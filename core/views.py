@@ -14,3 +14,6 @@ def calendar(request):
 
 def tickets(request):
     return render(request, 'core/tickets.html')
+
+def register(request):
+    return render(request, 'core/register.html')

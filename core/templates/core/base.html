@@ -37,6 +37,12 @@
             <a href="/admin/" class="nav-link">
                 Administration
             </a>
+            <form action="{% url 'logout' %}" method="post" id="logout-form" style="display: none;">
+                {% csrf_token %}
+            </form>
+            <a href="#" class="nav-link" onclick="document.getElementById('logout-form').submit(); return false;" style="color: var(--accent-red);">
+                Log Out
+            </a>
         </div>
     </aside>
 
