@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ancore | Business Dashboard{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">ANCORE<span>.</span></div>
+        </div>
+        <nav class="nav-section">
+            <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                Dashboard
+            </a>
+            <a href="{% url 'tasks' %}" class="nav-link {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}">
+                Tasks
+            </a>
+            <a href="{% url 'kanban' %}" class="nav-link {% if request.resolver_match.url_name == 'kanban' %}active{% endif %}">
+                Kanban
+            </a>
+            <a href="{% url 'calendar' %}" class="nav-link {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+                Calendar
+            </a>
+            <a href="{% url 'tickets' %}" class="nav-link {% if request.resolver_match.url_name == 'tickets' %}active{% endif %}">
+                Tickets
+            </a>
+        </nav>
+        <div class="sidebar-footer" style="padding-bottom: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+            <a href="/admin/" class="nav-link">
+                Administration
+            </a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="user-profile" style="font-size: 0.875rem; font-weight: 500; color: var(--text-muted);">
+                Administrator
+            </div>
+        </header>
+        <div class="page-container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</body>
+</html>
