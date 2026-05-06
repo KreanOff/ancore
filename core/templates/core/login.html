@@ -75,6 +75,22 @@
         .btn-login:hover {
             background-color: #1e293b;
         }
+        .alert {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
     </style>
 </head>
 <body>
@@ -88,14 +104,14 @@
             {% csrf_token %}
             
             {% if form.errors %}
-                <div style="margin-bottom: 1rem; padding: 0.75rem; background-color: #fee2e2; color: #991b1b; font-size: 0.875rem;">
+                <div class="alert alert-error">
                     Invalid email or password.
                 </div>
             {% endif %}
 
             {% if messages %}
                 {% for message in messages %}
-                    <div style="margin-bottom: 1rem; padding: 0.75rem; background-color: #dcfce7; color: #166534; font-size: 0.875rem;">
+                    <div class="alert alert-success">
                         {{ message }}
                     </div>
                 {% endfor %}

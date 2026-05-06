@@ -92,6 +92,22 @@
             text-decoration: none;
             font-weight: 600;
         }
+        .alert {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .alert-error, .alert-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
     </style>
 </head>
 <body>
@@ -106,14 +122,14 @@
             
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}" style="margin-bottom: 1rem; padding: 0.75rem; background-color: {% if message.tags == 'error' %}#fee2e2; color: #991b1b;{% else %}#dcfce7; color: #166534;{% endif %}; font-size: 0.875rem;">
+                    <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
 
             {% if form.errors %}
-                <div style="margin-bottom: 1rem; padding: 0.75rem; background-color: #fee2e2; color: #991b1b; font-size: 0.875rem;">
+                <div class="alert alert-error">
                     {% for field in form %}
                         {% for error in field.errors %}
                             <div>{{ error }}</div>
