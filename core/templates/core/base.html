@@ -49,7 +49,11 @@
     <main class="main-content">
         <header class="top-bar">
             <div class="user-profile" style="font-size: 0.875rem; font-weight: 500; color: var(--text-muted);">
-                Administrator
+                {% if user.is_authenticated %}
+                    {{ user.first_name }} {{ user.last_name }}
+                {% else %}
+                    Guest
+                {% endif %}
             </div>
         </header>
         <div class="page-container">

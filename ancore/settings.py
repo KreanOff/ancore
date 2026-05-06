@@ -78,6 +78,9 @@ WSGI_APPLICATION = 'ancore.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Database
+# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -88,6 +91,14 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
+
+# SQLite configuration (fallback)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
@@ -128,5 +139,9 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 LOGOUT_REDIRECT_URL = 'login'
+LOGIN_REDIRECT_URL = 'home'
+LOGIN_URL = 'login'
+
+AUTH_USER_MODEL = 'core.User'
 
 

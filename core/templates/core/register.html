@@ -101,30 +101,53 @@
             <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">Create a new account</p>
         </div>
 
-        <form action="#">
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" style="margin-bottom: 1rem; padding: 0.75rem; background-color: {% if message.tags == 'error' %}#fee2e2; color: #991b1b;{% else %}#dcfce7; color: #166534;{% endif %}; font-size: 0.875rem;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.errors %}
+                <div style="margin-bottom: 1rem; padding: 0.75rem; background-color: #fee2e2; color: #991b1b; font-size: 0.875rem;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             <div class="form-row">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="first-name">First Name</label>
-                    <input type="text" id="first-name" required autofocus>
+                    <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                    {{ form.first_name }}
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="last-name">Last Name</label>
-                    <input type="text" id="last-name" required>
+                    <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                    {{ form.last_name }}
                 </div>
             </div>
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" required>
+                <label for="{{ form.email.id_for_label }}">Email Address</label>
+                {{ form.email }}
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required>
+                <label for="{{ form.password1.id_for_label }}">Password</label>
+                {{ form.password1 }}
             </div>
             <div class="form-group">
-                <label for="confirm-password">Confirm Password</label>
-                <input type="password" id="confirm-password" required>
+                <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+                {{ form.password2 }}
             </div>
-            <button type="button" class="btn-login">CREATE ACCOUNT</button>
+            <button type="submit" class="btn-login">CREATE ACCOUNT</button>
         </form>
 
         <div class="footer-link">
