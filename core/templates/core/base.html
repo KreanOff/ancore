@@ -1,10 +1,10 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Ancore | Business Dashboard{% endblock %}</title>
+    <title>{% block title %}Ancore | Panel Biznesowy{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,30 +18,30 @@
         </div>
         <nav class="nav-section">
             <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                Dashboard
+                Panel Główny
             </a>
             <a href="{% url 'tasks' %}" class="nav-link {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}">
-                Tasks
+                Zadania
             </a>
             <a href="{% url 'kanban' %}" class="nav-link {% if request.resolver_match.url_name == 'kanban' %}active{% endif %}">
-                Kanban
+                Tablica Kanban
             </a>
             <a href="{% url 'calendar' %}" class="nav-link {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
-                Calendar
+                Kalendarz
             </a>
             <a href="{% url 'tickets' %}" class="nav-link {% if request.resolver_match.url_name == 'tickets' %}active{% endif %}">
-                Tickets
+                Zgłoszenia
             </a>
         </nav>
         <div class="sidebar-footer" style="padding-bottom: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05);">
             <a href="/admin/" class="nav-link">
-                Administration
+                Administracja
             </a>
             <form action="{% url 'logout' %}" method="post" id="logout-form" style="display: none;">
                 {% csrf_token %}
             </form>
             <a href="#" class="nav-link" onclick="document.getElementById('logout-form').submit(); return false;" style="color: var(--accent-red);">
-                Log Out
+                Wyloguj się
             </a>
         </div>
     </aside>
@@ -55,7 +55,7 @@
                 {% if user.is_authenticated %}
                     {{ user.first_name }} {{ user.last_name }}
                 {% else %}
-                    Guest
+                    Gość
                 {% endif %}
             </div>
         </header>

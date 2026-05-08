@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
         const count = selectedTaskCheckboxes.length;
         
-        selectedCount.textContent = `${count} item${count !== 1 ? 's' : ''} selected`;
+        selectedCount.textContent = `${count} ${count === 1 ? 'element' : 'elementów'} wybranych`;
         
         // Show/hide select all checkbox based on whether any task is selected
         if (count > 0) {
@@ -105,12 +105,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show success message
                     showMessage(data.message, 'success');
                 } else {
-                    showMessage(data.message || 'Error deleting tasks', 'error');
+                    showMessage(data.message || 'Błąd podczas usuwania zadań', 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showMessage('Error deleting tasks', 'error');
+                showMessage('Błąd podczas usuwania zadań', 'error');
             });
             });
         }
@@ -191,9 +191,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         modalContent.innerHTML = `
             <div style="margin-bottom: 1.5rem;">
-                <h3 style="margin: 0 0 1rem 0; color: #333; font-size: 1.25rem;">Confirm Deletion</h3>
+                <h3 style="margin: 0 0 1rem 0; color: #333; font-size: 1.25rem;">Potwierdź usunięcie</h3>
                 <p style="margin: 0; color: #666; line-height: 1.5;">
-                    Are you sure you want to delete ${taskCount} task${taskCount !== 1 ? 's' : ''}? This action cannot be undone.
+                    Czy na pewno chcesz usunąć ${taskCount} ${taskCount === 1 ? 'zadanie' : 'zadań'}? Ta czynności nie może być cofnięta.
                 </p>
             </div>
             <div style="display: flex; gap: 1rem; justify-content: center;">
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cursor: pointer;
                     font-size: 0.875rem;
                     font-weight: 500;
-                ">Cancel</button>
+                ">Anuluj</button>
                 <button id="confirm-delete" style="
                     padding: 0.75rem 1.5rem;
                     border: none;
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cursor: pointer;
                     font-size: 0.875rem;
                     font-weight: 500;
-                ">Delete</button>
+                ">Usuń</button>
             </div>
         `;
 

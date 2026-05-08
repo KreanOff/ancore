@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 
 {% block page_header %}
-<h1 class="page-title" style="margin-bottom: 0; font-size: 1.25rem;">Tasks</h1>
+<h1 class="page-title" style="margin-bottom: 0; font-size: 1.25rem;">Zadania</h1>
 {% endblock %}
 
 {% block page_container_class %}full-width{% endblock %}
@@ -14,14 +14,14 @@
     <div class="panel-left" style="display: flex; align-items: center; gap: 1rem;">
         <input type="checkbox" id="select-all-checkbox" class="task-checkbox" style="margin-right: 0.5rem; display: none;">
         <span id="selected-count" style="color: var(--text-muted); font-size: 0.875rem;">
-            0 items selected
+            0 wybranych elementów
         </span>
         <button id="delete-selected-btn" class="btn btn-danger" style="display: none;">
-            Delete Task
+            Usuń zadanie
         </button>
     </div>
     <div class="panel-right" style="display: flex; align-items: center; gap: 1rem;">
-        <label for="filter-status" style="font-size: 0.875rem; color: var(--text-muted);">Filter:</label>
+        <label for="filter-status" style="font-size: 0.875rem; color: var(--text-muted);">Filtruj:</label>
         <select id="filter-status" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; background: white;">
             <option value="">Wszystkie</option>
             <option value="new">Nowe</option>
@@ -38,7 +38,7 @@
             <option value="high">Wysoki</option>
         </select>
         <a href="{% url 'create_task' %}" class="btn btn-primary">
-            + Create Task
+            + Utwórz zadanie
         </a>
     </div>
 </div>
@@ -81,7 +81,7 @@
             {% empty %}
             <tr>
                 <td colspan="4" style="text-align: center; padding: 4rem; color: var(--text-muted);">
-                    No tasks found. Click "Create Task" to add your first one.
+                    Nie znaleziono zadań. Kliknij "Utwórz zadanie", aby dodać pierwsze zadanie.
                 </td>
             </tr>
             {% endfor %}

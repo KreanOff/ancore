@@ -1,10 +1,10 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ancore | Login</title>
+    <title>Ancore | Logowanie</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -97,7 +97,7 @@
     <div class="login-card">
         <div class="login-header">
             <div class="logo">ANCORE<span>.</span></div>
-            <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">Please sign in to your account</p>
+            <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">Zaloguj się na swoje konto</p>
         </div>
 
         <form method="post">
@@ -105,7 +105,7 @@
             
             {% if form.errors %}
                 <div class="alert alert-error">
-                    Invalid email or password.
+                    Nieprawidłowy email lub hasło.
                 </div>
             {% endif %}
 
@@ -118,18 +118,18 @@
             {% endif %}
 
             <div class="form-group">
-                <label for="email">Email Address</label>
+                <label for="email">Adres Email</label>
                 <input type="email" name="username" id="email" required autofocus>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Hasło</label>
                 <input type="password" name="password" id="password" required>
             </div>
-            <button type="submit" class="btn-login">SIGN IN</button>
+            <button type="submit" class="btn-login">ZALOGUJ SIĘ</button>
         </form>
 
         <div class="footer-link" style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: #64748b;">
-            Don't have an account? <a href="{% url 'register' %}" style="color: #2563eb; text-decoration: none; font-weight: 600;">Sign Up</a>
+            Nie masz konta? <a href="{% url 'register' %}" style="color: #2563eb; text-decoration: none; font-weight: 600;">Zarejestruj się</a>
         </div>
     </div>
 </body>

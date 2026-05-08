@@ -4,15 +4,15 @@ from .models import User, Task
 
 class UserRegistrationForm(UserCreationForm):
     first_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
-        'placeholder': 'First Name',
+        'placeholder': 'Imię',
         'id': 'first-name'
     }))
     last_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
-        'placeholder': 'Last Name',
+        'placeholder': 'Nazwisko',
         'id': 'last-name'
     }))
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
-        'placeholder': 'Email Address',
+        'placeholder': 'Adres Email',
         'id': 'email'
     }))
 
@@ -37,11 +37,11 @@ class TaskForm(forms.ModelForm):
         fields = ['title', 'description', 'priority', 'status']
         widgets = {
             'title': forms.TextInput(attrs={
-                'placeholder': 'Enter task title...',
+                'placeholder': 'Wprowadź tytuł zadania...',
                 'class': 'form-input'
             }),
             'description': forms.Textarea(attrs={
-                'placeholder': 'Enter task description...',
+                'placeholder': 'Wprowadź opis zadania...',
                 'rows': 4,
                 'class': 'form-input'
             }),

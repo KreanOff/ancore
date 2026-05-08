@@ -7,7 +7,7 @@
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
-        <span>Back to Tasks</span>
+        <span>Powrót do zadań</span>
     </a>
 </div>
 {% endblock %}
@@ -27,7 +27,7 @@
 
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
         <div>
-            <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Task #{{ task.id }}</div>
+            <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Zadanie #{{ task.id }}</div>
             <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0;">{{ task.title }}</h2>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -63,10 +63,10 @@
 
         <div style="margin-top: 1.5rem; display: flex; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
             <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2.5rem;">
-                Save Changes
+                Zapisz zmiany
             </button>
             <a href="{% url 'tasks' %}" class="btn" style="background: var(--border-color); color: var(--text-main); padding: 0.75rem 1.5rem; text-decoration: none; display: flex; align-items: center;">
-                Cancel
+                Anuluj
             </a>
         </div>
     </form>
