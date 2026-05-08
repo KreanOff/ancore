@@ -67,3 +67,35 @@ def update_task_status(request, task_id):
         })
     except Task.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Task not found'}, status=404)
+
+@login_required
+@require_POST
+def delete_task(request, task_id):
+    try:
+        task = Task.objects.get(id=task_id, user=request.user)
+        task.delete()
+        return JsonResponse({'status': 'success', 'message': 'Task deleted successfully'})
+    except Task.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Task not found'}, status=404)
+
+@login_required
+@require_POST
+def delete_tasks(request):
+    try:
+        data = json.loads(request.body)
+        task_ids = data.get('task_ids', [])
+        
+        if not task_ids:
+            return JsonResponse({'status': 'error', 'message': 'No task IDs provided'}, status=400)
+        
+        deleted_count = Task.objects.filter(id__in=task_ids, user=request.user).delete()[0]
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': f'{deleted_count} task{"s" if deleted_count != 1 else ""} deleted successfully',
+            'deleted_count': deleted_count
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
