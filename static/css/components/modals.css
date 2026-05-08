@@ -1,0 +1,85 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 280px;
+    width: calc(100% - 280px);
+    height: 100%;
+    background-color: var(--bg-main);
+    z-index: 2000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    overflow-y: auto;
+}
+
+.modal-overlay.active {
+    display: flex;
+    flex-direction: column;
+    opacity: 1;
+}
+
+.modal-header {
+    height: 64px;
+    padding: 0 2rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 2001;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--sidebar-bg);
+    letter-spacing: -0.025em;
+}
+
+.modal-title span {
+    color: var(--accent-red);
+}
+
+.modal-back {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    padding: 0.5rem 0;
+}
+
+.modal-back:hover {
+    color: var(--accent-red);
+    transform: translateX(-4px);
+}
+
+.modal-back svg {
+    transition: transform 0.2s;
+}
+
+.modal-body {
+    flex-grow: 1;
+    padding: 2rem;
+    width: 100%;
+    max-width: 1000px;
+}
+
+.modal-body h2 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -0.025em;
+}
+
+/* Prevent scrolling when modal is open */
+body.modal-open {
+    overflow: hidden;
+}

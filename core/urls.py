@@ -11,4 +11,7 @@ urlpatterns = [
     path('kanban/', kanban.kanban, name='kanban'),
     path('calendar/', calendar.calendar, name='calendar'),
     path('tickets/', tickets.tickets, name='tickets'),
+    path('tasks/create-task/', tasks.create_task, name='create_task'),
+    path('tasks/view-edit-task/<int:task_id>/', tasks.view_edit_task, name='view_edit_task'),
+    path('tasks/update/<int:task_id>/', tasks.update_task_status, name='update_task_status'),
 ]

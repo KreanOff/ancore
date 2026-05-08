@@ -157,3 +157,6 @@ cython_debug/
 
 # VS Code
 .vscode/
+
+# Obsidian
+obsidian-vault/

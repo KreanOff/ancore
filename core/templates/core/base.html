@@ -47,7 +47,10 @@
     </aside>
 
     <main class="main-content">
-        <header class="top-bar">
+        <header class="top-bar" style="justify-content: space-between;">
+            <div class="top-bar-left">
+                {% block page_header %}{% endblock %}
+            </div>
             <div class="user-profile" style="font-size: 0.875rem; font-weight: 500; color: var(--text-muted);">
                 {% if user.is_authenticated %}
                     {{ user.first_name }} {{ user.last_name }}
@@ -56,9 +59,11 @@
                 {% endif %}
             </div>
         </header>
-        <div class="page-container">
+        <div class="page-container {% block page_container_class %}{% endblock %}">
             {% block content %}{% endblock %}
         </div>
     </main>
+    <script src="{% static 'js/modal.js' %}"></script>
+    <script src="{% static 'js/tasks.js' %}"></script>
 </body>
 </html>

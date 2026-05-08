@@ -1,9 +1,62 @@
 {% extends 'core/base.html' %}
 
-{% block content %}
-<h1 class="page-title">Tasks</h1>
+{% block page_header %}
+<h1 class="page-title" style="margin-bottom: 0; font-size: 1.25rem;">Tasks</h1>
+{% endblock %}
 
-<div class="dashboard-card">
-    <p>Management and tracking of active tasks within the Ancore ecosystem.</p>
+{% block page_container_class %}full-width{% endblock %}
+
+{% block content %}
+<div class="page-header" style="justify-content: flex-end; padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-color); background: #ffffff; margin-bottom: 0;">
+    <a href="{% url 'create_task' %}" class="btn btn-primary">
+        + Create Task
+    </a>
 </div>
+
+<div class="table-container" style="border: none;">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 40px;"></th>
+                <th>ID</th>
+                <th>Temat</th>
+                <th>Opis</th>
+                <th>Priorytet</th>
+                <th>Stan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr class="task-row {% if task.is_completed %}completed{% endif %}" 
+                data-task-id="{{ task.id }}"
+                data-href="{% url 'view_edit_task' task.id %}"
+                style="cursor: pointer;">
+                <td>
+                    <input type="checkbox" class="task-checkbox" {% if task.is_completed %}checked{% endif %}>
+                </td>
+                <td style="color: var(--text-muted); font-weight: 600;">#{{ task.id }}</td>
+                <td class="task-title" style="font-weight: 600;">{{ task.title }}</td>
+                <td class="task-desc">{{ task.description|truncatechars:50 }}</td>
+                <td>
+                    <span class="badge badge-{{ task.priority }}">
+                        {{ task.get_priority_display }}
+                    </span>
+                </td>
+                <td>
+                    <span class="status-indicator status-{{ task.status }}">
+                        {{ task.get_status_display }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    No tasks found. Click "Create Task" to add your first one.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 {% endblock %}

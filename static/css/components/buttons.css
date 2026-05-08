@@ -1,0 +1,27 @@
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    border-radius: 0;
+}
+
+.btn-primary {
+    background-color: var(--accent-red);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #9f1239;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.btn-icon {
+    margin-right: 0.5rem;
+}

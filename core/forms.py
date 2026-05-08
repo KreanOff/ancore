@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User
+from .models import User, Task
 
 class UserRegistrationForm(UserCreationForm):
     first_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
@@ -30,3 +30,25 @@ class UserRegistrationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+class TaskForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ['title', 'description', 'priority', 'status']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'placeholder': 'Enter task title...',
+                'class': 'form-input'
+            }),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Enter task description...',
+                'rows': 4,
+                'class': 'form-input'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-input'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-input'
+            }),
+        }
