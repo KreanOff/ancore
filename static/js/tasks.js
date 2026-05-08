@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedCount = document.getElementById('selected-count');
     const filterStatus = document.getElementById('filter-status');
     const filterPriority = document.getElementById('filter-priority');
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const checkboxes = document.querySelectorAll('.task-checkbox');
 
     // Navigate to task detail on row click
     taskRows.forEach(row => {
@@ -17,31 +19,59 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Checkbox functionality
-    const checkboxes = document.querySelectorAll('.task-checkbox');
-    
     function updateDeleteButton() {
         const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
-        const count = selectedCheckboxes.length;
+        // Exclude select-all checkbox from the count
+        const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
+        const count = selectedTaskCheckboxes.length;
         
         selectedCount.textContent = `${count} item${count !== 1 ? 's' : ''} selected`;
         
+        // Show/hide select all checkbox based on whether any task is selected
         if (count > 0) {
-            deleteBtn.disabled = false;
-            deleteBtn.style.opacity = '1';
-            deleteBtn.style.cursor = 'pointer';
+            selectAllCheckbox.style.display = 'inline-block';
+            deleteBtn.style.display = 'inline-block';
         } else {
-            deleteBtn.disabled = true;
-            deleteBtn.style.opacity = '0.5';
-            deleteBtn.style.cursor = 'not-allowed';
+            selectAllCheckbox.style.display = 'none';
+            deleteBtn.style.display = 'none';
         }
     }
+
+    // Update select all checkbox state
+    function updateSelectAllCheckbox() {
+        const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
+        const totalCheckboxes = document.querySelectorAll('.task-checkbox');
+        
+        // Exclude select-all checkbox from the count
+        const taskCheckboxes = Array.from(totalCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
+        const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
+        
+        selectAllCheckbox.checked = selectedTaskCheckboxes.length === taskCheckboxes.length && taskCheckboxes.length > 0;
+        selectAllCheckbox.indeterminate = false;
+    }
+
+    // Select all checkbox functionality
+    selectAllCheckbox.addEventListener('change', function() {
+        // Only affect task checkboxes, not the select-all checkbox itself
+        const taskCheckboxes = Array.from(checkboxes).filter(cb => cb.id !== 'select-all-checkbox');
+        
+        taskCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateDeleteButton();
+        updateSelectAllCheckbox();
+    });
 
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function(e) {
             e.stopPropagation();
             updateDeleteButton();
+            updateSelectAllCheckbox();
         });
     });
+
+    // Initialize select all checkbox visibility on page load
+    updateDeleteButton();
 
     // Delete selected tasks
     deleteBtn.addEventListener('click', function() {

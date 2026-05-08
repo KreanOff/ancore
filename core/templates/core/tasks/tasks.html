@@ -12,26 +12,30 @@
 
 <div class="control-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 2rem; background: #f8f9fa; border-bottom: 1px solid var(--border-color);">
     <div class="panel-left" style="display: flex; align-items: center; gap: 1rem;">
+        <input type="checkbox" id="select-all-checkbox" class="task-checkbox" style="margin-right: 0.5rem; display: none;">
         <span id="selected-count" style="color: var(--text-muted); font-size: 0.875rem;">
             0 items selected
         </span>
-        <button id="delete-selected-btn" class="btn btn-danger" disabled style="opacity: 0.5; cursor: not-allowed;">
+        <button id="delete-selected-btn" class="btn btn-danger" style="display: none;">
             Delete Task
         </button>
     </div>
     <div class="panel-right" style="display: flex; align-items: center; gap: 1rem;">
         <label for="filter-status" style="font-size: 0.875rem; color: var(--text-muted);">Filter:</label>
         <select id="filter-status" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; background: white;">
-            <option value="">All Status</option>
-            <option value="new">New</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
+            <option value="">Wszystkie</option>
+            <option value="new">Nowe</option>
+            <option value="in_progress">Rozwój</option>
+            <option value="resolved">Rozwiązane</option>
+            <option value="implemented">Zrealizowane</option>
+            <option value="closed">Zamknięte</option>
+            <option value="reopened">Ponownie otwarte</option>
         </select>
         <select id="filter-priority" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; background: white;">
-            <option value="">All Priority</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="">Wszystkie priorytety</option>
+            <option value="low">Niski</option>
+            <option value="medium">Średni</option>
+            <option value="high">Wysoki</option>
         </select>
         <a href="{% url 'create_task' %}" class="btn btn-primary">
             + Create Task
