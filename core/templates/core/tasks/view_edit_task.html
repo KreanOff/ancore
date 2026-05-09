@@ -59,6 +59,9 @@
 
         <div style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted);">
             Utworzony: {{ task.created_at|date:"d.m.Y H:i" }}
+            {% if task.completion_date %}
+            <br>Zrealizowano: {{ task.completion_date|date:"d.m.Y H:i" }}
+            {% endif %}
         </div>
 
         <div style="margin-top: 1.5rem; display: flex; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">

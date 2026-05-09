@@ -35,9 +35,27 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    completion_date = models.DateTimeField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
 
     def save(self, *args, **kwargs):
+        from django.utils import timezone
+        
+        # Get original status if this is an update
+        if self.pk:
+            original_task = Task.objects.get(pk=self.pk)
+            original_status = original_task.status
+        else:
+            original_status = None
+        
+        # Set completion_date when status changes to 'closed'
+        if self.status == 'closed' and original_status != 'closed':
+            self.completion_date = timezone.now()
+            self.is_completed = True
+        elif self.status != 'closed' and original_status == 'closed':
+            self.completion_date = None
+            self.is_completed = False
+            
         if not self.pk or self.task_id == 0:
             # Get the highest task_id for this user
             max_task_id = Task.objects.filter(user=self.user).aggregate(Max('task_id'))['task_id__max'] or 0

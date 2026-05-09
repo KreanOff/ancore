@@ -54,16 +54,18 @@
                 <th>Opis</th>
                 <th>Priorytet</th>
                 <th>Stan</th>
+                <th>Data utworzenia</th>
+                <th>Data realizacji</th>
             </tr>
         </thead>
         <tbody>
             {% for task in tasks %}
-            <tr class="task-row {% if task.is_completed %}completed{% endif %}" 
+            <tr class="task-row {% if task.status == 'closed' %}completed{% endif %}" 
                 data-task-id="{{ task.id }}"
                 data-href="{% url 'view_edit_task' task.id %}"
                 style="cursor: pointer;">
                 <td>
-                    <input type="checkbox" class="task-checkbox" {% if task.is_completed %}checked{% endif %}>
+                    <input type="checkbox" class="task-checkbox">
                 </td>
                 <td style="color: var(--text-muted); font-weight: 600;">#{{ task.task_id }}</td>
                 <td class="task-title" style="font-weight: 600;">{{ task.title }}</td>
@@ -78,10 +80,20 @@
                         {{ task.get_status_display }}
                     </span>
                 </td>
+                <td style="color: var(--text-muted); font-size: 0.875rem;">
+                    {{ task.created_at|date:"d.m.Y H:i" }}
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.875rem;">
+                    {% if task.completion_date %}
+                        {{ task.completion_date|date:"d.m.Y H:i" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                <td colspan="8" style="text-align: center; padding: 4rem; color: var(--text-muted);">
                     Nie znaleziono zadań. Kliknij "Utwórz zadanie", aby dodać pierwsze zadanie.
                 </td>
             </tr>
