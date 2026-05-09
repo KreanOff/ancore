@@ -64,7 +64,7 @@
                 <td>
                     <input type="checkbox" class="task-checkbox" {% if task.is_completed %}checked{% endif %}>
                 </td>
-                <td style="color: var(--text-muted); font-weight: 600;">#{{ task.id }}</td>
+                <td style="color: var(--text-muted); font-weight: 600;">#{{ task.task_id }}</td>
                 <td class="task-title" style="font-weight: 600;">{{ task.title }}</td>
                 <td class="task-desc">{{ task.description|truncatechars:50 }}</td>
                 <td>
@@ -80,7 +80,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                <td colspan="6" style="text-align: center; padding: 4rem; color: var(--text-muted);">
                     Nie znaleziono zadań. Kliknij "Utwórz zadanie", aby dodać pierwsze zadanie.
                 </td>
             </tr>

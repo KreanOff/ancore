@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models import Max
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
@@ -27,6 +28,7 @@ class Task(models.Model):
         ('reopened', 'Ponownie otwarte'),
     ]
 
+    task_id = models.PositiveIntegerField(default=0)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
@@ -34,6 +36,28 @@ class Task(models.Model):
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
+
+    def save(self, *args, **kwargs):
+        if not self.pk or self.task_id == 0:
+            # Get the highest task_id for this user
+            max_task_id = Task.objects.filter(user=self.user).aggregate(Max('task_id'))['task_id__max'] or 0
+            self.task_id = max_task_id + 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        user = self.user
+        super().delete(*args, **kwargs)
+        # Renumber remaining tasks for this user
+        self._renumber_user_tasks(user)
+
+    @classmethod
+    def _renumber_user_tasks(cls, user):
+        """Renumber tasks sequentially starting from 1 for a specific user"""
+        tasks = cls.objects.filter(user=user).order_by('task_id')
+        for index, task in enumerate(tasks, 1):
+            if task.task_id != index:
+                task.task_id = index
+                task.save(update_fields=['task_id'])
 
     def __str__(self):
         return self.title

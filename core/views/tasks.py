@@ -88,7 +88,13 @@ def delete_tasks(request):
         if not task_ids:
             return JsonResponse({'status': 'error', 'message': 'Nie podano ID zadań'}, status=400)
         
-        deleted_count = Task.objects.filter(id__in=task_ids, user=request.user).delete()[0]
+        # Get user before deletion for renumbering
+        user = request.user
+        
+        deleted_count = Task.objects.filter(id__in=task_ids, user=user).delete()[0]
+        
+        # Renumber remaining tasks for this user
+        Task._renumber_user_tasks(user)
         
         return JsonResponse({
             'status': 'success', 
