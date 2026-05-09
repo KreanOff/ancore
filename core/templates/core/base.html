@@ -63,7 +63,20 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <!-- Notifications Container -->
+    {% if messages %}
+    <div class="notifications-container">
+        {% for message in messages %}
+        <div class="notification {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <script src="{% static 'js/modal.js' %}"></script>
     <script src="{% static 'js/tasks.js' %}"></script>
+    <script src="{% static 'js/notifications.js' %}"></script>
 </body>
 </html>

@@ -162,33 +162,42 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
 
-    // Helper function to show messages
+    // Helper function to show messages using global notification system
     function showMessage(message, type) {
-        // Create message element
-        const messageDiv = document.createElement('div');
-        messageDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            border-radius: 4px;
-            color: white;
-            font-weight: 500;
-            z-index: 1000;
-            transition: opacity 0.3s ease;
-            ${type === 'success' ? 'background-color: #28a745;' : 'background-color: #dc3545;'}
-        `;
-        messageDiv.textContent = message;
+        // Create or get notifications container
+        let container = document.querySelector('.notifications-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'notifications-container';
+            document.body.appendChild(container);
+        }
         
-        document.body.appendChild(messageDiv);
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
         
-        // Remove message after 3 seconds
+        container.appendChild(notification);
+        
+        // Auto-hide notification after 5 seconds
         setTimeout(() => {
-            messageDiv.style.opacity = '0';
-            setTimeout(() => {
-                document.body.removeChild(messageDiv);
-            }, 300);
-        }, 3000);
+            hideNotification(notification);
+        }, 5000);
+    }
+    
+    // Helper function to hide notification (from notifications.js)
+    function hideNotification(notification) {
+        notification.classList.add('hiding');
+        
+        setTimeout(() => {
+            notification.remove();
+            
+            // Remove container if no more notifications
+            const container = document.querySelector('.notifications-container');
+            if (container && container.children.length === 0) {
+                container.remove();
+            }
+        }, 300);
     }
 
     // Helper function to show centered confirmation modal
