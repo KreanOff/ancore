@@ -36,13 +36,13 @@ def create_task(request):
 
 @login_required
 def view_edit_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task = get_object_or_404(Task, task_id=task_id, user=request.user)
     if request.method == 'POST':
         form = TaskForm(request.POST, instance=task)
         if form.is_valid():
             form.save()
             messages.success(request, 'Zadanie zaktualizowane pomyślnie.')
-            return redirect('view_edit_task', task_id=task.id)
+            return redirect('view_edit_task', task_id=task.task_id)
     else:
         form = TaskForm(instance=task)
     
@@ -52,7 +52,7 @@ def view_edit_task(request, task_id):
 @require_POST
 def update_task_status(request, task_id):
     try:
-        task = Task.objects.get(id=task_id, user=request.user)
+        task = Task.objects.get(task_id=task_id, user=request.user)
         data = json.loads(request.body)
         is_completed = data.get('is_completed', False)
         
@@ -72,7 +72,7 @@ def update_task_status(request, task_id):
 @require_POST
 def delete_task(request, task_id):
     try:
-        task = Task.objects.get(id=task_id, user=request.user)
+        task = Task.objects.get(task_id=task_id, user=request.user)
         task.delete()
         return JsonResponse({'status': 'success', 'message': 'Zadanie usunięte pomyślnie'})
     except Task.DoesNotExist:

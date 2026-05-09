@@ -61,8 +61,8 @@
         <tbody>
             {% for task in tasks %}
             <tr class="task-row {% if task.status == 'closed' %}completed{% endif %}" 
-                data-task-id="{{ task.id }}"
-                data-href="{% url 'view_edit_task' task.id %}"
+                data-task-id="{{ task.task_id }}"
+                data-href="{% url 'view_edit_task' task.task_id %}"
                 style="cursor: pointer;">
                 <td>
                     <input type="checkbox" class="task-checkbox">
