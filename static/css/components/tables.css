@@ -21,6 +21,15 @@
     color: var(--text-muted);
     letter-spacing: 0.05em;
     border-bottom: 2px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.data-table th:first-child {
+    padding: 0;
+    text-align: center;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
 }
 
 .data-table td {
@@ -29,6 +38,11 @@
     color: var(--text-main);
     border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
+}
+
+.data-table td:first-child {
+    padding: 1rem;
+    text-align: center;
 }
 
 .data-table tr:last-child td {
@@ -69,6 +83,8 @@
     cursor: pointer;
     accent-color: var(--accent-red);
     border: 1px solid var(--border-color);
+    margin: 0;
+    vertical-align: middle;
 }
 
 .task-row.completed td {
@@ -80,6 +96,10 @@
 .task-row.completed .badge {
     text-decoration: none; /* Don't strike through the badge text */
     opacity: 0.5;
+}
+
+.task-row.checked {
+    background-color: rgba(239, 68, 68, 0.1);
 }
 
 .status-indicator {

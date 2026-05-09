@@ -30,10 +30,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show/hide select all checkbox based on whether any task is selected
         if (count > 0) {
             selectAllCheckbox.style.display = 'inline-block';
-            deleteBtn.style.display = 'inline-block';
+            deleteBtn.disabled = false;
         } else {
             selectAllCheckbox.style.display = 'none';
-            deleteBtn.style.display = 'none';
+            deleteBtn.disabled = true;
         }
     }
 
@@ -57,6 +57,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         taskCheckboxes.forEach(checkbox => {
             checkbox.checked = this.checked;
+            
+            // Toggle red highlight on the row
+            const taskRow = checkbox.closest('.task-row');
+            if (this.checked) {
+                taskRow.classList.add('checked');
+            } else {
+                taskRow.classList.remove('checked');
+            }
         });
         updateDeleteButton();
         updateSelectAllCheckbox();
@@ -65,18 +73,40 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function(e) {
             e.stopPropagation();
+            
+            // Toggle red highlight on the row
+            const taskRow = this.closest('.task-row');
+            if (this.checked) {
+                taskRow.classList.add('checked');
+            } else {
+                taskRow.classList.remove('checked');
+            }
+            
             updateDeleteButton();
             updateSelectAllCheckbox();
         });
     });
 
-    // Initialize select all checkbox visibility on page load
+    // Initialize select all checkbox visibility and red highlights on page load
     updateDeleteButton();
+    
+    // Add red highlight to already checked tasks
+    checkboxes.forEach(checkbox => {
+        if (checkbox.checked && checkbox.id !== 'select-all-checkbox') {
+            checkbox.closest('.task-row').classList.add('checked');
+        }
+    });
 
     // Delete selected tasks
     deleteBtn.addEventListener('click', function() {
+        if (this.disabled) {
+            return;
+        }
+        
         const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
-        const taskIds = Array.from(selectedCheckboxes).map(cb => 
+        // Exclude select-all checkbox from task deletion
+        const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
+        const taskIds = selectedTaskCheckboxes.map(cb => 
             cb.closest('.task-row').dataset.taskId
         );
         
@@ -97,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.status === 'success') {
                     // Remove rows from DOM
-                    selectedCheckboxes.forEach(cb => {
+                    selectedTaskCheckboxes.forEach(cb => {
                         cb.closest('.task-row').remove();
                     });
                     updateDeleteButton();
@@ -190,18 +220,18 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         modalContent.innerHTML = `
-            <div style="margin-bottom: 1.5rem;">
-                <h3 style="margin: 0 0 1rem 0; color: #333; font-size: 1.25rem;">Potwierdź usunięcie</h3>
-                <p style="margin: 0; color: #666; line-height: 1.5;">
+            <div style="margin-bottom: 1.5rem; text-align: left;">
+                <h3 style="margin: 0 0 1rem 0; color: var(--text-main); font-size: 1.25rem;">Potwierdź usunięcie</h3>
+                <p style="margin: 0; color: var(--text-muted); line-height: 1.5;">
                     Czy na pewno chcesz usunąć ${taskCount} ${taskCount === 1 ? 'zadanie' : 'zadań'}? Ta czynności nie może być cofnięta.
                 </p>
             </div>
             <div style="display: flex; gap: 1rem; justify-content: center;">
                 <button id="cancel-delete" style="
                     padding: 0.75rem 1.5rem;
-                    border: 1px solid #ddd;
-                    background: #f8f9fa;
-                    color: #666;
+                    border: 1px solid var(--border-color);
+                    background: var(--card-bg);
+                    color: var(--text-main);
                     cursor: pointer;
                     font-size: 0.875rem;
                     font-weight: 500;
@@ -209,8 +239,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button id="confirm-delete" style="
                     padding: 0.75rem 1.5rem;
                     border: none;
-                    background: #dc3545;
-                    color: white;
+                    background: var(--accent-red);
+                    color: #ffffff;
                     cursor: pointer;
                     font-size: 0.875rem;
                     font-weight: 500;
@@ -221,20 +251,39 @@ document.addEventListener('DOMContentLoaded', function() {
         modalOverlay.appendChild(modalContent);
         document.body.appendChild(modalOverlay);
 
+        // Function to close modal safely
+        function closeModal() {
+            if (modalOverlay && modalOverlay.parentNode) {
+                document.body.removeChild(modalOverlay);
+            }
+        }
+
         // Add event listeners
-        document.getElementById('cancel-delete').addEventListener('click', () => {
-            document.body.removeChild(modalOverlay);
-        });
+        document.getElementById('cancel-delete').addEventListener('click', closeModal);
 
         document.getElementById('confirm-delete').addEventListener('click', () => {
-            document.body.removeChild(modalOverlay);
+            closeModal();
             onConfirm();
         });
 
         // Close modal on overlay click
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) {
-                document.body.removeChild(modalOverlay);
+                closeModal();
+            }
+        });
+
+        // Handle Enter key to confirm, Escape to cancel
+        document.addEventListener('keydown', function handleKeyDown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                closeModal();
+                onConfirm();
+                document.removeEventListener('keydown', handleKeyDown);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeModal();
+                document.removeEventListener('keydown', handleKeyDown);
             }
         });
     }
