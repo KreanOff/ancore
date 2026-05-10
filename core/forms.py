@@ -1,6 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Task
+from .models import User, Task, TaskAttachment
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
 
 class UserRegistrationForm(UserCreationForm):
     first_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={

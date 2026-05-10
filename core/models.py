@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Max
+import os
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
@@ -79,3 +80,52 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_file_extension(self):
+        """Return file extension for icon selection"""
+        if self.attachments.exists():
+            first_attachment = self.attachments.first()
+            return os.path.splitext(first_attachment.file.name)[1].lower()
+        return ''
+
+class TaskAttachment(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='task_attachments/')
+    filename = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    file_size = models.PositiveIntegerField(default=0)  # Size in bytes
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            # Set filename from the uploaded file
+            self.filename = os.path.basename(self.file.name)
+            # Set file size
+            self.file_size = self.file.size
+        super().save(*args, **kwargs)
+
+    def get_file_extension(self):
+        """Return file extension for icon selection"""
+        return os.path.splitext(self.filename)[1].lower()
+
+    def is_image(self):
+        """Check if the file is an image"""
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
+        return self.get_file_extension() in image_extensions
+
+    def is_pdf(self):
+        """Check if the file is a PDF"""
+        return self.get_file_extension() == '.pdf'
+
+    def get_formatted_size(self):
+        """Return human-readable file size"""
+        if self.file_size == 0:
+            return "0 B"
+        size_names = ["B", "KB", "MB", "GB"]
+        i = 0
+        while self.file_size >= 1024 and i < len(size_names) - 1:
+            self.file_size /= 1024.0
+            i += 1
+        return f"{self.file_size:.1f} {size_names[i]}"
+
+    def __str__(self):
+        return f"{self.filename} - {self.task.title}"

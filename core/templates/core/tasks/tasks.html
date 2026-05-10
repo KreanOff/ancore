@@ -1,8 +1,6 @@
 {% extends 'core/base.html' %}
 
-{% block page_header %}
-<h1 class="page-title" style="margin-bottom: 0; font-size: 1.25rem;">Zadania</h1>
-{% endblock %}
+{% block page_header %}{% endblock %}
 
 {% block page_container_class %}full-width{% endblock %}
 
@@ -52,6 +50,7 @@
                 <th>Opis</th>
                 <th>Priorytet</th>
                 <th>Stan</th>
+                <th style="width: 120px;">Załączniki</th>
                 <th>Data utworzenia</th>
                 <th>Data realizacji</th>
             </tr>
@@ -60,9 +59,9 @@
             {% for task in tasks %}
             <tr class="task-row {% if task.status == 'closed' %}completed{% endif %}" 
                 data-task-id="{{ task.task_id }}"
-                data-href="{% url 'view_edit_task' task.task_id %}"
+                data-view-url="{% url 'view-task' task.task_id %}"
                 style="cursor: pointer;">
-                <td>
+                <td onclick="event.stopPropagation()">
                     <input type="checkbox" class="task-checkbox">
                 </td>
                 <td style="color: var(--text-muted); font-weight: 600;">#{{ task.task_id }}</td>
@@ -78,6 +77,31 @@
                         {{ task.get_status_display }}
                     </span>
                 </td>
+                <td>
+                    {% if task.attachments.exists %}
+                        <div class="attachments-column">
+                            {% for attachment in task.attachments.all %}
+                                <a href="{{ attachment.file.url }}" 
+                                   target="_blank" 
+                                   class="attachment-link-small"
+                                   title="{{ attachment.filename }} ({{ attachment.get_formatted_size }})">
+                                    {% if attachment.is_image %}
+                                        <span class="attachment-icon-small image">📷</span>
+                                    {% elif attachment.is_pdf %}
+                                        <span class="attachment-icon-small pdf">📄</span>
+                                    {% else %}
+                                        <span class="attachment-icon-small document">📎</span>
+                                    {% endif %}
+                                </a>
+                            {% endfor %}
+                            {% if task.attachments.count > 3 %}
+                                <span class="attachment-more">+{{ task.attachments.count|add:"-3" }}</span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">-</span>
+                    {% endif %}
+                </td>
                 <td style="color: var(--text-muted); font-size: 0.875rem;">
                     {{ task.created_at|date:"d.m.Y H:i" }}
                 </td>
@@ -91,7 +115,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                <td colspan="9" style="text-align: center; padding: 4rem; color: var(--text-muted);">
                     Nie znaleziono zadań. Kliknij "Utwórz zadanie", aby dodać pierwsze zadanie.
                 </td>
             </tr>
@@ -99,5 +123,20 @@
         </tbody>
     </table>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const taskRows = document.querySelectorAll('.task-row');
+    
+    taskRows.forEach(row => {
+        row.addEventListener('click', function() {
+            const viewUrl = this.getAttribute('data-view-url');
+            if (viewUrl) {
+                window.location.href = viewUrl;
+            }
+        });
+    });
+});
+</script>
 
 {% endblock %}

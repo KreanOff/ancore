@@ -51,6 +51,9 @@
             <div class="top-bar-left">
                 {% block page_header %}{% endblock %}
             </div>
+            <div class="top-bar-search" style="flex: 1; max-width: 400px; margin: 0 2rem;">
+                <input type="text" id="global-search" placeholder="Szukaj..." style="width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 4px; background: white; font-size: 0.875rem;">
+            </div>
             <div class="user-profile" style="font-size: 0.875rem; font-weight: 500; color: var(--text-muted);">
                 {% if user.is_authenticated %}
                     {{ user.first_name }} {{ user.last_name }}
@@ -78,5 +81,6 @@
     <script src="{% static 'js/modal.js' %}"></script>
     <script src="{% static 'js/tasks.js' %}"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
+    <script src="{% static 'js/file-upload.js' %}"></script>
 </body>
 </html>

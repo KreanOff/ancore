@@ -1,0 +1,254 @@
+{% extends 'core/base.html' %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block content %}
+<div class="control-panel" style="display: flex; justify-content: space-between; align-items: stretch; padding: 0.75rem 2rem; background: #f8f9fa; border-bottom: 1px solid var(--border-color);">
+    <div class="panel-left" style="display: flex; align-items: center; gap: 1rem;">
+        <a href="{% url 'view-task' task.task_id %}" class="modal-back" style="text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Powrót do zadania</span>
+        </a>
+    </div>
+    <div class="panel-right" style="display: flex; align-items: center; gap: 1rem;">
+        <a href="{% url 'view-task' task.task_id %}" class="btn" style="background: var(--border-color); color: var(--text-main); text-decoration: none;">
+            Anuluj
+        </a>
+        <button type="submit" form="edit-task-form" class="btn btn-primary">
+            Zapisz zmiany
+        </button>
+    </div>
+</div>
+
+<div style="padding: 2rem; max-width: 900px; margin: 0;">
+    <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Edytuj zadanie #{{ task.task_id }}</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Zaktualizuj szczegóły zadania, aby odzwierciedlić najnowsze zmiany.</p>
+    
+    <form id="edit-task-form" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div style="background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+            <strong>Wystąpiły błędy:</strong>
+            <ul style="margin: 0.5rem 0 0 1.5rem;">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label class="form-label">Temat</label>
+            {{ form.title }}
+        </div>
+        <div class="form-group">
+            <label class="form-label">Opis</label>
+            {{ form.description }}
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Priorytet</label>
+                {{ form.priority }}
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Stan</label>
+                {{ form.status }}
+            </div>
+        </div>
+        
+        {% if task.attachments.exists %}
+        <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Istniejące załączniki</label>
+            <div class="existing-attachments" style="padding: 0.5rem;">
+                {% for attachment in task.attachments.all %}
+                <div class="attachment-item" id="attachment-{{ attachment.id }}" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; margin: 0.25rem; background: white; border-radius: 6px; border: 1px solid #e1e4e8; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'; this.style.borderColor='#d1d5da'" onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'; this.style.borderColor='#e1e4e8'">
+                    <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
+                        <div style="width: 40px; height: 40px; border-radius: 6px; background: #f6f8fa; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                            {% if attachment.is_image %}
+                                📷
+                            {% elif attachment.is_pdf %}
+                                📄
+                            {% else %}
+                                📎
+                            {% endif %}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <a href="{{ attachment.file.url }}" target="_blank" style="text-decoration: none; color: var(--text-color); font-weight: 500; font-size: 0.9rem; display: block; word-break: break-all; line-height: 1.3;">
+                                {{ attachment.filename }}
+                            </a>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                                <span style="color: var(--text-muted); font-size: 0.75rem; background: #f1f3f4; padding: 0.2rem 0.4rem; border-radius: 3px;">
+                                    {{ attachment.get_formatted_size }}
+                                </span>
+                                {% if attachment.is_image %}
+                                    <span style="color: var(--text-muted); font-size: 0.75rem; background: #e8f5e8; padding: 0.2rem 0.4rem; border-radius: 3px;">
+                                        Obraz
+                                    </span>
+                                {% elif attachment.is_pdf %}
+                                    <span style="color: var(--text-muted); font-size: 0.75rem; background: #fff3cd; padding: 0.2rem 0.4rem; border-radius: 3px;">
+                                        PDF
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <button type='button' onclick='deleteAttachment({{ attachment.id }})' style='background: transparent; border: none; color: #586069; font-size: 1.2rem; font-weight: bold; cursor: pointer; padding: 0.4rem; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;' onmouseover='this.style.backgroundColor="#ffebe9"; this.style.color="#d73a49"; this.style.borderColor="#d73a49"' onmouseout='this.style.backgroundColor="transparent"; this.style.color="#586069"'>
+                        ×
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Dodaj nowe załączniki</label>
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p style="margin: 1rem 0 0.5rem 0; color: var(--text-main); font-weight: 500;">Przeciągnij i upuść pliki tutaj</p>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">lub <button type="button" id="browse-btn" class="link-btn">przeglądaj</button></p>
+                    <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.8rem;">Obsługiwane formaty: JPG, PNG, PDF, DOC, XLS i inne</p>
+                </div>
+                <input type="file" name="attachments" id="file-input" multiple
+                       accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                       style="display: none;">
+            </div>
+            <div id="file-list" class="file-list"></div>
+        </div>
+    </form>
+</div>
+
+<script>
+function deleteAttachment(attachmentId) {
+    if (confirm('Czy na pewno chcesz usunąć ten załącznik?')) {
+        fetch(`/tasks/delete-attachment/${attachmentId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Remove the attachment element from the DOM
+                const attachmentElement = document.getElementById(`attachment-${attachmentId}`);
+                if (attachmentElement) {
+                    attachmentElement.remove();
+                }
+                
+                // Check if there are any attachments left
+                const attachmentsContainer = document.querySelector('.existing-attachments');
+                const remainingAttachments = attachmentsContainer.querySelectorAll('.attachment-item');
+                
+                if (remainingAttachments.length === 0) {
+                    // Hide the entire attachments section if no attachments left
+                    const attachmentsSection = document.querySelector('.form-group').closest('.form-group');
+                    attachmentsSection.style.display = 'none';
+                }
+                
+                // Show success message
+                showMessage(data.message, 'success');
+            } else {
+                showMessage(data.message || 'Wystąpił błąd', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('Wystąpił błąd podczas usuwania załącznika', 'error');
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showMessage(message, type) {
+    // Create message element
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 4px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    if (type === 'success') {
+        messageDiv.style.backgroundColor = '#10b981';
+    } else {
+        messageDiv.style.backgroundColor = '#ef4444';
+    }
+    
+    messageDiv.textContent = message;
+    document.body.appendChild(messageDiv);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+        messageDiv.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            document.body.removeChild(messageDiv);
+        }, 300);
+    }, 3000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

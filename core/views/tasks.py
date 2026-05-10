@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 import json
-from core.models import Task
+from core.models import Task, TaskAttachment
 from core.forms import TaskForm
 
 @login_required
@@ -23,30 +23,38 @@ def tasks(request):
 @login_required
 def create_task(request):
     if request.method == 'POST':
-        form = TaskForm(request.POST)
+        # Debug: check what files are being sent
+        files = request.FILES.getlist('attachments')
+        print(f"DEBUG: request.FILES = {request.FILES}")
+        print(f"DEBUG: files count = {len(files)}")
+        for f in files:
+            print(f"DEBUG: file = {f.name}, size = {f.size}")
+
+        form = TaskForm(request.POST, request.FILES)
         if form.is_valid():
             task = form.save(commit=False)
             task.user = request.user
             task.save()
+
+            # Handle file attachments
+            for file in files:
+                TaskAttachment.objects.create(
+                    task=task,
+                    file=file
+                )
+
+            messages.success(request, 'Zadanie utworzone pomyślnie.')
             return redirect('tasks')
+        else:
+            # Show form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = TaskForm()
-    
+
     return render(request, 'core/tasks/create_task.html', {'form': form})
 
-@login_required
-def view_edit_task(request, task_id):
-    task = get_object_or_404(Task, task_id=task_id, user=request.user)
-    if request.method == 'POST':
-        form = TaskForm(request.POST, instance=task)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Zadanie zaktualizowane pomyślnie.')
-            return redirect('view_edit_task', task_id=task.task_id)
-    else:
-        form = TaskForm(instance=task)
-    
-    return render(request, 'core/tasks/view_edit_task.html', {'task': task, 'form': form})
 
 @login_required
 @require_POST
@@ -80,6 +88,17 @@ def delete_task(request, task_id):
 
 @login_required
 @require_POST
+def delete_attachment(request, attachment_id):
+    try:
+        attachment = get_object_or_404(TaskAttachment, id=attachment_id, task__user=request.user)
+        task_id = attachment.task.task_id
+        attachment.delete()
+        return JsonResponse({'status': 'success', 'message': 'Załącznik usunięty pomyślnie'})
+    except TaskAttachment.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Załącznik nie znaleziony'}, status=404)
+
+@login_required
+@require_POST
 def delete_tasks(request):
     try:
         data = json.loads(request.body)
@@ -105,3 +124,40 @@ def delete_tasks(request):
         return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def edit_task(request, task_id):
+    task = get_object_or_404(Task, task_id=task_id, user=request.user)
+    
+    if request.method == 'POST':
+        # Handle file attachments
+        files = request.FILES.getlist('attachments')
+        
+        form = TaskForm(request.POST, request.FILES, instance=task)
+        if form.is_valid():
+            form.save()
+
+            # Handle new file attachments
+            for file in files:
+                TaskAttachment.objects.create(
+                    task=task,
+                    file=file
+                )
+
+            messages.success(request, 'Zadanie zaktualizowane pomyślnie.')
+            return redirect('view-task', task_id=task.task_id)
+        else:
+            # Show form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = TaskForm(instance=task)
+
+    return render(request, 'core/tasks/edit_task.html', {'form': form, 'task': task})
+
+@login_required
+def view_task(request, task_id):
+    task = get_object_or_404(Task, task_id=task_id, user=request.user)
+    all_tasks = Task.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'core/tasks/view_task.html', {'task': task, 'all_tasks': all_tasks})

@@ -1,0 +1,359 @@
+/* File Upload Component Styles */
+.drop-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: 0;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background-color: var(--background-secondary);
+}
+
+.drop-zone:hover {
+    border-color: var(--primary-color);
+    background-color: var(--background-hover);
+}
+
+.drop-zone.dragover {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color-light);
+    transform: scale(1.02);
+}
+
+.drop-zone-content {
+    pointer-events: none;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    pointer-events: all;
+}
+
+.link-btn:hover {
+    color: var(--primary-color-dark);
+}
+
+.file-list {
+    margin-top: 1rem;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.file-item:hover {
+    background-color: var(--background-hover);
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.file-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.file-icon.image {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.file-icon.pdf {
+    background-color: #fce4ec;
+    color: #c2185b;
+}
+
+.file-icon.document {
+    background-color: #e8f5e8;
+    color: #388e3c;
+}
+
+.file-icon.archive {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+.file-icon.default {
+    background-color: #f5f5f5;
+    color: #616161;
+}
+
+.file-details {
+    flex: 1;
+}
+
+.file-name {
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+    word-break: break-word;
+}
+
+.file-size {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.file-remove {
+    background: none;
+    border: none;
+    color: var(--error-color);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.file-remove:hover {
+    background-color: var(--error-color-light);
+}
+
+.upload-progress {
+    margin-top: 0.5rem;
+}
+
+.progress-bar {
+    height: 4px;
+    background-color: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+/* Attachments Display Styles */
+.attachments-list {
+    margin-top: 0.5rem;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.attachment-item:hover {
+    background-color: var(--background-hover);
+}
+
+.attachment-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.attachment-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.attachment-icon.image {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.attachment-icon.pdf {
+    background-color: #fce4ec;
+    color: #c2185b;
+}
+
+.attachment-icon.document {
+    background-color: #e8f5e8;
+    color: #388e3c;
+}
+
+.attachment-icon.archive {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+.attachment-icon.default {
+    background-color: #f5f5f5;
+    color: #616161;
+}
+
+.attachment-details {
+    flex: 1;
+}
+
+.attachment-name {
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+    word-break: break-word;
+}
+
+.attachment-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.attachment-link:hover {
+    color: var(--primary-color-dark);
+    text-decoration: underline;
+}
+
+.attachment-size {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.attachment-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Task list attachment indicator */
+.task-attachment-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+}
+
+.task-attachment-indicator svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Attachments column styles */
+.attachments-column {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    max-width: 120px;
+}
+
+.attachment-link-small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+    background-color: var(--background-secondary);
+}
+
+.attachment-link-small:hover {
+    background-color: var(--background-hover);
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.attachment-icon-small {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.attachment-icon-small.image {
+    color: #1976d2;
+}
+
+.attachment-icon-small.pdf {
+    color: #c2185b;
+}
+
+.attachment-icon-small.document {
+    color: #388e3c;
+}
+
+.attachment-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .drop-zone {
+        padding: 1.5rem;
+    }
+    
+    .file-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .file-info {
+        width: 100%;
+    }
+    
+    .file-remove {
+        align-self: flex-end;
+    }
+    
+    .attachment-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .attachment-info {
+        width: 100%;
+    }
+    
+    .attachment-actions {
+        align-self: flex-end;
+    }
+}
