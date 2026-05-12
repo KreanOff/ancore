@@ -14,77 +14,244 @@
             </svg>
             <span>Powrót do zadań</span>
         </a>
+        <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 0.5rem;"></div>
+        <span style="color: var(--text-muted); font-weight: 600;">Nowe zadanie</span>
     </div>
     <div class="panel-right" style="display: flex; align-items: center; gap: 1rem;">
-        <a href="{% url 'tasks' %}" class="btn" style="background: var(--border-color); color: var(--text-main); text-decoration: none;">
+        <a href="{% url 'tasks' %}" class="btn" style="background: #e2e8f0; color: var(--text-main); text-decoration: none; border-radius: 0;">
             Anuluj
         </a>
-        <button type="submit" form="create-task-form" class="btn btn-primary">
+        <button type="submit" form="create-task-form" class="btn btn-primary" style="border-radius: 0;">
             Utwórz zadanie
         </button>
     </div>
 </div>
 
-<div style="padding: 2rem; max-width: 900px; margin: 0;">
-    <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Utwórz nowe zadanie</h2>
-    <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Zdefiniuj nowe zadanie, aby śledzić postępy i współpracować z zespołem.</p>
+<form id="create-task-form" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
     
-    <form id="create-task-form" method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        {% if form.errors %}
-        <div style="background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-            <strong>Wystąpiły błędy:</strong>
-            <ul style="margin: 0.5rem 0 0 1.5rem;">
-                {% for field in form %}
-                    {% for error in field.errors %}
-                        <li>{{ field.label }}: {{ error }}</li>
+    <div class="create-task-layout">
+        <!-- Kolumna Lewa: Główne pola -->
+        <div class="main-column" style="display: flex; flex-direction: column; gap: 1rem;">
+            
+            {% if form.errors %}
+            <div style="background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 0; margin-bottom: 1rem;">
+                <strong>Wystąpiły błędy:</strong>
+                <ul style="margin: 0.5rem 0 0 1.5rem;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
 
-        <div class="form-group">
-            <label class="form-label">Temat</label>
-            {{ form.title }}
-        </div>
-        <div class="form-group">
-            <label class="form-label">Opis</label>
-            {{ form.description }}
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">Priorytet</label>
-                {{ form.priority }}
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">Stan</label>
-                {{ form.status }}
-            </div>
-        </div>
-        <div class="form-group" style="margin-top: 1.5rem;">
-            <label class="form-label">Załączniki</label>
-            <div id="drop-zone" class="drop-zone">
-                <div class="drop-zone-content">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <p style="margin: 1rem 0 0.5rem 0; color: var(--text-main); font-weight: 500;">Przeciągnij i upuść pliki tutaj</p>
-                    <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">lub <button type="button" id="browse-btn" class="link-btn">przeglądaj</button></p>
-                    <p style="margin: 0.5rem 0 0 0; color: var(--text-muted); font-size: 0.8rem;">Obsługiwane formaty: JPG, PNG, PDF, DOC, XLS i inne</p>
+            <!-- Panel: Treść zadania -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Szczegóły zadania</h2>
                 </div>
-                <input type="file" name="attachments" id="file-input" multiple
-                       accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
-                       style="display: none;">
+                <div class="panel-content">
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Temat</label>
+                        {{ form.title }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Opis</label>
+                        {{ form.description }}
+                    </div>
+                </div>
             </div>
-            <div id="file-list" class="file-list"></div>
+
+            <!-- Panel: Załączniki -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Załączniki</h2>
+                </div>
+                <div class="panel-content">
+                    <div id="drop-zone" class="drop-zone" style="border: 2px dashed var(--border-color); padding: 2rem; text-align: center; background: #fafafa; border-radius: 0; transition: all 0.2s;">
+                        <div class="drop-zone-content">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p style="margin: 1rem 0 0.5rem 0; color: var(--text-main); font-weight: 500;">Przeciągnij i upuść pliki tutaj</p>
+                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">lub <button type="button" id="browse-btn" class="link-btn" style="color: #2563eb; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline;">przeglądaj</button></p>
+                        </div>
+                        <input type="file" name="attachments" id="file-input" multiple
+                               accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                               style="display: none;">
+                    </div>
+                    <div id="file-list" class="file-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                </div>
+            </div>
         </div>
-    </form>
-</div>
+
+        <!-- Kolumna Prawa: Parametry -->
+        <div class="sidebar-column" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Parametry zadania</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Priorytet</label>
+                        {{ form.priority }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Stan</label>
+                        {{ form.status }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<style>
+.create-task-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 1rem;
+    padding: 1rem;
+    height: calc(100vh - 64px - 57px);
+    overflow: hidden;
+}
+
+.main-column, .sidebar-column {
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.panel {
+    background: white;
+    border-radius: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.panel-header {
+    background: #f8f9fa;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0;
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.panel-content {
+    padding: 1.25rem;
+}
+
+/* Form Styles */
+input[type="text"], select, textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0 !important;
+    font-size: 1rem;
+    background: white;
+}
+
+textarea {
+    min-height: 300px;
+    resize: vertical;
+}
+
+/* Custom scrollbar */
+.main-column::-webkit-scrollbar, .sidebar-column::-webkit-scrollbar {
+    width: 6px;
+}
+.main-column::-webkit-scrollbar-track, .sidebar-column::-webkit-scrollbar-track {
+    background: transparent;
+}
+.main-column::-webkit-scrollbar-thumb, .sidebar-column::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .create-task-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+    }
+}
+</style>
+
+<script>
+// Drop zone handling
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const browseBtn = document.getElementById('browse-btn');
+    const fileList = document.getElementById('file-list');
+
+    if (browseBtn) {
+        browseBtn.addEventListener('click', () => fileInput.click());
+    }
+
+    if (dropZone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+            fileInput.files = files;
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+    }
+
+    function handleFiles(files) {
+        fileList.innerHTML = '';
+        [...files].forEach(file => {
+            const fileItem = document.createElement('div');
+            fileItem.style.cssText = 'padding: 0.5rem 1rem; background: #f0f7ff; border: 1px solid #2563eb; color: #2563eb; font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center;';
+            fileItem.innerHTML = `<span>${file.name}</span> <span style="font-size: 0.75rem; opacity: 0.8;">${(file.size / 1024).toFixed(1)} KB</span>`;
+            fileList.appendChild(fileItem);
+        });
+    }
+});
+
+// Animations style
+const style = document.createElement('style');
+style.textContent = `
+    .highlight { border-color: #2563eb !important; background-color: #f0f7ff !important; }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %}

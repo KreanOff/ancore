@@ -6,117 +6,116 @@
 
 {% block content %}
 
-<div class="control-panel" style="display: flex; justify-content: space-between; align-items: stretch; padding: 0.75rem 2rem; background: #f8f9fa; border-bottom: 1px solid var(--border-color);">
+<div class="control-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 2rem; background: #f8f9fa; border-bottom: 1px solid var(--border-color); height: 60px;">
     <div class="panel-left" style="display: flex; align-items: center; gap: 1rem;">
-        <span id="selected-count" style="color: var(--text-muted); font-size: 0.875rem; min-width: 180px; display: inline-block;">
-            0 wybranych elementów
-        </span>
-        <button id="delete-selected-btn" class="btn btn-danger">
-            Usuń zadanie
+        <div style="display: flex; align-items: center; height: 38px; padding: 0 1rem; background: white; border: 1px solid var(--border-color); border-radius: 0;">
+            <span id="selected-count" style="color: var(--text-muted); font-size: 0.8125rem; font-weight: 600;">
+                0 wybranych
+            </span>
+        </div>
+        <button id="delete-selected-btn" class="btn btn-danger" style="border-radius: 0; height: 38px; visibility: hidden; opacity: 0; transition: all 0.2s ease;">
+            Usuń zaznaczone
         </button>
     </div>
-    <div class="panel-right" style="display: flex; align-items: center; gap: 1rem;">
-        <label for="filter-status" style="font-size: 0.875rem; color: var(--text-muted);">Filtruj:</label>
-        <select id="filter-status" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; background: white;">
-            <option value="">Wszystkie</option>
-            <option value="new">Nowe</option>
-            <option value="in_progress">Rozwój</option>
-            <option value="resolved">Rozwiązane</option>
-            <option value="implemented">Zrealizowane</option>
-            <option value="closed">Zamknięte</option>
-            <option value="reopened">Ponownie otwarte</option>
-        </select>
-        <select id="filter-priority" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; background: white;">
-            <option value="">Wszystkie priorytety</option>
-            <option value="low">Niski</option>
-            <option value="medium">Średni</option>
-            <option value="high">Wysoki</option>
-        </select>
-        <a href="{% url 'create_task' %}" class="btn btn-primary">
-            + Utwórz zadanie
+    <div class="panel-right" style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="filter-status" style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">Status:</label>
+            <select id="filter-status" style="height: 38px; padding: 0 0.75rem; border: 1px solid var(--border-color); border-radius: 0; background: white; font-size: 0.875rem;">
+                <option value="">Wszystkie</option>
+                <option value="new">Nowe</option>
+                <option value="in_progress">W toku</option>
+                <option value="resolved">Rozwiązane</option>
+                <option value="implemented">Zrealizowane</option>
+                <option value="closed">Zamknięte</option>
+                <option value="reopened">Ponownie otwarte</option>
+            </select>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="filter-priority" style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">Priorytet:</label>
+            <select id="filter-priority" style="height: 38px; padding: 0 0.75rem; border: 1px solid var(--border-color); border-radius: 0; background: white; font-size: 0.875rem;">
+                <option value="">Wszystkie</option>
+                <option value="low">Niski</option>
+                <option value="medium">Średni</option>
+                <option value="high">Wysoki</option>
+            </select>
+        </div>
+        <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 0.5rem;"></div>
+        <a href="{% url 'create_task' %}" class="btn btn-primary" style="border-radius: 0; height: 38px; padding: 0 1.25rem; display: flex; align-items: center;">
+            + Nowe zadanie
         </a>
     </div>
 </div>
 
-<div class="table-container" style="border: none;">
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th style="width: 40px;">
-                    <input type="checkbox" id="select-all-checkbox" class="task-checkbox" style="display: none;">
+<div class="table-container" style="border: none; overflow-x: auto; height: calc(100vh - 64px - 57px);">
+    <table class="data-table" style="border-collapse: separate; border-spacing: 0; width: 100%;">
+        <thead style="position: sticky; top: 0; z-index: 10; background: white;">
+            <tr style="height: 50px;">
+                <th style="width: 45px; padding: 0 1rem; border-bottom: 2px solid var(--border-color); vertical-align: middle;">
+                    <input type="checkbox" id="select-all-checkbox" style="cursor: pointer; vertical-align: middle;">
                 </th>
-                <th>ID</th>
-                <th>Temat</th>
-                <th>Opis</th>
-                <th>Priorytet</th>
-                <th>Stan</th>
-                <th style="width: 120px;">Załączniki</th>
-                <th>Data utworzenia</th>
-                <th>Data realizacji</th>
+                <th style="width: 80px; padding: 0 1rem; border-bottom: 2px solid var(--border-color); font-size: 0.8125rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; vertical-align: middle;">ID</th>
+                <th style="padding: 0 1rem; border-bottom: 2px solid var(--border-color); font-size: 0.8125rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; vertical-align: middle;">Zadanie / Opis</th>
+                <th style="width: 120px; padding: 0 1rem; border-bottom: 2px solid var(--border-color); font-size: 0.8125rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; vertical-align: middle;">Priorytet</th>
+                <th style="width: 150px; padding: 0 1rem; border-bottom: 2px solid var(--border-color); font-size: 0.8125rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; vertical-align: middle;">Status</th>
+                <th style="width: 100px; padding: 0 1rem; border-bottom: 2px solid var(--border-color); font-size: 0.8125rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; text-align: center; vertical-align: middle;">Pliki</th>
+                <th style="width: 160px; padding: 0 1rem; border-bottom: 2px solid var(--border-color); font-size: 0.8125rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; vertical-align: middle;">Utworzono</th>
             </tr>
         </thead>
         <tbody>
             {% for task in tasks %}
             <tr class="task-row {% if task.status == 'closed' %}completed{% endif %}" 
                 data-task-id="{{ task.task_id }}"
+                data-status="{{ task.status }}"
+                data-priority="{{ task.priority }}"
                 data-view-url="{% url 'view-task' task.task_id %}"
-                style="cursor: pointer;">
-                <td onclick="event.stopPropagation()">
-                    <input type="checkbox" class="task-checkbox">
+                style="cursor: pointer; transition: background 0.15s ease;">
+                <td onclick="event.stopPropagation()" style="padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">
+                    <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" style="cursor: pointer; vertical-align: middle;">
                 </td>
-                <td style="color: var(--text-muted); font-weight: 600;">#{{ task.task_id }}</td>
-                <td class="task-title" style="font-weight: 600;">{{ task.title }}</td>
-                <td class="task-desc">{{ task.description|truncatechars:50 }}</td>
-                <td>
-                    <span class="badge badge-{{ task.priority }}">
+                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: var(--text-muted); font-weight: 700; font-size: 0.875rem;">
+                    #{{ task.task_id }}
+                </td>
+                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; flex-direction: column; gap: 0.125rem;">
+                        <span class="task-title" style="font-weight: 600; color: var(--text-color); font-size: 0.9375rem;">{{ task.title }}</span>
+                        <span class="task-desc" style="color: var(--text-muted); font-size: 0.8125rem;">{{ task.description|truncatechars:100 }}</span>
+                    </div>
+                </td>
+                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9;">
+                    <span class="badge badge-{{ task.priority }}" style="border-radius: 0; font-size: 0.75rem; padding: 0.2rem 0.6rem; font-weight: 700; text-transform: uppercase;">
                         {{ task.get_priority_display }}
                     </span>
                 </td>
-                <td>
-                    <span class="status-indicator status-{{ task.status }}">
+                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9;">
+                    <span class="status-indicator status-{{ task.status }}" style="border-radius: 0; font-size: 0.75rem; padding: 0.2rem 0.6rem; font-weight: 600;">
                         {{ task.get_status_display }}
                     </span>
                 </td>
-                <td>
+                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; text-align: center;">
                     {% if task.attachments.exists %}
-                        <div class="attachments-column">
-                            {% for attachment in task.attachments.all %}
-                                <a href="{{ attachment.file.url }}" 
-                                   target="_blank" 
-                                   class="attachment-link-small"
-                                   title="{{ attachment.filename }} ({{ attachment.get_formatted_size }})">
-                                    {% if attachment.is_image %}
-                                        <span class="attachment-icon-small image">📷</span>
-                                    {% elif attachment.is_pdf %}
-                                        <span class="attachment-icon-small pdf">📄</span>
-                                    {% else %}
-                                        <span class="attachment-icon-small document">📎</span>
-                                    {% endif %}
-                                </a>
-                            {% endfor %}
-                            {% if task.attachments.count > 3 %}
-                                <span class="attachment-more">+{{ task.attachments.count|add:"-3" }}</span>
-                            {% endif %}
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 0.35rem; color: #64748b; font-weight: 600; font-size: 0.875rem;" title="{{ task.attachments.count }} załączników">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                            <span>{{ task.attachments.count }}</span>
                         </div>
                     {% else %}
-                        <span style="color: var(--text-muted); font-size: 0.8rem;">-</span>
+                        <span style="color: #cbd5e1;">-</span>
                     {% endif %}
                 </td>
-                <td style="color: var(--text-muted); font-size: 0.875rem;">
+                <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; color: var(--text-muted); font-size: 0.8125rem; font-weight: 500;">
                     {{ task.created_at|date:"d.m.Y H:i" }}
-                </td>
-                <td style="color: var(--text-muted); font-size: 0.875rem;">
-                    {% if task.completion_date %}
-                        {{ task.completion_date|date:"d.m.Y H:i" }}
-                    {% else %}
-                        -
-                    {% endif %}
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="9" style="text-align: center; padding: 4rem; color: var(--text-muted);">
-                    Nie znaleziono zadań. Kliknij "Utwórz zadanie", aby dodać pierwsze zadanie.
+                <td colspan="7" style="text-align: center; padding: 5rem; color: var(--text-muted);">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.2;">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span>Nie znaleziono zadań pasujących do wybranych filtrów.</span>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
@@ -124,18 +123,120 @@
     </table>
 </div>
 
+<style>
+.task-row:hover {
+    background-color: #f8fafc !important;
+}
+.task-row.completed {
+    background-color: #fcfcfc;
+}
+.task-row.completed .task-title {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+/* Custom scrollbar for the table container */
+.table-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+.table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 0;
+}
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Checkbox style override */
+.task-checkbox, #select-all-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const taskRows = document.querySelectorAll('.task-row');
-    
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const taskCheckboxes = document.querySelectorAll('.task-checkbox');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const deleteBtn = document.getElementById('delete-selected-btn');
+    const filterStatus = document.getElementById('filter-status');
+    const filterPriority = document.getElementById('filter-priority');
+
+    // Row Click to View
     taskRows.forEach(row => {
-        row.addEventListener('click', function() {
+        row.addEventListener('click', function(e) {
+            // Prevent navigation if clicking checkbox or button
+            if (e.target.type === 'checkbox' || e.target.closest('button')) return;
+            
             const viewUrl = this.getAttribute('data-view-url');
-            if (viewUrl) {
-                window.location.href = viewUrl;
-            }
+            if (viewUrl) window.location.href = viewUrl;
         });
     });
+
+    // Selection Logic
+    function updateSelection() {
+        const selectedCount = document.querySelectorAll('.task-checkbox:checked').length;
+        selectedCountSpan.textContent = `${selectedCount} wybranych`;
+        
+        if (selectedCount > 0) {
+            deleteBtn.style.visibility = 'visible';
+            deleteBtn.style.opacity = '1';
+        } else {
+            deleteBtn.style.visibility = 'hidden';
+            deleteBtn.style.opacity = '0';
+        }
+        
+        // Update row background for selected items
+        taskCheckboxes.forEach(cb => {
+            const row = cb.closest('tr');
+            if (cb.checked) {
+                row.style.backgroundColor = '#eff6ff';
+            } else {
+                row.style.backgroundColor = '';
+            }
+        });
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            taskCheckboxes.forEach(cb => cb.checked = this.checked);
+            updateSelection();
+        });
+    }
+
+    taskCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelection);
+    });
+
+    // Filtering Logic
+    function applyFilters() {
+        const statusVal = filterStatus.value;
+        const priorityVal = filterPriority.value;
+
+        taskRows.forEach(row => {
+            const rowStatus = row.getAttribute('data-status');
+            const rowPriority = row.getAttribute('data-priority');
+            
+            const matchesStatus = !statusVal || rowStatus === statusVal;
+            const matchesPriority = !priorityVal || rowPriority === priorityVal;
+
+            if (matchesStatus && matchesPriority) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    if (filterStatus) filterStatus.addEventListener('change', applyFilters);
+    if (filterPriority) filterPriority.addEventListener('change', applyFilters);
 });
 </script>
 
