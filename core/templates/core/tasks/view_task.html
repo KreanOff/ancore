@@ -288,9 +288,16 @@
 
 <script>
 function confirmDelete() {
-    if (confirm('Czy na pewno chcesz usunąć to zadanie? Tej operacji nie można cofnąć.')) {
-        window.location.href = "{% url 'delete_task' task.task_id %}";
-    }
+    window.showConfirmModal({
+        title: 'Potwierdź usunięcie',
+        message: 'Czy na pewno chcesz usunąć to zadanie? Tej operacji nie można cofnąć.',
+        confirmText: 'Usuń',
+        cancelText: 'Anuluj',
+        confirmClass: 'btn-danger',
+        onConfirm: () => {
+            window.location.href = "{% url 'delete_task' task.task_id %}";
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
