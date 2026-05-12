@@ -1,125 +1,97 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const taskRows = document.querySelectorAll('.task-row[data-href]');
+    const taskRows = document.querySelectorAll('.task-row');
     const deleteBtn = document.getElementById('delete-selected-btn');
-    const selectedCount = document.getElementById('selected-count');
+    const selectedCountSpan = document.getElementById('selected-count');
     const filterStatus = document.getElementById('filter-status');
     const filterPriority = document.getElementById('filter-priority');
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
 
     // Navigate to task detail on row click
-    if (taskRows.length > 0) {
-        taskRows.forEach(row => {
-            row.addEventListener('click', function(e) {
-                // Prevent navigation if clicking on checkbox or its container cell
-                if (e.target.type === 'checkbox' || e.target.closest('td').querySelector('.task-checkbox')) {
-                    return;
-                }
-                window.location.href = this.dataset.href;
-            });
+    taskRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Prevent navigation if clicking on checkbox or its container cell
+            if (e.target.type === 'checkbox' || e.target.closest('td').querySelector('.task-checkbox')) {
+                return;
+            }
+            const viewUrl = this.getAttribute('data-view-url');
+            if (viewUrl) window.location.href = viewUrl;
         });
-    }
+    });
 
     // Checkbox functionality
-    function updateDeleteButton() {
-        if (!selectedCount) return;
-
+    function updateSelection() {
         const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
         // Exclude select-all checkbox from the count
         const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
         const count = selectedTaskCheckboxes.length;
 
-        selectedCount.textContent = `${count} ${count === 1 ? 'element' : 'elementów'} wybranych`;
+        if (selectedCountSpan) {
+            selectedCountSpan.textContent = `${count} wybranych`;
+        }
 
-        // Show/hide select all checkbox based on whether any task is selected
-        if (count > 0) {
-            if (selectAllCheckbox) selectAllCheckbox.style.display = 'inline-block';
-            if (deleteBtn) deleteBtn.disabled = false;
-        } else {
-            if (selectAllCheckbox) selectAllCheckbox.style.display = 'none';
-            if (deleteBtn) deleteBtn.disabled = true;
+        if (deleteBtn) {
+            if (count > 0) {
+                deleteBtn.style.visibility = 'visible';
+                deleteBtn.style.opacity = '1';
+                deleteBtn.disabled = false;
+            } else {
+                deleteBtn.style.visibility = 'hidden';
+                deleteBtn.style.opacity = '0';
+                deleteBtn.disabled = true;
+            }
+        }
+
+        // Highlight rows
+        checkboxes.forEach(cb => {
+            const row = cb.closest('.task-row');
+            if (row) {
+                if (cb.checked) {
+                    row.classList.add('checked');
+                    row.style.backgroundColor = '#eff6ff';
+                } else {
+                    row.classList.remove('checked');
+                    row.style.backgroundColor = '';
+                }
+            }
+        });
+
+        // Update select all state
+        if (selectAllCheckbox) {
+            const taskCheckboxes = Array.from(checkboxes).filter(cb => cb.id !== 'select-all-checkbox');
+            selectAllCheckbox.checked = count === taskCheckboxes.length && taskCheckboxes.length > 0;
         }
     }
 
-    // Update select all checkbox state
-    function updateSelectAllCheckbox() {
-        if (!selectAllCheckbox) return;
-
-        const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
-        const totalCheckboxes = document.querySelectorAll('.task-checkbox');
-
-        // Exclude select-all checkbox from the count
-        const taskCheckboxes = Array.from(totalCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
-        const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
-
-        selectAllCheckbox.checked = selectedTaskCheckboxes.length === taskCheckboxes.length && taskCheckboxes.length > 0;
-        selectAllCheckbox.indeterminate = false;
-    }
-
-    // Select all checkbox functionality
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
-            // Only affect task checkboxes, not the select-all checkbox itself
-            const taskCheckboxes = Array.from(checkboxes).filter(cb => cb.id !== 'select-all-checkbox');
-
-            taskCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-
-                // Toggle red highlight on the row
-                const taskRow = checkbox.closest('.task-row');
-                if (this.checked) {
-                    taskRow.classList.add('checked');
-                } else {
-                    taskRow.classList.remove('checked');
-                }
-            });
-            updateDeleteButton();
-            updateSelectAllCheckbox();
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateSelection();
         });
     }
 
-    if (checkboxes.length > 0) {
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function(e) {
-                e.stopPropagation();
-
-                // Toggle red highlight on the row
-                const taskRow = this.closest('.task-row');
-                if (this.checked) {
-                    taskRow.classList.add('checked');
-                } else {
-                    taskRow.classList.remove('checked');
-                }
-
-                updateDeleteButton();
-                updateSelectAllCheckbox();
-            });
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            updateSelection();
         });
-    }
-
-    // Initialize select all checkbox visibility and red highlights on page load
-    updateDeleteButton();
-    
-    // Add red highlight to already checked tasks
-    checkboxes.forEach(checkbox => {
-        if (checkbox.checked && checkbox.id !== 'select-all-checkbox') {
-            checkbox.closest('.task-row').classList.add('checked');
-        }
     });
+
+    // Initialize state
+    updateSelection();
 
     // Delete selected tasks
     if (deleteBtn) {
-        deleteBtn.addEventListener('click', function() {
-            if (this.disabled) {
-                return;
-            }
+        deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
             
             const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
-            // Exclude select-all checkbox from task deletion
             const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
-            const taskIds = selectedTaskCheckboxes.map(cb => 
-                cb.closest('.task-row').dataset.taskId
-            );
+            const taskIds = selectedTaskCheckboxes.map(cb => {
+                const row = cb.closest('.task-row');
+                return row ? row.dataset.taskId : null;
+            }).filter(id => id !== null);
             
             if (taskIds.length > 0) {
                 window.showConfirmModal({
@@ -129,7 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     cancelText: 'Anuluj',
                     confirmClass: 'btn-danger',
                     onConfirm: () => {
-                        // Make AJAX call to delete tasks from database
                         fetch('/tasks/delete/', {
                             method: 'POST',
                             headers: {
@@ -143,13 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         .then(response => response.json())
                         .then(data => {
                             if (data.status === 'success') {
-                                // Remove rows from DOM
                                 selectedTaskCheckboxes.forEach(cb => {
                                     cb.closest('.task-row').remove();
                                 });
-                                updateDeleteButton();
-                                
-                                // Show success message
+                                updateSelection();
                                 showMessage(data.message, 'success');
                             } else {
                                 showMessage(data.message || 'Błąd podczas usuwania zadań', 'error');
@@ -165,7 +133,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Helper function to get CSRF token
+    // Filtering Logic
+    function applyFilters() {
+        if (!filterStatus || !filterPriority) return;
+        const statusVal = filterStatus.value;
+        const priorityVal = filterPriority.value;
+
+        taskRows.forEach(row => {
+            const rowStatus = row.getAttribute('data-status');
+            const rowPriority = row.getAttribute('data-priority');
+            
+            const matchesStatus = !statusVal || rowStatus === statusVal;
+            const matchesPriority = !priorityVal || rowPriority === priorityVal;
+
+            row.style.display = (matchesStatus && matchesPriority) ? '' : 'none';
+        });
+    }
+
+    if (filterStatus) filterStatus.addEventListener('change', applyFilters);
+    if (filterPriority) filterPriority.addEventListener('change', applyFilters);
+
+    // Helper functions
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -181,9 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
 
-    // Helper function to show messages using global notification system
     function showMessage(message, type) {
-        // Create or get notifications container
         let container = document.querySelector('.notifications-container');
         if (!container) {
             container = document.createElement('div');
@@ -191,61 +177,15 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.appendChild(container);
         }
         
-        // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.textContent = message;
         
         container.appendChild(notification);
         
-        // Auto-hide notification after 5 seconds
         setTimeout(() => {
-            hideNotification(notification);
+            notification.classList.add('hiding');
+            setTimeout(() => notification.remove(), 300);
         }, 5000);
-    }
-    
-    // Helper function to hide notification (from notifications.js)
-    function hideNotification(notification) {
-        notification.classList.add('hiding');
-        
-        setTimeout(() => {
-            notification.remove();
-            
-            // Remove container if no more notifications
-            const container = document.querySelector('.notifications-container');
-            if (container && container.children.length === 0) {
-                container.remove();
-            }
-        }, 300);
-    }
-
-    // Filter functionality
-    function applyFilters() {
-        const statusFilter = filterStatus.value;
-        const priorityFilter = filterPriority.value;
-        
-        taskRows.forEach(row => {
-            const statusElement = row.querySelector('.status-indicator');
-            const priorityElement = row.querySelector('.badge');
-            
-            let showRow = true;
-            
-            if (statusFilter && !statusElement.classList.contains(`status-${statusFilter}`)) {
-                showRow = false;
-            }
-            
-            if (priorityFilter && !priorityElement.classList.contains(`badge-${priorityFilter}`)) {
-                showRow = false;
-            }
-            
-            row.style.display = showRow ? '' : 'none';
-        });
-    }
-
-    if (filterStatus) {
-        filterStatus.addEventListener('change', applyFilters);
-    }
-    if (filterPriority) {
-        filterPriority.addEventListener('change', applyFilters);
     }
 });
