@@ -295,7 +295,24 @@ function confirmDelete() {
         cancelText: 'Anuluj',
         confirmClass: 'btn-danger',
         onConfirm: () => {
-            window.location.href = "{% url 'delete_task' task.task_id %}";
+            fetch("{% url 'delete_task' task.task_id %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': window.getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = "{% url 'tasks' %}";
+                } else {
+                    alert('Błąd podczas usuwania zadania.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Błąd połączenia z serwerem.');
+            });
         }
     });
 }

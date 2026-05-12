@@ -110,7 +110,7 @@ def delete_tasks(request):
         # Get user before deletion for renumbering
         user = request.user
         
-        deleted_count = Task.objects.filter(id__in=task_ids, user=user).delete()[0]
+        deleted_count = Task.objects.filter(task_id__in=task_ids, user=user).delete()[0]
         
         # Renumber remaining tasks for this user
         Task._renumber_user_tasks(user)
