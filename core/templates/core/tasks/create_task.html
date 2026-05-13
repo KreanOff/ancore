@@ -118,7 +118,7 @@
     display: grid;
     grid-template-columns: 1fr 400px;
     gap: 1rem;
-    padding: 1rem;
+    padding: 1.5rem;
     height: calc(100vh - 64px - 57px);
     overflow: hidden;
 }
@@ -131,24 +131,23 @@
 
 .panel {
     background: white;
-    border-radius: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    overflow: hidden;
     border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
 }
 
 .panel-header {
-    background: #f8f9fa;
+    background: #fcfcfc;
     padding: 0.75rem 1.25rem;
     border-bottom: 1px solid var(--border-color);
-    border-radius: 0;
 }
 
 .panel-header h2 {
     margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-color);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--text-muted);
 }
 
 .panel-content {
@@ -193,65 +192,17 @@ textarea {
 </style>
 
 <script>
-// Drop zone handling
+// Drop zone highlight handling
 document.addEventListener('DOMContentLoaded', function() {
     const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const browseBtn = document.getElementById('browse-btn');
-    const fileList = document.getElementById('file-list');
-
-    if (browseBtn) {
-        browseBtn.addEventListener('click', () => fileInput.click());
-    }
-
     if (dropZone) {
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
         ['dragenter', 'dragover'].forEach(eventName => {
             dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight'), false);
         });
-
         ['dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight'), false);
         });
-
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles(files);
-            fileInput.files = files;
-        });
-    }
-
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            handleFiles(this.files);
-        });
-    }
-
-    function handleFiles(files) {
-        fileList.innerHTML = '';
-        [...files].forEach(file => {
-            const fileItem = document.createElement('div');
-            fileItem.style.cssText = 'padding: 0.5rem 1rem; background: #f0f7ff; border: 1px solid #2563eb; color: #2563eb; font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center;';
-            fileItem.innerHTML = `<span>${file.name}</span> <span style="font-size: 0.75rem; opacity: 0.8;">${(file.size / 1024).toFixed(1)} KB</span>`;
-            fileList.appendChild(fileItem);
-        });
     }
 });
-
-// Animations style
-const style = document.createElement('style');
-style.textContent = `
-    .highlight { border-color: #2563eb !important; background-color: #f0f7ff !important; }
-`;
-document.head.appendChild(style);
 </script>
 {% endblock %}

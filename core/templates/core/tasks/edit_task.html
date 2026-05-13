@@ -90,6 +90,37 @@
                     <div id="file-list" class="file-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
                 </div>
             </div>
+
+            <!-- Panel: Istniejące załączniki -->
+            {% if task.attachments.exists %}
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Istniejące załączniki</h2>
+                </div>
+                <div class="panel-content" style="padding: 0;">
+                    <div class="attachments-list">
+                        {% for attachment in task.attachments.all %}
+                        <div class="attachment-item" id="attachment-{{ attachment.id }}">
+                            <div class="attachment-info">
+                                <div class="file-icon {{ attachment.get_type_class }}">
+                                    {{ attachment.get_type_label }}
+                                </div>
+                                <div class="attachment-details">
+                                    <div class="attachment-name" title="{{ attachment.filename }}">{{ attachment.filename }}</div>
+                                    <div class="attachment-size">{{ attachment.get_formatted_size }}</div>
+                                </div>
+                            </div>
+                            <div class="attachment-actions">
+                                <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="delete-attachment-btn" title="Usuń załącznik">
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Kolumna Prawa: Ustawienia i Istniejące załączniki -->
@@ -112,42 +143,6 @@
                 </div>
             </div>
 
-            <!-- Panel: Istniejące załączniki -->
-            {% if task.attachments.exists %}
-            <div class="panel">
-                <div class="panel-header">
-                    <h2>Istniejące załączniki</h2>
-                </div>
-                <div class="panel-content" style="padding: 0;">
-                    <div class="existing-attachments">
-                        {% for attachment in task.attachments.all %}
-                        <div class="attachment-edit-item" id="attachment-{{ attachment.id }}" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; transition: all 0.2s ease;">
-                            <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
-                                <div style="width: 40px; height: 40px; border-radius: 0; background: #f6f8fa; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                                    {% if attachment.is_image %}
-                                        📷
-                                    {% elif attachment.is_pdf %}
-                                        📄
-                                    {% else %}
-                                        📎
-                                    {% endif %}
-                                </div>
-                                <div style="flex: 1; min-width: 0;">
-                                    <span style="text-decoration: none; color: var(--text-color); font-weight: 600; font-size: 0.9375rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ attachment.filename }}">
-                                        {{ attachment.filename }}
-                                    </span>
-                                    <span style="color: var(--text-muted); font-size: 0.8125rem;">{{ attachment.get_formatted_size }}</span>
-                                </div>
-                            </div>
-                            <button type='button' onclick='deleteAttachment({{ attachment.id }})' style='background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; font-size: 1.2rem; font-weight: bold; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 0; transition: all 0.2s;' onmouseover='this.style.backgroundColor="#feb2b2"; this.style.color="#742a2a"' onmouseout='this.style.backgroundColor="#fff5f5"; this.style.color="#c53030"'>
-                                ×
-                            </button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 </form>
@@ -157,7 +152,7 @@
     display: grid;
     grid-template-columns: 1fr 400px;
     gap: 1rem;
-    padding: 1rem;
+    padding: 1.5rem;
     height: calc(100vh - 64px - 57px);
     overflow: hidden;
 }
@@ -170,24 +165,23 @@
 
 .panel {
     background: white;
-    border-radius: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    overflow: hidden;
     border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
 }
 
 .panel-header {
-    background: #f8f9fa;
+    background: #fcfcfc;
     padding: 0.75rem 1.25rem;
     border-bottom: 1px solid var(--border-color);
-    border-radius: 0;
 }
 
 .panel-header h2 {
     margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-color);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--text-muted);
 }
 
 .panel-content {
@@ -221,6 +215,74 @@ textarea {
     border-radius: 0;
 }
 
+/* Attachments List Style */
+.attachments-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0 1.5rem;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.attachment-item:last-child {
+    border-bottom: none;
+}
+
+.attachment-item:hover {
+    background: #f8fafc;
+}
+
+.attachment-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.attachment-name {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.875rem;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-size {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.delete-attachment-btn {
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: #c53030;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    transition: all 0.2s;
+    margin-left: 1rem;
+}
+
+.delete-attachment-btn:hover {
+    background: #c53030;
+    color: white;
+    border-color: #c53030;
+}
 /* Responsive */
 @media (max-width: 1024px) {
     .edit-task-layout {
@@ -233,39 +295,46 @@ textarea {
 
 <script>
 function deleteAttachment(attachmentId) {
-    if (confirm('Czy na pewno chcesz usunąć ten załącznik?')) {
-        fetch(`/tasks/delete-attachment/${attachmentId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const attachmentElement = document.getElementById(`attachment-${attachmentId}`);
-                if (attachmentElement) {
-                    attachmentElement.style.opacity = '0';
-                    attachmentElement.style.transform = 'translateX(20px)';
-                    setTimeout(() => {
-                        attachmentElement.remove();
-                        const attachmentsContainer = document.querySelector('.existing-attachments');
-                        if (attachmentsContainer && attachmentsContainer.querySelectorAll('.attachment-edit-item').length === 0) {
-                            attachmentsContainer.closest('.panel').style.display = 'none';
-                        }
-                    }, 300);
+    window.showConfirmModal({
+        title: 'Potwierdź usunięcie',
+        message: 'Czy na pewno chcesz usunąć ten załącznik? Tej operacji nie można cofnąć.',
+        confirmText: 'Usuń',
+        cancelText: 'Anuluj',
+        confirmClass: 'btn-danger',
+        onConfirm: () => {
+            fetch(`/tasks/delete-attachment/${attachmentId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
                 }
-                showMessage(data.message, 'success');
-            } else {
-                showMessage(data.message || 'Wystąpił błąd', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showMessage('Wystąpił błąd podczas usuwania załącznika', 'error');
-        });
-    }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const attachmentElement = document.getElementById(`attachment-${attachmentId}`);
+                    if (attachmentElement) {
+                        attachmentElement.style.opacity = '0';
+                        attachmentElement.style.transform = 'translateX(20px)';
+                        setTimeout(() => {
+                            attachmentElement.remove();
+                            const attachmentsContainer = document.querySelector('.attachments-list');
+                            if (attachmentsContainer && attachmentsContainer.querySelectorAll('.attachment-item').length === 0) {
+                                attachmentsContainer.closest('.panel').style.display = 'none';
+                            }
+                        }, 300);
+                    }
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.message || 'Wystąpił błąd', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Wystąpił błąd podczas usuwania załącznika', 'error');
+            });
+        }
+    });
 }
 
 function getCookie(name) {
@@ -308,67 +377,17 @@ function showMessage(message, type) {
     }, 3000);
 }
 
-// Drop zone handling
+// Drop zone highlight handling
 document.addEventListener('DOMContentLoaded', function() {
     const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const browseBtn = document.getElementById('browse-btn');
-    const fileList = document.getElementById('file-list');
-
-    if (browseBtn) {
-        browseBtn.addEventListener('click', () => fileInput.click());
-    }
-
     if (dropZone) {
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
         ['dragenter', 'dragover'].forEach(eventName => {
             dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight'), false);
         });
-
         ['dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight'), false);
         });
-
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles(files);
-            fileInput.files = files;
-        });
-    }
-
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            handleFiles(this.files);
-        });
-    }
-
-    function handleFiles(files) {
-        fileList.innerHTML = '';
-        [...files].forEach(file => {
-            const fileItem = document.createElement('div');
-            fileItem.style.cssText = 'padding: 0.5rem 1rem; background: #f0f7ff; border: 1px solid #2563eb; color: #2563eb; font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center;';
-            fileItem.innerHTML = `<span>${file.name}</span> <span style="font-size: 0.75rem; opacity: 0.8;">${(file.size / 1024).toFixed(1)} KB</span>`;
-            fileList.appendChild(fileItem);
-        });
     }
 });
-
-// Animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-    .highlight { border-color: #2563eb !important; background-color: #f0f7ff !important; }
-`;
-document.head.appendChild(style);
 </script>
 {% endblock %}

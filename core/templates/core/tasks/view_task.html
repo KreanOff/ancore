@@ -5,283 +5,549 @@
 {% block page_container_class %}full-width{% endblock %}
 
 {% block content %}
-<div class="control-panel" style="display: flex; justify-content: space-between; align-items: stretch; padding: 0.75rem 2rem; background: #f8f9fa; border-bottom: 1px solid var(--border-color);">
-    <div class="panel-left" style="display: flex; align-items: center; gap: 1rem;">
-        <a href="{% url 'tasks' %}" class="modal-back" style="text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-            <span>Powrót do zadań</span>
-        </a>
-        <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 0.5rem;"></div>
-        <span style="color: var(--text-muted); font-weight: 600;">Zadanie #{{ task.task_id }}</span>
-    </div>
-    <div class="panel-right" style="display: flex; align-items: center; gap: 1rem;">
-        <a href="{% url 'create_task' %}" class="btn btn-primary" style="border-radius: 0;">
-            + Utwórz zadanie
-        </a>
-        <a href="{% url 'edit_task' task.task_id %}" class="btn btn-primary" style="border-radius: 0;">
-            Edytuj
-        </a>
-        <button type="button" class="btn btn-danger" onclick="confirmDelete()" style="border-radius: 0;">
-            Usuń
-        </button>
-    </div>
-</div>
-
-<div class="view-task-layout">
-    <!-- Kolumna Lewa: Główne informacje -->
-    <div class="main-column" style="display: flex; flex-direction: column; gap: 1rem;">
-        <!-- Panel: Temat i Opis -->
-        <div class="panel panel-title-description">
-            <div class="panel-header">
-                <h2>Temat i Opis</h2>
+<div class="view-task-container">
+    <!-- Główny obszar widoku (Teraz po lewej) -->
+    <main class="main-view-area">
+        <div class="control-panel">
+            <div class="panel-left">
+                <a href="{% url 'tasks' %}" class="modal-back" style="text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Lista zadań</span>
+                </a>
+                <div class="panel-divider"></div>
+                <span class="task-id-badge">Zadanie #{{ task.task_id }}</span>
             </div>
-            <div class="panel-content">
-                <div class="task-title-section">
-                    <h1 style="margin: 0; font-size: 1.75rem; color: var(--text-color); line-height: 1.3;">{{ task.title }}</h1>
-                </div>
-                <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-                <div class="task-description-section">
-                    <h3 style="margin: 0 0 1rem 0; font-size: 1.125rem; color: var(--text-color);">Opis</h3>
-                    <div class="description-content" style="line-height: 1.6; color: var(--text-color);">
-                        {% if task.description %}
-                            {{ task.description|linebreaks }}
-                        {% else %}
-                            <p style="color: var(--text-muted); font-style: italic;">Brak opisu</p>
-                        {% endif %}
-                    </div>
-                </div>
+            <div class="panel-right">
+                <a href="{% url 'create_task' %}" class="btn btn-primary btn-sm">
+                    + Nowe zadanie
+                </a>
+                <a href="{% url 'edit_task' task.task_id %}" class="btn btn-primary btn-sm">
+                    Edytuj
+                </a>
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete()">
+                    Usuń
+                </button>
             </div>
         </div>
 
-        <!-- Panel: Załączniki -->
-        <div class="panel panel-attachments">
-            <div class="panel-header">
-                <h2>Załączniki</h2>
-            </div>
-            <div class="panel-content" style="padding: 0; display: flex; flex-direction: column;">
-                {% if task.attachments.exists %}
-                <div class="attachments-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; padding: 1.25rem;">
-{% for attachment in task.attachments.all %}
-                    <div class="attachment-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: white; border-radius: 0; border: 1px solid var(--border-color); transition: all 0.2s ease;" onmouseover="this.style.borderColor='#2563eb'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'" onmouseout="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none'">
-                        <div style="width: 40px; height: 40px; border-radius: 0; background: #f6f8fa; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
-                            {% if attachment.is_image %}
-                                📷
-                            {% elif attachment.is_pdf %}
-                                📄
+        <div class="content-scroll-area">
+            <div class="view-task-layout">
+                <!-- Kolumna główna: Opis i Załączniki -->
+                <div class="main-column">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2>Szczegóły zadania</h2>
+                        </div>
+                        <div class="panel-content">
+                            <h1 class="task-main-title">{{ task.title }}</h1>
+                            <hr class="section-divider">
+                            <div class="task-description-section">
+                                <h3 class="section-title">Opis</h3>
+                                <div class="description-content">
+                                    {% if task.description %}
+                                        {{ task.description|linebreaks }}
+                                    {% else %}
+                                        <p class="empty-state">Brak opisu</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2>Załączniki</h2>
+                        </div>
+                        <div class="panel-content" style="padding: 0;">
+                            {% if task.attachments.exists %}
+                            <div class="attachments-list">
+                                {% for attachment in task.attachments.all %}
+                                <div class="attachment-item">
+                                    <div class="attachment-info">
+                                        <div class="file-icon {{ attachment.get_type_class }}">
+                                            {{ attachment.get_type_label }}
+                                        </div>
+                                        <div class="attachment-details">
+                                            <a href="{{ attachment.file.url }}" class="attachment-name" target="_blank" title="{{ attachment.filename }}">{{ attachment.filename }}</a>
+                                            <div class="attachment-size">{{ attachment.get_formatted_size }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
                             {% else %}
-                                📎
+                            <div class="empty-attachments">
+                                <span>📎</span>
+                                <p>Brak załączników</p>
+                            </div>
                             {% endif %}
                         </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <a href="{{ attachment.file.url }}" target="_blank" style="text-decoration: none; color: var(--text-color); font-weight: 600; font-size: 0.9375rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ attachment.filename }}">
-                                {{ attachment.filename }}
-                            </a>
-                            <span style="color: var(--text-muted); font-size: 0.8125rem;">{{ attachment.get_formatted_size }}</span>
+                    </div>
+                </div>
+
+                <!-- Kolumna boczna: Info -->
+                <aside class="info-sidebar">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2>Informacje</h2>
+                        </div>
+                        <div class="panel-content">
+                            <div class="info-list">
+                                <div class="info-row">
+                                    <label>Status:</label>
+                                    <span class="status-indicator status-{{ task.status }}">
+                                        {{ task.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <label>Priorytet:</label>
+                                    <span class="badge badge-{{ task.priority }}">
+                                        {{ task.get_priority_display }}
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <label>Przypisano do:</label>
+                                    <span class="user-val">{{ task.user.get_full_name|default:task.user.username }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <label>Data utworzenia:</label>
+                                    <span class="date-val">{{ task.created_at|date:"d.m.Y H:i" }}</span>
+                                </div>
+                                {% if task.completion_date %}
+                                <div class="info-row no-border">
+                                    <label>Zakończono:</label>
+                                    <span class="date-val">{{ task.completion_date|date:"d.m.Y H:i" }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                    <span style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;">📎</span>
-                    <p>Brak załączników</p>
-                </div>
-                {% endif %}
+                </aside>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Kolumna Prawa: Informacje i Nawigacja -->
-    <div class="sidebar-column" style="display: flex; flex-direction: column; gap: 1rem;">
-        <!-- Panel: Informacje o zadaniu -->
-        <div class="panel panel-task-info">
-            <div class="panel-header">
-                <h2>Informacje o zadaniu</h2>
+    <!-- Prawy panel: Szybka nawigacja (Pełna wysokość) -->
+    <aside class="quick-nav-sidebar">
+        <div class="nav-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h2 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-main);">Szybka nawigacja</h2>
+                <span style="font-size: 0.75rem; color: var(--text-muted); background: #f1f5f9; padding: 0.1rem 0.5rem; border-radius: 4px;">{{ all_tasks.count }}</span>
             </div>
-            <div class="panel-content">
-                <div class="info-grid" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <div class="info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0;">
-                        <label style="font-weight: 500; color: var(--text-muted); font-size: 0.9375rem;">Status:</label>
-                        <span class="status-indicator status-{{ task.status }}" style="font-size: 0.9375rem; padding: 0.25rem 0.75rem;">
-                            {{ task.get_status_display }}
-                        </span>
-                    </div>
-                    <div class="info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0;">
-                        <label style="font-weight: 500; color: var(--text-muted); font-size: 0.9375rem;">Priorytet:</label>
-                        <span class="badge badge-{{ task.priority }}" style="font-size: 0.875rem; padding: 0.25rem 0.75rem;">
-                            {{ task.get_priority_display }}
-                        </span>
-                    </div>
-                    <div class="info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0;">
-                        <label style="font-weight: 500; color: var(--text-muted); font-size: 0.9375rem;">Użytkownik:</label>
-                        <span style="font-weight: 600; font-size: 0.9375rem;">{{ task.user.get_full_name|default:task.user.username }}</span>
-                    </div>
-                    <div class="info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0;">
-                        <label style="font-weight: 500; color: var(--text-muted); font-size: 0.9375rem;">Utworzono:</label>
-                        <span style="font-weight: 500; font-size: 0.9375rem;">{{ task.created_at|date:"d.m.Y H:i" }}</span>
-                    </div>
-                    {% if task.completion_date %}
-                    <div class="info-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: none;">
-                        <label style="font-weight: 500; color: var(--text-muted); font-size: 0.9375rem;">Zrealizowano:</label>
-                        <span style="font-weight: 500; font-size: 0.9375rem;">{{ task.completion_date|date:"d.m.Y H:i" }}</span>
-                    </div>
-                    {% endif %}
-                </div>
+        </div>
+        
+        <div class="nav-search">
+            <div style="position: relative;">
+                <input type="text" id="task-search" placeholder="Szukaj zadania..." 
+                       style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.25rem; border: 1px solid var(--border-color); border-radius: 0; font-size: 0.875rem; background: #fff;">
+                <svg style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
             </div>
         </div>
 
-        <!-- Panel: Szybka nawigacja -->
-        <div class="panel panel-task-navigation" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
-            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>Szybka nawigacja</h2>
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">{{ all_tasks.count }} zadań</span>
-            </div>
-            <!-- Task Search -->
-            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); background: #fdfdfd;">
-                <div style="position: relative;">
-                    <input type="text" id="task-search" placeholder="Szukaj zadania..." 
-                           style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.25rem; border: 1px solid var(--border-color); border-radius: 0; font-size: 0.875rem;">
-                    <svg style="position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        <div class="nav-list" id="nav-task-list">
+            {% for nav_task in all_tasks %}
+            <a href="{% url 'view-task' nav_task.task_id %}" 
+               class="task-nav-item {% if nav_task.task_id == task.task_id %}active{% endif %}"
+               data-title="{{ nav_task.title|lower }}"
+               data-id="{{ nav_task.task_id }}">
+                
+                <div class="priority-strip priority-{{ nav_task.priority }}"></div>
+                
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <span style="font-weight: 700; color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">#{{ nav_task.task_id }}</span>
+                        <span class="task-nav-title">{{ nav_task.title }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span class="status-indicator status-{{ nav_task.status }}" style="font-size: 0.7rem; padding: 0.1rem 0.4rem; white-space: nowrap;">
+                            {{ nav_task.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                
+                {% if nav_task.task_id == task.task_id %}
+                <div style="color: #2563eb; flex-shrink: 0;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
                 </div>
-            </div>
-            <div class="panel-content" style="padding: 0; flex: 1; overflow-y: auto;" id="nav-task-list">
-                {% for nav_task in all_tasks %}
-                <a href="{% url 'view-task' nav_task.task_id %}" 
-                   class="task-nav-item {% if nav_task.task_id == task.task_id %}active{% endif %}"
-                   data-title="{{ nav_task.title|lower }}"
-                   data-id="{{ nav_task.task_id }}"
-                   style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; text-decoration: none; color: var(--text-color); transition: all 0.2s ease; position: relative;">
-                    
-                    <!-- Priority Strip -->
-                    <div class="priority-strip priority-{{ nav_task.priority }}" style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px;"></div>
-                    
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                            <span style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem; font-family: monospace;">#{{ nav_task.task_id }}</span>
-                            <span class="task-nav-title" style="font-weight: 600; font-size: 0.9375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">
-                                {{ nav_task.title }}
-                            </span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <span class="status-indicator status-{{ nav_task.status }}" style="font-size: 0.75rem; padding: 0.15rem 0.5rem; white-space: nowrap;">
-                                {{ nav_task.get_status_display }}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    {% if nav_task.task_id == task.task_id %}
-                    <div style="color: #2563eb;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
-                    {% endif %}
-                </a>
-                {% endfor %}
-            </div>
+                {% endif %}
+            </a>
+            {% endfor %}
         </div>
-    </div>
+    </aside>
 </div>
 
 <style>
-.view-task-layout {
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 1rem;
-    padding: 1rem;
-    height: calc(100vh - 64px - 57px); /* Subtract top bar and control panel height approximately */
+/* Layout Container */
+.view-task-container {
+    display: flex;
+    height: calc(100vh - 64px); /* Wysokość bez górnego paska */
     overflow: hidden;
+    background: #f8fafc;
 }
 
-.main-column {
-    height: 100%;
-    overflow-y: auto;
-    padding-right: 0.5rem;
-}
-
-.sidebar-column {
-    height: 100%;
+/* Quick Nav Sidebar (Now on the Right) */
+.quick-nav-sidebar {
+    width: 320px;
+    background: white;
+    border-left: 1px solid var(--border-color); /* Changed from border-right */
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    overflow: hidden; /* Navigation panel will have its own scrollbar */
+    flex-shrink: 0;
 }
 
-/* Custom scrollbar for columns */
-.main-column::-webkit-scrollbar, .sidebar-column::-webkit-scrollbar {
-    width: 6px;
-}
-.main-column::-webkit-scrollbar-track, .sidebar-column::-webkit-scrollbar-track {
-    background: transparent;
-}
-.main-column::-webkit-scrollbar-thumb, .sidebar-column::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-    border-radius: 0;
-}
-
-.panel {
-    background: white;
-    border-radius: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-}
-
-.panel-header {
-    background: #f8f9fa;
-    padding: 0.75rem 1.25rem;
+.nav-header {
+    padding: 1.25rem;
     border-bottom: 1px solid var(--border-color);
-    border-radius: 0;
+    background: #fcfcfc;
 }
 
-.panel-content {
-    padding: 1rem;
-    border-radius: 0;
+.nav-search {
+    padding: 0.75rem 1rem;
+    background: #fcfcfc;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nav-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Main View Area (Now on the Left) */
+.main-view-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Control Panel */
+.control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    padding: 0.75rem 2rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid var(--border-color);
+    height: 60px;
+    flex-shrink: 0;
+}
+
+.panel-left, .panel-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+
+.panel-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+}
+
+.task-id-badge {
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* Content Scroll Area */
+.content-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.view-task-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Task Nav Items */
+.task-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    text-decoration: none;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+    position: relative;
 }
 
 .task-nav-item:hover {
-    background: #f8f9fa;
+    background: #f8fafc;
 }
 
 .task-nav-item.active {
     background: #f0f7ff;
-    border-left: 1px solid #2563eb;
 }
 
-.priority-strip.priority-low { background-color: #10b981; }
-.priority-strip.priority-medium { background-color: #f59e0b; }
-.priority-strip.priority-high { background-color: #ef4444; }
-
-.badge, .status-indicator {
-    border-radius: 0 !important;
+/* Active indicator now on the left for right sidebar */
+.task-nav-item.active::after {
+    content: '';
+    position: absolute;
+    left: 0; /* Changed from right: 0 */
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #2563eb;
 }
 
-/* Custom scrollbar for navigation list */
-.panel-content::-webkit-scrollbar {
+.task-nav-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* Priority Strips (Keep them on the left of the item or right?) */
+/* User likely wants them on the left of the text, currently they are absolute left: 0 */
+.priority-strip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+}
+.priority-low { background-color: #10b981; }
+.priority-medium { background-color: #f59e0b; }
+.priority-high { background-color: #ef4444; }
+
+/* Panels */
+.panel {
+    background: white;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.panel-header {
+    background: #fcfcfc;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--text-muted);
+}
+
+.panel-content {
+    padding: 1.5rem;
+}
+
+/* Task details */
+.task-main-title {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-main);
+    line-height: 1.2;
+}
+
+.section-divider {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 1.5rem 0;
+}
+
+.section-title {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.description-content {
+    line-height: 1.6;
+    color: #475569;
+}
+
+.empty-state {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Attachments */
+.attachments-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0 1.5rem;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.attachment-info {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    flex: 1;
+}
+
+.attachment-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.attachment-name {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.875rem;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.attachment-name:hover {
+    color: var(--primary-color);
+}
+
+.attachment-size {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.attachment-item:last-child {
+    border-bottom: none;
+}
+
+.attachment-item:hover {
+    background: #f8fafc;
+}
+
+.attachment-icon {
+    width: 36px;
+    height: 36px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.attachment-info a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.875rem;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-info span {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.empty-attachments {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+}
+
+/* Info Sidebar */
+.info-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.info-row.no-border {
+    border-bottom: none;
+}
+
+.info-row label {
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.user-val, .date-val {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-main);
+}
+
+/* Buttons and Badges */
+.btn-sm {
+    padding: 0.4rem 1.25rem;
+    font-size: 0.875rem;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    border-radius: 0;
+    font-weight: 600;
+}
+
+.btn-outline {
+    background: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.btn-outline:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* Scrollbars */
+.nav-list::-webkit-scrollbar, .content-scroll-area::-webkit-scrollbar {
     width: 6px;
 }
-.panel-content::-webkit-scrollbar-track {
+.nav-list::-webkit-scrollbar-track, .content-scroll-area::-webkit-scrollbar-track {
     background: transparent;
 }
-.panel-content::-webkit-scrollbar-thumb {
+.nav-list::-webkit-scrollbar-thumb, .content-scroll-area::-webkit-scrollbar-thumb {
     background: #e2e8f0;
-    border-radius: 0;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
+/* Mobile adjustments */
+@media (max-width: 1200px) {
     .view-task-layout {
         grid-template-columns: 1fr;
-        height: auto;
-        overflow: visible;
     }
-    .panel-content {
-        max-height: none;
+}
+
+@media (max-width: 992px) {
+    .quick-nav-sidebar {
+        display: none;
     }
 }
 </style>
@@ -318,6 +584,7 @@ function confirmDelete() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Scroll active item into view
     const activeNavItem = document.querySelector('.task-nav-item.active');
     if (activeNavItem) {
         activeNavItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -344,3 +611,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+

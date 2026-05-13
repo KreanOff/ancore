@@ -102,6 +102,23 @@
     color: #616161;
 }
 
+.file-icon-mini {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.file-icon-mini.image { background-color: #e3f2fd; color: #1976d2; }
+.file-icon-mini.pdf { background-color: #fce4ec; color: #c2185b; }
+.file-icon-mini.document { background-color: #e8f5e8; color: #388e3c; }
+.file-icon-mini.archive { background-color: #fff3e0; color: #f57c00; }
+.file-icon-mini.default { background-color: #f5f5f5; color: #616161; }
+
 .file-details {
     flex: 1;
 }

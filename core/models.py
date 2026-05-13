@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Max
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 import os
 
 class User(AbstractUser):
@@ -116,16 +118,45 @@ class TaskAttachment(models.Model):
         """Check if the file is a PDF"""
         return self.get_file_extension() == '.pdf'
 
+    def get_type_class(self):
+        """Return CSS class based on file type"""
+        ext = self.get_file_extension()
+        if self.is_image(): return 'image'
+        if ext == '.pdf': return 'pdf'
+        if ext in ['.doc', '.docx', '.xls', '.xlsx', '.txt', '.rtf']: return 'document'
+        if ext in ['.zip', '.rar', '.7z', '.tar', '.gz']: return 'archive'
+        return 'default'
+
+    def get_type_label(self):
+        """Return text label for the icon badge"""
+        ext = self.get_file_extension()
+        if self.is_image(): return 'IMG'
+        if ext == '.pdf': return 'PDF'
+        if ext in ['.doc', '.docx', '.xls', '.xlsx', '.txt', '.rtf']: return 'DOC'
+        if ext in ['.zip', '.rar', '.7z', '.tar', '.gz']: return 'ZIP'
+        return 'FILE'
+
     def get_formatted_size(self):
         """Return human-readable file size"""
-        if self.file_size == 0:
+        size = float(self.file_size)
+        if size == 0:
             return "0 B"
         size_names = ["B", "KB", "MB", "GB"]
         i = 0
-        while self.file_size >= 1024 and i < len(size_names) - 1:
-            self.file_size /= 1024.0
+        while size >= 1024 and i < len(size_names) - 1:
+            size /= 1024.0
             i += 1
-        return f"{self.file_size:.1f} {size_names[i]}"
+        return f"{size:.1f} {size_names[i]}"
 
     def __str__(self):
         return f"{self.filename} - {self.task.title}"
+
+@receiver(post_delete, sender=TaskAttachment)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding TaskAttachment object is deleted.
+    """
+    if instance.file:
+        if os.path.isfile(instance.file.path):
+            os.remove(instance.file.path)
