@@ -17,19 +17,19 @@
             <div class="logo">ANCORE<span>.</span></div>
         </div>
         <nav class="nav-section">
-            <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.view_name == 'home' %}active{% endif %}">
                 Panel Główny
             </a>
-            <a href="{% url 'tasks' %}" class="nav-link {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}">
+            <a href="{% url 'tasks:tasks' %}" class="nav-link {% if 'tasks:tasks' in request.resolver_match.view_name %}active{% endif %}">
                 Zadania
             </a>
-            <a href="{% url 'kanban' %}" class="nav-link {% if request.resolver_match.url_name == 'kanban' %}active{% endif %}">
+            <a href="{% url 'tasks:kanban' %}" class="nav-link {% if request.resolver_match.view_name == 'tasks:kanban' %}active{% endif %}">
                 Tablica Kanban
             </a>
-            <a href="{% url 'calendar' %}" class="nav-link {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+            <a href="{% url 'tasks:calendar' %}" class="nav-link {% if request.resolver_match.view_name == 'tasks:calendar' %}active{% endif %}">
                 Kalendarz
             </a>
-            <a href="{% url 'tickets' %}" class="nav-link {% if request.resolver_match.url_name == 'tickets' %}active{% endif %}">
+            <a href="{% url 'tickets:tickets' %}" class="nav-link {% if request.resolver_match.view_name == 'tickets:tickets' %}active{% endif %}">
                 Zgłoszenia
             </a>
         </nav>

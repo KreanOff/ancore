@@ -1,0 +1,393 @@
+{% extends 'core/base.html' %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block content %}
+<div class="control-panel" style="display: flex; justify-content: space-between; align-items: stretch; padding: 0.75rem 2rem; background: #f8f9fa; border-bottom: 1px solid var(--border-color);">
+    <div class="panel-left" style="display: flex; align-items: center; gap: 1rem;">
+        <a href="{% url 'tasks:view-task' task.task_id %}" class="modal-back" style="text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Powrót do zadania</span>
+        </a>
+        <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 0.5rem;"></div>
+        <span style="color: var(--text-muted); font-weight: 600;">Edycja #{{ task.task_id }}</span>
+    </div>
+    <div class="panel-right" style="display: flex; align-items: center; gap: 1rem;">
+        <a href="{% url 'tasks:view-task' task.task_id %}" class="btn" style="background: #e2e8f0; color: var(--text-main); text-decoration: none; border-radius: 0;">
+            Anuluj
+        </a>
+        <button type="submit" form="edit-task-form" class="btn btn-primary" style="border-radius: 0;">
+            Zapisz zmiany
+        </button>
+    </div>
+</div>
+
+<form id="edit-task-form" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="edit-task-layout">
+        <!-- Kolumna Lewa: Główne pola edycji -->
+        <div class="main-column" style="display: flex; flex-direction: column; gap: 1rem;">
+            
+            {% if form.errors %}
+            <div style="background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 0; margin-bottom: 1rem;">
+                <strong>Wystąpiły błędy:</strong>
+                <ul style="margin: 0.5rem 0 0 1.5rem;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Panel: Treść zadania -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Treść zadania</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Temat</label>
+                        {{ form.title }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Opis</label>
+                        {{ form.description }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel: Dodaj załączniki -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Dodaj nowe załączniki</h2>
+                </div>
+                <div class="panel-content">
+                    <div id="drop-zone" class="drop-zone" style="border: 2px dashed var(--border-color); padding: 2rem; text-align: center; background: #fafafa; border-radius: 0; transition: all 0.2s;">
+                        <div class="drop-zone-content">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p style="margin: 1rem 0 0.5rem 0; color: var(--text-main); font-weight: 500;">Przeciągnij i upuść pliki tutaj</p>
+                            <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">lub <button type="button" id="browse-btn" class="link-btn" style="color: #2563eb; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline;">przeglądaj</button></p>
+                        </div>
+                        <input type="file" name="attachments" id="file-input" multiple
+                               accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                               style="display: none;">
+                    </div>
+                    <div id="file-list" class="file-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                </div>
+            </div>
+
+            <!-- Panel: Istniejące załączniki -->
+            {% if task.attachments.exists %}
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Istniejące załączniki</h2>
+                </div>
+                <div class="panel-content" style="padding: 0;">
+                    <div class="attachments-list">
+                        {% for attachment in task.attachments.all %}
+                        <div class="attachment-item" id="attachment-{{ attachment.id }}">
+                            <div class="attachment-info">
+                                <div class="file-icon {{ attachment.get_type_class }}">
+                                    {{ attachment.get_type_label }}
+                                </div>
+                                <div class="attachment-details">
+                                    <div class="attachment-name" title="{{ attachment.filename }}">{{ attachment.filename }}</div>
+                                    <div class="attachment-size">{{ attachment.get_formatted_size }}</div>
+                                </div>
+                            </div>
+                            <div class="attachment-actions">
+                                <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="delete-attachment-btn" title="Usuń załącznik">
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Kolumna Prawa: Ustawienia i Istniejące załączniki -->
+        <div class="sidebar-column" style="display: flex; flex-direction: column; gap: 1rem;">
+            
+            <!-- Panel: Parametry -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Parametry zadania</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Priorytet</label>
+                        {{ form.priority }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Stan</label>
+                        {{ form.status }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<style>
+.edit-task-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 1rem;
+    padding: 1.5rem;
+    height: calc(100vh - 64px - 57px);
+    overflow: hidden;
+}
+
+.main-column, .sidebar-column {
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.panel {
+    background: white;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.panel-header {
+    background: #fcfcfc;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--text-muted);
+}
+
+.panel-content {
+    padding: 1.25rem;
+}
+
+/* Form Styles */
+input[type="text"], select, textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0 !important;
+    font-size: 1rem;
+    background: white;
+}
+
+textarea {
+    min-height: 300px;
+    resize: vertical;
+}
+
+/* Custom scrollbar */
+.main-column::-webkit-scrollbar, .sidebar-column::-webkit-scrollbar {
+    width: 6px;
+}
+.main-column::-webkit-scrollbar-track, .sidebar-column::-webkit-scrollbar-track {
+    background: transparent;
+}
+.main-column::-webkit-scrollbar-thumb, .sidebar-column::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 0;
+}
+
+/* Attachments List Style */
+.attachments-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0 1.5rem;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.attachment-item:last-child {
+    border-bottom: none;
+}
+
+.attachment-item:hover {
+    background: #f8fafc;
+}
+
+.attachment-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.attachment-name {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.875rem;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-size {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.delete-attachment-btn {
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: #c53030;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    transition: all 0.2s;
+    margin-left: 1rem;
+}
+
+.delete-attachment-btn:hover {
+    background: #c53030;
+    color: white;
+    border-color: #c53030;
+}
+/* Responsive */
+@media (max-width: 1024px) {
+    .edit-task-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+    }
+}
+</style>
+
+<script>
+function deleteAttachment(attachmentId) {
+    window.showConfirmModal({
+        title: 'Potwierdź usunięcie',
+        message: 'Czy na pewno chcesz usunąć ten załącznik? Tej operacji nie można cofnąć.',
+        confirmText: 'Usuń',
+        cancelText: 'Anuluj',
+        confirmClass: 'btn-danger',
+        onConfirm: () => {
+            fetch(`/tasks/delete-attachment/${attachmentId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const attachmentElement = document.getElementById(`attachment-${attachmentId}`);
+                    if (attachmentElement) {
+                        attachmentElement.style.opacity = '0';
+                        attachmentElement.style.transform = 'translateX(20px)';
+                        setTimeout(() => {
+                            attachmentElement.remove();
+                            const attachmentsContainer = document.querySelector('.attachments-list');
+                            if (attachmentsContainer && attachmentsContainer.querySelectorAll('.attachment-item').length === 0) {
+                                attachmentsContainer.closest('.panel').style.display = 'none';
+                            }
+                        }, 300);
+                    }
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.message || 'Wystąpił błąd', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Wystąpił błąd podczas usuwania załącznika', 'error');
+            });
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showMessage(message, type) {
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 0;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    messageDiv.style.backgroundColor = type === 'success' ? '#10b981' : '#ef4444';
+    messageDiv.textContent = message;
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        messageDiv.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            document.body.removeChild(messageDiv);
+        }, 300);
+    }, 3000);
+}
+
+// Drop zone highlight handling
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight'), false);
+        });
+    }
+});
+</script>
+{% endblock %}
