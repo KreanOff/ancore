@@ -58,7 +58,7 @@ def update_task_status(request, task_id):
         is_completed = data.get('is_completed', False)
         
         task.is_completed = is_completed
-        task.status = 'closed' if is_completed else 'new'
+        task.status = 'closed' if is_completed else 'reopened'
         task.save()
         
         return JsonResponse({
@@ -116,6 +116,30 @@ def delete_tasks(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
+@require_POST
+def bulk_update_status(request):
+    try:
+        data = json.loads(request.body)
+        task_ids = data.get('task_ids', [])
+        status = data.get('status', 'closed')
+        
+        if not task_ids:
+            return JsonResponse({'status': 'error', 'message': 'Nie podano ID zadań'}, status=400)
+        
+        user = request.user
+        updated_count = Task.objects.filter(task_id__in=task_ids, user=user).update(status=status)
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': f'Zaktualizowano {updated_count} {"zadań" if updated_count != 1 else "zadanie"}',
+            'updated_count': updated_count
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
 def edit_task(request, task_id):
     task = get_object_or_404(Task, task_id=task_id, user=request.user)
     
@@ -124,6 +148,12 @@ def edit_task(request, task_id):
         form = TaskForm(request.POST, request.FILES, instance=task)
         if form.is_valid():
             form.save()
+
+            # Handle staged attachment deletions
+            deleted_attachments = request.POST.get('deleted_attachments', '')
+            if deleted_attachments:
+                attachment_ids = [int(aid) for aid in deleted_attachments.split(',') if aid.isdigit()]
+                TaskAttachment.objects.filter(id__in=attachment_ids, task=task).delete()
 
             # Handle new file attachments
             for file in files:

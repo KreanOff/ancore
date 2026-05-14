@@ -12,6 +12,7 @@ urlpatterns = [
     path('delete-attachment/<int:attachment_id>/', tasks.delete_attachment, name='delete_attachment'),
     path('delete/<int:task_id>/', tasks.delete_task, name='delete_task'),
     path('delete/', tasks.delete_tasks, name='delete_tasks'),
+    path('bulk-update-status/', tasks.bulk_update_status, name='bulk_update_status'),
     path('kanban/', kanban.kanban, name='kanban'),
     path('calendar/', calendar.calendar, name='calendar'),
 ]

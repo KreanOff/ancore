@@ -29,6 +29,7 @@
 
 <form id="edit-task-form" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
+    <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
     
     <div class="edit-task-layout">
         <!-- Kolumna Lewa: Główne pola edycji -->
@@ -297,44 +298,69 @@ textarea {
 function deleteAttachment(attachmentId) {
     window.showConfirmModal({
         title: 'Potwierdź usunięcie',
-        message: 'Czy na pewno chcesz usunąć ten załącznik? Tej operacji nie można cofnąć.',
+        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana po kliknięciu "Zapisz zmiany".',
         confirmText: 'Usuń',
         cancelText: 'Anuluj',
         confirmClass: 'btn-danger',
         onConfirm: () => {
-            fetch(`/tasks/delete-attachment/${attachmentId}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+            const deletedInput = document.getElementById('deleted-attachments');
+            let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+            if (!deletedIds.includes(attachmentId.toString())) {
+                deletedIds.push(attachmentId.toString());
+                deletedInput.value = deletedIds.join(',');
+            }
+
+            const attachmentElement = document.getElementById(`attachment-${attachmentId}`);
+            if (attachmentElement) {
+                attachmentElement.style.opacity = '0.5';
+                attachmentElement.style.textDecoration = 'line-through';
+                attachmentElement.style.pointerEvents = 'none';
+                attachmentElement.classList.add('marked-for-deletion');
+                
+                // Change the delete button to an undo button or just disable it
+                const btn = attachmentElement.querySelector('.delete-attachment-btn');
+                if (btn) {
+                    btn.innerHTML = '↺';
+                    btn.title = 'Cofnij usunięcie';
+                    btn.style.background = '#e2e8f0';
+                    btn.style.color = '#475569';
+                    btn.style.borderColor = '#cbd5e1';
+                    btn.style.pointerEvents = 'auto';
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        undoDeleteAttachment(attachmentId);
+                    };
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const attachmentElement = document.getElementById(`attachment-${attachmentId}`);
-                    if (attachmentElement) {
-                        attachmentElement.style.opacity = '0';
-                        attachmentElement.style.transform = 'translateX(20px)';
-                        setTimeout(() => {
-                            attachmentElement.remove();
-                            const attachmentsContainer = document.querySelector('.attachments-list');
-                            if (attachmentsContainer && attachmentsContainer.querySelectorAll('.attachment-item').length === 0) {
-                                attachmentsContainer.closest('.panel').style.display = 'none';
-                            }
-                        }, 300);
-                    }
-                    showMessage(data.message, 'success');
-                } else {
-                    showMessage(data.message || 'Wystąpił błąd', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('Wystąpił błąd podczas usuwania załącznika', 'error');
-            });
+            }
+            showMessage('Załącznik oznaczony do usunięcia', 'success');
         }
     });
+}
+
+function undoDeleteAttachment(attachmentId) {
+    const deletedInput = document.getElementById('deleted-attachments');
+    let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+    deletedIds = deletedIds.filter(id => id !== attachmentId.toString());
+    deletedInput.value = deletedIds.join(',');
+
+    const attachmentElement = document.getElementById(`attachment-${attachmentId}`);
+    if (attachmentElement) {
+        attachmentElement.style.opacity = '1';
+        attachmentElement.style.textDecoration = 'none';
+        attachmentElement.style.pointerEvents = 'auto';
+        attachmentElement.classList.remove('marked-for-deletion');
+        
+        const btn = attachmentElement.querySelector('.delete-attachment-btn');
+        if (btn) {
+            btn.innerHTML = '×';
+            btn.title = 'Usuń załącznik';
+            btn.style.background = ''; // Revert to CSS
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            btn.onclick = () => deleteAttachment(attachmentId);
+        }
+    }
+    showMessage('Cofnięto oznaczenie do usunięcia', 'success');
 }
 
 function getCookie(name) {

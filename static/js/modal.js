@@ -99,9 +99,11 @@ window.showConfirmModal = function(options) {
     requestAnimationFrame(() => {
         overlay.style.opacity = '1';
         container.style.transform = 'translateY(0)';
+        document.getElementById('modal-confirm-btn').focus();
     });
 
     const closeModal = () => {
+        document.removeEventListener('keydown', handleKeyDown);
         overlay.style.opacity = '0';
         container.style.transform = 'translateY(10px)';
         setTimeout(() => {
@@ -118,14 +120,16 @@ window.showConfirmModal = function(options) {
         onConfirm();
     });
 
-    // Close on escape
-    const handleEsc = (e) => {
+    const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
             closeModal();
-            document.removeEventListener('keydown', handleEsc);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            closeModal();
+            onConfirm();
         }
     };
-    document.addEventListener('keydown', handleEsc);
+    document.addEventListener('keydown', handleKeyDown);
 
     // Hover effects
     const cancelBtn = document.getElementById('modal-cancel-btn');
