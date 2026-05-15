@@ -1,0 +1,526 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block content %}
+<!-- Fixed Toolbar -->
+<div class="control-panel">
+    <div class="panel-left" style="display: flex; align-items: center; gap: 1rem;">
+        <div class="board-name-badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+            <span>{{ board.name }}</span>
+        </div>
+    </div>
+    <div class="panel-right" style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="filter-priority" style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">Priorytet:</label>
+            <select id="filter-priority" style="height: 38px; padding: 0 0.75rem; border: 1px solid var(--border-color); border-radius: 0; background: white; font-size: 0.875rem; color: var(--text-main);">
+                <option value="">Wszystkie</option>
+                <option value="low">Niski</option>
+                <option value="medium">Średni</option>
+                <option value="high">Wysoki</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="kanban-workspace">
+    <div class="kanban-board" id="kanban-board">
+        {% for column in columns %}
+        <div class="kanban-column" data-column-id="{{ column.id }}">
+            <div class="column-header">
+                <div class="column-title-container">
+                    <h3 class="column-title" contenteditable="true" spellcheck="false">{{ column.name }}</h3>
+                    <span class="column-count">{{ column.cards.count }}</span>
+                </div>
+                <div class="column-actions">
+                    <button class="btn-icon delete-column-btn" title="Usuń listę">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="column-cards" data-column-id="{{ column.id }}">
+                {% for card in column.cards.all|dictsort:"order" %}
+                    <div class="kanban-card priority-{{ card.priority }}" data-card-id="{{ card.id }}">
+                        <div class="priority-indicator"></div>
+                        <h4 class="card-title">{{ card.title }}</h4>
+                        {% if card.description %}
+                        <p class="card-desc-preview">{{ card.description|truncatechars:80 }}</p>
+                        {% endif %}
+                        <div class="card-footer">
+                            <div class="card-meta">
+                                {% if card.description %}
+                                <div class="meta-item" title="Ma opis">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>
+                                </div>
+                                {% endif %}
+                                {% if card.is_completed %}
+                                <div class="meta-item" title="Ukończone" style="color: #10b981;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-user" title="{{ card.user.get_full_name }}">
+                                <div style="width: 22px; height: 22px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--text-muted);">
+                                    {{ card.user.first_name|slice:":1" }}{{ card.user.last_name|slice:":1" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="quick-add-card">
+                <button class="btn-add-card">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Dodaj kartę
+                </button>
+                <div class="quick-add-form">
+                    <textarea placeholder="Wpisz tytuł tej karty..."></textarea>
+                    <div class="quick-add-actions">
+                        <button class="btn btn-primary btn-sm submit-quick-add">Dodaj</button>
+                        <button class="btn btn-ghost btn-sm cancel-quick-add">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="add-column-wrapper">
+            <button class="btn-add-column" id="show-add-column">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Dodaj kolejną listę
+            </button>
+            <div class="add-column-form" style="display: none;">
+                <input type="text" id="new-column-name" placeholder="Wpisz tytuł listy..." autofocus>
+                <div class="add-column-actions">
+                    <button class="btn btn-primary btn-sm" id="submit-add-column">Dodaj listę</button>
+                    <button class="btn btn-ghost btn-sm" id="cancel-add-column">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="card-detail-modal" class="modal-overlay kanban-modal-overlay">
+    <div class="kanban-modal-content">
+        <div class="modal-header">
+            <input type="text" id="detail-title-input" class="detail-title-edit" placeholder="Tytuł karty">
+            <button class="close-modal-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-section" style="margin-bottom: 2.5rem;">
+                <label>Opis</label>
+                <textarea id="detail-description-input" class="detail-desc-edit" placeholder="Dodaj bardziej szczegółowy opis..."></textarea>
+            </div>
+            
+            <div class="detail-meta-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
+                <div class="detail-item">
+                    <label>PRIORYTET</label>
+                    <select id="detail-priority-input" class="form-control" style="width: 100%; height: 42px; border: 1px solid var(--border-color); padding: 0 0.75rem; background: #f8fafc;">
+                        <option value="low">Niski</option>
+                        <option value="medium">Średni</option>
+                        <option value="high">Wysoki</option>
+                    </select>
+                </div>
+                <div class="detail-item">
+                    <label>LISTA</label>
+                    <div id="detail-column" class="detail-static-info" style="height: 42px; display: flex; align-items: center;"></div>
+                </div>
+                <div class="detail-item">
+                    <label>UTWORZONO</label>
+                    <div id="detail-date" class="detail-static-info" style="height: 42px; display: flex; align-items: center; color: var(--text-muted); font-weight: 500;"></div>
+                </div>
+            </div>
+
+            <div class="detail-actions" style="border-top: 1px solid var(--border-color); padding-top: 2rem; display: flex; gap: 1rem; align-items: center;">
+                <button type="button" class="btn btn-danger delete-card-btn" style="height: 42px; padding: 0 1.5rem;">Usuń kartę</button>
+                <button type="button" class="btn btn-secondary toggle-complete-btn" style="height: 42px; padding: 0 1.5rem; margin-left: auto;">Oznacz jako gotowe</button>
+                <button type="button" class="cancel-modal-btn btn btn-primary" style="height: 42px; padding: 0 1.5rem;">Zamknij</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const boardElement = document.getElementById('kanban-board');
+    const csrfToken = '{{ csrf_token }}';
+
+    // 1. Initialize Sortable for Columns (moving columns)
+    new Sortable(boardElement, {
+        animation: 150,
+        handle: '.column-header',
+        draggable: '.kanban-column',
+        ghostClass: 'sortable-ghost',
+        onEnd: function() {
+            const columnIds = Array.from(boardElement.querySelectorAll('.kanban-column'))
+                .map(col => col.dataset.columnId);
+            
+            fetch('{% url "kanban:reorder_columns" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ column_ids: columnIds })
+            });
+        }
+    });
+
+    // 2. Initialize Sortable for Cards in each column
+    function initCardSortable(columnElement) {
+        new Sortable(columnElement, {
+            group: 'cards',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                const targetColId = evt.to.dataset.columnId;
+                const cardIds = Array.from(evt.to.querySelectorAll('.kanban-card'))
+                    .map(card => card.dataset.cardId);
+                
+                fetch('{% url "kanban:reorder_cards" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ 
+                        column_id: targetColId,
+                        card_ids: cardIds 
+                    })
+                });
+                
+                // Update counts
+                updateColumnCounts();
+            }
+        });
+    }
+
+    document.querySelectorAll('.column-cards').forEach(initCardSortable);
+
+    function updateColumnCounts() {
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            const count = col.querySelectorAll('.kanban-card').length;
+            col.querySelector('.column-count').textContent = count;
+        });
+    }
+
+    // 3. Inline Column Name Editing
+    document.querySelectorAll('.column-title').forEach(title => {
+        title.addEventListener('blur', function() {
+            const newName = this.innerText.trim();
+            const colId = this.closest('.kanban-column').dataset.columnId;
+            
+            if (newName && newName !== this.dataset.oldName) {
+                fetch(`/kanban/column/${colId}/update-name/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ name: newName })
+                });
+                this.dataset.oldName = newName;
+            }
+        });
+
+        title.addEventListener('focus', function() {
+            this.dataset.oldName = this.innerText.trim();
+            // Select all text
+            const range = document.createRange();
+            range.selectNodeContents(this);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        });
+
+        title.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur();
+            }
+        });
+    });
+
+    // 4. Quick Add Card
+    document.querySelectorAll('.btn-add-card').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const container = this.closest('.quick-add-card');
+            this.style.display = 'none';
+            container.querySelector('.quick-add-form').style.display = 'block';
+            container.querySelector('textarea').focus();
+        });
+    });
+
+    document.querySelectorAll('.cancel-quick-add').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const container = this.closest('.quick-add-card');
+            container.querySelector('.quick-add-form').style.display = 'none';
+            container.querySelector('.btn-add-card').style.display = 'flex';
+        });
+    });
+
+    document.querySelectorAll('.submit-quick-add').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const container = this.closest('.quick-add-card');
+            const textarea = container.querySelector('textarea');
+            const title = textarea.value.trim();
+            const columnId = this.closest('.kanban-column').dataset.columnId;
+
+            if (title) {
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('column', columnId);
+                formData.append('is_ajax', 'true');
+                formData.append('csrfmiddlewaretoken', csrfToken);
+
+                fetch('{% url "kanban:create_card" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Błąd: ' + JSON.stringify(data.errors || data.message));
+                    }
+                });
+            }
+        });
+    });
+
+    document.querySelectorAll('.quick-add-form textarea').forEach(textarea => {
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.closest('.quick-add-card').querySelector('.submit-quick-add').click();
+            }
+            if (e.key === 'Escape') {
+                this.closest('.quick-add-card').querySelector('.cancel-quick-add').click();
+            }
+        });
+    });
+
+    // 5. Modals and Column Addition
+    const detailModal = document.getElementById('card-detail-modal');
+    const addColumnBtn = document.getElementById('show-add-column');
+    const addColumnForm = document.querySelector('.add-column-form');
+    const addColumnInput = document.getElementById('new-column-name');
+
+    // Inline Add Column
+    if (addColumnBtn) {
+        addColumnBtn.addEventListener('click', () => {
+            addColumnBtn.style.display = 'none';
+            addColumnForm.style.display = 'block';
+            addColumnInput.focus();
+        });
+    }
+
+    document.getElementById('cancel-add-column').addEventListener('click', () => {
+        addColumnForm.style.display = 'none';
+        addColumnBtn.style.display = 'flex';
+        addColumnInput.value = '';
+    });
+
+    document.getElementById('submit-add-column').addEventListener('click', function() {
+        const name = addColumnInput.value.trim();
+        if (name) {
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('board_id', '{{ board.id }}');
+            formData.append('is_ajax', 'true');
+            formData.append('csrfmiddlewaretoken', csrfToken);
+
+            fetch('{% url "kanban:create_column" %}', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') location.reload();
+            });
+        }
+    });
+
+    // Handle Enter and Esc for Add Column
+    addColumnInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('submit-add-column').click();
+        if (e.key === 'Escape') document.getElementById('cancel-add-column').click();
+    });
+    
+    document.querySelectorAll('.close-modal-btn, .cancel-modal-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            detailModal.classList.remove('active');
+        });
+    });
+
+    // Close modal on overlay click
+    detailModal.addEventListener('click', function(e) {
+        if (e.target === detailModal) {
+            detailModal.classList.remove('active');
+        }
+    });
+
+    // 6. Card Details and Editing
+    let currentCardId = null;
+    let cardState = {};
+
+    document.querySelectorAll('.kanban-card').forEach(card => {
+        card.addEventListener('click', function() {
+            currentCardId = this.dataset.cardId;
+            fetch(`/kanban/card/${currentCardId}/`)
+                .then(res => res.json())
+                .then(data => {
+                    cardState = data;
+                    document.getElementById('detail-title-input').value = data.title;
+                    document.getElementById('detail-description-input').value = data.description || '';
+                    document.getElementById('detail-priority-input').value = data.priority;
+                    document.getElementById('detail-column').textContent = data.column_name;
+                    document.getElementById('detail-date').textContent = data.created_at;
+                    
+                    const completeBtn = document.querySelector('.toggle-complete-btn');
+                    completeBtn.textContent = data.is_completed ? 'Przywróć' : 'Oznacz jako gotowe';
+                    completeBtn.className = data.is_completed ? 'btn btn-secondary toggle-complete-btn' : 'btn btn-success toggle-complete-btn';
+
+                    detailModal.classList.add('active');
+                });
+        });
+    });
+
+    // Save card updates on change
+    function saveCardUpdate() {
+        if (!currentCardId) return;
+        const title = document.getElementById('detail-title-input').value.trim();
+        const description = document.getElementById('detail-description-input').value.trim();
+        const priority = document.getElementById('detail-priority-input').value;
+
+        if (!title) return;
+
+        fetch(`/kanban/card/${currentCardId}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ title, description, priority })
+        }).then(res => res.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  // Optional: Update DOM without reload for better UX
+                  const card = document.querySelector(`.kanban-card[data-card-id="${currentCardId}"]`);
+                  if (card) {
+                      card.querySelector('.card-title').textContent = title;
+                      // Update priority class
+                      card.className = card.className.replace(/priority-\w+/, `priority-${priority}`);
+                      const descPrev = card.querySelector('.card-desc-preview');
+                      if (descPrev) descPrev.textContent = description.substring(0, 80) + (description.length > 80 ? '...' : '');
+                  }
+              }
+          });
+    }
+
+    document.getElementById('detail-title-input').addEventListener('blur', saveCardUpdate);
+    document.getElementById('detail-description-input').addEventListener('blur', saveCardUpdate);
+    document.getElementById('detail-priority-input').addEventListener('change', saveCardUpdate);
+
+    // 7. Delete Column
+    document.querySelectorAll('.delete-column-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (confirm('Czy na pewno chcesz usunąć tę listę wraz ze wszystkimi kartami?')) {
+                const colId = this.closest('.kanban-column').dataset.columnId;
+                fetch(`/kanban/column/${colId}/delete/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                }).then(() => location.reload());
+            }
+        });
+    });
+
+    // 8. Delete Card (from modal)
+    document.querySelector('.delete-card-btn').addEventListener('click', function() {
+        if (currentCardId && confirm('Czy na pewno chcesz usunąć tę kartę?')) {
+            fetch(`/kanban/card/${currentCardId}/delete/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            }).then(() => location.reload());
+        }
+    });
+
+    // 9. Toggle Complete (from modal)
+    document.querySelector('.toggle-complete-btn').addEventListener('click', function() {
+        if (currentCardId) {
+            fetch(`/kanban/card/${currentCardId}/toggle/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            }).then(() => location.reload());
+        }
+    });
+
+    // 10. Filter priority
+    const filterSelect = document.getElementById('filter-priority');
+    filterSelect.addEventListener('change', function() {
+        const val = this.value;
+        document.querySelectorAll('.kanban-card').forEach(card => {
+            if (!val || card.classList.contains(`priority-${val}`)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+
+<style>
+/* Local button styles to match the premium look */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.btn-ghost {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+}
+.btn-ghost:hover {
+    color: var(--accent-red);
+}
+.btn-success {
+    background: #10b981;
+    color: white;
+    border: none;
+}
+.btn-success:hover {
+    background: #059669;
+}
+.btn-danger {
+    background: var(--accent-red);
+    color: white;
+    border: none;
+}
+.btn-danger:hover {
+    background: #9f1239;
+}
+</style>
+{% endblock %}

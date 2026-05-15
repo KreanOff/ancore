@@ -9,6 +9,8 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('tasks/', include('tasks.urls')),
     path('tickets/', include('tickets.urls')),
+    path('kanban/', include('kanban.urls')),
+    path('calendar/', include('planner.urls')),
 ]
 
 if settings.DEBUG:

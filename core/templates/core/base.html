@@ -23,10 +23,10 @@
             <a href="{% url 'tasks:tasks' %}" class="nav-link {% if 'tasks:tasks' in request.resolver_match.view_name %}active{% endif %}">
                 Zadania
             </a>
-            <a href="{% url 'tasks:kanban' %}" class="nav-link {% if request.resolver_match.view_name == 'tasks:kanban' %}active{% endif %}">
+            <a href="{% url 'kanban:index' %}" class="nav-link {% if request.resolver_match.app_name == 'kanban' %}active{% endif %}">
                 Tablica Kanban
             </a>
-            <a href="{% url 'tasks:calendar' %}" class="nav-link {% if request.resolver_match.view_name == 'tasks:calendar' %}active{% endif %}">
+            <a href="{% url 'planner:index' %}" class="nav-link {% if request.resolver_match.app_name == 'planner' %}active{% endif %}">
                 Kalendarz
             </a>
             <a href="{% url 'tickets:tickets' %}" class="nav-link {% if request.resolver_match.view_name == 'tickets:tickets' %}active{% endif %}">

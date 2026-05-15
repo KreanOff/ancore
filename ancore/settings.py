@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'tasks',
     'tickets',
     'dashboard',
+    'kanban',
+    'planner',
 ]
 
 MIDDLEWARE = [

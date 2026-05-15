@@ -5,7 +5,7 @@
 }
 
 html {
-    zoom: 0.9;
+    /* Zoom removed to fix rendering issues */
 }
 
 body {
