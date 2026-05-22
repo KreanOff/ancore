@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 import json
-from .models import KanbanBoard, KanbanColumn, KanbanCard
+import os
+from .models import KanbanBoard, KanbanColumn, KanbanCard, KanbanAttachment
 from .forms import KanbanCardForm
 
 @login_required
@@ -34,10 +35,7 @@ def index(request):
 def create_card(request):
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.POST.get('is_ajax')
     
-    # If priority is missing, default to medium
     data = request.POST.copy()
-    if not data.get('priority'):
-        data['priority'] = 'medium'
         
     form = KanbanCardForm(data)
     if form.is_valid():
@@ -95,8 +93,6 @@ def update_card(request, card_id):
             card.title = data['title']
         if 'description' in data:
             card.description = data['description']
-        if 'priority' in data:
-            card.priority = data['priority']
             
         card.save()
         return JsonResponse({'status': 'success'})
@@ -126,15 +122,25 @@ def move_card(request):
 @login_required
 def card_detail(request, card_id):
     card = get_object_or_404(KanbanCard, id=card_id, user=request.user)
+    attachments = card.attachments.order_by('uploaded_at')
     return JsonResponse({
         'id': card.id,
         'title': card.title,
         'description': card.description,
-        'priority': card.priority,
-        'priority_display': card.get_priority_display(),
         'column_name': card.column.name,
         'is_completed': card.is_completed,
         'created_at': card.created_at.strftime('%d.%m.%Y %H:%M'),
+        'attachments': [
+            {
+                'id': a.id,
+                'name': a.original_name,
+                'url': a.file.url,
+                'uploaded_at': a.uploaded_at.strftime('%d.%m.%Y'),
+                'is_image': a.is_image,
+                'extension': a.file_extension,
+            }
+            for a in attachments
+        ]
     })
 
 @login_required
@@ -205,4 +211,50 @@ def delete_card(request, card_id):
 def delete_column(request, column_id):
     column = get_object_or_404(KanbanColumn, id=column_id, board__user=request.user)
     column.delete()
+    return JsonResponse({'status': 'success'})
+
+
+@login_required
+@require_POST
+def upload_attachment(request, card_id):
+    card = get_object_or_404(KanbanCard, id=card_id, user=request.user)
+    uploaded_file = request.FILES.get('file')
+    if not uploaded_file:
+        return JsonResponse({'status': 'error', 'message': 'Brak pliku'}, status=400)
+
+    # 25 MB limit
+    if uploaded_file.size > 25 * 1024 * 1024:
+        return JsonResponse({'status': 'error', 'message': 'Plik jest za duży (max 25 MB)'}, status=400)
+
+    attachment = KanbanAttachment.objects.create(
+        card=card,
+        file=uploaded_file,
+        original_name=uploaded_file.name,
+        uploaded_by=request.user,
+    )
+    return JsonResponse({
+        'status': 'success',
+        'attachment': {
+            'id': attachment.id,
+            'name': attachment.original_name,
+            'url': attachment.file.url,
+            'uploaded_at': attachment.uploaded_at.strftime('%d.%m.%Y'),
+            'is_image': attachment.is_image,
+            'extension': attachment.file_extension,
+        }
+    })
+
+
+@login_required
+@require_POST
+def delete_attachment(request, attachment_id):
+    attachment = get_object_or_404(
+        KanbanAttachment,
+        id=attachment_id,
+        uploaded_by=request.user
+    )
+    # Also delete the physical file
+    if attachment.file and os.path.isfile(attachment.file.path):
+        os.remove(attachment.file.path)
+    attachment.delete()
     return JsonResponse({'status': 'success'})

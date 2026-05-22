@@ -15,19 +15,12 @@
 <div class="control-panel">
     <div class="panel-left" style="display: flex; align-items: center; gap: 1rem;">
         <div class="board-name-badge">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
             <span>{{ board.name }}</span>
-        </div>
-    </div>
-    <div class="panel-right" style="display: flex; align-items: center; gap: 0.75rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <label for="filter-priority" style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">Priorytet:</label>
-            <select id="filter-priority" style="height: 38px; padding: 0 0.75rem; border: 1px solid var(--border-color); border-radius: 0; background: white; font-size: 0.875rem; color: var(--text-main);">
-                <option value="">Wszystkie</option>
-                <option value="low">Niski</option>
-                <option value="medium">Średni</option>
-                <option value="high">Wysoki</option>
-            </select>
         </div>
     </div>
 </div>
@@ -43,45 +36,78 @@
                 </div>
                 <div class="column-actions">
                     <button class="btn-icon delete-column-btn" title="Usuń listę">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
                     </button>
                 </div>
             </div>
-            
+
             <div class="column-cards" data-column-id="{{ column.id }}">
                 {% for card in column.cards.all|dictsort:"order" %}
-                    <div class="kanban-card priority-{{ card.priority }}" data-card-id="{{ card.id }}">
-                        <div class="priority-indicator"></div>
-                        <h4 class="card-title">{{ card.title }}</h4>
-                        {% if card.description %}
-                        <p class="card-desc-preview">{{ card.description|truncatechars:80 }}</p>
-                        {% endif %}
-                        <div class="card-footer">
-                            <div class="card-meta">
-                                {% if card.description %}
-                                <div class="meta-item" title="Ma opis">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>
-                                </div>
-                                {% endif %}
-                                {% if card.is_completed %}
-                                <div class="meta-item" title="Ukończone" style="color: #10b981;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                </div>
-                                {% endif %}
+                <div class="kanban-card {% if card.is_completed %}completed{% endif %}" data-card-id="{{ card.id }}">
+                    <div class="card-checkbox-container">
+                        <input type="checkbox" class="card-checkbox" {% if card.is_completed %}checked{% endif %}
+                            title="Oznacz jako gotowe">
+                    </div>
+                    <h4 class="card-title">{{ card.title }}</h4>
+                    {% if card.description %}
+                    <p class="card-desc-preview">{{ card.description|truncatechars:80 }}</p>
+                    {% endif %}
+                    <div class="card-footer">
+                        <div class="card-meta">
+                            {% if card.description %}
+                            <div class="meta-item" title="Ma opis">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="21" y1="10" x2="3" y2="10"></line>
+                                    <line x1="21" y1="6" x2="3" y2="6"></line>
+                                    <line x1="21" y1="14" x2="3" y2="14"></line>
+                                    <line x1="21" y1="18" x2="3" y2="18"></line>
+                                </svg>
                             </div>
-                            <div class="card-user" title="{{ card.user.get_full_name }}">
-                                <div style="width: 22px; height: 22px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--text-muted);">
-                                    {{ card.user.first_name|slice:":1" }}{{ card.user.last_name|slice:":1" }}
-                                </div>
+                            {% endif %}
+                            {% if card.is_completed %}
+                            <div class="meta-item" title="Ukończone" style="color: #10b981;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
                             </div>
+                            {% endif %}
+                            {% with att_count=card.attachments.count %}
+                            {% if att_count > 0 %}
+                            <div class="meta-item meta-attach"
+                                title="{{ att_count }} załącznik{% if att_count == 1 %}{% elif att_count < 5 %}i{% else %}ów{% endif %}">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path
+                                        d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                                    </path>
+                                </svg>
+                                <span>{{ att_count }}</span>
+                            </div>
+                            {% endif %}
+                            {% endwith %}
                         </div>
                     </div>
+                </div>
                 {% endfor %}
             </div>
 
             <div class="quick-add-card">
                 <button class="btn-add-card">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                     Dodaj kartę
                 </button>
                 <div class="quick-add-form">
@@ -89,7 +115,11 @@
                     <div class="quick-add-actions">
                         <button class="btn btn-primary btn-sm submit-quick-add">Dodaj</button>
                         <button class="btn btn-ghost btn-sm cancel-quick-add">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -99,7 +129,11 @@
 
         <div class="add-column-wrapper">
             <button class="btn-add-column" id="show-add-column">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
                 Dodaj kolejną listę
             </button>
             <div class="add-column-form" style="display: none;">
@@ -107,7 +141,11 @@
                 <div class="add-column-actions">
                     <button class="btn btn-primary btn-sm" id="submit-add-column">Dodaj listę</button>
                     <button class="btn btn-ghost btn-sm" id="cancel-add-column">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -117,410 +155,883 @@
 
 <div id="card-detail-modal" class="modal-overlay kanban-modal-overlay">
     <div class="kanban-modal-content">
-        <div class="modal-header">
-            <input type="text" id="detail-title-input" class="detail-title-edit" placeholder="Tytuł karty">
-            <button class="close-modal-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="detail-section" style="margin-bottom: 2.5rem;">
-                <label>Opis</label>
-                <textarea id="detail-description-input" class="detail-desc-edit" placeholder="Dodaj bardziej szczegółowy opis..."></textarea>
+
+        <!-- Header — Ancore style: white with border, title + close -->
+        <div class="kmodal-header">
+            <div class="kmodal-header-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)"
+                    stroke-width="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                <span class="kmodal-header-eyebrow">Karta Kanban</span>
             </div>
-            
-            <div class="detail-meta-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
-                <div class="detail-item">
-                    <label>PRIORYTET</label>
-                    <select id="detail-priority-input" class="form-control" style="width: 100%; height: 42px; border: 1px solid var(--border-color); padding: 0 0.75rem; background: #f8fafc;">
-                        <option value="low">Niski</option>
-                        <option value="medium">Średni</option>
-                        <option value="high">Wysoki</option>
-                    </select>
+            <div class="kmodal-header-actions">
+                <div class="kmodal-save-indicator" id="autosave-status"></div>
+                <button type="button" class="btn btn-danger btn-sm delete-card-btn" style="border-radius: 0; padding: 0.35rem 0.75rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 700; border: none; height: 32px; background: var(--accent-red); color: white; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; transition: background 0.15s ease;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Usuń kartę</span>
+                </button>
+                <button class="kmodal-close-btn cancel-modal-btn" title="Zamknij (Esc)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Body: Notion-style clean full width document flow -->
+        <div class="kmodal-body">
+
+            <!-- Main content area (No boxy sidebar, fully seamless) -->
+            <div class="kmodal-main">
+                <!-- Title & Horizontal Meta Bar -->
+                <div class="kmodal-title-wrap">
+                    <input type="text" id="detail-title-input" class="kmodal-title-input"
+                        placeholder="Tytuł zadania...">
+                    
+                    <div class="kmodal-meta-bar">
+                        <div class="meta-item">
+                            <span class="meta-label">Lista</span>
+                            <span id="detail-column" class="status-indicator">—</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Utworzono</span>
+                            <span id="detail-date" class="date-val">—</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <label>LISTA</label>
-                    <div id="detail-column" class="detail-static-info" style="height: 42px; display: flex; align-items: center;"></div>
+
+                <!-- Description -->
+                <div class="kmodal-section">
+                    <div class="kmodal-section-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <line x1="21" y1="6" x2="3" y2="6"></line>
+                            <line x1="21" y1="10" x2="3" y2="10"></line>
+                            <line x1="21" y1="14" x2="3" y2="14"></line>
+                            <line x1="15" y1="18" x2="3" y2="18"></line>
+                        </svg>
+                        Opis
+                    </div>
+                    <textarea id="detail-description-input" class="kmodal-desc-input form-input"
+                        placeholder="Dodaj opis, notatki lub kroki do wykonania..."></textarea>
                 </div>
-                <div class="detail-item">
-                    <label>UTWORZONO</label>
-                    <div id="detail-date" class="detail-static-info" style="height: 42px; display: flex; align-items: center; color: var(--text-muted); font-weight: 500;"></div>
+
+                <!-- Attachments -->
+                <div class="kmodal-section" id="attachments-section">
+                    <div class="kmodal-section-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path
+                                d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                            </path>
+                        </svg>
+                        Załączniki
+                    </div>
+
+                    <!-- Drop zone -->
+                    <div class="attach-dropzone" id="attach-dropzone">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Przeciągnij plik lub</span>
+                        <label class="attach-browse-btn" for="attach-file-input">wybierz plik</label>
+                        <input type="file" id="attach-file-input" multiple style="display:none;">
+                        <span class="attach-size-hint">Maks. 25 MB na plik</span>
+                    </div>
+
+                    <!-- Upload progress -->
+                    <div class="attach-progress-wrap" id="attach-progress-wrap" style="display:none;">
+                        <div class="attach-progress-bar" id="attach-progress-bar"></div>
+                        <span class="attach-progress-label" id="attach-progress-label">Wgrywanie...</span>
+                    </div>
+
+                    <!-- Attachment list -->
+                    <div class="attach-list" id="attach-list"></div>
                 </div>
             </div>
 
-            <div class="detail-actions" style="border-top: 1px solid var(--border-color); padding-top: 2rem; display: flex; gap: 1rem; align-items: center;">
-                <button type="button" class="btn btn-danger delete-card-btn" style="height: 42px; padding: 0 1.5rem;">Usuń kartę</button>
-                <button type="button" class="btn btn-secondary toggle-complete-btn" style="height: 42px; padding: 0 1.5rem; margin-left: auto;">Oznacz jako gotowe</button>
-                <button type="button" class="cancel-modal-btn btn btn-primary" style="height: 42px; padding: 0 1.5rem;">Zamknij</button>
-            </div>
         </div>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const boardElement = document.getElementById('kanban-board');
-    const csrfToken = '{{ csrf_token }}';
+    document.addEventListener('DOMContentLoaded', function () {
+        const boardElement = document.getElementById('kanban-board');
+        const csrfToken = '{{ csrf_token }}';
 
-    // 1. Initialize Sortable for Columns (moving columns)
-    new Sortable(boardElement, {
-        animation: 150,
-        handle: '.column-header',
-        draggable: '.kanban-column',
-        ghostClass: 'sortable-ghost',
-        onEnd: function() {
-            const columnIds = Array.from(boardElement.querySelectorAll('.kanban-column'))
-                .map(col => col.dataset.columnId);
-            
-            fetch('{% url "kanban:reorder_columns" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({ column_ids: columnIds })
+        // 1. Initialize Sortable for Columns (moving columns)
+        new Sortable(boardElement, {
+            animation: 150,
+            handle: '.column-header',
+            draggable: '.kanban-column',
+            ghostClass: 'sortable-ghost',
+            onEnd: function () {
+                const columnIds = Array.from(boardElement.querySelectorAll('.kanban-column'))
+                    .map(col => col.dataset.columnId);
+
+                fetch('{% url "kanban:reorder_columns" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ column_ids: columnIds })
+                });
+            }
+        });
+
+        // 2. Initialize Sortable for Cards in each column
+        function initCardSortable(columnElement) {
+            new Sortable(columnElement, {
+                group: 'cards',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function (evt) {
+                    const targetColId = evt.to.dataset.columnId;
+                    const cardIds = Array.from(evt.to.querySelectorAll('.kanban-card'))
+                        .map(card => card.dataset.cardId);
+
+                    fetch('{% url "kanban:reorder_cards" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            column_id: targetColId,
+                            card_ids: cardIds
+                        })
+                    });
+
+                    // Update counts
+                    updateColumnCounts();
+                }
             });
         }
-    });
 
-    // 2. Initialize Sortable for Cards in each column
-    function initCardSortable(columnElement) {
-        new Sortable(columnElement, {
-            group: 'cards',
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            onEnd: function(evt) {
-                const targetColId = evt.to.dataset.columnId;
-                const cardIds = Array.from(evt.to.querySelectorAll('.kanban-card'))
-                    .map(card => card.dataset.cardId);
-                
-                fetch('{% url "kanban:reorder_cards" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify({ 
-                        column_id: targetColId,
-                        card_ids: cardIds 
+        document.querySelectorAll('.column-cards').forEach(initCardSortable);
+
+        function updateColumnCounts() {
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                const count = col.querySelectorAll('.kanban-card').length;
+                col.querySelector('.column-count').textContent = count;
+            });
+        }
+
+        // 3. Inline Column Name Editing
+        document.querySelectorAll('.column-title').forEach(title => {
+            title.addEventListener('blur', function () {
+                const newName = this.innerText.trim();
+                const colId = this.closest('.kanban-column').dataset.columnId;
+
+                if (newName && newName !== this.dataset.oldName) {
+                    fetch(`/kanban/column/${colId}/update-name/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ name: newName })
+                    });
+                    this.dataset.oldName = newName;
+                }
+            });
+
+            title.addEventListener('focus', function () {
+                this.dataset.oldName = this.innerText.trim();
+                // Select all text
+                const range = document.createRange();
+                range.selectNodeContents(this);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            });
+
+            title.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                }
+            });
+        });
+
+        // 4. Quick Add Card
+        document.querySelectorAll('.btn-add-card').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const container = this.closest('.quick-add-card');
+                this.style.display = 'none';
+                container.querySelector('.quick-add-form').style.display = 'block';
+                container.querySelector('textarea').focus();
+            });
+        });
+
+        document.querySelectorAll('.cancel-quick-add').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const container = this.closest('.quick-add-card');
+                container.querySelector('.quick-add-form').style.display = 'none';
+                container.querySelector('.btn-add-card').style.display = 'flex';
+            });
+        });
+
+        document.querySelectorAll('.submit-quick-add').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const container = this.closest('.quick-add-card');
+                const textarea = container.querySelector('textarea');
+                const title = textarea.value.trim();
+                const columnId = this.closest('.kanban-column').dataset.columnId;
+
+                if (title) {
+                    const formData = new FormData();
+                    formData.append('title', title);
+                    formData.append('column', columnId);
+                    formData.append('is_ajax', 'true');
+                    formData.append('csrfmiddlewaretoken', csrfToken);
+
+                    fetch('{% url "kanban:create_card" %}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
                     })
-                });
-                
-                // Update counts
-                updateColumnCounts();
-            }
-        });
-    }
-
-    document.querySelectorAll('.column-cards').forEach(initCardSortable);
-
-    function updateColumnCounts() {
-        document.querySelectorAll('.kanban-column').forEach(col => {
-            const count = col.querySelectorAll('.kanban-card').length;
-            col.querySelector('.column-count').textContent = count;
-        });
-    }
-
-    // 3. Inline Column Name Editing
-    document.querySelectorAll('.column-title').forEach(title => {
-        title.addEventListener('blur', function() {
-            const newName = this.innerText.trim();
-            const colId = this.closest('.kanban-column').dataset.columnId;
-            
-            if (newName && newName !== this.dataset.oldName) {
-                fetch(`/kanban/column/${colId}/update-name/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify({ name: newName })
-                });
-                this.dataset.oldName = newName;
-            }
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                location.reload();
+                            } else {
+                                alert('Błąd: ' + JSON.stringify(data.errors || data.message));
+                            }
+                        });
+                }
+            });
         });
 
-        title.addEventListener('focus', function() {
-            this.dataset.oldName = this.innerText.trim();
-            // Select all text
-            const range = document.createRange();
-            range.selectNodeContents(this);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
+        document.querySelectorAll('.quick-add-form textarea').forEach(textarea => {
+            textarea.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.closest('.quick-add-card').querySelector('.submit-quick-add').click();
+                }
+                if (e.key === 'Escape') {
+                    this.closest('.quick-add-card').querySelector('.cancel-quick-add').click();
+                }
+            });
         });
 
-        title.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.blur();
-            }
+        // 5. Modals and Column Addition
+        const detailModal = document.getElementById('card-detail-modal');
+        const addColumnBtn = document.getElementById('show-add-column');
+        const addColumnForm = document.querySelector('.add-column-form');
+        const addColumnInput = document.getElementById('new-column-name');
+
+        // Inline Add Column
+        if (addColumnBtn) {
+            addColumnBtn.addEventListener('click', () => {
+                addColumnBtn.style.display = 'none';
+                addColumnForm.style.display = 'block';
+                addColumnInput.focus();
+            });
+        }
+
+        document.getElementById('cancel-add-column').addEventListener('click', () => {
+            addColumnForm.style.display = 'none';
+            addColumnBtn.style.display = 'flex';
+            addColumnInput.value = '';
         });
-    });
 
-    // 4. Quick Add Card
-    document.querySelectorAll('.btn-add-card').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const container = this.closest('.quick-add-card');
-            this.style.display = 'none';
-            container.querySelector('.quick-add-form').style.display = 'block';
-            container.querySelector('textarea').focus();
-        });
-    });
-
-    document.querySelectorAll('.cancel-quick-add').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const container = this.closest('.quick-add-card');
-            container.querySelector('.quick-add-form').style.display = 'none';
-            container.querySelector('.btn-add-card').style.display = 'flex';
-        });
-    });
-
-    document.querySelectorAll('.submit-quick-add').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const container = this.closest('.quick-add-card');
-            const textarea = container.querySelector('textarea');
-            const title = textarea.value.trim();
-            const columnId = this.closest('.kanban-column').dataset.columnId;
-
-            if (title) {
+        document.getElementById('submit-add-column').addEventListener('click', function () {
+            const name = addColumnInput.value.trim();
+            if (name) {
                 const formData = new FormData();
-                formData.append('title', title);
-                formData.append('column', columnId);
+                formData.append('name', name);
+                formData.append('board_id', '{{ board.id }}');
                 formData.append('is_ajax', 'true');
                 formData.append('csrfmiddlewaretoken', csrfToken);
 
-                fetch('{% url "kanban:create_card" %}', {
+                fetch('{% url "kanban:create_column" %}', {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .then(res => res.json())
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') location.reload();
+                    });
+            }
+        });
+
+        // Handle Enter and Esc for Add Column
+        addColumnInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') document.getElementById('submit-add-column').click();
+            if (e.key === 'Escape') document.getElementById('cancel-add-column').click();
+        });
+
+        document.querySelectorAll('.close-modal-btn, .cancel-modal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                detailModal.classList.remove('active');
+            });
+        });
+
+        // Close modal on overlay click
+        detailModal.addEventListener('click', function (e) {
+            if (e.target === detailModal) {
+                detailModal.classList.remove('active');
+            }
+        });
+
+        // 6. Card Details and Editing
+        let currentCardId = null;
+        let cardState = {};
+
+        document.querySelectorAll('.kanban-card').forEach(card => {
+            card.addEventListener('click', function () {
+                currentCardId = this.dataset.cardId;
+                fetch(`/kanban/card/${currentCardId}/`)
+                    .then(res => res.json())
+                    .then(data => {
+                        cardState = data;
+                        document.getElementById('detail-title-input').value = data.title;
+                        document.getElementById('detail-description-input').value = data.description || '';
+                        document.getElementById('detail-column').textContent = data.column_name;
+                        document.getElementById('detail-date').textContent = data.created_at;
+
+                        // Render attachments
+                        renderAttachments(data.attachments || []);
+
+                        detailModal.classList.add('active');
+                    });
+            });
+        });
+
+        // Save card updates on change — with autosave indicator
+        const autosaveStatus = document.getElementById('autosave-status');
+        let saveTimer = null;
+
+        function showSaving() {
+            autosaveStatus.textContent = 'Zapisywanie...';
+            autosaveStatus.className = 'kmodal-save-indicator';
+        }
+        function showSaved() {
+            autosaveStatus.textContent = 'Zapisano';
+            autosaveStatus.className = 'kmodal-save-indicator saved';
+            setTimeout(() => { autosaveStatus.textContent = ''; autosaveStatus.className = 'kmodal-save-indicator'; }, 2500);
+        }
+
+        function saveCardUpdate() {
+            if (!currentCardId) return;
+            const title = document.getElementById('detail-title-input').value.trim();
+            const description = document.getElementById('detail-description-input').value.trim();
+
+            if (!title) return;
+            showSaving();
+
+            fetch(`/kanban/card/${currentCardId}/update/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ title, description })
+            }).then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        location.reload();
-                    } else {
-                        alert('Błąd: ' + JSON.stringify(data.errors || data.message));
+                        showSaved();
+                        const card = document.querySelector(`.kanban-card[data-card-id="${currentCardId}"]`);
+                        if (card) {
+                            card.querySelector('.card-title').textContent = title;
+                            const descPrev = card.querySelector('.card-desc-preview');
+                            if (descPrev) descPrev.textContent = description.substring(0, 80) + (description.length > 80 ? '...' : '');
+                        }
                     }
                 });
+        }
+
+        // Debounced auto-save on input (500ms after typing stops)
+        function debouncedSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveCardUpdate, 500);
+        }
+
+        document.getElementById('detail-title-input').addEventListener('input', debouncedSave);
+        document.getElementById('detail-description-input').addEventListener('input', debouncedSave);
+
+        // Escape key closes modal
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && detailModal.classList.contains('active')) {
+                saveCardUpdate();
+                detailModal.classList.remove('active');
             }
         });
-    });
 
-    document.querySelectorAll('.quick-add-form textarea').forEach(textarea => {
-        textarea.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.closest('.quick-add-card').querySelector('.submit-quick-add').click();
-            }
-            if (e.key === 'Escape') {
-                this.closest('.quick-add-card').querySelector('.cancel-quick-add').click();
-            }
-        });
-    });
+        // Modal close buttons already handle closing via the cancel-modal-btn class
 
-    // 5. Modals and Column Addition
-    const detailModal = document.getElementById('card-detail-modal');
-    const addColumnBtn = document.getElementById('show-add-column');
-    const addColumnForm = document.querySelector('.add-column-form');
-    const addColumnInput = document.getElementById('new-column-name');
 
-    // Inline Add Column
-    if (addColumnBtn) {
-        addColumnBtn.addEventListener('click', () => {
-            addColumnBtn.style.display = 'none';
-            addColumnForm.style.display = 'block';
-            addColumnInput.focus();
-        });
-    }
-
-    document.getElementById('cancel-add-column').addEventListener('click', () => {
-        addColumnForm.style.display = 'none';
-        addColumnBtn.style.display = 'flex';
-        addColumnInput.value = '';
-    });
-
-    document.getElementById('submit-add-column').addEventListener('click', function() {
-        const name = addColumnInput.value.trim();
-        if (name) {
-            const formData = new FormData();
-            formData.append('name', name);
-            formData.append('board_id', '{{ board.id }}');
-            formData.append('is_ajax', 'true');
-            formData.append('csrfmiddlewaretoken', csrfToken);
-
-            fetch('{% url "kanban:create_column" %}', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') location.reload();
+        // 7. Delete Column
+        document.querySelectorAll('.delete-column-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (confirm('Czy na pewno chcesz usunąć tę listę wraz ze wszystkimi kartami?')) {
+                    const colId = this.closest('.kanban-column').dataset.columnId;
+                    fetch(`/kanban/column/${colId}/delete/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken }
+                    }).then(() => location.reload());
+                }
             });
-        }
-    });
-
-    // Handle Enter and Esc for Add Column
-    addColumnInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') document.getElementById('submit-add-column').click();
-        if (e.key === 'Escape') document.getElementById('cancel-add-column').click();
-    });
-    
-    document.querySelectorAll('.close-modal-btn, .cancel-modal-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            detailModal.classList.remove('active');
         });
-    });
 
-    // Close modal on overlay click
-    detailModal.addEventListener('click', function(e) {
-        if (e.target === detailModal) {
-            detailModal.classList.remove('active');
-        }
-    });
-
-    // 6. Card Details and Editing
-    let currentCardId = null;
-    let cardState = {};
-
-    document.querySelectorAll('.kanban-card').forEach(card => {
-        card.addEventListener('click', function() {
-            currentCardId = this.dataset.cardId;
-            fetch(`/kanban/card/${currentCardId}/`)
-                .then(res => res.json())
-                .then(data => {
-                    cardState = data;
-                    document.getElementById('detail-title-input').value = data.title;
-                    document.getElementById('detail-description-input').value = data.description || '';
-                    document.getElementById('detail-priority-input').value = data.priority;
-                    document.getElementById('detail-column').textContent = data.column_name;
-                    document.getElementById('detail-date').textContent = data.created_at;
-                    
-                    const completeBtn = document.querySelector('.toggle-complete-btn');
-                    completeBtn.textContent = data.is_completed ? 'Przywróć' : 'Oznacz jako gotowe';
-                    completeBtn.className = data.is_completed ? 'btn btn-secondary toggle-complete-btn' : 'btn btn-success toggle-complete-btn';
-
-                    detailModal.classList.add('active');
-                });
-        });
-    });
-
-    // Save card updates on change
-    function saveCardUpdate() {
-        if (!currentCardId) return;
-        const title = document.getElementById('detail-title-input').value.trim();
-        const description = document.getElementById('detail-description-input').value.trim();
-        const priority = document.getElementById('detail-priority-input').value;
-
-        if (!title) return;
-
-        fetch(`/kanban/card/${currentCardId}/update/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({ title, description, priority })
-        }).then(res => res.json())
-          .then(data => {
-              if (data.status === 'success') {
-                  // Optional: Update DOM without reload for better UX
-                  const card = document.querySelector(`.kanban-card[data-card-id="${currentCardId}"]`);
-                  if (card) {
-                      card.querySelector('.card-title').textContent = title;
-                      // Update priority class
-                      card.className = card.className.replace(/priority-\w+/, `priority-${priority}`);
-                      const descPrev = card.querySelector('.card-desc-preview');
-                      if (descPrev) descPrev.textContent = description.substring(0, 80) + (description.length > 80 ? '...' : '');
-                  }
-              }
-          });
-    }
-
-    document.getElementById('detail-title-input').addEventListener('blur', saveCardUpdate);
-    document.getElementById('detail-description-input').addEventListener('blur', saveCardUpdate);
-    document.getElementById('detail-priority-input').addEventListener('change', saveCardUpdate);
-
-    // 7. Delete Column
-    document.querySelectorAll('.delete-column-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (confirm('Czy na pewno chcesz usunąć tę listę wraz ze wszystkimi kartami?')) {
-                const colId = this.closest('.kanban-column').dataset.columnId;
-                fetch(`/kanban/column/${colId}/delete/`, {
+        // 8. Delete Card (from modal)
+        document.querySelector('.delete-card-btn').addEventListener('click', function () {
+            if (currentCardId && confirm('Czy na pewno chcesz usunąć tę kartę?')) {
+                fetch(`/kanban/card/${currentCardId}/delete/`, {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrfToken }
                 }).then(() => location.reload());
             }
         });
-    });
 
-    // 8. Delete Card (from modal)
-    document.querySelector('.delete-card-btn').addEventListener('click', function() {
-        if (currentCardId && confirm('Czy na pewno chcesz usunąć tę kartę?')) {
-            fetch(`/kanban/card/${currentCardId}/delete/`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrfToken }
-            }).then(() => location.reload());
-        }
-    });
 
-    // 9. Toggle Complete (from modal)
-    document.querySelector('.toggle-complete-btn').addEventListener('click', function() {
-        if (currentCardId) {
-            fetch(`/kanban/card/${currentCardId}/toggle/`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrfToken }
-            }).then(() => location.reload());
-        }
-    });
+        // 10. Toggle Complete (from card checkbox)
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('card-checkbox')) {
+                const card = e.target.closest('.kanban-card');
+                const cardId = card.dataset.cardId;
 
-    // 10. Filter priority
-    const filterSelect = document.getElementById('filter-priority');
-    filterSelect.addEventListener('change', function() {
-        const val = this.value;
-        document.querySelectorAll('.kanban-card').forEach(card => {
-            if (!val || card.classList.contains(`priority-${val}`)) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
+                fetch(`/kanban/card/${cardId}/toggle/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                }).then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            card.classList.toggle('completed', data.is_completed);
+                        }
+                    });
             }
         });
+
+        // Prevent modal opening when clicking checkbox
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('card-checkbox') || e.target.classList.contains('card-checkbox-container')) {
+                e.stopPropagation();
+            }
+        }, true);
+
+        // =========================================================
+        // ATTACHMENTS
+        // =========================================================
+        const dropzone = document.getElementById('attach-dropzone');
+        const fileInput = document.getElementById('attach-file-input');
+        const progressWrap = document.getElementById('attach-progress-wrap');
+        const progressBar = document.getElementById('attach-progress-bar');
+        const progressLabel = document.getElementById('attach-progress-label');
+        const attachList = document.getElementById('attach-list');
+
+        // Extension → icon/color map aligned with Task details
+        const extConfig = {
+            pdf: { color: '#c2185b', bg: '#fce4ec' },
+            doc: { color: '#388e3c', bg: '#e8f5e8' },
+            docx: { color: '#388e3c', bg: '#e8f5e8' },
+            xls: { color: '#388e3c', bg: '#e8f5e8' },
+            xlsx: { color: '#388e3c', bg: '#e8f5e8' },
+            ppt: { color: '#388e3c', bg: '#e8f5e8' },
+            pptx: { color: '#388e3c', bg: '#e8f5e8' },
+            zip: { color: '#f57c00', bg: '#fff3e0' },
+            rar: { color: '#f57c00', bg: '#fff3e0' },
+            jpg: { color: '#1976d2', bg: '#e3f2fd' },
+            jpeg: { color: '#1976d2', bg: '#e3f2fd' },
+            png: { color: '#1976d2', bg: '#e3f2fd' },
+            gif: { color: '#1976d2', bg: '#e3f2fd' },
+            webp: { color: '#1976d2', bg: '#e3f2fd' },
+            svg: { color: '#1976d2', bg: '#e3f2fd' },
+            txt: { color: '#388e3c', bg: '#e8f5e8' },
+        };
+
+        function getExtConfig(ext) {
+            if (ext) ext = ext.replace('.', '').toLowerCase();
+            return extConfig[ext] || { color: '#616161', bg: '#f5f5f5' };
+        }
+
+        function getSvgIcon(ext) {
+            if (ext) ext = ext.replace('.', '').toLowerCase();
+            const images = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+            const pdfs = ['pdf'];
+            const docs = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'];
+            const archives = ['zip', 'rar', '7z', 'tar', 'gz'];
+            
+            if (images.includes(ext)) {
+                return `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                `;
+            }
+            if (pdfs.includes(ext)) {
+                return `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                `;
+            }
+            if (docs.includes(ext)) {
+                return `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                `;
+            }
+            if (archives.includes(ext)) {
+                return `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 8V21a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+                        <rect x="1" y="3" width="22" height="5" rx="1"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                `;
+            }
+            return `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                    <polyline points="13 2 13 9 20 9"></polyline>
+                </svg>
+            `;
+        }
+
+        function renderAttachments(attachments) {
+            attachList.innerHTML = '';
+            attachments.forEach(a => addAttachmentRow(a));
+        }
+
+        function addAttachmentRow(a) {
+            const cfg = getExtConfig(a.extension);
+            const row = document.createElement('div');
+            row.className = 'attach-item';
+            row.dataset.attachId = a.id;
+            row.innerHTML = `
+            <div class="attach-icon" style="background:${cfg.bg}; color:${cfg.color}">
+                ${getSvgIcon(a.extension)}
+            </div>
+            <div class="attach-info">
+                <a href="${a.url}" target="_blank" class="attach-name" title="${a.name}">${a.name}</a>
+                <span class="attach-date">${a.uploaded_at}</span>
+            </div>
+            <button class="attach-delete-btn" data-attach-id="${a.id}" title="Usuń załącznik">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+        `;
+            attachList.appendChild(row);
+
+            row.querySelector('.attach-delete-btn').addEventListener('click', function () {
+                const attId = this.dataset.attachId;
+                if (!confirm('Usunąć ten załącznik?')) return;
+                fetch(`/kanban/attachment/${attId}/delete/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                }).then(r => r.json()).then(data => {
+                    if (data.status === 'success') {
+                        row.remove();
+                    }
+                });
+            });
+        }
+
+        function uploadFiles(files) {
+            if (!currentCardId || !files.length) return;
+            const file = files[0]; // upload one by one
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('csrfmiddlewaretoken', csrfToken);
+
+            progressWrap.style.display = 'flex';
+            progressBar.style.width = '0%';
+            progressLabel.textContent = `Wgrywanie: ${file.name}`;
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `/kanban/card/${currentCardId}/upload-attachment/`);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            xhr.upload.addEventListener('progress', function (e) {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = pct + '%';
+                    progressLabel.textContent = `Wgrywanie: ${pct}%`;
+                }
+            });
+
+            xhr.addEventListener('load', function () {
+                progressWrap.style.display = 'none';
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.status === 'success') {
+                        addAttachmentRow(data.attachment);
+                        // If there are more files, upload next
+                        if (files.length > 1) uploadFiles(Array.from(files).slice(1));
+                    } else {
+                        alert('Błąd: ' + (data.message || 'Nieznany błąd'));
+                    }
+                } catch (err) {
+                    alert('Błąd serwera');
+                }
+            });
+
+            xhr.addEventListener('error', function () {
+                progressWrap.style.display = 'none';
+                alert('Błąd połączenia podczas wgrywania pliku.');
+            });
+
+            xhr.send(formData);
+        }
+
+        // File input change
+        fileInput.addEventListener('change', function () {
+            uploadFiles(Array.from(this.files));
+            this.value = '';
+        });
+
+        // Drag & drop
+        dropzone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            dropzone.classList.add('drag-over');
+        });
+        dropzone.addEventListener('dragleave', function () {
+            dropzone.classList.remove('drag-over');
+        });
+        dropzone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropzone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                uploadFiles(Array.from(e.dataTransfer.files));
+            }
+        });
+
     });
-});
 </script>
 
 <style>
-/* Local button styles to match the premium look */
-.btn-sm {
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-.btn-ghost {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-}
-.btn-ghost:hover {
-    color: var(--accent-red);
-}
-.btn-success {
-    background: #10b981;
-    color: white;
-    border: none;
-}
-.btn-success:hover {
-    background: #059669;
-}
-.btn-danger {
-    background: var(--accent-red);
-    color: white;
-    border: none;
-}
-.btn-danger:hover {
-    background: #9f1239;
-}
+    /* Local button styles to match the premium look */
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+        color: var(--accent-red);
+    }
+
+    .btn-success {
+        background: #10b981;
+        color: white;
+        border: none;
+    }
+
+    .btn-success:hover {
+        background: #059669;
+    }
+
+    .btn-danger {
+        background: var(--accent-red);
+        color: white;
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background: #9f1239;
+    }
+
+    /* ===== ATTACHMENTS ===== */
+    .attach-dropzone {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        border: 2px dashed var(--border-color);
+        background: #f8fafc;
+        cursor: pointer;
+        border-radius: 0;
+        transition: border-color 0.2s, background 0.2s;
+        flex-wrap: wrap;
+    }
+
+    .attach-dropzone:hover,
+    .attach-dropzone.drag-over {
+        border-color: var(--accent-red);
+        background: #fff5f5;
+    }
+
+    .attach-dropzone svg {
+        color: var(--text-muted);
+        flex-shrink: 0;
+    }
+
+    .attach-dropzone>span {
+        color: var(--text-muted);
+        font-size: 0.8375rem;
+    }
+
+    .attach-browse-btn {
+        color: var(--accent-red);
+        font-size: 0.8375rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .attach-size-hint {
+        color: var(--text-muted);
+        font-size: 0.72rem;
+        margin-left: auto;
+    }
+
+    .attach-progress-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 6px;
+        padding: 8px 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+    }
+
+    .attach-progress-bar {
+        height: 4px;
+        background: var(--accent-red);
+        transition: width 0.2s;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .attach-progress-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+
+    .attach-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 4px;
+    }
+
+    .attach-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-left: 3px solid transparent;
+        transition: border-color 0.15s, border-left-color 0.15s, background 0.15s;
+        border-radius: 0;
+    }
+
+    .attach-item:hover {
+        background: #f8fafc;
+        border-color: var(--border-color);
+        border-left-color: var(--accent-red);
+    }
+
+    .attach-icon {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0;
+    }
+
+    .attach-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .attach-name {
+        color: var(--text-main);
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        transition: color 0.15s;
+    }
+
+    .attach-name:hover {
+        color: var(--accent-red);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .attach-date {
+        color: var(--text-muted);
+        font-size: 0.72rem;
+        font-weight: 500;
+    }
+
+    .attach-delete-btn {
+        flex-shrink: 0;
+        background: transparent;
+        border: 1px solid transparent;
+        padding: 5px 7px;
+        color: var(--text-muted);
+        cursor: pointer;
+        border-radius: 0;
+        opacity: 0;
+        transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .attach-item:hover .attach-delete-btn {
+        opacity: 1;
+    }
+
+    .attach-delete-btn:hover {
+        color: var(--accent-red);
+        border-color: var(--accent-red);
+        background: #fff5f5;
+    }
+
+    /* Attachment badge on cards */
+    .meta-attach {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        color: var(--text-muted);
+    }
+
+    .meta-attach span {
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
 </style>
 {% endblock %}

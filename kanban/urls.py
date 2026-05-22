@@ -16,4 +16,6 @@ urlpatterns = [
     path('card/<int:card_id>/', views.card_detail, name='card_detail'),
     path('card/<int:card_id>/toggle/', views.toggle_card_complete, name='toggle_card_complete'),
     path('card/<int:card_id>/update/', views.update_card, name='update_card'),
+    path('card/<int:card_id>/upload-attachment/', views.upload_attachment, name='upload_attachment'),
+    path('attachment/<int:attachment_id>/delete/', views.delete_attachment, name='delete_attachment'),
 ]

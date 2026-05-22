@@ -113,11 +113,30 @@
     font-weight: 800;
 }
 
-.file-icon-mini.image { background-color: #e3f2fd; color: #1976d2; }
-.file-icon-mini.pdf { background-color: #fce4ec; color: #c2185b; }
-.file-icon-mini.document { background-color: #e8f5e8; color: #388e3c; }
-.file-icon-mini.archive { background-color: #fff3e0; color: #f57c00; }
-.file-icon-mini.default { background-color: #f5f5f5; color: #616161; }
+.file-icon-mini.image {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.file-icon-mini.pdf {
+    background-color: #fce4ec;
+    color: #c2185b;
+}
+
+.file-icon-mini.document {
+    background-color: #e8f5e8;
+    color: #388e3c;
+}
+
+.file-icon-mini.archive {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+.file-icon-mini.default {
+    background-color: #f5f5f5;
+    color: #616161;
+}
 
 .file-details {
     flex: 1;
@@ -345,31 +364,31 @@
     .drop-zone {
         padding: 1.5rem;
     }
-    
+
     .file-item {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
     }
-    
+
     .file-info {
         width: 100%;
     }
-    
+
     .file-remove {
         align-self: flex-end;
     }
-    
+
     .attachment-item {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
     }
-    
+
     .attachment-info {
         width: 100%;
     }
-    
+
     .attachment-actions {
         align-self: flex-end;
     }

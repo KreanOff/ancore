@@ -73,98 +73,113 @@
         </div>
 
         <div class="content-scroll-area">
-            <div class="view-task-layout">
-                <!-- Kolumna główna: Opis i Załączniki -->
-                <div class="main-column">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h2>Szczegóły zadania</h2>
+            <div class="task-details-full">
+                <!-- Header: Title & Meta Info -->
+                <div class="task-main-header">
+                    <h1 class="task-main-title">{{ task.title }}</h1>
+                    
+                    <div class="task-meta-bar">
+                        <div class="meta-item">
+                            <span class="meta-label">Status</span>
+                            <span class="status-indicator status-{{ task.status }}">
+                                {{ task.get_status_display }}
+                            </span>
                         </div>
-                        <div class="panel-content">
-                            <h1 class="task-main-title">{{ task.title }}</h1>
-                            <hr class="section-divider">
-                            <div class="task-description-section">
-                                <h3 class="section-title">Opis</h3>
-                                <div class="description-content">
-                                    {% if task.description %}
-                                        {{ task.description|linebreaks }}
-                                    {% else %}
-                                        <p class="empty-state">Brak opisu</p>
-                                    {% endif %}
-                                </div>
-                            </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Priorytet</span>
+                            <span class="badge badge-{{ task.priority }}">
+                                {{ task.get_priority_display }}
+                            </span>
                         </div>
-                    </div>
-
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h2>Załączniki</h2>
+                        <div class="meta-item">
+                            <span class="meta-label">Przypisano do</span>
+                            <span class="user-val">{{ task.user.get_full_name|default:task.user.username }}</span>
                         </div>
-                        <div class="panel-content" style="padding: 0;">
-                            {% if task.attachments.exists %}
-                            <div class="attachments-list">
-                                {% for attachment in task.attachments.all %}
-                                <div class="attachment-item">
-                                    <div class="attachment-info">
-                                        <div class="file-icon {{ attachment.get_type_class }}">
-                                            {{ attachment.get_type_label }}
-                                        </div>
-                                        <div class="attachment-details">
-                                            <a href="{{ attachment.file.url }}" class="attachment-name" target="_blank" title="{{ attachment.filename }}">{{ attachment.filename }}</a>
-                                            <div class="attachment-size">{{ attachment.get_formatted_size }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <div class="empty-attachments">
-                                <span>📎</span>
-                                <p>Brak załączników</p>
-                            </div>
-                            {% endif %}
+                        <div class="meta-item">
+                            <span class="meta-label">Utworzono</span>
+                            <span class="date-val">{{ task.created_at|date:"d.m.Y H:i" }}</span>
                         </div>
+                        {% if task.completion_date %}
+                        <div class="meta-item">
+                            <span class="meta-label">Zakończono</span>
+                            <span class="date-val">{{ task.completion_date|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
-                <!-- Kolumna boczna: Info -->
-                <aside class="info-sidebar">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h2>Informacje</h2>
-                        </div>
-                        <div class="panel-content">
-                            <div class="info-list">
-                                <div class="info-row">
-                                    <label>Status:</label>
-                                    <span class="status-indicator status-{{ task.status }}">
-                                        {{ task.get_status_display }}
-                                    </span>
-                                </div>
-                                <div class="info-row">
-                                    <label>Priorytet:</label>
-                                    <span class="badge badge-{{ task.priority }}">
-                                        {{ task.get_priority_display }}
-                                    </span>
-                                </div>
-                                <div class="info-row">
-                                    <label>Przypisano do:</label>
-                                    <span class="user-val">{{ task.user.get_full_name|default:task.user.username }}</span>
-                                </div>
-                                <div class="info-row">
-                                    <label>Data utworzenia:</label>
-                                    <span class="date-val">{{ task.created_at|date:"d.m.Y H:i" }}</span>
-                                </div>
-                                {% if task.completion_date %}
-                                <div class="info-row no-border">
-                                    <label>Zakończono:</label>
-                                    <span class="date-val">{{ task.completion_date|date:"d.m.Y H:i" }}</span>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
+                <!-- Description Section -->
+                <div class="task-section task-description-section">
+                    <h2 class="section-title">Opis zadania</h2>
+                    <div class="description-content">
+                        {% if task.description %}
+                            {{ task.description|linebreaks }}
+                        {% else %}
+                            <p class="empty-state">Brak opisu</p>
+                        {% endif %}
                     </div>
-                </aside>
+                </div>
+
+                <!-- Attachments Section -->
+                <div class="task-section task-attachments-section">
+                    <h2 class="section-title">Załączniki</h2>
+                    <div class="attachments-container">
+                        {% if task.attachments.exists %}
+                        <div class="attachments-grid">
+                            {% for attachment in task.attachments.all %}
+                            <div class="attachment-card" onclick="window.open('{{ attachment.file.url }}', '_blank')">
+                                <div class="attachment-info">
+                                    <div class="file-icon {{ attachment.get_type_class }}">
+                                        {% if attachment.get_type_class == 'image' %}
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                <polyline points="21 15 16 10 5 21"></polyline>
+                                            </svg>
+                                        {% elif attachment.get_type_class == 'pdf' %}
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                <polyline points="10 9 9 9 8 9"></polyline>
+                                            </svg>
+                                        {% elif attachment.get_type_class == 'document' %}
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            </svg>
+                                        {% elif attachment.get_type_class == 'archive' %}
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 8V21a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+                                                <rect x="1" y="3" width="22" height="5" rx="1"></rect>
+                                                <line x1="10" y1="12" x2="14" y2="12"></line>
+                                            </svg>
+                                        {% else %}
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                                <polyline points="13 2 13 9 20 9"></polyline>
+                                            </svg>
+                                        {% endif %}
+                                    </div>
+                                    <div class="attachment-details">
+                                        <a href="{{ attachment.file.url }}" class="attachment-name" target="_blank" title="{{ attachment.filename }}" onclick="event.stopPropagation()">{{ attachment.filename }}</a>
+                                        <div class="attachment-size">{{ attachment.get_formatted_size }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-attachments-inline">
+                            <span class="empty-icon">📎</span>
+                            <p>Brak załączników dla tego zadania</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -174,7 +189,7 @@
         <div class="nav-header">
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <h2 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-main);">Szybka nawigacja</h2>
-                <span style="font-size: 0.75rem; color: var(--text-muted); background: #f1f5f9; padding: 0.1rem 0.5rem; border-radius: 4px;">{{ all_tasks.count }}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); background: #f1f5f9; padding: 0.1rem 0.5rem; border-radius: 0;">{{ all_tasks.count }}</span>
             </div>
         </div>
         
@@ -303,22 +318,6 @@
     font-size: 0.9rem;
 }
 
-/* Content Scroll Area */
-.content-scroll-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1.5rem;
-}
-
-.view-task-layout {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 1.5rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-}
-
 /* Task Nav Items */
 .task-nav-item {
     display: flex;
@@ -340,11 +339,10 @@
     background: #f0f7ff;
 }
 
-/* Active indicator now on the left for right sidebar */
 .task-nav-item.active::after {
     content: '';
     position: absolute;
-    left: 0; /* Changed from right: 0 */
+    left: 0;
     top: 0;
     bottom: 0;
     width: 3px;
@@ -360,8 +358,7 @@
     display: block;
 }
 
-/* Priority Strips (Keep them on the left of the item or right?) */
-/* User likely wants them on the left of the text, currently they are absolute left: 0 */
+/* Priority Strips */
 .priority-strip {
     position: absolute;
     left: 0;
@@ -373,56 +370,103 @@
 .priority-medium { background-color: #f59e0b; }
 .priority-high { background-color: #ef4444; }
 
-/* Panels */
-.panel {
-    background: white;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    margin-bottom: 1.5rem;
+/* Content Scroll Area */
+.content-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    background: #ffffff; /* Clean white canvas */
 }
 
-.panel-header {
-    background: #fcfcfc;
-    padding: 0.75rem 1.25rem;
+/* Document layout: full screen/bleed */
+.task-details-full {
+    max-width: 100%;
+    margin: 0;
+    padding: 3rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+/* Title & Header Section */
+.task-main-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.task-main-title {
+    margin: 0;
+    font-size: 2.75rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+}
+
+/* Horizontal metadata bar */
+.task-meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
 }
 
-.panel-header h2 {
-    margin: 0;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
+.meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.meta-label {
+    font-size: 0.75rem;
+    font-weight: 700;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
-.panel-content {
-    padding: 1.5rem;
-}
-
-/* Task details */
-.task-main-title {
-    margin: 0;
-    font-size: 1.5rem;
+.meta-value, .user-val, .date-val {
+    font-size: 0.95rem;
+    font-weight: 600;
     color: var(--text-main);
-    line-height: 1.2;
 }
 
-.section-divider {
-    border: none;
-    border-top: 1px solid var(--border-color);
-    margin: 1.5rem 0;
+/* Task details section */
+.task-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
 }
 
 .section-title {
-    margin: 0 0 1rem 0;
-    font-size: 1rem;
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
     color: var(--text-main);
-    font-weight: 600;
+    letter-spacing: -0.01em;
+    position: relative;
+    padding-bottom: 0.625rem;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 32px;
+    height: 3px;
+    background: var(--accent-blue);
+    border-radius: 0;
 }
 
 .description-content {
-    line-height: 1.6;
-    color: #475569;
+    font-size: 1.0625rem;
+    line-height: 1.8;
+    color: #334155;
+    word-break: break-word;
+    max-width: 1000px;
 }
 
 .empty-state {
@@ -430,49 +474,63 @@
     font-style: italic;
 }
 
-/* Attachments */
-.attachments-list {
-    display: flex;
-    flex-direction: column;
-    padding: 0 1.5rem;
+/* Attachments Grid Styling */
+.attachments-container {
+    margin-top: 0.5rem;
 }
 
-.attachment-item {
+.attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.attachment-card {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 0;
+    padding: 1.25rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.875rem;
-    padding: 1rem 1.5rem;
+}
+
+.attachment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
     background: white;
-    border-bottom: 1px solid var(--border-color);
-    transition: all 0.2s ease;
 }
 
 .attachment-info {
     display: flex;
     align-items: center;
-    gap: 0.875rem;
-    flex: 1;
+    gap: 1rem;
+    width: 100%;
 }
 
 .attachment-details {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
 }
 
 .attachment-name {
     font-weight: 600;
     color: var(--text-main);
     font-size: 0.875rem;
-    max-width: 250px;
+    text-decoration: none;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    text-decoration: none;
+    display: block;
 }
 
 .attachment-name:hover {
-    color: var(--primary-color);
+    color: var(--accent-blue);
 }
 
 .attachment-size {
@@ -480,74 +538,48 @@
     font-size: 0.75rem;
 }
 
-.attachment-item:last-child {
-    border-bottom: none;
-}
-
-.attachment-item:hover {
-    background: #f8fafc;
-}
-
-.attachment-icon {
-    width: 36px;
-    height: 36px;
-    background: #f1f5f9;
+.file-icon {
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    border-radius: 0;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
 }
 
-.attachment-info a {
-    text-decoration: none;
-    color: var(--text-main);
-    font-weight: 600;
-    font-size: 0.875rem;
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+/* File Icon classes */
+.file-icon.image { background-color: #e3f2fd; color: #1976d2; }
+.file-icon.pdf { background-color: #fce4ec; color: #c2185b; }
+.file-icon.document { background-color: #e8f5e8; color: #388e3c; }
+.file-icon.archive { background-color: #fff3e0; color: #f57c00; }
+.file-icon.default { background-color: #f5f5f5; color: #616161; }
 
-.attachment-info span {
-    color: var(--text-muted);
-    font-size: 0.75rem;
-}
-
-.empty-attachments {
-    text-align: center;
-    padding: 3rem 1.5rem;
-    color: var(--text-muted);
-}
-
-/* Info Sidebar */
-.info-list {
+.empty-attachments-inline {
     display: flex;
     flex-direction: column;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 0.875rem 0;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.info-row.no-border {
-    border-bottom: none;
-}
-
-.info-row label {
-    font-weight: 500;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    background: #f8fafc;
+    border: 1px dashed var(--border-color);
+    border-radius: 0;
     color: var(--text-muted);
-    font-size: 0.875rem;
+    text-align: center;
+    gap: 0.75rem;
+    max-width: 600px;
 }
 
-.user-val, .date-val {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--text-main);
+.empty-attachments-inline .empty-icon {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
+.empty-attachments-inline p {
+    margin: 0;
+    font-size: 0.9rem;
 }
 
 /* Buttons and Badges */
@@ -602,15 +634,22 @@
 }
 
 /* Mobile adjustments */
-@media (max-width: 1200px) {
-    .view-task-layout {
-        grid-template-columns: 1fr;
-    }
-}
-
 @media (max-width: 992px) {
     .quick-nav-sidebar {
         display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .task-details-full {
+        padding: 2rem 1.5rem;
+        gap: 2rem;
+    }
+    .task-main-title {
+        font-size: 2rem;
+    }
+    .task-meta-bar {
+        gap: 1.5rem;
     }
 }
 </style>
