@@ -1,0 +1,112 @@
+/* Unified attachment icons (Bootstrap Icons) */
+.attachment-icon,
+.tasks-file-icon,
+.file-icon,
+.attach-icon,
+.file-icon-mini {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 0;
+}
+
+.attachment-icon i,
+.tasks-file-icon i,
+.file-icon i,
+.attach-icon i,
+.file-icon-mini i {
+    line-height: 1;
+}
+
+.attachment-icon--sm,
+.file-icon-mini {
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
+}
+
+.attachment-icon--md,
+.file-icon,
+.attach-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.125rem;
+}
+
+.attachment-icon--lg,
+.tasks-file-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+}
+
+.attachment-icon.image,
+.tasks-file-icon.image,
+.file-icon.image,
+.attach-icon.image,
+.file-icon-mini.image { background-color: #e3f2fd; color: #1976d2; }
+
+.attachment-icon.pdf,
+.tasks-file-icon.pdf,
+.file-icon.pdf,
+.attach-icon.pdf,
+.file-icon-mini.pdf { background-color: #fce4ec; color: #c2185b; }
+
+.attachment-icon.document,
+.tasks-file-icon.document,
+.file-icon.document,
+.attach-icon.document,
+.file-icon-mini.document { background-color: #e8f5e8; color: #388e3c; }
+
+.attachment-icon.archive,
+.tasks-file-icon.archive,
+.file-icon.archive,
+.attach-icon.archive,
+.file-icon-mini.archive { background-color: #fff3e0; color: #f57c00; }
+
+.attachment-icon.default,
+.tasks-file-icon.default,
+.file-icon.default,
+.attach-icon.default,
+.file-icon-mini.default { background-color: #f5f5f5; color: #616161; }
+
+.attachment-upload-icon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.attachment-upload-icon--sm {
+    font-size: 1.375rem;
+}
+
+.attachment-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.attachment-indicator i {
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.attachment-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+    line-height: 1;
+}
+
+.attachment-delete-btn i {
+    font-size: 0.8125rem;
+}

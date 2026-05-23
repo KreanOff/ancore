@@ -3,16 +3,18 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}Ancore | Panel Biznesowy{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {% include 'core/includes/bootstrap.html' %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <aside class="sidebar">
+    <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+    <aside class="sidebar" id="app-sidebar">
         <div class="sidebar-header">
             <div class="logo">ANCORE<span>.</span></div>
         </div>
@@ -23,8 +25,8 @@
             <a href="{% url 'tasks:tasks' %}" class="nav-link {% if 'tasks:tasks' in request.resolver_match.view_name %}active{% endif %}">
                 Zadania
             </a>
-            <a href="{% url 'kanban:index' %}" class="nav-link {% if request.resolver_match.app_name == 'kanban' %}active{% endif %}">
-                Tablica Kanban
+            <a href="{% url 'kanban:workspaces' %}" class="nav-link {% if request.resolver_match.app_name == 'kanban' %}active{% endif %}">
+                Tablice Kanban
             </a>
             <a href="{% url 'planner:index' %}" class="nav-link {% if request.resolver_match.app_name == 'planner' %}active{% endif %}">
                 Kalendarz
@@ -33,28 +35,33 @@
                 Zgłoszenia
             </a>
         </nav>
-        <div class="sidebar-footer" style="padding-bottom: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+        <div class="sidebar-footer">
             <a href="/admin/" class="nav-link">
                 Administracja
             </a>
-            <form action="{% url 'logout' %}" method="post" id="logout-form" style="display: none;">
+            <form action="{% url 'logout' %}" method="post" id="logout-form" class="u-hidden">
                 {% csrf_token %}
             </form>
-            <a href="#" class="nav-link" onclick="document.getElementById('logout-form').submit(); return false;" style="color: var(--accent-red);">
+            <a href="#" class="nav-link nav-link--danger" onclick="document.getElementById('logout-form').submit(); return false;">
                 Wyloguj się
             </a>
         </div>
     </aside>
 
     <main class="main-content">
-        <header class="top-bar" style="justify-content: space-between;">
+        <header class="top-bar">
             <div class="top-bar-left">
+                <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Otwórz menu" aria-controls="app-sidebar" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <path d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
                 {% block page_header %}{% endblock %}
             </div>
-            <div class="top-bar-search" style="flex: 1; max-width: 400px; margin: 0 2rem;">
-                <input type="text" id="global-search" placeholder="Szukaj..." style="width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 4px; background: white; font-size: 0.875rem;">
+            <div class="top-bar-search">
+                <input type="text" id="global-search" class="form-input" placeholder="Szukaj...">
             </div>
-            <div class="user-profile" style="font-size: 0.875rem; font-weight: 500; color: var(--text-muted);">
+            <div class="user-profile">
                 {% if user.is_authenticated %}
                     {{ user.first_name }} {{ user.last_name }}
                 {% else %}
@@ -67,7 +74,6 @@
         </div>
     </main>
 
-    <!-- Notifications Container -->
     {% if messages %}
     <div class="notifications-container">
         {% for message in messages %}
@@ -78,6 +84,8 @@
     </div>
     {% endif %}
 
+    <script src="{% static 'js/layout.js' %}"></script>
+    <script src="{% static 'js/attachment-icons.js' %}"></script>
     <script src="{% static 'js/modal.js' %}"></script>
     <script src="{% static 'js/tasks.js' %}"></script>
     <script src="{% static 'js/notifications.js' %}"></script>

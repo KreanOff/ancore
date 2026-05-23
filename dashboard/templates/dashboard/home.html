@@ -1,13 +1,155 @@
 {% extends 'core/base.html' %}
 
+{% block title %}Ancore | Panel Główny{% endblock %}
+
 {% block page_header %}
-<h1 class="page-title" style="margin-bottom: 0; font-size: 1.25rem;">Przegląd</h1>
+<h1 class="page-title page-title--compact">Panel Główny</h1>
 {% endblock %}
 
 {% block content %}
+<div class="dashboard-shell">
+    <section class="dashboard-hero" aria-labelledby="dashboard-title">
+        <div>
+            <p class="dashboard-eyebrow">{{ today|date:"l, d E Y" }}</p>
+            <h2 id="dashboard-title">Dzień dobry{% if user.first_name %}, {{ user.first_name }}{% endif %}</h2>
+            <p>Najważniejsze zadania, terminy i tablice w jednym miejscu.</p>
+        </div>
+        <div class="dashboard-hero-actions" aria-label="Szybkie akcje">
+            <a href="{% url 'tasks:create_task' %}" class="btn btn-primary">Nowe zadanie</a>
+            <a href="{% url 'planner:index' %}" class="btn btn-secondary">Kalendarz</a>
+        </div>
+    </section>
 
-<div class="dashboard-card">
-    <p>Witaj w Panelu Biznesowym Ancore. Ten interfejs został zaprojektowany do wydajnego zarządzania i profesjonalnego
-        nadzoru.</p>
+    <section class="dashboard-stats" aria-label="Podsumowanie">
+        <article class="dashboard-stat">
+            <span class="dashboard-stat__label">Otwarte zadania</span>
+            <strong>{{ stats.open_tasks }}</strong>
+            <span class="dashboard-stat__hint">Do obsłużenia</span>
+        </article>
+        <article class="dashboard-stat">
+            <span class="dashboard-stat__label">Zamknięte zadania</span>
+            <strong>{{ stats.closed_tasks }}</strong>
+            <span class="dashboard-stat__hint">{{ stats.completion_rate }}% ukończenia</span>
+        </article>
+        <article class="dashboard-stat">
+            <span class="dashboard-stat__label">Nadchodzące terminy</span>
+            <strong>{{ stats.upcoming_events }}</strong>
+            <span class="dashboard-stat__hint">Od dziś</span>
+        </article>
+        <article class="dashboard-stat">
+            <span class="dashboard-stat__label">Tablice Kanban</span>
+            <strong>{{ stats.active_boards }}</strong>
+            <span class="dashboard-stat__hint">Aktywne przestrzenie pracy</span>
+        </article>
+    </section>
+
+    <div class="dashboard-grid">
+        <section class="dashboard-panel dashboard-panel--large" aria-labelledby="tasks-heading">
+            <div class="dashboard-panel__header">
+                <div>
+                    <p class="dashboard-panel__kicker">Priorytety</p>
+                    <h3 id="tasks-heading">Ostatnie otwarte zadania</h3>
+                </div>
+                <a href="{% url 'tasks:tasks' %}" class="dashboard-link">Wszystkie</a>
+            </div>
+            <div class="dashboard-list">
+                {% for task in recent_tasks %}
+                    <a href="{% url 'tasks:view-task' task.task_id %}" class="dashboard-list-item">
+                        <span class="dashboard-list-item__main">
+                            <strong>{{ task.title }}</strong>
+                            <small>#{{ task.task_id }} · {{ task.get_status_display }}</small>
+                        </span>
+                        <span class="dashboard-badge dashboard-badge--{{ task.priority }}">{{ task.get_priority_display }}</span>
+                    </a>
+                {% empty %}
+                    <div class="dashboard-empty">Brak otwartych zadań.</div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="dashboard-panel" aria-labelledby="events-heading">
+            <div class="dashboard-panel__header">
+                <div>
+                    <p class="dashboard-panel__kicker">Kalendarz</p>
+                    <h3 id="events-heading">Najbliższe wydarzenia</h3>
+                </div>
+                <a href="{% url 'planner:index' %}" class="dashboard-link">Otwórz</a>
+            </div>
+            <div class="dashboard-timeline">
+                {% for event in upcoming_events %}
+                    <div class="dashboard-timeline-item dashboard-timeline-item--{{ event.color }}">
+                        <time datetime="{{ event.start|date:'c' }}">{{ event.start|date:"d M, H:i" }}</time>
+                        <strong>{{ event.title }}</strong>
+                        {% if event.description %}
+                            <small>{{ event.description|truncatechars:72 }}</small>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <div class="dashboard-empty">Brak nadchodzących wydarzeń.</div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="dashboard-panel" aria-labelledby="status-heading">
+            <div class="dashboard-panel__header">
+                <div>
+                    <p class="dashboard-panel__kicker">Zadania</p>
+                    <h3 id="status-heading">Statusy</h3>
+                </div>
+            </div>
+            <div class="dashboard-status-list">
+                {% for row in status_rows %}
+                    <div class="dashboard-status-row">
+                        <span>{{ row.label }}</span>
+                        <strong>{{ row.count }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="dashboard-panel dashboard-panel--large" aria-labelledby="kanban-heading">
+            <div class="dashboard-panel__header">
+                <div>
+                    <p class="dashboard-panel__kicker">Kanban</p>
+                    <h3 id="kanban-heading">Tablice z ruchem</h3>
+                </div>
+                <a href="{% url 'kanban:workspaces' %}" class="dashboard-link">Przestrzenie</a>
+            </div>
+            <div class="dashboard-board-grid">
+                {% for board in active_boards %}
+                    <a href="{% url 'kanban:index' %}?workspace_id={{ board.workspace_id }}&board_id={{ board.id }}" class="dashboard-board">
+                        <span class="dashboard-board__initial">{{ board.initial }}</span>
+                        <span>
+                            <strong>{{ board.name }}</strong>
+                            <small>{{ board.open_card_count }} otw. / {{ board.card_count }} kart</small>
+                        </span>
+                    </a>
+                {% empty %}
+                    <div class="dashboard-empty">Brak tablic Kanban.</div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="dashboard-panel" aria-labelledby="cards-heading">
+            <div class="dashboard-panel__header">
+                <div>
+                    <p class="dashboard-panel__kicker">Karty</p>
+                    <h3 id="cards-heading">Ostatnio aktualizowane</h3>
+                </div>
+            </div>
+            <div class="dashboard-list dashboard-list--compact">
+                {% for card in recent_cards %}
+                    <a href="{% url 'kanban:index' %}?workspace_id={{ card.column.board.workspace_id }}&board_id={{ card.column.board.id }}" class="dashboard-list-item">
+                        <span class="dashboard-list-item__main">
+                            <strong>{{ card.title }}</strong>
+                            <small>{{ card.column.board.name }} · {{ card.column.name }}</small>
+                        </span>
+                    </a>
+                {% empty %}
+                    <div class="dashboard-empty">Brak aktywnych kart.</div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}

@@ -1,12 +1,154 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block page_header %}
-<h1 class="page-title" style="margin-bottom: 0; font-size: 1.25rem;">Kalendarz</h1>
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+<script src="{% static 'js/calendar.js' %}" defer></script>
 {% endblock %}
 
-{% block content %}
+{% block page_header %}{% endblock %}
 
-<div class="dashboard-card">
-    <p>Planowanie i zarządzanie wydarzeniami dla platformy Ancore.</p>
+{% block page_container_class %}full-width{% endblock %}
+
+{% block content %}
+<div class="calendar-page">
+    <div class="tasks-control-panel calendar-toolbar">
+        <div class="panel-left">
+            <div class="calendar-nav">
+                <button type="button" class="btn btn-secondary calendar-nav-btn" id="cal-prev" aria-label="Poprzedni okres">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <button type="button" class="btn btn-secondary calendar-nav-btn" id="cal-today">Dziś</button>
+                <button type="button" class="btn btn-secondary calendar-nav-btn" id="cal-next" aria-label="Następny okres">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+            <h2 class="calendar-period-label" id="cal-period-label"></h2>
+        </div>
+        <div class="panel-right">
+            <div class="calendar-view-switch" role="tablist" aria-label="Widok kalendarza">
+                <button type="button" class="calendar-view-btn" data-view="year" role="tab">Rok</button>
+                <button type="button" class="calendar-view-btn is-active" data-view="month" role="tab" aria-selected="true">Miesiąc</button>
+                <button type="button" class="calendar-view-btn" data-view="week" role="tab">Tydzień</button>
+                <button type="button" class="calendar-view-btn" data-view="day" role="tab">Dzień</button>
+            </div>
+            <button type="button" class="btn btn-primary tasks-toolbar-btn" id="cal-add-event">+ Nowe wydarzenie</button>
+        </div>
+    </div>
+
+    <div class="calendar-body">
+        <div class="calendar-main">
+            <div class="calendar-weekdays" id="cal-weekdays-header" aria-hidden="true">
+                <span>Pon</span>
+                <span>Wto</span>
+                <span>Śro</span>
+                <span>Czw</span>
+                <span>Pią</span>
+                <span class="calendar-weekend">Sob</span>
+                <span class="calendar-weekend">Nie</span>
+            </div>
+
+            <div id="calendar-view-month" class="calendar-view calendar-view--month">
+                <div class="calendar-days" id="calendar-days-month" role="grid" aria-label="Widok miesięczny"></div>
+            </div>
+
+            <div id="calendar-view-week" class="calendar-view calendar-view--week u-hidden" role="grid" aria-label="Widok tygodniowy">
+                <div class="calendar-week-header" id="calendar-week-header"></div>
+                <div class="calendar-week-columns" id="calendar-week-columns"></div>
+            </div>
+
+            <div id="calendar-view-day" class="calendar-view calendar-view--day u-hidden" aria-label="Widok dzienny">
+                <div class="calendar-day-schedule" id="calendar-day-schedule"></div>
+            </div>
+
+            <div id="calendar-view-year" class="calendar-view calendar-view--year u-hidden" aria-label="Widok roczny">
+                <div class="calendar-year-grid" id="calendar-year-grid"></div>
+            </div>
+        </div>
+
+        <aside class="calendar-sidebar" aria-label="Lista wydarzeń">
+            <div class="calendar-sidebar-header">
+                <h3 class="calendar-sidebar-title">Wydarzenia</h3>
+                <p class="calendar-sidebar-subtitle" id="cal-events-subtitle"></p>
+            </div>
+            <ul class="calendar-events-list" id="calendar-events-list"></ul>
+        </aside>
+    </div>
 </div>
+
+<div id="event-dialog-overlay" class="kanban-card-overlay" aria-hidden="true">
+    <aside class="kanban-card-panel" role="dialog" aria-labelledby="event-dialog-title">
+        <div class="tasks-control-panel kanban-card-panel-header">
+            <div class="panel-left">
+                <span id="event-dialog-title" class="tasks-context-label">Nowe wydarzenie</span>
+            </div>
+            <div class="panel-right">
+                <button type="button" class="btn btn-danger btn-sm tasks-toolbar-btn u-hidden" id="event-delete-btn" title="Usuń wydarzenie">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Usuń
+                </button>
+                <button type="button" class="kmodal-close-btn cancel-event-btn" title="Zamknij (Esc)" aria-label="Zamknij">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <form id="event-form" class="card-detail-body" novalidate>
+            <input type="hidden" name="event_id" id="event-id">
+            <div class="form-group card-detail-field">
+                <label class="form-label" for="event-title">Tytuł</label>
+                <input type="text" id="event-title" name="title" class="form-input" required placeholder="Tytuł wydarzenia">
+            </div>
+            <div class="form-group card-detail-field">
+                <label class="form-label form-label--checkbox" for="event-all-day">
+                    <input type="checkbox" id="event-all-day" name="all_day" class="form-checkbox">
+                    Cały dzień
+                </label>
+            </div>
+            <div class="calendar-form-row">
+                <div class="form-group card-detail-field">
+                    <label class="form-label" for="event-start">Rozpoczęcie</label>
+                    <input type="datetime-local" id="event-start" name="start" class="form-input" required>
+                </div>
+                <div class="form-group card-detail-field">
+                    <label class="form-label" for="event-end">Zakończenie</label>
+                    <input type="datetime-local" id="event-end" name="end" class="form-input" required>
+                </div>
+            </div>
+            <div class="form-group card-detail-field">
+                <label class="form-label" for="event-color">Kolor</label>
+                <select id="event-color" name="color" class="form-input form-select">
+                    <option value="red">Czerwony</option>
+                    <option value="blue">Niebieski</option>
+                    <option value="green">Zielony</option>
+                    <option value="amber">Bursztynowy</option>
+                    <option value="slate">Szary</option>
+                </select>
+            </div>
+            <div class="kmodal-section">
+                <div class="kmodal-section-label">Opis</div>
+                <textarea id="event-description" name="description" class="form-input card-detail-desc" placeholder="Opis (opcjonalnie)"></textarea>
+            </div>
+            <p class="calendar-form-error u-hidden" id="event-form-error" role="alert"></p>
+        </form>
+
+        <div class="card-detail-footer">
+            <button type="button" class="tasks-btn-cancel cancel-event-btn">Anuluj</button>
+            <button type="submit" form="event-form" class="btn btn-primary" id="event-save-btn">Zapisz</button>
+        </div>
+    </aside>
+</div>
+
+{{ calendar_config|json_script:"calendar-config" }}
 {% endblock %}

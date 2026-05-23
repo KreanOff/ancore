@@ -5,231 +5,142 @@
 {% block page_container_class %}full-width{% endblock %}
 
 {% block content %}
-<div class="view-task-container">
-    <!-- Główny obszar widoku (Teraz po lewej) -->
-    <main class="main-view-area">
-        <div class="control-panel">
+<div class="tasks-page tasks-view-layout">
+
+    <main class="tasks-main">
+        <div class="tasks-control-panel">
             <div class="panel-left">
-                <a href="{% url 'tasks:tasks' %}" class="modal-back" style="text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <a href="{% url 'tasks:tasks' %}" class="tasks-back-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                    <span>Lista zadań</span>
+                    Lista zadań
                 </a>
-                <div class="panel-divider"></div>
+                <span class="tasks-panel-divider"></span>
                 <span class="task-id-badge">Zadanie #{{ task.task_id }}</span>
             </div>
             <div class="panel-right">
                 <div class="action-group">
-                    <a href="{% url 'tasks:edit_task' task.task_id %}" class="btn btn-danger btn-sm">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
+                    <a href="{% url 'tasks:edit_task' task.task_id %}" class="btn btn-danger btn-sm tasks-toolbar-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         Edytuj
                     </a>
                     {% if task.status != 'closed' %}
-                    <button type="button" class="btn btn-success btn-sm" onclick="updateTaskStatus(true)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
-                        Zamknij zadanie
+                    <button type="button" class="btn btn-success btn-sm tasks-toolbar-btn" onclick="updateTaskStatus(true)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        Zamknij
                     </button>
                     {% else %}
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="updateTaskStatus(false)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
-                            <polyline points="23 4 23 10 17 10"></polyline>
-                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                        </svg>
+                    <button type="button" class="btn btn-secondary btn-sm tasks-toolbar-btn" onclick="updateTaskStatus(false)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                         Otwórz ponownie
                     </button>
                     {% endif %}
                 </div>
-
-                <div class="panel-divider"></div>
-
-                <a href="{% url 'tasks:create_task' %}" class="btn btn-primary btn-sm">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Nowe zadanie
-                </a>
-
-                <div class="panel-divider"></div>
-
-                <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
+                <span class="tasks-panel-divider"></span>
+                <a href="{% url 'tasks:create_task' %}" class="btn btn-primary btn-sm tasks-toolbar-btn">+ Nowe</a>
+                <span class="tasks-panel-divider"></span>
+                <button type="button" class="btn btn-danger btn-sm tasks-toolbar-btn" onclick="confirmDelete()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     Usuń
                 </button>
             </div>
         </div>
 
-        <div class="content-scroll-area">
-            <div class="task-details-full">
-                <!-- Header: Title & Meta Info -->
-                <div class="task-main-header">
-                    <h1 class="task-main-title">{{ task.title }}</h1>
-                    
-                    <div class="task-meta-bar">
-                        <div class="meta-item">
-                            <span class="meta-label">Status</span>
-                            <span class="status-indicator status-{{ task.status }}">
-                                {{ task.get_status_display }}
-                            </span>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Priorytet</span>
-                            <span class="badge badge-{{ task.priority }}">
-                                {{ task.get_priority_display }}
-                            </span>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Przypisano do</span>
-                            <span class="user-val">{{ task.user.get_full_name|default:task.user.username }}</span>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Utworzono</span>
-                            <span class="date-val">{{ task.created_at|date:"d.m.Y H:i" }}</span>
-                        </div>
-                        {% if task.completion_date %}
-                        <div class="meta-item">
-                            <span class="meta-label">Zakończono</span>
-                            <span class="date-val">{{ task.completion_date|date:"d.m.Y H:i" }}</span>
-                        </div>
-                        {% endif %}
+        <div class="tasks-content-scroll">
+            <div class="tasks-view-card">
+                <h1 class="tasks-view-title">{{ task.title }}</h1>
+
+                <div class="tasks-view-meta">
+                    <div class="tasks-view-meta-item">
+                        <span class="tasks-view-meta-label">Status</span>
+                        <span class="tasks-view-meta-value status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
                     </div>
+                    <div class="tasks-view-meta-item">
+                        <span class="tasks-view-meta-label">Priorytet</span>
+                        <span class="badge badge-{{ task.priority }}">{{ task.get_priority_display }}</span>
+                    </div>
+                    <div class="tasks-view-meta-item">
+                        <span class="tasks-view-meta-label">Przypisano</span>
+                        <span class="tasks-view-meta-value">{{ task.user.get_full_name|default:task.user.username }}</span>
+                    </div>
+                    <div class="tasks-view-meta-item">
+                        <span class="tasks-view-meta-label">Utworzono</span>
+                        <span class="tasks-view-meta-value">{{ task.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    {% if task.completion_date %}
+                    <div class="tasks-view-meta-item">
+                        <span class="tasks-view-meta-label">Zakończono</span>
+                        <span class="tasks-view-meta-value">{{ task.completion_date|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- Description Section -->
-                <div class="task-section task-description-section">
-                    <h2 class="section-title">Opis zadania</h2>
-                    <div class="description-content">
+                <div class="tasks-section">
+                    <h2 class="tasks-section-title">Opis zadania</h2>
+                    <div class="tasks-description-box">
                         {% if task.description %}
                             {{ task.description|linebreaks }}
                         {% else %}
-                            <p class="empty-state">Brak opisu</p>
+                            <p class="tasks-description-empty">Brak opisu</p>
                         {% endif %}
                     </div>
                 </div>
 
-                <!-- Attachments Section -->
-                <div class="task-section task-attachments-section">
-                    <h2 class="section-title">Załączniki</h2>
-                    <div class="attachments-container">
-                        {% if task.attachments.exists %}
-                        <div class="attachments-grid">
-                            {% for attachment in task.attachments.all %}
-                            <div class="attachment-card" onclick="window.open('{{ attachment.file.url }}', '_blank')">
-                                <div class="attachment-info">
-                                    <div class="file-icon {{ attachment.get_type_class }}">
-                                        {% if attachment.get_type_class == 'image' %}
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                                <polyline points="21 15 16 10 5 21"></polyline>
-                                            </svg>
-                                        {% elif attachment.get_type_class == 'pdf' %}
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                                <polyline points="14 2 14 8 20 8"></polyline>
-                                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                                <polyline points="10 9 9 9 8 9"></polyline>
-                                            </svg>
-                                        {% elif attachment.get_type_class == 'document' %}
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                                <polyline points="14 2 14 8 20 8"></polyline>
-                                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                            </svg>
-                                        {% elif attachment.get_type_class == 'archive' %}
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M21 8V21a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
-                                                <rect x="1" y="3" width="22" height="5" rx="1"></rect>
-                                                <line x1="10" y1="12" x2="14" y2="12"></line>
-                                            </svg>
-                                        {% else %}
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                                                <polyline points="13 2 13 9 20 9"></polyline>
-                                            </svg>
-                                        {% endif %}
-                                    </div>
-                                    <div class="attachment-details">
-                                        <a href="{{ attachment.file.url }}" class="attachment-name" target="_blank" title="{{ attachment.filename }}" onclick="event.stopPropagation()">{{ attachment.filename }}</a>
-                                        <div class="attachment-size">{{ attachment.get_formatted_size }}</div>
-                                    </div>
+                <div class="tasks-section">
+                    <h2 class="tasks-section-title">Załączniki</h2>
+                    {% if task.attachments.exists %}
+                    <div class="tasks-attachments-grid">
+                        {% for attachment in task.attachments.all %}
+                        <a href="{{ attachment.file.url }}" target="_blank" rel="noopener"
+                           class="tasks-attachment-card is-link"
+                           title="{{ attachment.filename }}">
+                            <div class="tasks-attachment-info">
+                                {% include 'core/includes/attachment_icon.html' with type_class=attachment.get_type_class size='lg' %}
+                                <div class="tasks-attachment-details">
+                                    <span class="tasks-attachment-name">{{ attachment.filename }}</span>
+                                    <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
                                 </div>
                             </div>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <div class="empty-attachments-inline">
-                            <span class="empty-icon">📎</span>
-                            <p>Brak załączników dla tego zadania</p>
-                        </div>
-                        {% endif %}
+                        </a>
+                        {% endfor %}
                     </div>
+                    {% else %}
+                    <div class="tasks-empty-attachments">Brak załączników</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Prawy panel: Szybka nawigacja (Pełna wysokość) -->
-    <aside class="quick-nav-sidebar">
-        <div class="nav-header">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <h2 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-main);">Szybka nawigacja</h2>
-                <span style="font-size: 0.75rem; color: var(--text-muted); background: #f1f5f9; padding: 0.1rem 0.5rem; border-radius: 0;">{{ all_tasks.count }}</span>
-            </div>
+    <aside class="tasks-nav-sidebar">
+        <div class="tasks-nav-header">
+            <h2>Szybka nawigacja</h2>
+            <span class="tasks-nav-count">{{ all_tasks.count }}</span>
         </div>
-        
-        <div class="nav-search">
-            <div style="position: relative;">
-                <input type="text" id="task-search" placeholder="Szukaj zadania..." 
-                       style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.25rem; border: 1px solid var(--border-color); border-radius: 0; font-size: 0.875rem; background: #fff;">
-                <svg style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-            </div>
+        <div class="tasks-nav-search">
+            <svg class="tasks-nav-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="task-search" class="tasks-nav-search-input" placeholder="Szukaj zadania...">
         </div>
-
-        <div class="nav-list" id="nav-task-list">
+        <div class="tasks-nav-list" id="nav-task-list">
             {% for nav_task in all_tasks %}
-            <a href="{% url 'tasks:view-task' nav_task.task_id %}" 
-               class="task-nav-item {% if nav_task.task_id == task.task_id %}active{% endif %}"
+            <a href="{% url 'tasks:view-task' nav_task.task_id %}"
+               class="tasks-nav-item {% if nav_task.task_id == task.task_id %}active{% endif %}"
                data-title="{{ nav_task.title|lower }}"
                data-id="{{ nav_task.task_id }}">
-                
-                <div class="priority-strip priority-{{ nav_task.priority }}"></div>
-                
-                <div style="flex: 1; min-width: 0;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                        <span style="font-weight: 700; color: var(--text-muted); font-size: 0.75rem; font-family: monospace;">#{{ nav_task.task_id }}</span>
-                        <span class="task-nav-title">{{ nav_task.title }}</span>
+                <span class="tasks-priority-strip priority-{{ nav_task.priority }}"></span>
+                <div class="tasks-nav-item-body">
+                    <div class="tasks-nav-item-top">
+                        <span class="tasks-nav-item-id">#{{ nav_task.task_id }}</span>
+                        <span class="tasks-nav-title">{{ nav_task.title }}</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <span class="status-indicator status-{{ nav_task.status }}" style="font-size: 0.7rem; padding: 0.1rem 0.4rem; white-space: nowrap;">
-                            {{ nav_task.get_status_display }}
-                        </span>
-                    </div>
+                    <span class="status-indicator status-{{ nav_task.status }}">{{ nav_task.get_status_display }}</span>
                 </div>
-                
                 {% if nav_task.task_id == task.task_id %}
-                <div style="color: #2563eb; flex-shrink: 0;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </div>
+                <span class="tasks-nav-active-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </span>
                 {% endif %}
             </a>
             {% endfor %}
@@ -237,435 +148,15 @@
     </aside>
 </div>
 
-<style>
-/* Layout Container */
-.view-task-container {
-    display: flex;
-    height: calc(100vh - 64px); /* Wysokość bez górnego paska */
-    overflow: hidden;
-    background: #f8fafc;
-}
-
-/* Quick Nav Sidebar (Now on the Right) */
-.quick-nav-sidebar {
-    width: 320px;
-    background: white;
-    border-left: 1px solid var(--border-color); /* Changed from border-right */
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-}
-
-.nav-header {
-    padding: 1.25rem;
-    border-bottom: 1px solid var(--border-color);
-    background: #fcfcfc;
-}
-
-.nav-search {
-    padding: 0.75rem 1rem;
-    background: #fcfcfc;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.nav-list {
-    flex: 1;
-    overflow-y: auto;
-}
-
-/* Main View Area (Now on the Left) */
-.main-view-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-/* Control Panel */
-.control-panel {
-    display: flex;
-    justify-content: space-between;
-    align-items: stretch;
-    padding: 0.75rem 2rem;
-    background: #f8f9fa;
-    border-bottom: 1px solid var(--border-color);
-    height: 60px;
-    flex-shrink: 0;
-}
-
-.panel-left, .panel-right {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-}
-
-.action-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-
-.panel-divider {
-    width: 1px;
-    height: 24px;
-    background: var(--border-color);
-}
-
-.task-id-badge {
-    color: var(--text-muted);
-    font-weight: 700;
-    font-size: 0.9rem;
-}
-
-/* Task Nav Items */
-.task-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid #f1f5f9;
-    text-decoration: none;
-    color: var(--text-main);
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.task-nav-item:hover {
-    background: #f8fafc;
-}
-
-.task-nav-item.active {
-    background: #f0f7ff;
-}
-
-.task-nav-item.active::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: #2563eb;
-}
-
-.task-nav-title {
-    font-weight: 600;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-}
-
-/* Priority Strips */
-.priority-strip {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-}
-.priority-low { background-color: #10b981; }
-.priority-medium { background-color: #f59e0b; }
-.priority-high { background-color: #ef4444; }
-
-/* Content Scroll Area */
-.content-scroll-area {
-    flex: 1;
-    overflow-y: auto;
-    background: #ffffff; /* Clean white canvas */
-}
-
-/* Document layout: full screen/bleed */
-.task-details-full {
-    max-width: 100%;
-    margin: 0;
-    padding: 3rem 4rem;
-    display: flex;
-    flex-direction: column;
-    gap: 3rem;
-}
-
-/* Title & Header Section */
-.task-main-header {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.task-main-title {
-    margin: 0;
-    font-size: 2.75rem;
-    font-weight: 800;
-    color: var(--text-main);
-    line-height: 1.15;
-    letter-spacing: -0.03em;
-}
-
-/* Horizontal metadata bar */
-.task-meta-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3rem;
-    padding: 1.5rem 0;
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.meta-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-}
-
-.meta-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.meta-value, .user-val, .date-val {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-main);
-}
-
-/* Task details section */
-.task-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.section-title {
-    margin: 0;
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--text-main);
-    letter-spacing: -0.01em;
-    position: relative;
-    padding-bottom: 0.625rem;
-}
-
-.section-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 32px;
-    height: 3px;
-    background: var(--accent-blue);
-    border-radius: 0;
-}
-
-.description-content {
-    font-size: 1.0625rem;
-    line-height: 1.8;
-    color: #334155;
-    word-break: break-word;
-    max-width: 1000px;
-}
-
-.empty-state {
-    color: var(--text-muted);
-    font-style: italic;
-}
-
-/* Attachments Grid Styling */
-.attachments-container {
-    margin-top: 0.5rem;
-}
-
-.attachments-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
-}
-
-.attachment-card {
-    background: #f8fafc;
-    border: 1px solid var(--border-color);
-    border-radius: 0;
-    padding: 1.25rem;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-}
-
-.attachment-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.08);
-    border-color: #cbd5e1;
-    background: white;
-}
-
-.attachment-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    width: 100%;
-}
-
-.attachment-details {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-    flex: 1;
-}
-
-.attachment-name {
-    font-weight: 600;
-    color: var(--text-main);
-    font-size: 0.875rem;
-    text-decoration: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-}
-
-.attachment-name:hover {
-    color: var(--accent-blue);
-}
-
-.attachment-size {
-    color: var(--text-muted);
-    font-size: 0.75rem;
-}
-
-.file-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0;
-    font-size: 11px;
-    font-weight: 800;
-    flex-shrink: 0;
-}
-
-/* File Icon classes */
-.file-icon.image { background-color: #e3f2fd; color: #1976d2; }
-.file-icon.pdf { background-color: #fce4ec; color: #c2185b; }
-.file-icon.document { background-color: #e8f5e8; color: #388e3c; }
-.file-icon.archive { background-color: #fff3e0; color: #f57c00; }
-.file-icon.default { background-color: #f5f5f5; color: #616161; }
-
-.empty-attachments-inline {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1.5rem;
-    background: #f8fafc;
-    border: 1px dashed var(--border-color);
-    border-radius: 0;
-    color: var(--text-muted);
-    text-align: center;
-    gap: 0.75rem;
-    max-width: 600px;
-}
-
-.empty-attachments-inline .empty-icon {
-    font-size: 2rem;
-    opacity: 0.5;
-}
-
-.empty-attachments-inline p {
-    margin: 0;
-    font-size: 0.9rem;
-}
-
-/* Buttons and Badges */
-.btn-sm {
-    padding: 0.4rem 1.25rem;
-    font-size: 0.875rem;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    border-radius: 0;
-    font-weight: 600;
-}
-
-.btn-outline {
-    background: white;
-    border: 1px solid var(--border-color);
-    color: var(--text-main);
-}
-
-.btn-outline:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-}
-
-.btn-success {
-    background-color: #059669;
-    color: white;
-}
-
-.btn-success:hover {
-    background-color: #047857;
-}
-
-.btn-secondary {
-    background-color: #64748b;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background-color: #475569;
-}
-
-/* Scrollbars */
-.nav-list::-webkit-scrollbar, .content-scroll-area::-webkit-scrollbar {
-    width: 6px;
-}
-.nav-list::-webkit-scrollbar-track, .content-scroll-area::-webkit-scrollbar-track {
-    background: transparent;
-}
-.nav-list::-webkit-scrollbar-thumb, .content-scroll-area::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-}
-
-/* Mobile adjustments */
-@media (max-width: 992px) {
-    .quick-nav-sidebar {
-        display: none;
-    }
-}
-
-@media (max-width: 768px) {
-    .task-details-full {
-        padding: 2rem 1.5rem;
-        gap: 2rem;
-    }
-    .task-main-title {
-        font-size: 2rem;
-    }
-    .task-meta-bar {
-        gap: 1.5rem;
-    }
-}
-</style>
-
 <script>
 function updateTaskStatus(isCompleted) {
     const statusText = isCompleted ? 'zamknąć' : 'otworzyć ponownie';
-    const confirmBtnText = isCompleted ? 'Zamknij' : 'Otwórz ponownie';
-    const confirmClass = isCompleted ? 'btn-success' : 'btn-primary';
-
     window.showConfirmModal({
-        title: isCompleted ? 'Zamknij zadanie' : 'Otwórz ponownie zadanie',
+        title: isCompleted ? 'Zamknij zadanie' : 'Otwórz ponownie',
         message: `Czy na pewno chcesz ${statusText} to zadanie?`,
-        confirmText: confirmBtnText,
+        confirmText: isCompleted ? 'Zamknij' : 'Otwórz ponownie',
         cancelText: 'Anuluj',
-        confirmClass: confirmClass,
+        confirmClass: isCompleted ? 'btn-success' : 'btn-secondary',
         onConfirm: () => {
             fetch("{% url 'tasks:update_task_status' task.task_id %}", {
                 method: 'POST',
@@ -675,18 +166,12 @@ function updateTaskStatus(isCompleted) {
                 },
                 body: JSON.stringify({ is_completed: isCompleted })
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
-                if (data.status === 'success') {
-                    window.location.reload();
-                } else {
-                    alert('Błąd podczas aktualizacji statusu: ' + (data.message || 'Nieznany błąd'));
-                }
+                if (data.status === 'success') window.location.reload();
+                else alert('Błąd: ' + (data.message || 'Nieznany błąd'));
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Błąd połączenia z serwerem.');
-            });
+            .catch(() => alert('Błąd połączenia z serwerem.'));
         }
     });
 }
@@ -706,47 +191,28 @@ function confirmDelete() {
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = "{% url 'tasks:tasks' %}";
-                } else {
-                    alert('Błąd podczas usuwania zadania.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Błąd połączenia z serwerem.');
-            });
+            .then(r => { if (r.ok) window.location.href = "{% url 'tasks:tasks' %}"; else alert('Błąd usuwania.'); })
+            .catch(() => alert('Błąd połączenia.'));
         }
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Scroll active item into view
-    const activeNavItem = document.querySelector('.task-nav-item.active');
-    if (activeNavItem) {
-        activeNavItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+document.addEventListener('DOMContentLoaded', function () {
+    const activeNavItem = document.querySelector('.tasks-nav-item.active');
+    if (activeNavItem) activeNavItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    // Task Search Filtering
     const searchInput = document.getElementById('task-search');
-    const navItems = document.querySelectorAll('.task-nav-item');
-
+    const navItems = document.querySelectorAll('.tasks-nav-item');
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', function () {
             const query = this.value.toLowerCase();
             navItems.forEach(item => {
-                const title = item.getAttribute('data-title');
-                const id = item.getAttribute('data-id');
-                if (title.includes(query) || id.includes(query)) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
+                const title = item.getAttribute('data-title') || '';
+                const id = item.getAttribute('data-id') || '';
+                item.style.display = (title.includes(query) || id.includes(query)) ? 'flex' : 'none';
             });
         });
     }
 });
 </script>
 {% endblock %}
-

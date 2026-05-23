@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{% block title %}Ancore{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    {% include 'core/includes/bootstrap.html' %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="logo">ANCORE<span>.</span></div>
+            <p class="auth-subtitle">{% block auth_subtitle %}{% endblock %}</p>
+        </div>
+        {% block auth_content %}{% endblock %}
+    </div>
+
+    {% if messages %}
+    <div class="notifications-container">
+        {% for message in messages %}
+        <div class="notification {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <script src="{% static 'js/notifications.js' %}"></script>
+</body>
+</html>

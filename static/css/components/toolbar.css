@@ -1,0 +1,212 @@
+/* Shared toolbar, filters, sections — used across Ancore modules */
+
+.page-container.full-width:has(.app-page),
+.page-container.full-width:has(.tasks-page),
+.page-container.full-width:has(.kanban-page),
+.page-container.full-width:has(.kanban-workspaces-page),
+.page-container.full-width:has(.calendar-page) {
+    min-height: calc(100dvh - var(--topbar-height));
+    height: calc(100dvh - var(--topbar-height));
+    overflow: hidden;
+    background: var(--bg-main);
+}
+
+.app-page,
+.tasks-page,
+.tasks-view-layout,
+.kanban-workspaces-page {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.control-panel,
+.tasks-control-panel,
+.tasks-page .control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 2rem;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--border-color);
+    height: var(--toolbar-height);
+    flex-shrink: 0;
+    box-sizing: border-box;
+    gap: 1rem;
+}
+
+.control-panel .panel-left,
+.control-panel .panel-right,
+.tasks-control-panel .panel-left,
+.tasks-control-panel .panel-right,
+.tasks-page .panel-left,
+.tasks-page .panel-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.panel-divider,
+.tasks-panel-divider,
+.tasks-page .panel-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+    flex-shrink: 0;
+}
+
+.back-link,
+.tasks-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.back-link:hover,
+.tasks-back-link:hover {
+    color: var(--text-main);
+}
+
+.context-label,
+.tasks-context-label {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.selection-badge,
+.tasks-selection-badge {
+    display: flex;
+    align-items: center;
+    height: var(--control-height);
+    padding: 0 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.selection-actions,
+.tasks-selection-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.filter-group,
+.tasks-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-label,
+.tasks-filter-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.filter-select,
+.tasks-filter-select,
+.form-select {
+    height: var(--control-height);
+    padding: 0 2rem 0 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    font-size: var(--font-size-base);
+    color: var(--text-main);
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    font-family: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+}
+
+.filter-select:focus,
+.tasks-filter-select:focus,
+.form-select:focus {
+    outline: none;
+    border-color: var(--accent-red);
+}
+
+.section-title,
+.tasks-section-title,
+.workspaces-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent-red);
+    width: fit-content;
+}
+
+.workspaces-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.section-panel,
+.tasks-section-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 1.25rem;
+}
+
+.error-banner,
+.tasks-error-banner {
+    background: #fff5f7;
+    border: 1px solid rgba(190, 18, 60, 0.25);
+    color: #9f1239;
+    padding: 1rem 1.25rem;
+    font-size: var(--font-size-base);
+}
+
+.error-banner ul,
+.tasks-error-banner ul {
+    margin: 0.5rem 0 0 1.25rem;
+    padding: 0;
+}
+
+.page-title--compact {
+    margin-bottom: 0;
+    font-size: 1.25rem;
+}
+
+.u-hidden,
+.is-hidden {
+    display: none;
+}
+
+.u-inline-form {
+    display: inline;
+}
+
+@media (max-width: 1024px) {
+    .control-panel,
+    .tasks-control-panel,
+    .tasks-page .control-panel {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+}

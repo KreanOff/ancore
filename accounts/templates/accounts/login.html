@@ -1,218 +1,30 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ancore | Logowanie</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <style>
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f1f5f9;
-            height: 100vh;
-            margin: 0;
-        }
-        .login-card {
-            background: white;
-            padding: 3rem;
-            width: 100%;
-            max-width: 440px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        .login-header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-        }
-        .login-header .logo {
-            color: #0f172a;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-        .login-header .logo span {
-            color: #be123c;
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #cbd5e1;
-            font-size: 1rem;
-            transition: border-color 0.2s;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #2563eb;
-        }
-        .btn-login {
-            width: 100%;
-            padding: 0.75rem;
-            background-color: #0f172a;
-            color: white;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-top: 1rem;
-        }
-        .btn-login:hover {
-            background-color: #1e293b;
-        }
-        .alert {
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            font-size: 0.875rem;
-            border-radius: 4px;
-        }
-        .alert-success {
-            background-color: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-        .alert-error {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
+{% extends 'accounts/auth_base.html' %}
 
-        /* Fixed Notifications */
-        .notifications-container {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            pointer-events: none;
-        }
+{% block title %}Ancore | Logowanie{% endblock %}
+{% block auth_subtitle %}Zaloguj się na swoje konto{% endblock %}
 
-        .notification {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            padding: 1rem 1.5rem;
-            margin-bottom: 0.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            min-width: 300px;
-            max-width: 500px;
-            pointer-events: auto;
-            animation: slideDown 0.3s ease-out;
-        }
+{% block auth_content %}
+<form method="post">
+    {% csrf_token %}
 
-        .notification.success {
-            background: #ecfdf5;
-            border-color: #a7f3d0;
-            color: #059669;
-        }
-
-        .notification.error {
-            background: #fef2f2;
-            border-color: #fecaca;
-            color: #dc2626;
-        }
-
-        .notification.warning {
-            background: #fffbeb;
-            border-color: #fed7aa;
-            color: #ea580c;
-        }
-
-        .notification.info {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #2563eb;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-            }
-            to {
-                opacity: 0;
-            }
-        }
-
-        .notification.hiding {
-            animation: fadeOut 0.3s ease-out forwards;
-        }
-
-        @media (max-width: 768px) {
-            .notification {
-                min-width: 250px;
-                max-width: 90vw;
-                margin: 0 10px 0.5rem 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="login-card">
-        <div class="login-header">
-            <div class="logo">ANCORE<span>.</span></div>
-            <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">Zaloguj się na swoje konto</p>
-        </div>
-
-        <form method="post">
-            {% csrf_token %}
-            
-            {% if form.errors %}
-                <div class="alert alert-error">
-                    Nieprawidłowy email lub hasło.
-                </div>
-            {% endif %}
-
-            <div class="form-group">
-                <label for="email">Adres Email</label>
-                <input type="email" name="username" id="email" required autofocus>
-            </div>
-            <div class="form-group">
-                <label for="password">Hasło</label>
-                <input type="password" name="password" id="password" required>
-            </div>
-            <button type="submit" class="btn-login">ZALOGUJ SIĘ</button>
-        </form>
-
-        <div class="footer-link" style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: #64748b;">
-            Nie masz konta? <a href="{% url 'register' %}" style="color: #2563eb; text-decoration: none; font-weight: 600;">Zarejestruj się</a>
-        </div>
-    </div>
-
-    <!-- Notifications Container -->
-    {% if messages %}
-    <div class="notifications-container">
-        {% for message in messages %}
-        <div class="notification {{ message.tags }}">
-            {{ message }}
-        </div>
-        {% endfor %}
+    {% if form.errors %}
+    <div class="alert alert-error">
+        Nieprawidłowy email lub hasło.
     </div>
     {% endif %}
 
-    <script src="{% static 'js/notifications.js' %}"></script>
-</body>
-</html>
+    <div class="form-group">
+        <label class="form-label" for="email">Adres Email</label>
+        <input type="email" name="username" id="email" class="form-input" required autofocus>
+    </div>
+    <div class="form-group">
+        <label class="form-label" for="password">Hasło</label>
+        <input type="password" name="password" id="password" class="form-input" required>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Zaloguj się</button>
+</form>
+
+<div class="auth-footer">
+    Nie masz konta? <a href="{% url 'register' %}">Zarejestruj się</a>
+</div>
+{% endblock %}

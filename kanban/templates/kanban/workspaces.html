@@ -1,0 +1,165 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Przestrzenie robocze | Ancore{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block content %}
+<div class="kanban-workspaces-page">
+    <div class="tasks-control-panel">
+        <div class="panel-left">
+            <span class="tasks-context-label">Tablice Kanban</span>
+        </div>
+    </div>
+
+    <div class="workspaces-scroll">
+        <div class="workspaces-dashboard">
+
+            {% if recent_boards %}
+            <section class="workspaces-section">
+                <h2 class="workspaces-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Ostatnio przeglądane
+                </h2>
+                <div class="workspaces-recent-grid">
+                    {% for board in recent_boards %}
+                    <a href="{% url 'kanban:index' %}?workspace_id={{ board.workspace_id }}&board_id={{ board.id }}"
+                       class="board-card" title="{{ board.name }}">
+                        <div class="board-card-bg" style="background: {{ board.background_style }};"></div>
+                        <div class="board-card-footer">{{ board.name }}</div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <section class="workspaces-section">
+                <h2 class="workspaces-section-title">Twoje przestrzenie robocze</h2>
+
+                {% for workspace in workspaces %}
+                <div class="workspace-block">
+                    <div class="workspace-header">
+                        <div class="workspace-header-left">
+                            <div class="workspace-avatar workspace-avatar--{% cycle 'green' 'blue' 'orange' 'purple' 'red' %}">
+                                {{ workspace.name|first|upper }}
+                            </div>
+                            <h3 class="workspace-name">{{ workspace.name }}</h3>
+                        </div>
+                        <nav class="workspace-nav" aria-label="Nawigacja przestrzeni">
+                            <span class="workspace-nav-link is-active">Tablice</span>
+                        </nav>
+                    </div>
+
+                    <div class="workspaces-boards-grid">
+                        {% for board in workspace.boards.all %}
+                        <a href="{% url 'kanban:index' %}?workspace_id={{ workspace.id }}&board_id={{ board.id }}"
+                           class="board-card" title="{{ board.name }}">
+                            <div class="board-card-bg" style="background: {{ board.background_style }};"></div>
+                            <div class="board-card-footer">{{ board.name }}</div>
+                        </a>
+                        {% endfor %}
+
+                        <button type="button" class="board-card board-card--create"
+                                data-workspace-id="{{ workspace.id }}"
+                                data-action="create-board"
+                                title="Utwórz nową tablicę">
+                            <p class="board-card-create-title">Utwórz nową tablicę</p>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="workspaces-empty">Brak przestrzeni roboczych.</p>
+                {% endfor %}
+
+                <div class="workspaces-create-workspace">
+                    <button type="button" class="btn-workspace-create" id="add-workspace-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Utwórz nową przestrzeń roboczą
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<div id="workspace-modal" class="modal-overlay kanban-modal-overlay">
+    <div class="kanban-modal-content kanban-dialog">
+        <h3 class="kanban-dialog-title">Utwórz przestrzeń roboczą</h3>
+        <form method="POST" action="{% url 'kanban:create_workspace' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="workspace-name-input">Nazwa przestrzeni</label>
+                <input type="text" name="name" id="workspace-name-input" class="form-input"
+                       placeholder="np. Projekt Alpha" required>
+            </div>
+            <div class="kanban-dialog-actions">
+                <button type="button" class="tasks-btn-cancel close-ws-modal">Anuluj</button>
+                <button type="submit" class="btn btn-primary tasks-toolbar-btn">Utwórz</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="board-modal" class="modal-overlay kanban-modal-overlay">
+    <div class="kanban-modal-content kanban-dialog">
+        <h3 class="kanban-dialog-title">Utwórz nową tablicę</h3>
+        <form method="POST" action="{% url 'kanban:create_board' %}">
+            {% csrf_token %}
+            <input type="hidden" name="workspace_id" id="board-workspace-id">
+            <div class="form-group">
+                <label class="form-label" for="board-name-input">Nazwa tablicy</label>
+                <input type="text" name="name" id="board-name-input" class="form-input"
+                       placeholder="np. Sprint 1" required>
+            </div>
+            <div class="kanban-dialog-actions">
+                <button type="button" class="tasks-btn-cancel close-board-modal">Anuluj</button>
+                <button type="submit" class="btn btn-primary tasks-toolbar-btn">Utwórz</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    const wsModal = document.getElementById('workspace-modal');
+    const boardModal = document.getElementById('board-modal');
+
+    document.getElementById('add-workspace-btn')?.addEventListener('click', () => {
+        wsModal.classList.add('active');
+        document.getElementById('workspace-name-input')?.focus();
+    });
+
+    document.querySelectorAll('.close-ws-modal').forEach((btn) => {
+        btn.addEventListener('click', () => wsModal.classList.remove('active'));
+    });
+
+    document.querySelectorAll('.close-board-modal').forEach((btn) => {
+        btn.addEventListener('click', () => boardModal.classList.remove('active'));
+    });
+
+    wsModal?.addEventListener('click', (e) => {
+        if (e.target === wsModal) wsModal.classList.remove('active');
+    });
+
+    boardModal?.addEventListener('click', (e) => {
+        if (e.target === boardModal) boardModal.classList.remove('active');
+    });
+
+    document.querySelectorAll('[data-action="create-board"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            document.getElementById('board-workspace-id').value = btn.dataset.workspaceId;
+            boardModal.classList.add('active');
+            document.getElementById('board-name-input')?.focus();
+        });
+    });
+})();
+</script>
+{% endblock %}

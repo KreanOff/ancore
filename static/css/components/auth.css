@@ -1,0 +1,112 @@
+/* Auth pages (login / register) */
+
+body.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f5f9;
+    height: 100vh;
+    margin: 0;
+    min-height: 100vh;
+}
+
+.auth-card {
+    background: var(--card-bg);
+    padding: 3rem;
+    width: 100%;
+    max-width: 440px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.auth-header .logo {
+    color: var(--sidebar-bg);
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+
+.auth-header .logo span {
+    color: var(--accent-red);
+}
+
+.auth-subtitle {
+    color: var(--text-muted);
+    font-size: var(--font-size-base);
+    margin-top: 0.5rem;
+}
+
+.auth-card .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.auth-card .form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.auth-card .form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.auth-card .form-input {
+    width: 100%;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: var(--font-size-base);
+    color: var(--text-muted);
+}
+
+.auth-footer a {
+    color: var(--accent-red);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    body.auth-page {
+        align-items: flex-start;
+        padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+            max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+        height: auto;
+        min-height: 100dvh;
+    }
+
+    .auth-card {
+        padding: 2rem 1.5rem;
+        margin: auto 0;
+    }
+
+    .auth-card .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 1.5rem 1.25rem;
+        border-left: none;
+        border-right: none;
+    }
+
+    .auth-header .logo {
+        font-size: 1.625rem;
+    }
+}

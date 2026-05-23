@@ -2,14 +2,23 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.5rem;
     padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
+    font-size: var(--font-size-base);
     font-weight: 600;
+    line-height: 1;
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
     border: none;
-    border-radius: 0;
+    border-radius: var(--radius);
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .btn-primary {
@@ -17,9 +26,9 @@
     color: #ffffff;
 }
 
-.btn-primary:hover {
-    background-color: #9f1239;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--accent-red-hover);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-danger {
@@ -28,16 +37,83 @@
 }
 
 .btn-danger:hover:not(:disabled) {
-    background-color: #9f1239;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    background-color: var(--accent-red-hover);
+    box-shadow: var(--shadow-md);
 }
 
-.btn-danger:disabled {
-    background-color: #6c757d;
-    cursor: not-allowed;
-    opacity: 0.6;
+.btn-success {
+    background-color: var(--accent-green);
+    color: #ffffff;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: var(--accent-green-hover);
+}
+
+.btn-secondary {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: var(--background-hover);
+    border-color: var(--text-muted);
+}
+
+.btn-ghost {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+}
+
+.btn-ghost:hover:not(:disabled) {
+    color: var(--accent-red);
+}
+
+.btn-sm,
+.btn.btn-sm {
+    height: var(--control-height);
+    padding: 0 1rem;
+    font-size: var(--font-size-base);
+}
+
+.btn-toolbar,
+.tasks-toolbar-btn {
+    height: var(--control-height);
+    padding: 0 1rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+}
+
+.btn-cancel,
+.tasks-btn-cancel {
+    background: var(--card-bg);
+    color: var(--text-main);
+    text-decoration: none;
+    border: 1px solid var(--border-color);
+    height: var(--control-height);
+    padding: 0 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    border-radius: var(--radius);
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-cancel:hover,
+.tasks-btn-cancel:hover {
+    background: var(--background-hover);
+    border-color: var(--text-main);
+}
+
+.btn-block {
+    width: 100%;
 }
 
 .btn-icon {
-    margin-right: 0.5rem;
+    margin-right: 0;
 }

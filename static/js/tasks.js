@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Show Edit only if exactly 1 is selected
                 if (editBtn) {
-                    editBtn.style.display = count === 1 ? 'flex' : 'none';
+                    editBtn.classList.toggle('u-hidden', count !== 1);
                 }
 
                 // Update Status Toggle Button
@@ -49,14 +49,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     const anyOpen = statuses.some(s => s !== 'closed');
                     
                     if (anyOpen) {
-                        statusToggleBtn.className = 'btn btn-success';
+                        statusToggleBtn.className = 'btn btn-success tasks-toolbar-btn';
                         statusToggleBtn.innerHTML = `
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                             Zamknij zadanie
                         `;
                         statusToggleBtn.dataset.targetStatus = 'closed';
                     } else {
-                        statusToggleBtn.className = 'btn btn-secondary';
+                        statusToggleBtn.className = 'btn btn-secondary tasks-toolbar-btn';
                         statusToggleBtn.innerHTML = `
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                             Otwórz ponownie

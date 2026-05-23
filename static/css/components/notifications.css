@@ -70,9 +70,16 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    .notifications-container {
+        left: max(1rem, env(safe-area-inset-left));
+        right: max(1rem, env(safe-area-inset-right));
+        width: auto;
+    }
+
     .notification {
-        min-width: 250px;
-        max-width: 90vw;
-        margin: 0 10px 0.5rem 10px;
+        min-width: 0;
+        max-width: none;
+        width: 100%;
+        margin: 0 0 0.5rem;
     }
 }

@@ -1,5 +1,5 @@
 .main-content {
-    margin-left: 280px;
+    margin-left: var(--sidebar-width);
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -7,33 +7,67 @@
 }
 
 .top-bar {
-    height: 64px;
-    background-color: #ffffff;
+    height: var(--topbar-height);
+    background-color: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
     padding: 0 2rem;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     position: fixed;
     top: 0;
-    left: 280px;
+    left: var(--sidebar-width);
     right: 0;
     z-index: 100;
 }
 
+.top-bar-left {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.top-bar-search {
+    flex: 1;
+    max-width: 400px;
+    margin: 0 2rem;
+}
+
+.top-bar-search .form-input {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: var(--font-size-base);
+}
+
+.user-profile {
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
 .page-container {
     padding: 2rem;
-    max-width: 1200px;
+    max-width: var(--page-max-width);
     width: 100%;
     margin: 0 auto;
-    margin-top: 64px;
+    margin-top: var(--topbar-height);
+}
+
+.sidebar-footer {
+    padding-bottom: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nav-link--danger {
+    color: var(--accent-red) !important;
 }
 
 .page-container.full-width {
     max-width: none;
     padding: 0;
     margin: 0;
-    margin-top: 64px;
+    margin-top: var(--topbar-height);
     flex-grow: 1;
     display: flex;
     flex-direction: column;

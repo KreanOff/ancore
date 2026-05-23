@@ -1,8 +1,8 @@
 .modal-overlay {
     position: fixed;
     top: 0;
-    left: 280px;
-    width: calc(100% - 280px);
+    left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
     height: 100%;
     background-color: var(--bg-main);
     z-index: 2000;
@@ -82,4 +82,17 @@
 /* Prevent scrolling when modal is open */
 body.modal-open {
     overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    .modal-overlay {
+        left: 0;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-body {
+        max-width: none;
+    }
 }

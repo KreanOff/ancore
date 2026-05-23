@@ -1,0 +1,13 @@
+<div class="attachment-icon attachment-icon--{{ size|default:'md' }} {{ type_class }}"{% if title %} title="{{ title }}"{% endif %}>
+    {% if type_class == 'image' %}
+    <i class="bi bi-file-earmark-image" aria-hidden="true"></i>
+    {% elif type_class == 'pdf' %}
+    <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+    {% elif type_class == 'document' %}
+    <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+    {% elif type_class == 'archive' %}
+    <i class="bi bi-file-earmark-zip" aria-hidden="true"></i>
+    {% else %}
+    <i class="bi bi-file-earmark" aria-hidden="true"></i>
+    {% endif %}
+</div>

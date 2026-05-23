@@ -5,8 +5,40 @@
     --sidebar-active: #ffffff;
     --accent-blue: #2563eb;
     --accent-red: #be123c;
+    --accent-red-hover: #9f1239;
+    --accent-green: #059669;
+    --accent-green-hover: #047857;
     --text-main: #1e293b;
     --text-muted: #64748b;
     --border-color: #e2e8f0;
     --card-bg: #ffffff;
+    --panel-bg: #f8f9fa;
+    --radius-max: 2px;
+    --radius: var(--radius-max);
+    --toolbar-height: 60px;
+    --topbar-height: 64px;
+    --sidebar-width: 280px;
+    --page-max-width: 1200px;
+    --bp-sm: 480px;
+    --bp-md: 768px;
+    --bp-lg: 1024px;
+    --bp-xl: 1440px;
+    --bp-2xl: 1920px;
+    --control-height: 38px;
+    --font-size-sm: 0.8125rem;
+    --font-size-base: 0.875rem;
+    --font-size-lg: 1rem;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 4px 24px rgba(15, 23, 42, 0.12);
+    --focus-ring: 0 0 0 3px rgba(190, 18, 60, 0.1);
+
+    /* Semantic aliases (legacy file-upload.css) */
+    --primary-color: var(--accent-red);
+    --primary-color-dark: var(--accent-red-hover);
+    --primary-color-light: #fff5f7;
+    --error-color: var(--accent-red);
+    --error-color-light: #fff5f7;
+    --background-secondary: #f8fafc;
+    --background-hover: #f1f5f9;
 }
