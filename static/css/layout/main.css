@@ -3,47 +3,89 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: calc(100vh - var(--topbar-height));
+    padding-top: var(--topbar-height);
 }
 
-.top-bar {
-    height: var(--topbar-height);
-    background-color: var(--card-bg);
-    border-bottom: 1px solid var(--border-color);
-    padding: 0 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.app-topbar {
     position: fixed;
-    top: 0;
-    left: var(--sidebar-width);
-    right: 0;
-    z-index: 100;
+    inset: 0 0 auto 0;
+    height: var(--topbar-height);
+    display: grid;
+    grid-template-columns: minmax(64px, 1fr) auto minmax(64px, 1fr);
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1.5rem;
+    background: #fbfbfb;
+    border-top: 4px solid #242424;
+    border-bottom: 1px solid #dcdfe3;
+    color: #4f555d;
+    z-index: 200;
 }
 
-.top-bar-left {
+.app-topbar-left,
+.app-topbar-right,
+.app-topbar-center,
+.topbar-clock {
     display: flex;
     align-items: center;
+}
+
+.app-topbar-left {
+    justify-content: flex-start;
+}
+
+.app-topbar-center {
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #565b62;
+    white-space: nowrap;
+}
+
+.app-topbar-right {
+    justify-content: flex-end;
+    gap: 0.875rem;
     min-width: 0;
 }
 
-.top-bar-search {
-    flex: 1;
-    max-width: 400px;
-    margin: 0 2rem;
+.topbar-icon-button {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #6a7078;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.top-bar-search .form-input {
-    width: 100%;
-    padding: 0.5rem 1rem;
-    font-size: var(--font-size-base);
+.topbar-icon-button:hover {
+    background: #edf0f3;
+    color: #22262b;
 }
 
-.user-profile {
-    font-size: var(--font-size-base);
-    font-weight: 500;
-    color: var(--text-muted);
+.topbar-icon-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+.topbar-add-button svg {
+    width: 19px;
+    height: 19px;
+}
+
+.topbar-clock {
+    gap: 0.5rem;
     white-space: nowrap;
+    font-size: 0.875rem;
+    color: #4a4f55;
 }
 
 .page-container {
@@ -51,12 +93,11 @@
     max-width: var(--page-max-width);
     width: 100%;
     margin: 0 auto;
-    margin-top: var(--topbar-height);
 }
 
 .sidebar-footer {
     padding-bottom: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--border-color);
 }
 
 .nav-link--danger {
@@ -67,7 +108,6 @@
     max-width: none;
     padding: 0;
     margin: 0;
-    margin-top: var(--topbar-height);
     flex-grow: 1;
     display: flex;
     flex-direction: column;

@@ -4,33 +4,6 @@ html {
     overflow-x: clip;
 }
 
-.sidebar-toggle {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    margin-right: 0.75rem;
-    padding: 0;
-    border: 1px solid var(--border-color);
-    background: var(--card-bg);
-    color: var(--text-main);
-    cursor: pointer;
-    flex-shrink: 0;
-    border-radius: var(--radius);
-    transition: background-color 0.2s, border-color 0.2s;
-}
-
-.sidebar-toggle:hover {
-    background: var(--background-hover);
-    border-color: #cbd5e1;
-}
-
-.sidebar-toggle svg {
-    width: 20px;
-    height: 20px;
-}
-
 .sidebar-backdrop {
     display: none;
     position: fixed;
@@ -72,14 +45,6 @@ body.sidebar-open .sidebar-backdrop {
         width: 100%;
     }
 
-    .top-bar {
-        left: 0;
-    }
-
-    .sidebar-toggle {
-        display: inline-flex;
-    }
-
     .modal-overlay,
     .dialog-overlay,
     .kanban-modal-overlay,
@@ -100,24 +65,29 @@ body.sidebar-open .sidebar-backdrop {
 
 /* Telefon */
 @media (max-width: 768px) {
-    :root {
-        --topbar-height: 56px;
-    }
-
-    .top-bar {
-        padding: 0 1rem;
+    .app-topbar {
+        grid-template-columns: auto minmax(0, 1fr) auto;
         gap: 0.5rem;
+        padding: 0 0.75rem;
     }
 
-    .top-bar-search {
-        display: none;
-    }
-
-    .user-profile {
-        font-size: var(--font-size-sm);
-        max-width: 42vw;
+    .app-topbar-center {
+        justify-content: flex-start;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .app-topbar-center span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .app-topbar-right {
+        gap: 0.375rem;
+    }
+
+    .topbar-clock span {
+        display: none;
     }
 
     .page-container {
@@ -139,16 +109,28 @@ body.sidebar-open .sidebar-backdrop {
 }
 
 @media (max-width: 480px) {
+    .app-topbar-center {
+        font-size: 0.75rem;
+    }
+
+    .topbar-icon-button {
+        width: 26px;
+        height: 26px;
+    }
+
+    .topbar-clock {
+        font-size: 0.8125rem;
+    }
+
     .sidebar {
         width: min(100vw, var(--sidebar-width));
     }
 
-    .logo {
-        font-size: 1.25rem;
-    }
-
     .nav-link {
-        padding: 0.65rem 1.25rem;
+        width: 48px;
+        height: 48px;
+        min-height: 48px;
+        padding: 0;
     }
 }
 
@@ -210,18 +192,6 @@ body.sidebar-open .sidebar-backdrop {
     .calendar-toolbar .panel-right,
     .kanban-control-panel .panel-right {
         flex-wrap: wrap;
-    }
-
-    .top-bar-left {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .top-bar-left .page-title,
-    .top-bar-left .page-title--compact {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     .dashboard-card {
@@ -286,18 +256,8 @@ body.sidebar-open .sidebar-backdrop {
         padding-right: max(2rem, env(safe-area-inset-right));
     }
 
-    .top-bar {
-        padding-left: max(2rem, env(safe-area-inset-left));
-        padding-right: max(2rem, env(safe-area-inset-right));
-    }
-
     @media (max-width: 768px) {
         .page-container {
-            padding-left: max(1rem, env(safe-area-inset-left));
-            padding-right: max(1rem, env(safe-area-inset-right));
-        }
-
-        .top-bar {
             padding-left: max(1rem, env(safe-area-inset-left));
             padding-right: max(1rem, env(safe-area-inset-right));
         }
