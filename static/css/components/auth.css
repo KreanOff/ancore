@@ -4,7 +4,7 @@ body.auth-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f1f5f9;
+    background-color: var(--bg-main);
     height: 100vh;
     margin: 0;
     min-height: 100vh;

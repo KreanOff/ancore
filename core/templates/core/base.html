@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     {% include 'core/includes/bootstrap.html' %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_head %}{% endblock %}
@@ -63,6 +63,14 @@
             </a>
         </div>
         <nav class="nav-section">
+            <button type="button" class="nav-link secondary-menu-toggle" id="secondary-menu-toggle" aria-label="Zwiń drugie menu" aria-controls="secondary-menu" aria-expanded="true" title="Zwiń drugie menu">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+                    <path d="M5 7h14"/>
+                    <path d="M5 12h14"/>
+                    <path d="M5 17h14"/>
+                </svg>
+                <span class="nav-label">Drugie menu</span>
+            </button>
             <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.view_name == 'home' %}active{% endif %}" aria-label="Panel Główny" title="Panel Główny">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M3 11l9-8 9 8"/>
@@ -123,6 +131,11 @@
                 </svg>
                 <span class="nav-label">Wyloguj się</span>
             </a>
+        </div>
+    </aside>
+    <aside class="secondary-menu" id="secondary-menu" aria-label="Drugie menu">
+        <div class="secondary-menu-panel" {% block secondary_menu_panel_attrs %}aria-hidden="true"{% endblock %}>
+            {% block secondary_menu %}{% endblock %}
         </div>
     </aside>
 

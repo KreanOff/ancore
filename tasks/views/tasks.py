@@ -1,30 +1,223 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Case, When, Value, IntegerField
+from django.db import transaction
+from django.db.models import Case, Count, IntegerField, Prefetch, Q, Value, When
 from django.http import JsonResponse
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 import json
-from ..models import Task, TaskAttachment
-from ..forms import TaskForm
+from ..models import Task, TaskAttachment, TaskProject, TaskSection
+from ..forms import QuickTaskForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm
 
 @login_required
 def tasks(request):
-    tasks = Task.objects.filter(user=request.user).annotate(
+    return _tasks_page(request)
+
+
+@login_required
+def task_group(request, section_id):
+    active_section = get_object_or_404(TaskSection, id=section_id, project__user=request.user)
+    return _tasks_page(request, active_section=active_section)
+
+
+def _tasks_page(request, active_section=None):
+    project_form = TaskProjectForm()
+    section_form = TaskSectionForm()
+    active_project_id = request.POST.get('project_id') if request.method == 'POST' else request.GET.get('project')
+    if active_section:
+        active_project_id = active_section.project_id
+    active_project_for_form = None
+    if active_project_id:
+        active_project_for_form = TaskProject.objects.filter(id=active_project_id, user=request.user).first()
+    task_modal_form = TaskModalForm(user=request.user, project=active_project_for_form, section=active_section)
+    project_modal_open = False
+    project_rename_modal_open = False
+    project_rename_form = TaskProjectRenameForm()
+    project_rename_project_id = ''
+    section_create_modal_open = False
+    section_create_project_id = active_project_id or ''
+    section_rename_modal_open = False
+    section_rename_form = TaskSectionRenameForm()
+    section_rename_section_id = ''
+    task_modal_open = False
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'create_project':
+            project_form = TaskProjectForm(request.POST)
+            if project_form.is_valid():
+                with transaction.atomic():
+                    project = project_form.save(commit=False)
+                    project.user = request.user
+                    project.save()
+                    TaskSection.objects.create(
+                        project=project,
+                        title='Nowa Grupa',
+                        kind='custom',
+                        order=0,
+                    )
+                messages.success(request, 'Projekt dodany.')
+                return redirect(f"{reverse('tasks:tasks')}?project={project.id}")
+            project_modal_open = True
+            messages.error(request, 'Nie udało się dodać projektu.')
+
+        if action == 'delete_project':
+            project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
+            task_count = Task.objects.filter(section__project=project, user=request.user).count()
+            project.delete()
+            if task_count:
+                messages.success(request, 'Projekt usunięty. Zadania przeniesiono do sekcji „Bez projektu”.')
+            else:
+                messages.success(request, 'Projekt usunięty.')
+            return redirect('tasks:tasks')
+
+        if action in ('edit_project', 'rename_project'):
+            project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
+            project_rename_form = TaskProjectRenameForm(request.POST, instance=project)
+            if project_rename_form.is_valid():
+                project_rename_form.save()
+                messages.success(request, 'Projekt zaktualizowany.')
+                return redirect(f"{reverse('tasks:tasks')}?project={project.id}")
+            project_rename_modal_open = True
+            project_rename_project_id = project.id
+            active_project_for_form = project
+            messages.error(request, 'Nie udało się zaktualizować projektu.')
+
+        if action == 'create_section':
+            project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
+            section_form = TaskSectionForm(request.POST)
+            if section_form.is_valid():
+                section = section_form.save(commit=False)
+                section.project = project
+                section.order = project.sections.count()
+                section.save()
+                messages.success(request, 'Grupa dodana.')
+                return redirect('tasks:task_group', section_id=section.id)
+            section_create_modal_open = True
+            section_create_project_id = project.id
+            messages.error(request, 'Nie udało się dodać grupy.')
+
+        if action in ('edit_section', 'rename_section'):
+            section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
+            section_rename_form = TaskSectionRenameForm(request.POST, instance=section)
+            if section_rename_form.is_valid():
+                section_rename_form.save()
+                messages.success(request, 'Grupa zaktualizowana.')
+                return redirect('tasks:task_group', section_id=section.id)
+            section_rename_modal_open = True
+            section_rename_section_id = section.id
+            active_section = section
+            active_project_for_form = section.project
+            messages.error(request, 'Nie udało się zaktualizować grupy.')
+
+        if action == 'delete_section':
+            section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
+            project_id = section.project_id
+            task_count = Task.objects.filter(section=section, user=request.user).count()
+            section.delete()
+            if task_count:
+                messages.success(request, 'Grupa usunięta. Zadania przeniesiono do sekcji „Bez projektu”.')
+            else:
+                messages.success(request, 'Grupa usunięta.')
+            return redirect(f"{reverse('tasks:tasks')}?project={project_id}")
+
+        if action == 'create_task':
+            section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
+            form = QuickTaskForm(request.POST)
+            if form.is_valid():
+                task = form.save(commit=False)
+                task.user = request.user
+                task.section = section
+                task.save()
+                messages.success(request, 'Zadanie dodane.')
+                return redirect('tasks:task_group', section_id=section.id)
+            messages.error(request, 'Nie udało się dodać zadania.')
+
+        if action == 'create_task_modal':
+            project = None
+            project_id = request.POST.get('project_id')
+            if project_id:
+                project = get_object_or_404(TaskProject, id=project_id, user=request.user)
+            task_modal_form = TaskModalForm(request.POST, user=request.user, project=project, section=active_section)
+            if task_modal_form.is_valid():
+                task = task_modal_form.save(commit=False)
+                task.user = request.user
+                task.save()
+                messages.success(request, 'Zadanie dodane.')
+                return redirect('tasks:task_group', section_id=task.section_id)
+            task_modal_open = True
+            messages.error(request, 'Nie udało się dodać zadania.')
+
+    tasks_qs = Task.objects.filter(user=request.user).select_related('section', 'section__project').annotate(
         is_closed_sort=Case(
             When(status='closed', then=Value(1)),
             default=Value(0),
             output_field=IntegerField(),
         )
-    ).order_by('is_closed_sort', '-created_at')
-    
-    return render(request, 'tasks/tasks.html', {'tasks': tasks})
+    ).order_by('is_closed_sort', 'task_id')
+
+    projects = list(TaskProject.objects.filter(user=request.user).annotate(
+        total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=request.user))
+    ).prefetch_related(
+        Prefetch('sections', queryset=TaskSection.objects.prefetch_related(
+            Prefetch('tasks', queryset=tasks_qs)
+        ))
+    ))
+
+    active_project = active_section.project if active_section else None
+    if active_section:
+        for project in projects:
+            if project.id != active_section.project_id:
+                continue
+            active_project = project
+            active_section = next((section for section in project.sections.all() if section.id == active_section.id), active_section)
+            break
+
+    active_project_id = request.GET.get('project') if not active_section else str(active_section.project_id)
+    if active_project_id and not active_project:
+        active_project = next((project for project in projects if str(project.id) == active_project_id), None)
+
+    orphan_tasks = tasks_qs.filter(section__isnull=True)
+    if active_section:
+        can_create_issue = True
+    elif active_project:
+        can_create_issue = active_project.sections.exists()
+    else:
+        can_create_issue = TaskSection.objects.filter(project__user=request.user).exists()
+
+    context = {
+        'projects': projects,
+        'active_project': active_project,
+        'active_section': active_section,
+        'visible_sections': [active_section] if active_section else [],
+        'orphan_tasks': orphan_tasks,
+        'tasks': tasks_qs,
+        'total_task_count': tasks_qs.count(),
+        'project_form': project_form,
+        'project_rename_form': project_rename_form,
+        'project_rename_project_id': project_rename_project_id,
+        'section_form': section_form,
+        'section_create_modal_open': section_create_modal_open,
+        'section_create_project_id': section_create_project_id,
+        'section_rename_form': section_rename_form,
+        'section_rename_section_id': section_rename_section_id,
+        'section_rename_modal_open': section_rename_modal_open,
+        'task_modal_form': task_modal_form,
+        'quick_task_form': QuickTaskForm(),
+        'project_modal_open': project_modal_open,
+        'project_rename_modal_open': project_rename_modal_open,
+        'task_modal_open': task_modal_open,
+        'can_create_issue': can_create_issue,
+    }
+    return render(request, 'tasks/tasks.html', context)
 
 @login_required
 def create_task(request):
     if request.method == 'POST':
         files = request.FILES.getlist('attachments')
-        form = TaskForm(request.POST, request.FILES)
+        form = TaskForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             task = form.save(commit=False)
             task.user = request.user
@@ -44,7 +237,7 @@ def create_task(request):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = TaskForm()
+        form = TaskForm(user=request.user)
 
     return render(request, 'tasks/create_task.html', {'form': form})
 
@@ -145,7 +338,7 @@ def edit_task(request, task_id):
     
     if request.method == 'POST':
         files = request.FILES.getlist('attachments')
-        form = TaskForm(request.POST, request.FILES, instance=task)
+        form = TaskForm(request.POST, request.FILES, instance=task, user=request.user)
         if form.is_valid():
             form.save()
 
@@ -169,7 +362,7 @@ def edit_task(request, task_id):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = TaskForm(instance=task)
+        form = TaskForm(instance=task, user=request.user)
 
     return render(request, 'tasks/edit_task.html', {'form': form, 'task': task})
 

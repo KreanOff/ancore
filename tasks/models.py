@@ -5,6 +5,68 @@ from django.dispatch import receiver
 from django.conf import settings
 import os
 
+
+class TaskProject(models.Model):
+    ICON_COLORS = [
+        {'background': '#e8f1ff', 'foreground': '#2563eb'},
+        {'background': '#eaf7ef', 'foreground': '#16803f'},
+        {'background': '#fff1df', 'foreground': '#c25a00'},
+        {'background': '#f0eaff', 'foreground': '#7c3aed'},
+        {'background': '#e8f8f6', 'foreground': '#0f766e'},
+        {'background': '#ffeaf0', 'foreground': '#be185d'},
+        {'background': '#f4f0e8', 'foreground': '#8b5e22'},
+        {'background': '#edf1f7', 'foreground': '#475569'},
+    ]
+
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    code = models.CharField(max_length=8, blank=True)
+    icon = models.CharField(max_length=8, blank=True, default='')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_projects')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            source = ''.join(ch for ch in self.name.upper() if ch.isalnum())
+            self.code = (source[:3] or 'PRJ')
+        self.code = self.code.upper()[:8]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def icon_color(self):
+        index_source = self.pk or 1
+        return self.ICON_COLORS[(index_source - 1) % len(self.ICON_COLORS)]
+
+
+class TaskSection(models.Model):
+    KIND_CHOICES = [
+        ('issues', 'Kwestie'),
+        ('components', 'Komponenty'),
+        ('milestones', 'Kamienie milowe'),
+        ('templates', 'Szablony'),
+        ('custom', 'Własne'),
+    ]
+
+    project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='sections')
+    title = models.CharField(max_length=120)
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
+    icon = models.CharField(max_length=8, blank=True, default='')
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f'{self.project.name} / {self.title}'
+
+
 class Task(models.Model):
     PRIORITY_CHOICES = [
         ('low', 'Niski'),
@@ -29,6 +91,7 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     completion_date = models.DateTimeField(null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
+    section = models.ForeignKey(TaskSection, on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         from django.utils import timezone

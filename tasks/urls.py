@@ -5,6 +5,7 @@ app_name = 'tasks'
 
 urlpatterns = [
     path('', tasks.tasks, name='tasks'),
+    path('groups/<int:section_id>/', tasks.task_group, name='task_group'),
     path('create-task/', tasks.create_task, name='create_task'),
     path('edit-task/<int:task_id>/', tasks.edit_task, name='edit_task'),
     path('view-task/<int:task_id>/', tasks.view_task, name='view-task'),

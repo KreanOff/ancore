@@ -40,6 +40,10 @@ body.sidebar-open .sidebar-backdrop {
         transform: translateX(0);
     }
 
+    .secondary-menu {
+        display: none;
+    }
+
     .main-content {
         margin-left: 0;
         width: 100%;

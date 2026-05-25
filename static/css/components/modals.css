@@ -1,8 +1,8 @@
 .modal-overlay {
     position: fixed;
     top: 0;
-    left: var(--sidebar-width);
-    width: calc(100% - var(--sidebar-width));
+    left: var(--app-sidebar-total-width);
+    width: calc(100% - var(--app-sidebar-total-width));
     height: 100%;
     background-color: var(--bg-main);
     z-index: 2000;

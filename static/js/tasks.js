@@ -7,14 +7,883 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedCountSpan = document.getElementById('selected-count');
     const filterStatus = document.getElementById('filter-status');
     const filterPriority = document.getElementById('filter-priority');
+    const filterSearch = document.getElementById('filter-search');
+    const filterButtons = document.querySelectorAll('[data-status-filter], [data-priority-filter]');
+    const groupRows = document.querySelectorAll('.tasks-group-row');
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
+    const createMenu = document.querySelector('[data-create-menu]');
+    const createMenuToggle = document.getElementById('open-create-menu');
+    const createMenuPanel = document.getElementById('create-menu-panel');
+    const sectionActionMenu = document.querySelector('[data-section-actions]');
+    const projectActionMenus = document.querySelectorAll('[data-project-actions]');
+    const projectTree = document.querySelector('[data-project-tree]');
+    const projectTreeToggle = document.querySelector('[data-project-tree-toggle]');
+    const projectNodes = document.querySelectorAll('[data-project-node]');
+    const openProjectButtons = document.querySelectorAll('[data-open-project]');
+    const openProjectRenameButtons = document.querySelectorAll('[data-open-project-rename]');
+    const openSectionCreateButtons = document.querySelectorAll('[data-open-section-create]');
+    const openSectionRenameButtons = document.querySelectorAll('[data-open-section-rename]');
+    const openIssueButtons = document.querySelectorAll('#open-issue-modal, [data-open-issue]');
+    const projectModal = document.getElementById('project-modal');
+    const projectRenameModal = document.getElementById('project-rename-modal');
+    const sectionCreateModal = document.getElementById('section-create-modal');
+    const sectionRenameModal = document.getElementById('section-rename-modal');
+    const issueModal = document.getElementById('issue-modal');
+    const projectForm = document.getElementById('project-create-form');
+    const projectRenameForm = document.getElementById('project-rename-form');
+    const sectionCreateForm = document.getElementById('section-create-form');
+    const sectionRenameForm = document.getElementById('section-rename-form');
+    const issueForm = document.getElementById('issue-create-form');
+    const projectNameInput = projectForm ? projectForm.querySelector('[name="name"]') : null;
+    const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
+    const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
+    const projectRenameCodeInput = projectRenameForm ? projectRenameForm.querySelector('[name="code"]') : null;
+    const projectRenameIconInput = projectRenameForm ? projectRenameForm.querySelector('[name="icon"]') : null;
+    const projectRenameIdInput = projectRenameForm ? projectRenameForm.querySelector('[name="project_id"]') : null;
+    const sectionCreateTitleInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="title"]') : null;
+    const sectionCreateProjectInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="project_id"]') : null;
+    const sectionCreateIconInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="icon"]') : null;
+    const sectionRenameTitleInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="title"]') : null;
+    const sectionRenameKindInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="kind"]') : null;
+    const sectionRenameIconInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="icon"]') : null;
+    const sectionRenameIdInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="section_id"]') : null;
+    const issueTitleInput = issueForm ? issueForm.querySelector('[name="title"]') : null;
+    const projectSubmitBtn = document.getElementById('project-create-submit');
+    const projectRenameSubmitBtn = document.getElementById('project-rename-submit');
+    const sectionCreateSubmitBtn = document.getElementById('section-create-submit');
+    const sectionRenameSubmitBtn = document.getElementById('section-rename-submit');
+    const issueSubmitBtn = document.getElementById('issue-create-submit');
+    const projectIconInput = projectForm ? projectForm.querySelector('[name="icon"]') : null;
+    const projectIconPickers = document.querySelectorAll('[data-project-icon-picker]');
+    const projectIconGroups = [
+        { input: projectIconInput, picker: document.getElementById('project-icon-picker') },
+        { input: projectRenameIconInput, picker: document.getElementById('project-rename-icon-picker') },
+        { input: sectionCreateIconInput, picker: document.getElementById('section-create-icon-picker') },
+        { input: sectionRenameIconInput, picker: document.getElementById('section-rename-icon-picker') }
+    ];
+    const projectIconSets = [
+        {
+            label: 'Najczęstsze',
+            icon: '⭐',
+            items: ['🚀', '⭐', '✅', '⚙️', '💡', '📌', '📋', '📁', '🔧', '🧩', '🎯', '📈', '🔒', '🛠️', '🧪', '🖥️', '📱', '🌐', '☁️', '✨', '🏆', '🎉', '📍', '🔑', '🧰', '🧱', '🪄', '💎', '🧲', '🗓️', '📎', '🔔', '💬', '📣', '🧠', '🧭', '🏁', '🛡️', '🧿', '📌', '📍', '📎', '📔', '📙', '📚', '🗂️', '🗃️', '🧾', '📊', '📉', '📆', '⏰', '⏳', '🔍', '🔎', '🔗', '🔖', '🏷️', '📦', '📫', '📨', '📥', '📤', '📝', '✏️', '🖊️', '🖋️', '🔐', '🔓']
+        },
+        {
+            label: 'Praca',
+            icon: '💼',
+            items: ['💼', '📊', '📎', '📝', '📅', '⏱️', '🏷️', '📦', '🗂️', '🧾', '✉️', '🔍', '✅', '❗', '📣', '🤝', '👥', '🧠', '🧭', '📔', '📕', '📗', '📘', '📙', '📚', '📓', '📒', '🗃️', '🗄️', '🗒️', '🧑‍💼', '📇', '🗳️', '📤', '📥', '🪪', '🧳', '🏢', '🏦', '📞', '☎️', '📠', '📧', '📨', '📬', '📭', '📮', '🗞️', '📰', '💬', '💭', '🕘', '🕙', '🗓️', '📈', '📉', '💹', '🧮', '💳', '💵', '💶', '💷', '🧾', '⚖️', '📜', '🖋️', '🖇️', '📌']
+        },
+        {
+            label: 'Technologia',
+            icon: '💻',
+            items: ['💻', '🖥️', '⌨️', '🖱️', '📱', '📲', '🕹️', '💾', '💿', '📀', '🧮', '🔌', '🔋', '🪫', '📡', '🛰️', '🤖', '🧬', '🔬', '⚗️', '🧪', '🧫', '🧲', '⚙️', '🛠️', '🔧', '🔩', '⛓️', '🧰', '🪛', '🧑‍💻', '🖨️', '📟', '📠', '🗜️', '🧯', '🛜', '💽', '💡', '🔐', '🔒', '🔓', '🔑', '🗝️', '📶', '📳', '📴', '🔊', '🔉', '🔈', '🎛️', '🎚️', '📺', '📷', '📹', '🎥', '🔍', '🧭', '🧱', '🧩', '🪄', '🧬', '🩻', '💫', '✨', '⚡', '🔥', '🌐', '☁️']
+        },
+        {
+            label: 'Kreatywne',
+            icon: '🎨',
+            items: ['🎨', '🖌️', '🖍️', '✏️', '✒️', '🖊️', '🖋️', '📐', '📏', '✂️', '🧵', '🪡', '🎭', '🎬', '🎧', '🎤', '🎹', '🥁', '🎸', '🎻', '🎲', '🧩', '🪄', '📷', '📸', '🎥', '📹', '🖼️', '🌈', '💫', '🪩', '🎼', '🎵', '🎶', '🎙️', '🎚️', '🎛️', '🪅', '🪆', '🧶', '🖋️', '🖊️', '📝', '📜', '📄', '📃', '📑', '🗒️', '🖇️', '📌', '📍', '🔖', '✨', '🌟', '⭐', '🔥', '💥', '💡', '🎞️', '📽️', '🎟️', '🎫', '🎪', '🕹️', '🎯', '🎳', '🧸', '🪀', '🪁']
+        },
+        {
+            label: 'Status',
+            icon: '⚡',
+            items: ['⚡', '🔥', '⭐', '🔔', '🟢', '🟡', '🔴', '🔵', '🟣', '🟠', '⬆️', '⬇️', '➡️', '🔁', '⏳', '🚧', '🧯', '🛡️', '🏁', '🎉', '💥', '💢', '💤', '💯', '🔜', '🔝', '🆕', '🆒', '🆗', '📛', '🚨', '✅', '☑️', '❌', '❗', '❓', '♻️', '🔄', '⛔', '💬', '⭕', '🚫', '❎', '✔️', '➕', '➖', '➗', '✳️', '✴️', '🔆', '🔅', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚪', '⚫', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '💠', '🔰']
+        },
+        {
+            label: 'Zespół',
+            icon: '🙂',
+            items: ['🙂', '😀', '😎', '🤓', '🧐', '🤩', '🥳', '🙌', '👏', '👍', '💪', '🙏', '👋', '🤝', '👥', '🧑', '👩', '👨', '🧑‍💻', '👩‍💻', '👨‍💻', '🧑‍🎨', '👩‍🔧', '👨‍🔧', '🧑‍🚀', '👩‍🏫', '👨‍🏫', '🧑‍💼', '👩‍💼', '👨‍💼', '😁', '😄', '😃', '😊', '😉', '😌', '😍', '😇', '😋', '😜', '🤠', '😺', '👌', '✌️', '🤞', '🤟', '🤘', '👊', '✊', '🫶', '🤲', '💁', '🙋', '🙆', '🙅', '🧑‍🏫', '🧑‍🔧', '🧑‍🔬', '🧑‍🚒', '🧑‍✈️', '🧑‍⚕️', '🧑‍⚖️', '🧑‍🌾']
+        },
+        {
+            label: 'Plan',
+            icon: '🗓️',
+            items: ['🗓️', '📅', '📆', '⏰', '⏱️', '⏲️', '⌛', '⏳', '🕒', '📍', '🧭', '🗺️', '🧱', '🏗️', '🛤️', '🚦', '🧾', '📋', '📝', '✍️', '📌', '📎', '🔖', '🏷️', '🎯', '🏁', '🧮', '📊', '📈', '📉', '🕐', '🕑', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '📖', '📚', '🗒️', '🗂️', '🗃️', '📦', '🚧', '🔁', '🔄', '➡️', '⬅️', '⬆️', '⬇️', '🔜', '🔝', '✅', '☑️', '⚠️', '🚩']
+        },
+        {
+            label: 'Biznes',
+            icon: '💰',
+            items: ['💰', '💵', '💶', '💷', '💳', '🧾', '🏦', '🏢', '🏬', '🏭', '🏗️', '🚚', '📦', '📫', '📮', '📤', '📥', '📨', '📧', '📞', '☎️', '📠', '🪪', '🧳', '🛒', '🧺', '🤝', '📊', '📈', '📉', '💸', '💎', '⚖️', '🧮', '📝', '🗂️', '📋', '📌', '🔐', '🔑', '📇', '🗃️', '🗄️', '🏷️', '📣', '📰', '🗞️', '📢', '🎯', '🏁', '🧭', '🚀', '⭐', '🏆', '✅', '📅', '⏱️', '🌐', '☁️', '🔗']
+        },
+        {
+            label: 'Miejsca',
+            icon: '🌍',
+            items: ['🌍', '🌎', '🌏', '🗺️', '🏙️', '🌆', '🌃', '🏢', '🏫', '🏛️', '🏥', '🏦', '🏭', '🏗️', '⛲', '🌉', '🚉', '✈️', '🚀', '🛸', '🚗', '🚕', '🚲', '🛴', '🚢', '⚓', '🏝️', '🏕️', '🏖️', '🏜️', '🏞️', '⛰️', '🏔️', '🌋', '🗻', '🏟️', '🏰', '🗼', '🗽', '⛪', '🕌', '🛕', '🕍', '⛩️', '🕋', '⛲', '⛺', '🚏', '🚦', '🛤️', '🛣️', '🚇', '🚆', '🚊', '🚍', '🚐', '🛵']
+        },
+        {
+            label: 'Natura',
+            icon: '🌿',
+            items: ['🌿', '🌱', '🌳', '🌲', '🍀', '🌵', '🌾', '🌻', '🌼', '🌸', '🌺', '🍄', '🌞', '🌙', '⭐', '🌟', '☁️', '⛅', '🌧️', '⛈️', '❄️', '💧', '🌊', '🔥', '💎', '🪨', '⛰️', '🏔️', '🌋', '🏕️', '🌷', '🪷', '💐', '🌹', '🥀', '🪻', '🌴', '🪵', '🍁', '🍂', '🍃', '🪹', '🪺', '🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘', '🌈', '☀️', '🌤️', '🌦️', '🌩️', '🌨️', '🌬️', '🫧', '💦', '🧊']
+        },
+        {
+            label: 'Jedzenie',
+            icon: '🍕',
+            items: ['🍕', '🍔', '🌭', '🥪', '🌮', '🌯', '🥗', '🍱', '🍜', '🍝', '🍣', '🍩', '🍪', '🍰', '🧁', '🍫', '🍿', '☕', '🍵', '🥤', '🧃', '🍎', '🍋', '🍓', '🍇', '🍉', '🥑', '🥕', '🌽', '🧀', '🥐', '🥨', '🥞', '🧇', '🥯', '🍞', '🥘', '🥫', '🍯', '🫖', '🍏', '🍐', '🍊', '🍌', '🍍', '🥭', '🍑', '🍒', '🫐', '🥝', '🍅', '🫒', '🥥', '🥦', '🥬', '🥒', '🌶️', '🫑', '🥔', '🍠', '🥜', '🫘', '🍄', '🥚', '🧈', '🥖', '🥩', '🍗', '🍖', '🍤', '🍚']
+        },
+        {
+            label: 'Edukacja',
+            icon: '🎓',
+            items: ['🎓', '📚', '📖', '📕', '📗', '📘', '📙', '📓', '📒', '📝', '✏️', '🖊️', '🧮', '📐', '📏', '🔬', '🧪', '🧬', '🧫', '🌍', '🗺️', '🧠', '💡', '🏫', '👩‍🏫', '👨‍🏫', '🧑‍🏫', '🎒', '🔖', '🏅', '📔', '📒', '📄', '📃', '📑', '📊', '📈', '📉', '🗒️', '🗂️', '🖍️', '🖌️', '🖋️', '🔎', '🔍', '🧭', '⚗️', '🔭', '🪐', '🌐', '💬', '🗣️', '🎯', '🏆', '⭐', '✅', '☑️', '🧩', '🪄', '⏱️']
+        },
+        {
+            label: 'Sport',
+            icon: '🏅',
+            items: ['🏅', '🏆', '🥇', '🥈', '🥉', '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🥏', '🎱', '🏓', '🏸', '🥊', '🥋', '⛳', '🏹', '🎣', '⛸️', '🎿', '🏂', '🏋️', '🚴', '🏃', '🏊', '🧗', '🤸', '🏌️', '🤾', '⛹️', '🤼', '🤽', '🚣', '🏄', '🛶', '🥌', '🛷', '🛼', '🛹', '🎽', '🥅', '🥎', '🏏', '🏑', '🥍', '🪃', '🎯', '🏟️', '🎟️', '📣', '🔥', '⚡', '💪', '👏', '🙌', '🏁', '🚩']
+        },
+        {
+            label: 'Zdrowie',
+            icon: '💚',
+            items: ['💚', '❤️', '🩺', '💊', '🩹', '🩻', '🧬', '🧪', '🔬', '🧫', '🏥', '🚑', '🧘', '🥗', '🍎', '🥑', '💧', '🌿', '🌞', '🛌', '⏰', '🧠', '💪', '🫶', '😌', '🙂', '🌱', '🍵', '🫧', '✨', '🫀', '🫁', '🦷', '🦴', '👁️', '👂', '👃', '🧴', '🧼', '🪥', '🛁', '🚿', '🧊', '🥦', '🥬', '🥕', '🍋', '🍓', '🫐', '🥤', '🧃', '☀️', '🌈', '🌙', '⭐', '✅', '📋', '📅', '⏱️', '🔔']
+        },
+        {
+            label: 'Symbole',
+            icon: '🔣',
+            items: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '☮️', '☯️', '♻️', '✅', '☑️', '✔️', '❌', '❎', '➕', '➖', '➗', '✳️', '🔆', '🔅', '🔱', '⚜️', '🔰', '⭕', '❇️', '✴️', '💠', '🔶', '🔷', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '⬛', '⬜', '◼️', '◻️', '◾', '◽', '▪️', '▫️', '🔺', '🔻', '🔸', '🔹', '🔘', '🔳', '🔲', '➰', '➿', '〽️', '⚠️', '🚫']
+        }
+    ];
+    const projectIconSetExtras = {
+        'Najczęstsze': ['📁', '📂', '🗂️', '🗄️', '🗃️', '📇', '🧾', '🧮', '📜', '📄', '📃', '📑', '📒', '🗒️', '🖇️', '🧷', '🪧', '📡', '📶', '🛜', '🔋', '🔌', '💾', '💽', '🖨️', '🧑‍💻', '🧑‍🎨', '🧑‍💼', '🧑‍🔧', '🧑‍🏫', '🧑‍🔬', '💪', '🙌', '👏', '🤝', '🫶', '🚩', '⚠️', '🚨', '⛔', '⭕', '🔰', '💠', '🔶', '🔷', '🟢', '🟡', '🔴', '🟣'],
+        'Praca': ['📁', '📂', '🗂️', '🗄️', '📑', '📄', '📃', '🧷', '🖊️', '✒️', '🖌️', '🔖', '🔗', '📍', '📆', '🕒', '⏳', '⌛', '🔔', '🚩', '⚠️', '🚨', '⛔', '☑️', '✔️', '❌', '🔄', '♻️', '🔎', '🔒', '🔓', '🗝️', '🏛️', '🏭', '🏗️', '🚛', '🚢', '✈️', '📦', '🧰', '🛠️', '⚙️', '💡', '🎯', '💯', '🏆', '🥇', '⭐'],
+        'Technologia': ['🧑‍🔬', '🧑‍🚀', '🧑‍🔧', '🧑‍🏭', '📁', '📂', '🗂️', '🗄️', '📊', '📈', '📉', '🧾', '📋', '🖇️', '🧷', '📎', '🔖', '🏷️', '🧱', '🧰', '🪚', '🪜', '🧯', '🛡️', '🧿', '🚨', '⚠️', '✅', '☑️', '❌', '⭕', '♻️', '🔄', '🔁', '🔀', '🔂', '🔃', '⬆️', '⬇️', '➡️', '⬅️', '↗️', '↘️', '↪️', '↩️', '⏫', '⏬'],
+        'Kreatywne': ['🖼️', '🪞', '🧿', '🎇', '🎆', '🌠', '🌌', '🌃', '🌆', '🌅', '🌄', '☀️', '🌙', '🌕', '🌻', '🌸', '🌺', '🌼', '🪷', '💐', '💎', '🔮', '🕯️', '🎁', '🎀', '🎊', '🎉', '🪄', '🧵', '🪡', '🧶', '🧷', '🖇️', '📎', '📚', '📖', '📕', '📗', '📘', '📙', '🧠', '💭', '💬', '🗯️', '💥', '💫', '🫧'],
+        'Status': ['🟩', '🟨', '🟥', '🟦', '🟪', '🟧', '🟫', '⬛', '⬜', '◼️', '◻️', '◾', '◽', '▪️', '▫️', '🔳', '🔲', '🔘', '🔵', '🔴', '🟢', '🟡', '🟣', '🟠', '⚫', '⚪', '🟤', '🚩', '🏳️', '🏁', '📍', '📌', '🔔', '📣', '📢', '💡', '💥', '✨', '🌟', '⭐', '💯', '🔝', '🆙', '🆗', '🆕', '🆓', '🆘', '🛑'],
+        'Zespół': ['😆', '🤣', '😂', '🥰', '😘', '😗', '😙', '😚', '🤗', '🤭', '🤫', '🤔', '🫡', '🤨', '😐', '😑', '😶', '🫥', '😶‍🌫️', '🙄', '😬', '😮‍💨', '🤥', '😴', '😪', '😮', '😲', '🥱', '😤', '😮‍💨', '👋', '🤚', '🖐️', '✋', '🖖', '🫱', '🫲', '🫳', '🫴', '👈', '👉', '👆', '👇', '☝️', '🫵', '🧑‍🍳', '🧑‍🎤', '🧑‍🚒'],
+        'Plan': ['📌', '📍', '🧷', '🖇️', '📎', '🔖', '🏷️', '📁', '📂', '🗄️', '🗃️', '📇', '📜', '📄', '📃', '📑', '📔', '📕', '📗', '📘', '📙', '📓', '📒', '🧾', '🧮', '🔍', '🔎', '🔔', '📣', '📢', '🚨', '⛔', '⭕', '❌', '✔️', '➕', '➖', '✳️', '🔆', '🔅', '🟢', '🟡', '🔴', '🔵', '🟣', '🟠', '💯', '🎉'],
+        'Biznes': ['📁', '📂', '📑', '📄', '📃', '📜', '📔', '📕', '📗', '📘', '📙', '📓', '🗒️', '🧷', '🖇️', '📎', '🔖', '🔗', '🗝️', '🔒', '🔓', '🏛️', '🏫', '🏟️', '🏪', '🏬', '🏢', '🏭', '🏗️', '🚛', '🚚', '🚢', '✈️', '🚀', '📦', '🛒', '🧺', '💡', '⚙️', '🛠️', '🧰', '📡', '📶', '🛜', '🎖️', '🏅', '🥇'],
+        'Miejsca': ['🏯', '🏚️', '🏙️', '🌁', '🌄', '🌅', '🌇', '🌉', '🎠', '🛝', '🎡', '🎢', '⛱️', '🏨', '🏩', '🏪', '🏬', '🏤', '🏣', '🏦', '🏫', '🏢', '🏭', '🏗️', '🚲', '🛴', '🛵', '🏍️', '🚙', '🚎', '🚒', '🚑', '🚓', '🚕', '🚗', '🚚', '🚛', '🚜', '🚁', '🛩️', '🛫', '🛬', '🚤', '⛵', '🛳️', '🚢', '🧭', '📍'],
+        'Natura': ['🌰', '🫚', '🪸', '🪨', '🪵', '🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🫐', '🥝', '🍅', '🫒', '🥥', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🧄', '🧅', '🥔', '🍠', '🫘', '🥜', '🌍', '🌎', '🌏', '🪐', '☄️', '💫', '⚡', '🔥', '🧊', '💧'],
+        'Jedzenie': ['🍛', '🍲', '🫕', '🥣', '🥡', '🥟', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🍮', '🍭', '🍬', '🍯', '🍼', '🥛', '🫗', '🍶', '🍾', '🍷', '🍸', '🍹', '🍺', '🍻', '🥂', '🥃', '🧉', '🧋', '🧊', '🥄', '🍴', '🍽️', '🥢', '🧂', '🔪', '🏺', '🛒', '🧺', '📦', '🎂', '🍥', '🍘', '🍙', '🍞'],
+        'Edukacja': ['🏫', '🏛️', '🧑‍🎓', '🧑‍🏫', '🧑‍🔬', '🧑‍💻', '🧑‍🎨', '🧑‍⚖️', '🧑‍🚀', '🧑‍🔧', '🧑‍⚕️', '🧑‍💼', '📌', '📍', '📎', '🧷', '🖇️', '🔖', '🏷️', '📁', '📂', '🗄️', '🗃️', '📇', '🧾', '📜', '📰', '🗞️', '💡', '🔦', '🕯️', '🔮', '🪄', '🧿', '🎓', '🏅', '🥇', '🎖️', '🎯', '🧩', '🧱', '⚙️', '🛠️', '🔧', '📡', '🌐', '☁️', '🛜'],
+        'Sport': ['🥅', '🏟️', '🎖️', '🎗️', '🎫', '🎟️', '🎪', '🎯', '🎲', '🎳', '🕹️', '🪀', '🪁', '🥁', '📣', '📢', '🔔', '🚩', '🏁', '✅', '☑️', '⭐', '🌟', '💫', '✨', '💥', '💯', '🔥', '⚡', '💪', '🦾', '🧘', '⏱️', '⏲️', '⌛', '⏳', '📊', '📈', '🏔️', '⛰️', '🏕️', '🏖️', '🌊', '☀️', '❄️', '🧊', '🎿', '🛷'],
+        'Zdrowie': ['🧑‍⚕️', '👩‍⚕️', '👨‍⚕️', '🧑‍🔬', '👩‍🔬', '👨‍🔬', '🧘‍♀️', '🧘‍♂️', '🏃', '🚶', '🏋️', '🤸', '🤽', '🏊', '🚴', '🛌', '🧎', '🧍', '🍵', '🫖', '🥛', '🍼', '🧂', '🥣', '🥗', '🍯', '🍊', '🍌', '🍇', '🍉', '🥝', '🍅', '🫒', '🥥', '🥒', '🌽', '🫘', '🥜', '💚', '💙', '🤍', '💛', '🩵', '✨', '🌟', '💫', '🔆', '🔅'],
+        'Dom': ['🏚️', '🏗️', '🧱', '🪵', '🪨', '🪜', '🪚', '🔨', '⛏️', '⚒️', '🛠️', '🗜️', '⛓️', '🧲', '🔌', '🔋', '🪫', '📦', '🧺', '🛒', '🛍️', '🎁', '🪑', '🛋️', '🛏️', '🚪', '🧯', '🔒', '🔓', '🗝️', '🕯️', '💡', '🔦', '📺', '📻', '🎛️', '🎚️', '🎵', '🎶', '📚', '📖', '🧸', '🧶', '🪡', '🌷', '🌼', '🌸', '🌱'],
+        'Symbole': ['🟩', '🟨', '🟥', '🟦', '🟪', '🟧', '🟫', '🔶', '🔷', '🔸', '🔹', '💠', '🔘', '🔳', '🔲', '🔺', '🔻', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '🟤', '⚫', '⚪', '❔', '❕', '❓', '❗', '‼️', '⁉️', '〰️', '➰', '➿', '🔱', '⚜️', '🔰', '♻️', '✅', '☑️', '✔️', '✖️', '❌', '⭕', '🚫', '⛔', '🛑']
+    };
+    projectIconSets.forEach(set => {
+        set.items = [...new Set([...set.items, ...(projectIconSetExtras[set.label] || [])])];
+    });
+    const projectIconSetKeywords = {
+        'Najczęstsze': ['popularne', 'ulubione', 'gwiazda', 'start', 'zadanie', 'projekt'],
+        'Praca': ['firma', 'biuro', 'biznes', 'dokument', 'mail', 'spotkanie', 'zespół', 'zespol'],
+        'Technologia': ['tech', 'komputer', 'laptop', 'telefon', 'kod', 'programowanie', 'narzędzia', 'narzedzia'],
+        'Kreatywne': ['design', 'projektowanie', 'sztuka', 'muzyka', 'foto', 'kamera', 'pomysł', 'pomysl'],
+        'Status': ['priorytet', 'ważne', 'wazne', 'gotowe', 'błąd', 'blad', 'alert', 'kolor'],
+        'Zespół': ['ludzie', 'osoba', 'uśmiech', 'usmiech', 'team', 'człowiek', 'czlowiek'],
+        'Plan': ['kalendarz', 'czas', 'termin', 'harmonogram', 'mapa', 'cel'],
+        'Biznes': ['pieniądze', 'pieniadze', 'finanse', 'bank', 'sprzedaż', 'sprzedaz', 'sklep'],
+        'Miejsca': ['miasto', 'budynek', 'podróż', 'podroz', 'transport', 'auto', 'samolot'],
+        'Natura': ['roślina', 'roslina', 'drzewo', 'kwiat', 'pogoda', 'woda', 'ogień', 'ogien'],
+        'Jedzenie': ['food', 'pizza', 'kawa', 'napój', 'napoj', 'owoc', 'warzywo'],
+        'Edukacja': ['szkoła', 'szkola', 'nauka', 'książka', 'ksiazka', 'student', 'uczeń', 'uczen'],
+        'Sport': ['gra', 'mecz', 'medal', 'puchar', 'piłka', 'pilka', 'trening'],
+        'Zdrowie': ['medycyna', 'lekarz', 'serce', 'apteczka', 'ćwiczenia', 'cwiczenia'],
+        'Symbole': ['znak', 'serce', 'kolor', 'checkbox', 'plus', 'minus', 'okrąg', 'okrag']
+    };
+    const projectIconKeywords = {
+        '🚀': ['rakieta', 'start', 'launch'],
+        '⭐': ['gwiazda', 'ulubione', 'star'],
+        '✅': ['check', 'gotowe', 'zrobione', 'ok'],
+        '⚙️': ['ustawienia', 'trybik', 'settings'],
+        '💡': ['pomysł', 'pomysl', 'idea'],
+        '📌': ['pinezka', 'przypięte', 'przypiete'],
+        '📋': ['lista', 'clipboard'],
+        '📁': ['folder', 'projekt'],
+        '🔧': ['klucz', 'naprawa', 'narzędzie', 'narzedzie'],
+        '🧩': ['puzzle', 'część', 'czesc'],
+        '🎯': ['cel', 'target'],
+        '📈': ['wzrost', 'wykres'],
+        '🔒': ['blokada', 'zamknięte', 'zamkniete'],
+        '🖥️': ['monitor', 'komputer'],
+        '📱': ['telefon', 'mobile'],
+        '🌐': ['internet', 'web', 'sieć', 'siec'],
+        '☁️': ['chmura', 'cloud'],
+        '💼': ['praca', 'teczka', 'biuro'],
+        '💻': ['laptop', 'komputer', 'kod'],
+        '🎨': ['sztuka', 'design', 'kolor'],
+        '🙂': ['uśmiech', 'usmiech', 'osoba'],
+        '🗓️': ['kalendarz', 'plan', 'termin'],
+        '💰': ['pieniądze', 'pieniadze', 'finanse'],
+        '🌍': ['świat', 'swiat', 'ziemia'],
+        '🌿': ['natura', 'liść', 'lisc'],
+        '🍕': ['pizza', 'jedzenie'],
+        '🎓': ['edukacja', 'nauka'],
+        '🏅': ['medal', 'sport'],
+        '💚': ['zdrowie', 'serce'],
+        '🔣': ['symbole', 'znaki'],
+        '📅': ['data', 'kalendarz'],
+        '⏰': ['alarm', 'czas'],
+        '🔍': ['szukaj', 'lupa'],
+        '📦': ['paczka', 'box'],
+        '📝': ['notatka', 'pisanie'],
+        '🏢': ['firma', 'budynek'],
+        '📞': ['telefon', 'kontakt'],
+        '🤝': ['współpraca', 'wspolpraca'],
+        '👥': ['zespół', 'zespol', 'ludzie'],
+        '🎬': ['film', 'video'],
+        '🎧': ['audio', 'muzyka'],
+        '📷': ['aparat', 'foto'],
+        '🔥': ['ogień', 'ogien', 'pilne'],
+        '🔔': ['dzwonek', 'powiadomienie'],
+        '❌': ['anuluj', 'błąd', 'blad'],
+        '⚠️': ['uwaga', 'ostrzeżenie', 'ostrzezenie'],
+        '🏠': ['dom', 'home'],
+        '❤️': ['serce', 'miłość', 'milosc']
+    };
+    const normalizedProjectIconSearch = projectIconSets.map(set => ({
+        label: set.label,
+        items: set.items.map(icon => ({
+            icon,
+            keywords: [
+                set.label,
+                ...(projectIconSetKeywords[set.label] || []),
+                ...(projectIconKeywords[icon] || [])
+            ].join(' ').toLowerCase()
+        }))
+    }));
+    let activeIconPicker = null;
+    let activeIconInput = null;
+    let emojiPicker = null;
+    let emojiPickerSearch = null;
+    let emojiPickerBody = null;
+    let activeIconSetIndex = 0;
+
+    function updateProjectSubmitState() {
+        if (!projectSubmitBtn || !projectNameInput) return;
+        projectSubmitBtn.disabled = projectNameInput.value.trim().length === 0;
+    }
+
+    function updateIssueSubmitState() {
+        if (!issueSubmitBtn || !issueTitleInput) return;
+        issueSubmitBtn.disabled = issueTitleInput.value.trim().length === 0;
+    }
+
+    function updateProjectRenameSubmitState() {
+        if (!projectRenameSubmitBtn || !projectRenameNameInput) return;
+        projectRenameSubmitBtn.disabled = projectRenameNameInput.value.trim().length === 0;
+    }
+
+    function updateSectionCreateSubmitState() {
+        if (!sectionCreateSubmitBtn || !sectionCreateTitleInput) return;
+        sectionCreateSubmitBtn.disabled = sectionCreateTitleInput.value.trim().length === 0;
+    }
+
+    function updateSectionRenameSubmitState() {
+        if (!sectionRenameSubmitBtn || !sectionRenameTitleInput) return;
+        sectionRenameSubmitBtn.disabled = sectionRenameTitleInput.value.trim().length === 0;
+    }
+
+    function closeCreateMenu() {
+        if (!createMenu || !createMenuToggle) return;
+        createMenu.classList.remove('is-open');
+        createMenuToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function closeProjectActionMenus(exceptMenu = null) {
+        projectActionMenus.forEach(menu => {
+            if (menu === exceptMenu) return;
+            menu.classList.remove('is-open');
+            menu.querySelector('[data-project-menu-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function closeSectionActionMenu() {
+        if (!sectionActionMenu) return;
+        sectionActionMenu.classList.remove('is-open');
+        sectionActionMenu.querySelector('[data-section-menu-toggle]')?.setAttribute('aria-expanded', 'false');
+    }
+
+    function getCollapsedProjects() {
+        try {
+            return new Set(JSON.parse(localStorage.getItem('collapsedTaskProjects') || '[]'));
+        } catch (error) {
+            return new Set();
+        }
+    }
+
+    function saveCollapsedProjects(collapsedProjects) {
+        try {
+            localStorage.setItem('collapsedTaskProjects', JSON.stringify([...collapsedProjects]));
+        } catch (error) {
+            // Ignore storage failures; the in-page collapse state still works.
+        }
+    }
+
+    function getProjectTreeCollapsed() {
+        try {
+            return localStorage.getItem('collapsedTaskProjectTree') === 'true';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function saveProjectTreeCollapsed(isCollapsed) {
+        try {
+            localStorage.setItem('collapsedTaskProjectTree', String(isCollapsed));
+        } catch (error) {
+            // Ignore storage failures; the in-page collapse state still works.
+        }
+    }
+
+    function setProjectTreeCollapsed(isCollapsed) {
+        if (!projectTree || !projectTreeToggle) return;
+
+        projectTree.classList.toggle('is-collapsed', isCollapsed);
+        projectTreeToggle.setAttribute('aria-expanded', String(!isCollapsed));
+        projectTreeToggle.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} Twoje projekty`);
+    }
+
+    function setProjectCollapsed(projectNode, isCollapsed) {
+        const toggle = projectNode.querySelector('[data-project-collapse-toggle]');
+        const projectName = projectNode.querySelector('.tasks-project-title span:not(.tasks-project-badge)')?.textContent?.trim() || 'projekt';
+
+        projectNode.classList.toggle('is-collapsed', isCollapsed);
+        toggle?.setAttribute('aria-expanded', String(!isCollapsed));
+        toggle?.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} projekt ${projectName}`);
+    }
+
+    function openModal(modal, focusTarget, onOpen) {
+        if (!modal) return;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+        closeCreateMenu();
+        if (onOpen) onOpen();
+        setTimeout(() => focusTarget?.focus(), 50);
+    }
+
+    function closeModal(modal) {
+        if (!modal) return;
+        closeEmojiPicker();
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        if (!document.querySelector('.tasks-modal.is-open')) {
+            document.body.classList.remove('modal-open');
+        }
+    }
+
+    function createSectionDefaultIconSvg() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'tasks-section-default-icon');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+
+        ['M21 5.5 10 16.5 4.5 11', 'M20 12v6.5A2.5 2.5 0 0 1 17.5 21h-12A2.5 2.5 0 0 1 3 18.5v-12A2.5 2.5 0 0 1 5.5 4H15'].forEach(d => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            svg.appendChild(path);
+        });
+
+        return svg;
+    }
+
+    function createEmptyIconSvg() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'tasks-empty-icon');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+
+        ['M5 5l14 14', 'M19 5 5 19'].forEach(d => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            svg.appendChild(path);
+        });
+
+        return svg;
+    }
+
+    function renderProjectIcon(display, icon) {
+        if (!display) return;
+        display.textContent = '';
+        if (!icon) {
+            display.appendChild(createEmptyIconSvg());
+            return;
+        }
+        if (icon === 'check' || icon === '✅') {
+            display.appendChild(createSectionDefaultIconSvg());
+            return;
+        }
+        display.textContent = icon;
+    }
+
+    function setIconValue(input, picker, icon) {
+        const normalizedIcon = (icon || '').trim();
+        if (input) input.value = normalizedIcon;
+        const display = picker ? picker.querySelector('[data-selected-project-icon]') : null;
+        renderProjectIcon(display, normalizedIcon);
+    }
+
+    function syncProjectIconPickers() {
+        projectIconGroups.forEach(group => {
+            if (!group.input || !group.picker) return;
+            setIconValue(group.input, group.picker, group.input.value);
+        });
+    }
+
+    function getPickerForInput(input) {
+        const group = projectIconGroups.find(item => item.input === input);
+        return group ? group.picker : null;
+    }
+
+    function createEmojiPicker() {
+        if (emojiPicker) return emojiPicker;
+
+        emojiPicker = document.createElement('div');
+        emojiPicker.className = 'tasks-emoji-picker';
+        emojiPicker.setAttribute('role', 'dialog');
+        emojiPicker.setAttribute('aria-label', 'Wybór ikony projektu');
+
+        const tabs = document.createElement('div');
+        tabs.className = 'tasks-emoji-picker__tabs';
+        projectIconSets.forEach((set, index) => {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.textContent = set.icon;
+            tab.title = set.label;
+            tab.setAttribute('aria-label', set.label);
+            tab.addEventListener('click', () => {
+                activeIconSetIndex = index;
+                emojiPickerSearch.value = '';
+                renderEmojiPicker();
+            });
+            tabs.appendChild(tab);
+        });
+
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'tasks-emoji-picker__search';
+        searchWrap.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>';
+
+        emojiPickerSearch = document.createElement('input');
+        emojiPickerSearch.type = 'search';
+        emojiPickerSearch.placeholder = 'Szukaj lub wpisz ikonę';
+        emojiPickerSearch.setAttribute('aria-label', 'Szukaj ikony');
+        emojiPickerSearch.addEventListener('input', renderEmojiPicker);
+        searchWrap.appendChild(emojiPickerSearch);
+
+        const clearButton = document.createElement('button');
+        clearButton.type = 'button';
+        clearButton.className = 'tasks-emoji-clear';
+        clearButton.title = 'Usuń ikonę';
+        clearButton.setAttribute('aria-label', 'Usuń ikonę');
+        clearButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
+        clearButton.addEventListener('click', () => {
+            setIconValue(activeIconInput, activeIconPicker, '');
+            closeEmojiPicker();
+            activeIconInput?.focus();
+        });
+        searchWrap.appendChild(clearButton);
+
+        emojiPickerBody = document.createElement('div');
+        emojiPickerBody.className = 'tasks-emoji-picker__body';
+
+        emojiPicker.appendChild(tabs);
+        emojiPicker.appendChild(searchWrap);
+        emojiPicker.appendChild(emojiPickerBody);
+        document.body.appendChild(emojiPicker);
+        renderEmojiPicker();
+        return emojiPicker;
+    }
+
+    function renderEmojiPicker() {
+        if (!emojiPicker || !emojiPickerBody) return;
+        const query = (emojiPickerSearch?.value || '').trim().toLowerCase();
+        const tabs = emojiPicker.querySelectorAll('.tasks-emoji-picker__tabs button');
+        tabs.forEach((tab, index) => tab.classList.toggle('is-active', index === activeIconSetIndex));
+
+        emojiPickerBody.innerHTML = '';
+        const searchResults = query
+            ? normalizedProjectIconSearch.flatMap(set => set.items)
+                .filter(item => item.icon.includes(query) || item.keywords.includes(query))
+                .map(item => item.icon)
+            : [];
+        const sets = query
+            ? [{ label: 'Wyniki', items: [...new Set(searchResults)] }]
+            : [projectIconSets[activeIconSetIndex]];
+
+        sets.forEach(set => {
+            const group = document.createElement('section');
+            group.className = 'tasks-emoji-group';
+            const title = document.createElement('h3');
+            title.textContent = set.label;
+            const list = document.createElement('div');
+            list.className = 'tasks-emoji-list';
+
+            const items = set.items.length ? set.items : (query ? [query] : []);
+            items.forEach(icon => {
+                const option = document.createElement('button');
+                option.type = 'button';
+                option.className = 'tasks-emoji-option';
+                option.textContent = icon;
+                option.setAttribute('aria-label', `Wybierz ikonę ${icon}`);
+                option.addEventListener('click', () => {
+                    setIconValue(activeIconInput, activeIconPicker, icon);
+                    closeEmojiPicker();
+                    activeIconInput?.focus();
+                });
+                list.appendChild(option);
+            });
+
+            group.appendChild(title);
+            group.appendChild(list);
+            emojiPickerBody.appendChild(group);
+        });
+    }
+
+    function openEmojiPicker(picker, input) {
+        if (!picker || !input) return;
+        createEmojiPicker();
+        activeIconPicker = picker;
+        activeIconInput = input;
+        projectIconPickers.forEach(button => button.setAttribute('aria-expanded', String(button === picker)));
+        emojiPickerSearch.value = '';
+        renderEmojiPicker();
+        emojiPicker.classList.add('is-open');
+        setTimeout(() => emojiPickerSearch?.focus(), 30);
+    }
+
+    function closeEmojiPicker() {
+        if (!emojiPicker) return;
+        emojiPicker.classList.remove('is-open');
+        projectIconPickers.forEach(button => button.setAttribute('aria-expanded', 'false'));
+        activeIconPicker = null;
+        activeIconInput = null;
+    }
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value;
+        return div.innerHTML;
+    }
+
+    if (createMenuToggle && createMenu) {
+        createMenuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = createMenu.classList.toggle('is-open');
+            createMenuToggle.setAttribute('aria-expanded', String(isOpen));
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+        });
+    }
+
+    if (sectionActionMenu) {
+        const toggle = sectionActionMenu.querySelector('[data-section-menu-toggle]');
+        const panel = sectionActionMenu.querySelector('.tasks-section-menu');
+
+        toggle?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!panel) return;
+            const isOpen = !sectionActionMenu.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            sectionActionMenu.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+        });
+
+        sectionActionMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+
+    projectActionMenus.forEach(menu => {
+        const toggle = menu.querySelector('[data-project-menu-toggle]');
+        if (!toggle) return;
+
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !menu.classList.contains('is-open');
+            closeProjectActionMenus(menu);
+            closeCreateMenu();
+            closeSectionActionMenu();
+            menu.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+        });
+
+        menu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+
+    if (projectTree && projectTreeToggle) {
+        setProjectTreeCollapsed(getProjectTreeCollapsed());
+
+        projectTreeToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const isCollapsed = !projectTree.classList.contains('is-collapsed');
+            setProjectTreeCollapsed(isCollapsed);
+            saveProjectTreeCollapsed(isCollapsed);
+        });
+    }
+
+    if (projectNodes.length) {
+        const collapsedProjects = getCollapsedProjects();
+
+        projectNodes.forEach(projectNode => {
+            const projectId = projectNode.dataset.projectId || '';
+            const toggle = projectNode.querySelector('[data-project-collapse-toggle]');
+            const shouldCollapse = collapsedProjects.has(projectId) && !projectNode.classList.contains('is-current');
+
+            setProjectCollapsed(projectNode, shouldCollapse);
+
+            toggle?.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isCollapsed = !projectNode.classList.contains('is-collapsed');
+                setProjectCollapsed(projectNode, isCollapsed);
+
+                if (projectId) {
+                    if (isCollapsed) {
+                        collapsedProjects.add(projectId);
+                    } else {
+                        collapsedProjects.delete(projectId);
+                    }
+                    saveCollapsedProjects(collapsedProjects);
+                }
+            });
+        });
+    }
+
+    document.querySelectorAll('[data-delete-project-form]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const projectName = escapeHtml(this.dataset.projectName || 'ten projekt');
+
+            window.showConfirmModal({
+                title: 'Usuń projekt',
+                message: `Czy na pewno chcesz usunąć projekt „${projectName}”? Zadania z projektu zostaną przeniesione do sekcji „Bez projektu”.`,
+                confirmText: 'Usuń projekt',
+                cancelText: 'Anuluj',
+                confirmClass: 'btn-danger',
+                onConfirm: () => this.submit()
+            });
+        });
+    });
+
+    document.querySelectorAll('[data-delete-section-form]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const sectionName = escapeHtml(this.dataset.sectionName || 'tę grupę');
+
+            window.showConfirmModal({
+                title: 'Usuń grupę',
+                message: `Czy na pewno chcesz usunąć grupę „${sectionName}”? Zadania z tej grupy zostaną przeniesione do sekcji „Bez projektu”.`,
+                confirmText: 'Usuń grupę',
+                cancelText: 'Anuluj',
+                confirmClass: 'btn-danger',
+                onConfirm: () => this.submit()
+            });
+        });
+    });
+
+    openProjectButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            openModal(projectModal, projectNameInput, updateProjectSubmitState);
+        });
+    });
+
+    openProjectRenameButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (projectRenameIdInput) projectRenameIdInput.value = button.dataset.projectId || '';
+            if (projectRenameNameInput) projectRenameNameInput.value = button.dataset.projectName || '';
+            if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = button.dataset.projectDescription || '';
+            if (projectRenameCodeInput) projectRenameCodeInput.value = button.dataset.projectCode || '';
+            if (projectRenameIconInput) projectRenameIconInput.value = button.dataset.projectIcon || '';
+            syncProjectIconPickers();
+            closeProjectActionMenus();
+            openModal(projectRenameModal, projectRenameNameInput, updateProjectRenameSubmitState);
+            setTimeout(() => projectRenameNameInput?.select(), 60);
+        });
+    });
+
+    openSectionCreateButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (sectionCreateProjectInput) sectionCreateProjectInput.value = button.dataset.projectId || '';
+            if (sectionCreateTitleInput) sectionCreateTitleInput.value = '';
+            if (sectionCreateIconInput) sectionCreateIconInput.value = '';
+            syncProjectIconPickers();
+            closeProjectActionMenus();
+            openModal(sectionCreateModal, sectionCreateTitleInput, updateSectionCreateSubmitState);
+        });
+    });
+
+    openSectionRenameButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (sectionRenameIdInput) sectionRenameIdInput.value = button.dataset.sectionId || '';
+            if (sectionRenameTitleInput) sectionRenameTitleInput.value = button.dataset.sectionTitle || '';
+            if (sectionRenameKindInput) sectionRenameKindInput.value = button.dataset.sectionKind || 'issues';
+            if (sectionRenameIconInput) sectionRenameIconInput.value = button.dataset.sectionIcon || '';
+            syncProjectIconPickers();
+            closeSectionActionMenu();
+            openModal(sectionRenameModal, sectionRenameTitleInput, updateSectionRenameSubmitState);
+            setTimeout(() => sectionRenameTitleInput?.select(), 60);
+        });
+    });
+
+    openIssueButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (button.disabled) return;
+            openModal(issueModal, issueTitleInput, updateIssueSubmitState);
+        });
+    });
+
+    document.querySelectorAll('[data-close-modal]').forEach(button => {
+        button.addEventListener('click', function() {
+            closeModal(this.closest('.tasks-modal'));
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (createMenu && !createMenu.contains(e.target)) closeCreateMenu();
+        if (!e.target.closest('[data-section-actions]')) closeSectionActionMenu();
+        if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
+        if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
+            closeEmojiPicker();
+        }
+    });
+
+    if (projectNameInput) {
+        projectNameInput.addEventListener('input', function() {
+            const codeInput = projectForm.querySelector('[name="code"]');
+            if (codeInput && !codeInput.dataset.touched) {
+                const generatedCode = projectNameInput.value.replace(/[^a-z0-9]/gi, '').slice(0, 3).toUpperCase();
+                codeInput.value = generatedCode || 'TSK';
+            }
+            updateProjectSubmitState();
+        });
+    }
+
+    if (projectForm) {
+        const codeInput = projectForm.querySelector('[name="code"]');
+        if (codeInput) {
+            codeInput.addEventListener('input', function() {
+                codeInput.dataset.touched = 'true';
+            });
+            if (!codeInput.value) codeInput.value = 'TSK';
+        }
+        if (projectIconInput && !projectIconInput.value) {
+            setIconValue(projectIconInput, getPickerForInput(projectIconInput), '');
+        }
+        if (projectIconInput) {
+            projectIconInput.addEventListener('input', function() {
+                setIconValue(projectIconInput, getPickerForInput(projectIconInput), projectIconInput.value);
+            });
+        }
+        updateProjectSubmitState();
+    }
+
+    if (projectRenameIconInput) {
+        projectRenameIconInput.addEventListener('input', function() {
+            setIconValue(projectRenameIconInput, getPickerForInput(projectRenameIconInput), projectRenameIconInput.value);
+        });
+    }
+
+    if (sectionCreateIconInput) {
+        sectionCreateIconInput.addEventListener('input', function() {
+            setIconValue(sectionCreateIconInput, getPickerForInput(sectionCreateIconInput), sectionCreateIconInput.value);
+        });
+    }
+
+    if (sectionRenameIconInput) {
+        sectionRenameIconInput.addEventListener('input', function() {
+            setIconValue(sectionRenameIconInput, getPickerForInput(sectionRenameIconInput), sectionRenameIconInput.value);
+        });
+    }
+
+    syncProjectIconPickers();
+
+    projectIconPickers.forEach(picker => {
+        picker.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const input = document.getElementById(picker.dataset.projectIconTarget || '');
+            if (!input) return;
+            if (emojiPicker?.classList.contains('is-open') && activeIconPicker === picker) {
+                closeEmojiPicker();
+                return;
+            }
+            openEmojiPicker(picker, input);
+        });
+    });
+
+    if (issueTitleInput) {
+        issueTitleInput.addEventListener('input', updateIssueSubmitState);
+        updateIssueSubmitState();
+    }
+
+    if (projectRenameNameInput) {
+        projectRenameNameInput.addEventListener('input', updateProjectRenameSubmitState);
+        updateProjectRenameSubmitState();
+    }
+
+    if (sectionCreateTitleInput) {
+        sectionCreateTitleInput.addEventListener('input', updateSectionCreateSubmitState);
+        updateSectionCreateSubmitState();
+    }
+
+    if (projectRenameCodeInput) {
+        projectRenameCodeInput.addEventListener('input', function() {
+            projectRenameCodeInput.value = projectRenameCodeInput.value.toUpperCase();
+        });
+    }
+
+    if (sectionRenameTitleInput) {
+        sectionRenameTitleInput.addEventListener('input', updateSectionRenameSubmitState);
+        updateSectionRenameSubmitState();
+    }
+
+    document.querySelectorAll('.tasks-modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal(modal);
+        });
+        if (modal.classList.contains('is-open')) {
+            let focusTarget = projectNameInput;
+            let onOpen = updateProjectSubmitState;
+            if (modal.id === 'issue-modal') {
+                focusTarget = issueTitleInput;
+                onOpen = updateIssueSubmitState;
+            }
+            if (modal.id === 'project-rename-modal') {
+                focusTarget = projectRenameNameInput;
+                onOpen = updateProjectRenameSubmitState;
+            }
+            if (modal.id === 'section-create-modal') {
+                focusTarget = sectionCreateTitleInput;
+                onOpen = updateSectionCreateSubmitState;
+            }
+            if (modal.id === 'section-rename-modal') {
+                focusTarget = sectionRenameTitleInput;
+                onOpen = updateSectionRenameSubmitState;
+            }
+            openModal(modal, focusTarget, onOpen);
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeEmojiPicker();
+            const openModalEl = document.querySelector('.tasks-modal.is-open');
+            if (openModalEl) closeModal(openModalEl);
+        }
+    });
+
+    document.querySelectorAll('.tasks-toggle input').forEach(input => {
+        input.addEventListener('change', function() {
+            this.closest('.tasks-toggle')?.classList.toggle('is-on', this.checked);
+        });
+    });
+
+    if (createMenuPanel) {
+        createMenuPanel.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
 
     // Navigate to task detail on row click
     taskRows.forEach(row => {
         row.addEventListener('click', function(e) {
             // Prevent navigation if clicking on checkbox or its container cell
-            if (e.target.type === 'checkbox' || e.target.closest('td').querySelector('.task-checkbox')) {
+            const cell = e.target.closest('td');
+            if (e.target.type === 'checkbox' || e.target.closest('form') || (cell && cell.querySelector('.task-checkbox'))) {
                 return;
             }
             const viewUrl = this.getAttribute('data-view-url');
@@ -49,7 +918,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const anyOpen = statuses.some(s => s !== 'closed');
                     
                     if (anyOpen) {
-                        statusToggleBtn.className = 'btn btn-success tasks-toolbar-btn';
+                        statusToggleBtn.className = 'btn btn-secondary tasks-toolbar-btn';
                         statusToggleBtn.innerHTML = `
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                             Zamknij zadanie
@@ -76,10 +945,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (row) {
                 if (cb.checked) {
                     row.classList.add('checked');
-                    row.style.backgroundColor = '#eff6ff';
                 } else {
                     row.classList.remove('checked');
-                    row.style.backgroundColor = '';
                 }
             }
         });
@@ -218,24 +1085,79 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Filtering Logic
+    function updateGroupVisibility() {
+        groupRows.forEach(groupRow => {
+            let hasVisibleTask = false;
+            let nextRow = groupRow.nextElementSibling;
+
+            while (nextRow && !nextRow.classList.contains('tasks-group-row')) {
+                if (nextRow.classList.contains('task-row') && nextRow.style.display !== 'none') {
+                    hasVisibleTask = true;
+                    break;
+                }
+                nextRow = nextRow.nextElementSibling;
+            }
+
+            groupRow.style.display = hasVisibleTask ? '' : 'none';
+        });
+    }
+
+    function setActiveFilterButtons() {
+        const statusVal = filterStatus ? filterStatus.value : '';
+        const priorityVal = filterPriority ? filterPriority.value : '';
+
+        filterButtons.forEach(button => {
+            if (button.dataset.statusFilter !== undefined) {
+                button.classList.toggle('is-active', button.dataset.statusFilter === statusVal);
+            }
+            if (button.dataset.priorityFilter !== undefined) {
+                button.classList.toggle('is-active', button.dataset.priorityFilter === priorityVal);
+            }
+        });
+    }
+
     function applyFilters() {
-        if (!filterStatus || !filterPriority) return;
-        const statusVal = filterStatus.value;
-        const priorityVal = filterPriority.value;
+        const statusVal = filterStatus ? filterStatus.value : (document.querySelector('.tasks-segments button.is-active')?.dataset.statusFilter || '');
+        const priorityVal = filterPriority ? filterPriority.value : '';
+        const searchVal = filterSearch ? filterSearch.value.trim().toLowerCase() : '';
 
         taskRows.forEach(row => {
             const rowStatus = row.getAttribute('data-status');
             const rowPriority = row.getAttribute('data-priority');
+            const rowText = row.textContent.toLowerCase();
             
             const matchesStatus = !statusVal || rowStatus === statusVal;
             const matchesPriority = !priorityVal || rowPriority === priorityVal;
+            const matchesSearch = !searchVal || rowText.includes(searchVal);
 
-            row.style.display = (matchesStatus && matchesPriority) ? '' : 'none';
+            row.style.display = (matchesStatus && matchesPriority && matchesSearch) ? '' : 'none';
         });
+
+        updateGroupVisibility();
+        setActiveFilterButtons();
     }
 
     if (filterStatus) filterStatus.addEventListener('change', applyFilters);
     if (filterPriority) filterPriority.addEventListener('change', applyFilters);
+    if (filterSearch) filterSearch.addEventListener('input', applyFilters);
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.dataset.statusFilter !== undefined && filterStatus) {
+                filterStatus.value = this.dataset.statusFilter;
+            }
+            if (this.dataset.priorityFilter !== undefined && filterPriority) {
+                filterPriority.value = this.dataset.priorityFilter;
+            }
+            if (this.dataset.statusFilter !== undefined && !filterStatus) {
+                document.querySelectorAll('[data-status-filter]').forEach(btn => btn.classList.remove('is-active'));
+                this.classList.add('is-active');
+            }
+            applyFilters();
+        });
+    });
+
+    applyFilters();
 
     // Helper functions
 

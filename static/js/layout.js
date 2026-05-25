@@ -4,6 +4,8 @@
     const sidebar = document.querySelector('.sidebar');
     const toggle = document.getElementById('sidebar-toggle');
     const backdrop = document.getElementById('sidebar-backdrop');
+    const secondaryMenu = document.getElementById('secondary-menu');
+    const secondaryMenuToggle = document.getElementById('secondary-menu-toggle');
 
     if (!sidebar || !toggle) {
         return;
@@ -23,6 +25,30 @@
 
     function closeSidebar() {
         setOpen(false);
+    }
+
+    function setSecondaryMenuCollapsed(collapsed) {
+        document.body.classList.toggle('secondary-menu-collapsed', collapsed);
+
+        if (!secondaryMenuToggle) {
+            return;
+        }
+
+        secondaryMenuToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        secondaryMenuToggle.setAttribute('aria-label', collapsed ? 'Rozwiń drugie menu' : 'Zwiń drugie menu');
+        secondaryMenuToggle.setAttribute('title', collapsed ? 'Rozwiń drugie menu' : 'Zwiń drugie menu');
+    }
+
+    if (secondaryMenu && secondaryMenuToggle) {
+        const savedSecondaryMenuState = localStorage.getItem('secondaryMenuCollapsed');
+        const forceSecondaryMenuOpen = Boolean(secondaryMenu.querySelector('.tasks-tracker-rail'));
+        setSecondaryMenuCollapsed(forceSecondaryMenuOpen ? false : savedSecondaryMenuState === 'true');
+
+        secondaryMenuToggle.addEventListener('click', function () {
+            const collapsed = !document.body.classList.contains('secondary-menu-collapsed');
+            setSecondaryMenuCollapsed(collapsed);
+            localStorage.setItem('secondaryMenuCollapsed', collapsed ? 'true' : 'false');
+        });
     }
 
     toggle.addEventListener('click', function () {

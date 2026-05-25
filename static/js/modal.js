@@ -1,3 +1,7 @@
+if (document.querySelector('.tasks-page')) {
+    document.body.classList.add('tasks-ui');
+}
+
 /**
  * Universal Confirmation Modal
  */
@@ -13,9 +17,15 @@ window.showConfirmModal = function (options) {
 
     const overlay = document.createElement('div');
     overlay.className = 'confirm-modal-overlay';
+    if (document.querySelector('.tasks-page')) {
+        overlay.classList.add('confirm-modal-overlay--tasks');
+    }
 
     const modal = document.createElement('div');
     modal.className = 'confirm-modal';
+    if (overlay.classList.contains('confirm-modal-overlay--tasks')) {
+        modal.classList.add('confirm-modal--tasks');
+    }
     modal.innerHTML = `
         <div class="confirm-modal__body">
             <div class="confirm-modal__icon">

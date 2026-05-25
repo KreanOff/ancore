@@ -3,7 +3,7 @@
     border: 1px solid var(--border-color);
     padding: 2rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border-radius: 0;
+    border-radius: 16px;
 }
 
 .dashboard-card p {
@@ -13,6 +13,9 @@
 }
 
 .dashboard-shell {
+    --dashboard-radius-lg: 18px;
+    --dashboard-radius-md: 14px;
+    --dashboard-radius-sm: 10px;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -26,7 +29,7 @@
     padding: 1.5rem;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius);
+    border-radius: var(--dashboard-radius-lg);
     box-shadow: var(--shadow-sm);
 }
 
@@ -70,7 +73,7 @@
 .dashboard-panel {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius);
+    border-radius: var(--dashboard-radius-md);
     box-shadow: var(--shadow-sm);
 }
 
@@ -163,7 +166,7 @@
     text-decoration: none;
     background: var(--background-secondary);
     border: 1px solid transparent;
-    border-radius: var(--radius);
+    border-radius: var(--dashboard-radius-sm);
 }
 
 .dashboard-list-item:hover,
@@ -200,7 +203,7 @@
 .dashboard-badge {
     flex-shrink: 0;
     padding: 0.35rem 0.55rem;
-    border-radius: var(--radius);
+    border-radius: 999px;
     color: var(--text-main);
     background: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -292,7 +295,7 @@
     flex-shrink: 0;
     color: #ffffff;
     background: var(--sidebar-bg);
-    border-radius: var(--radius);
+    border-radius: var(--dashboard-radius-sm);
     font-weight: 800;
 }
 
@@ -308,7 +311,7 @@
     color: var(--text-muted);
     background: var(--background-secondary);
     border: 1px dashed var(--border-color);
-    border-radius: var(--radius);
+    border-radius: var(--dashboard-radius-sm);
     font-size: var(--font-size-base);
 }
 
