@@ -10,10 +10,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     {% include 'core/includes/bootstrap.html' %}
+    <script>
+        (function () {
+            var savedWidth = Number(localStorage.getItem('secondaryMenuWidth'));
+            if (!Number.isFinite(savedWidth) || savedWidth <= 0) {
+                return;
+            }
+
+            var min = 180;
+            var max = Math.max(min, window.innerWidth - 56 - 240);
+            var width = Math.min(max, Math.max(min, savedWidth));
+            document.documentElement.style.setProperty('--secondary-menu-width', width + 'px');
+        })();
+    </script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <script>
+        (function () {
+            if (localStorage.getItem('secondaryMenuCollapsed') === 'true') {
+                document.body.classList.add('secondary-menu-collapsed');
+            }
+        })();
+    </script>
     <header class="app-topbar" aria-label="Pasek aplikacji">
         <div class="app-topbar-left">
             <button type="button" class="topbar-icon-button topbar-add-button" id="sidebar-toggle" aria-label="Otwórz menu" aria-controls="app-sidebar" aria-expanded="false" title="Otwórz menu">
@@ -79,7 +99,7 @@
                 </svg>
                 <span class="nav-label">Panel Główny</span>
             </a>
-            <a href="{% url 'tasks:tasks' %}" class="nav-link {% if 'tasks:tasks' in request.resolver_match.view_name %}active{% endif %}" aria-label="Zadania" title="Zadania">
+            <a href="{% url 'tasks:tasks' %}" class="nav-link {% if request.resolver_match.app_name == 'tasks' %}active{% endif %}" aria-label="Zadania" title="Zadania">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M9 11l3 3L22 4"/>
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
@@ -137,6 +157,7 @@
         <div class="secondary-menu-panel" {% block secondary_menu_panel_attrs %}aria-hidden="true"{% endblock %}>
             {% block secondary_menu %}{% endblock %}
         </div>
+        <div class="secondary-menu-resizer" id="secondary-menu-resizer" role="separator" aria-orientation="vertical" aria-label="Zmień szerokość drugiego menu" tabindex="0"></div>
     </aside>
 
     <main class="main-content">

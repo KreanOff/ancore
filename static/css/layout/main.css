@@ -5,6 +5,7 @@
     flex-direction: column;
     min-height: calc(100vh - var(--topbar-height));
     padding-top: var(--topbar-height);
+    background: var(--panel-bg);
     transition: margin-left 0.2s ease;
 }
 
@@ -117,12 +118,20 @@
 }
 
 .page-container.full-width {
+    --page-container-gap: 0px;
+
     max-width: none;
     padding: 0;
-    margin: 0;
-    flex-grow: 1;
+    margin: var(--page-container-gap);
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    background-clip: padding-box;
 }
 
 .page-title {

@@ -1,154 +1,411 @@
 {% extends 'core/base.html' %}
 
+{% block extra_head %}
+    {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
+{% endblock %}
+
 {% block page_header %}{% endblock %}
 
 {% block page_container_class %}full-width{% endblock %}
 
-{% block content %}
-<div class="tasks-page tasks-view-layout">
+{% block secondary_menu_panel_attrs %}{% endblock %}
 
-    <main class="tasks-main">
-        <div class="tasks-control-panel">
-            <div class="panel-left">
-                <a href="{% url 'tasks:tasks' %}" class="tasks-back-link">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
+{% block secondary_menu %}
+    {% include 'tasks/includes/tasks_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-issue-page">
+    <div class="tasks-issue-shell">
+        <header class="tasks-issue-header">
+            <div class="tasks-issue-breadcrumb">
+                <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" aria-label="Wróć do listy zadań" title="Wróć do listy zadań">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
                     </svg>
-                    Lista zadań
                 </a>
-                <span class="tasks-panel-divider"></span>
-                <span class="task-id-badge">Zadanie #{{ task.task_id }}</span>
-            </div>
-            <div class="panel-right">
-                <div class="action-group">
-                    <a href="{% url 'tasks:edit_task' task.task_id %}" class="btn btn-danger btn-sm tasks-toolbar-btn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        Edytuj
-                    </a>
-                    {% if task.status != 'closed' %}
-                    <button type="button" class="btn btn-success btn-sm tasks-toolbar-btn" onclick="updateTaskStatus(true)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        Zamknij
-                    </button>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-project">
+                    <span class="tasks-issue-project-icon" aria-hidden="true">
+                        {% if task.section and task.section.project.icon %}{{ task.section.project.icon }}{% else %}⭐{% endif %}
+                    </span>
+                    {% if task.section %}
+                        {{ task.section.project.name }}
                     {% else %}
-                    <button type="button" class="btn btn-secondary btn-sm tasks-toolbar-btn" onclick="updateTaskStatus(false)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                        Otwórz ponownie
-                    </button>
+                        Bez projektu
                     {% endif %}
-                </div>
-                <span class="tasks-panel-divider"></span>
-                <a href="{% url 'tasks:create_task' %}" class="btn btn-primary btn-sm tasks-toolbar-btn">+ Nowe</a>
-                <span class="tasks-panel-divider"></span>
-                <button type="button" class="btn btn-danger btn-sm tasks-toolbar-btn" onclick="confirmDelete()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    Usuń
+                </span>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                <span class="tasks-issue-key">
+                    {% if task.section %}{{ task.section.project.code }}{% else %}TASK{% endif %}-{{ task.task_id }}
+                </span>
+            </div>
+
+            <div class="tasks-issue-actions">
+                <button type="button" class="tasks-issue-icon-button" aria-label="Więcej" title="Więcej">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <circle cx="5" cy="12" r="1.6"/>
+                        <circle cx="12" cy="12" r="1.6"/>
+                        <circle cx="19" cy="12" r="1.6"/>
+                    </svg>
+                </button>
+                <button type="button" class="tasks-issue-icon-button" aria-label="Kopiuj link" title="Kopiuj link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/>
+                        <path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/>
+                    </svg>
+                </button>
+                <button type="button" class="tasks-issue-icon-button" aria-label="Ustawienia" title="Ustawienia">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.08.08a2 2 0 1 1-3.84 0L10 20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.08a2 2 0 1 1 0-3.84L4 10a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 1 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.08-.08a2 2 0 1 1 3.84 0L14 4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.4 9c.1.35.3.69.6 1l.08.08a2 2 0 1 1 0 3.84L20 14c-.3.31-.5.65-.6 1z"/>
+                    </svg>
+                </button>
+                <button type="submit" form="task-detail-form" class="tasks-issue-save" title="Zapisz zmiany">
+                    Zapisz
                 </button>
             </div>
-        </div>
+        </header>
 
-        <div class="tasks-content-scroll">
-            <div class="tasks-view-card">
-                <h1 class="tasks-view-title">{{ task.title }}</h1>
+        <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form">
+            {% csrf_token %}
+            <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
 
-                <div class="tasks-view-meta">
-                    <div class="tasks-view-meta-item">
-                        <span class="tasks-view-meta-label">Status</span>
-                        <span class="tasks-view-meta-value status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
-                    </div>
-                    <div class="tasks-view-meta-item">
-                        <span class="tasks-view-meta-label">Priorytet</span>
-                        <span class="badge badge-{{ task.priority }}">{{ task.get_priority_display }}</span>
-                    </div>
-                    <div class="tasks-view-meta-item">
-                        <span class="tasks-view-meta-label">Przypisano</span>
-                        <span class="tasks-view-meta-value">{{ task.user.get_full_name|default:task.user.username }}</span>
-                    </div>
-                    <div class="tasks-view-meta-item">
-                        <span class="tasks-view-meta-label">Utworzono</span>
-                        <span class="tasks-view-meta-value">{{ task.created_at|date:"d.m.Y H:i" }}</span>
-                    </div>
-                    {% if task.completion_date %}
-                    <div class="tasks-view-meta-item">
-                        <span class="tasks-view-meta-label">Zakończono</span>
-                        <span class="tasks-view-meta-value">{{ task.completion_date|date:"d.m.Y H:i" }}</span>
+            <main class="tasks-issue-main">
+                <section class="tasks-issue-content" aria-label="Treść zadania">
+                    {% if form.errors %}
+                    <div class="tasks-error-banner">
+                        <strong>Wystąpiły błędy:</strong>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
                     </div>
                     {% endif %}
-                </div>
 
-                <div class="tasks-section">
-                    <h2 class="tasks-section-title">Opis zadania</h2>
-                    <div class="tasks-description-box">
-                        {% if task.description %}
-                            {{ task.description|linebreaks }}
-                        {% else %}
-                            <p class="tasks-description-empty">Brak opisu</p>
-                        {% endif %}
+                    <div class="tasks-issue-title-field">
+                        {{ form.title }}
                     </div>
-                </div>
 
-                <div class="tasks-section">
-                    <h2 class="tasks-section-title">Załączniki</h2>
+                    <div class="tasks-issue-description-field">
+                        {{ form.description }}
+                    </div>
+
+                    <div class="tasks-issue-tool-row" aria-label="Narzędzia zadania">
+                        <label class="tasks-issue-tool" for="file-input" title="Dodaj załącznik">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m21.4 11.6-8.5 8.5a6 6 0 0 1-8.5-8.5l8.5-8.5a4 4 0 0 1 5.7 5.7l-8.5 8.5a2 2 0 0 1-2.8-2.8l7.8-7.8"/>
+                            </svg>
+                        </label>
+                        <button type="button" class="tasks-issue-tool" title="Wideo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M15 10 21 6v12l-6-4"/>
+                                <rect x="3" y="6" width="12" height="12" rx="2"/>
+                            </svg>
+                        </button>
+                        <span class="tasks-issue-tool-separator" aria-hidden="true"></span>
+                        <button type="button" class="tasks-issue-tool" title="Tabela">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="16" rx="2"/>
+                                <path d="M3 10h18"/>
+                                <path d="M9 4v16"/>
+                                <path d="M15 4v16"/>
+                            </svg>
+                        </button>
+                        <span class="tasks-issue-tool-separator" aria-hidden="true"></span>
+                        <button type="button" class="tasks-issue-tool" title="Wspomnij">
+                            <span aria-hidden="true">@</span>
+                        </button>
+                        <button type="button" class="tasks-issue-tool" title="Reakcja">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M8 14s1.3 1.5 4 1.5S16 14 16 14"/>
+                                <path d="M9 9h.01"/>
+                                <path d="M15 9h.01"/>
+                            </svg>
+                        </button>
+                        <span class="tasks-issue-tool-separator" aria-hidden="true"></span>
+                        <button type="button" class="tasks-issue-tool" title="Dodaj element">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 5v14"/>
+                                <path d="M5 12h14"/>
+                                <path d="M16 3h3a2 2 0 0 1 2 2v3"/>
+                                <path d="M21 16v3a2 2 0 0 1-2 2h-3"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div id="drop-zone" class="tasks-issue-drop-zone">
+                        <span>+ Dodaj załącznik</span>
+                        <button type="button" id="browse-btn" class="tasks-link-btn">wybierz plik</button>
+                        <input type="file" name="attachments" id="file-input" multiple hidden
+                               accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                    </div>
+                    <div id="file-list" class="tasks-file-list"></div>
+
                     {% if task.attachments.exists %}
-                    <div class="tasks-attachments-grid">
-                        {% for attachment in task.attachments.all %}
-                        <a href="{{ attachment.file.url }}" target="_blank" rel="noopener"
-                           class="tasks-attachment-card is-link"
-                           title="{{ attachment.filename }}">
-                            <div class="tasks-attachment-info">
-                                {% include 'core/includes/attachment_icon.html' with type_class=attachment.get_type_class size='lg' %}
-                                <div class="tasks-attachment-details">
-                                    <span class="tasks-attachment-name">{{ attachment.filename }}</span>
-                                    <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
-                                </div>
+                    <section class="tasks-issue-attachments" aria-label="Załączniki">
+                        <div class="tasks-attachments-grid">
+                            {% for attachment in task.attachments.all %}
+                            <div class="tasks-attachment-card" id="attachment-{{ attachment.id }}">
+                                <a href="{{ attachment.file.url }}" target="_blank" rel="noopener" class="tasks-attachment-info" title="{{ attachment.filename }}">
+                                    {% include 'core/includes/attachment_icon.html' with type_class=attachment.get_type_class size='lg' %}
+                                    <span class="tasks-attachment-details">
+                                        <span class="tasks-attachment-name">{{ attachment.filename }}</span>
+                                        <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
+                                    </span>
+                                </a>
+                                <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
                             </div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="tasks-empty-attachments">Brak załączników</div>
+                            {% endfor %}
+                        </div>
+                    </section>
                     {% endif %}
-                </div>
-            </div>
-        </div>
-    </main>
 
-    <aside class="tasks-nav-sidebar">
-        <div class="tasks-nav-header">
-            <h2>Szybka nawigacja</h2>
-            <span class="tasks-nav-count">{{ all_tasks.count }}</span>
-        </div>
-        <div class="tasks-nav-search">
-            <svg class="tasks-nav-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="task-search" class="tasks-nav-search-input" placeholder="Szukaj zadania...">
-        </div>
-        <div class="tasks-nav-list" id="nav-task-list">
-            {% for nav_task in all_tasks %}
-            <a href="{% url 'tasks:view-task' nav_task.task_id %}"
-               class="tasks-nav-item {% if nav_task.task_id == task.task_id %}active{% endif %}"
-               data-title="{{ nav_task.title|lower }}"
-               data-id="{{ nav_task.task_id }}">
-                <span class="tasks-priority-strip priority-{{ nav_task.priority }}"></span>
-                <div class="tasks-nav-item-body">
-                    <div class="tasks-nav-item-top">
-                        <span class="tasks-nav-item-id">#{{ nav_task.task_id }}</span>
-                        <span class="tasks-nav-title">{{ nav_task.title }}</span>
-                    </div>
-                    <span class="status-indicator status-{{ nav_task.status }}">{{ nav_task.get_status_display }}</span>
-                </div>
-                {% if nav_task.task_id == task.task_id %}
-                <span class="tasks-nav-active-icon" aria-hidden="true">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </span>
-                {% endif %}
-            </a>
-            {% endfor %}
-        </div>
-    </aside>
+                    <button type="button" class="tasks-issue-subissue">
+                        <span aria-hidden="true">+</span>
+                        Dodaj podzadanie
+                    </button>
+
+                    <section class="tasks-issue-activity">
+                        <div class="tasks-issue-activity-head">
+                            <h2>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/>
+                                    <path d="M14 3v5h5"/>
+                                    <path d="m9 14 2 2 4-5"/>
+                                </svg>
+                                Aktywność
+                            </h2>
+                            <div class="tasks-issue-activity-filters">
+                                <button type="button" class="is-active">Wszystko</button>
+                                <button type="button" aria-label="Filtry aktywności" title="Filtry aktywności">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M4 21v-7"/>
+                                        <path d="M4 10V3"/>
+                                        <path d="M12 21v-9"/>
+                                        <path d="M12 8V3"/>
+                                        <path d="M20 21v-5"/>
+                                        <path d="M20 12V3"/>
+                                        <path d="M2 14h4"/>
+                                        <path d="M10 8h4"/>
+                                        <path d="M18 16h4"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tasks-issue-comment">
+                            <textarea class="tasks-issue-comment-input" rows="3" placeholder="Zacznij pisać..."></textarea>
+                            <div class="tasks-issue-comment-tools">
+                                <div class="tasks-issue-tool-row">
+                                    <button type="button" class="tasks-issue-tool" title="Załącznik">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="m21.4 11.6-8.5 8.5a6 6 0 0 1-8.5-8.5l8.5-8.5a4 4 0 0 1 5.7 5.7l-8.5 8.5a2 2 0 0 1-2.8-2.8l7.8-7.8"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="tasks-issue-tool" title="Wideo">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M15 10 21 6v12l-6-4"/>
+                                            <rect x="3" y="6" width="12" height="12" rx="2"/>
+                                        </svg>
+                                    </button>
+                                    <span class="tasks-issue-tool-separator" aria-hidden="true"></span>
+                                    <button type="button" class="tasks-issue-tool" title="Wspomnij"><span aria-hidden="true">@</span></button>
+                                    <button type="button" class="tasks-issue-tool" title="Reakcja">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="9"/>
+                                            <path d="M8 14s1.3 1.5 4 1.5S16 14 16 14"/>
+                                            <path d="M9 9h.01"/>
+                                            <path d="M15 9h.01"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button type="button" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m22 2-7 20-4-9-9-4Z"/>
+                                        <path d="M22 2 11 13"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tasks-issue-feed">
+                            <article class="tasks-issue-feed-item">
+                                <span class="tasks-issue-avatar">{{ request.user.first_name|first|default:request.user.username|first|upper }}</span>
+                                <div>
+                                    <p><strong>{{ task.user.get_full_name|default:task.user.username }}</strong> utworzył zadanie <time>{{ task.created_at|date:"d.m, H:i" }}</time></p>
+                                    <p class="tasks-issue-feed-note">
+                                        Status ustawiony na <strong>{{ task.get_status_display }}</strong>
+                                    </p>
+                                    <p class="tasks-issue-feed-note">
+                                        Priorytet ustawiony na <strong>{{ task.get_priority_display }}</strong>
+                                    </p>
+                                </div>
+                            </article>
+                            {% if task.completion_date %}
+                            <article class="tasks-issue-feed-item">
+                                <span class="tasks-issue-avatar">{{ request.user.first_name|first|default:request.user.username|first|upper }}</span>
+                                <div>
+                                    <p><strong>{{ task.user.get_full_name|default:task.user.username }}</strong> zamknął zadanie <time>{{ task.completion_date|date:"d.m, H:i" }}</time></p>
+                                    <p class="tasks-issue-feed-note">Status ustawiony na <strong>{{ task.get_status_display }}</strong></p>
+                                </div>
+                            </article>
+                            {% endif %}
+                        </div>
+                    </section>
+                </section>
+
+                <aside class="tasks-issue-sidebar" aria-label="Szczegóły zadania">
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.status.id_for_label }}">Status</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-status-wrap">{{ form.status }}</div>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.priority.id_for_label }}">Priorytet</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-priority-wrap">{{ form.priority }}</div>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Utworzył</span>
+                            <strong class="tasks-issue-person">
+                                <span class="tasks-issue-mini-avatar">{{ task.user.first_name|first|default:task.user.username|first|upper }}</span>
+                                {{ task.user.get_full_name|default:task.user.username }}
+                            </strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Przypisany</span>
+                            <strong class="tasks-issue-muted">Nieprzypisane</strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Etykiety</span>
+                            <strong class="tasks-issue-muted">Dodaj etykietę</strong>
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.section.id_for_label }}">Komponent</label>
+                            <div class="tasks-issue-select-wrap">{{ form.section }}</div>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Kamień milowy</span>
+                            <strong class="tasks-issue-muted">Brak</strong>
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <span>Typ zadania</span>
+                            <strong>Classic project/Issue</strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Estymacja</span>
+                            <strong>0h</strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Spędzony czas</span>
+                            <strong>0h</strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Pozostało</span>
+                            <strong>0h</strong>
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <span>Współpracownicy</span>
+                            <strong class="tasks-issue-person">
+                                <span class="tasks-issue-mini-avatar">{{ task.user.first_name|first|default:task.user.username|first|upper }}</span>
+                                {{ task.user.get_full_name|default:task.user.username }}
+                            </strong>
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <h2>Historia statusu:</h2>
+                        <div class="tasks-issue-history-row">
+                            <span class="status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
+                            <strong>{{ task.created_at|timesince }}</strong>
+                        </div>
+                        {% if task.status != 'new' %}
+                        <div class="tasks-issue-history-row">
+                            <span class="status-indicator status-new">Nowe</span>
+                            <strong>{{ task.created_at|date:"d.m" }}</strong>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <section class="tasks-issue-side-section tasks-issue-danger">
+                        {% if task.status != 'closed' %}
+                        <button type="button" class="tasks-issue-side-button" onclick="updateTaskStatus(true)">Zamknij zadanie</button>
+                        {% else %}
+                        <button type="button" class="tasks-issue-side-button" onclick="updateTaskStatus(false)">Otwórz ponownie</button>
+                        {% endif %}
+                        <button type="button" class="tasks-issue-side-button is-danger" onclick="confirmDelete()">Usuń zadanie</button>
+                    </section>
+                </aside>
+            </main>
+        </form>
+    </div>
 </div>
 
 <script>
+function deleteAttachment(attachmentId) {
+    window.showConfirmModal({
+        title: 'Potwierdź usunięcie',
+        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana po kliknięciu „Zapisz”.',
+        confirmText: 'Usuń',
+        cancelText: 'Anuluj',
+        confirmClass: 'btn-danger',
+        onConfirm: () => {
+            const deletedInput = document.getElementById('deleted-attachments');
+            let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+            if (!deletedIds.includes(attachmentId.toString())) {
+                deletedIds.push(attachmentId.toString());
+                deletedInput.value = deletedIds.join(',');
+            }
+            const el = document.getElementById(`attachment-${attachmentId}`);
+            if (el) {
+                el.classList.add('marked-for-deletion');
+                const btn = el.querySelector('.tasks-delete-attach-btn');
+                if (btn) {
+                    btn.innerHTML = '<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>';
+                    btn.title = 'Cofnij usunięcie';
+                    btn.onclick = (e) => { e.stopPropagation(); undoDeleteAttachment(attachmentId); };
+                }
+            }
+        }
+    });
+}
+
+function undoDeleteAttachment(attachmentId) {
+    const deletedInput = document.getElementById('deleted-attachments');
+    let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+    deletedIds = deletedIds.filter(id => id !== attachmentId.toString());
+    deletedInput.value = deletedIds.join(',');
+    const el = document.getElementById(`attachment-${attachmentId}`);
+    if (el) {
+        el.classList.remove('marked-for-deletion');
+        const btn = el.querySelector('.tasks-delete-attach-btn');
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-trash" aria-hidden="true"></i>';
+            btn.title = 'Usuń załącznik';
+            btn.onclick = () => deleteAttachment(attachmentId);
+        }
+    }
+}
+
 function updateTaskStatus(isCompleted) {
     const statusText = isCompleted ? 'zamknąć' : 'otworzyć ponownie';
     window.showConfirmModal({
@@ -196,23 +453,5 @@ function confirmDelete() {
         }
     });
 }
-
-document.addEventListener('DOMContentLoaded', function () {
-    const activeNavItem = document.querySelector('.tasks-nav-item.active');
-    if (activeNavItem) activeNavItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-    const searchInput = document.getElementById('task-search');
-    const navItems = document.querySelectorAll('.tasks-nav-item');
-    if (searchInput) {
-        searchInput.addEventListener('input', function () {
-            const query = this.value.toLowerCase();
-            navItems.forEach(item => {
-                const title = item.getAttribute('data-title') || '';
-                const id = item.getAttribute('data-id') || '';
-                item.style.display = (title.includes(query) || id.includes(query)) ? 'flex' : 'none';
-            });
-        });
-    }
-});
 </script>
 {% endblock %}

@@ -1,6 +1,6 @@
 .sidebar {
     width: var(--sidebar-width);
-    background: linear-gradient(180deg, #fbfbfc 0%, #f8f9fb 100%);
+    background: rgb(251, 251, 252);
     color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
@@ -19,8 +19,8 @@
     width: var(--secondary-menu-width);
     z-index: 95;
     display: flex;
-    background: #fbfbfc;
-    border-right: 1px solid var(--border-color);
+    background: rgb(251, 251, 252);
+    border-right: 0;
     transition: width 0.2s ease, border-color 0.2s ease;
 }
 
@@ -28,8 +28,54 @@
     width: 100%;
     min-height: 100%;
     background: linear-gradient(180deg, #fbfbfc 0%, #f8f9fb 100%);
+    border: none;
     overflow: hidden;
     transition: opacity 0.15s ease;
+}
+
+.secondary-menu-resizer {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    bottom: 0;
+    width: 8px;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 2;
+}
+
+.secondary-menu-resizer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 3px;
+    bottom: 0;
+    width: 1px;
+    background: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.secondary-menu-resizer:hover::after,
+.secondary-menu-resizer:focus-visible::after,
+body.secondary-menu-resizing .secondary-menu-resizer::after {
+    background: var(--accent-blue);
+}
+
+.secondary-menu-resizer:focus-visible {
+    outline: none;
+}
+
+body.secondary-menu-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+body.secondary-menu-resizing .secondary-menu {
+    transition: none;
+}
+
+body.secondary-menu-resizing .main-content {
+    transition: none;
 }
 
 .secondary-menu-toggle {
@@ -40,12 +86,13 @@
 }
 
 .secondary-menu-toggle .nav-icon {
+    display: block;
     width: 20px;
     height: 20px;
 }
 
 .secondary-menu-toggle .nav-icon path {
-    transition: transform 0.18s ease;
+    transition: none;
 }
 
 body.secondary-menu-collapsed {
@@ -60,6 +107,10 @@ body.secondary-menu-collapsed .secondary-menu {
 
 body.secondary-menu-collapsed .secondary-menu-panel {
     opacity: 0;
+}
+
+body.secondary-menu-collapsed .secondary-menu-resizer {
+    display: none;
 }
 
 .sidebar-header {

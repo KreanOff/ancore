@@ -10,6 +10,85 @@ import json
 from ..models import Task, TaskAttachment, TaskProject, TaskSection
 from ..forms import QuickTaskForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm
 
+
+def _status_groups_for_tasks(tasks):
+    tasks_by_status = {status: [] for status, _label in Task.STATUS_CHOICES}
+    for task in tasks:
+        tasks_by_status.setdefault(task.status, []).append(task)
+    return [
+        {
+            'status': status,
+            'label': label,
+            'tasks': tasks_by_status.get(status, []),
+            'count': len(tasks_by_status.get(status, [])),
+        }
+        for status, label in Task.STATUS_CHOICES
+    ]
+
+
+def _decorate_status_groups(projects, orphan_tasks):
+    for project in projects:
+        project_tasks = []
+        for section in project.sections.all():
+            section_tasks = list(section.tasks.all())
+            section.status_groups = _status_groups_for_tasks(section_tasks)
+            project_tasks.extend(section_tasks)
+        project.status_groups = _status_groups_for_tasks(project_tasks)
+    return _status_groups_for_tasks(list(orphan_tasks))
+
+
+def _sections_for_projects(projects):
+    return [section for project in projects for section in project.sections.all()]
+
+
+def _tasks_navigation_context(user, active_section=None, active_view=None):
+    tasks_qs = Task.objects.filter(user=user).select_related('section', 'section__project').annotate(
+        is_closed_sort=Case(
+            When(status='closed', then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        )
+    ).order_by('is_closed_sort', 'task_id')
+
+    projects = list(TaskProject.objects.filter(user=user).annotate(
+        total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=user))
+    ).prefetch_related(
+        Prefetch('sections', queryset=TaskSection.objects.prefetch_related(
+            Prefetch('tasks', queryset=tasks_qs)
+        ))
+    ))
+
+    active_project = active_section.project if active_section else None
+    if active_section:
+        for project in projects:
+            if project.id != active_section.project_id:
+                continue
+            active_project = project
+            active_section = next((section for section in project.sections.all() if section.id == active_section.id), active_section)
+            break
+
+    if active_view is None:
+        active_view = 'section' if active_section else 'projects'
+
+    if active_section:
+        can_create_issue = True
+    elif active_project:
+        can_create_issue = active_project.sections.exists()
+    else:
+        can_create_issue = TaskSection.objects.filter(project__user=user).exists()
+
+    return {
+        'projects': projects,
+        'active_project': active_project,
+        'active_section': active_section,
+        'active_view': active_view,
+        'tasks': tasks_qs,
+        'total_task_count': tasks_qs.count(),
+        'total_group_count': len(_sections_for_projects(projects)),
+        'can_create_issue': can_create_issue,
+    }
+
+
 @login_required
 def tasks(request):
     return _tasks_page(request)
@@ -24,7 +103,12 @@ def task_group(request, section_id):
 def _tasks_page(request, active_section=None):
     project_form = TaskProjectForm()
     section_form = TaskSectionForm()
+    all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
+    my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
+    all_groups_view = request.GET.get('view') == 'all-groups' and not active_section
     active_project_id = request.POST.get('project_id') if request.method == 'POST' else request.GET.get('project')
+    if all_tasks_view or my_tasks_view or all_groups_view:
+        active_project_id = None
     if active_section:
         active_project_id = active_section.project_id
     active_project_for_form = None
@@ -180,6 +264,9 @@ def _tasks_page(request, active_section=None):
         active_project = next((project for project in projects if str(project.id) == active_project_id), None)
 
     orphan_tasks = tasks_qs.filter(section__isnull=True)
+    orphan_status_groups = _decorate_status_groups(projects, orphan_tasks)
+    all_status_groups = _status_groups_for_tasks(list(tasks_qs))
+    all_sections = _sections_for_projects(projects)
     if active_section:
         can_create_issue = True
     elif active_project:
@@ -187,14 +274,32 @@ def _tasks_page(request, active_section=None):
     else:
         can_create_issue = TaskSection.objects.filter(project__user=request.user).exists()
 
+    if active_section:
+        active_view = 'section'
+    elif active_project:
+        active_view = 'project'
+    elif all_groups_view:
+        active_view = 'all_groups'
+    elif my_tasks_view:
+        active_view = 'my_tasks'
+    elif all_tasks_view:
+        active_view = 'all_tasks'
+    else:
+        active_view = 'projects'
+
     context = {
         'projects': projects,
         'active_project': active_project,
         'active_section': active_section,
+        'active_view': active_view,
         'visible_sections': [active_section] if active_section else [],
         'orphan_tasks': orphan_tasks,
+        'orphan_status_groups': orphan_status_groups,
+        'all_status_groups': all_status_groups,
+        'all_sections': all_sections,
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
+        'total_group_count': len(all_sections),
         'project_form': project_form,
         'project_rename_form': project_rename_form,
         'project_rename_project_id': project_rename_project_id,
@@ -214,44 +319,23 @@ def _tasks_page(request, active_section=None):
     return render(request, 'tasks/tasks.html', context)
 
 @login_required
-def create_task(request):
-    if request.method == 'POST':
-        files = request.FILES.getlist('attachments')
-        form = TaskForm(request.POST, request.FILES, user=request.user)
-        if form.is_valid():
-            task = form.save(commit=False)
-            task.user = request.user
-            task.save()
-
-            # Handle file attachments
-            for file in files:
-                TaskAttachment.objects.create(
-                    task=task,
-                    file=file
-                )
-
-            messages.success(request, 'Zadanie utworzone pomyślnie.')
-            return redirect('tasks:tasks')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-    else:
-        form = TaskForm(user=request.user)
-
-    return render(request, 'tasks/create_task.html', {'form': form})
-
-
-@login_required
 @require_POST
 def update_task_status(request, task_id):
     try:
         task = Task.objects.get(task_id=task_id, user=request.user)
         data = json.loads(request.body)
-        is_completed = data.get('is_completed', False)
-        
-        task.is_completed = is_completed
-        task.status = 'closed' if is_completed else 'reopened'
+        status = data.get('status')
+
+        if status:
+            valid_statuses = {choice for choice, _label in Task.STATUS_CHOICES}
+            if status not in valid_statuses:
+                return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
+            task.status = status
+        else:
+            is_completed = data.get('is_completed', False)
+            task.is_completed = is_completed
+            task.status = 'closed' if is_completed else 'reopened'
+
         task.save()
         
         return JsonResponse({
@@ -332,10 +416,9 @@ def bulk_update_status(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-@login_required
-def edit_task(request, task_id):
+def _task_detail_response(request, task_id):
     task = get_object_or_404(Task, task_id=task_id, user=request.user)
-    
+
     if request.method == 'POST':
         files = request.FILES.getlist('attachments')
         form = TaskForm(request.POST, request.FILES, instance=task, user=request.user)
@@ -364,10 +447,22 @@ def edit_task(request, task_id):
     else:
         form = TaskForm(instance=task, user=request.user)
 
-    return render(request, 'tasks/edit_task.html', {'form': form, 'task': task})
+    context = {
+        'form': form,
+        'task': task,
+        **_tasks_navigation_context(
+            request.user,
+            active_section=task.section,
+            active_view='section' if task.section_id else 'all_tasks',
+        ),
+    }
+    return render(request, 'tasks/view_task.html', context)
+
+
+@login_required
+def edit_task(request, task_id):
+    return _task_detail_response(request, task_id)
 
 @login_required
 def view_task(request, task_id):
-    task = get_object_or_404(Task, task_id=task_id, user=request.user)
-    all_tasks = Task.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'tasks/view_task.html', {'task': task, 'all_tasks': all_tasks})
+    return _task_detail_response(request, task_id)

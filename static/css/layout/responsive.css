@@ -61,6 +61,10 @@ body.sidebar-open .sidebar-backdrop {
         padding: 1.5rem;
     }
 
+    .page-container.full-width {
+        padding: 0;
+    }
+
     .page-header {
         flex-wrap: wrap;
         gap: 1rem;
@@ -96,6 +100,10 @@ body.sidebar-open .sidebar-backdrop {
 
     .page-container {
         padding: 1rem;
+    }
+
+    .page-container.full-width {
+        padding: 0;
     }
 
     .page-title {
@@ -160,8 +168,8 @@ body.sidebar-open .sidebar-backdrop {
     .page-container.full-width:has(.kanban-page),
     .page-container.full-width:has(.kanban-workspaces-page),
     .page-container.full-width:has(.calendar-page) {
-        min-height: calc(100dvh - var(--topbar-height));
-        height: calc(100dvh - var(--topbar-height));
+        min-height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
+        height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
     }
 }
 
@@ -260,10 +268,20 @@ body.sidebar-open .sidebar-backdrop {
         padding-right: max(2rem, env(safe-area-inset-right));
     }
 
+    .page-container.full-width {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
     @media (max-width: 768px) {
         .page-container {
             padding-left: max(1rem, env(safe-area-inset-left));
             padding-right: max(1rem, env(safe-area-inset-right));
+        }
+
+        .page-container.full-width {
+            padding-left: 0;
+            padding-right: 0;
         }
     }
 }

@@ -37,7 +37,7 @@ def home(request):
         'total_tasks': user_tasks.count(),
         'open_tasks_count': open_tasks.count(),
         'completed_tasks_count': user_tasks.filter(status='closed').count(),
-        'high_priority_count': open_tasks.filter(priority='high').count(),
+        'high_priority_count': open_tasks.filter(priority__in=['high', 'urgent']).count(),
         'kanban_cards_count': KanbanCard.objects.filter(user=request.user, is_completed=False).count(),
         'events_count': upcoming_events.count(),
         'recent_tasks': recent_tasks,

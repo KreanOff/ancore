@@ -67,6 +67,11 @@
     color: #059669;
 }
 
+.badge-none {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
 .badge-medium {
     background-color: #fffbeb;
     color: #d97706;
@@ -75,6 +80,11 @@
 .badge-high {
     background-color: #fef2f2;
     color: #dc2626;
+}
+
+.badge-urgent {
+    background-color: #fee2e2;
+    color: #e74c3c;
 }
 
 .task-checkbox {

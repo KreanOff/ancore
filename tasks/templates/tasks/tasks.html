@@ -1,5 +1,9 @@
 {% extends 'core/base.html' %}
 
+{% block extra_head %}
+    {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
+{% endblock %}
+
 {% block page_header %}{% endblock %}
 
 {% block page_container_class %}full-width{% endblock %}
@@ -9,7 +13,7 @@
 {% block secondary_menu %}
     <aside class="tasks-tracker-rail" aria-label="Nawigacja zadań">
         <div class="tasks-rail-header">
-            <h1>Abstrakt</h1>
+            <h1>Zadania</h1>
         </div>
 
         <div class="tasks-create-menu" data-create-menu>
@@ -30,22 +34,47 @@
         </div>
 
         <nav class="tasks-rail-nav">
-            <a href="{% url 'tasks:tasks' %}" class="tasks-rail-link {% if not active_project %}is-active{% endif %}">
-                <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
-                </span>
-                Wszystkie projekty
-                <span class="tasks-rail-count">{{ total_task_count }}</span>
-            </a>
+            <div class="tasks-rail-nav-group">
+                <a href="{% url 'tasks:tasks' %}?view=my-tasks" class="tasks-rail-link {% if active_view == 'my_tasks' %}is-active{% endif %}">
+                    <span class="tasks-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 19a7 7 0 0 1 14 0"/><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+                    </span>
+                    Moje Zadania
+                    <span class="tasks-rail-count">{{ total_task_count }}</span>
+                </a>
+                <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
+                    <span class="tasks-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+                    </span>
+                    Wszystkie zadania
+                    <span class="tasks-rail-count">{{ total_task_count }}</span>
+                </a>
+            </div>
+            <div class="tasks-rail-nav-group">
+                <a href="{% url 'tasks:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
+                    <span class="tasks-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg>
+                    </span>
+                    Wszystkie projekty
+                    <span class="tasks-rail-count">{{ projects|length }}</span>
+                </a>
+                <a href="{% url 'tasks:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
+                    <span class="tasks-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><path d="M7.5 7.5h.01"/></svg>
+                    </span>
+                    Tagi
+                    <span class="tasks-rail-count">{{ total_group_count }}</span>
+                </a>
+            </div>
         </nav>
 
         <div class="tasks-rail-section tasks-project-tree" data-project-tree>
             <div class="tasks-rail-section-title">
-                <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń Twoje projekty" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle>
+                <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń Moje projekty" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="m6 9 6 6 6-6"/>
                     </svg>
-                    <span>Twoje projekty</span>
+                    <span>Moje projekty</span>
                 </button>
                 <button type="button" class="tasks-rail-add-button" aria-label="Dodaj projekt" title="Dodaj projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
                     <span aria-hidden="true">+</span>
@@ -68,7 +97,6 @@
                         </span>
                         {% endif %}
                         <span>{{ project.name }}</span>
-                        <small>{{ project.total_tasks }}</small>
                     </a>
                     <div class="tasks-project-actions" data-project-actions>
                         <button type="button" class="tasks-project-more" aria-label="Opcje projektu {{ project.name }}" title="Opcje projektu" aria-haspopup="menu" aria-expanded="false" data-project-menu-toggle>
@@ -154,18 +182,37 @@
                     </svg>
                 </button>
                 <span class="tasks-topbar-title">
+                    {% if active_project %}
+                    <span class="tasks-topbar-title-item">
+                        {% if active_project.icon %}
+                        <span class="tasks-topbar-title-icon" aria-hidden="true" style="--project-icon-fg: {{ active_project.icon_color.foreground }};">
+                            {{ active_project.icon }}
+                        </span>
+                        {% endif %}
+                        <span>{{ active_project.name }}</span>
+                    </span>
                     {% if active_section %}
-                    {% if active_section.icon %}
-                    <span aria-hidden="true">
-                        {{ active_section.icon }}
+                    <span class="tasks-topbar-title-separator" aria-hidden="true">&gt;</span>
+                    <span class="tasks-topbar-title-item">
+                        {% if active_section.icon %}
+                        <span class="tasks-topbar-title-icon" aria-hidden="true">
+                            {{ active_section.icon }}
+                        </span>
+                        {% endif %}
+                        <span>{{ active_section.title }}</span>
                     </span>
                     {% endif %}
                     {% else %}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                    </svg>
+                    {% if active_view == 'all_tasks' %}
+                    <span>Wszystkie zadania</span>
+                    {% elif active_view == 'my_tasks' %}
+                    <span>Moje Zadania</span>
+                    {% elif active_view == 'all_groups' %}
+                    <span>Tagi</span>
+                    {% else %}
+                    <span>Wszystkie projekty</span>
                     {% endif %}
-                    {% if active_section %}{{ active_project.name }} / {{ active_section.title }}{% elif active_project %}{{ active_project.name }}{% else %}Wszystkie projekty{% endif %}
+                    {% endif %}
                 </span>
             </div>
             <div class="tasks-section-actions" data-section-actions>
@@ -176,7 +223,7 @@
                 </button>
                 {% if active_section %}
                 <div class="tasks-section-menu" role="menu">
-                    <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-section-rename data-section-id="{{ active_section.id }}" data-section-title="{{ active_section.title|escape }}" data-section-kind="{{ active_section.kind|escape }}" data-section-icon="{{ active_section.icon|default:''|escape }}">
+                    <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-section-rename data-section-id="{{ active_section.id }}" data-section-title="{{ active_section.title|escape }}" data-section-description="{{ active_section.description|default:''|escape }}" data-section-icon="{{ active_section.icon|default:''|escape }}">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M12 20h9"/>
                             <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
@@ -205,12 +252,22 @@
 
         <div class="tasks-filterbar">
             <div class="tasks-filterbar-left">
-                <button type="button" class="tasks-filter-button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M22 3H2l8 9v7l4 2v-9l8-9z"/>
-                    </svg>
-                    Filtr
-                </button>
+                <div class="tasks-filter-dropdown" data-status-filter-menu>
+                    <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-status-filter-toggle>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M22 3H2l8 9v7l4 2v-9l8-9z"/>
+                        </svg>
+                        <span data-status-filter-label>Stan</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr stanu">
+                        <button type="button" class="is-active" role="menuitem" data-status-filter="">Wszystko</button>
+                        <button type="button" role="menuitem" data-status-filter="new">Nowe</button>
+                        <button type="button" role="menuitem" data-status-filter="in_progress">Realizowane</button>
+                        <button type="button" role="menuitem" data-status-filter="resolved">Rozwiązane</button>
+                        <button type="button" role="menuitem" data-status-filter="closed">Zamknięte</button>
+                        <button type="button" role="menuitem" data-status-filter="reopened">Otwarte ponownie</button>
+                    </div>
+                </div>
                 <label class="tasks-search is-open" for="filter-search">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
                         <circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/>
@@ -219,64 +276,76 @@
                 </label>
             </div>
             <div class="tasks-filterbar-right">
-                <div class="tasks-segments" aria-label="Szybki filtr statusu">
-                    <button type="button" class="is-active" data-status-filter="">Wszystko</button>
-                    <button type="button" data-status-filter="new">Aktywny</button>
-                    <button type="button" data-status-filter="closed">Zaległości</button>
+                <div class="tasks-segments" aria-label="Szybki filtr priorytetu">
+                    <button type="button" class="is-active" data-priority-filter="">Wszystko</button>
+                    <button type="button" data-priority-filter="none">Brak</button>
+                    <button type="button" data-priority-filter="low">Niski</button>
+                    <button type="button" data-priority-filter="medium">Średni</button>
+                    <button type="button" data-priority-filter="high">Wysoki</button>
+                    <button type="button" data-priority-filter="urgent">Pilny</button>
                 </div>
             </div>
         </div>
 
-        {% if active_project %}
+        {% if active_project and not active_section %}
         <div class="tasks-table-wrap tasks-board">
-            {% for section in visible_sections %}
-            <section class="tasks-issue-group" id="section-{{ section.id }}" data-section-status="">
+            <section class="tasks-issue-group" data-section-status="">
                 <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję">▾</button>
-                    {% if section.icon %}
-                    <span aria-hidden="true">
-                        {{ section.icon }}
-                    </span>
-                    {% endif %}
-                    <span class="status-indicator status-closed">{{ section.title }}</span>
-                    <span class="tasks-rail-count">{{ section.tasks.count }}</span>
+                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                    </button>
+                    <span class="status-indicator status-label-plain">Grupy</span>
+                    <span class="tasks-rail-count">{{ active_project.sections.all|length }}</span>
                 </header>
-
-                <div class="tasks-issue-list">
-                    {% for task in section.tasks.all %}
-                    <article class="task-row tasks-issue-row {% if task.status == 'closed' %}completed{% endif %}"
-                             data-task-id="{{ task.task_id }}"
-                             data-status="{{ task.status }}"
-                             data-priority="{{ task.priority }}"
-                             data-view-url="{% url 'tasks:view-task' task.task_id %}">
-                        <span class="tasks-row-marker" aria-hidden="true"></span>
-                        <span class="tasks-row-dash" aria-hidden="true">—</span>
-                        <span class="tasks-row-id">{{ active_project.code }}-{{ task.task_id }}</span>
-                        <span class="status-indicator status-{{ task.status }}" aria-label="{{ task.get_status_display }}"></span>
-                        <span class="tasks-row-title">{{ task.title }}</span>
-                        <span class="tasks-row-comments" title="Załączniki i komentarze">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
-                            </svg>
-                            {{ task.attachments.count }}
-                        </span>
-                        <span class="tasks-row-time">0 godz.</span>
-                        <span class="tasks-row-date">{{ task.created_at|date:"d M" }}</span>
-                        <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
-                    </article>
-                    {% empty %}
-                    <div class="tasks-empty-section">Brak zadań w tej grupie.</div>
-                    {% endfor %}
-
-                    <form method="post" class="tasks-task-create">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="create_task">
-                        <input type="hidden" name="section_id" value="{{ section.id }}">
-                        <input type="text" name="title" class="tasks-inline-input" placeholder="Dodaj zadanie..." required>
-                        <button type="submit" class="tasks-inline-submit">Dodaj zadanie</button>
-                    </form>
+                <div class="tasks-issue-list tasks-section-list" aria-label="Lista grup projektu">
+                {% for section in active_project.sections.all %}
+                <a href="{% url 'tasks:task_group' section.id %}" class="tasks-issue-row tasks-section-row">
+                    <span class="tasks-row-id">{{ active_project.code }}</span>
+                    <span class="tasks-row-title tasks-section-row-title">
+                        {% if section.icon %}
+                        <span class="tasks-section-row-icon" aria-hidden="true">{{ section.icon }}</span>
+                        {% endif %}
+                        <span>{{ section.title }}</span>
+                    </span>
+                    <span class="tasks-section-row-description">{{ section.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-row-time">{{ section.tasks.count }} zadań</span>
+                    <span class="tasks-row-date">{{ section.created_at|date:"d M" }}</span>
+                </a>
+                {% empty %}
+                <div class="tasks-empty-state">
+                    <p>Ten projekt nie ma jeszcze grup. Dodaj pierwszą grupę, a potem zadania w środku.</p>
+                </div>
+                {% endfor %}
                 </div>
             </section>
+        </div>
+        {% elif active_project %}
+        <div class="tasks-table-wrap tasks-board">
+            {% for section in visible_sections %}
+                {% for status_group in section.status_groups %}
+                {% if status_group.count %}
+                <section class="tasks-issue-group tasks-status-block" id="section-{{ section.id }}-{{ status_group.status }}" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
+                    <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
+                        <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                        </button>
+                        <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
+                        <span class="tasks-rail-count">{{ status_group.count }}</span>
+                    </header>
+                    <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
+                        {% for task in status_group.tasks %}
+                        {% include 'tasks/includes/task_issue_row.html' with task=task project_code=active_project.code only %}
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+                {% endfor %}
+
+                {% if section.tasks.count == 0 %}
+                <section class="tasks-issue-group">
+                    <div class="tasks-empty-section">Brak zadań w tej grupie.</div>
+                </section>
+                {% endif %}
             {% empty %}
             <div class="tasks-empty-state">
                 {% if active_project.sections.all %}
@@ -287,83 +356,94 @@
             </div>
             {% endfor %}
         </div>
-        {% elif projects %}
+        {% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}
         <div class="tasks-table-wrap tasks-board">
-            {% for project in projects %}
-            <section class="tasks-issue-group" id="project-{{ project.id }}" data-section-status="">
-                <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję">▾</button>
-                    <span class="status-indicator status-closed">{{ project.name }}</span>
-                    <span class="tasks-rail-count">{{ project.total_tasks }}</span>
+            {% for status_group in all_status_groups %}
+            {% if status_group.count %}
+            <section class="tasks-issue-group tasks-status-block" id="all-tasks-{{ status_group.status }}" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
+                <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
+                    <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                    </button>
+                    <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
+                    <span class="tasks-rail-count">{{ status_group.count }}</span>
                 </header>
-
-                <div class="tasks-issue-list">
-                    {% for section in project.sections.all %}
-                        {% for task in section.tasks.all %}
-                        <article class="task-row tasks-issue-row {% if task.status == 'closed' %}completed{% endif %}"
-                                 data-task-id="{{ task.task_id }}"
-                                 data-status="{{ task.status }}"
-                                 data-priority="{{ task.priority }}"
-                                 data-view-url="{% url 'tasks:view-task' task.task_id %}">
-                            <span class="tasks-row-marker" aria-hidden="true"></span>
-                            <span class="tasks-row-dash" aria-hidden="true">—</span>
-                            <span class="tasks-row-id">{{ project.code }}-{{ task.task_id }}</span>
-                            <span class="status-indicator status-{{ task.status }}" aria-label="{{ task.get_status_display }}"></span>
-                            <span class="tasks-row-title">{{ task.title }}</span>
-                            <span class="tasks-row-comments" title="Załączniki i komentarze">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
-                                </svg>
-                                {{ task.attachments.count }}
-                            </span>
-                            <span class="tasks-row-time">0 godz.</span>
-                            <span class="tasks-row-date">{{ task.created_at|date:"d M" }}</span>
-                            <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
-                        </article>
-                        {% endfor %}
-                    {% endfor %}
-
-                    {% if project.total_tasks == 0 %}
-                    <div class="tasks-empty-section">Brak zadań w tym projekcie.</div>
-                    {% endif %}
-                </div>
-            </section>
-            {% endfor %}
-
-            {% if orphan_tasks %}
-            <section class="tasks-issue-group" id="tasks-without-project" data-section-status="">
-                <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję">▾</button>
-                    <span class="status-indicator status-closed">Bez projektu</span>
-                    <span class="tasks-rail-count">{{ orphan_tasks.count }}</span>
-                </header>
-
-                <div class="tasks-issue-list">
-                    {% for task in orphan_tasks %}
-                    <article class="task-row tasks-issue-row {% if task.status == 'closed' %}completed{% endif %}"
-                             data-task-id="{{ task.task_id }}"
-                             data-status="{{ task.status }}"
-                             data-priority="{{ task.priority }}"
-                             data-view-url="{% url 'tasks:view-task' task.task_id %}">
-                        <span class="tasks-row-marker" aria-hidden="true"></span>
-                        <span class="tasks-row-dash" aria-hidden="true">—</span>
-                        <span class="tasks-row-id">TASK-{{ task.task_id }}</span>
-                        <span class="status-indicator status-{{ task.status }}" aria-label="{{ task.get_status_display }}"></span>
-                        <span class="tasks-row-title">{{ task.title }}</span>
-                        <span class="tasks-row-comments" title="Załączniki i komentarze">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
-                            </svg>
-                            {{ task.attachments.count }}
-                        </span>
-                        <span class="tasks-row-time">0 godz.</span>
-                        <span class="tasks-row-date">{{ task.created_at|date:"d M" }}</span>
-                        <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
-                    </article>
+                <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
+                    {% for task in status_group.tasks %}
+                    {% include 'tasks/includes/task_issue_row.html' with task=task project_code=task.section.project.code|default:'TASK' only %}
                     {% endfor %}
                 </div>
             </section>
             {% endif %}
+            {% endfor %}
+
+            {% if total_task_count == 0 %}
+            <div class="tasks-empty-state">
+                <p>Nie ma jeszcze zadań.</p>
+            </div>
+            {% endif %}
+        </div>
+        {% elif active_view == 'all_groups' %}
+        <div class="tasks-table-wrap tasks-board">
+            <section class="tasks-issue-group" data-section-status="">
+                <header class="tasks-issue-group-header">
+                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                    </button>
+                    <span class="status-indicator status-label-plain">Grupy</span>
+                    <span class="tasks-rail-count">{{ total_group_count }}</span>
+                </header>
+                <div class="tasks-issue-list tasks-section-list" aria-label="Lista wszystkich grup">
+                {% for section in all_sections %}
+                <a href="{% url 'tasks:task_group' section.id %}" class="tasks-issue-row tasks-section-row tasks-all-groups-row">
+                    <span class="tasks-row-id">{{ section.project.code }}</span>
+                    <span class="tasks-row-title tasks-section-row-title">
+                        {% if section.icon %}
+                        <span class="tasks-section-row-icon" aria-hidden="true">{{ section.icon }}</span>
+                        {% endif %}
+                        <span>{{ section.title }}</span>
+                    </span>
+                    <span class="tasks-section-row-description">{{ section.project.name }}</span>
+                    <span class="tasks-section-row-description">{{ section.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-row-time">{{ section.tasks.count }} zadań</span>
+                    <span class="tasks-row-date">{{ section.created_at|date:"d M" }}</span>
+                </a>
+                {% empty %}
+                <div class="tasks-empty-state">
+                    <p>Nie ma jeszcze grup.</p>
+                </div>
+                {% endfor %}
+                </div>
+            </section>
+        </div>
+        {% elif projects %}
+        <div class="tasks-table-wrap tasks-board">
+            <section class="tasks-issue-group" data-section-status="">
+                <header class="tasks-issue-group-header">
+                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Projekty" aria-expanded="true">
+                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                    </button>
+                    <span class="status-indicator status-label-plain">Projekty</span>
+                    <span class="tasks-rail-count">{{ projects|length }}</span>
+                </header>
+                <div class="tasks-issue-list tasks-project-list" aria-label="Lista projektów">
+                {% for project in projects %}
+                <a href="{% url 'tasks:tasks' %}?project={{ project.id }}" class="tasks-issue-row tasks-project-row">
+                    <span class="tasks-row-id">{{ project.code }}</span>
+                    <span class="status-indicator status-label-plain" aria-label="Projekt"></span>
+                    <span class="tasks-row-title tasks-project-row-title">
+                        {% if project.icon %}
+                        <span class="tasks-project-row-icon" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon }}</span>
+                        {% endif %}
+                        <span>{{ project.name }}</span>
+                    </span>
+                    <span class="tasks-project-row-description">{{ project.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-row-time">{{ project.total_tasks }} zadań</span>
+                    <span class="tasks-row-date">{{ project.created_at|date:"d M" }}</span>
+                </a>
+                {% endfor %}
+                </div>
+            </section>
         </div>
         {% else %}
         <div class="tasks-empty-state">
@@ -520,8 +600,8 @@
                     <label for="{{ section_form.title.id_for_label }}">Nazwa grupy</label>
                     {{ section_form.title }}
 
-                    <label for="{{ section_form.kind.id_for_label }}">Typ grupy</label>
-                    {{ section_form.kind }}
+                    <label for="{{ section_form.description.id_for_label }}">Opis</label>
+                    {{ section_form.description }}
 
                     <label for="section-create-icon">Ikona grupy</label>
                     <div class="tasks-icon-picker-wrap">
@@ -574,12 +654,8 @@
                     <label for="section-rename-title">Nazwa grupy</label>
                     <input type="text" id="section-rename-title" name="title" class="tasks-inline-input" placeholder="Nazwa grupy" value="{{ section_rename_form.title.value|default_if_none:'' }}" required>
 
-                    <label for="section-rename-kind">Typ grupy</label>
-                    <select id="section-rename-kind" name="kind" class="tasks-inline-select">
-                        {% for value, label in section_rename_form.fields.kind.choices %}
-                        <option value="{{ value }}" {% if section_rename_form.kind.value == value %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
+                    <label for="section-rename-description">Opis</label>
+                    <textarea id="section-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ section_rename_form.description.value|default_if_none:'' }}</textarea>
 
                     <label for="section-rename-icon">Ikona grupy</label>
                     <div class="tasks-icon-picker-wrap">
@@ -603,19 +679,52 @@
         <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_task_modal">
-            {% if active_project %}<input type="hidden" name="project_id" value="{{ active_project.id }}">{% endif %}
+            <input type="hidden" name="project_id" id="issue-project-id" value="{% if active_project %}{{ active_project.id }}{% endif %}">
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
-                    <span class="tasks-project-chip"{% if active_project %} style="--project-icon-fg: {{ active_project.icon_color.foreground }};"{% endif %}>
-                        {% if active_project and active_project.icon %}
-                        <span aria-hidden="true">
-                            {{ active_project.icon }}
-                        </span>
-                        {% endif %}
-                        {% if active_project %}{{ active_project.name }}{% else %}Brak projektu{% endif %}
-                    </span>
+                    <div class="tasks-chip-picker" data-issue-project-picker>
+                        <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle {% if active_project %}style="--project-icon-fg: {{ active_project.icon_color.foreground }};"{% endif %}>
+                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_project and active_project.icon %}{{ active_project.icon }}{% endif %}</span>
+                            <span data-picker-label>{% if active_project %}{{ active_project.name }}{% else %}Wybierz projekt{% endif %}</span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="tasks-chip-picker__menu" role="menu">
+                            <div class="tasks-chip-picker__search">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
+                                <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
+                            </div>
+                            {% for project in projects %}
+                            <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
+                                <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon|default:'' }}</span>
+                                {{ project.name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
                     <span class="tasks-project-modal__chevron">›</span>
-                    <strong id="issue-modal-title">{% if active_section %}{{ active_section.title }}{% else %}Nowe zadanie{% endif %}</strong>
+                    <div class="tasks-chip-picker" data-issue-section-picker>
+                        <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
+                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_section and active_section.icon %}{{ active_section.icon }}{% endif %}</span>
+                            <span data-picker-label>{% if active_section %}{{ active_section.title }}{% else %}Wybierz grupę{% endif %}</span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="tasks-chip-picker__menu" role="menu">
+                            <div class="tasks-chip-picker__search">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
+                                <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
+                            </div>
+                            {% for project in projects %}
+                                {% for section in project.sections.all %}
+                                <button type="button" role="menuitem" data-section-option data-section-id="{{ section.id }}" data-section-project-id="{{ project.id }}" data-section-title="{{ section.title|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
+                                    <span aria-hidden="true">{{ section.icon|default:'' }}</span>
+                                    {{ section.title }}
+                                </button>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <span class="tasks-project-modal__chevron">›</span>
+                    <strong id="issue-modal-title">Nowe zadanie</strong>
                 </div>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -645,7 +754,7 @@
                 {{ task_modal_form.description }}
 
                 <div class="tasks-issue-fields">
-                    <label>
+                    <label class="u-sr-only">
                         <span>Grupa projektu</span>
                         {{ task_modal_form.section }}
                     </label>

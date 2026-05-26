@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const taskRows = document.querySelectorAll('.task-row');
+    const projectRows = document.querySelectorAll('.tasks-project-row');
+    const sectionRows = document.querySelectorAll('.tasks-section-row');
     const deleteBtn = document.getElementById('delete-selected-btn');
     const editBtn = document.getElementById('edit-selected-btn');
     const statusToggleBtn = document.getElementById('status-toggle-btn');
@@ -9,7 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterPriority = document.getElementById('filter-priority');
     const filterSearch = document.getElementById('filter-search');
     const filterButtons = document.querySelectorAll('[data-status-filter], [data-priority-filter]');
+    const statusFilterMenu = document.querySelector('[data-status-filter-menu]');
+    const statusFilterToggle = document.querySelector('[data-status-filter-toggle]');
+    const statusFilterLabel = document.querySelector('[data-status-filter-label]');
     const groupRows = document.querySelectorAll('.tasks-group-row');
+    const issueGroups = document.querySelectorAll('.tasks-issue-group');
+    const statusSubgroups = document.querySelectorAll('.tasks-status-subgroup');
+    const collapsibleGroupHeaders = document.querySelectorAll('.tasks-issue-group-header, .tasks-status-subgroup-header');
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
     const createMenu = document.querySelector('[data-create-menu]');
@@ -42,13 +50,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const projectRenameIconInput = projectRenameForm ? projectRenameForm.querySelector('[name="icon"]') : null;
     const projectRenameIdInput = projectRenameForm ? projectRenameForm.querySelector('[name="project_id"]') : null;
     const sectionCreateTitleInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="title"]') : null;
+    const sectionCreateDescriptionInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="description"]') : null;
     const sectionCreateProjectInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="project_id"]') : null;
     const sectionCreateIconInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="icon"]') : null;
     const sectionRenameTitleInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="title"]') : null;
-    const sectionRenameKindInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="kind"]') : null;
+    const sectionRenameDescriptionInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="description"]') : null;
     const sectionRenameIconInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="icon"]') : null;
     const sectionRenameIdInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="section_id"]') : null;
     const issueTitleInput = issueForm ? issueForm.querySelector('[name="title"]') : null;
+    const issueProjectInput = issueForm ? issueForm.querySelector('[name="project_id"]') : null;
+    const issueSectionSelect = issueForm ? issueForm.querySelector('[name="section"]') : null;
+    const issueProjectPicker = issueForm ? issueForm.querySelector('[data-issue-project-picker]') : null;
+    const issueSectionPicker = issueForm ? issueForm.querySelector('[data-issue-section-picker]') : null;
+    const issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
+    const issueSectionOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-section-option]')) : [];
+    const issuePickerSearchInputs = issueForm ? Array.from(issueForm.querySelectorAll('[data-picker-search]')) : [];
     const projectSubmitBtn = document.getElementById('project-create-submit');
     const projectRenameSubmitBtn = document.getElementById('project-rename-submit');
     const sectionCreateSubmitBtn = document.getElementById('section-create-submit');
@@ -62,6 +78,13 @@ document.addEventListener('DOMContentLoaded', function() {
         { input: sectionCreateIconInput, picker: document.getElementById('section-create-icon-picker') },
         { input: sectionRenameIconInput, picker: document.getElementById('section-rename-icon-picker') }
     ];
+    const statusLabels = {
+        new: 'Nowe',
+        in_progress: 'Realizowane',
+        resolved: 'Rozwiązane',
+        closed: 'Zamknięte',
+        reopened: 'Ponownie otwarte'
+    };
     const projectIconSets = [
         {
             label: 'Najczęstsze',
@@ -290,6 +313,53 @@ document.addEventListener('DOMContentLoaded', function() {
         sectionActionMenu.querySelector('[data-section-menu-toggle]')?.setAttribute('aria-expanded', 'false');
     }
 
+    function closeStatusFilterMenu() {
+        if (!statusFilterMenu || !statusFilterToggle) return;
+        statusFilterMenu.classList.remove('is-open');
+        statusFilterToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function closeIssuePickers(exceptPicker = null) {
+        [issueProjectPicker, issueSectionPicker].forEach(picker => {
+            if (!picker || picker === exceptPicker) return;
+            picker.classList.remove('is-open');
+            picker.querySelector('[data-picker-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function normalizePickerSearch(value) {
+        return (value || '').trim().toLowerCase();
+    }
+
+    function filterPickerSearch(input) {
+        const query = normalizePickerSearch(input?.value);
+        const type = input?.dataset.pickerSearchType || '';
+        const selectedProjectId = issueProjectInput?.value || '';
+
+        if (type === 'project') {
+            issueProjectOptions.forEach(option => {
+                const text = normalizePickerSearch(option.dataset.projectName || option.textContent);
+                option.hidden = query ? !text.includes(query) : false;
+            });
+            return;
+        }
+
+        if (type === 'section') {
+            issueSectionOptions.forEach(option => {
+                const belongsToProject = !selectedProjectId || option.dataset.sectionProjectId === selectedProjectId;
+                const text = normalizePickerSearch(option.dataset.sectionTitle || option.textContent);
+                option.hidden = !belongsToProject || (query ? !text.includes(query) : false);
+            });
+        }
+    }
+
+    function resetPickerSearch(picker) {
+        const input = picker?.querySelector('[data-picker-search]');
+        if (!input) return;
+        input.value = '';
+        filterPickerSearch(input);
+    }
+
     function getCollapsedProjects() {
         try {
             return new Set(JSON.parse(localStorage.getItem('collapsedTaskProjects') || '[]'));
@@ -327,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         projectTree.classList.toggle('is-collapsed', isCollapsed);
         projectTreeToggle.setAttribute('aria-expanded', String(!isCollapsed));
-        projectTreeToggle.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} Twoje projekty`);
+        projectTreeToggle.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} Moje projekty`);
     }
 
     function setProjectCollapsed(projectNode, isCollapsed) {
@@ -337,6 +407,11 @@ document.addEventListener('DOMContentLoaded', function() {
         projectNode.classList.toggle('is-collapsed', isCollapsed);
         toggle?.setAttribute('aria-expanded', String(!isCollapsed));
         toggle?.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} projekt ${projectName}`);
+    }
+
+    function clearProjectTreeInitialState() {
+        document.documentElement.classList.remove('tasks-project-tree-initially-collapsed');
+        document.getElementById('tasks-project-tree-initial-state')?.remove();
     }
 
     function openModal(modal, focusTarget, onOpen) {
@@ -408,6 +483,79 @@ document.addEventListener('DOMContentLoaded', function() {
         if (input) input.value = normalizedIcon;
         const display = picker ? picker.querySelector('[data-selected-project-icon]') : null;
         renderProjectIcon(display, normalizedIcon);
+    }
+
+    function setIssueChip(picker, label, icon, color) {
+        if (!picker) return;
+        const labelEl = picker.querySelector('[data-picker-label]');
+        const iconEl = picker.querySelector('[data-picker-icon]');
+        const toggle = picker.querySelector('[data-picker-toggle]');
+
+        if (labelEl) labelEl.textContent = label || '';
+        if (iconEl) iconEl.textContent = icon || '';
+        if (toggle && color) toggle.style.setProperty('--project-icon-fg', color);
+    }
+
+    function getSelectedSectionOption() {
+        if (!issueSectionSelect?.value) return null;
+        return issueSectionOptions.find(option => option.dataset.sectionId === issueSectionSelect.value) || null;
+    }
+
+    function selectIssueSection(sectionId) {
+        const sectionOption = issueSectionOptions.find(option => option.dataset.sectionId === String(sectionId));
+        if (!sectionOption || !issueSectionSelect) return false;
+
+        issueSectionSelect.value = sectionOption.dataset.sectionId || '';
+        setIssueChip(issueSectionPicker, sectionOption.dataset.sectionTitle || 'Wybierz grupę', sectionOption.dataset.sectionIcon || '');
+        return true;
+    }
+
+    function filterIssueSections(projectId) {
+        let firstVisibleSectionId = '';
+        const sectionSearch = issueSectionPicker?.querySelector('[data-picker-search]');
+        const query = normalizePickerSearch(sectionSearch?.value);
+
+        issueSectionOptions.forEach(option => {
+            const text = normalizePickerSearch(option.dataset.sectionTitle || option.textContent);
+            const isVisible = (!projectId || option.dataset.sectionProjectId === String(projectId)) && (!query || text.includes(query));
+            option.hidden = !isVisible;
+            if (isVisible && !firstVisibleSectionId) {
+                firstVisibleSectionId = option.dataset.sectionId || '';
+            }
+        });
+
+        return firstVisibleSectionId;
+    }
+
+    function selectIssueProject(projectId, preferredSectionId = '') {
+        const projectOption = issueProjectOptions.find(option => option.dataset.projectId === String(projectId)) || issueProjectOptions[0];
+        if (!projectOption) return;
+
+        const selectedProjectId = projectOption.dataset.projectId || '';
+        if (issueProjectInput) issueProjectInput.value = selectedProjectId;
+        setIssueChip(
+            issueProjectPicker,
+            projectOption.dataset.projectName || 'Wybierz projekt',
+            projectOption.dataset.projectIcon || '',
+            projectOption.dataset.projectColor || ''
+        );
+
+        const firstVisibleSectionId = filterIssueSections(selectedProjectId);
+        const currentSectionOption = getSelectedSectionOption();
+        const currentSectionFits = currentSectionOption?.dataset.sectionProjectId === selectedProjectId;
+        const nextSectionId = preferredSectionId || (currentSectionFits ? currentSectionOption.dataset.sectionId : '') || projectOption.dataset.defaultSectionId || firstVisibleSectionId;
+
+        if (!selectIssueSection(nextSectionId) && firstVisibleSectionId) {
+            selectIssueSection(firstVisibleSectionId);
+        }
+    }
+
+    function syncIssuePickers() {
+        if (!issueForm || !issueProjectOptions.length) return;
+
+        const selectedSectionOption = getSelectedSectionOption();
+        const projectId = issueProjectInput?.value || selectedSectionOption?.dataset.sectionProjectId || issueProjectOptions[0]?.dataset.projectId || '';
+        selectIssueProject(projectId, selectedSectionOption?.dataset.sectionId || '');
     }
 
     function syncProjectIconPickers() {
@@ -559,6 +707,23 @@ document.addEventListener('DOMContentLoaded', function() {
             createMenuToggle.setAttribute('aria-expanded', String(isOpen));
             closeProjectActionMenus();
             closeSectionActionMenu();
+            closeStatusFilterMenu();
+        });
+    }
+
+    if (statusFilterToggle && statusFilterMenu) {
+        statusFilterToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !statusFilterMenu.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            statusFilterMenu.classList.toggle('is-open', isOpen);
+            statusFilterToggle.setAttribute('aria-expanded', String(isOpen));
+        });
+
+        statusFilterMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
         });
     }
 
@@ -572,6 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const isOpen = !sectionActionMenu.classList.contains('is-open');
             closeCreateMenu();
             closeProjectActionMenus();
+            closeStatusFilterMenu();
             sectionActionMenu.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
         });
@@ -591,6 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeProjectActionMenus(menu);
             closeCreateMenu();
             closeSectionActionMenu();
+            closeStatusFilterMenu();
             menu.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
         });
@@ -640,6 +807,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    clearProjectTreeInitialState();
 
     document.querySelectorAll('[data-delete-project-form]').forEach(form => {
         form.addEventListener('submit', function(e) {
@@ -697,6 +866,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', () => {
             if (sectionCreateProjectInput) sectionCreateProjectInput.value = button.dataset.projectId || '';
             if (sectionCreateTitleInput) sectionCreateTitleInput.value = '';
+            if (sectionCreateDescriptionInput) sectionCreateDescriptionInput.value = '';
             if (sectionCreateIconInput) sectionCreateIconInput.value = '';
             syncProjectIconPickers();
             closeProjectActionMenus();
@@ -708,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', () => {
             if (sectionRenameIdInput) sectionRenameIdInput.value = button.dataset.sectionId || '';
             if (sectionRenameTitleInput) sectionRenameTitleInput.value = button.dataset.sectionTitle || '';
-            if (sectionRenameKindInput) sectionRenameKindInput.value = button.dataset.sectionKind || 'issues';
+            if (sectionRenameDescriptionInput) sectionRenameDescriptionInput.value = button.dataset.sectionDescription || '';
             if (sectionRenameIconInput) sectionRenameIconInput.value = button.dataset.sectionIcon || '';
             syncProjectIconPickers();
             closeSectionActionMenu();
@@ -720,7 +890,61 @@ document.addEventListener('DOMContentLoaded', function() {
     openIssueButtons.forEach(button => {
         button.addEventListener('click', () => {
             if (button.disabled) return;
+            syncIssuePickers();
             openModal(issueModal, issueTitleInput, updateIssueSubmitState);
+        });
+    });
+
+    issueProjectPicker?.querySelector('[data-picker-toggle]')?.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const isOpen = !issueProjectPicker.classList.contains('is-open');
+        closeIssuePickers(issueProjectPicker);
+        issueProjectPicker.classList.toggle('is-open', isOpen);
+        this.setAttribute('aria-expanded', String(isOpen));
+        if (isOpen) {
+            resetPickerSearch(issueProjectPicker);
+            setTimeout(() => issueProjectPicker.querySelector('[data-picker-search]')?.focus(), 30);
+        }
+    });
+
+    issueSectionPicker?.querySelector('[data-picker-toggle]')?.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const isOpen = !issueSectionPicker.classList.contains('is-open');
+        closeIssuePickers(issueSectionPicker);
+        issueSectionPicker.classList.toggle('is-open', isOpen);
+        this.setAttribute('aria-expanded', String(isOpen));
+        if (isOpen) {
+            resetPickerSearch(issueSectionPicker);
+            setTimeout(() => issueSectionPicker.querySelector('[data-picker-search]')?.focus(), 30);
+        }
+    });
+
+    issueProjectOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectIssueProject(this.dataset.projectId || '', this.dataset.defaultSectionId || '');
+            closeIssuePickers();
+        });
+    });
+
+    issueSectionOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectIssueProject(this.dataset.sectionProjectId || '', this.dataset.sectionId || '');
+            closeIssuePickers();
+        });
+    });
+
+    issuePickerSearchInputs.forEach(input => {
+        input.addEventListener('click', e => e.stopPropagation());
+        input.addEventListener('input', function() {
+            filterPickerSearch(this);
+        });
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                closeIssuePickers();
+            }
         });
     });
 
@@ -732,8 +956,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('click', function(e) {
         if (createMenu && !createMenu.contains(e.target)) closeCreateMenu();
+        if (!e.target.closest('[data-status-filter-menu]')) closeStatusFilterMenu();
         if (!e.target.closest('[data-section-actions]')) closeSectionActionMenu();
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
+        if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
         if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
             closeEmojiPicker();
         }
@@ -807,6 +1033,11 @@ document.addEventListener('DOMContentLoaded', function() {
         updateIssueSubmitState();
     }
 
+    if (issueSectionSelect) {
+        issueSectionSelect.addEventListener('change', syncIssuePickers);
+        syncIssuePickers();
+    }
+
     if (projectRenameNameInput) {
         projectRenameNameInput.addEventListener('input', updateProjectRenameSubmitState);
         updateProjectRenameSubmitState();
@@ -860,6 +1091,8 @@ document.addEventListener('DOMContentLoaded', function() {
             closeCreateMenu();
             closeProjectActionMenus();
             closeSectionActionMenu();
+            closeStatusFilterMenu();
+            closeIssuePickers();
             closeEmojiPicker();
             const openModalEl = document.querySelector('.tasks-modal.is-open');
             if (openModalEl) closeModal(openModalEl);
@@ -881,6 +1114,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Navigate to task detail on row click
     taskRows.forEach(row => {
         row.addEventListener('click', function(e) {
+            if (this.dataset.dragSuppressClick === 'true') {
+                delete this.dataset.dragSuppressClick;
+                return;
+            }
             // Prevent navigation if clicking on checkbox or its container cell
             const cell = e.target.closest('td');
             if (e.target.type === 'checkbox' || e.target.closest('form') || (cell && cell.querySelector('.task-checkbox'))) {
@@ -888,6 +1125,110 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const viewUrl = this.getAttribute('data-view-url');
             if (viewUrl) window.location.href = viewUrl;
+        });
+    });
+
+    function getDropStatus(dropTarget) {
+        return dropTarget?.dataset.dropStatus || dropTarget?.closest('[data-drop-status]')?.dataset.dropStatus || '';
+    }
+
+    function updateTaskStatusVisual(row, status) {
+        row.dataset.status = status;
+        row.classList.toggle('completed', status === 'closed');
+
+        const indicator = row.querySelector('.status-indicator');
+        if (!indicator) return;
+
+        Array.from(indicator.classList)
+            .filter(className => className.startsWith('status-'))
+            .forEach(className => indicator.classList.remove(className));
+        indicator.classList.add(`status-${status}`);
+        indicator.setAttribute('aria-label', statusLabels[status] || status);
+    }
+
+    function refreshGroupCounts() {
+        document.querySelectorAll('.tasks-status-block, .tasks-status-subgroup').forEach(group => {
+            const count = group.querySelectorAll('.task-row').length;
+            const countEl = group.querySelector(':scope > header .tasks-rail-count');
+            if (countEl) countEl.textContent = count;
+        });
+    }
+
+    function moveTaskRow(row, dropTarget) {
+        const status = getDropStatus(dropTarget);
+        const list = dropTarget.matches('.tasks-issue-list, .tasks-status-subgroup-list')
+            ? dropTarget
+            : dropTarget.querySelector('.tasks-issue-list, .tasks-status-subgroup-list');
+
+        if (!row || !status || !list || row.dataset.status === status) return;
+
+        const previousParent = row.parentElement;
+        const previousStatus = row.dataset.status;
+        const taskId = row.dataset.taskId;
+
+        row.dataset.dragSuppressClick = 'true';
+        list.appendChild(row);
+        updateTaskStatusVisual(row, status);
+        refreshGroupCounts();
+        applyFilters();
+
+        fetch(`/tasks/update/${taskId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.getCookie('csrftoken')
+            },
+            body: JSON.stringify({ status })
+        })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok || data.status !== 'success') {
+                throw new Error(data.message || 'Błąd podczas aktualizacji statusu');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (previousParent) previousParent.appendChild(row);
+            updateTaskStatusVisual(row, previousStatus);
+            refreshGroupCounts();
+            applyFilters();
+            showMessage(error.message || 'Błąd podczas przenoszenia zadania', 'error');
+        });
+    }
+
+    document.querySelectorAll('.tasks-issue-row[draggable="true"]').forEach(row => {
+        row.addEventListener('dragstart', function(event) {
+            this.classList.add('is-dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', this.dataset.taskId || '');
+        });
+
+        row.addEventListener('dragend', function() {
+            this.classList.remove('is-dragging');
+            document.querySelectorAll('.is-drag-over').forEach(target => target.classList.remove('is-drag-over'));
+        });
+    });
+
+    document.querySelectorAll('[data-drop-status]').forEach(dropTarget => {
+        dropTarget.addEventListener('dragover', function(event) {
+            if (!Array.from(event.dataTransfer.types).includes('text/plain')) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            this.classList.add('is-drag-over');
+        });
+
+        dropTarget.addEventListener('dragleave', function(event) {
+            if (!this.contains(event.relatedTarget)) {
+                this.classList.remove('is-drag-over');
+            }
+        });
+
+        dropTarget.addEventListener('drop', function(event) {
+            event.preventDefault();
+            this.classList.remove('is-drag-over');
+            const taskId = event.dataTransfer.getData('text/plain');
+            const row = document.querySelector(`.tasks-issue-row[data-task-id="${taskId}"]`);
+            moveTaskRow(row, this);
         });
     });
 
@@ -1100,11 +1441,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
             groupRow.style.display = hasVisibleTask ? '' : 'none';
         });
+
+        statusSubgroups.forEach(group => {
+            const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row')).filter(row => row.style.display !== 'none');
+            group.style.display = visibleRows.length ? '' : 'none';
+        });
+
+        issueGroups.forEach(group => {
+            const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row')).filter(row => row.style.display !== 'none');
+            const hasEmptyState = group.querySelector('.tasks-empty-section, .tasks-empty-state') !== null;
+            group.style.display = (visibleRows.length || hasEmptyState) ? '' : 'none';
+        });
+    }
+
+    function getActiveStatusFilterValue() {
+        const activeStatusButton = document.querySelector('[data-status-filter].is-active');
+        return filterStatus ? filterStatus.value : (activeStatusButton?.dataset.statusFilter || '');
+    }
+
+    function getActivePriorityFilterValue() {
+        const activePriorityButton = document.querySelector('[data-priority-filter].is-active');
+        return filterPriority ? filterPriority.value : (activePriorityButton?.dataset.priorityFilter || '');
     }
 
     function setActiveFilterButtons() {
-        const statusVal = filterStatus ? filterStatus.value : '';
-        const priorityVal = filterPriority ? filterPriority.value : '';
+        const statusVal = getActiveStatusFilterValue();
+        const priorityVal = getActivePriorityFilterValue();
 
         filterButtons.forEach(button => {
             if (button.dataset.statusFilter !== undefined) {
@@ -1114,11 +1476,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.classList.toggle('is-active', button.dataset.priorityFilter === priorityVal);
             }
         });
+
+        if (statusFilterLabel) {
+            const activeStatusButton = document.querySelector(`[data-status-filter="${statusVal}"]`);
+            const label = activeStatusButton && statusVal ? activeStatusButton.textContent.trim() : '';
+            statusFilterLabel.textContent = label ? `Stan: ${label}` : 'Stan';
+        }
     }
 
     function applyFilters() {
-        const statusVal = filterStatus ? filterStatus.value : (document.querySelector('.tasks-segments button.is-active')?.dataset.statusFilter || '');
-        const priorityVal = filterPriority ? filterPriority.value : '';
+        const statusVal = getActiveStatusFilterValue();
+        const priorityVal = getActivePriorityFilterValue();
         const searchVal = filterSearch ? filterSearch.value.trim().toLowerCase() : '';
 
         taskRows.forEach(row => {
@@ -1131,6 +1499,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchesSearch = !searchVal || rowText.includes(searchVal);
 
             row.style.display = (matchesStatus && matchesPriority && matchesSearch) ? '' : 'none';
+        });
+
+        projectRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            const matchesSearch = !searchVal || rowText.includes(searchVal);
+            row.style.display = matchesSearch ? '' : 'none';
+        });
+
+        sectionRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            const matchesSearch = !searchVal || rowText.includes(searchVal);
+            row.style.display = matchesSearch ? '' : 'none';
         });
 
         updateGroupVisibility();
@@ -1153,7 +1533,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelectorAll('[data-status-filter]').forEach(btn => btn.classList.remove('is-active'));
                 this.classList.add('is-active');
             }
+            if (this.dataset.priorityFilter !== undefined && !filterPriority) {
+                document.querySelectorAll('[data-priority-filter]').forEach(btn => btn.classList.remove('is-active'));
+                this.classList.add('is-active');
+            }
+            closeStatusFilterMenu();
             applyFilters();
+        });
+    });
+
+    collapsibleGroupHeaders.forEach(header => {
+        const button = header.querySelector('.tasks-group-caret');
+        if (!button) return;
+
+        button.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const group = header.closest('.tasks-issue-group, .tasks-status-subgroup');
+            if (!group) return;
+
+            group.classList.toggle('is-collapsed');
+            const isCollapsed = group.classList.contains('is-collapsed');
+            button.setAttribute('aria-expanded', String(!isCollapsed));
+            button.setAttribute('aria-label', isCollapsed ? 'Rozwiń sekcję' : 'Zwiń sekcję');
         });
     });
 

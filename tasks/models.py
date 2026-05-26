@@ -55,6 +55,7 @@ class TaskSection(models.Model):
 
     project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='sections')
     title = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
     icon = models.CharField(max_length=8, blank=True, default='')
     order = models.PositiveIntegerField(default=0)
@@ -69,9 +70,11 @@ class TaskSection(models.Model):
 
 class Task(models.Model):
     PRIORITY_CHOICES = [
+        ('none', 'Brak priorytetu'),
         ('low', 'Niski'),
         ('medium', 'Średni'),
         ('high', 'Wysoki'),
+        ('urgent', 'Pilny'),
     ]
 
     STATUS_CHOICES = [

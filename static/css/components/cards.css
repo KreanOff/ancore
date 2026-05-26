@@ -216,6 +216,11 @@
     background: var(--primary-color-light);
 }
 
+.dashboard-badge--urgent {
+    color: #e74c3c;
+    background: #fee2e2;
+}
+
 .dashboard-badge--medium {
     color: #92400e;
     background: #fffbeb;
@@ -224,6 +229,11 @@
 .dashboard-badge--low {
     color: var(--accent-green);
     background: #ecfdf5;
+}
+
+.dashboard-badge--none {
+    color: #6b7280;
+    background: #f3f4f6;
 }
 
 .dashboard-timeline-item {

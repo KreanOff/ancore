@@ -114,14 +114,16 @@ class TaskProjectRenameForm(forms.ModelForm):
 class TaskSectionForm(forms.ModelForm):
     class Meta:
         model = TaskSection
-        fields = ['title', 'kind', 'icon']
+        fields = ['title', 'description', 'icon']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
                 'class': 'tasks-inline-input',
             }),
-            'kind': forms.Select(attrs={
-                'class': 'tasks-inline-select',
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Dodaj opis...',
+                'rows': 3,
+                'class': 'tasks-inline-input tasks-modal-textarea',
             }),
             'icon': forms.HiddenInput(attrs={
                 'maxlength': 8,
@@ -135,14 +137,16 @@ class TaskSectionForm(forms.ModelForm):
 class TaskSectionRenameForm(forms.ModelForm):
     class Meta:
         model = TaskSection
-        fields = ['title', 'kind', 'icon']
+        fields = ['title', 'description', 'icon']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
                 'class': 'tasks-inline-input',
             }),
-            'kind': forms.Select(attrs={
-                'class': 'tasks-inline-select',
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Dodaj opis...',
+                'rows': 3,
+                'class': 'tasks-inline-input tasks-modal-textarea',
             }),
             'icon': forms.HiddenInput(attrs={
                 'maxlength': 8,
