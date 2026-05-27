@@ -1,5 +1,5 @@
 from django import forms
-from .models import Task, TaskAttachment, TaskProject, TaskSection
+from .models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
 def clean_optional_icon(value):
@@ -22,14 +22,17 @@ class TaskForm(forms.ModelForm):
             if project:
                 sections = sections.filter(project=project)
             self.fields['section'].queryset = sections
+            self.fields['tags'].queryset = TaskTag.objects.filter(user=user)
         self.fields['section'].required = True
         self.fields['section'].label = 'Grupa projektu'
+        self.fields['tags'].required = False
+        self.fields['tags'].label = 'Tagi'
         if section:
             self.fields['section'].initial = section
 
     class Meta:
         model = Task
-        fields = ['title', 'section', 'description', 'priority', 'status']
+        fields = ['title', 'section', 'tags', 'description', 'priority', 'status']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Wprowadź tytuł zadania...',
@@ -37,6 +40,10 @@ class TaskForm(forms.ModelForm):
             }),
             'section': forms.Select(attrs={
                 'class': 'form-input'
+            }),
+            'tags': forms.SelectMultiple(attrs={
+                'class': 'form-input tasks-tag-select',
+                'size': 4,
             }),
             'description': forms.Textarea(attrs={
                 'placeholder': 'Wprowadź opis zadania...',
@@ -52,7 +59,28 @@ class TaskForm(forms.ModelForm):
         }
 
 
-class TaskProjectForm(forms.ModelForm):
+class TaskProjectBaseForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_code(self):
+        code = (self.cleaned_data.get('code') or '').strip().upper()[:8]
+        if not code or not self.user:
+            return code
+
+        duplicate_codes = TaskProject.objects.filter(user=self.user, code=code)
+        if self.instance and self.instance.pk:
+            duplicate_codes = duplicate_codes.exclude(pk=self.instance.pk)
+        if duplicate_codes.exists():
+            raise forms.ValidationError('Taki kod projektu już istnieje.')
+        return code
+
+    def clean_icon(self):
+        return clean_optional_icon(self.cleaned_data.get('icon'))
+
+
+class TaskProjectForm(TaskProjectBaseForm):
     class Meta:
         model = TaskProject
         fields = ['name', 'description', 'code', 'icon']
@@ -76,11 +104,8 @@ class TaskProjectForm(forms.ModelForm):
             }),
         }
 
-    def clean_icon(self):
-        return clean_optional_icon(self.cleaned_data.get('icon'))
 
-
-class TaskProjectRenameForm(forms.ModelForm):
+class TaskProjectRenameForm(TaskProjectBaseForm):
     class Meta:
         model = TaskProject
         fields = ['name', 'description', 'code', 'icon']
@@ -103,12 +128,6 @@ class TaskProjectRenameForm(forms.ModelForm):
                 'maxlength': 8,
             }),
         }
-
-    def clean_code(self):
-        return (self.cleaned_data.get('code') or '').strip().upper()[:8]
-
-    def clean_icon(self):
-        return clean_optional_icon(self.cleaned_data.get('icon'))
 
 
 class TaskSectionForm(forms.ModelForm):
@@ -157,6 +176,26 @@ class TaskSectionRenameForm(forms.ModelForm):
         return clean_optional_icon(self.cleaned_data.get('icon'))
 
 
+class TaskTagForm(forms.ModelForm):
+    class Meta:
+        model = TaskTag
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'placeholder': 'Nazwa tagu',
+                'class': 'tasks-inline-input',
+            }),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Dodaj opis...',
+                'rows': 3,
+                'class': 'tasks-inline-input tasks-modal-textarea',
+            }),
+        }
+
+    def clean_name(self):
+        return (self.cleaned_data.get('name') or '').strip()
+
+
 class QuickTaskForm(forms.ModelForm):
     class Meta:
         model = Task
@@ -180,14 +219,17 @@ class TaskModalForm(forms.ModelForm):
             if project:
                 sections = sections.filter(project=project)
             self.fields['section'].queryset = sections
+            self.fields['tags'].queryset = TaskTag.objects.filter(user=user)
         self.fields['section'].required = True
         self.fields['section'].label = 'Grupa projektu'
+        self.fields['tags'].required = False
+        self.fields['tags'].label = 'Tagi'
         if section:
             self.fields['section'].initial = section
 
     class Meta:
         model = Task
-        fields = ['title', 'section', 'description', 'priority', 'status']
+        fields = ['title', 'section', 'tags', 'description', 'priority', 'status']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Tytuł zadania',
@@ -195,6 +237,10 @@ class TaskModalForm(forms.ModelForm):
             }),
             'section': forms.Select(attrs={
                 'class': 'tasks-inline-select',
+            }),
+            'tags': forms.SelectMultiple(attrs={
+                'class': 'tasks-inline-select tasks-tag-select',
+                'size': 4,
             }),
             'description': forms.Textarea(attrs={
                 'placeholder': 'Dodaj opis...',

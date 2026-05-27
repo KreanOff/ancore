@@ -14,6 +14,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusFilterMenu = document.querySelector('[data-status-filter-menu]');
     const statusFilterToggle = document.querySelector('[data-status-filter-toggle]');
     const statusFilterLabel = document.querySelector('[data-status-filter-label]');
+    const statusFilterIcon = document.querySelector('[data-status-filter-icon]');
+    const priorityFilterMenu = document.querySelector('[data-priority-filter-menu]');
+    const priorityFilterToggle = document.querySelector('[data-priority-filter-toggle]');
+    const priorityFilterLabel = document.querySelector('[data-priority-filter-label]');
+    const priorityFilterIcon = document.querySelector('[data-priority-filter-icon]');
     const groupRows = document.querySelectorAll('.tasks-group-row');
     const issueGroups = document.querySelectorAll('.tasks-issue-group');
     const statusSubgroups = document.querySelectorAll('.tasks-status-subgroup');
@@ -29,21 +34,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const projectTreeToggle = document.querySelector('[data-project-tree-toggle]');
     const projectNodes = document.querySelectorAll('[data-project-node]');
     const openProjectButtons = document.querySelectorAll('[data-open-project]');
+    const openTagButtons = document.querySelectorAll('[data-open-tag]');
     const openProjectRenameButtons = document.querySelectorAll('[data-open-project-rename]');
     const openSectionCreateButtons = document.querySelectorAll('[data-open-section-create]');
     const openSectionRenameButtons = document.querySelectorAll('[data-open-section-rename]');
     const openIssueButtons = document.querySelectorAll('#open-issue-modal, [data-open-issue]');
     const projectModal = document.getElementById('project-modal');
+    const tagModal = document.getElementById('tag-modal');
     const projectRenameModal = document.getElementById('project-rename-modal');
     const sectionCreateModal = document.getElementById('section-create-modal');
     const sectionRenameModal = document.getElementById('section-rename-modal');
     const issueModal = document.getElementById('issue-modal');
     const projectForm = document.getElementById('project-create-form');
+    const tagForm = document.getElementById('tag-create-form');
     const projectRenameForm = document.getElementById('project-rename-form');
     const sectionCreateForm = document.getElementById('section-create-form');
     const sectionRenameForm = document.getElementById('section-rename-form');
     const issueForm = document.getElementById('issue-create-form');
     const projectNameInput = projectForm ? projectForm.querySelector('[name="name"]') : null;
+    const tagNameInput = tagForm ? tagForm.querySelector('[name="name"]') : null;
     const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
     const projectRenameCodeInput = projectRenameForm ? projectRenameForm.querySelector('[name="code"]') : null;
@@ -66,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const issueSectionOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-section-option]')) : [];
     const issuePickerSearchInputs = issueForm ? Array.from(issueForm.querySelectorAll('[data-picker-search]')) : [];
     const projectSubmitBtn = document.getElementById('project-create-submit');
+    const tagSubmitBtn = document.getElementById('tag-create-submit');
     const projectRenameSubmitBtn = document.getElementById('project-rename-submit');
     const sectionCreateSubmitBtn = document.getElementById('section-create-submit');
     const sectionRenameSubmitBtn = document.getElementById('section-rename-submit');
@@ -273,6 +283,11 @@ document.addEventListener('DOMContentLoaded', function() {
         projectSubmitBtn.disabled = projectNameInput.value.trim().length === 0;
     }
 
+    function updateTagSubmitState() {
+        if (!tagSubmitBtn || !tagNameInput) return;
+        tagSubmitBtn.disabled = tagNameInput.value.trim().length === 0;
+    }
+
     function updateIssueSubmitState() {
         if (!issueSubmitBtn || !issueTitleInput) return;
         issueSubmitBtn.disabled = issueTitleInput.value.trim().length === 0;
@@ -317,6 +332,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!statusFilterMenu || !statusFilterToggle) return;
         statusFilterMenu.classList.remove('is-open');
         statusFilterToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function closePriorityFilterMenu() {
+        if (!priorityFilterMenu || !priorityFilterToggle) return;
+        priorityFilterMenu.classList.remove('is-open');
+        priorityFilterToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function getPriorityFilterIconMarkup(priority) {
+        if (!priority) return '';
+        if (priority === 'urgent') {
+            return '<span class="tasks-row-priority priority-urgent"><span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span></span>';
+        }
+        if (priority === 'none') {
+            return '<span class="tasks-row-priority priority-none"><span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span></span>';
+        }
+        return `<span class="tasks-row-priority priority-${priority}"><span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span></span>`;
+    }
+
+    function getFilterButtonText(button) {
+        if (!button) return '';
+        const clone = button.cloneNode(true);
+        clone.querySelectorAll('[aria-hidden="true"]').forEach(node => node.remove());
+        return clone.textContent.trim();
     }
 
     function closeIssuePickers(exceptPicker = null) {
@@ -708,6 +747,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeProjectActionMenus();
             closeSectionActionMenu();
             closeStatusFilterMenu();
+            closePriorityFilterMenu();
         });
     }
 
@@ -718,11 +758,29 @@ document.addEventListener('DOMContentLoaded', function() {
             closeCreateMenu();
             closeProjectActionMenus();
             closeSectionActionMenu();
+            closePriorityFilterMenu();
             statusFilterMenu.classList.toggle('is-open', isOpen);
             statusFilterToggle.setAttribute('aria-expanded', String(isOpen));
         });
 
         statusFilterMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+
+    if (priorityFilterToggle && priorityFilterMenu) {
+        priorityFilterToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !priorityFilterMenu.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeStatusFilterMenu();
+            priorityFilterMenu.classList.toggle('is-open', isOpen);
+            priorityFilterToggle.setAttribute('aria-expanded', String(isOpen));
+        });
+
+        priorityFilterMenu.addEventListener('click', function(e) {
             e.stopPropagation();
         });
     }
@@ -738,6 +796,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeCreateMenu();
             closeProjectActionMenus();
             closeStatusFilterMenu();
+            closePriorityFilterMenu();
             sectionActionMenu.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
         });
@@ -758,6 +817,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeCreateMenu();
             closeSectionActionMenu();
             closeStatusFilterMenu();
+            closePriorityFilterMenu();
             menu.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
         });
@@ -845,6 +905,13 @@ document.addEventListener('DOMContentLoaded', function() {
     openProjectButtons.forEach(button => {
         button.addEventListener('click', () => {
             openModal(projectModal, projectNameInput, updateProjectSubmitState);
+        });
+    });
+
+    openTagButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            closeCreateMenu();
+            openModal(tagModal, tagNameInput, updateTagSubmitState);
         });
     });
 
@@ -957,6 +1024,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (createMenu && !createMenu.contains(e.target)) closeCreateMenu();
         if (!e.target.closest('[data-status-filter-menu]')) closeStatusFilterMenu();
+        if (!e.target.closest('[data-priority-filter-menu]')) closePriorityFilterMenu();
         if (!e.target.closest('[data-section-actions]')) closeSectionActionMenu();
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
@@ -967,13 +1035,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (projectNameInput) {
         projectNameInput.addEventListener('input', function() {
-            const codeInput = projectForm.querySelector('[name="code"]');
-            if (codeInput && !codeInput.dataset.touched) {
-                const generatedCode = projectNameInput.value.replace(/[^a-z0-9]/gi, '').slice(0, 3).toUpperCase();
-                codeInput.value = generatedCode || 'TSK';
-            }
             updateProjectSubmitState();
         });
+    }
+
+    if (tagNameInput) {
+        tagNameInput.addEventListener('input', updateTagSubmitState);
+        updateTagSubmitState();
     }
 
     if (projectForm) {
@@ -982,7 +1050,6 @@ document.addEventListener('DOMContentLoaded', function() {
             codeInput.addEventListener('input', function() {
                 codeInput.dataset.touched = 'true';
             });
-            if (!codeInput.value) codeInput.value = 'TSK';
         }
         if (projectIconInput && !projectIconInput.value) {
             setIconValue(projectIconInput, getPickerForInput(projectIconInput), '');
@@ -1070,6 +1137,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 focusTarget = issueTitleInput;
                 onOpen = updateIssueSubmitState;
             }
+            if (modal.id === 'tag-modal') {
+                focusTarget = tagNameInput;
+                onOpen = updateTagSubmitState;
+            }
             if (modal.id === 'project-rename-modal') {
                 focusTarget = projectRenameNameInput;
                 onOpen = updateProjectRenameSubmitState;
@@ -1092,6 +1163,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeProjectActionMenus();
             closeSectionActionMenu();
             closeStatusFilterMenu();
+            closePriorityFilterMenu();
             closeIssuePickers();
             closeEmojiPicker();
             const openModalEl = document.querySelector('.tasks-modal.is-open');
@@ -1111,6 +1183,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function shouldIgnoreRowClick(event) {
+        const cell = event.target.closest('td');
+        return event.target.type === 'checkbox'
+            || event.target.closest('form')
+            || event.target.closest('input, button, select, textarea')
+            || (cell && cell.querySelector('.task-checkbox'));
+    }
+
     // Navigate to task detail on row click
     taskRows.forEach(row => {
         row.addEventListener('click', function(e) {
@@ -1118,13 +1198,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 delete this.dataset.dragSuppressClick;
                 return;
             }
-            // Prevent navigation if clicking on checkbox or its container cell
-            const cell = e.target.closest('td');
-            if (e.target.type === 'checkbox' || e.target.closest('form') || (cell && cell.querySelector('.task-checkbox'))) {
+            if (shouldIgnoreRowClick(e)) {
                 return;
             }
             const viewUrl = this.getAttribute('data-view-url');
             if (viewUrl) window.location.href = viewUrl;
+        });
+    });
+
+    [...projectRows, ...sectionRows].forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (shouldIgnoreRowClick(e)) return;
+            const viewUrl = this.getAttribute('data-view-url');
+            if (viewUrl) window.location.href = viewUrl;
+        });
+
+        row.addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            if (shouldIgnoreRowClick(e)) return;
+            const viewUrl = this.getAttribute('data-view-url');
+            if (!viewUrl) return;
+            e.preventDefault();
+            window.location.href = viewUrl;
         });
     });
 
@@ -1479,8 +1574,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (statusFilterLabel) {
             const activeStatusButton = document.querySelector(`[data-status-filter="${statusVal}"]`);
-            const label = activeStatusButton && statusVal ? activeStatusButton.textContent.trim() : '';
+            const label = activeStatusButton && statusVal ? getFilterButtonText(activeStatusButton) : '';
             statusFilterLabel.textContent = label ? `Stan: ${label}` : 'Stan';
+        }
+
+        if (statusFilterIcon) {
+            statusFilterIcon.className = `status-indicator tasks-filter-status-icon ${statusVal ? `status-${statusVal}` : 'status-label-plain'}`;
+        }
+
+        if (priorityFilterLabel) {
+            const activePriorityButton = document.querySelector(`[data-priority-filter="${priorityVal}"]`);
+            const label = activePriorityButton && priorityVal ? getFilterButtonText(activePriorityButton) : '';
+            priorityFilterLabel.textContent = label ? `Priorytet: ${label}` : 'Priorytet';
+        }
+
+        if (priorityFilterIcon) {
+            priorityFilterIcon.innerHTML = getPriorityFilterIconMarkup(priorityVal);
         }
     }
 
@@ -1538,6 +1647,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.classList.add('is-active');
             }
             closeStatusFilterMenu();
+            closePriorityFilterMenu();
             applyFilters();
         });
     });

@@ -19,26 +19,33 @@
     <div class="tasks-issue-shell">
         <header class="tasks-issue-header">
             <div class="tasks-issue-breadcrumb">
-                <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" aria-label="Wróć do listy zadań" title="Wróć do listy zadań">
+                <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" aria-label="Wróć do poprzedniej strony" title="Wróć do poprzedniej strony" data-history-back>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M18 6 6 18"/>
                         <path d="m6 6 12 12"/>
                     </svg>
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
-                <span class="tasks-issue-project">
-                    <span class="tasks-issue-project-icon" aria-hidden="true">
-                        {% if task.section and task.section.project.icon %}{{ task.section.project.icon }}{% else %}⭐{% endif %}
+                <span class="tasks-issue-crumb">
+                    {% if task.section and task.section.project.icon %}
+                    <span class="tasks-issue-crumb-icon" aria-hidden="true" style="--project-icon-fg: {{ task.section.project.icon_color.foreground }};">
+                        {{ task.section.project.icon }}
                     </span>
-                    {% if task.section %}
-                        {{ task.section.project.name }}
-                    {% else %}
-                        Bez projektu
                     {% endif %}
+                    <span>{% if task.section %}{{ task.section.project.name }}{% else %}Bez projektu{% endif %}</span>
                 </span>
                 <span class="tasks-issue-chevron" aria-hidden="true">›</span>
-                <span class="tasks-issue-key">
-                    {% if task.section %}{{ task.section.project.code }}{% else %}TASK{% endif %}-{{ task.task_id }}
+                <span class="tasks-issue-crumb">
+                    {% if task.section and task.section.icon %}
+                    <span class="tasks-issue-crumb-icon" aria-hidden="true">
+                        {{ task.section.icon }}
+                    </span>
+                    {% endif %}
+                    <span>{% if task.section %}{{ task.section.title }}{% else %}Bez kategorii{% endif %}</span>
+                </span>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                <span class="tasks-issue-crumb tasks-issue-crumb--current">
+                    <span>{{ task.title }}</span>
                 </span>
             </div>
 
@@ -287,8 +294,8 @@
                             <strong class="tasks-issue-muted">Nieprzypisane</strong>
                         </div>
                         <div class="tasks-issue-field">
-                            <span>Etykiety</span>
-                            <strong class="tasks-issue-muted">Dodaj etykietę</strong>
+                            <label for="{{ form.tags.id_for_label }}">Tagi</label>
+                            <div class="tasks-issue-select-wrap">{{ form.tags }}</div>
                         </div>
                     </section>
 
@@ -361,6 +368,15 @@
 </div>
 
 <script>
+document.querySelectorAll('[data-history-back]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+        if (window.history.length <= 1) return;
+
+        event.preventDefault();
+        window.history.back();
+    });
+});
+
 function deleteAttachment(attachmentId) {
     window.showConfirmModal({
         title: 'Potwierdź usunięcie',

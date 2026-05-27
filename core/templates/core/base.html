@@ -36,25 +36,13 @@
     </script>
     <header class="app-topbar" aria-label="Pasek aplikacji">
         <div class="app-topbar-left">
-            <button type="button" class="topbar-icon-button topbar-add-button" id="sidebar-toggle" aria-label="Otwórz menu" aria-controls="app-sidebar" aria-expanded="false" title="Otwórz menu">
+            <div class="topbar-tabs" id="topbar-tabs" role="tablist" aria-label="Karty aplikacji"></div>
+            <button type="button" class="topbar-icon-button topbar-new-tab-button" id="topbar-new-tab" data-new-tab-url="{% url 'home' %}" aria-label="Otwórz nową kartę" title="Otwórz nową kartę">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
                     <path d="M12 5v14"/>
                     <path d="M5 12h14"/>
                 </svg>
             </button>
-        </div>
-        <div class="app-topbar-center">
-            <span>
-                {% if user.is_authenticated %}
-                    {% if user.first_name or user.last_name %}
-                        {{ user.first_name }} {{ user.last_name }}
-                    {% else %}
-                        {{ user.email|default:user.username }}
-                    {% endif %}
-                {% else %}
-                    Gość
-                {% endif %}
-            </span>
         </div>
         <div class="app-topbar-right">
             <button type="button" class="topbar-icon-button" aria-label="Szukaj" title="Szukaj">
@@ -178,6 +166,7 @@
 
     <script src="{% static 'js/layout.js' %}"></script>
     <script src="{% static 'js/topbar.js' %}"></script>
+    <script src="{% static 'js/topbar-tabs.js' %}"></script>
     <script src="{% static 'js/attachment-icons.js' %}"></script>
     <script src="{% static 'js/modal.js' %}"></script>
     <script src="{% static 'js/tasks.js' %}"></script>

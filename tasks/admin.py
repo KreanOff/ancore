@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Task, TaskAttachment, TaskProject, TaskSection
+from .models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 class TaskAttachmentInline(admin.TabularInline):
     model = TaskAttachment
@@ -30,6 +30,11 @@ class TaskSectionAdmin(admin.ModelAdmin):
     list_display = ('title', 'project', 'kind', 'order', 'created_at')
     list_filter = ('kind', 'created_at')
     search_fields = ('title', 'project__name')
+
+@admin.register(TaskTag)
+class TaskTagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'user', 'created_at')
+    search_fields = ('name', 'user__username')
 
 @admin.register(TaskAttachment)
 class TaskAttachmentAdmin(admin.ModelAdmin):

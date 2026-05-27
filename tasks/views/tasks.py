@@ -7,8 +7,8 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 import json
-from ..models import Task, TaskAttachment, TaskProject, TaskSection
-from ..forms import QuickTaskForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm
+from ..models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
+from ..forms import QuickTaskForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
 
 def _status_groups_for_tasks(tasks):
@@ -42,7 +42,7 @@ def _sections_for_projects(projects):
 
 
 def _tasks_navigation_context(user, active_section=None, active_view=None):
-    tasks_qs = Task.objects.filter(user=user).select_related('section', 'section__project').annotate(
+    tasks_qs = Task.objects.filter(user=user).select_related('section', 'section__project').prefetch_related('tags').annotate(
         is_closed_sort=Case(
             When(status='closed', then=Value(1)),
             default=Value(0),
@@ -85,6 +85,8 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
         'total_group_count': len(_sections_for_projects(projects)),
+        'tags': TaskTag.objects.filter(user=user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=user))),
+        'total_tag_count': TaskTag.objects.filter(user=user).count(),
         'can_create_issue': can_create_issue,
     }
 
@@ -101,8 +103,9 @@ def task_group(request, section_id):
 
 
 def _tasks_page(request, active_section=None):
-    project_form = TaskProjectForm()
+    project_form = TaskProjectForm(user=request.user)
     section_form = TaskSectionForm()
+    tag_form = TaskTagForm()
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
     all_groups_view = request.GET.get('view') == 'all-groups' and not active_section
@@ -117,7 +120,7 @@ def _tasks_page(request, active_section=None):
     task_modal_form = TaskModalForm(user=request.user, project=active_project_for_form, section=active_section)
     project_modal_open = False
     project_rename_modal_open = False
-    project_rename_form = TaskProjectRenameForm()
+    project_rename_form = TaskProjectRenameForm(user=request.user)
     project_rename_project_id = ''
     section_create_modal_open = False
     section_create_project_id = active_project_id or ''
@@ -125,12 +128,13 @@ def _tasks_page(request, active_section=None):
     section_rename_form = TaskSectionRenameForm()
     section_rename_section_id = ''
     task_modal_open = False
+    tag_modal_open = False
 
     if request.method == 'POST':
         action = request.POST.get('action')
 
         if action == 'create_project':
-            project_form = TaskProjectForm(request.POST)
+            project_form = TaskProjectForm(request.POST, user=request.user)
             if project_form.is_valid():
                 with transaction.atomic():
                     project = project_form.save(commit=False)
@@ -159,7 +163,7 @@ def _tasks_page(request, active_section=None):
 
         if action in ('edit_project', 'rename_project'):
             project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
-            project_rename_form = TaskProjectRenameForm(request.POST, instance=project)
+            project_rename_form = TaskProjectRenameForm(request.POST, instance=project, user=request.user)
             if project_rename_form.is_valid():
                 project_rename_form.save()
                 messages.success(request, 'Projekt zaktualizowany.')
@@ -182,6 +186,21 @@ def _tasks_page(request, active_section=None):
             section_create_modal_open = True
             section_create_project_id = project.id
             messages.error(request, 'Nie udało się dodać grupy.')
+
+        if action == 'create_tag':
+            tag_form = TaskTagForm(request.POST)
+            if tag_form.is_valid():
+                tag_name = tag_form.cleaned_data['name']
+                if TaskTag.objects.filter(user=request.user, name__iexact=tag_name).exists():
+                    tag_form.add_error('name', 'Taki tag już istnieje.')
+                else:
+                    tag = tag_form.save(commit=False)
+                    tag.user = request.user
+                    tag.save()
+                    messages.success(request, 'Tag dodany.')
+                    return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
+            tag_modal_open = True
+            messages.error(request, 'Nie udało się dodać tagu.')
 
         if action in ('edit_section', 'rename_section'):
             section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
@@ -229,12 +248,13 @@ def _tasks_page(request, active_section=None):
                 task = task_modal_form.save(commit=False)
                 task.user = request.user
                 task.save()
+                task_modal_form.save_m2m()
                 messages.success(request, 'Zadanie dodane.')
                 return redirect('tasks:task_group', section_id=task.section_id)
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać zadania.')
 
-    tasks_qs = Task.objects.filter(user=request.user).select_related('section', 'section__project').annotate(
+    tasks_qs = Task.objects.filter(user=request.user).select_related('section', 'section__project').prefetch_related('tags').annotate(
         is_closed_sort=Case(
             When(status='closed', then=Value(1)),
             default=Value(0),
@@ -267,6 +287,7 @@ def _tasks_page(request, active_section=None):
     orphan_status_groups = _decorate_status_groups(projects, orphan_tasks)
     all_status_groups = _status_groups_for_tasks(list(tasks_qs))
     all_sections = _sections_for_projects(projects)
+    tags = TaskTag.objects.filter(user=request.user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=request.user)))
     if active_section:
         can_create_issue = True
     elif active_project:
@@ -300,10 +321,13 @@ def _tasks_page(request, active_section=None):
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
         'total_group_count': len(all_sections),
+        'tags': tags,
+        'total_tag_count': tags.count(),
         'project_form': project_form,
         'project_rename_form': project_rename_form,
         'project_rename_project_id': project_rename_project_id,
         'section_form': section_form,
+        'tag_form': tag_form,
         'section_create_modal_open': section_create_modal_open,
         'section_create_project_id': section_create_project_id,
         'section_rename_form': section_rename_form,
@@ -314,6 +338,7 @@ def _tasks_page(request, active_section=None):
         'project_modal_open': project_modal_open,
         'project_rename_modal_open': project_rename_modal_open,
         'task_modal_open': task_modal_open,
+        'tag_modal_open': tag_modal_open,
         'can_create_issue': can_create_issue,
     }
     return render(request, 'tasks/tasks.html', context)

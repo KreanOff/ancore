@@ -3,10 +3,14 @@ from django.db.models import Max
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.conf import settings
+import secrets
 import os
 
 
 class TaskProject(models.Model):
+    CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    CODE_LENGTH = 8
+
     ICON_COLORS = [
         {'background': '#e8f1ff', 'foreground': '#2563eb'},
         {'background': '#eaf7ef', 'foreground': '#16803f'},
@@ -27,11 +31,25 @@ class TaskProject(models.Model):
 
     class Meta:
         ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'code'], name='unique_task_project_code_per_user'),
+        ]
+
+    def _generate_unique_code(self):
+        existing_codes = set(
+            TaskProject.objects.filter(user=self.user)
+            .exclude(pk=self.pk)
+            .values_list('code', flat=True)
+        )
+
+        while True:
+            candidate = ''.join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
+            if candidate not in existing_codes:
+                return candidate
 
     def save(self, *args, **kwargs):
         if not self.code:
-            source = ''.join(ch for ch in self.name.upper() if ch.isalnum())
-            self.code = (source[:3] or 'PRJ')
+            self.code = self._generate_unique_code()
         self.code = self.code.upper()[:8]
         super().save(*args, **kwargs)
 
@@ -68,6 +86,22 @@ class TaskSection(models.Model):
         return f'{self.project.name} / {self.title}'
 
 
+class TaskTag(models.Model):
+    name = models.CharField(max_length=80)
+    description = models.TextField(blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_tags')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'name'], name='unique_task_tag_per_user'),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
 class Task(models.Model):
     PRIORITY_CHOICES = [
         ('none', 'Brak priorytetu'),
@@ -95,6 +129,7 @@ class Task(models.Model):
     completion_date = models.DateTimeField(null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
     section = models.ForeignKey(TaskSection, on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
+    tags = models.ManyToManyField(TaskTag, related_name='tasks', blank=True)
 
     def save(self, *args, **kwargs):
         from django.utils import timezone

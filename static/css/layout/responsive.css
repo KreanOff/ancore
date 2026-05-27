@@ -74,20 +74,20 @@ body.sidebar-open .sidebar-backdrop {
 /* Telefon */
 @media (max-width: 768px) {
     .app-topbar {
-        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 0.5rem;
         padding: 0 0.75rem;
     }
 
-    .app-topbar-center {
-        justify-content: flex-start;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    .topbar-tabs {
+        max-width: 42vw;
     }
 
-    .app-topbar-center span {
-        overflow: hidden;
-        text-overflow: ellipsis;
+    .topbar-tab {
+        flex-basis: 112px;
+        width: 112px;
+        min-width: 88px;
+        max-width: 132px;
     }
 
     .app-topbar-right {
@@ -121,10 +121,6 @@ body.sidebar-open .sidebar-backdrop {
 }
 
 @media (max-width: 480px) {
-    .app-topbar-center {
-        font-size: 0.75rem;
-    }
-
     .topbar-icon-button {
         width: 26px;
         height: 26px;

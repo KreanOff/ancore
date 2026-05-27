@@ -28,6 +28,7 @@
             </button>
             <div class="tasks-create-menu__panel" id="create-menu-panel" role="menu" aria-labelledby="open-create-menu">
                 <button type="button" role="menuitem" data-open-project>Utwórz projekt</button>
+                <button type="button" role="menuitem" data-open-tag>Utwórz tag</button>
                 <button type="button" role="menuitem" data-open-issue {% if not can_create_issue %}disabled{% endif %}>Nowe zadanie</button>
                 <button type="button" role="menuitem" disabled>Import</button>
             </div>
@@ -63,7 +64,7 @@
                         <svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><path d="M7.5 7.5h.01"/></svg>
                     </span>
                     Tagi
-                    <span class="tasks-rail-count">{{ total_group_count }}</span>
+                    <span class="tasks-rail-count">{{ total_tag_count }}</span>
                 </a>
             </div>
         </nav>
@@ -257,15 +258,75 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M22 3H2l8 9v7l4 2v-9l8-9z"/>
                         </svg>
+                        <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-status-filter-icon></span>
                         <span data-status-filter-label>Stan</span>
                     </button>
                     <div class="tasks-filter-menu" role="menu" aria-label="Filtr stanu">
-                        <button type="button" class="is-active" role="menuitem" data-status-filter="">Wszystko</button>
-                        <button type="button" role="menuitem" data-status-filter="new">Nowe</button>
-                        <button type="button" role="menuitem" data-status-filter="in_progress">Realizowane</button>
-                        <button type="button" role="menuitem" data-status-filter="resolved">Rozwiązane</button>
-                        <button type="button" role="menuitem" data-status-filter="closed">Zamknięte</button>
-                        <button type="button" role="menuitem" data-status-filter="reopened">Otwarte ponownie</button>
+                        <button type="button" class="is-active" role="menuitem" data-status-filter="">
+                            <span class="status-indicator status-label-plain">Wszystko</span>
+                        </button>
+                        <button type="button" role="menuitem" data-status-filter="new">
+                            <span class="status-indicator status-new">Nowe</span>
+                        </button>
+                        <button type="button" role="menuitem" data-status-filter="in_progress">
+                            <span class="status-indicator status-in_progress">Realizowane</span>
+                        </button>
+                        <button type="button" role="menuitem" data-status-filter="resolved">
+                            <span class="status-indicator status-resolved">Rozwiązane</span>
+                        </button>
+                        <button type="button" role="menuitem" data-status-filter="closed">
+                            <span class="status-indicator status-closed">Zamknięte</span>
+                        </button>
+                        <button type="button" role="menuitem" data-status-filter="reopened">
+                            <span class="status-indicator status-reopened">Otwarte ponownie</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-priority-filter-menu>
+                    <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-priority-filter-toggle>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 19h16"/>
+                            <path d="M7 16V9"/>
+                            <path d="M12 16V5"/>
+                            <path d="M17 16v-4"/>
+                        </svg>
+                        <span class="tasks-filter-priority-icon" aria-hidden="true" data-priority-filter-icon></span>
+                        <span data-priority-filter-label>Priorytet</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr priorytetu">
+                        <button type="button" class="is-active" role="menuitem" data-priority-filter="">
+                            <span>Wszystko</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="none">
+                            <span class="tasks-row-priority priority-none" aria-hidden="true">
+                                <span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span>
+                            </span>
+                            <span>Brak</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="low">
+                            <span class="tasks-row-priority priority-low" aria-hidden="true">
+                                <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                            </span>
+                            <span>Niski</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="medium">
+                            <span class="tasks-row-priority priority-medium" aria-hidden="true">
+                                <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                            </span>
+                            <span>Średni</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="high">
+                            <span class="tasks-row-priority priority-high" aria-hidden="true">
+                                <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                            </span>
+                            <span>Wysoki</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="urgent">
+                            <span class="tasks-row-priority priority-urgent" aria-hidden="true">
+                                <span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span>
+                            </span>
+                            <span>Pilny</span>
+                        </button>
                     </div>
                 </div>
                 <label class="tasks-search is-open" for="filter-search">
@@ -276,14 +337,12 @@
                 </label>
             </div>
             <div class="tasks-filterbar-right">
-                <div class="tasks-segments" aria-label="Szybki filtr priorytetu">
-                    <button type="button" class="is-active" data-priority-filter="">Wszystko</button>
-                    <button type="button" data-priority-filter="none">Brak</button>
-                    <button type="button" data-priority-filter="low">Niski</button>
-                    <button type="button" data-priority-filter="medium">Średni</button>
-                    <button type="button" data-priority-filter="high">Wysoki</button>
-                    <button type="button" data-priority-filter="urgent">Pilny</button>
-                </div>
+                {% if active_view == 'all_groups' %}
+                <button type="button" class="tasks-tag-topbar-button" title="Dodaj tag" aria-label="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag>
+                    <span aria-hidden="true">+</span>
+                    <span>Dodaj tag</span>
+                </button>
+                {% endif %}
             </div>
         </div>
 
@@ -299,8 +358,11 @@
                 </header>
                 <div class="tasks-issue-list tasks-section-list" aria-label="Lista grup projektu">
                 {% for section in active_project.sections.all %}
-                <a href="{% url 'tasks:task_group' section.id %}" class="tasks-issue-row tasks-section-row">
+                <article class="tasks-issue-row tasks-section-row" role="link" tabindex="0" data-view-url="{% url 'tasks:task_group' section.id %}">
+                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz grupę {{ section.title }}">
+                    <span class="tasks-row-spacer" aria-hidden="true"></span>
                     <span class="tasks-row-id">{{ active_project.code }}</span>
+                    <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
                     <span class="tasks-row-title tasks-section-row-title">
                         {% if section.icon %}
                         <span class="tasks-section-row-icon" aria-hidden="true">{{ section.icon }}</span>
@@ -310,7 +372,7 @@
                     <span class="tasks-section-row-description">{{ section.description|default:"Brak opisu" }}</span>
                     <span class="tasks-row-time">{{ section.tasks.count }} zadań</span>
                     <span class="tasks-row-date">{{ section.created_at|date:"d M" }}</span>
-                </a>
+                </article>
                 {% empty %}
                 <div class="tasks-empty-state">
                     <p>Ten projekt nie ma jeszcze grup. Dodaj pierwszą grupę, a potem zadania w środku.</p>
@@ -387,30 +449,34 @@
         <div class="tasks-table-wrap tasks-board">
             <section class="tasks-issue-group" data-section-status="">
                 <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
+                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Tagi" aria-expanded="true">
                         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
                     </button>
-                    <span class="status-indicator status-label-plain">Grupy</span>
-                    <span class="tasks-rail-count">{{ total_group_count }}</span>
+                    <span class="status-indicator status-label-plain">Tagi</span>
+                    <span class="tasks-rail-count">{{ total_tag_count }}</span>
+                    <button type="button" class="tasks-rail-add-button tasks-tag-create-button" aria-label="Dodaj tag" title="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag>
+                        <span aria-hidden="true">+</span>
+                    </button>
                 </header>
-                <div class="tasks-issue-list tasks-section-list" aria-label="Lista wszystkich grup">
-                {% for section in all_sections %}
-                <a href="{% url 'tasks:task_group' section.id %}" class="tasks-issue-row tasks-section-row tasks-all-groups-row">
-                    <span class="tasks-row-id">{{ section.project.code }}</span>
+                <div class="tasks-issue-list tasks-section-list" aria-label="Lista tagów">
+                {% for tag in tags %}
+                <div class="tasks-issue-row tasks-section-row tasks-all-groups-row">
+                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tag {{ tag.name }}">
+                    <span class="tasks-row-spacer" aria-hidden="true"></span>
+                    <span class="tasks-row-id">TAG</span>
+                    <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
                     <span class="tasks-row-title tasks-section-row-title">
-                        {% if section.icon %}
-                        <span class="tasks-section-row-icon" aria-hidden="true">{{ section.icon }}</span>
-                        {% endif %}
-                        <span>{{ section.title }}</span>
+                        <span class="tasks-tag-dot" aria-hidden="true"></span>
+                        <span>{{ tag.name }}</span>
                     </span>
-                    <span class="tasks-section-row-description">{{ section.project.name }}</span>
-                    <span class="tasks-section-row-description">{{ section.description|default:"Brak opisu" }}</span>
-                    <span class="tasks-row-time">{{ section.tasks.count }} zadań</span>
-                    <span class="tasks-row-date">{{ section.created_at|date:"d M" }}</span>
-                </a>
+                    <span class="tasks-section-row-description">{{ tag.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-row-time">{{ tag.total_tasks }} zadań</span>
+                    <span class="tasks-row-date">{{ tag.created_at|date:"d M" }}</span>
+                </div>
                 {% empty %}
                 <div class="tasks-empty-state">
-                    <p>Nie ma jeszcze grup.</p>
+                    <p>Nie ma jeszcze tagów.</p>
+                    <button type="button" class="tasks-modal__submit tasks-empty-action" data-open-tag>Utwórz tag</button>
                 </div>
                 {% endfor %}
                 </div>
@@ -428,7 +494,9 @@
                 </header>
                 <div class="tasks-issue-list tasks-project-list" aria-label="Lista projektów">
                 {% for project in projects %}
-                <a href="{% url 'tasks:tasks' %}?project={{ project.id }}" class="tasks-issue-row tasks-project-row">
+                <article class="tasks-issue-row tasks-project-row" role="link" tabindex="0" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}">
+                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz projekt {{ project.name }}">
+                    <span class="tasks-row-spacer" aria-hidden="true"></span>
                     <span class="tasks-row-id">{{ project.code }}</span>
                     <span class="status-indicator status-label-plain" aria-label="Projekt"></span>
                     <span class="tasks-row-title tasks-project-row-title">
@@ -440,7 +508,7 @@
                     <span class="tasks-project-row-description">{{ project.description|default:"Brak opisu" }}</span>
                     <span class="tasks-row-time">{{ project.total_tasks }} zadań</span>
                     <span class="tasks-row-date">{{ project.created_at|date:"d M" }}</span>
-                </a>
+                </article>
                 {% endfor %}
                 </div>
             </section>
@@ -451,6 +519,50 @@
         </div>
         {% endif %}
     </section>
+</div>
+
+<div class="tasks-modal tasks-project-modal {% if tag_modal_open %}is-open{% endif %}" id="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title" aria-hidden="{% if tag_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="tag-create-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_tag">
+            <header class="tasks-modal__header">
+                <h2 id="tag-modal-title">Nowy tag</h2>
+                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="tasks-modal__body tasks-project-modal__body">
+                {% if tag_form.errors %}
+                <div class="tasks-modal__errors">
+                    {% for field in tag_form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in tag_form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="tasks-settings-grid">
+                    <label for="{{ tag_form.name.id_for_label }}">Nazwa tagu</label>
+                    {{ tag_form.name }}
+                    <label for="{{ tag_form.description.id_for_label }}">Opis</label>
+                    {{ tag_form.description }}
+                </div>
+            </div>
+
+            <footer class="tasks-modal__footer">
+                <button type="submit" class="tasks-modal__submit" id="tag-create-submit">Utwórz tag</button>
+            </footer>
+        </form>
+    </div>
 </div>
 
 <div class="tasks-modal tasks-project-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
@@ -765,6 +877,10 @@
                     <label>
                         <span>Priorytet</span>
                         {{ task_modal_form.priority }}
+                    </label>
+                    <label>
+                        <span>Tagi</span>
+                        {{ task_modal_form.tags }}
                     </label>
                 </div>
             </div>
