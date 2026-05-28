@@ -21,8 +21,9 @@
         return qs ? `${urls.index}?${qs}` : urls.index;
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function initKanban() {
         const boardElement = document.getElementById('kanban-board');
+        if (!boardElement) return;
         
 
         // 1. Initialize Sortable for Columns (moving columns)
@@ -803,5 +804,11 @@
             });
         }
 
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initKanban, { once: true });
+    } else {
+        initKanban();
+    }
 })();

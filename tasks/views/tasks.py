@@ -129,6 +129,8 @@ def _tasks_page(request, active_section=None):
     section_rename_section_id = ''
     task_modal_open = False
     tag_modal_open = False
+    tag_edit_mode = False
+    tag_edit_tag_id = ''
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -201,6 +203,28 @@ def _tasks_page(request, active_section=None):
                     return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
             tag_modal_open = True
             messages.error(request, 'Nie udało się dodać tagu.')
+
+        if action == 'edit_tag':
+            tag = get_object_or_404(TaskTag, id=request.POST.get('tag_id'), user=request.user)
+            tag_form = TaskTagForm(request.POST, instance=tag)
+            if tag_form.is_valid():
+                tag_name = tag_form.cleaned_data['name']
+                if TaskTag.objects.filter(user=request.user, name__iexact=tag_name).exclude(pk=tag.pk).exists():
+                    tag_form.add_error('name', 'Taki tag już istnieje.')
+                else:
+                    tag_form.save()
+                    messages.success(request, 'Tag zaktualizowany.')
+                    return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
+            tag_modal_open = True
+            tag_edit_mode = True
+            tag_edit_tag_id = tag.id
+            messages.error(request, 'Nie udało się zaktualizować tagu.')
+
+        if action == 'delete_tag':
+            tag = get_object_or_404(TaskTag, id=request.POST.get('tag_id'), user=request.user)
+            tag.delete()
+            messages.success(request, 'Tag usunięty.')
+            return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
 
         if action in ('edit_section', 'rename_section'):
             section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
@@ -339,6 +363,8 @@ def _tasks_page(request, active_section=None):
         'project_rename_modal_open': project_rename_modal_open,
         'task_modal_open': task_modal_open,
         'tag_modal_open': tag_modal_open,
+        'tag_edit_mode': tag_edit_mode,
+        'tag_edit_tag_id': tag_edit_tag_id,
         'can_create_issue': can_create_issue,
     }
     return render(request, 'tasks/tasks.html', context)

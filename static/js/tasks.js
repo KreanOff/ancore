@@ -3,6 +3,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const projectRows = document.querySelectorAll('.tasks-project-row');
     const sectionRows = document.querySelectorAll('.tasks-section-row');
     const deleteBtn = document.getElementById('delete-selected-btn');
+    const editSelectedTaskMenuBtn = document.getElementById('edit-selected-task-menu-btn');
+    const editSelectedSectionMenuBtn = document.getElementById('edit-selected-section-menu-btn');
+    const editSelectedProjectMenuBtn = document.getElementById('edit-selected-project-menu-btn');
+    const editSelectedTagMenuBtn = document.getElementById('edit-selected-tag-menu-btn');
+    const deleteSelectedTaskMenuBtn = document.getElementById('delete-selected-task-menu-btn');
+    const deleteSelectedSectionMenuBtn = document.getElementById('delete-selected-section-menu-btn');
+    const deleteSelectedProjectMenuBtn = document.getElementById('delete-selected-project-menu-btn');
+    const deleteSelectedTagMenuBtn = document.getElementById('delete-selected-tag-menu-btn');
     const editBtn = document.getElementById('edit-selected-btn');
     const statusToggleBtn = document.getElementById('status-toggle-btn');
     const selectionActions = document.getElementById('selection-actions');
@@ -25,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const collapsibleGroupHeaders = document.querySelectorAll('.tasks-issue-group-header, .tasks-status-subgroup-header');
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
+    const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
+    const projectCheckboxes = document.querySelectorAll('.tasks-project-row .tasks-row-checkbox[data-project-id]');
+    const tagCheckboxes = document.querySelectorAll('.tasks-all-groups-row .tasks-row-checkbox[data-tag-id]');
     const createMenu = document.querySelector('[data-create-menu]');
     const createMenuToggle = document.getElementById('open-create-menu');
     const createMenuPanel = document.getElementById('create-menu-panel');
@@ -37,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const openTagButtons = document.querySelectorAll('[data-open-tag]');
     const openProjectRenameButtons = document.querySelectorAll('[data-open-project-rename]');
     const openSectionCreateButtons = document.querySelectorAll('[data-open-section-create]');
-    const openSectionRenameButtons = document.querySelectorAll('[data-open-section-rename]');
     const openIssueButtons = document.querySelectorAll('#open-issue-modal, [data-open-issue]');
     const projectModal = document.getElementById('project-modal');
     const tagModal = document.getElementById('tag-modal');
@@ -52,7 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const sectionRenameForm = document.getElementById('section-rename-form');
     const issueForm = document.getElementById('issue-create-form');
     const projectNameInput = projectForm ? projectForm.querySelector('[name="name"]') : null;
+    const tagActionInput = tagForm ? tagForm.querySelector('[name="action"]') : null;
+    const tagIdInput = tagForm ? tagForm.querySelector('[name="tag_id"]') : null;
     const tagNameInput = tagForm ? tagForm.querySelector('[name="name"]') : null;
+    const tagDescriptionInput = tagForm ? tagForm.querySelector('[name="description"]') : null;
     const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
     const projectRenameCodeInput = projectRenameForm ? projectRenameForm.querySelector('[name="code"]') : null;
@@ -792,6 +805,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toggle?.addEventListener('click', function(e) {
             e.stopPropagation();
             if (!panel) return;
+            if (!panel.querySelector('[role="menuitem"]:not(.u-hidden)')) return;
             const isOpen = !sectionActionMenu.classList.contains('is-open');
             closeCreateMenu();
             closeProjectActionMenus();
@@ -886,31 +900,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    document.querySelectorAll('[data-delete-section-form]').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const sectionName = escapeHtml(this.dataset.sectionName || 'tę grupę');
-
-            window.showConfirmModal({
-                title: 'Usuń grupę',
-                message: `Czy na pewno chcesz usunąć grupę „${sectionName}”? Zadania z tej grupy zostaną przeniesione do sekcji „Bez projektu”.`,
-                confirmText: 'Usuń grupę',
-                cancelText: 'Anuluj',
-                confirmClass: 'btn-danger',
-                onConfirm: () => this.submit()
-            });
-        });
-    });
-
     openProjectButtons.forEach(button => {
         button.addEventListener('click', () => {
             openModal(projectModal, projectNameInput, updateProjectSubmitState);
         });
     });
 
+    function setTagModalMode(mode, data = {}) {
+        const isEdit = mode === 'edit';
+        if (tagActionInput) tagActionInput.value = isEdit ? 'edit_tag' : 'create_tag';
+        if (tagIdInput) tagIdInput.value = isEdit ? (data.tagId || '') : '';
+        if (tagNameInput) tagNameInput.value = isEdit ? (data.tagName || '') : '';
+        if (tagDescriptionInput) tagDescriptionInput.value = isEdit ? (data.tagDescription || '') : '';
+        const tagModalTitle = document.getElementById('tag-modal-title');
+        if (tagModalTitle) tagModalTitle.textContent = isEdit ? 'Edytuj tag' : 'Nowy tag';
+        if (tagSubmitBtn) tagSubmitBtn.textContent = isEdit ? 'Zapisz zmiany' : 'Utwórz tag';
+        updateTagSubmitState();
+    }
+
     openTagButtons.forEach(button => {
         button.addEventListener('click', () => {
             closeCreateMenu();
+            setTagModalMode('create');
             openModal(tagModal, tagNameInput, updateTagSubmitState);
         });
     });
@@ -938,19 +949,6 @@ document.addEventListener('DOMContentLoaded', function() {
             syncProjectIconPickers();
             closeProjectActionMenus();
             openModal(sectionCreateModal, sectionCreateTitleInput, updateSectionCreateSubmitState);
-        });
-    });
-
-    openSectionRenameButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            if (sectionRenameIdInput) sectionRenameIdInput.value = button.dataset.sectionId || '';
-            if (sectionRenameTitleInput) sectionRenameTitleInput.value = button.dataset.sectionTitle || '';
-            if (sectionRenameDescriptionInput) sectionRenameDescriptionInput.value = button.dataset.sectionDescription || '';
-            if (sectionRenameIconInput) sectionRenameIconInput.value = button.dataset.sectionIcon || '';
-            syncProjectIconPickers();
-            closeSectionActionMenu();
-            openModal(sectionRenameModal, sectionRenameTitleInput, updateSectionRenameSubmitState);
-            setTimeout(() => sectionRenameTitleInput?.select(), 60);
         });
     });
 
@@ -1328,15 +1326,97 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Checkbox functionality
+    function getSelectedTaskCheckboxes() {
+        return Array.from(document.querySelectorAll('.task-checkbox:checked'))
+            .filter(cb => cb.id !== 'select-all-checkbox');
+    }
+
+    function getSelectedSectionCheckbox() {
+        return Array.from(sectionCheckboxes).find(cb => cb.checked) || null;
+    }
+
+    function getSelectedProjectCheckbox() {
+        return Array.from(projectCheckboxes).find(cb => cb.checked) || null;
+    }
+
+    function getSelectedTagCheckbox() {
+        return Array.from(tagCheckboxes).find(cb => cb.checked) || null;
+    }
+
+    function setMenuButtonState(button, isEnabled, dataset = {}) {
+        if (!button) return;
+
+        button.disabled = !isEnabled;
+        Object.keys(dataset).forEach(key => {
+            button.dataset[key] = dataset[key] || '';
+        });
+    }
+
+    function updateDeleteMenuButtons() {
+        const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
+        setMenuButtonState(
+            editSelectedTaskMenuBtn,
+            selectedTaskCheckboxes.length === 1,
+            { taskId: selectedTaskCheckboxes[0]?.dataset.taskId || '' }
+        );
+        setMenuButtonState(
+            deleteSelectedTaskMenuBtn,
+            selectedTaskCheckboxes.length > 0,
+            { taskCount: String(selectedTaskCheckboxes.length) }
+        );
+
+        const selectedSectionCheckbox = getSelectedSectionCheckbox();
+        const sectionDataset = {
+            sectionId: selectedSectionCheckbox?.dataset.sectionId || '',
+            sectionTitle: selectedSectionCheckbox?.dataset.sectionTitle || '',
+            sectionDescription: selectedSectionCheckbox?.dataset.sectionDescription || '',
+            sectionIcon: selectedSectionCheckbox?.dataset.sectionIcon || ''
+        };
+        setMenuButtonState(editSelectedSectionMenuBtn, Boolean(selectedSectionCheckbox), sectionDataset);
+        setMenuButtonState(
+            deleteSelectedSectionMenuBtn,
+            Boolean(selectedSectionCheckbox),
+            sectionDataset
+        );
+
+        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+        const projectDataset = {
+            projectId: selectedProjectCheckbox?.dataset.projectId || '',
+            projectName: selectedProjectCheckbox?.dataset.projectName || '',
+            projectDescription: selectedProjectCheckbox?.dataset.projectDescription || '',
+            projectCode: selectedProjectCheckbox?.dataset.projectCode || '',
+            projectIcon: selectedProjectCheckbox?.dataset.projectIcon || ''
+        };
+        setMenuButtonState(editSelectedProjectMenuBtn, Boolean(selectedProjectCheckbox), projectDataset);
+        setMenuButtonState(
+            deleteSelectedProjectMenuBtn,
+            Boolean(selectedProjectCheckbox),
+            projectDataset
+        );
+
+        const selectedTagCheckbox = getSelectedTagCheckbox();
+        const tagDataset = {
+            tagId: selectedTagCheckbox?.dataset.tagId || '',
+            tagName: selectedTagCheckbox?.dataset.tagName || '',
+            tagDescription: selectedTagCheckbox?.dataset.tagDescription || ''
+        };
+        setMenuButtonState(editSelectedTagMenuBtn, Boolean(selectedTagCheckbox), tagDataset);
+        setMenuButtonState(
+            deleteSelectedTagMenuBtn,
+            Boolean(selectedTagCheckbox),
+            tagDataset
+        );
+    }
+
     function updateSelection() {
-        const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
-        // Exclude select-all checkbox from the count
-        const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
+        const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
         const count = selectedTaskCheckboxes.length;
 
         if (selectedCountSpan) {
             selectedCountSpan.textContent = `${count} wybranych`;
         }
+
+        updateDeleteMenuButtons();
 
         if (selectionActions) {
             if (count > 0) {
@@ -1387,6 +1467,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        sectionCheckboxes.forEach(cb => {
+            cb.closest('.tasks-section-row')?.classList.toggle('checked', cb.checked);
+        });
+
+        projectCheckboxes.forEach(cb => {
+            cb.closest('.tasks-project-row')?.classList.toggle('checked', cb.checked);
+        });
+
+        tagCheckboxes.forEach(cb => {
+            cb.closest('.tasks-all-groups-row')?.classList.toggle('checked', cb.checked);
+        });
+
         // Update select all state
         if (selectAllCheckbox) {
             const taskCheckboxes = Array.from(checkboxes).filter(cb => cb.id !== 'select-all-checkbox');
@@ -1408,17 +1500,239 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    sectionCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            if (this.checked) {
+                sectionCheckboxes.forEach(other => {
+                    if (other !== this) other.checked = false;
+                });
+            }
+            updateSelection();
+        });
+    });
+
+    projectCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            if (this.checked) {
+                projectCheckboxes.forEach(other => {
+                    if (other !== this) other.checked = false;
+                });
+            }
+            updateSelection();
+        });
+    });
+
+    tagCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            if (this.checked) {
+                tagCheckboxes.forEach(other => {
+                    if (other !== this) other.checked = false;
+                });
+            }
+            updateSelection();
+        });
+    });
+
     // Initialize state
     updateSelection();
+
+    function postPageAction(action, fields) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.style.display = 'none';
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = window.getCookie('csrftoken');
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = action;
+
+        form.append(csrfInput, actionInput);
+
+        Object.entries(fields).forEach(([name, value]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function postDeleteSection(sectionId) {
+        postPageAction('delete_section', { section_id: sectionId });
+    }
+
+    function postDeleteProject(projectId) {
+        postPageAction('delete_project', { project_id: projectId });
+    }
+
+    function postDeleteTag(tagId) {
+        postPageAction('delete_tag', { tag_id: tagId });
+    }
+
+    function editSelectedTask() {
+        const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
+        if (selectedTaskCheckboxes.length !== 1) return;
+
+        const taskId = selectedTaskCheckboxes[0].dataset.taskId;
+        if (taskId) window.location.href = `/tasks/edit-task/${taskId}/`;
+    }
+
+    function editSelectedSection() {
+        const selectedSectionCheckbox = getSelectedSectionCheckbox();
+        if (!selectedSectionCheckbox || !sectionRenameModal) return;
+
+        if (sectionRenameIdInput) sectionRenameIdInput.value = selectedSectionCheckbox.dataset.sectionId || '';
+        if (sectionRenameTitleInput) sectionRenameTitleInput.value = selectedSectionCheckbox.dataset.sectionTitle || '';
+        if (sectionRenameDescriptionInput) sectionRenameDescriptionInput.value = selectedSectionCheckbox.dataset.sectionDescription || '';
+        if (sectionRenameIconInput) sectionRenameIconInput.value = selectedSectionCheckbox.dataset.sectionIcon || '';
+        syncProjectIconPickers();
+        closeSectionActionMenu();
+        openModal(sectionRenameModal, sectionRenameTitleInput, updateSectionRenameSubmitState);
+        setTimeout(() => sectionRenameTitleInput?.select(), 60);
+    }
+
+    function editSelectedProject() {
+        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+        if (!selectedProjectCheckbox || !projectRenameModal) return;
+
+        if (projectRenameIdInput) projectRenameIdInput.value = selectedProjectCheckbox.dataset.projectId || '';
+        if (projectRenameNameInput) projectRenameNameInput.value = selectedProjectCheckbox.dataset.projectName || '';
+        if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = selectedProjectCheckbox.dataset.projectDescription || '';
+        if (projectRenameCodeInput) projectRenameCodeInput.value = selectedProjectCheckbox.dataset.projectCode || '';
+        if (projectRenameIconInput) projectRenameIconInput.value = selectedProjectCheckbox.dataset.projectIcon || '';
+        syncProjectIconPickers();
+        closeSectionActionMenu();
+        openModal(projectRenameModal, projectRenameNameInput, updateProjectRenameSubmitState);
+        setTimeout(() => projectRenameNameInput?.select(), 60);
+    }
+
+    function editSelectedTag() {
+        const selectedTagCheckbox = getSelectedTagCheckbox();
+        if (!selectedTagCheckbox || !tagModal) return;
+
+        closeSectionActionMenu();
+        setTagModalMode('edit', {
+            tagId: selectedTagCheckbox.dataset.tagId || '',
+            tagName: selectedTagCheckbox.dataset.tagName || '',
+            tagDescription: selectedTagCheckbox.dataset.tagDescription || ''
+        });
+        openModal(tagModal, tagNameInput, updateTagSubmitState);
+        setTimeout(() => tagNameInput?.select(), 60);
+    }
+
+    function deleteSelectedSection() {
+        const selectedSectionCheckbox = getSelectedSectionCheckbox();
+        const sectionId = selectedSectionCheckbox?.dataset.sectionId || '';
+        const sectionTitle = escapeHtml(selectedSectionCheckbox?.dataset.sectionTitle || 'tę grupę');
+        if (!sectionId) return;
+
+        closeSectionActionMenu();
+        window.showConfirmModal({
+            title: 'Usuń grupę',
+            message: `Czy na pewno chcesz usunąć grupę „${sectionTitle}”? Zadania z grupy zostaną przeniesione do sekcji „Bez projektu”.`,
+            confirmText: 'Usuń grupę',
+            cancelText: 'Anuluj',
+            confirmClass: 'btn-danger',
+            onConfirm: () => postDeleteSection(sectionId)
+        });
+    }
+
+    function deleteSelectedProject() {
+        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+        const projectId = selectedProjectCheckbox?.dataset.projectId || '';
+        const projectName = escapeHtml(selectedProjectCheckbox?.dataset.projectName || 'ten projekt');
+        if (!projectId) return;
+
+        closeSectionActionMenu();
+        window.showConfirmModal({
+            title: 'Usuń projekt',
+            message: `Czy na pewno chcesz usunąć projekt „${projectName}”? Zadania z projektu zostaną przeniesione do sekcji „Bez projektu”.`,
+            confirmText: 'Usuń projekt',
+            cancelText: 'Anuluj',
+            confirmClass: 'btn-danger',
+            onConfirm: () => postDeleteProject(projectId)
+        });
+    }
+
+    function deleteSelectedTag() {
+        const selectedTagCheckbox = getSelectedTagCheckbox();
+        const tagId = selectedTagCheckbox?.dataset.tagId || '';
+        const tagName = escapeHtml(selectedTagCheckbox?.dataset.tagName || 'ten tag');
+        if (!tagId) return;
+
+        closeSectionActionMenu();
+        window.showConfirmModal({
+            title: 'Usuń tag',
+            message: `Czy na pewno chcesz usunąć tag „${tagName}”? Tag zostanie odpięty od zadań.`,
+            confirmText: 'Usuń tag',
+            cancelText: 'Anuluj',
+            confirmClass: 'btn-danger',
+            onConfirm: () => postDeleteTag(tagId)
+        });
+    }
+
+    function deleteSelectedTasks() {
+        const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
+        const taskIds = selectedTaskCheckboxes.map(cb => {
+            const row = cb.closest('.task-row');
+            return row ? row.dataset.taskId : null;
+        }).filter(id => id !== null);
+
+        if (taskIds.length === 0) return;
+
+        closeSectionActionMenu();
+        window.showConfirmModal({
+            title: 'Potwierdź usunięcie',
+            message: `Czy na pewno chcesz usunąć ${taskIds.length} ${taskIds.length === 1 ? 'zadanie' : 'zadań'}? Tej operacji nie można cofnąć.`,
+            confirmText: 'Usuń',
+            cancelText: 'Anuluj',
+            confirmClass: 'btn-danger',
+            onConfirm: () => {
+                fetch('/tasks/delete/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': window.getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        task_ids: taskIds.map(id => parseInt(id))
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        selectedTaskCheckboxes.forEach(cb => {
+                            cb.closest('.task-row')?.remove();
+                        });
+                        updateSelection();
+                        showMessage(data.message, 'success');
+                    } else {
+                        showMessage(data.message || 'Błąd podczas usuwania zadań', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Błąd podczas usuwania zadań', 'error');
+                });
+            }
+        });
+    }
 
     // Edit selected task
     if (editBtn) {
         editBtn.addEventListener('click', function() {
-            const selectedCheckbox = document.querySelector('.task-checkbox:checked');
-            if (selectedCheckbox) {
-                const taskId = selectedCheckbox.dataset.taskId;
-                window.location.href = `/tasks/edit-task/${taskId}/`;
-            }
+            editSelectedTask();
         });
     }
 
@@ -1472,51 +1786,71 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (this.disabled) return;
-            
-            const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
-            const selectedTaskCheckboxes = Array.from(selectedCheckboxes).filter(cb => cb.id !== 'select-all-checkbox');
-            const taskIds = selectedTaskCheckboxes.map(cb => {
-                const row = cb.closest('.task-row');
-                return row ? row.dataset.taskId : null;
-            }).filter(id => id !== null);
-            
-            if (taskIds.length > 0) {
-                window.showConfirmModal({
-                    title: 'Potwierdź usunięcie',
-                    message: `Czy na pewno chcesz usunąć ${taskIds.length} ${taskIds.length === 1 ? 'zadanie' : 'zadań'}? Tej operacji nie można cofnąć.`,
-                    confirmText: 'Usuń',
-                    cancelText: 'Anuluj',
-                    confirmClass: 'btn-danger',
-                    onConfirm: () => {
-                        fetch('/tasks/delete/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': window.getCookie('csrftoken')
-                            },
-                            body: JSON.stringify({
-                                task_ids: taskIds.map(id => parseInt(id))
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                selectedTaskCheckboxes.forEach(cb => {
-                                    cb.closest('.task-row').remove();
-                                });
-                                updateSelection();
-                                showMessage(data.message, 'success');
-                            } else {
-                                showMessage(data.message || 'Błąd podczas usuwania zadań', 'error');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            showMessage('Błąd podczas usuwania zadań', 'error');
-                        });
-                    }
-                });
-            }
+            deleteSelectedTasks();
+        });
+    }
+
+    if (editSelectedTaskMenuBtn) {
+        editSelectedTaskMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            editSelectedTask();
+        });
+    }
+
+    if (editSelectedSectionMenuBtn) {
+        editSelectedSectionMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            editSelectedSection();
+        });
+    }
+
+    if (editSelectedProjectMenuBtn) {
+        editSelectedProjectMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            editSelectedProject();
+        });
+    }
+
+    if (editSelectedTagMenuBtn) {
+        editSelectedTagMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            editSelectedTag();
+        });
+    }
+
+    if (deleteSelectedTaskMenuBtn) {
+        deleteSelectedTaskMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            deleteSelectedTasks();
+        });
+    }
+
+    if (deleteSelectedSectionMenuBtn) {
+        deleteSelectedSectionMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            deleteSelectedSection();
+        });
+    }
+
+    if (deleteSelectedProjectMenuBtn) {
+        deleteSelectedProjectMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            deleteSelectedProject();
+        });
+    }
+
+    if (deleteSelectedTagMenuBtn) {
+        deleteSelectedTagMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            deleteSelectedTag();
         });
     }
 

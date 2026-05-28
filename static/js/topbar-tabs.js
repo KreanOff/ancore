@@ -9,6 +9,7 @@
     const tabsKey = 'ancoreTopbarTabs';
     const activeKey = 'ancoreActiveTopbarTab';
     const maxTabs = 12;
+    const tabContentCache = new Map();
 
     function currentUrl() {
         return window.location.pathname + window.location.search + window.location.hash;
@@ -103,6 +104,259 @@
         return sessionStorage.getItem(activeKey);
     }
 
+    function cacheActiveTabContent() {
+        const activeId = getActiveTabId();
+        const pageContainer = document.querySelector('.page-container');
+        const secondaryPanel = document.querySelector('.secondary-menu-panel');
+
+        if (!activeId || !pageContainer) {
+            return;
+        }
+
+        const tabs = readTabs();
+        const activeTab = tabs.find((tab) => tab.id === activeId);
+        if (activeTab) {
+            activeTab.url = currentUrl();
+            activeTab.title = currentTitle();
+            saveTabs(tabs);
+        }
+
+        tabContentCache.set(activeId, {
+            url: currentUrl(),
+            title: document.title,
+            scrollX: window.scrollX,
+            scrollY: window.scrollY,
+            pageContainerClass: pageContainer.className,
+            pageNodes: Array.from(pageContainer.childNodes),
+            secondaryPanelClass: secondaryPanel ? secondaryPanel.className : '',
+            secondaryPanelAttributes: secondaryPanel
+                ? Array.from(secondaryPanel.attributes).map((attribute) => [attribute.name, attribute.value])
+                : [],
+            secondaryNodes: secondaryPanel ? Array.from(secondaryPanel.childNodes) : [],
+        });
+    }
+
+    function restoreElementAttributes(element, attributes) {
+        if (!element) {
+            return;
+        }
+
+        Array.from(element.attributes).forEach((attribute) => {
+            element.removeAttribute(attribute.name);
+        });
+
+        attributes.forEach(([name, value]) => {
+            element.setAttribute(name, value);
+        });
+    }
+
+    function attributesFrom(element) {
+        return Array.from(element.attributes).map((attribute) => [attribute.name, attribute.value]);
+    }
+
+    function assetUrl(value, baseUrl = window.location.href) {
+        return new URL(value, baseUrl).href;
+    }
+
+    function loadScript(script, baseUrl) {
+        return new Promise((resolve, reject) => {
+            const nextScript = document.createElement('script');
+
+            Array.from(script.attributes).forEach((attribute) => {
+                if (attribute.name !== 'defer') {
+                    nextScript.setAttribute(attribute.name, attribute.value);
+                }
+            });
+
+            if (script.src) {
+                const src = assetUrl(script.getAttribute('src'), baseUrl);
+                const srcUrl = new URL(src);
+                const alreadyLoaded = Array.from(document.querySelectorAll('script[src]'))
+                    .some((existingScript) => assetUrl(existingScript.getAttribute('src')) === src);
+
+                if (alreadyLoaded && srcUrl.origin !== window.location.origin) {
+                    resolve();
+                    return;
+                }
+
+                nextScript.src = src;
+                nextScript.async = false;
+                nextScript.addEventListener('load', resolve, { once: true });
+                nextScript.addEventListener('error', reject, { once: true });
+                document.head.appendChild(nextScript);
+                return;
+            }
+
+            nextScript.textContent = script.textContent;
+            document.head.appendChild(nextScript);
+            resolve();
+        });
+    }
+
+    function syncHeadStyles(doc, baseUrl) {
+        const existingStyles = new Set(
+            Array.from(document.querySelectorAll('link[rel="stylesheet"][href]'))
+                .map((link) => assetUrl(link.getAttribute('href')))
+        );
+
+        doc.querySelectorAll('head link[rel="stylesheet"][href]').forEach((link) => {
+            const href = assetUrl(link.getAttribute('href'), baseUrl);
+            if (existingStyles.has(href)) {
+                return;
+            }
+
+            const nextLink = link.cloneNode(true);
+            nextLink.href = href;
+            document.head.appendChild(nextLink);
+            existingStyles.add(href);
+        });
+    }
+
+    async function runHeadScripts(doc, baseUrl) {
+        for (const script of doc.querySelectorAll('head script')) {
+            await loadScript(script, baseUrl);
+        }
+    }
+
+    function syncSidebarActive(url) {
+        const targetUrl = new URL(url, window.location.origin);
+        const targetPath = targetUrl.pathname;
+
+        document.querySelectorAll('.sidebar .nav-link.active').forEach((link) => {
+            link.classList.remove('active');
+        });
+
+        const navLinks = Array.from(document.querySelectorAll('.sidebar .nav-section .nav-link[href]'));
+        let bestMatch = null;
+
+        navLinks.forEach((link) => {
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('#')) {
+                return;
+            }
+
+            const linkPath = new URL(href, window.location.origin).pathname;
+            if (
+                targetPath === linkPath ||
+                (linkPath !== '/' && targetPath.startsWith(linkPath.replace(/\/$/, '') + '/'))
+            ) {
+                if (!bestMatch || linkPath.length > new URL(bestMatch.getAttribute('href'), window.location.origin).pathname.length) {
+                    bestMatch = link;
+                }
+            }
+        });
+
+        if (bestMatch) {
+            bestMatch.classList.add('active');
+        }
+    }
+
+    function restoreCachedTab(tab) {
+        const cached = tabContentCache.get(tab.id);
+        const pageContainer = document.querySelector('.page-container');
+        const secondaryPanel = document.querySelector('.secondary-menu-panel');
+
+        if (!cached || !pageContainer) {
+            return false;
+        }
+
+        pageContainer.className = cached.pageContainerClass;
+        pageContainer.replaceChildren(...cached.pageNodes);
+
+        if (secondaryPanel) {
+            restoreElementAttributes(secondaryPanel, cached.secondaryPanelAttributes);
+            secondaryPanel.className = cached.secondaryPanelClass;
+            secondaryPanel.replaceChildren(...cached.secondaryNodes);
+        }
+
+        document.title = cached.title || tab.title || document.title;
+        if (currentUrl() !== tab.url) {
+            window.history.pushState({ topbarTabId: tab.id }, '', tab.url);
+        }
+
+        syncSidebarActive(tab.url);
+        window.scrollTo(cached.scrollX || 0, cached.scrollY || 0);
+        return true;
+    }
+
+    async function loadTabFromServer(tab) {
+        const targetUrl = new URL(tab.url, window.location.origin);
+        if (targetUrl.origin !== window.location.origin) {
+            return false;
+        }
+
+        const response = await fetch(targetUrl.href, {
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (!response.ok) {
+            return false;
+        }
+
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const nextPageContainer = doc.querySelector('.page-container');
+        const nextSecondaryPanel = doc.querySelector('.secondary-menu-panel');
+        const pageContainer = document.querySelector('.page-container');
+        const secondaryPanel = document.querySelector('.secondary-menu-panel');
+
+        if (!nextPageContainer || !pageContainer) {
+            return false;
+        }
+
+        syncHeadStyles(doc, targetUrl.href);
+
+        restoreElementAttributes(pageContainer, attributesFrom(nextPageContainer));
+        pageContainer.replaceChildren(...Array.from(nextPageContainer.childNodes));
+
+        if (secondaryPanel && nextSecondaryPanel) {
+            restoreElementAttributes(secondaryPanel, attributesFrom(nextSecondaryPanel));
+            secondaryPanel.replaceChildren(...Array.from(nextSecondaryPanel.childNodes));
+        } else if (secondaryPanel) {
+            secondaryPanel.setAttribute('aria-hidden', 'true');
+            secondaryPanel.replaceChildren();
+        }
+
+        document.title = doc.title || tab.title || document.title;
+        window.history.pushState({ topbarTabId: tab.id }, '', targetUrl.href);
+        syncSidebarActive(tab.url);
+        window.scrollTo(0, 0);
+        await runHeadScripts(doc, targetUrl.href);
+        return true;
+    }
+
+    async function activateTab(tab) {
+        if (tab.id === getActiveTabId()) {
+            return;
+        }
+
+        cacheActiveTabContent();
+        setActiveTab(tab.id);
+
+        if (restoreCachedTab(tab)) {
+            render();
+            return;
+        }
+
+        if (tab.url !== currentUrl()) {
+            try {
+                if (await loadTabFromServer(tab)) {
+                    render();
+                    return;
+                }
+            } catch (error) {
+                console.error('Nie udało się przełączyć karty bez odświeżania.', error);
+            }
+
+            window.location.href = tab.url;
+        } else {
+            render();
+        }
+    }
+
     function syncCurrentTab() {
         const url = currentUrl();
         const title = currentTitle();
@@ -173,10 +427,7 @@
 
             tabButton.addEventListener('click', (event) => {
                 event.preventDefault();
-                setActiveTab(tab.id);
-                if (tab.url !== currentUrl()) {
-                    window.location.href = tab.url;
-                }
+                activateTab(tab);
             });
 
             closeButton.addEventListener('click', (event) => {
@@ -196,7 +447,7 @@
         }
     }
 
-    function closeTab(tabId) {
+    async function closeTab(tabId) {
         const tabs = readTabs();
         const index = tabs.findIndex((tab) => tab.id === tabId);
 
@@ -219,10 +470,25 @@
         if (isActive) {
             const nextTab = nextTabs[Math.max(0, index - 1)];
             setActiveTab(nextTab.id);
+            if (restoreCachedTab(nextTab)) {
+                render();
+                return;
+            }
+
+            try {
+                if (await loadTabFromServer(nextTab)) {
+                    render();
+                    return;
+                }
+            } catch (error) {
+                console.error('Nie udało się zamknąć karty bez odświeżania.', error);
+            }
+
             window.location.href = nextTab.url;
             return;
         }
 
+        tabContentCache.delete(tabId);
         render();
     }
 

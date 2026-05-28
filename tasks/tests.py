@@ -174,6 +174,59 @@ class TaskProjectCreationTests(TestCase):
             description='Makiety i decyzje wizualne',
         ).exists())
 
+    def test_delete_tag_from_tasks_page(self):
+        tag = TaskTag.objects.create(user=self.user, name='Design')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_tag',
+            'tag_id': tag.id,
+        })
+
+        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=all-groups")
+        self.assertFalse(TaskTag.objects.filter(id=tag.id).exists())
+
+    def test_edit_tag_from_tasks_page(self):
+        tag = TaskTag.objects.create(user=self.user, name='Design', description='Stary opis')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'edit_tag',
+            'tag_id': tag.id,
+            'name': 'UI',
+            'description': 'Nowy opis',
+        })
+
+        tag.refresh_from_db()
+
+        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=all-groups")
+        self.assertEqual(tag.name, 'UI')
+        self.assertEqual(tag.description, 'Nowy opis')
+
+    def test_more_options_render_edit_and_delete_actions_for_list_views(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        Task.objects.create(user=self.user, section=section, title='Zadanie')
+        TaskTag.objects.create(user=self.user, name='Design')
+
+        section_response = self.client.get(reverse('tasks:task_group', args=[section.id]))
+        project_response = self.client.get(f"{reverse('tasks:tasks')}?project={project.id}")
+        all_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
+        my_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=my-tasks")
+        projects_response = self.client.get(reverse('tasks:tasks'))
+        tags_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+
+        self.assertContains(section_response, 'id="delete-selected-task-menu-btn"')
+        self.assertContains(section_response, 'id="edit-selected-task-menu-btn"')
+        self.assertContains(project_response, 'id="delete-selected-section-menu-btn"')
+        self.assertContains(project_response, 'id="edit-selected-section-menu-btn"')
+        self.assertContains(all_tasks_response, 'id="delete-selected-task-menu-btn"')
+        self.assertContains(all_tasks_response, 'id="edit-selected-task-menu-btn"')
+        self.assertContains(my_tasks_response, 'id="delete-selected-task-menu-btn"')
+        self.assertContains(my_tasks_response, 'id="edit-selected-task-menu-btn"')
+        self.assertContains(projects_response, 'id="delete-selected-project-menu-btn"')
+        self.assertContains(projects_response, 'id="edit-selected-project-menu-btn"')
+        self.assertContains(tags_response, 'id="delete-selected-tag-menu-btn"')
+        self.assertContains(tags_response, 'id="edit-selected-tag-menu-btn"')
+
     def test_create_task_modal_assigns_existing_tags(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
