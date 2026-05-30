@@ -19,10 +19,14 @@
     <div class="tasks-issue-shell">
         <header class="tasks-issue-header">
             <div class="tasks-issue-breadcrumb">
-                <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" aria-label="Wróć do poprzedniej strony" title="Wróć do poprzedniej strony" data-history-back>
+                <a href="{% if task.parent %}{% url 'tasks:view-task' task.parent.task_id %}{% else %}{% url 'tasks:tasks' %}{% endif %}"
+                   class="tasks-issue-close"
+                   aria-label="{% if task.parent %}Wróć do zadania{% else %}Wróć do poprzedniej strony{% endif %}"
+                   title="{% if task.parent %}Wróć do zadania{% else %}Wróć do poprzedniej strony{% endif %}"
+                   {% if not task.parent %}data-history-back{% endif %}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
+                        <path d="M19 12H5"/>
+                        <path d="m12 19-7-7 7-7"/>
                     </svg>
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
@@ -44,6 +48,12 @@
                     <span>{% if task.section %}{{ task.section.title }}{% else %}Bez kategorii{% endif %}</span>
                 </span>
                 <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                {% if task.parent %}
+                <a href="{% url 'tasks:view-task' task.parent.task_id %}" class="tasks-issue-crumb">
+                    <span>{{ task.parent.title }}</span>
+                </a>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                {% endif %}
                 <span class="tasks-issue-crumb tasks-issue-crumb--current">
                     <span>{{ task.title }}</span>
                 </span>
@@ -55,18 +65,6 @@
                         <circle cx="5" cy="12" r="1.6"/>
                         <circle cx="12" cy="12" r="1.6"/>
                         <circle cx="19" cy="12" r="1.6"/>
-                    </svg>
-                </button>
-                <button type="button" class="tasks-issue-icon-button" aria-label="Kopiuj link" title="Kopiuj link">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/>
-                        <path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/>
-                    </svg>
-                </button>
-                <button type="button" class="tasks-issue-icon-button" aria-label="Ustawienia" title="Ustawienia">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.08.08a2 2 0 1 1-3.84 0L10 20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.08a2 2 0 1 1 0-3.84L4 10a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 1 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.08-.08a2 2 0 1 1 3.84 0L14 4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.4 9c.1.35.3.69.6 1l.08.08a2 2 0 1 1 0 3.84L20 14c-.3.31-.5.65-.6 1z"/>
                     </svg>
                 </button>
                 <button type="submit" form="task-detail-form" class="tasks-issue-save" title="Zapisz zmiany">
@@ -118,15 +116,6 @@
                             </svg>
                         </button>
                         <span class="tasks-issue-tool-separator" aria-hidden="true"></span>
-                        <button type="button" class="tasks-issue-tool" title="Tabela">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect x="3" y="4" width="18" height="16" rx="2"/>
-                                <path d="M3 10h18"/>
-                                <path d="M9 4v16"/>
-                                <path d="M15 4v16"/>
-                            </svg>
-                        </button>
-                        <span class="tasks-issue-tool-separator" aria-hidden="true"></span>
                         <button type="button" class="tasks-issue-tool" title="Wspomnij">
                             <span aria-hidden="true">@</span>
                         </button>
@@ -149,13 +138,8 @@
                         </button>
                     </div>
 
-                    <div id="drop-zone" class="tasks-issue-drop-zone">
-                        <span>+ Dodaj załącznik</span>
-                        <button type="button" id="browse-btn" class="tasks-link-btn">wybierz plik</button>
-                        <input type="file" name="attachments" id="file-input" multiple hidden
-                               accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
-                    </div>
-                    <div id="file-list" class="tasks-file-list"></div>
+                    <input type="file" name="attachments" id="file-input" multiple hidden
+                           accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
 
                     {% if task.attachments.exists %}
                     <section class="tasks-issue-attachments" aria-label="Załączniki">
@@ -177,12 +161,68 @@
                         </div>
                     </section>
                     {% endif %}
+                    <div id="file-list" class="tasks-file-list"></div>
 
-                    <button type="button" class="tasks-issue-subissue">
-                        <span aria-hidden="true">+</span>
-                        Dodaj podzadanie
-                    </button>
+                    {% if not task.parent %}
+                    <section class="tasks-issue-subtasks" aria-label="Podzadania">
+                        <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
+                            <button type="button" class="tasks-subtasks-title" data-subtasks-collapse aria-expanded="true">
+                                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                                <span>Podzadania ({{ task.subtasks.count }})</span>
+                            </button>
+                            <div class="tasks-subtasks-actions">
+                                <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-subtasks-sort>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M7 6h10"/>
+                                        <path d="M7 12h7"/>
+                                        <path d="M7 18h4"/>
+                                        <path d="M17 14v6"/>
+                                        <path d="m14 17 3 3 3-3"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-subtasks-delete>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18"/>
+                                        <path d="M8 6V4h8v2"/>
+                                        <path d="m19 6-1 14H6L5 6"/>
+                                        <path d="M10 11v5"/>
+                                        <path d="M14 11v5"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-open-issue aria-haspopup="dialog" aria-controls="issue-modal">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 5v14"/>
+                                        <path d="M5 12h14"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        {% if task.subtasks.exists %}
+                        <div class="tasks-table-wrap tasks-board tasks-subtasks-board">
+                            {% for status_group in subtask_status_groups %}
+                            {% if status_group.count %}
+                            <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
+                                <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
+                                    <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
+                                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                                    </button>
+                                    <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
+                                    <span class="tasks-rail-count">{{ status_group.count }}</span>
+                                </header>
+                                <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
+                                    {% for subtask in status_group.tasks %}
+                                    {% include 'tasks/includes/task_issue_row.html' with task=subtask project_code=subtask.section.project.code|default:'TASK' compact=True only %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </section>
+                    {% endif %}
 
+                    {% if not task.parent %}
                     <section class="tasks-issue-activity">
                         <div class="tasks-issue-activity-head">
                             <h2>
@@ -270,9 +310,17 @@
                             {% endif %}
                         </div>
                     </section>
+                    {% endif %}
                 </section>
 
                 <aside class="tasks-issue-sidebar" aria-label="Szczegóły zadania">
+                    <button
+                        type="button"
+                        class="tasks-issue-sidebar-resizer"
+                        aria-label="Zmień szerokość panelu szczegółów"
+                        title="Zmień szerokość panelu szczegółów"
+                        data-issue-sidebar-resizer
+                    ></button>
                     <section class="tasks-issue-side-section">
                         <div class="tasks-issue-field">
                             <label for="{{ form.status.id_for_label }}">Status</label>
@@ -326,13 +374,6 @@
                             </div>
                         </div>
                         <div class="tasks-issue-field">
-                            <span>Utworzył</span>
-                            <strong class="tasks-issue-person">
-                                <span class="tasks-issue-mini-avatar">{{ task.user.first_name|first|default:task.user.username|first|upper }}</span>
-                                {{ task.user.get_full_name|default:task.user.username }}
-                            </strong>
-                        </div>
-                        <div class="tasks-issue-field">
                             <label for="{{ form.tags.id_for_label }}">Tagi</label>
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ form.tags }}
@@ -356,15 +397,114 @@
                                         {% endfor %}
                                     </div>
                                 </div>
+                                <div class="tasks-issue-selected-tags" data-task-detail-selected-tags aria-live="polite"></div>
+                            </div>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Utworzył</span>
+                            <strong class="tasks-issue-person">
+                                <span class="tasks-issue-mini-avatar">{{ task.user.first_name|first|default:task.user.username|first|upper }}</span>
+                                {{ task.user.get_full_name|default:task.user.username }}
+                            </strong>
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <span>Utworzono</span>
+                            <strong>{{ task.created_at|date:"d.m.Y, H:i" }}</strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Zamknięto</span>
+                            <strong class="tasks-issue-muted">
+                                {% if task.completion_date %}
+                                {{ task.completion_date|date:"d.m.Y, H:i" }}
+                                {% else %}
+                                Nie zamknięto
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Czas pracy</span>
+                            <div class="tasks-issue-time-spent">
+                                <label for="{{ form.time_spent_hours.id_for_label }}">
+                                    {{ form.time_spent_hours }}
+                                    <span>h</span>
+                                </label>
+                                <label for="{{ form.time_spent_minutes.id_for_label }}">
+                                    {{ form.time_spent_minutes }}
+                                    <span>min</span>
+                                </label>
                             </div>
                         </div>
                     </section>
 
                     <section class="tasks-issue-side-section">
                         <div class="tasks-issue-field">
-                            <label for="{{ form.section.id_for_label }}">Komponent</label>
-                            <div class="tasks-issue-select-wrap">{{ form.section }}</div>
+                            <label for="{{ form.project.id_for_label }}">Projekt</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ form.project }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-project-dropdown data-task-detail-select="#{{ form.project.id_for_label }}">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
+                                        <span data-task-detail-label data-task-detail-default-label="Projekt">Projekt</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz projekt">
+                                        {% for project in form.project.field.queryset %}
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ project.id }}" data-task-detail-default-section="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
+                                            {% if project.icon %}
+                                            <span class="tasks-issue-mini-avatar" aria-hidden="true" data-task-detail-option-icon style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon }}</span>
+                                            {% endif %}
+                                            <span>{{ project.name }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.section.id_for_label }}">Grupa</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ form.section }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-section-dropdown data-task-detail-select="#{{ form.section.id_for_label }}">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
+                                        <span data-task-detail-label data-task-detail-default-label="Grupa">Grupa</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz grupę">
+                                        {% for section in form.section.field.queryset %}
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ section.id }}" data-task-detail-project-id="{{ section.project_id }}">
+                                            {% if section.icon %}
+                                            <span aria-hidden="true" data-task-detail-option-icon>{{ section.icon }}</span>
+                                            {% endif %}
+                                            <span>{{ section.title }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if task.parent %}
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.parent.id_for_label }}">Zadanie</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ form.parent }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-parent-dropdown data-task-detail-select="#{{ form.parent.id_for_label }}">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
+                                        <span data-task-detail-label data-task-detail-default-label="Zadanie">Zadanie</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz zadanie">
+                                        {% for parent_task in form.parent.field.queryset %}
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ parent_task.id }}" data-task-detail-section-id="{{ parent_task.section_id }}" data-task-detail-project-id="{{ parent_task.section.project_id }}">
+                                            <span>{{ parent_task.title }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </section>
 
                     <section class="tasks-issue-side-section">
@@ -381,16 +521,74 @@
                         {% endif %}
                     </section>
 
-                    <section class="tasks-issue-side-section tasks-issue-danger">
-                        {% if task.status != 'closed' %}
-                        <button type="button" class="tasks-issue-side-button" onclick="updateTaskStatus(true)">Zamknij zadanie</button>
-                        {% else %}
-                        <button type="button" class="tasks-issue-side-button" onclick="updateTaskStatus(false)">Otwórz ponownie</button>
-                        {% endif %}
-                        <button type="button" class="tasks-issue-side-button is-danger" onclick="confirmDelete()">Usuń zadanie</button>
-                    </section>
                 </aside>
             </main>
+        </form>
+    </div>
+</div>
+
+<div class="tasks-modal tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_subtask_modal">
+            <header class="tasks-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <strong id="issue-modal-title">Nowe podzadanie</strong>
+                </div>
+                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="tasks-modal__body tasks-issue-modal__body">
+                {% if task_modal_form.errors %}
+                <div class="tasks-modal__errors">
+                    {% for field in task_modal_form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in task_modal_form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <label class="u-sr-only" for="{{ task_modal_form.title.id_for_label }}">Tytuł podzadania</label>
+                {{ task_modal_form.title }}
+                <label class="u-sr-only" for="{{ task_modal_form.description.id_for_label }}">Opis</label>
+                {{ task_modal_form.description }}
+
+                <div class="tasks-issue-fields">
+                    <label>
+                        <span>Status</span>
+                        <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                            {{ task_modal_form.status }}
+                            <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
+                                <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                    <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-inline-status-icon></span>
+                                    <span data-inline-select-label>Status</span>
+                                </button>
+                                <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz status">
+                                    {% for value, label in task_modal_form.status.field.choices %}
+                                    <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
+                                        <span class="status-indicator status-{{ value }}">{{ label }}</span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <footer class="tasks-modal__footer tasks-issue-modal__footer">
+                <button type="submit" class="tasks-modal__submit" id="issue-create-submit">Utwórz podzadanie</button>
+            </footer>
         </form>
     </div>
 </div>
@@ -398,6 +596,25 @@
 <script>
 document.querySelectorAll('[data-history-back]').forEach((link) => {
     link.addEventListener('click', (event) => {
+        const storedReturnPoint = sessionStorage.getItem('tasks:lastTaskReturn');
+        if (storedReturnPoint) {
+            try {
+                const returnPoint = JSON.parse(storedReturnPoint);
+                const savedViewPath = returnPoint.viewUrl ? new URL(returnPoint.viewUrl, window.location.origin).pathname : '';
+                const isCurrentTask = savedViewPath === window.location.pathname;
+                const isFresh = Date.now() - Number(returnPoint.savedAt || 0) < 30 * 60 * 1000;
+
+                if (returnPoint.returnUrl && isCurrentTask && isFresh) {
+                    event.preventDefault();
+                    sessionStorage.setItem('tasks:restoreTaskReturn', storedReturnPoint);
+                    window.location.href = returnPoint.returnUrl;
+                    return;
+                }
+            } catch (error) {
+                sessionStorage.removeItem('tasks:lastTaskReturn');
+            }
+        }
+
         if (window.history.length <= 1) return;
 
         event.preventDefault();
@@ -428,12 +645,80 @@ function closeTaskDetailDropdowns(exceptDropdown = null) {
     });
 }
 
+function getTaskDetailSelect(dropdown) {
+    return dropdown ? document.querySelector(dropdown.dataset.taskDetailSelect) : null;
+}
+
+function syncTaskDetailProjectSections(changedDropdown = null) {
+    const projectDropdown = document.querySelector('[data-task-detail-project-dropdown]');
+    const sectionDropdown = document.querySelector('[data-task-detail-section-dropdown]');
+    const parentDropdown = document.querySelector('[data-task-detail-parent-dropdown]');
+    const projectSelect = getTaskDetailSelect(projectDropdown);
+    const sectionSelect = getTaskDetailSelect(sectionDropdown);
+    const parentSelect = getTaskDetailSelect(parentDropdown);
+    if (!projectDropdown || !sectionDropdown || !projectSelect || !sectionSelect) return;
+
+    if (changedDropdown === parentDropdown && parentSelect) {
+        const activeParentButton = parentDropdown.querySelector(`[data-task-detail-value="${parentSelect.value}"]`);
+        if (activeParentButton?.dataset.taskDetailSectionId) {
+            sectionSelect.value = activeParentButton.dataset.taskDetailSectionId;
+        }
+        if (activeParentButton?.dataset.taskDetailProjectId) {
+            projectSelect.value = activeParentButton.dataset.taskDetailProjectId;
+        }
+    }
+
+    if (changedDropdown === sectionDropdown) {
+        const activeSectionButton = sectionDropdown.querySelector(`[data-task-detail-value="${sectionSelect.value}"]`);
+        if (activeSectionButton?.dataset.taskDetailProjectId) {
+            projectSelect.value = activeSectionButton.dataset.taskDetailProjectId;
+        }
+    }
+
+    const projectId = projectSelect.value;
+    let firstVisibleSection = null;
+    sectionDropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
+        const isVisible = !projectId || button.dataset.taskDetailProjectId === projectId;
+        button.hidden = !isVisible;
+        if (isVisible && !firstVisibleSection) firstVisibleSection = button;
+    });
+
+    if (changedDropdown === projectDropdown) {
+        const currentSectionButton = sectionDropdown.querySelector(`[data-task-detail-value="${sectionSelect.value}"]`);
+        const currentSectionFits = currentSectionButton?.dataset.taskDetailProjectId === projectId;
+        if (!currentSectionFits) sectionSelect.value = '';
+    }
+
+    if (parentDropdown && parentSelect) {
+        const sectionId = sectionSelect.value;
+        let firstVisibleParent = null;
+        parentDropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
+            const matchesSection = sectionId && button.dataset.taskDetailSectionId === sectionId;
+            const matchesProject = !sectionId && (!projectId || button.dataset.taskDetailProjectId === projectId);
+            const isVisible = matchesSection || matchesProject;
+            button.hidden = !isVisible;
+            if (isVisible && !firstVisibleParent) firstVisibleParent = button;
+        });
+
+        if (changedDropdown === sectionDropdown || changedDropdown === projectDropdown) {
+            const currentParentButton = parentDropdown.querySelector(`[data-task-detail-value="${parentSelect.value}"]`);
+            if (currentParentButton?.hidden && firstVisibleParent) {
+                parentSelect.value = firstVisibleParent.dataset.taskDetailValue;
+                syncTaskDetailProjectSections(parentDropdown);
+            }
+        }
+    }
+}
+
 function syncTaskDetailDropdown(dropdown) {
+    if (!dropdown) return;
     const select = document.querySelector(dropdown.dataset.taskDetailSelect);
     const label = dropdown.querySelector('[data-task-detail-label]');
+    const detailIcon = dropdown.querySelector('[data-task-detail-icon]');
     const statusIcon = dropdown.querySelector('[data-task-detail-status-icon]');
     const priorityIcon = dropdown.querySelector('[data-task-detail-priority-icon]');
     const isMultiple = dropdown.hasAttribute('data-task-detail-multiple');
+    const selectedTags = dropdown.closest('.tasks-issue-select-wrap')?.querySelector('[data-task-detail-selected-tags]');
     const selectedValues = select ? Array.from(select.selectedOptions).map((option) => option.value) : [];
     const currentValue = select ? select.value : '';
 
@@ -450,8 +735,23 @@ function syncTaskDetailDropdown(dropdown) {
             label.textContent = selectedValues.length ? `Tagi: ${selectedValues.length}` : 'Tagi';
         } else {
             const activeButton = dropdown.querySelector(`[data-task-detail-value="${currentValue}"]`);
-            label.textContent = activeButton ? getTaskDetailButtonText(activeButton) : label.textContent;
+            label.textContent = activeButton ? getTaskDetailButtonText(activeButton) : label.dataset.taskDetailDefaultLabel || label.textContent;
         }
+    }
+
+    if (detailIcon) {
+        detailIcon.replaceChildren();
+        const activeButton = !isMultiple ? dropdown.querySelector(`[data-task-detail-value="${currentValue}"]`) : null;
+        const optionIcon = activeButton?.querySelector('[data-task-detail-option-icon]');
+        if (optionIcon) detailIcon.appendChild(optionIcon.cloneNode(true));
+    }
+
+    if (selectedTags && isMultiple) {
+        selectedTags.replaceChildren();
+        dropdown.querySelectorAll('[data-task-detail-value].is-active').forEach((button) => {
+            const chip = button.querySelector('.tasks-tag-chip')?.cloneNode(true);
+            if (chip) selectedTags.appendChild(chip);
+        });
     }
 
     if (statusIcon) {
@@ -491,14 +791,29 @@ document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
                 if (option) option.selected = !option.selected;
             } else {
                 select.value = button.dataset.taskDetailValue;
+                syncTaskDetailProjectSections(dropdown);
                 closeTaskDetailDropdowns();
             }
 
             select.dispatchEvent(new Event('change', { bubbles: true }));
+            if (dropdown.hasAttribute('data-task-detail-project-dropdown')) {
+                getTaskDetailSelect(document.querySelector('[data-task-detail-section-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            if (dropdown.hasAttribute('data-task-detail-section-dropdown')) {
+                getTaskDetailSelect(document.querySelector('[data-task-detail-project-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
+            }
             syncTaskDetailDropdown(dropdown);
+            syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown]'));
+            syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
+            syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
         });
     });
 });
+
+syncTaskDetailProjectSections(document.querySelector('[data-task-detail-project-dropdown]'));
+syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown]'));
+syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
+syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
 
 document.addEventListener('click', () => closeTaskDetailDropdowns());
 

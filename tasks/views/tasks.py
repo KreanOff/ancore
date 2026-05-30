@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 import json
 from ..models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
-from ..forms import QuickTaskForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
+from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
 
 def _status_groups_for_tasks(tasks):
@@ -42,7 +42,7 @@ def _sections_for_projects(projects):
 
 
 def _tasks_navigation_context(user, active_section=None, active_view=None):
-    tasks_qs = Task.objects.filter(user=user).select_related('section', 'section__project').prefetch_related('tags').annotate(
+    tasks_qs = Task.objects.filter(user=user, parent__isnull=True).select_related('section', 'section__project').prefetch_related('tags').annotate(
         is_closed_sort=Case(
             When(status='closed', then=Value(1)),
             default=Value(0),
@@ -51,7 +51,7 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
     ).order_by('is_closed_sort', 'task_id')
 
     projects = list(TaskProject.objects.filter(user=user).annotate(
-        total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=user))
+        total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=user, sections__tasks__parent__isnull=True))
     ).prefetch_related(
         Prefetch('sections', queryset=TaskSection.objects.prefetch_related(
             Prefetch('tasks', queryset=tasks_qs)
@@ -85,10 +85,19 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
         'total_group_count': len(_sections_for_projects(projects)),
-        'tags': TaskTag.objects.filter(user=user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=user))),
+        'tags': TaskTag.objects.filter(user=user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=user, tasks__parent__isnull=True))),
         'total_tag_count': TaskTag.objects.filter(user=user).count(),
         'can_create_issue': can_create_issue,
     }
+
+
+def _set_task_status(task, status):
+    valid_statuses = {choice for choice, _label in Task.STATUS_CHOICES}
+    if status not in valid_statuses:
+        return False
+    task.status = status
+    task.save()
+    return True
 
 
 @login_required
@@ -278,7 +287,7 @@ def _tasks_page(request, active_section=None):
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać zadania.')
 
-    tasks_qs = Task.objects.filter(user=request.user).select_related('section', 'section__project').prefetch_related('tags').annotate(
+    tasks_qs = Task.objects.filter(user=request.user, parent__isnull=True).select_related('section', 'section__project').prefetch_related('tags').annotate(
         is_closed_sort=Case(
             When(status='closed', then=Value(1)),
             default=Value(0),
@@ -287,7 +296,7 @@ def _tasks_page(request, active_section=None):
     ).order_by('is_closed_sort', 'task_id')
 
     projects = list(TaskProject.objects.filter(user=request.user).annotate(
-        total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=request.user))
+        total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=request.user, sections__tasks__parent__isnull=True))
     ).prefetch_related(
         Prefetch('sections', queryset=TaskSection.objects.prefetch_related(
             Prefetch('tasks', queryset=tasks_qs)
@@ -311,7 +320,7 @@ def _tasks_page(request, active_section=None):
     orphan_status_groups = _decorate_status_groups(projects, orphan_tasks)
     all_status_groups = _status_groups_for_tasks(list(tasks_qs))
     all_sections = _sections_for_projects(projects)
-    tags = TaskTag.objects.filter(user=request.user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=request.user)))
+    tags = TaskTag.objects.filter(user=request.user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=request.user, tasks__parent__isnull=True)))
     if active_section:
         can_create_issue = True
     elif active_project:
@@ -378,16 +387,11 @@ def update_task_status(request, task_id):
         status = data.get('status')
 
         if status:
-            valid_statuses = {choice for choice, _label in Task.STATUS_CHOICES}
-            if status not in valid_statuses:
+            if not _set_task_status(task, status):
                 return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
-            task.status = status
         else:
             is_completed = data.get('is_completed', False)
-            task.is_completed = is_completed
-            task.status = 'closed' if is_completed else 'reopened'
-
-        task.save()
+            _set_task_status(task, 'closed' if is_completed else 'reopened')
         
         return JsonResponse({
             'status': 'success',
@@ -453,9 +457,16 @@ def bulk_update_status(request):
         
         if not task_ids:
             return JsonResponse({'status': 'error', 'message': 'Nie podano ID zadań'}, status=400)
+        valid_statuses = {choice for choice, _label in Task.STATUS_CHOICES}
+        if status not in valid_statuses:
+            return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
         
         user = request.user
-        updated_count = Task.objects.filter(task_id__in=task_ids, user=user).update(status=status)
+        tasks_to_update = Task.objects.filter(task_id__in=task_ids, user=user)
+        updated_count = 0
+        for task in tasks_to_update:
+            _set_task_status(task, status)
+            updated_count += 1
         
         return JsonResponse({
             'status': 'success', 
@@ -468,39 +479,70 @@ def bulk_update_status(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 def _task_detail_response(request, task_id):
-    task = get_object_or_404(Task, task_id=task_id, user=request.user)
+    task = get_object_or_404(
+        Task.objects.select_related('section', 'section__project', 'parent').prefetch_related(
+            Prefetch(
+                'subtasks',
+                queryset=Task.objects.select_related('section', 'section__project').prefetch_related('tags', 'attachments').order_by('task_id'),
+            )
+        ),
+        task_id=task_id,
+        user=request.user,
+    )
+    subtask_status_groups = _status_groups_for_tasks(list(task.subtasks.all()))
+    form = TaskForm(instance=task, user=request.user)
+    task_modal_form = SubTaskModalForm()
+    task_modal_open = False
 
     if request.method == 'POST':
-        files = request.FILES.getlist('attachments')
-        form = TaskForm(request.POST, request.FILES, instance=task, user=request.user)
-        if form.is_valid():
-            form.save()
-
-            # Handle staged attachment deletions
-            deleted_attachments = request.POST.get('deleted_attachments', '')
-            if deleted_attachments:
-                attachment_ids = [int(aid) for aid in deleted_attachments.split(',') if aid.isdigit()]
-                TaskAttachment.objects.filter(id__in=attachment_ids, task=task).delete()
-
-            # Handle new file attachments
-            for file in files:
-                TaskAttachment.objects.create(
-                    task=task,
-                    file=file
-                )
-
-            messages.success(request, 'Zadanie zaktualizowane pomyślnie.')
-            return redirect('tasks:view-task', task_id=task.task_id)
+        action = request.POST.get('action')
+        if action == 'create_subtask_modal':
+            task_modal_form = SubTaskModalForm(request.POST)
+            if task_modal_form.is_valid():
+                subtask = task_modal_form.save(commit=False)
+                subtask.user = request.user
+                subtask.parent = task
+                subtask.section = task.section
+                subtask.save()
+                messages.success(request, 'Podzadanie dodane.')
+                return redirect('tasks:view-task', task_id=task.task_id)
+            task_modal_open = True
+            messages.error(request, 'Nie udało się dodać podzadania.')
         else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
+            files = request.FILES.getlist('attachments')
+            form = TaskForm(request.POST, request.FILES, instance=task, user=request.user)
+            if form.is_valid():
+                form.save()
+
+                # Handle staged attachment deletions
+                deleted_attachments = request.POST.get('deleted_attachments', '')
+                if deleted_attachments:
+                    attachment_ids = [int(aid) for aid in deleted_attachments.split(',') if aid.isdigit()]
+                    TaskAttachment.objects.filter(id__in=attachment_ids, task=task).delete()
+
+                # Handle new file attachments
+                for file in files:
+                    TaskAttachment.objects.create(
+                        task=task,
+                        file=file
+                    )
+
+                messages.success(request, 'Zadanie zaktualizowane pomyślnie.')
+                detail_route = 'tasks:view-subtask' if task.parent_id else 'tasks:view-task'
+                return redirect(detail_route, task_id=task.task_id)
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{field}: {error}")
     else:
         form = TaskForm(instance=task, user=request.user)
 
     context = {
         'form': form,
+        'task_modal_form': task_modal_form,
+        'task_modal_open': task_modal_open,
         'task': task,
+        'subtask_status_groups': subtask_status_groups,
         **_tasks_navigation_context(
             request.user,
             active_section=task.section,
@@ -511,9 +553,9 @@ def _task_detail_response(request, task_id):
 
 
 @login_required
-def edit_task(request, task_id):
+def view_task(request, task_id):
     return _task_detail_response(request, task_id)
 
 @login_required
-def view_task(request, task_id):
+def view_subtask(request, task_id):
     return _task_detail_response(request, task_id)

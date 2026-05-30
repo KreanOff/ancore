@@ -121,10 +121,11 @@
 .filter-select,
 .tasks-filter-select,
 .form-select {
-    height: var(--control-height);
+    min-width: var(--dropdown-menu-width);
+    height: var(--dropdown-control-height);
     padding: 0 2rem 0 0.75rem;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius);
+    border-radius: var(--dropdown-control-radius);
     background: var(--card-bg);
     font-size: var(--font-size-base);
     color: var(--text-main);

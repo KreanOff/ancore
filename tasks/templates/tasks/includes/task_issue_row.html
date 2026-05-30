@@ -1,9 +1,40 @@
-<article class="task-row tasks-issue-row {% if task.status == 'closed' %}completed{% endif %}"
+<article class="task-row tasks-issue-row {% if compact %}tasks-issue-row--compact{% endif %} {% if task.status == 'closed' %}completed{% endif %}"
          draggable="true"
          data-task-id="{{ task.task_id }}"
          data-status="{{ task.status }}"
          data-priority="{{ task.priority }}"
-         data-view-url="{% url 'tasks:view-task' task.task_id %}">
+         data-created="{{ task.created_at|date:'c' }}"
+         data-view-url="{% if compact %}{% url 'tasks:view-subtask' task.task_id %}{% else %}{% url 'tasks:view-task' task.task_id %}{% endif %}">
+    {% if compact %}
+    <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
+    <span class="tasks-row-priority priority-{{ task.priority }}"
+          title="Priorytet: {{ task.get_priority_display }}"
+          aria-label="Priorytet: {{ task.get_priority_display }}">
+        <span class="tasks-priority-icon" aria-hidden="true">
+            {% if task.priority == 'urgent' %}
+                <span class="tasks-priority-urgent-mark">!</span>
+            {% elif task.priority == 'none' %}
+                <span class="tasks-priority-no-mark"></span>
+            {% else %}
+                <span class="tasks-priority-bars">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+            {% endif %}
+        </span>
+    </span>
+    <span class="status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
+    <span class="tasks-row-title">
+        <span class="tasks-row-title-content">
+            <span class="tasks-row-title-text">{{ task.title }}</span>
+            {% if task.description %}
+            <span class="tasks-row-title-description">{{ task.description|striptags }}</span>
+            {% endif %}
+        </span>
+    </span>
+    <span class="tasks-row-date">{{ task.created_at|date:"d M" }}</span>
+    {% else %}
     <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
     <span class="tasks-row-priority priority-{{ task.priority }}"
           title="Priorytet: {{ task.get_priority_display }}"
@@ -25,7 +56,9 @@
     <span class="tasks-row-id">{{ project_code }}-{{ task.task_id }}</span>
     <span class="status-indicator status-{{ task.status }}" aria-label="{{ task.get_status_display }}"></span>
     <span class="tasks-row-title">
-        <span>{{ task.title }}</span>
+        <span class="tasks-row-title-content">
+            <span class="tasks-row-title-text">{{ task.title }}</span>
+        </span>
     </span>
     <span class="tasks-row-tags" aria-label="Tagi zadania">
         {% for tag in task.tags.all %}
@@ -38,12 +71,13 @@
         </span>
         {% endfor %}
     </span>
-    <span class="tasks-row-comments" title="Załączniki i komentarze">
+    <span class="tasks-row-attachments" title="Załączniki: {{ task.attachments.count }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+            <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 1 1-2.83-2.83l8.49-8.48"/>
         </svg>
         {{ task.attachments.count }}
     </span>
     <span class="tasks-row-time">0 godz.</span>
     <span class="tasks-row-date">{{ task.created_at|date:"d M" }}</span>
+    {% endif %}
 </article>

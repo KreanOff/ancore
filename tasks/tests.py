@@ -1,3 +1,6 @@
+import json
+import re
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -248,6 +251,82 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
         self.assertEqual(list(task.tags.all()), [tag])
 
+    def test_create_subtask_from_task_detail(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie główne')
+
+        response = self.client.post(reverse('tasks:view-task', args=[task.task_id]), {
+            'action': 'create_subtask_modal',
+            'title': 'Pierwsze podzadanie',
+            'description': 'Opis podzadania',
+            'status': 'in_progress',
+        })
+
+        subtask = Task.objects.get(user=self.user, title='Pierwsze podzadanie')
+
+        self.assertRedirects(response, reverse('tasks:view-task', args=[task.task_id]))
+        self.assertEqual(subtask.parent, task)
+        self.assertEqual(subtask.section, section)
+        self.assertEqual(subtask.description, 'Opis podzadania')
+        self.assertEqual(subtask.priority, 'medium')
+        self.assertEqual(subtask.status, 'in_progress')
+        self.assertEqual(list(subtask.tags.all()), [])
+
+        detail_response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
+        subtask_detail_response = self.client.get(reverse('tasks:view-subtask', args=[subtask.task_id]))
+        list_response = self.client.get(reverse('tasks:task_group', args=[section.id]))
+
+        self.assertContains(detail_response, 'Pierwsze podzadanie')
+        self.assertContains(detail_response, 'Opis podzadania')
+        self.assertContains(detail_response, 'Realizowane')
+        self.assertContains(detail_response, 'tasks-issue-row--compact')
+        self.assertContains(detail_response, reverse('tasks:view-subtask', args=[subtask.task_id]))
+        self.assertNotContains(detail_response, '<span>Zadanie</span>', html=True)
+        self.assertContains(subtask_detail_response, '<label for="id_parent">Zadanie</label>', html=True)
+        self.assertContains(subtask_detail_response, 'Zadanie główne')
+        subtask_detail_html = subtask_detail_response.content.decode()
+        project_label_position = subtask_detail_html.index('<label for="id_project">Projekt</label>')
+        section_label_position = subtask_detail_html.index('<label for="id_section">Grupa</label>')
+        parent_label_position = subtask_detail_html.index('<label for="id_parent">Zadanie</label>')
+        self.assertLess(project_label_position, section_label_position)
+        self.assertLess(section_label_position, parent_label_position)
+        self.assertContains(subtask_detail_response, f'href="{reverse("tasks:view-task", args=[task.task_id])}"')
+        self.assertContains(subtask_detail_response, 'aria-label="Wróć do zadania"')
+        self.assertNotRegex(
+            subtask_detail_response.content.decode(),
+            rf'<a\s+href="{re.escape(reverse("tasks:view-task", args=[task.task_id]))}"[^>]*data-history-back',
+        )
+        self.assertNotContains(subtask_detail_response, f'{project.code}-{task.task_id}')
+        self.assertNotContains(detail_response, f'{project.code}-{subtask.task_id}')
+        self.assertNotContains(list_response, 'Pierwsze podzadanie')
+
+    def test_subtask_detail_can_change_parent_task(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        first_section = TaskSection.objects.create(project=project, title='Frontend')
+        second_section = TaskSection.objects.create(project=project, title='Backend')
+        first_parent = Task.objects.create(user=self.user, section=first_section, title='Zadanie frontendowe')
+        second_parent = Task.objects.create(user=self.user, section=second_section, title='Zadanie backendowe')
+        subtask = Task.objects.create(user=self.user, section=first_section, parent=first_parent, title='Podzadanie')
+
+        response = self.client.post(reverse('tasks:view-subtask', args=[subtask.task_id]), {
+            'title': 'Podzadanie',
+            'parent': second_parent.id,
+            'project': project.id,
+            'section': first_section.id,
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+            'time_spent_hours': '',
+            'time_spent_minutes': '',
+        })
+
+        subtask.refresh_from_db()
+
+        self.assertRedirects(response, reverse('tasks:view-subtask', args=[subtask.task_id]))
+        self.assertEqual(subtask.parent, second_parent)
+        self.assertEqual(subtask.section, second_section)
+
     def test_my_tasks_view_is_available_from_secondary_navigation(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
@@ -352,3 +431,48 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
         self.assertEqual(section.title, 'API')
         self.assertEqual(section.description, 'Nowy opis')
+
+    def test_bulk_update_status_runs_task_completion_logic(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        first_task = Task.objects.create(user=self.user, section=section, title='Pierwsze zadanie')
+        second_task = Task.objects.create(user=self.user, section=section, title='Drugie zadanie')
+
+        response = self.client.post(
+            reverse('tasks:bulk_update_status'),
+            data=json.dumps({
+                'task_ids': [first_task.task_id, second_task.task_id],
+                'status': 'closed',
+            }),
+            content_type='application/json',
+        )
+
+        first_task.refresh_from_db()
+        second_task.refresh_from_db()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['updated_count'], 2)
+        self.assertTrue(first_task.is_completed)
+        self.assertTrue(second_task.is_completed)
+        self.assertIsNotNone(first_task.completion_date)
+        self.assertIsNotNone(second_task.completion_date)
+
+    def test_bulk_update_status_rejects_invalid_status(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.post(
+            reverse('tasks:bulk_update_status'),
+            data=json.dumps({
+                'task_ids': [task.task_id],
+                'status': 'nie-ma-takiego',
+            }),
+            content_type='application/json',
+        )
+
+        task.refresh_from_db()
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['message'], 'Nieprawidłowy status')
+        self.assertEqual(task.status, 'new')

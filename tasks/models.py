@@ -3,6 +3,7 @@ from django.db.models import Max
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 import secrets
 import os
 
@@ -127,9 +128,12 @@ class Task(models.Model):
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     completion_date = models.DateTimeField(null=True, blank=True)
+    time_spent_hours = models.PositiveIntegerField(null=True, blank=True)
+    time_spent_minutes = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(59)])
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
     section = models.ForeignKey(TaskSection, on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
     tags = models.ManyToManyField(TaskTag, related_name='tasks', blank=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='subtasks', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         from django.utils import timezone

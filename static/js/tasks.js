@@ -31,6 +31,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const issueGroups = document.querySelectorAll('.tasks-issue-group');
     const statusSubgroups = document.querySelectorAll('.tasks-status-subgroup');
     const collapsibleGroupHeaders = document.querySelectorAll('.tasks-issue-group-header, .tasks-status-subgroup-header');
+    const subtasksToolbar = document.querySelector('.tasks-subtasks-toolbar');
+    const subtasksBoard = document.querySelector('.tasks-subtasks-board');
+    const subtasksCollapseButton = document.querySelector('[data-subtasks-collapse]');
+    const subtasksSortButton = document.querySelector('[data-subtasks-sort]');
+    const subtasksDeleteButton = document.querySelector('[data-subtasks-delete]');
+    const descriptionInput = document.querySelector('.tasks-issue-description-field textarea[name="description"]');
+    const descriptionEditor = enhanceDescriptionEditor(descriptionInput);
+    const issueDetailMain = document.querySelector('.tasks-issue-main');
+    const issueSidebarResizer = document.querySelector('[data-issue-sidebar-resizer]');
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
@@ -69,6 +78,75 @@ document.addEventListener('DOMContentLoaded', function() {
     const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
     const projectRenameCodeInput = projectRenameForm ? projectRenameForm.querySelector('[name="code"]') : null;
+
+    const taskReturnStorageKey = 'tasks:lastTaskReturn';
+    const taskReturnRestoreKey = 'tasks:restoreTaskReturn';
+
+    function getTaskScrollSnapshot() {
+        const mainContent = document.querySelector('.main-content');
+        const tableWrap = document.querySelector('.tasks-list-page .tasks-table-wrap');
+
+        return {
+            windowX: window.scrollX,
+            windowY: window.scrollY,
+            mainX: mainContent ? mainContent.scrollLeft : 0,
+            mainY: mainContent ? mainContent.scrollTop : 0,
+            tableX: tableWrap ? tableWrap.scrollLeft : 0,
+            tableY: tableWrap ? tableWrap.scrollTop : 0,
+        };
+    }
+
+    function rememberTaskReturnPoint(viewUrl) {
+        if (!viewUrl || !viewUrl.includes('/tasks/view-task/')) return;
+
+        sessionStorage.setItem(taskReturnStorageKey, JSON.stringify({
+            viewUrl,
+            returnUrl: window.location.pathname + window.location.search + window.location.hash,
+            scroll: getTaskScrollSnapshot(),
+            savedAt: Date.now(),
+        }));
+    }
+
+    function restoreTaskReturnPoint() {
+        const restorePayload = sessionStorage.getItem(taskReturnRestoreKey);
+        if (!restorePayload) return;
+
+        let returnPoint = null;
+        try {
+            returnPoint = JSON.parse(restorePayload);
+        } catch (error) {
+            sessionStorage.removeItem(taskReturnRestoreKey);
+            return;
+        }
+
+        const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+        if (!returnPoint || returnPoint.returnUrl !== currentUrl) return;
+
+        sessionStorage.removeItem(taskReturnRestoreKey);
+
+        const scroll = returnPoint.scroll || {};
+        const applyScroll = () => {
+            const mainContent = document.querySelector('.main-content');
+            const tableWrap = document.querySelector('.tasks-list-page .tasks-table-wrap');
+
+            window.scrollTo(scroll.windowX || 0, scroll.windowY || 0);
+            if (mainContent) {
+                mainContent.scrollLeft = scroll.mainX || 0;
+                mainContent.scrollTop = scroll.mainY || 0;
+            }
+            if (tableWrap) {
+                tableWrap.scrollLeft = scroll.tableX || 0;
+                tableWrap.scrollTop = scroll.tableY || 0;
+            }
+        };
+
+        requestAnimationFrame(() => {
+            applyScroll();
+            requestAnimationFrame(applyScroll);
+        });
+    }
+
+    restoreTaskReturnPoint();
     const projectRenameIconInput = projectRenameForm ? projectRenameForm.querySelector('[name="icon"]') : null;
     const projectRenameIdInput = projectRenameForm ? projectRenameForm.querySelector('[name="project_id"]') : null;
     const sectionCreateTitleInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="title"]') : null;
@@ -353,6 +431,14 @@ document.addEventListener('DOMContentLoaded', function() {
         priorityFilterToggle.setAttribute('aria-expanded', 'false');
     }
 
+    function closeInlineSelectDropdowns(exceptDropdown = null) {
+        document.querySelectorAll('[data-inline-select-dropdown]').forEach(dropdown => {
+            if (dropdown === exceptDropdown) return;
+            dropdown.classList.remove('is-open');
+            dropdown.querySelector('[data-inline-select-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
     function getPriorityFilterIconMarkup(priority) {
         if (!priority) return '';
         if (priority === 'urgent') {
@@ -369,6 +455,57 @@ document.addEventListener('DOMContentLoaded', function() {
         const clone = button.cloneNode(true);
         clone.querySelectorAll('[aria-hidden="true"]').forEach(node => node.remove());
         return clone.textContent.trim();
+    }
+
+    function getInlineSelect(dropdown) {
+        return dropdown?.closest('.tasks-issue-select-wrap')?.querySelector('select') || null;
+    }
+
+    function syncInlineSelectDropdown(dropdown) {
+        if (!dropdown) return;
+        const select = getInlineSelect(dropdown);
+        if (!select) return;
+
+        const label = dropdown.querySelector('[data-inline-select-label]');
+        const statusIcon = dropdown.querySelector('[data-inline-status-icon]');
+        const priorityIcon = dropdown.querySelector('[data-inline-priority-icon]');
+        const isMultiple = dropdown.hasAttribute('data-inline-select-multiple');
+        const selectedTags = dropdown.closest('.tasks-issue-select-wrap')?.querySelector('[data-inline-selected-tags]');
+        const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
+        const currentValue = select.value;
+
+        dropdown.querySelectorAll('[data-inline-select-value]').forEach(button => {
+            const isActive = isMultiple ? selectedValues.includes(button.dataset.inlineSelectValue) : button.dataset.inlineSelectValue === currentValue;
+            button.classList.toggle('is-active', isActive);
+            if (button.getAttribute('role') === 'menuitemcheckbox') {
+                button.setAttribute('aria-checked', String(isActive));
+            }
+        });
+
+        if (label) {
+            if (isMultiple) {
+                label.textContent = selectedValues.length ? `Tagi: ${selectedValues.length}` : 'Tagi';
+            } else {
+                const activeButton = dropdown.querySelector(`[data-inline-select-value="${currentValue}"]`);
+                label.textContent = activeButton ? getFilterButtonText(activeButton) : label.textContent;
+            }
+        }
+
+        if (selectedTags && isMultiple) {
+            selectedTags.replaceChildren();
+            dropdown.querySelectorAll('[data-inline-select-value].is-active').forEach(button => {
+                const chip = button.querySelector('.tasks-tag-chip')?.cloneNode(true);
+                if (chip) selectedTags.appendChild(chip);
+            });
+        }
+
+        if (statusIcon) {
+            statusIcon.className = `status-indicator tasks-filter-status-icon ${currentValue ? `status-${currentValue}` : 'status-label-plain'}`;
+        }
+
+        if (priorityIcon) {
+            priorityIcon.innerHTML = getPriorityFilterIconMarkup(currentValue);
+        }
     }
 
     function closeIssuePickers(exceptPicker = null) {
@@ -798,6 +935,53 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    document.querySelectorAll('[data-inline-select-dropdown]').forEach(dropdown => {
+        const select = getInlineSelect(dropdown);
+        const toggle = dropdown.querySelector('[data-inline-select-toggle]');
+        const isMultiple = dropdown.hasAttribute('data-inline-select-multiple');
+
+        syncInlineSelectDropdown(dropdown);
+
+        toggle?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !dropdown.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeStatusFilterMenu();
+            closePriorityFilterMenu();
+            closeIssuePickers();
+            closeInlineSelectDropdowns(dropdown);
+            dropdown.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+        });
+
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        dropdown.querySelectorAll('[data-inline-select-value]').forEach(button => {
+            button.addEventListener('click', function() {
+                if (!select) return;
+
+                if (isMultiple) {
+                    const option = Array.from(select.options).find(item => item.value === this.dataset.inlineSelectValue);
+                    if (option) option.selected = !option.selected;
+                } else {
+                    select.value = this.dataset.inlineSelectValue;
+                    closeInlineSelectDropdowns();
+                }
+
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                syncInlineSelectDropdown(dropdown);
+            });
+        });
+
+        select?.addEventListener('change', function() {
+            syncInlineSelectDropdown(dropdown);
+        });
+    });
+
     if (sectionActionMenu) {
         const toggle = sectionActionMenu.querySelector('[data-section-menu-toggle]');
         const panel = sectionActionMenu.querySelector('.tasks-section-menu');
@@ -1026,6 +1210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!e.target.closest('[data-section-actions]')) closeSectionActionMenu();
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
+        if (!e.target.closest('[data-inline-select-dropdown]')) closeInlineSelectDropdowns();
         if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
             closeEmojiPicker();
         }
@@ -1181,11 +1366,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function shouldIgnoreRowClick(event) {
+    function shouldIgnoreRowClick(event, row = null) {
         const cell = event.target.closest('td');
+        const form = event.target.closest('form');
+        const rowForm = row ? row.closest('form') : null;
+
         return event.target.type === 'checkbox'
-            || event.target.closest('form')
-            || event.target.closest('input, button, select, textarea')
+            || (form && form !== rowForm)
+            || event.target.closest('a, input, button, select, textarea')
             || (cell && cell.querySelector('.task-checkbox'));
     }
 
@@ -1196,24 +1384,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 delete this.dataset.dragSuppressClick;
                 return;
             }
-            if (shouldIgnoreRowClick(e)) {
+            if (shouldIgnoreRowClick(e, this)) {
                 return;
             }
             const viewUrl = this.getAttribute('data-view-url');
-            if (viewUrl) window.location.href = viewUrl;
+            if (viewUrl) {
+                rememberTaskReturnPoint(viewUrl);
+                window.location.href = viewUrl;
+            }
         });
     });
 
     [...projectRows, ...sectionRows].forEach(row => {
         row.addEventListener('click', function(e) {
-            if (shouldIgnoreRowClick(e)) return;
+            if (shouldIgnoreRowClick(e, this)) return;
             const viewUrl = this.getAttribute('data-view-url');
             if (viewUrl) window.location.href = viewUrl;
         });
 
         row.addEventListener('keydown', function(e) {
             if (e.key !== 'Enter' && e.key !== ' ') return;
-            if (shouldIgnoreRowClick(e)) return;
+            if (shouldIgnoreRowClick(e, this)) return;
             const viewUrl = this.getAttribute('data-view-url');
             if (!viewUrl) return;
             e.preventDefault();
@@ -1233,7 +1424,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!indicator) return;
 
         Array.from(indicator.classList)
-            .filter(className => className.startsWith('status-'))
+            .filter(className => className.startsWith('status-') && className !== 'status-indicator')
             .forEach(className => indicator.classList.remove(className));
         indicator.classList.add(`status-${status}`);
         indicator.setAttribute('aria-label', statusLabels[status] || status);
@@ -1245,6 +1436,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const countEl = group.querySelector(':scope > header .tasks-rail-count');
             if (countEl) countEl.textContent = count;
         });
+    }
+
+    function updateSubtasksCount() {
+        if (!subtasksToolbar || !subtasksBoard) return;
+        const title = subtasksToolbar.querySelector('.tasks-subtasks-title span');
+        if (!title) return;
+        title.textContent = `Podzadania (${subtasksBoard.querySelectorAll('.task-row').length})`;
     }
 
     function moveTaskRow(row, dropTarget) {
@@ -1585,7 +1783,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectedTaskCheckboxes.length !== 1) return;
 
         const taskId = selectedTaskCheckboxes[0].dataset.taskId;
-        if (taskId) window.location.href = `/tasks/edit-task/${taskId}/`;
+        if (taskId) window.location.href = `/tasks/view-task/${taskId}/`;
     }
 
     function editSelectedSection() {
@@ -1716,6 +1914,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             cb.closest('.task-row')?.remove();
                         });
                         updateSelection();
+                        refreshGroupCounts();
+                        updateSubtasksCount();
+                        updateGroupVisibility();
                         showMessage(data.message, 'success');
                     } else {
                         showMessage(data.message || 'Błąd podczas usuwania zadań', 'error');
@@ -2000,12 +2201,245 @@ document.addEventListener('DOMContentLoaded', function() {
             button.setAttribute('aria-expanded', String(!isCollapsed));
             button.setAttribute('aria-label', isCollapsed ? 'Rozwiń sekcję' : 'Zwiń sekcję');
         });
+
+        header.addEventListener('click', function(event) {
+            if (event.target.closest('button, input, select, textarea, a')) return;
+            button.click();
+        });
     });
 
+    if (subtasksCollapseButton && subtasksBoard) {
+        subtasksCollapseButton.addEventListener('click', function() {
+            const isCollapsed = !subtasksBoard.classList.contains('is-collapsed');
+            subtasksBoard.classList.toggle('is-collapsed', isCollapsed);
+            this.setAttribute('aria-expanded', String(!isCollapsed));
+        });
+    }
+
+    if (subtasksSortButton && subtasksBoard) {
+        subtasksSortButton.addEventListener('click', function() {
+            const direction = this.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
+            this.dataset.sortDirection = direction;
+
+            subtasksBoard.querySelectorAll('.tasks-issue-list').forEach(list => {
+                const rows = Array.from(list.querySelectorAll('.task-row'));
+                rows.sort((a, b) => {
+                    const aValue = a.dataset.created || '';
+                    const bValue = b.dataset.created || '';
+                    return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                });
+                rows.forEach(row => list.appendChild(row));
+            });
+        });
+    }
+
+    if (subtasksDeleteButton) {
+        subtasksDeleteButton.addEventListener('click', function() {
+            const selectedSubtasks = subtasksBoard
+                ? Array.from(subtasksBoard.querySelectorAll('.task-checkbox:checked'))
+                : [];
+            if (!selectedSubtasks.length) {
+                showMessage('Zaznacz podzadanie do usunięcia', 'error');
+                return;
+            }
+            deleteSelectedTasks();
+        });
+    }
+
+    initIssueSidebarResize();
     applyFilters();
 
     // Helper functions
 
+    function enhanceDescriptionEditor(input) {
+        if (!input) return null;
+
+        const editor = document.createElement('div');
+        editor.className = `${input.className} tasks-description-editor`;
+        editor.contentEditable = 'true';
+        editor.setAttribute('role', 'textbox');
+        editor.setAttribute('aria-multiline', 'true');
+        editor.dataset.placeholder = input.getAttribute('placeholder') || '';
+        editor.innerHTML = descriptionValueToEditorHtml(input.value);
+
+        input.hidden = true;
+        input.classList.add('tasks-description-source');
+        input.insertAdjacentElement('afterend', editor);
+
+        editor.addEventListener('input', function() {
+            syncDescriptionInput(editor);
+        });
+
+        const form = input.closest('form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                syncDescriptionInput(editor);
+            });
+        }
+
+        syncDescriptionInput(editor);
+        return editor;
+    }
+
+    function initIssueSidebarResize() {
+        if (!issueDetailMain || !issueSidebarResizer) return;
+
+        const storageKey = 'tasks.issueSidebarWidth';
+        const minWidth = 280;
+        let width = readStoredSidebarWidth();
+
+        if (width) {
+            setSidebarWidth(width);
+        }
+
+        issueSidebarResizer.addEventListener('pointerdown', function(event) {
+            if (event.button !== undefined && event.button !== 0) return;
+
+            event.preventDefault();
+            issueSidebarResizer.setPointerCapture(event.pointerId);
+            issueDetailMain.classList.add('is-resizing-sidebar');
+            document.body.classList.add('is-resizing-tasks-sidebar');
+            updateFromPointer(event.clientX);
+        });
+
+        issueSidebarResizer.addEventListener('pointermove', function(event) {
+            if (!issueDetailMain.classList.contains('is-resizing-sidebar')) return;
+            updateFromPointer(event.clientX);
+        });
+
+        issueSidebarResizer.addEventListener('pointerup', finishResize);
+        issueSidebarResizer.addEventListener('pointercancel', finishResize);
+
+        issueSidebarResizer.addEventListener('keydown', function(event) {
+            const step = event.shiftKey ? 48 : 24;
+            const currentWidth = width || getCurrentSidebarWidth();
+            let nextWidth = currentWidth;
+
+            if (event.key === 'ArrowLeft') {
+                nextWidth = currentWidth + step;
+            } else if (event.key === 'ArrowRight') {
+                nextWidth = currentWidth - step;
+            } else if (event.key === 'Home') {
+                nextWidth = minWidth;
+            } else if (event.key === 'End') {
+                nextWidth = getSidebarMaxWidth();
+            } else {
+                return;
+            }
+
+            event.preventDefault();
+            setSidebarWidth(nextWidth);
+            storeSidebarWidth(width);
+        });
+
+        window.addEventListener('resize', function() {
+            if (!width) return;
+            setSidebarWidth(width);
+            storeSidebarWidth(width);
+        });
+
+        function updateFromPointer(clientX) {
+            const rect = issueDetailMain.getBoundingClientRect();
+            setSidebarWidth(rect.right - clientX);
+        }
+
+        function finishResize(event) {
+            if (!issueDetailMain.classList.contains('is-resizing-sidebar')) return;
+
+            issueDetailMain.classList.remove('is-resizing-sidebar');
+            document.body.classList.remove('is-resizing-tasks-sidebar');
+            storeSidebarWidth(width);
+
+            if (event.pointerId !== undefined && issueSidebarResizer.hasPointerCapture(event.pointerId)) {
+                issueSidebarResizer.releasePointerCapture(event.pointerId);
+            }
+        }
+
+        function setSidebarWidth(nextWidth) {
+            width = clampSidebarWidth(nextWidth);
+            issueDetailMain.style.setProperty('--tasks-issue-sidebar-width', `${width}px`);
+        }
+
+        function getCurrentSidebarWidth() {
+            const sidebar = issueDetailMain.querySelector('.tasks-issue-sidebar');
+            return sidebar ? sidebar.getBoundingClientRect().width : minWidth;
+        }
+
+        function clampSidebarWidth(nextWidth) {
+            return Math.round(Math.min(Math.max(Number(nextWidth) || minWidth, minWidth), getSidebarMaxWidth()));
+        }
+
+        function getSidebarMaxWidth() {
+            const mainWidth = issueDetailMain.getBoundingClientRect().width || window.innerWidth;
+            return Math.max(minWidth, Math.min(640, mainWidth * 0.55));
+        }
+
+        function readStoredSidebarWidth() {
+            try {
+                return Number(window.localStorage.getItem(storageKey)) || null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function storeSidebarWidth(nextWidth) {
+            try {
+                window.localStorage.setItem(storageKey, String(clampSidebarWidth(nextWidth)));
+            } catch (error) {
+                // localStorage may be unavailable in private or restricted contexts.
+            }
+        }
+    }
+
+    function descriptionValueToEditorHtml(value) {
+        if (!value) return '';
+        if (/<\/?[a-z][\s\S]*>/i.test(value)) {
+            return sanitizeDescriptionHtml(value);
+        }
+
+        return plainTextToEditorHtml(value);
+    }
+
+    function plainTextToEditorHtml(value) {
+        const paragraphs = value
+            .split(/\n{2,}/)
+            .map((paragraph) => paragraph.trim())
+            .filter(Boolean)
+            .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`);
+
+        return paragraphs.join('');
+    }
+
+    function sanitizeDescriptionHtml(value) {
+        const template = document.createElement('template');
+        template.innerHTML = value;
+        const allowedTags = new Set(['BR', 'DIV', 'P', 'STRONG', 'B', 'EM', 'I', 'UL', 'OL', 'LI']);
+
+        template.content.querySelectorAll('*').forEach((element) => {
+            if (!allowedTags.has(element.tagName)) {
+                element.replaceWith(document.createTextNode(element.textContent || ''));
+                return;
+            }
+
+            Array.from(element.attributes).forEach((attribute) => {
+                element.removeAttribute(attribute.name);
+            });
+        });
+
+        return template.innerHTML;
+    }
+
+    function escapeHtml(value) {
+        const element = document.createElement('div');
+        element.textContent = value;
+        return element.innerHTML;
+    }
+
+    function syncDescriptionInput(editor) {
+        if (!descriptionInput) return;
+        descriptionInput.value = editor.innerHTML.trim();
+        descriptionInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 
     function showMessage(message, type) {
         let container = document.querySelector('.notifications-container');

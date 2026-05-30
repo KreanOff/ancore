@@ -23,7 +23,7 @@
 }
 
 .kanban-control-select {
-    min-width: 160px;
+    min-width: var(--dropdown-menu-width);
 }
 
 .kanban-control-actions {

@@ -330,7 +330,7 @@
                             <span class="status-indicator status-closed">Zamknięte</span>
                         </button>
                         <button type="button" role="menuitem" data-status-filter="reopened">
-                            <span class="status-indicator status-reopened">Otwarte ponownie</span>
+                            <span class="status-indicator status-reopened">Ponownie otwarte</span>
                         </button>
                     </div>
                 </div>
@@ -923,15 +923,81 @@
                     </label>
                     <label>
                         <span>Status</span>
-                        {{ task_modal_form.status }}
+                        <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                            {{ task_modal_form.status }}
+                            <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
+                                <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                    <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-inline-status-icon></span>
+                                    <span data-inline-select-label>Status</span>
+                                </button>
+                                <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz status">
+                                    {% for value, label in task_modal_form.status.field.choices %}
+                                    <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
+                                        <span class="status-indicator status-{{ value }}">{{ label }}</span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </label>
                     <label>
                         <span>Priorytet</span>
-                        {{ task_modal_form.priority }}
+                        <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                            {{ task_modal_form.priority }}
+                            <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
+                                <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                    <span class="tasks-filter-priority-icon" aria-hidden="true" data-inline-priority-icon></span>
+                                    <span data-inline-select-label>Priorytet</span>
+                                </button>
+                                <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet">
+                                    {% for value, label in task_modal_form.priority.field.choices %}
+                                    <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
+                                        {% if value == 'urgent' %}
+                                        <span class="tasks-row-priority priority-urgent" aria-hidden="true">
+                                            <span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span>
+                                        </span>
+                                        {% elif value == 'none' %}
+                                        <span class="tasks-row-priority priority-none" aria-hidden="true">
+                                            <span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span>
+                                        </span>
+                                        {% else %}
+                                        <span class="tasks-row-priority priority-{{ value }}" aria-hidden="true">
+                                            <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                                        </span>
+                                        {% endif %}
+                                        <span>{{ label }}</span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </label>
                     <label>
                         <span>Tagi</span>
-                        {{ task_modal_form.tags }}
+                        <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                            {{ task_modal_form.tags }}
+                            <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown data-inline-select-multiple>
+                                <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/>
+                                        <path d="M7.5 7.5h.01"/>
+                                    </svg>
+                                    <span data-inline-select-label>Tagi</span>
+                                </button>
+                                <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi">
+                                    {% for tag in task_modal_form.tags.field.queryset %}
+                                    <button type="button" role="menuitemcheckbox" aria-checked="false" data-inline-select-value="{{ tag.id }}">
+                                        <span class="tasks-tag-chip"><span>{{ tag.name }}</span></span>
+                                    </button>
+                                    {% empty %}
+                                    <button type="button" role="menuitem" disabled>
+                                        <span>Brak tagów</span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="tasks-issue-selected-tags" data-inline-selected-tags aria-live="polite"></div>
+                        </div>
                     </label>
                 </div>
             </div>

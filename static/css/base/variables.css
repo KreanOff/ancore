@@ -27,6 +27,16 @@
     --bp-xl: 1440px;
     --bp-2xl: 1920px;
     --control-height: 32px;
+    --dropdown-control-height: 36px;
+    --dropdown-control-radius: 6px;
+    --dropdown-menu-width: 188px;
+    --dropdown-menu-max-height: 280px;
+    --dropdown-menu-padding: 0.35rem;
+    --dropdown-menu-radius: 7px;
+    --dropdown-menu-item-height: 32px;
+    --dropdown-menu-item-radius: 5px;
+    --dropdown-menu-font-size: 0.875rem;
+    --dropdown-menu-shadow: 0 16px 36px rgba(31, 35, 40, 0.14);
     --font-size-sm: 0.75rem;
     --font-size-base: 0.8125rem;
     --font-size-lg: 0.9375rem;

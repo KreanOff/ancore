@@ -2,6 +2,16 @@ from django import forms
 from .models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
+class TwoDigitNumberInput(forms.NumberInput):
+    def format_value(self, value):
+        if value in (None, ''):
+            return None
+        try:
+            return f'{int(value):02d}'
+        except (TypeError, ValueError):
+            return super().format_value(value)
+
+
 def clean_optional_icon(value):
     icon = (value or '').strip()[:8]
     return '' if icon == 'check' else icon
@@ -12,27 +22,72 @@ class MultipleFileInput(forms.ClearableFileInput):
 
 
 class TaskForm(forms.ModelForm):
+    project = forms.ModelChoiceField(
+        queryset=TaskProject.objects.none(),
+        required=False,
+        label='Projekt',
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+    )
+    parent = forms.ModelChoiceField(
+        queryset=Task.objects.none(),
+        required=False,
+        label='Zadanie',
+        widget=forms.Select(attrs={
+            'class': 'form-input'
+        }),
+    )
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
         super().__init__(*args, **kwargs)
         if user:
-            sections = TaskSection.objects.filter(project__user=user)
-            if project:
-                sections = sections.filter(project=project)
+            projects = TaskProject.objects.filter(user=user).prefetch_related('sections')
+            sections = TaskSection.objects.filter(project__user=user).select_related('project')
+            parents = Task.objects.none()
+            if getattr(self.instance, 'parent_id', None):
+                parents = Task.objects.filter(user=user, parent__isnull=True).select_related('section', 'section__project').order_by('task_id')
+                if self.instance and self.instance.pk:
+                    parents = parents.exclude(pk=self.instance.pk)
+            self.fields['project'].queryset = projects
             self.fields['section'].queryset = sections
+            self.fields['parent'].queryset = parents
             self.fields['tags'].queryset = TaskTag.objects.filter(user=user)
+        current_section = section or getattr(self.instance, 'section', None)
+        if current_section:
+            self.fields['project'].initial = current_section.project
+            self.fields['section'].initial = current_section
+        elif project:
+            self.fields['project'].initial = project
         self.fields['section'].required = True
         self.fields['section'].label = 'Grupa projektu'
+        self.fields['parent'].required = bool(getattr(self.instance, 'parent_id', None))
         self.fields['tags'].required = False
         self.fields['tags'].label = 'Tagi'
-        if section:
-            self.fields['section'].initial = section
+    def clean(self):
+        cleaned_data = super().clean()
+        parent = cleaned_data.get('parent')
+        project = cleaned_data.get('project')
+        section = cleaned_data.get('section')
+        if parent:
+            cleaned_data['section'] = parent.section
+            section = parent.section
+            if section:
+                cleaned_data['project'] = section.project
+                project = section.project
+        if section and not project:
+            cleaned_data['project'] = section.project
+            project = section.project
+        if project and section and section.project_id != project.id:
+            self.add_error('section', 'Wybierz grupę z wybranego projektu.')
+        return cleaned_data
 
     class Meta:
         model = Task
-        fields = ['title', 'section', 'tags', 'description', 'priority', 'status']
+        fields = ['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'time_spent_hours', 'time_spent_minutes']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Wprowadź tytuł zadania...',
@@ -55,6 +110,17 @@ class TaskForm(forms.ModelForm):
             }),
             'status': forms.Select(attrs={
                 'class': 'form-input'
+            }),
+            'time_spent_hours': TwoDigitNumberInput(attrs={
+                'placeholder': '00',
+                'class': 'form-input',
+                'min': 0,
+            }),
+            'time_spent_minutes': TwoDigitNumberInput(attrs={
+                'placeholder': '00',
+                'class': 'form-input',
+                'min': 0,
+                'max': 59,
             }),
         }
 
@@ -249,6 +315,26 @@ class TaskModalForm(forms.ModelForm):
             }),
             'priority': forms.Select(attrs={
                 'class': 'tasks-inline-select',
+            }),
+            'status': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+        }
+
+
+class SubTaskModalForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ['title', 'description', 'status']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'placeholder': 'Tytuł podzadania',
+                'class': 'tasks-inline-input',
+            }),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Dodaj opis...',
+                'rows': 4,
+                'class': 'tasks-inline-input tasks-modal-textarea',
             }),
             'status': forms.Select(attrs={
                 'class': 'tasks-inline-select',

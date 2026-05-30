@@ -5,21 +5,32 @@ class FileUploadManager {
         this.browseBtn = document.getElementById('browse-btn');
         this.fileList = document.getElementById('file-list');
         this.files = [];
+        this.isTaskIssueUpload = Boolean(
+            this.fileList &&
+            this.fileList.classList.contains('tasks-file-list') &&
+            this.fileList.closest('.tasks-issue-page')
+        );
 
         this.init();
     }
 
     init() {
-        if (!this.dropZone || !this.fileInput || !this.browseBtn) return;
+        if (!this.fileInput) return;
 
-        // Click events
-        this.browseBtn.addEventListener('click', () => this.triggerFileInputClick());
-        this.dropZone.addEventListener('click', () => this.triggerFileInputClick());
+        if (this.browseBtn) {
+            this.browseBtn.addEventListener('click', () => this.triggerFileInputClick());
+        }
+
+        if (this.dropZone) {
+            this.dropZone.addEventListener('click', () => this.triggerFileInputClick());
+        }
 
         // File input change
         this.fileInput.addEventListener('change', (e) => {
             this.handleFiles(e.target.files);
         });
+
+        if (!this.dropZone) return;
 
         // Drag and drop events
         this.dropZone.addEventListener('dragover', (e) => {
@@ -92,7 +103,7 @@ class FileUploadManager {
             return;
         }
 
-        this.fileList.style.display = 'block';
+        this.fileList.style.display = this.isTaskIssueUpload ? 'grid' : 'block';
 
         this.files.forEach((file, index) => {
             const fileItem = this.createFileItem(file, index);
@@ -101,6 +112,10 @@ class FileUploadManager {
     }
 
     createFileItem(file, index) {
+        if (this.isTaskIssueUpload) {
+            return this.createTaskIssueFileItem(file, index);
+        }
+
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
 
@@ -128,6 +143,44 @@ class FileUploadManager {
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'file-remove';
+        removeBtn.innerHTML = `<i class="bi ${AttachmentIcons.TRASH}" aria-hidden="true"></i>`;
+        removeBtn.addEventListener('click', () => this.removeFile(index));
+        fileItem.appendChild(removeBtn);
+
+        return fileItem;
+    }
+
+    createTaskIssueFileItem(file, index) {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'tasks-attachment-card tasks-attachment-card--pending';
+
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'tasks-attachment-info';
+
+        const fileIcon = this.createFileIcon(file);
+        fileInfo.appendChild(fileIcon);
+
+        const fileDetails = document.createElement('span');
+        fileDetails.className = 'tasks-attachment-details';
+
+        const fileName = document.createElement('span');
+        fileName.className = 'tasks-attachment-name';
+        fileName.textContent = file.name;
+        fileDetails.appendChild(fileName);
+
+        const fileSize = document.createElement('span');
+        fileSize.className = 'tasks-attachment-size';
+        fileSize.textContent = this.formatFileSize(file.size);
+        fileDetails.appendChild(fileSize);
+
+        fileInfo.appendChild(fileDetails);
+        fileItem.appendChild(fileInfo);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'tasks-delete-attach-btn';
+        removeBtn.title = 'Usuń załącznik';
+        removeBtn.setAttribute('aria-label', `Usuń ${file.name}`);
         removeBtn.innerHTML = `<i class="bi ${AttachmentIcons.TRASH}" aria-hidden="true"></i>`;
         removeBtn.addEventListener('click', () => this.removeFile(index));
         fileItem.appendChild(removeBtn);
