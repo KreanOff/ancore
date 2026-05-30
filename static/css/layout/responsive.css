@@ -11,7 +11,7 @@ html {
     background: rgba(15, 23, 42, 0.45);
     z-index: 90;
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.13s ease;
     pointer-events: none;
 }
 
@@ -25,36 +25,48 @@ body.sidebar-open .sidebar-backdrop {
     pointer-events: auto;
 }
 
-/* Tablet — sidebar jako overlay */
+/* Tablet — zachowaj stały pasek boczny */
 @media (max-width: 1024px) {
     .sidebar {
-        box-shadow: 4px 0 24px rgba(15, 23, 42, 0.2);
-        transition: transform 0.25s ease;
-    }
-
-    .sidebar:not(.sidebar--visible) {
-        transform: translateX(-100%);
-    }
-
-    .sidebar.sidebar--visible {
         transform: translateX(0);
     }
 
     .secondary-menu {
-        display: none;
+        left: var(--sidebar-width);
+        width: min(var(--secondary-menu-width), calc(100vw - var(--sidebar-width)));
+        z-index: 95;
+        border-right: 1px solid var(--border-color);
+        box-shadow: 12px 0 30px rgba(15, 23, 42, 0.12);
+        transform: translateX(0);
+        transition: none;
+    }
+
+    body.secondary-menu-toggling .secondary-menu {
+        transition: transform 0.1s ease, box-shadow 0.1s ease, width 0.1s ease, border-color 0.1s ease;
+    }
+
+    body.secondary-menu-collapsed .secondary-menu {
+        width: min(var(--secondary-menu-width), calc(100vw - var(--sidebar-width)));
+        transform: translateX(-100%);
+        box-shadow: none;
+        pointer-events: none;
+    }
+
+    body.secondary-menu-collapsed .secondary-menu-panel {
+        opacity: 1;
     }
 
     .main-content {
-        margin-left: 0;
-        width: 100%;
+        margin-left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
     }
 
     .modal-overlay,
     .dialog-overlay,
     .kanban-modal-overlay,
     .kanban-card-overlay {
-        left: 0;
-        width: 100%;
+        left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
     }
 
     .page-container {

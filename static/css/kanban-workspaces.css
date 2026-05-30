@@ -106,7 +106,7 @@
     overflow: hidden;
     text-decoration: none;
     border: 1px solid var(--border-color);
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.075s, box-shadow 0.075s;
 }
 
 .board-card:hover {
@@ -145,7 +145,7 @@
     font-family: inherit;
     width: 100%;
     min-height: 100px;
-    transition: background 0.15s, border-color 0.15s;
+    transition: background 0.075s, border-color 0.075s;
     box-shadow: none;
 }
 
@@ -182,7 +182,7 @@
     cursor: pointer;
     padding: 0.625rem 1rem;
     font-family: inherit;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    transition: border-color 0.075s, color 0.075s, background 0.075s;
 }
 
 .btn-workspace-create:hover {

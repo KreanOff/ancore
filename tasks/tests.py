@@ -2,11 +2,11 @@ import json
 import re
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
-from unittest.mock import patch
 
-from .models import Task, TaskProject, TaskSection, TaskTag
+from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
 class TaskProjectCreationTests(TestCase):
@@ -35,6 +35,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
         self.assertEqual(project.description, 'Opis projektu')
         self.assertEqual(project.icon, '☆')
+        self.assertNotEqual(project.code, 'PT')
+        self.assertRegex(project.code, r'^PRJ-\d{4}-001$')
         self.assertEqual(section.title, 'Nowa Grupa')
         self.assertEqual(section.kind, 'custom')
         self.assertEqual(section.icon, '')
@@ -51,56 +53,40 @@ class TaskProjectCreationTests(TestCase):
         project = TaskProject.objects.get(user=self.user, name='Projekt bez kodu')
 
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
-        self.assertRegex(project.code, r'^[A-Z2-9]{8}$')
+        self.assertRegex(project.code, r'^PRJ-\d{4}-001$')
         self.assertEqual(project.icon, '')
 
-    def test_create_project_retries_random_code_when_generated_code_is_taken(self):
-        TaskProject.objects.create(user=self.user, name='Projekt pierwszy', code='ABCDEFGH')
-
-        with patch('tasks.models.secrets.choice', side_effect=list('ABCDEFGHABCDEFGJ')):
-            response = self.client.post(reverse('tasks:tasks'), {
-                'action': 'create_project',
-                'name': 'Projekt drugi',
-                'description': '',
-                'icon': '',
-            })
-
-        project = TaskProject.objects.get(user=self.user, name='Projekt drugi')
-
-        self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
-        self.assertEqual(project.code, 'ABCDEFGJ')
-
-    def test_create_project_rejects_duplicate_code_for_same_user(self):
-        TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ABC')
+    def test_create_project_uses_next_project_number_for_current_year(self):
+        first = TaskProject.objects.create(user=self.user, name='Projekt pierwszy')
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'create_project',
-            'name': 'Drugi projekt',
+            'name': 'Projekt drugi',
             'description': '',
-            'code': 'abc',
             'icon': '',
         })
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Taki kod projektu już istnieje.')
-        self.assertFalse(TaskProject.objects.filter(user=self.user, name='Drugi projekt').exists())
+        project = TaskProject.objects.get(user=self.user, name='Projekt drugi')
+        prefix = first.code.rsplit('-', 1)[0]
 
-    def test_create_project_allows_same_code_for_different_users(self):
+        self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
+        self.assertEqual(project.code, f'{prefix}-002')
+
+    def test_project_numbering_is_per_user(self):
         other_user = get_user_model().objects.create_user(username='other-user', password='test-pass-123')
-        TaskProject.objects.create(user=other_user, name='Projekt innej osoby', code='ABC')
+        other_project = TaskProject.objects.create(user=other_user, name='Projekt innej osoby')
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'create_project',
             'name': 'Mój projekt',
             'description': '',
-            'code': 'abc',
             'icon': '',
         })
 
         project = TaskProject.objects.get(user=self.user, name='Mój projekt')
 
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
-        self.assertEqual(project.code, 'ABC')
+        self.assertEqual(project.code, other_project.code)
 
     def test_project_icons_get_different_badge_colors(self):
         first = TaskProject.objects.create(user=self.user, name='Pierwszy')
@@ -151,6 +137,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Prace po stronie UI')
         self.assertContains(response, 'Brak opisu')
         self.assertContains(response, 'Backend')
+        self.assertContains(response, frontend.code)
+        self.assertContains(response, backend.code)
         self.assertContains(response, '1 zadań')
         self.assertContains(response, '0 zadań')
 
@@ -168,14 +156,30 @@ class TaskProjectCreationTests(TestCase):
             'action': 'create_tag',
             'name': 'Design',
             'description': 'Makiety i decyzje wizualne',
+            'code': 'DES',
         })
 
+        tag = TaskTag.objects.get(user=self.user, name='Design')
+
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=all-groups")
-        self.assertTrue(TaskTag.objects.filter(
-            user=self.user,
-            name='Design',
-            description='Makiety i decyzje wizualne',
-        ).exists())
+        self.assertEqual(tag.description, 'Makiety i decyzje wizualne')
+        self.assertNotEqual(tag.code, 'DES')
+        self.assertRegex(tag.code, r'^TAG-\d{4}-001$')
+
+    def test_create_tag_uses_next_tag_number_for_current_year(self):
+        first = TaskTag.objects.create(user=self.user, name='Design')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_tag',
+            'name': 'Backend',
+            'description': '',
+        })
+
+        tag = TaskTag.objects.get(user=self.user, name='Backend')
+        prefix = first.code.rsplit('-', 1)[0]
+
+        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=all-groups")
+        self.assertEqual(tag.code, f'{prefix}-002')
 
     def test_delete_tag_from_tasks_page(self):
         tag = TaskTag.objects.create(user=self.user, name='Design')
@@ -190,12 +194,14 @@ class TaskProjectCreationTests(TestCase):
 
     def test_edit_tag_from_tasks_page(self):
         tag = TaskTag.objects.create(user=self.user, name='Design', description='Stary opis')
+        old_code = tag.code
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'edit_tag',
             'tag_id': tag.id,
             'name': 'UI',
             'description': 'Nowy opis',
+            'code': 'NEW',
         })
 
         tag.refresh_from_db()
@@ -203,6 +209,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=all-groups")
         self.assertEqual(tag.name, 'UI')
         self.assertEqual(tag.description, 'Nowy opis')
+        self.assertEqual(tag.code, old_code)
 
     def test_more_options_render_edit_and_delete_actions_for_list_views(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
@@ -301,6 +308,19 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(detail_response, f'{project.code}-{subtask.task_id}')
         self.assertNotContains(list_response, 'Pierwsze podzadanie')
 
+    def test_task_detail_sidebar_shows_project_code(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
+        content = response.content.decode()
+
+        self.assertContains(response, '<span>Kod projektu</span>', html=True)
+        self.assertContains(response, '<strong class="tasks-issue-muted">PRJ</strong>', html=True)
+        self.assertLess(content.index('<label for="id_tags">Tagi</label>'), content.index('<span>Kod projektu</span>'))
+        self.assertLess(content.index('<span>Kod projektu</span>'), content.index('<span>Utworzył</span>'))
+
     def test_subtask_detail_can_change_parent_task(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         first_section = TaskSection.objects.create(project=project, title='Frontend')
@@ -327,6 +347,114 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(subtask.parent, second_parent)
         self.assertEqual(subtask.section, second_section)
 
+    def test_subtask_detail_does_not_allow_adding_attachments(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        parent = Task.objects.create(user=self.user, section=section, title='Zadanie główne')
+        subtask = Task.objects.create(user=self.user, section=section, parent=parent, title='Podzadanie')
+
+        detail_response = self.client.get(reverse('tasks:view-subtask', args=[subtask.task_id]))
+
+        self.assertNotContains(detail_response, 'Dodaj załącznik')
+        self.assertNotContains(detail_response, 'name="attachments"')
+
+        response = self.client.post(reverse('tasks:view-subtask', args=[subtask.task_id]), {
+            'title': 'Podzadanie',
+            'parent': parent.id,
+            'project': project.id,
+            'section': section.id,
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+            'time_spent_hours': '',
+            'time_spent_minutes': '',
+            'attachments': SimpleUploadedFile('notatka.txt', b'tresc', content_type='text/plain'),
+        })
+
+        self.assertRedirects(response, reverse('tasks:view-subtask', args=[subtask.task_id]))
+        self.assertFalse(TaskAttachment.objects.filter(task=subtask).exists())
+
+    def test_task_activity_comment_is_saved_from_detail_view(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.post(reverse('tasks:view-task', args=[task.task_id]), {
+            'action': 'add_activity_comment',
+            'activity_comment': 'To jest wiadomość w czacie.',
+        })
+
+        activity = TaskActivity.objects.get(task=task, kind='comment')
+
+        self.assertRedirects(response, reverse('tasks:view-task', args=[task.task_id]))
+        self.assertEqual(activity.actor, self.user)
+        self.assertEqual(activity.action, 'commented')
+        self.assertEqual(activity.message, 'To jest wiadomość w czacie.')
+
+        detail_response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
+        self.assertContains(detail_response, 'Aktywność')
+        self.assertContains(detail_response, 'Tylko czat')
+        self.assertContains(detail_response, 'Tylko historia')
+        self.assertContains(detail_response, 'To jest wiadomość w czacie.')
+
+    def test_task_activity_feed_shows_newest_items_first(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+        TaskActivity.objects.create(task=task, actor=self.user, kind='comment', action='commented', message='Starsza wiadomość')
+        TaskActivity.objects.create(task=task, actor=self.user, kind='comment', action='commented', message='Nowsza wiadomość')
+
+        response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
+        content = response.content.decode()
+
+        self.assertLess(content.index('Nowsza wiadomość'), content.index('Starsza wiadomość'))
+
+    def test_detail_update_records_multiple_field_changes_as_one_activity(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.post(reverse('tasks:view-task', args=[task.task_id]), {
+            'title': 'Zadanie po zmianach',
+            'parent': '',
+            'section': section.id,
+            'description': 'Nowy opis',
+            'priority': 'high',
+            'status': 'in_progress',
+            'time_spent_hours': 1,
+            'time_spent_minutes': 15,
+        })
+
+        activities = TaskActivity.objects.filter(task=task).exclude(action='created')
+        activity = activities.get()
+
+        self.assertRedirects(response, reverse('tasks:view-task', args=[task.task_id]))
+        self.assertEqual(activity.action, 'updated')
+        self.assertEqual(activity.message, 'zaktualizował zadanie')
+        self.assertEqual(activity.metadata['fields'], ['status', 'priorytet', 'tytuł', 'opis', 'czas pracy'])
+        self.assertEqual(activity.metadata['changes'][0]['from_label'], 'Nowe')
+        self.assertEqual(activity.metadata['changes'][0]['to_label'], 'Realizowane')
+        self.assertEqual(activity.metadata['changes'][1]['from_label'], 'Średni')
+        self.assertEqual(activity.metadata['changes'][1]['to_label'], 'Wysoki')
+
+    def test_update_task_status_records_activity(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.post(
+            reverse('tasks:update_task_status', args=[task.task_id]),
+            data=json.dumps({'status': 'in_progress'}),
+            content_type='application/json',
+        )
+
+        activity = TaskActivity.objects.filter(task=task, action='status_changed').latest('id')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(activity.actor, self.user)
+        self.assertEqual(activity.metadata['from_label'], 'Nowe')
+        self.assertEqual(activity.metadata['to_label'], 'Realizowane')
+
     def test_my_tasks_view_is_available_from_secondary_navigation(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
@@ -341,7 +469,7 @@ class TaskProjectCreationTests(TestCase):
             f'<a href="{reverse("tasks:tasks")}?view=my-tasks" class="tasks-rail-link is-active">',
         )
 
-    def test_edit_project_updates_details(self):
+    def test_edit_project_updates_details_without_changing_code(self):
         project = TaskProject.objects.create(user=self.user, name='Stara nazwa', description='Stary opis', code='OLD')
 
         response = self.client.post(reverse('tasks:tasks'), {
@@ -359,7 +487,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(project.name, 'Nowa nazwa')
         self.assertEqual(project.description, 'Nowy opis')
         self.assertEqual(project.icon, '🚀')
-        self.assertEqual(project.code, 'NEW')
+        self.assertEqual(project.code, 'OLD')
 
     def test_edit_project_can_remove_icon(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ', icon='🚀')
@@ -378,7 +506,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
         self.assertEqual(project.icon, '')
 
-    def test_edit_project_rejects_duplicate_code_for_same_user(self):
+    def test_edit_project_ignores_posted_code(self):
         TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
         project = TaskProject.objects.create(user=self.user, name='Drugi projekt', code='TWO')
 
@@ -393,8 +521,7 @@ class TaskProjectCreationTests(TestCase):
 
         project.refresh_from_db()
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Taki kod projektu już istnieje.')
+        self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
         self.assertEqual(project.code, 'TWO')
 
     def test_create_section_saves_description(self):

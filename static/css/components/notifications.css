@@ -17,7 +17,7 @@
     min-width: 300px;
     max-width: 500px;
     pointer-events: auto;
-    animation: slideDown 0.3s ease-out;
+    animation: slideDown 0.15s ease-out;
 }
 
 .notification.success {
@@ -107,7 +107,7 @@ body:has(.tasks-page) .notification.info,
 }
 
 .notification.hiding {
-    animation: fadeOut 0.3s ease-out forwards;
+    animation: fadeOut 0.15s ease-out forwards;
 }
 
 /* Responsive */

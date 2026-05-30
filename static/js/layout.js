@@ -96,8 +96,12 @@
 
         secondaryMenuToggle.addEventListener('click', function () {
             const collapsed = !document.body.classList.contains('secondary-menu-collapsed');
+            document.body.classList.add('secondary-menu-toggling');
             setSecondaryMenuCollapsed(collapsed);
             localStorage.setItem('secondaryMenuCollapsed', collapsed ? 'true' : 'false');
+            window.setTimeout(function () {
+                document.body.classList.remove('secondary-menu-toggling');
+            }, 220);
         });
     }
 

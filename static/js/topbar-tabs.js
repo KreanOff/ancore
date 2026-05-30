@@ -158,8 +158,24 @@
         return new URL(value, baseUrl).href;
     }
 
+    function isExecutableScript(script) {
+        const type = (script.getAttribute('type') || '').trim().toLowerCase();
+        return !type || [
+            'text/javascript',
+            'application/javascript',
+            'application/ecmascript',
+            'text/ecmascript',
+            'module',
+        ].includes(type);
+    }
+
     function loadScript(script, baseUrl) {
         return new Promise((resolve, reject) => {
+            if (!isExecutableScript(script)) {
+                resolve();
+                return;
+            }
+
             const nextScript = document.createElement('script');
 
             Array.from(script.attributes).forEach((attribute) => {
@@ -215,6 +231,19 @@
     async function runHeadScripts(doc, baseUrl) {
         for (const script of doc.querySelectorAll('head script')) {
             await loadScript(script, baseUrl);
+        }
+    }
+
+    async function runFragmentScripts(baseUrl) {
+        const fragments = [
+            document.querySelector('.secondary-menu-panel'),
+            document.querySelector('.page-container'),
+        ].filter(Boolean);
+
+        for (const fragment of fragments) {
+            for (const script of fragment.querySelectorAll('script')) {
+                await loadScript(script, baseUrl);
+            }
         }
     }
 
@@ -276,6 +305,9 @@
 
         syncSidebarActive(tab.url);
         window.scrollTo(cached.scrollX || 0, cached.scrollY || 0);
+        document.dispatchEvent(new CustomEvent('ancore:content-loaded', {
+            detail: { url: tab.url, source: 'cache' },
+        }));
         return true;
     }
 
@@ -325,8 +357,47 @@
         syncSidebarActive(tab.url);
         window.scrollTo(0, 0);
         await runHeadScripts(doc, targetUrl.href);
+        await runFragmentScripts(targetUrl.href);
+        document.dispatchEvent(new CustomEvent('ancore:content-loaded', {
+            detail: { url: targetUrl.href, source: 'server' },
+        }));
         return true;
     }
+
+    async function navigateToUrl(url) {
+        const targetUrl = new URL(url, window.location.origin);
+        if (targetUrl.origin !== window.location.origin) {
+            window.location.href = targetUrl.href;
+            return;
+        }
+
+        cacheActiveTabContent();
+
+        const tabs = readTabs();
+        const activeTab = tabs.find((tab) => tab.id === getActiveTabId()) || createTab(currentUrl(), currentTitle());
+        activeTab.url = targetUrl.pathname + targetUrl.search + targetUrl.hash;
+        activeTab.title = currentTitle();
+
+        if (!tabs.some((tab) => tab.id === activeTab.id)) {
+            tabs.push(activeTab);
+            setActiveTab(activeTab.id);
+        }
+
+        saveTabs(tabs);
+
+        try {
+            if (await loadTabFromServer(activeTab)) {
+                render();
+                return;
+            }
+        } catch (error) {
+            console.error('Nie udało się przejść bez odświeżania.', error);
+        }
+
+        window.location.href = targetUrl.href;
+    }
+
+    window.ancoreNavigate = navigateToUrl;
 
     async function activateTab(tab) {
         if (tab.id === getActiveTabId()) {
@@ -538,5 +609,29 @@
         if (event.target.matches('#board-selector, #workspace-selector')) {
             scheduleTitleRefresh();
         }
+    });
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('a[href]');
+        if (!link || event.defaultPrevented || event.button !== 0) {
+            return;
+        }
+
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || (link.target && link.target !== '_self')) {
+            return;
+        }
+
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+            return;
+        }
+
+        const targetUrl = new URL(href, window.location.href);
+        if (targetUrl.origin !== window.location.origin) {
+            return;
+        }
+
+        event.preventDefault();
+        navigateToUrl(targetUrl.href);
     });
 })();

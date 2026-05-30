@@ -172,14 +172,9 @@
                         <path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/>
                     </svg>
                 </button>
-                <button type="button" class="tasks-icon-button" aria-label="Kolumny" title="Kolumny">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-                        <path d="M4 5h6v14H4z"/><path d="M14 5h6v14h-6z"/>
-                    </svg>
-                </button>
-                <button type="button" class="tasks-icon-button" aria-label="Sortowanie" title="Sortowanie">
+                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M8 4v16"/><path d="M5 7l3-3 3 3"/><path d="M16 4h4"/><path d="M14 10h6"/><path d="M12 16h8"/>
+                        <path d="M8 4v16" data-sort-arrow-line/><path d="M5 7l3-3 3 3" data-sort-arrow-head/><path d="M16 4h4"/><path d="M14 10h6"/><path d="M12 16h8"/>
                     </svg>
                 </button>
                 <span class="tasks-topbar-title">
@@ -381,7 +376,9 @@
                         </button>
                     </div>
                 </div>
-                <label class="tasks-search is-open" for="filter-search">
+            </div>
+            <div class="tasks-filterbar-center">
+                <label class="tasks-search-field" for="filter-search">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
                         <circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/>
                     </svg>
@@ -389,7 +386,22 @@
                 </label>
             </div>
             <div class="tasks-filterbar-right">
-                {% if active_view == 'all_groups' %}
+                {% if active_view == 'projects' %}
+                <button type="button" class="tasks-tag-topbar-button" title="Dodaj projekt" aria-label="Dodaj projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
+                    <span aria-hidden="true">+</span>
+                    <span>Dodaj projekt</span>
+                </button>
+                {% elif active_project and not active_section %}
+                <button type="button" class="tasks-tag-topbar-button" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}">
+                    <span aria-hidden="true">+</span>
+                    <span>Dodaj grupę</span>
+                </button>
+                {% elif active_section %}
+                <button type="button" class="tasks-tag-topbar-button" title="Dodaj zadanie" aria-label="Dodaj zadanie" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue {% if not can_create_issue %}disabled{% endif %}>
+                    <span aria-hidden="true">+</span>
+                    <span>Dodaj zadanie</span>
+                </button>
+                {% elif active_view == 'all_groups' %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj tag" aria-label="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag>
                     <span aria-hidden="true">+</span>
                     <span>Dodaj tag</span>
@@ -410,7 +422,7 @@
                 </header>
                 <div class="tasks-issue-list tasks-section-list" aria-label="Lista grup projektu">
                 {% for section in active_project.sections.all %}
-                <article class="tasks-issue-row tasks-section-row" role="link" tabindex="0" data-view-url="{% url 'tasks:task_group' section.id %}">
+                <article class="tasks-issue-row tasks-section-row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
                     <span class="tasks-row-spacer" aria-hidden="true"></span>
                     <span class="tasks-row-id">{{ active_project.code }}</span>
@@ -505,18 +517,17 @@
                         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
                     </button>
                     <span class="status-indicator status-label-plain">Tagi</span>
-                    <span class="tasks-rail-count">{{ total_tag_count }}</span>
                     <button type="button" class="tasks-rail-add-button tasks-tag-create-button" aria-label="Dodaj tag" title="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag></button>
+                    <span class="tasks-rail-count">{{ total_tag_count }}</span>
                 </header>
                 <div class="tasks-issue-list tasks-section-list" aria-label="Lista tagów">
                 {% for tag in tags %}
-                <div class="tasks-issue-row tasks-section-row tasks-all-groups-row">
+                <div class="tasks-issue-row tasks-section-row tasks-all-groups-row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }}">
                     <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
                     <span class="tasks-row-spacer" aria-hidden="true"></span>
-                    <span class="tasks-row-id">TAG</span>
+                    <span class="tasks-row-id">{{ tag.code }}</span>
                     <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
                     <span class="tasks-row-title tasks-section-row-title">
-                        <span class="tasks-tag-dot" aria-hidden="true"></span>
                         <span>{{ tag.name }}</span>
                     </span>
                     <span class="tasks-section-row-description">{{ tag.description|default:"Brak opisu" }}</span>
@@ -544,7 +555,7 @@
                 </header>
                 <div class="tasks-issue-list tasks-project-list" aria-label="Lista projektów">
                 {% for project in projects %}
-                <article class="tasks-issue-row tasks-project-row" role="link" tabindex="0" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}">
+                <article class="tasks-issue-row tasks-project-row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}">
                     <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz projekt {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}">
                     <span class="tasks-row-spacer" aria-hidden="true"></span>
                     <span class="tasks-row-id">{{ project.code }}</span>
@@ -652,9 +663,6 @@
                     <label for="{{ project_form.description.id_for_label }}">Opis</label>
                     {{ project_form.description }}
 
-                    <label for="{{ project_form.code.id_for_label }}">Kod projektu</label>
-                    {{ project_form.code }}
-
                     <label for="{{ project_form.icon.id_for_label }}">Ikona projektu</label>
                     <div class="tasks-icon-picker-wrap">
                         {{ project_form.icon }}
@@ -709,8 +717,8 @@
                     <label for="project-rename-description">Opis</label>
                     <textarea id="project-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ project_rename_form.description.value|default_if_none:'' }}</textarea>
 
-                    <label for="project-rename-code">Kod projektu</label>
-                    <input type="text" id="project-rename-code" name="code" class="tasks-inline-input tasks-inline-code" placeholder="TSK" maxlength="8" value="{{ project_rename_form.code.value|default_if_none:'' }}">
+                    <span>Kod projektu</span>
+                    <span class="tasks-inline-input tasks-inline-code tasks-inline-code--readonly" id="project-rename-code">{{ project_rename_form.instance.code|default:'Zostanie nadany automatycznie' }}</span>
 
                     <label for="project-rename-icon">Ikona projektu</label>
                     <div class="tasks-icon-picker-wrap">

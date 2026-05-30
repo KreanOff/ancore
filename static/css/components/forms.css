@@ -18,7 +18,7 @@
     background-color: #ffffff;
     border: 1px solid var(--border-color);
     border-radius: 0;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.1s, box-shadow 0.1s;
     font-family: inherit;
 }
 

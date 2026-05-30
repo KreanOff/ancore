@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+function initTasksPage() {
     const taskRows = document.querySelectorAll('.task-row');
     const projectRows = document.querySelectorAll('.tasks-project-row');
     const sectionRows = document.querySelectorAll('.tasks-section-row');
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tagDescriptionInput = tagForm ? tagForm.querySelector('[name="description"]') : null;
     const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
-    const projectRenameCodeInput = projectRenameForm ? projectRenameForm.querySelector('[name="code"]') : null;
+    const projectRenameCodeValue = document.getElementById('project-rename-code');
 
     const taskReturnStorageKey = 'tasks:lastTaskReturn';
     const taskReturnRestoreKey = 'tasks:restoreTaskReturn';
@@ -1115,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (projectRenameIdInput) projectRenameIdInput.value = button.dataset.projectId || '';
             if (projectRenameNameInput) projectRenameNameInput.value = button.dataset.projectName || '';
             if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = button.dataset.projectDescription || '';
-            if (projectRenameCodeInput) projectRenameCodeInput.value = button.dataset.projectCode || '';
+            if (projectRenameCodeValue) projectRenameCodeValue.textContent = button.dataset.projectCode || '';
             if (projectRenameIconInput) projectRenameIconInput.value = button.dataset.projectIcon || '';
             syncProjectIconPickers();
             closeProjectActionMenus();
@@ -1296,12 +1296,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sectionCreateTitleInput) {
         sectionCreateTitleInput.addEventListener('input', updateSectionCreateSubmitState);
         updateSectionCreateSubmitState();
-    }
-
-    if (projectRenameCodeInput) {
-        projectRenameCodeInput.addEventListener('input', function() {
-            projectRenameCodeInput.value = projectRenameCodeInput.value.toUpperCase();
-        });
     }
 
     if (sectionRenameTitleInput) {
@@ -1807,7 +1801,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (projectRenameIdInput) projectRenameIdInput.value = selectedProjectCheckbox.dataset.projectId || '';
         if (projectRenameNameInput) projectRenameNameInput.value = selectedProjectCheckbox.dataset.projectName || '';
         if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = selectedProjectCheckbox.dataset.projectDescription || '';
-        if (projectRenameCodeInput) projectRenameCodeInput.value = selectedProjectCheckbox.dataset.projectCode || '';
+        if (projectRenameCodeValue) projectRenameCodeValue.textContent = selectedProjectCheckbox.dataset.projectCode || '';
         if (projectRenameIconInput) projectRenameIconInput.value = selectedProjectCheckbox.dataset.projectIcon || '';
         syncProjectIconPickers();
         closeSectionActionMenu();
@@ -2056,8 +2050,43 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Filtering Logic
+    function currentTaskRows() {
+        return document.querySelectorAll('.task-row');
+    }
+
+    function currentProjectRows() {
+        return document.querySelectorAll('.tasks-project-row');
+    }
+
+    function currentSectionRows() {
+        return document.querySelectorAll('.tasks-section-row');
+    }
+
+    function normalizeFilterText(value) {
+        return (value || '')
+            .toString()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    function rowSearchText(row) {
+        return normalizeFilterText(row.dataset.searchIndex || row.textContent);
+    }
+
+    function rowPrimarySearchText(row) {
+        return normalizeFilterText(row.dataset.searchPrimary || row.dataset.searchIndex || row.textContent);
+    }
+
+    function rowMatchesSearch(row, searchVal) {
+        if (!searchVal) return true;
+        const searchableText = searchVal.length === 1 ? rowPrimarySearchText(row) : rowSearchText(row);
+        return searchableText.includes(searchVal);
+    }
+
     function updateGroupVisibility() {
-        groupRows.forEach(groupRow => {
+        document.querySelectorAll('.tasks-group-row').forEach(groupRow => {
             let hasVisibleTask = false;
             let nextRow = groupRow.nextElementSibling;
 
@@ -2072,12 +2101,12 @@ document.addEventListener('DOMContentLoaded', function() {
             groupRow.style.display = hasVisibleTask ? '' : 'none';
         });
 
-        statusSubgroups.forEach(group => {
+        document.querySelectorAll('.tasks-status-subgroup').forEach(group => {
             const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row')).filter(row => row.style.display !== 'none');
             group.style.display = visibleRows.length ? '' : 'none';
         });
 
-        issueGroups.forEach(group => {
+        document.querySelectorAll('.tasks-issue-group').forEach(group => {
             const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row')).filter(row => row.style.display !== 'none');
             const hasEmptyState = group.querySelector('.tasks-empty-section, .tasks-empty-state') !== null;
             group.style.display = (visibleRows.length || hasEmptyState) ? '' : 'none';
@@ -2131,29 +2160,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function applyFilters() {
         const statusVal = getActiveStatusFilterValue();
         const priorityVal = getActivePriorityFilterValue();
-        const searchVal = filterSearch ? filterSearch.value.trim().toLowerCase() : '';
+        const activeSearch = document.getElementById('filter-search');
+        const searchVal = normalizeFilterText(activeSearch ? activeSearch.value : '');
 
-        taskRows.forEach(row => {
+        currentTaskRows().forEach(row => {
             const rowStatus = row.getAttribute('data-status');
             const rowPriority = row.getAttribute('data-priority');
-            const rowText = row.textContent.toLowerCase();
             
             const matchesStatus = !statusVal || rowStatus === statusVal;
             const matchesPriority = !priorityVal || rowPriority === priorityVal;
-            const matchesSearch = !searchVal || rowText.includes(searchVal);
+            const matchesSearch = rowMatchesSearch(row, searchVal);
 
             row.style.display = (matchesStatus && matchesPriority && matchesSearch) ? '' : 'none';
         });
 
-        projectRows.forEach(row => {
-            const rowText = row.textContent.toLowerCase();
-            const matchesSearch = !searchVal || rowText.includes(searchVal);
+        currentProjectRows().forEach(row => {
+            const matchesSearch = rowMatchesSearch(row, searchVal);
             row.style.display = matchesSearch ? '' : 'none';
         });
 
-        sectionRows.forEach(row => {
-            const rowText = row.textContent.toLowerCase();
-            const matchesSearch = !searchVal || rowText.includes(searchVal);
+        currentSectionRows().forEach(row => {
+            const matchesSearch = rowMatchesSearch(row, searchVal);
             row.style.display = matchesSearch ? '' : 'none';
         });
 
@@ -2457,7 +2484,73 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             notification.classList.add('hiding');
-            setTimeout(() => notification.remove(), 300);
+            setTimeout(() => notification.remove(), 150);
         }, 5000);
     }
-});
+}
+
+function getTaskSortRowValue(row) {
+    if (row.classList.contains('task-row')) {
+        return row.dataset.created || row.dataset.taskId || '';
+    }
+
+    const title = row.querySelector('.tasks-row-title-text, .tasks-row-title, .tasks-project-row-title, .tasks-section-row-title');
+    return (title ? title.textContent : row.textContent).trim().toLowerCase();
+}
+
+function sortCurrentTaskLists(direction) {
+    document.querySelectorAll('.tasks-table-wrap .tasks-issue-list').forEach(list => {
+        const rows = Array.from(list.children).filter(child => (
+            child.classList.contains('task-row') ||
+            child.classList.contains('tasks-project-row') ||
+            child.classList.contains('tasks-section-row')
+        ));
+
+        if (rows.length < 2) return;
+
+        rows.sort((a, b) => {
+            const aValue = getTaskSortRowValue(a);
+            const bValue = getTaskSortRowValue(b);
+
+            return direction === 'asc'
+                ? aValue.localeCompare(bValue, 'pl', { numeric: true, sensitivity: 'base' })
+                : bValue.localeCompare(aValue, 'pl', { numeric: true, sensitivity: 'base' });
+        });
+
+        rows.forEach(row => list.appendChild(row));
+    });
+}
+
+function updateTaskSortButton(button, direction) {
+    const sortArrowHead = button.querySelector('[data-sort-arrow-head]');
+
+    button.dataset.sortDirection = direction;
+    button.setAttribute('aria-pressed', String(direction === 'asc'));
+    button.setAttribute('title', direction === 'asc' ? 'Sortowanie: rosnąco' : 'Sortowanie: malejąco');
+    button.setAttribute('aria-label', direction === 'asc' ? 'Sortowanie: rosnąco' : 'Sortowanie: malejąco');
+
+    if (sortArrowHead) {
+        sortArrowHead.setAttribute('d', direction === 'asc' ? 'M5 7l3-3 3 3' : 'M5 17l3 3 3-3');
+    }
+}
+
+if (!window.ancoreTaskSortHandlerInitialized) {
+    window.ancoreTaskSortHandlerInitialized = true;
+
+    document.addEventListener('click', function(event) {
+        const button = event.target.closest('[data-task-sort]');
+        if (!button) return;
+
+        const direction = button.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
+        updateTaskSortButton(button, direction);
+        sortCurrentTaskLists(direction);
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTasksPage);
+} else {
+    initTasksPage();
+}
+
+document.addEventListener('ancore:content-loaded', initTasksPage);

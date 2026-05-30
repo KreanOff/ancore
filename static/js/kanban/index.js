@@ -21,6 +21,15 @@
         return qs ? `${urls.index}?${qs}` : urls.index;
     }
 
+    function navigate(url) {
+        if (typeof window.ancoreNavigate === 'function') {
+            window.ancoreNavigate(url);
+            return;
+        }
+
+        window.location.href = url;
+    }
+
     function initKanban() {
         const boardElement = document.getElementById('kanban-board');
         if (!boardElement) return;
@@ -28,7 +37,7 @@
 
         // 1. Initialize Sortable for Columns (moving columns)
         new Sortable(boardElement, {
-            animation: 150,
+            animation: 75,
             handle: '.column-header',
             draggable: '.kanban-column',
             ghostClass: 'sortable-ghost',
@@ -51,7 +60,7 @@
         function initCardSortable(columnElement) {
             new Sortable(columnElement, {
                 group: 'cards',
-                animation: 150,
+                animation: 75,
                 ghostClass: 'sortable-ghost',
                 onEnd: function (evt) {
                     const targetColId = evt.to.dataset.columnId;
@@ -521,7 +530,7 @@
         const workspaceSelector = document.getElementById('workspace-selector');
         if (workspaceSelector) {
             workspaceSelector.addEventListener('change', function () {
-                window.location.href = boardIndexUrl(this.value);
+                navigate(boardIndexUrl(this.value));
             });
         }
 
@@ -529,7 +538,7 @@
         if (boardSelector) {
             boardSelector.addEventListener('change', function () {
                 const wsId = workspaceSelector ? workspaceSelector.value : '';
-                window.location.href = boardIndexUrl(wsId, this.value);
+                navigate(boardIndexUrl(wsId, this.value));
             });
         }
 

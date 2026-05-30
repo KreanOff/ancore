@@ -8,7 +8,7 @@
     z-index: 2000;
     display: none;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.15s ease;
     overflow-y: auto;
 }
 
@@ -52,7 +52,7 @@
     font-weight: 600;
     cursor: pointer;
     color: var(--text-muted);
-    transition: all 0.2s;
+    transition: all 0.1s;
     padding: 0.5rem 0;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .modal-back svg {
-    transition: transform 0.2s;
+    transition: transform 0.1s;
 }
 
 .modal-body {

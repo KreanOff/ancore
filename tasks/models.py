@@ -1,16 +1,18 @@
 from django.db import models
 from django.db.models import Max
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
-import secrets
+from django.utils import timezone
+from django.utils.formats import date_format
 import os
+import re
 
 
 class TaskProject(models.Model):
-    CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    CODE_LENGTH = 8
+    CODE_PREFIX = 'PRJ'
+    CODE_NUMBER_WIDTH = 3
 
     ICON_COLORS = [
         {'background': '#e8f1ff', 'foreground': '#2563eb'},
@@ -25,7 +27,7 @@ class TaskProject(models.Model):
 
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
-    code = models.CharField(max_length=8, blank=True)
+    code = models.CharField(max_length=20, blank=True)
     icon = models.CharField(max_length=8, blank=True, default='')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_projects')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,21 +39,32 @@ class TaskProject(models.Model):
         ]
 
     def _generate_unique_code(self):
-        existing_codes = set(
+        year = timezone.localtime(self.created_at).year if self.created_at else timezone.localtime().year
+        code_prefix = f'{self.CODE_PREFIX}-{year}-'
+        existing_codes = list(
             TaskProject.objects.filter(user=self.user)
             .exclude(pk=self.pk)
             .values_list('code', flat=True)
         )
+        highest_number = 0
+        code_pattern = re.compile(rf'^{re.escape(code_prefix)}(\d+)$')
 
+        for code in existing_codes:
+            match = code_pattern.match(code or '')
+            if match:
+                highest_number = max(highest_number, int(match.group(1)))
+
+        next_number = highest_number + 1
         while True:
-            candidate = ''.join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
+            candidate = f'{code_prefix}{next_number:0{self.CODE_NUMBER_WIDTH}d}'
             if candidate not in existing_codes:
                 return candidate
+            next_number += 1
 
     def save(self, *args, **kwargs):
         if not self.code:
             self.code = self._generate_unique_code()
-        self.code = self.code.upper()[:8]
+        self.code = self.code.upper()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -88,8 +101,12 @@ class TaskSection(models.Model):
 
 
 class TaskTag(models.Model):
+    CODE_PREFIX = 'TAG'
+    CODE_NUMBER_WIDTH = 3
+
     name = models.CharField(max_length=80)
     description = models.TextField(blank=True)
+    code = models.CharField(max_length=20, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_tags')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -97,7 +114,37 @@ class TaskTag(models.Model):
         ordering = ['name']
         constraints = [
             models.UniqueConstraint(fields=['user', 'name'], name='unique_task_tag_per_user'),
+            models.UniqueConstraint(fields=['user', 'code'], name='unique_task_tag_code_per_user'),
         ]
+
+    def _generate_unique_code(self):
+        year = timezone.localtime(self.created_at).year if self.created_at else timezone.localtime().year
+        code_prefix = f'{self.CODE_PREFIX}-{year}-'
+        existing_codes = list(
+            TaskTag.objects.filter(user=self.user)
+            .exclude(pk=self.pk)
+            .values_list('code', flat=True)
+        )
+        highest_number = 0
+        code_pattern = re.compile(rf'^{re.escape(code_prefix)}(\d+)$')
+
+        for code in existing_codes:
+            match = code_pattern.match(code or '')
+            if match:
+                highest_number = max(highest_number, int(match.group(1)))
+
+        next_number = highest_number + 1
+        while True:
+            candidate = f'{code_prefix}{next_number:0{self.CODE_NUMBER_WIDTH}d}'
+            if candidate not in existing_codes:
+                return candidate
+            next_number += 1
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self._generate_unique_code()
+        self.code = self.code.upper()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -180,6 +227,18 @@ class Task(models.Model):
     def __str__(self):
         return self.title
 
+    def _activity_datetime(self, value):
+        if not value:
+            return ''
+        return date_format(timezone.localtime(value), 'd.m.Y H:i')
+
+    def _activity_time_spent(self):
+        hours = self.time_spent_hours or 0
+        minutes = self.time_spent_minutes or 0
+        if not hours and not minutes:
+            return '00:00'
+        return f'{hours:02d}:{minutes:02d}'
+
     def get_file_extension(self):
         """Return file extension for icon selection"""
         if self.attachments.exists():
@@ -248,6 +307,39 @@ class TaskAttachment(models.Model):
     def __str__(self):
         return f"{self.filename} - {self.task.title}"
 
+
+class TaskActivity(models.Model):
+    KIND_CHOICES = [
+        ('system', 'Historia'),
+        ('comment', 'Komentarz'),
+    ]
+
+    ACTION_CHOICES = [
+        ('created', 'Utworzono zadanie'),
+        ('updated', 'Zaktualizowano zadanie'),
+        ('status_changed', 'Zmieniono status'),
+        ('priority_changed', 'Zmieniono priorytet'),
+        ('commented', 'Dodano komentarz'),
+        ('subtask_created', 'Dodano podzadanie'),
+        ('attachments_added', 'Dodano załączniki'),
+        ('attachments_deleted', 'Usunięto załączniki'),
+    ]
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='activities')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='task_activities', null=True, blank=True)
+    kind = models.CharField(max_length=12, choices=KIND_CHOICES, default='system')
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES, default='updated')
+    message = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+
+    def __str__(self):
+        return f'{self.get_action_display()} - {self.task}'
+
+
 @receiver(post_delete, sender=TaskAttachment)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     """
@@ -257,3 +349,16 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
     if instance.file:
         if os.path.isfile(instance.file.path):
             os.remove(instance.file.path)
+
+
+@receiver(post_save, sender=Task)
+def create_task_activity_on_create(sender, instance, created, **kwargs):
+    if created:
+        TaskActivity.objects.create(
+            task=instance,
+            actor=instance.user,
+            kind='system',
+            action='created',
+            message='utworzył zadanie',
+            metadata={'title': instance.title},
+        )

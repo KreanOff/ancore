@@ -55,7 +55,7 @@
     font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.075s, color 0.075s;
 }
 
 .calendar-view-btn:last-child {
@@ -139,7 +139,7 @@
     flex-direction: column;
     gap: 0.35rem;
     cursor: pointer;
-    transition: background-color 0.15s;
+    transition: background-color 0.075s;
     overflow: hidden;
 }
 
@@ -475,7 +475,7 @@
     background: transparent;
     text-align: left;
     font-family: inherit;
-    transition: background 0.15s;
+    transition: background 0.075s;
 }
 
 .calendar-list-item:hover {

@@ -21,7 +21,7 @@
     display: flex;
     background: rgb(251, 251, 252);
     border-right: 0;
-    transition: width 0.2s ease, border-color 0.2s ease;
+    transition: none;
 }
 
 .secondary-menu-panel {
@@ -30,7 +30,15 @@
     background: linear-gradient(180deg, #fbfbfc 0%, #f8f9fb 100%);
     border: none;
     overflow: hidden;
-    transition: opacity 0.15s ease;
+    transition: none;
+}
+
+body.secondary-menu-toggling .secondary-menu {
+    transition: width 0.1s ease, border-color 0.1s ease;
+}
+
+body.secondary-menu-toggling .secondary-menu-panel {
+    transition: opacity 0.075s ease;
 }
 
 .secondary-menu-resizer {
@@ -52,7 +60,7 @@
     bottom: 0;
     width: 1px;
     background: transparent;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.075s ease;
 }
 
 .secondary-menu-resizer:hover::after,
@@ -107,6 +115,7 @@ body.secondary-menu-collapsed .secondary-menu {
 
 body.secondary-menu-collapsed .secondary-menu-panel {
     opacity: 0;
+    pointer-events: none;
 }
 
 body.secondary-menu-collapsed .secondary-menu-resizer {
@@ -166,7 +175,7 @@ body.secondary-menu-collapsed .secondary-menu-resizer {
     padding: 0;
     color: var(--sidebar-text);
     text-decoration: none;
-    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+    transition: color 0.1s, background-color 0.1s, border-color 0.1s;
     border: 1px solid transparent;
     border-radius: 8px;
 }

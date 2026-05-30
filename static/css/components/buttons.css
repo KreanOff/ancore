@@ -9,7 +9,7 @@
     line-height: 1;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s, box-shadow 0.1s;
     border: none;
     border-radius: var(--radius);
     font-family: inherit;
@@ -101,7 +101,7 @@
     font-size: var(--font-size-base);
     cursor: pointer;
     font-family: inherit;
-    transition: background-color 0.15s, border-color 0.15s;
+    transition: background-color 0.075s, border-color 0.075s;
 }
 
 .btn-cancel:hover,

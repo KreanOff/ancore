@@ -59,7 +59,7 @@ window.showConfirmModal = function (options) {
         document.removeEventListener('keydown', handleKeyDown);
         overlay.classList.remove('is-visible');
         modal.classList.remove('is-visible');
-        setTimeout(() => overlay.remove(), 300);
+        setTimeout(() => overlay.remove(), 150);
     };
 
     document.getElementById('modal-cancel-btn')?.addEventListener('click', closeModal);

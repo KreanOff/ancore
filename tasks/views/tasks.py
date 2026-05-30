@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 import json
-from ..models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
+from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
 
@@ -98,6 +98,97 @@ def _set_task_status(task, status):
     task.status = status
     task.save()
     return True
+
+
+def _record_task_activity(task, actor, action, message='', kind='system', metadata=None):
+    return TaskActivity.objects.create(
+        task=task,
+        actor=actor if getattr(actor, 'is_authenticated', False) else None,
+        kind=kind,
+        action=action,
+        message=message,
+        metadata=metadata or {},
+    )
+
+
+def _task_activity_snapshot(task):
+    section = task.section
+    project = section.project if section else None
+    return {
+        'title': task.title,
+        'description': task.description,
+        'status': task.status,
+        'priority': task.priority,
+        'section_id': task.section_id,
+        'section_label': section.title if section else '',
+        'project_id': project.id if project else None,
+        'project_label': project.name if project else '',
+        'parent_id': task.parent_id,
+        'time_spent_hours': task.time_spent_hours,
+        'time_spent_minutes': task.time_spent_minutes,
+        'completion_date': task.completion_date,
+        'tags': set(task.tags.values_list('id', flat=True)),
+        'tag_labels': list(task.tags.order_by('name').values_list('name', flat=True)),
+    }
+
+
+def _task_change_activities(task, before):
+    status_labels = dict(Task.STATUS_CHOICES)
+    priority_labels = dict(Task.PRIORITY_CHOICES)
+    changed_fields = []
+    detailed_changes = []
+
+    def normalize_change_value(value):
+        if hasattr(value, 'tzinfo'):
+            return task._activity_datetime(value)
+        if value in (None, ''):
+            return '—'
+        return str(value)
+
+    def add_change(field_label, from_label, to_label):
+        changed_fields.append(field_label)
+        detailed_changes.append({
+            'field': field_label,
+            'from_label': normalize_change_value(from_label),
+            'to_label': normalize_change_value(to_label),
+        })
+
+    if before['status'] != task.status:
+        add_change('status', status_labels.get(before['status'], before['status']), task.get_status_display())
+    if before['priority'] != task.priority:
+        add_change('priorytet', priority_labels.get(before['priority'], before['priority']), task.get_priority_display())
+    if before['title'] != task.title:
+        add_change('tytuł', before['title'], task.title)
+    if before['description'] != task.description:
+        add_change('opis', before['description'], task.description)
+    if before['project_id'] != (task.section.project_id if task.section_id else None):
+        add_change('projekt', before['project_label'], task.section.project.name if task.section_id else '')
+    if before['section_id'] != task.section_id:
+        add_change('grupa', before['section_label'], task.section.title if task.section_id else '')
+    if before['parent_id'] != task.parent_id:
+        add_change('zadanie nadrzędne', before['parent_id'], task.parent_id)
+    if (
+        before['time_spent_hours'] != task.time_spent_hours
+        or before['time_spent_minutes'] != task.time_spent_minutes
+    ):
+        previous_time = f"{before['time_spent_hours'] or 0:02d}:{before['time_spent_minutes'] or 0:02d}"
+        add_change('czas pracy', previous_time, task._activity_time_spent())
+    if before['completion_date'] != task.completion_date:
+        add_change('zamknięto', before['completion_date'], task._activity_datetime(task.completion_date))
+    if before['tags'] != set(task.tags.values_list('id', flat=True)):
+        add_change('tagi', ', '.join(before['tag_labels']), ', '.join(task.tags.order_by('name').values_list('name', flat=True)))
+
+    changed_fields = list(dict.fromkeys(changed_fields))
+    if changed_fields:
+        return [{
+            'action': 'updated',
+            'message': 'zaktualizował zadanie',
+            'metadata': {
+                'fields': changed_fields,
+                'changes': detailed_changes,
+            },
+        }]
+    return []
 
 
 @login_required
@@ -282,6 +373,7 @@ def _tasks_page(request, active_section=None):
                 task.user = request.user
                 task.save()
                 task_modal_form.save_m2m()
+                task.activities.filter(action='created').update(metadata={'title': task.title})
                 messages.success(request, 'Zadanie dodane.')
                 return redirect('tasks:task_group', section_id=task.section_id)
             task_modal_open = True
@@ -385,6 +477,7 @@ def update_task_status(request, task_id):
         task = Task.objects.get(task_id=task_id, user=request.user)
         data = json.loads(request.body)
         status = data.get('status')
+        previous_status = task.status
 
         if status:
             if not _set_task_status(task, status):
@@ -392,6 +485,24 @@ def update_task_status(request, task_id):
         else:
             is_completed = data.get('is_completed', False)
             _set_task_status(task, 'closed' if is_completed else 'reopened')
+
+        if previous_status != task.status:
+            status_labels = dict(Task.STATUS_CHOICES)
+            _record_task_activity(
+                task,
+                request.user,
+                'status_changed',
+                'zmienił status',
+                metadata={
+                    'from_label': status_labels.get(previous_status, previous_status),
+                    'to_label': task.get_status_display(),
+                    'changes': [{
+                        'field': 'status',
+                        'from_label': status_labels.get(previous_status, previous_status),
+                        'to_label': task.get_status_display(),
+                    }],
+                },
+            )
         
         return JsonResponse({
             'status': 'success',
@@ -484,12 +595,17 @@ def _task_detail_response(request, task_id):
             Prefetch(
                 'subtasks',
                 queryset=Task.objects.select_related('section', 'section__project').prefetch_related('tags', 'attachments').order_by('task_id'),
-            )
+            ),
+            Prefetch(
+                'activities',
+                queryset=TaskActivity.objects.select_related('actor').order_by('created_at', 'id'),
+            ),
         ),
         task_id=task_id,
         user=request.user,
     )
     subtask_status_groups = _status_groups_for_tasks(list(task.subtasks.all()))
+    can_add_attachments = not task.parent_id
     form = TaskForm(instance=task, user=request.user)
     task_modal_form = SubTaskModalForm()
     task_modal_open = False
@@ -504,27 +620,81 @@ def _task_detail_response(request, task_id):
                 subtask.parent = task
                 subtask.section = task.section
                 subtask.save()
+                _record_task_activity(
+                    task,
+                    request.user,
+                    'subtask_created',
+                    'dodał podzadanie',
+                    metadata={
+                        'subtask_title': subtask.title,
+                        'subtask_task_id': subtask.task_id,
+                    },
+                )
                 messages.success(request, 'Podzadanie dodane.')
                 return redirect('tasks:view-task', task_id=task.task_id)
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać podzadania.')
+        elif action == 'add_activity_comment':
+            comment = (request.POST.get('activity_comment') or '').strip()
+            if comment:
+                _record_task_activity(
+                    task,
+                    request.user,
+                    'commented',
+                    comment,
+                    kind='comment',
+                )
+                messages.success(request, 'Komentarz dodany.')
+            else:
+                messages.error(request, 'Wpisz treść komentarza.')
+            detail_route = 'tasks:view-subtask' if task.parent_id else 'tasks:view-task'
+            return redirect(detail_route, task_id=task.task_id)
         else:
-            files = request.FILES.getlist('attachments')
+            files = request.FILES.getlist('attachments') if can_add_attachments else []
+            before = _task_activity_snapshot(task)
             form = TaskForm(request.POST, request.FILES, instance=task, user=request.user)
             if form.is_valid():
                 form.save()
 
                 # Handle staged attachment deletions
                 deleted_attachments = request.POST.get('deleted_attachments', '')
+                deleted_count = 0
                 if deleted_attachments:
                     attachment_ids = [int(aid) for aid in deleted_attachments.split(',') if aid.isdigit()]
-                    TaskAttachment.objects.filter(id__in=attachment_ids, task=task).delete()
+                    attachments_to_delete = TaskAttachment.objects.filter(id__in=attachment_ids, task=task)
+                    deleted_count = attachments_to_delete.count()
+                    attachments_to_delete.delete()
 
                 # Handle new file attachments
                 for file in files:
                     TaskAttachment.objects.create(
                         task=task,
                         file=file
+                    )
+
+                for change in _task_change_activities(task, before):
+                    _record_task_activity(
+                        task,
+                        request.user,
+                        change['action'],
+                        change['message'],
+                        metadata=change['metadata'],
+                    )
+                if files:
+                    _record_task_activity(
+                        task,
+                        request.user,
+                        'attachments_added',
+                        'dodał załączniki',
+                        metadata={'count': len(files)},
+                    )
+                if deleted_count:
+                    _record_task_activity(
+                        task,
+                        request.user,
+                        'attachments_deleted',
+                        'usunął załączniki',
+                        metadata={'count': deleted_count},
                     )
 
                 messages.success(request, 'Zadanie zaktualizowane pomyślnie.')
@@ -542,6 +712,8 @@ def _task_detail_response(request, task_id):
         'task_modal_form': task_modal_form,
         'task_modal_open': task_modal_open,
         'task': task,
+        'can_add_attachments': can_add_attachments,
+        'activity_items': task.activities.order_by('-created_at', '-id'),
         'subtask_status_groups': subtask_status_groups,
         **_tasks_navigation_context(
             request.user,

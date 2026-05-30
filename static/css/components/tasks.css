@@ -340,7 +340,11 @@
     background: #f9fafc;
     color: #22262d;
     cursor: pointer;
-    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+    transition: background-color 0.08s ease, border-color 0.08s ease, color 0.08s ease;
+}
+
+.tasks-sort-button {
+    display: flex;
 }
 
 .tasks-icon-button:hover,
@@ -378,7 +382,7 @@
     line-height: 1;
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color 0.16s ease, box-shadow 0.16s ease;
+    transition: background-color 0.08s ease, box-shadow 0.08s ease;
 }
 
 .tasks-tag-topbar-button:hover {
@@ -447,7 +451,22 @@
     min-height: 68px;
     padding: 0.75rem 1.25rem;
     border-bottom: 1px solid #edf0f3;
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
     gap: 1rem;
+}
+
+.tasks-filterbar-left {
+    justify-self: start;
+}
+
+.tasks-filterbar-center {
+    justify-self: start;
+    min-width: 0;
+}
+
+.tasks-filterbar-right {
+    justify-self: end;
 }
 
 .tasks-actionbar {
@@ -458,46 +477,41 @@
     gap: 0.75rem;
 }
 
-.tasks-search {
-    width: 36px;
+.tasks-search-field {
+    width: min(360px, 34vw);
     height: 36px;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     border: 1px solid #dfe3e8;
     border-radius: 6px;
     background: #ffffff;
     color: #252a32;
-    transition: width 0.18s ease;
-    overflow: hidden;
+    padding: 0 0.75rem;
+    box-sizing: border-box;
 }
 
-.tasks-search:focus-within {
-    width: 220px;
+.tasks-search-field:focus-within {
     border-color: #cfd5de;
 }
 
-.tasks-search svg {
+.tasks-search-field svg {
     width: 18px;
     height: 18px;
     flex: 0 0 18px;
 }
 
-.tasks-search input {
+.tasks-search-field input {
     min-width: 0;
-    width: 0;
+    width: 100%;
     border: 0;
     outline: 0;
     padding: 0;
+    margin-left: 0.5rem;
     background: transparent;
     color: #1f2328;
     font: inherit;
     font-size: 0.875rem;
-}
-
-.tasks-search:focus-within input {
-    width: 100%;
-    margin-left: 0.5rem;
 }
 
 .tasks-segments {
@@ -619,7 +633,7 @@
     background: transparent;
     color: #111827;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.075s ease, color 0.075s ease;
 }
 
 .tasks-group-caret:hover {
@@ -637,7 +651,7 @@
     stroke-linejoin: round;
     transform: rotate(0deg);
     backface-visibility: hidden;
-    transition: transform 0.15s ease;
+    transition: transform 0.075s ease;
 }
 
 .tasks-group-caret[aria-expanded="false"] svg {
@@ -646,7 +660,7 @@
 
 .task-row {
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.075s ease, color 0.075s ease;
 }
 
 .tasks-table .task-row td {
@@ -1365,6 +1379,8 @@
 }
 
 .tasks-project-modal__body .tasks-inline-code {
+    display: inline-flex;
+    align-items: center;
     width: min(180px, 100%);
     height: 42px;
     margin-top: 2rem;
@@ -1374,6 +1390,10 @@
     background: #ffffff;
     color: #464d59;
     font-size: 0.92rem;
+}
+
+.tasks-project-modal__body .tasks-inline-code--readonly {
+    background: #f7f8fa;
 }
 
 .tasks-project-modal__body .tasks-inline-code:focus {
@@ -2043,7 +2063,7 @@
     height: 24px;
     border-radius: 999px;
     background: #cfd1d5;
-    transition: background 0.16s ease;
+    transition: background 0.08s ease;
 }
 
 .tasks-toggle span::before {
@@ -2056,7 +2076,7 @@
     border-radius: 50%;
     background: #ffffff;
     box-shadow: 0 2px 5px rgba(31, 35, 40, 0.24);
-    transition: transform 0.16s ease;
+    transition: transform 0.08s ease;
 }
 
 .tasks-toggle input:checked + span {
@@ -2295,7 +2315,7 @@
     transform-origin: center;
     transform: rotate(0deg);
     backface-visibility: hidden;
-    transition: transform 0.16s ease;
+    transition: transform 0.08s ease;
 }
 
 .tasks-project-tree .tasks-rail-add-button {
@@ -2361,7 +2381,7 @@
     transform-origin: center;
     transform: rotate(0deg);
     backface-visibility: hidden;
-    transition: transform 0.16s ease;
+    transition: transform 0.08s ease;
 }
 
 .tasks-project-node.is-collapsed .tasks-project-collapse-toggle svg {
@@ -2711,14 +2731,6 @@
     color: #2f3440;
 }
 
-.tasks-search.is-open {
-    width: 42px;
-}
-
-.tasks-search.is-open:focus-within {
-    width: 220px;
-}
-
 .tasks-section-create {
     min-height: 56px;
     display: flex;
@@ -2950,9 +2962,9 @@
 
 .tasks-issue-row {
     min-height: 52px;
-    --tasks-row-code-status-offset: 20px;
+    --tasks-row-code-status-offset: 34px;
     display: grid;
-    grid-template-columns: 20px 24px 88px 38px minmax(220px, 1fr) minmax(0, 148px) 64px 76px 76px;
+    grid-template-columns: 20px 24px 88px 56px minmax(220px, 1fr) minmax(0, 148px) 64px 76px 76px;
     align-items: center;
     column-gap: 0.625rem;
     padding: 0 1rem;
@@ -3115,15 +3127,6 @@
     max-width: 100%;
 }
 
-.tasks-row-tags {
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.35rem;
-    overflow: hidden;
-}
-
 .tasks-tag-chip {
     flex: 0 0 auto;
     min-width: 46px;
@@ -3174,6 +3177,7 @@
     margin-top: 0.85rem;
 }
 
+.tasks-row-tags,
 .tasks-row-attachments,
 .tasks-row-comments {
     min-width: 56px;
@@ -3192,10 +3196,16 @@
     justify-self: end;
 }
 
+.tasks-row-tags svg,
 .tasks-row-attachments svg,
 .tasks-row-comments svg {
     width: 16px;
     height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .tasks-issue-row .task-checkbox {
@@ -3207,7 +3217,7 @@
     justify-self: start;
     margin-left: 0;
     opacity: 0;
-    transition: opacity 0.16s ease;
+    transition: opacity 0.08s ease;
 }
 
 .tasks-issue-row .tasks-row-checkbox {
@@ -3221,7 +3231,7 @@
     justify-self: start;
     margin: 0;
     opacity: 0;
-    transition: opacity 0.16s ease;
+    transition: opacity 0.08s ease;
 }
 
 .tasks-issue-row:hover .task-checkbox,
@@ -3319,7 +3329,7 @@
     text-align: center;
     background: var(--bg-main);
     border-radius: var(--radius);
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color 0.1s, background 0.1s;
     cursor: pointer;
 }
 
@@ -3449,7 +3459,7 @@
     justify-content: space-between;
     gap: 0.5rem;
     color: #242830;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition: border-color 0.075s ease, background 0.075s ease;
 }
 
 .tasks-attachment-card:hover {
@@ -3529,7 +3539,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: all 0.15s;
+    transition: all 0.075s;
 }
 
 .tasks-delete-attach-btn:hover {
@@ -3689,6 +3699,13 @@
     padding: 2.4rem clamp(1.75rem, 5vw, 5rem) 3.25rem;
 }
 
+.tasks-issue-content > * {
+    box-sizing: border-box;
+    width: min(100%, 980px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .tasks-issue-title-field .form-input,
 .tasks-issue-description-field .form-input {
     border: 0;
@@ -3767,6 +3784,14 @@
     border-radius: 6px;
     font: inherit;
     font-size: 1rem;
+}
+
+.tasks-issue-tool--labelled {
+    width: auto;
+    padding: 0 0.55rem;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 .tasks-issue-tool svg {
@@ -3875,7 +3900,7 @@
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    transition: transform 0.16s ease;
+    transition: transform 0.08s ease;
 }
 
 .tasks-subtasks-title[aria-expanded="false"] svg {
@@ -3997,18 +4022,71 @@
     height: 17px;
 }
 
+.tasks-issue-activity-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    justify-content: space-between;
+    min-height: 30px;
+    padding: 0 0.65rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #4d535e;
+    font-size: 0.84rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tasks-issue-activity-chip svg {
+    flex: 0 0 auto;
+}
+
+.tasks-issue-activity-chip:hover {
+    border-color: #cfd5dd;
+    color: #242830;
+}
+
+.tasks-issue-activity-dropdown {
+    --dropdown-menu-width: 190px;
+    --dropdown-menu-padding: 0.3rem;
+    --dropdown-menu-radius: 8px;
+    --dropdown-menu-item-height: 34px;
+    --dropdown-menu-item-radius: 6px;
+    --dropdown-menu-font-size: 0.84rem;
+}
+
+.tasks-issue-activity-menu {
+    left: auto;
+    right: 0;
+}
+
+.tasks-issue-activity-menu button:hover,
+.tasks-issue-activity-menu button.is-active {
+    background: #edf1ff;
+    color: #2f3440;
+}
+
+.tasks-issue-comment-form {
+    display: contents;
+}
+
 .tasks-issue-comment {
     margin-top: 1.1rem;
     border: 1px solid #dfe3e8;
     border-radius: 6px;
     background: #ffffff;
+    overflow: hidden;
 }
 
 .tasks-issue-comment-input {
+    display: block;
     width: 100%;
     min-height: 64px;
     padding: 0.85rem;
     border: 0;
+    border-radius: 5px 5px 0 0;
+    background: transparent;
     resize: vertical;
     color: #242830;
     font: inherit;
@@ -4023,7 +4101,7 @@
 .tasks-issue-comment-tools {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 0.85rem;
     padding: 0.45rem 0.7rem 0.65rem;
 }
@@ -4050,6 +4128,19 @@
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr);
     gap: 0.85rem;
+}
+
+.tasks-issue-feed-item[hidden],
+.tasks-issue-empty-feed[hidden] {
+    display: none;
+}
+
+.tasks-issue-feed-item--comment .tasks-issue-avatar {
+    background: #16803f;
+}
+
+.tasks-issue-feed-body {
+    min-width: 0;
 }
 
 .tasks-issue-avatar,
@@ -4094,6 +4185,29 @@
     color: #333842;
 }
 
+.tasks-issue-change-line {
+    color: #6d7481;
+    line-height: 1.45;
+}
+
+.tasks-issue-chat-message {
+    display: inline-block;
+    max-width: min(100%, 720px);
+    padding: 0;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #242830;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.tasks-issue-empty-feed {
+    margin: 0;
+    color: #7b8494;
+    font-size: 0.9rem;
+}
+
 .tasks-issue-sidebar {
     position: relative;
     min-width: 0;
@@ -4126,7 +4240,7 @@
     width: 2px;
     height: 100%;
     background: transparent;
-    transition: background-color 0.16s ease, box-shadow 0.16s ease;
+    transition: background-color 0.08s ease, box-shadow 0.08s ease;
 }
 
 .tasks-issue-sidebar-resizer:hover::before,
@@ -4179,6 +4293,7 @@ body.is-resizing-tasks-sidebar {
     margin: 0;
     color: #7a808a;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .tasks-issue-field-label {
@@ -4216,20 +4331,35 @@ body.is-resizing-tasks-sidebar {
 
 .tasks-issue-time-spent {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0.45rem;
+    grid-template-columns: repeat(2, max-content);
+    justify-content: start;
+    gap: 0.7rem;
+    min-width: 0;
 }
 
 .tasks-issue-time-spent label {
-    display: flex;
+    display: grid;
+    grid-template-columns: 4.25rem max-content;
     align-items: center;
     gap: 0.35rem;
+    min-width: 0;
 }
 
 .tasks-issue-time-spent .form-input {
-    min-width: 0;
-    width: 100%;
+    min-width: 4.25rem;
+    width: 4.25rem;
     border-radius: 8px;
+    padding-inline: 0.55rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+    appearance: textfield;
+}
+
+.tasks-issue-time-spent .form-input::-webkit-outer-spin-button,
+.tasks-issue-time-spent .form-input::-webkit-inner-spin-button {
+    margin: 0;
+    appearance: none;
 }
 
 .tasks-issue-time-spent span {
@@ -4243,12 +4373,16 @@ body.is-resizing-tasks-sidebar {
     min-width: 0;
     color: #3f444d;
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .tasks-issue-person {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
+    white-space: nowrap;
 }
 
 .tasks-issue-muted {
@@ -4516,7 +4650,7 @@ body.is-resizing-tasks-sidebar {
     border-bottom: 1px solid #f1f5f9;
     text-decoration: none;
     color: var(--text-main);
-    transition: background 0.15s;
+    transition: background 0.075s;
     position: relative;
 }
 
@@ -4682,6 +4816,7 @@ body.is-resizing-tasks-sidebar {
 @media (max-width: 768px) {
     .tasks-topbar,
     .tasks-filterbar {
+        display: flex;
         align-items: flex-start;
         flex-direction: column;
         min-height: 0;
@@ -4692,18 +4827,15 @@ body.is-resizing-tasks-sidebar {
         flex-wrap: wrap;
     }
 
-    .tasks-search,
-    .tasks-search:focus-within {
+    .tasks-filterbar-center,
+    .tasks-filterbar-right {
+        width: 100%;
+    }
+
+    .tasks-search-field {
         width: 100%;
         justify-content: flex-start;
         padding: 0 0.75rem;
-        box-sizing: border-box;
-    }
-
-    .tasks-search input,
-    .tasks-search:focus-within input {
-        width: 100%;
-        margin-left: 0.5rem;
     }
 
     .tasks-actionbar {
@@ -4785,9 +4917,9 @@ body.is-resizing-tasks-sidebar {
     }
 
     .tasks-issue-field {
-        grid-template-columns: 1fr;
-        gap: 0.3rem;
-        align-items: start;
+        grid-template-columns: minmax(88px, 0.5fr) minmax(0, 1fr);
+        gap: 0.75rem;
+        align-items: center;
     }
 
     .tasks-issue-comment-tools,
@@ -4884,17 +5016,21 @@ body.is-resizing-tasks-sidebar {
     padding: 0 0.95rem;
 }
 
-.tasks-icon-button,
-.tasks-search {
+.tasks-icon-button {
     width: 30px;
     height: 30px;
     border-radius: 5px;
 }
 
 .tasks-icon-button svg,
-.tasks-search svg {
+.tasks-search-field svg {
     width: 16px;
     height: 16px;
+}
+
+.tasks-search-field {
+    width: min(300px, 34vw);
+    height: 30px;
 }
 
 .tasks-topbar-title {
@@ -4929,15 +5065,6 @@ body.is-resizing-tasks-sidebar {
 .tasks-filter-button svg {
     width: 15px;
     height: 15px;
-}
-
-.tasks-search.is-open {
-    width: 34px;
-}
-
-.tasks-search:focus-within,
-.tasks-search.is-open:focus-within {
-    width: 180px;
 }
 
 .tasks-segments button {
@@ -4984,8 +5111,8 @@ body.is-resizing-tasks-sidebar {
 
 .tasks-issue-row {
     min-height: 40px;
-    --tasks-row-code-status-offset: 22px;
-    grid-template-columns: 18px 22px 78px 38px minmax(190px, 1fr) minmax(0, 124px) 54px 66px 66px;
+    --tasks-row-code-status-offset: 36px;
+    grid-template-columns: 18px 22px 78px 52px minmax(190px, 1fr) minmax(0, 124px) 54px 66px 66px;
     column-gap: 0.5rem;
     padding: 0 0.75rem;
 }
@@ -5048,6 +5175,7 @@ body.is-resizing-tasks-sidebar {
     font-size: 0.85rem;
 }
 
+.tasks-row-tags,
 .tasks-row-attachments,
 .tasks-row-comments {
     min-width: 46px;
@@ -5057,6 +5185,7 @@ body.is-resizing-tasks-sidebar {
     font-size: 0.75rem;
 }
 
+.tasks-row-tags svg,
 .tasks-row-attachments svg,
 .tasks-row-comments svg {
     width: 14px;

@@ -47,7 +47,7 @@
     scroll-behavior: smooth;
     display: flex;
     flex-direction: column;
-    transition: background 0.35s ease;
+    transition: background 0.18s ease;
 }
 
 .kanban-workspace--wallpaper .kanban-column {
@@ -108,7 +108,7 @@
     border: 1px solid transparent;
     padding: 2px 4px;
     border-radius: 0;
-    transition: all 0.2s;
+    transition: all 0.1s;
     cursor: text;
 }
 
@@ -130,7 +130,7 @@
 
 .column-actions {
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.1s;
 }
 
 .kanban-column:hover .column-actions {
@@ -185,7 +185,7 @@
     cursor: pointer;
     border: 1px solid var(--border-color);
     border-left: 3px solid transparent;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.1s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
@@ -258,7 +258,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .btn-add-card:hover {
@@ -328,7 +328,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 .btn-add-column:hover {
@@ -380,7 +380,7 @@
     color: var(--text-main);
     resize: none;
     border-radius: 0;
-    transition: all 0.2s;
+    transition: all 0.1s;
     line-height: 1.6;
 }
 
@@ -436,7 +436,7 @@
     display: flex;
     flex-direction: column;
     pointer-events: auto;
-    animation: kanban-card-panel-in 0.22s ease-out;
+    animation: kanban-card-panel-in 0.11s ease-out;
 }
 
 @keyframes kanban-card-panel-in {
@@ -562,7 +562,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 0;
-    transition: all 0.15s;
+    transition: all 0.075s;
 }
 .kmodal-close-btn:hover {
     color: var(--accent-red);
@@ -613,7 +613,7 @@
     line-height: 1.2;
     font-family: inherit;
     border-radius: 0 !important;
-    transition: border-color 0.2s;
+    transition: border-color 0.1s;
 }
 .kmodal-title-input:focus {
     border-bottom-color: var(--accent-red) !important;
@@ -692,7 +692,7 @@
     border-radius: 0 !important;
     border: 1px solid var(--border-color) !important;
     padding: 0.875rem 1rem !important;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.1s, box-shadow 0.1s;
     width: 100%;
     font-family: inherit;
     background: #ffffff;
@@ -824,7 +824,7 @@
     background: #ffffff;
     cursor: pointer;
     border-radius: 0;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color 0.1s, background 0.1s;
     flex-wrap: wrap;
 }
 
@@ -871,7 +871,7 @@
 .attach-progress-bar {
     height: 4px;
     background: var(--accent-red);
-    transition: width 0.2s;
+    transition: width 0.1s;
     min-width: 0;
     flex: 1;
 }
@@ -897,7 +897,7 @@
     background: #ffffff;
     border: 1px solid var(--border-color);
     border-left: 3px solid transparent;
-    transition: border-color 0.15s, border-left-color 0.15s, background 0.15s;
+    transition: border-color 0.075s, border-left-color 0.075s, background 0.075s;
     border-radius: 0;
 }
 
@@ -933,7 +933,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
-    transition: color 0.15s;
+    transition: color 0.075s;
 }
 
 .attach-name:hover {
@@ -957,7 +957,7 @@
     cursor: pointer;
     border-radius: 0;
     opacity: 0;
-    transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
+    transition: opacity 0.075s, color 0.075s, border-color 0.075s, background 0.075s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1026,7 +1026,7 @@
     border: 2px solid var(--border-color);
     background: white;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.1s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1078,7 +1078,7 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    transition: all 0.15s;
+    transition: all 0.075s;
 }
 
 .btn-icon-small:hover {
@@ -1215,7 +1215,7 @@
     cursor: pointer;
     padding: 0;
     overflow: hidden;
-    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    transition: border-color 0.075s, box-shadow 0.075s, transform 0.075s;
 }
 
 .board-background-option:hover {

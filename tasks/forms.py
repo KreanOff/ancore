@@ -127,20 +127,8 @@ class TaskForm(forms.ModelForm):
 
 class TaskProjectBaseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+        kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-
-    def clean_code(self):
-        code = (self.cleaned_data.get('code') or '').strip().upper()[:8]
-        if not code or not self.user:
-            return code
-
-        duplicate_codes = TaskProject.objects.filter(user=self.user, code=code)
-        if self.instance and self.instance.pk:
-            duplicate_codes = duplicate_codes.exclude(pk=self.instance.pk)
-        if duplicate_codes.exists():
-            raise forms.ValidationError('Taki kod projektu już istnieje.')
-        return code
 
     def clean_icon(self):
         return clean_optional_icon(self.cleaned_data.get('icon'))
@@ -149,7 +137,7 @@ class TaskProjectBaseForm(forms.ModelForm):
 class TaskProjectForm(TaskProjectBaseForm):
     class Meta:
         model = TaskProject
-        fields = ['name', 'description', 'code', 'icon']
+        fields = ['name', 'description', 'icon']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nowy projekt',
@@ -160,11 +148,6 @@ class TaskProjectForm(TaskProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'code': forms.TextInput(attrs={
-                'placeholder': 'TSK',
-                'class': 'tasks-inline-input tasks-inline-code',
-                'maxlength': 8,
-            }),
             'icon': forms.HiddenInput(attrs={
                 'maxlength': 8,
             }),
@@ -174,7 +157,7 @@ class TaskProjectForm(TaskProjectBaseForm):
 class TaskProjectRenameForm(TaskProjectBaseForm):
     class Meta:
         model = TaskProject
-        fields = ['name', 'description', 'code', 'icon']
+        fields = ['name', 'description', 'icon']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa projektu',
@@ -184,11 +167,6 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
                 'placeholder': 'Dodaj opis...',
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
-            }),
-            'code': forms.TextInput(attrs={
-                'placeholder': 'TSK',
-                'class': 'tasks-inline-input tasks-inline-code',
-                'maxlength': 8,
             }),
             'icon': forms.HiddenInput(attrs={
                 'maxlength': 8,
