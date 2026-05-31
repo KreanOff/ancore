@@ -8,11 +8,11 @@
         <div>
             <p class="dashboard-eyebrow">Panel Główny</p>
             <h2 id="dashboard-title">Dashboard</h2>
-            <p>Najważniejsze zadania, tablice i terminy w jednym miejscu.</p>
+            <p>Najważniejsze zadania i terminy w jednym miejscu.</p>
         </div>
         <div class="dashboard-hero-actions">
             <a href="{% url 'tasks:tasks' %}" class="btn btn-primary">Nowe zadanie</a>
-            <a href="{% url 'kanban:workspaces' %}" class="btn btn-secondary">Tablice</a>
+            <a href="{% url 'planner:index' %}" class="btn btn-secondary">Kalendarz</a>
         </div>
     </div>
 
@@ -26,11 +26,6 @@
             <span class="dashboard-stat__label">Wysoki priorytet</span>
             <strong>{{ high_priority_count }}</strong>
             <span class="dashboard-stat__hint">Wymaga uwagi</span>
-        </article>
-        <article class="dashboard-stat">
-            <span class="dashboard-stat__label">Karty Kanban</span>
-            <strong>{{ kanban_cards_count }}</strong>
-            <span class="dashboard-stat__hint">Aktywne karty</span>
         </article>
         <article class="dashboard-stat">
             <span class="dashboard-stat__label">Nadchodzące terminy</span>
@@ -107,31 +102,6 @@
             {% endif %}
         </section>
 
-        <section class="dashboard-panel dashboard-panel--large" aria-labelledby="boards-title">
-            <div class="dashboard-panel__header">
-                <div>
-                    <p class="dashboard-panel__kicker">Kanban</p>
-                    <h3 id="boards-title">Ostatnie tablice</h3>
-                </div>
-                <a href="{% url 'kanban:workspaces' %}" class="dashboard-link">Tablice</a>
-            </div>
-
-            {% if boards %}
-            <div class="dashboard-board-grid">
-                {% for board in boards %}
-                <a href="{% url 'kanban:index' %}{% if board.workspace_id %}?workspace_id={{ board.workspace_id }}&amp;board_id={{ board.id }}{% else %}?board_id={{ board.id }}{% endif %}" class="dashboard-board">
-                    <span class="dashboard-board__initial">{{ board.initial }}</span>
-                    <span>
-                        <strong>{{ board.name }}</strong>
-                        <small>{{ board.card_count }} kart</small>
-                    </span>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="dashboard-empty">Nie masz jeszcze tablic Kanban.</p>
-            {% endif %}
-        </section>
     </div>
 </section>
 {% endblock %}

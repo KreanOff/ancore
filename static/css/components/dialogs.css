@@ -1,7 +1,6 @@
 /* Shared dialogs & modals */
 
-.dialog-overlay,
-.kanban-modal-overlay {
+.dialog-overlay {
     position: fixed;
     top: 0;
     left: var(--app-sidebar-total-width);
@@ -16,13 +15,11 @@
     box-sizing: border-box;
 }
 
-.dialog-overlay.active,
-.kanban-modal-overlay.active {
+.dialog-overlay.active {
     display: flex;
 }
 
-.dialog,
-.kanban-modal-content {
+.dialog {
     background: var(--card-bg);
     width: 100%;
     border: 1px solid var(--border-color);
@@ -30,30 +27,26 @@
     border-radius: var(--radius);
 }
 
-.dialog--sm,
-.kanban-dialog {
+.dialog--sm {
     max-width: 420px;
     padding: 2rem;
 }
 
-.dialog-title,
-.kanban-dialog-title {
+.dialog-title {
     margin: 0 0 1.25rem;
     font-size: var(--font-size-lg);
     font-weight: 700;
     color: var(--text-main);
 }
 
-.dialog-actions,
-.kanban-dialog-actions {
+.dialog-actions {
     display: flex;
     gap: 0.75rem;
     justify-content: flex-end;
     align-items: center;
 }
 
-.dialog .form-group,
-.kanban-dialog .form-group {
+.dialog .form-group {
     margin-bottom: 1.25rem;
 }
 
@@ -139,8 +132,7 @@
 }
 
 @media (max-width: 1024px) {
-    .dialog-overlay,
-    .kanban-modal-overlay {
+    .dialog-overlay {
         left: 0;
         width: 100%;
         padding: 1rem;
@@ -148,15 +140,12 @@
 }
 
 @media (max-width: 480px) {
-    .dialog-overlay,
-    .kanban-modal-overlay {
+    .dialog-overlay {
         padding: 0.75rem;
         align-items: flex-end;
     }
 
-    .dialog--sm,
-    .kanban-dialog,
-    .kanban-modal-content.kanban-dialog {
+    .dialog--sm {
         max-width: none;
         width: 100%;
         border-radius: 0;

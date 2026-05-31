@@ -45,9 +45,9 @@ INSTALLED_APPS = [
     'core',
     'accounts',
     'tasks',
+    'kanban',
     'tickets',
     'dashboard',
-    'kanban',
     'planner',
 ]
 
@@ -153,5 +153,3 @@ LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 
 AUTH_USER_MODEL = 'accounts.User'
-
-

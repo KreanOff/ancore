@@ -1,0 +1,66 @@
+<article class="task-row tasks-kanban-card {% if task.status == 'closed' %}completed{% endif %}"
+         draggable="true"
+         role="link"
+         tabindex="0"
+         data-task-id="{{ task.task_id }}"
+         data-status="{{ task.status }}"
+         data-column-id="{{ task.column_id|default:'' }}"
+         data-priority="{{ task.priority }}"
+         data-created="{{ task.created_at|date:'c' }}"
+         data-search-primary="{{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
+         data-search-index="{{ task.task_id }} {{ project_code }}-{{ task.task_id }} {{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.get_status_display }} {{ task.get_priority_display }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {{ task.section.project.code|default:project_code }} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
+         data-view-url="{% url 'kanban:view-task' task.task_id %}">
+    <div class="tasks-kanban-card__header">
+        <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
+        <div class="tasks-kanban-card__title">{{ task.title }}</div>
+    </div>
+
+    <div class="tasks-kanban-card__meta" aria-label="Metadane karty">
+        <span class="tasks-kanban-card__pill tasks-kanban-card__pill--status">
+            <span class="tasks-kanban-card__label u-sr-only">Stan</span>
+            <span class="status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
+        </span>
+        <span class="tasks-kanban-card__pill tasks-row-priority priority-{{ task.priority }}"
+              title="Priorytet: {{ task.get_priority_display }}"
+              aria-label="Priorytet: {{ task.get_priority_display }}">
+            <span class="tasks-kanban-card__label u-sr-only">Priorytet</span>
+            <span class="tasks-priority-icon" aria-hidden="true">
+                {% if task.priority == 'urgent' %}
+                    <span class="tasks-priority-urgent-mark">!</span>
+                {% elif task.priority == 'none' %}
+                    <span class="tasks-priority-no-mark"></span>
+                {% else %}
+                    <span class="tasks-priority-bars">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </span>
+                {% endif %}
+            </span>
+            <span>{{ task.get_priority_display }}</span>
+        </span>
+        <span class="tasks-kanban-card__pill tasks-kanban-card__pill--tags"
+              title="Tagi: {{ task.tags.count }}"
+              aria-label="Tagi: {{ task.tags.count }}">
+            <span class="tasks-kanban-card__label u-sr-only">Tagi</span>
+            <span class="tasks-kanban-card__tag-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/>
+                    <path d="M7.5 7.5h.01"/>
+                </svg>
+            </span>
+            <span class="tasks-kanban-card__count">{{ task.tags.count }}</span>
+        </span>
+        <span class="tasks-kanban-card__pill tasks-kanban-card__pill--attachments"
+              title="Załączniki: {{ task.attachments.count }}"
+              aria-label="Załączniki: {{ task.attachments.count }}">
+            <span class="tasks-kanban-card__label u-sr-only">Załączniki</span>
+            <span class="tasks-kanban-card__attachment-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 1 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+            </span>
+            <span class="tasks-kanban-card__count">{{ task.attachments.count }}</span>
+        </span>
+    </div>
+</article>

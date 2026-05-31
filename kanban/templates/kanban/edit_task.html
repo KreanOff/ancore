@@ -1,0 +1,176 @@
+{% extends 'core/base.html' %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-form-page">
+
+    <div class="tasks-control-panel">
+        <div class="panel-left">
+            <a href="{% url 'kanban:view-task' task.task_id %}" class="tasks-back-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Podgląd karty
+            </a>
+            <span class="tasks-panel-divider"></span>
+            <span class="tasks-context-label">Edycja #{{ task.task_id }}</span>
+        </div>
+        <div class="panel-right">
+            <a href="{% url 'kanban:view-task' task.task_id %}" class="tasks-btn-cancel">Anuluj</a>
+            <button type="submit" form="edit-task-form" class="btn btn-primary tasks-toolbar-btn">Zapisz zmiany</button>
+        </div>
+    </div>
+
+    <div class="tasks-form-scroll">
+        <form id="edit-task-form" method="POST" enctype="multipart/form-data" class="tasks-form-card">
+            {% csrf_token %}
+            <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
+
+            {% if form.errors %}
+            <div class="tasks-error-banner">
+                <strong>Wystąpiły błędy:</strong>
+                <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.title.id_for_label }}">Tytuł karty</label>
+                {{ form.title }}
+            </div>
+
+            <div class="tasks-meta-panel">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.section.id_for_label }}">Tablica przestrzeni roboczej</label>
+                    {{ form.section }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.priority.id_for_label }}">Priorytet</label>
+                    {{ form.priority }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.status.id_for_label }}">Stan</label>
+                    {{ form.status }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.tags.id_for_label }}">Tagi</label>
+                    {{ form.tags }}
+                </div>
+            </div>
+
+            <div class="tasks-section">
+                <h2 class="tasks-section-title">Opis karty</h2>
+                <div class="tasks-section-panel">
+                    <div class="form-group">
+                        {{ form.description }}
+                    </div>
+                </div>
+            </div>
+
+            {% if task.attachments.exists %}
+            <div class="tasks-section">
+                <h2 class="tasks-section-title">Istniejące załączniki</h2>
+                <div class="tasks-attachments-grid">
+                    {% for attachment in task.attachments.all %}
+                    <div class="tasks-attachment-card" id="attachment-{{ attachment.id }}">
+                        <div class="tasks-attachment-info">
+                            {% include 'core/includes/attachment_icon.html' with type_class=attachment.get_type_class size='lg' %}
+                            <div class="tasks-attachment-details">
+                                <span class="tasks-attachment-name" title="{{ attachment.filename }}">{{ attachment.filename }}</span>
+                                <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="tasks-section">
+                <h2 class="tasks-section-title">Dodaj załączniki</h2>
+                <div class="tasks-section-panel">
+                    <div id="drop-zone" class="tasks-drop-zone">
+                        {% include 'core/includes/attachment_upload_icon.html' %}
+                        <p class="tasks-upload-text">Przeciągnij plik tutaj</p>
+                        <p class="tasks-upload-sub">lub <button type="button" id="browse-btn" class="tasks-link-btn">wybierz z dysku</button></p>
+                        <input type="file" name="attachments" id="file-input" multiple hidden
+                               accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                    </div>
+                    <div id="file-list" class="tasks-file-list"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function deleteAttachment(attachmentId) {
+    window.showConfirmModal({
+        title: 'Potwierdź usunięcie',
+        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana po kliknięciu „Zapisz zmiany”.',
+        confirmText: 'Usuń',
+        cancelText: 'Anuluj',
+        confirmClass: 'btn-danger',
+        onConfirm: () => {
+            const deletedInput = document.getElementById('deleted-attachments');
+            let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+            if (!deletedIds.includes(attachmentId.toString())) {
+                deletedIds.push(attachmentId.toString());
+                deletedInput.value = deletedIds.join(',');
+            }
+            const el = document.getElementById(`attachment-${attachmentId}`);
+            if (el) {
+                el.classList.add('marked-for-deletion');
+                const btn = el.querySelector('.tasks-delete-attach-btn');
+                if (btn) {
+                    btn.innerHTML = '<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>';
+                    btn.title = 'Cofnij usunięcie';
+                    btn.onclick = (e) => { e.stopPropagation(); undoDeleteAttachment(attachmentId); };
+                }
+            }
+        }
+    });
+}
+
+function undoDeleteAttachment(attachmentId) {
+    const deletedInput = document.getElementById('deleted-attachments');
+    let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+    deletedIds = deletedIds.filter(id => id !== attachmentId.toString());
+    deletedInput.value = deletedIds.join(',');
+    const el = document.getElementById(`attachment-${attachmentId}`);
+    if (el) {
+        el.classList.remove('marked-for-deletion');
+        const btn = el.querySelector('.tasks-delete-attach-btn');
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-trash" aria-hidden="true"></i>';
+            btn.title = 'Usuń załącznik';
+            btn.onclick = () => deleteAttachment(attachmentId);
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const dropZone = document.getElementById('drop-zone');
+    if (!dropZone) return;
+    ['dragenter', 'dragover'].forEach((e) => {
+        dropZone.addEventListener(e, () => dropZone.classList.add('highlight'), false);
+    });
+    ['dragleave', 'drop'].forEach((e) => {
+        dropZone.addEventListener(e, () => dropZone.classList.remove('highlight'), false);
+    });
+});
+</script>
+{% endblock %}

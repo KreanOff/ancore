@@ -88,8 +88,8 @@
 }
 
 .task-checkbox {
-    width: 18px;
-    height: 18px;
+    width: var(--checkbox-size);
+    height: var(--checkbox-size);
     cursor: pointer;
     accent-color: var(--accent-red);
     border: 1px solid var(--border-color);

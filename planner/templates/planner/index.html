@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
 <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
 <script src="{% static 'js/calendar.js' %}" defer></script>
 {% endblock %}
@@ -81,9 +80,9 @@
     </div>
 </div>
 
-<div id="event-dialog-overlay" class="kanban-card-overlay" aria-hidden="true">
-    <aside class="kanban-card-panel" role="dialog" aria-labelledby="event-dialog-title">
-        <div class="tasks-control-panel kanban-card-panel-header">
+<div id="event-dialog-overlay" class="calendar-dialog-overlay" aria-hidden="true">
+    <aside class="calendar-dialog-panel" role="dialog" aria-labelledby="event-dialog-title">
+        <div class="tasks-control-panel calendar-dialog-header">
             <div class="panel-left">
                 <span id="event-dialog-title" class="tasks-context-label">Nowe wydarzenie</span>
             </div>
@@ -95,7 +94,7 @@
                     </svg>
                     Usuń
                 </button>
-                <button type="button" class="kmodal-close-btn cancel-event-btn" title="Zamknij (Esc)" aria-label="Zamknij">
+                <button type="button" class="calendar-dialog-close cancel-event-btn" title="Zamknij (Esc)" aria-label="Zamknij">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -104,29 +103,29 @@
             </div>
         </div>
 
-        <form id="event-form" class="card-detail-body" novalidate>
+        <form id="event-form" class="calendar-dialog-body" novalidate>
             <input type="hidden" name="event_id" id="event-id">
-            <div class="form-group card-detail-field">
+            <div class="form-group calendar-dialog-field">
                 <label class="form-label" for="event-title">Tytuł</label>
                 <input type="text" id="event-title" name="title" class="form-input" required placeholder="Tytuł wydarzenia">
             </div>
-            <div class="form-group card-detail-field">
+            <div class="form-group calendar-dialog-field">
                 <label class="form-label form-label--checkbox" for="event-all-day">
                     <input type="checkbox" id="event-all-day" name="all_day" class="form-checkbox">
                     Cały dzień
                 </label>
             </div>
             <div class="calendar-form-row">
-                <div class="form-group card-detail-field">
+                <div class="form-group calendar-dialog-field">
                     <label class="form-label" for="event-start">Rozpoczęcie</label>
                     <input type="datetime-local" id="event-start" name="start" class="form-input" required>
                 </div>
-                <div class="form-group card-detail-field">
+                <div class="form-group calendar-dialog-field">
                     <label class="form-label" for="event-end">Zakończenie</label>
                     <input type="datetime-local" id="event-end" name="end" class="form-input" required>
                 </div>
             </div>
-            <div class="form-group card-detail-field">
+            <div class="form-group calendar-dialog-field">
                 <label class="form-label" for="event-color">Kolor</label>
                 <select id="event-color" name="color" class="form-input form-select">
                     <option value="red">Czerwony</option>
@@ -136,14 +135,14 @@
                     <option value="slate">Szary</option>
                 </select>
             </div>
-            <div class="kmodal-section">
-                <div class="kmodal-section-label">Opis</div>
-                <textarea id="event-description" name="description" class="form-input card-detail-desc" placeholder="Opis (opcjonalnie)"></textarea>
+            <div class="calendar-dialog-section">
+                <div class="calendar-dialog-section-label">Opis</div>
+                <textarea id="event-description" name="description" class="form-input calendar-dialog-desc" placeholder="Opis (opcjonalnie)"></textarea>
             </div>
             <p class="calendar-form-error u-hidden" id="event-form-error" role="alert"></p>
         </form>
 
-        <div class="card-detail-footer">
+        <div class="calendar-dialog-footer">
             <button type="button" class="tasks-btn-cancel cancel-event-btn">Anuluj</button>
             <button type="submit" form="event-form" class="btn btn-primary" id="event-save-btn">Zapisz</button>
         </div>

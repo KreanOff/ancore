@@ -63,8 +63,7 @@ body.sidebar-open .sidebar-backdrop {
 
     .modal-overlay,
     .dialog-overlay,
-    .kanban-modal-overlay,
-    .kanban-card-overlay {
+    .calendar-dialog-overlay {
         left: var(--sidebar-width);
         width: calc(100% - var(--sidebar-width));
     }
@@ -161,7 +160,7 @@ body.sidebar-open .sidebar-backdrop {
     }
 }
 
-/* Toolbary — wspólne dla zadań, kalendarza, kanban */
+/* Toolbary — wspólne dla zadań i kalendarza */
 @media (max-width: 1024px) {
     .control-panel,
     .tasks-control-panel,
@@ -173,8 +172,6 @@ body.sidebar-open .sidebar-backdrop {
 
     .page-container.full-width:has(.app-page),
     .page-container.full-width:has(.tasks-page),
-    .page-container.full-width:has(.kanban-page),
-    .page-container.full-width:has(.kanban-workspaces-page),
     .page-container.full-width:has(.calendar-page) {
         min-height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
         height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
@@ -185,8 +182,7 @@ body.sidebar-open .sidebar-backdrop {
     .control-panel,
     .tasks-control-panel,
     .tasks-page .control-panel,
-    .calendar-toolbar,
-    .kanban-control-panel {
+    .calendar-toolbar {
         flex-direction: column;
         align-items: stretch;
         height: auto;
@@ -200,17 +196,14 @@ body.sidebar-open .sidebar-backdrop {
     .tasks-control-panel .panel-left,
     .tasks-control-panel .panel-right,
     .calendar-toolbar .panel-left,
-    .calendar-toolbar .panel-right,
-    .kanban-control-panel .panel-left,
-    .kanban-control-panel .panel-right {
+    .calendar-toolbar .panel-right {
         width: 100%;
         justify-content: space-between;
     }
 
     .control-panel .panel-right,
     .tasks-control-panel .panel-right,
-    .calendar-toolbar .panel-right,
-    .kanban-control-panel .panel-right {
+    .calendar-toolbar .panel-right {
         flex-wrap: wrap;
     }
 
@@ -250,7 +243,6 @@ body.sidebar-open .sidebar-backdrop {
         --page-max-width: 1400px;
     }
 
-    .page-container.full-width .kanban-workspace,
     .page-container.full-width .workspaces-dashboard {
         padding-left: 2rem;
         padding-right: 2rem;
@@ -262,7 +254,6 @@ body.sidebar-open .sidebar-backdrop {
         --page-max-width: 1680px;
     }
 
-    .page-container.full-width .kanban-workspace,
     .page-container.full-width .workspaces-dashboard {
         padding-left: 3rem;
         padding-right: 3rem;

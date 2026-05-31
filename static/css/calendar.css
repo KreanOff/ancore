@@ -594,6 +594,94 @@
     padding-left: 0.4rem;
 }
 
+.calendar-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: var(--app-sidebar-total-width);
+    width: calc(100% - var(--app-sidebar-total-width));
+    height: 100%;
+    display: none;
+    justify-content: flex-end;
+    background: rgba(15, 23, 42, 0.28);
+    z-index: 2200;
+}
+
+.calendar-dialog-overlay.active {
+    display: flex;
+}
+
+.calendar-dialog-panel {
+    width: min(540px, 100%);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -16px 0 40px rgba(15, 23, 42, 0.16);
+}
+
+.calendar-dialog-header {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+}
+
+.calendar-dialog-header .panel-right {
+    margin-left: auto;
+}
+
+.calendar-dialog-close {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.calendar-dialog-close:hover {
+    color: var(--text-main);
+    background: var(--bg-main);
+}
+
+.calendar-dialog-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+}
+
+.calendar-dialog-field {
+    margin-bottom: 1rem;
+}
+
+.calendar-dialog-section {
+    margin-bottom: 1rem;
+}
+
+.calendar-dialog-section-label {
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.calendar-dialog-desc {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.calendar-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--panel-bg);
+}
+
 .calendar-form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -609,8 +697,8 @@
 }
 
 .form-checkbox {
-    width: 1rem;
-    height: 1rem;
+    width: var(--checkbox-size);
+    height: var(--checkbox-size);
     accent-color: var(--accent-red);
 }
 
@@ -622,6 +710,11 @@
 }
 
 @media (max-width: 1024px) {
+    .calendar-dialog-overlay {
+        left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+    }
+
     .calendar-body {
         flex-direction: column;
     }
@@ -643,6 +736,10 @@
 }
 
 @media (max-width: 768px) {
+    .calendar-dialog-panel {
+        width: 100%;
+    }
+
     .calendar-nav {
         flex-wrap: wrap;
     }

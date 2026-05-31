@@ -1,5 +1,7 @@
 .main-content {
     margin-left: var(--app-sidebar-total-width);
+    width: calc(100% - var(--app-sidebar-total-width));
+    min-width: 0;
     flex-grow: 1;
     display: flex;
     flex-direction: column;

@@ -1,141 +1,389 @@
-import random
 from django.db import models
+from django.db.models import Max
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 from django.conf import settings
-
-BOARD_BACKGROUND_CHOICES = [
-    ('neutral', 'Jasna'),
-    ('ocean', 'Ocean'),
-    ('sunset', 'Zachód słońca'),
-    ('forest', 'Las'),
-    ('berry', 'Jagody'),
-    ('lavender', 'Lawenda'),
-    ('coral', 'Koral'),
-    ('midnight', 'Północ'),
-    ('mint', 'Mięta'),
-]
-
-BOARD_BACKGROUND_STYLES = {
-    'neutral': '#f8fafc',
-    'ocean': 'linear-gradient(135deg, #0079bf 0%, #5067c5 100%)',
-    'sunset': 'linear-gradient(135deg, #d29034 0%, #cc5f35 100%)',
-    'forest': 'linear-gradient(135deg, #519839 0%, #2d6a4f 100%)',
-    'berry': 'linear-gradient(135deg, #b04632 0%, #89609e 100%)',
-    'lavender': 'linear-gradient(135deg, #89609e 0%, #5c6bc0 100%)',
-    'coral': 'linear-gradient(135deg, #cd5a91 0%, #e85d75 100%)',
-    'midnight': 'linear-gradient(135deg, #344563 0%, #172b4d 100%)',
-    'mint': 'linear-gradient(135deg, #4bbf6b 0%, #00a86b 100%)',
-}
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.utils import timezone
+from django.utils.formats import date_format
+import os
+import re
 
 
-def random_board_background():
-    return random.choice([c[0] for c in BOARD_BACKGROUND_CHOICES])
+class KanbanProject(models.Model):
+    CODE_PREFIX = 'PRJ'
+    CODE_NUMBER_WIDTH = 3
 
+    ICON_COLORS = [
+        {'background': '#e8f1ff', 'foreground': '#2563eb'},
+        {'background': '#eaf7ef', 'foreground': '#16803f'},
+        {'background': '#fff1df', 'foreground': '#c25a00'},
+        {'background': '#f0eaff', 'foreground': '#7c3aed'},
+        {'background': '#e8f8f6', 'foreground': '#0f766e'},
+        {'background': '#ffeaf0', 'foreground': '#be185d'},
+        {'background': '#f4f0e8', 'foreground': '#8b5e22'},
+        {'background': '#edf1f7', 'foreground': '#475569'},
+    ]
 
-class Workspace(models.Model):
-    name = models.CharField(max_length=100)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_workspaces')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.user.username})"
-
-class KanbanBoard(models.Model):
-    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='boards', null=True, blank=True)
-    name = models.CharField(max_length=100)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_boards')
-    background = models.CharField(max_length=20, choices=BOARD_BACKGROUND_CHOICES, default='ocean')
-    background_image = models.FileField(upload_to='kanban_board_backgrounds/', blank=True, null=True)
-    background_url = models.URLField(max_length=500, blank=True, default='')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.user.username})"
-
-    @property
-    def has_custom_background(self):
-        return bool(self.background_image or self.background_url)
-
-    @property
-    def background_source(self):
-        if self.background_image:
-            return 'image'
-        if self.background_url:
-            return 'url'
-        return 'preset'
-
-    @property
-    def background_style(self):
-        if self.background_image:
-            return f"url('{self.background_image.url}') center / cover no-repeat"
-        if self.background_url:
-            return f"url('{self.background_url}') center / cover no-repeat"
-        return BOARD_BACKGROUND_STYLES.get(self.background, BOARD_BACKGROUND_STYLES['ocean'])
-
-    @property
-    def uses_wallpaper(self):
-        return self.has_custom_background or self.background != 'neutral'
-
-    def clear_custom_background(self):
-        if self.background_image:
-            self.background_image.delete(save=False)
-        self.background_image = None
-        self.background_url = ''
-
-    def delete(self, *args, **kwargs):
-        if self.background_image:
-            self.background_image.delete(save=False)
-        super().delete(*args, **kwargs)
-
-    @property
-    def initial(self):
-        return self.name[0].upper() if self.name else '?'
-
-class KanbanColumn(models.Model):
-    board = models.ForeignKey(KanbanBoard, on_delete=models.CASCADE, related_name='columns')
-    name = models.CharField(max_length=100)
-    order = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ['order']
-
-    def __str__(self):
-        return f"{self.name} - {self.board.name}"
-
-class KanbanCard(models.Model):
-
-    column = models.ForeignKey(KanbanColumn, on_delete=models.CASCADE, related_name='cards')
-    title = models.CharField(max_length=200)
+    name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
-    order = models.PositiveIntegerField(default=0)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_cards')
-    is_completed = models.BooleanField(default=False)
+    code = models.CharField(max_length=20, blank=True)
+    icon = models.CharField(max_length=8, blank=True, default='')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_projects')
     created_at = models.DateTimeField(auto_now_add=True)
 
-    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'code'], name='unique_kanban_project_code_per_user'),
+        ]
+
+    def _generate_unique_code(self):
+        year = timezone.localtime(self.created_at).year if self.created_at else timezone.localtime().year
+        code_prefix = f'{self.CODE_PREFIX}-{year}-'
+        existing_codes = list(
+            KanbanProject.objects.filter(user=self.user)
+            .exclude(pk=self.pk)
+            .values_list('code', flat=True)
+        )
+        highest_number = 0
+        code_pattern = re.compile(rf'^{re.escape(code_prefix)}(\d+)$')
+
+        for code in existing_codes:
+            match = code_pattern.match(code or '')
+            if match:
+                highest_number = max(highest_number, int(match.group(1)))
+
+        next_number = highest_number + 1
+        while True:
+            candidate = f'{code_prefix}{next_number:0{self.CODE_NUMBER_WIDTH}d}'
+            if candidate not in existing_codes:
+                return candidate
+            next_number += 1
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self._generate_unique_code()
+        self.code = self.code.upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def icon_color(self):
+        index_source = self.pk or 1
+        return self.ICON_COLORS[(index_source - 1) % len(self.ICON_COLORS)]
+
+
+class KanbanSection(models.Model):
+    KIND_CHOICES = [
+        ('issues', 'Kwestie'),
+        ('components', 'Komponenty'),
+        ('milestones', 'Kamienie milowe'),
+        ('templates', 'Szablony'),
+        ('custom', 'Własne'),
+    ]
+
+    project = models.ForeignKey(KanbanProject, on_delete=models.CASCADE, related_name='sections')
+    title = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
+    icon = models.CharField(max_length=8, blank=True, default='')
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f'{self.project.name} / {self.title}'
+
+
+class KanbanTag(models.Model):
+    CODE_PREFIX = 'TAG'
+    CODE_NUMBER_WIDTH = 3
+
+    name = models.CharField(max_length=80)
+    description = models.TextField(blank=True)
+    code = models.CharField(max_length=20, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_tags')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'name'], name='unique_kanban_tag_per_user'),
+            models.UniqueConstraint(fields=['user', 'code'], name='unique_kanban_tag_code_per_user'),
+        ]
+
+    def _generate_unique_code(self):
+        year = timezone.localtime(self.created_at).year if self.created_at else timezone.localtime().year
+        code_prefix = f'{self.CODE_PREFIX}-{year}-'
+        existing_codes = list(
+            KanbanTag.objects.filter(user=self.user)
+            .exclude(pk=self.pk)
+            .values_list('code', flat=True)
+        )
+        highest_number = 0
+        code_pattern = re.compile(rf'^{re.escape(code_prefix)}(\d+)$')
+
+        for code in existing_codes:
+            match = code_pattern.match(code or '')
+            if match:
+                highest_number = max(highest_number, int(match.group(1)))
+
+        next_number = highest_number + 1
+        while True:
+            candidate = f'{code_prefix}{next_number:0{self.CODE_NUMBER_WIDTH}d}'
+            if candidate not in existing_codes:
+                return candidate
+            next_number += 1
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self._generate_unique_code()
+        self.code = self.code.upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class KanbanBoardColumn(models.Model):
+    section = models.ForeignKey(KanbanSection, on_delete=models.CASCADE, related_name='columns')
+    title = models.CharField(max_length=80)
+    order = models.PositiveIntegerField(default=0)
+    is_done = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    @classmethod
+    def ensure_defaults_for_section(cls, section):
+        return
 
     def __str__(self):
         return self.title
 
 
-class KanbanAttachment(models.Model):
-    card = models.ForeignKey(KanbanCard, on_delete=models.CASCADE, related_name='attachments')
-    file = models.FileField(upload_to='kanban_attachments/')
-    original_name = models.CharField(max_length=255)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+class Kanban(models.Model):
+    PRIORITY_CHOICES = [
+        ('none', 'Brak priorytetu'),
+        ('low', 'Niski'),
+        ('medium', 'Średni'),
+        ('high', 'Wysoki'),
+        ('urgent', 'Pilny'),
+    ]
+
+    STATUS_CHOICES = [
+        ('new', 'Nowe'),
+        ('in_progress', 'Realizowane'),
+        ('resolved', 'Rozwiązane'),
+        ('closed', 'Zamknięte'),
+        ('reopened', 'Ponownie otwarte'),
+    ]
+
+    task_id = models.PositiveIntegerField(default=0)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='new')
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completion_date = models.DateTimeField(null=True, blank=True)
+    time_spent_hours = models.PositiveIntegerField(null=True, blank=True)
+    time_spent_minutes = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(59)])
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_items')
+    section = models.ForeignKey(KanbanSection, on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
+    column = models.ForeignKey(KanbanBoardColumn, on_delete=models.SET_NULL, related_name='cards', null=True, blank=True)
+    tags = models.ManyToManyField(KanbanTag, related_name='tasks', blank=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='subtasks', null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+        
+        # Get original status if this is an update
+        if self.pk:
+            try:
+                original_task = Kanban.objects.get(pk=self.pk)
+                original_status = original_task.status
+            except Kanban.DoesNotExist:
+                original_status = None
+        else:
+            original_status = None
+        
+        # Set completion_date when status changes to 'closed'
+        if self.status == 'closed' and original_status != 'closed':
+            self.completion_date = timezone.now()
+            self.is_completed = True
+        elif self.status != 'closed' and original_status == 'closed':
+            self.completion_date = None
+            self.is_completed = False
+
+        if self.section_id:
+            if self.column_id and self.column.section_id != self.section_id:
+                self.column = None
+        else:
+            self.column = None
+            
+        if not self.pk or self.task_id == 0:
+            # Get the highest task_id for this user
+            max_task_id = Kanban.objects.filter(user=self.user).aggregate(Max('task_id'))['task_id__max'] or 0
+            self.task_id = max_task_id + 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        user = self.user
+        super().delete(*args, **kwargs)
+        # Renumber remaining tasks for this user
+        self._renumber_user_tasks(user)
+
+    @classmethod
+    def _renumber_user_tasks(cls, user):
+        """Renumber tasks sequentially starting from 1 for a specific user"""
+        tasks = cls.objects.filter(user=user).order_by('task_id')
+        for index, task in enumerate(tasks, 1):
+            if task.task_id != index:
+                task.task_id = index
+                task.save(update_fields=['task_id'])
 
     def __str__(self):
-        return f"{self.original_name} → {self.card.title}"
+        return self.title
 
-    @property
-    def file_extension(self):
-        import os
-        _, ext = os.path.splitext(self.original_name)
-        return ext.lower().lstrip('.')
+    def _activity_datetime(self, value):
+        if not value:
+            return ''
+        return date_format(timezone.localtime(value), 'd.m.Y H:i')
 
-    @property
+    def _activity_time_spent(self):
+        hours = self.time_spent_hours or 0
+        minutes = self.time_spent_minutes or 0
+        if not hours and not minutes:
+            return '00:00'
+        return f'{hours:02d}:{minutes:02d}'
+
+    def get_file_extension(self):
+        """Return file extension for icon selection"""
+        if self.attachments.exists():
+            first_attachment = self.attachments.first()
+            return os.path.splitext(first_attachment.file.name)[1].lower()
+        return ''
+
+class KanbanAttachment(models.Model):
+    task = models.ForeignKey(Kanban, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='kanban_attachments/')
+    filename = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    file_size = models.PositiveIntegerField(default=0)  # Size in bytes
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            # Set filename from the uploaded file
+            self.filename = os.path.basename(self.file.name)
+            # Set file size
+            self.file_size = self.file.size
+        super().save(*args, **kwargs)
+
+    def get_file_extension(self):
+        """Return file extension for icon selection"""
+        return os.path.splitext(self.filename)[1].lower()
+
     def is_image(self):
-        return self.file_extension in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg')
+        """Check if the file is an image"""
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
+        return self.get_file_extension() in image_extensions
+
+    def is_pdf(self):
+        """Check if the file is a PDF"""
+        return self.get_file_extension() == '.pdf'
+
+    def get_type_class(self):
+        """Return CSS class based on file type"""
+        ext = self.get_file_extension()
+        if self.is_image(): return 'image'
+        if ext == '.pdf': return 'pdf'
+        if ext in ['.doc', '.docx', '.xls', '.xlsx', '.txt', '.rtf']: return 'document'
+        if ext in ['.zip', '.rar', '.7z', '.tar', '.gz']: return 'archive'
+        return 'default'
+
+    def get_type_label(self):
+        """Return text label for the icon badge"""
+        ext = self.get_file_extension()
+        if self.is_image(): return 'IMG'
+        if ext == '.pdf': return 'PDF'
+        if ext in ['.doc', '.docx', '.xls', '.xlsx', '.txt', '.rtf']: return 'DOC'
+        if ext in ['.zip', '.rar', '.7z', '.tar', '.gz']: return 'ZIP'
+        return 'FILE'
+
+    def get_formatted_size(self):
+        """Return human-readable file size"""
+        size = float(self.file_size)
+        if size == 0:
+            return "0 B"
+        size_names = ["B", "KB", "MB", "GB"]
+        i = 0
+        while size >= 1024 and i < len(size_names) - 1:
+            size /= 1024.0
+            i += 1
+        return f"{size:.1f} {size_names[i]}"
+
+    def __str__(self):
+        return f"{self.filename} - {self.task.title}"
+
+
+class KanbanActivity(models.Model):
+    KIND_CHOICES = [
+        ('system', 'Historia'),
+        ('comment', 'Komentarz'),
+    ]
+
+    ACTION_CHOICES = [
+        ('created', 'Utworzono kartę'),
+        ('updated', 'Zaktualizowano kartę'),
+        ('status_changed', 'Zmieniono status'),
+        ('priority_changed', 'Zmieniono priorytet'),
+        ('commented', 'Dodano komentarz'),
+        ('subtask_created', 'Dodano podkartę'),
+        ('attachments_added', 'Dodano załączniki'),
+        ('attachments_deleted', 'Usunięto załączniki'),
+    ]
+
+    task = models.ForeignKey(Kanban, on_delete=models.CASCADE, related_name='activities')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='kanban_activities', null=True, blank=True)
+    kind = models.CharField(max_length=12, choices=KIND_CHOICES, default='system')
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES, default='updated')
+    message = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+
+    def __str__(self):
+        return f'{self.get_action_display()} - {self.task}'
+
+
+@receiver(post_delete, sender=KanbanAttachment)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding KanbanAttachment object is deleted.
+    """
+    if instance.file:
+        if os.path.isfile(instance.file.path):
+            os.remove(instance.file.path)
+
+
+@receiver(post_save, sender=Kanban)
+def create_task_activity_on_create(sender, instance, created, **kwargs):
+    if created:
+        KanbanActivity.objects.create(
+            task=instance,
+            actor=instance.user,
+            kind='system',
+            action='created',
+            message='utworzył kartę',
+            metadata={'title': instance.title},
+        )

@@ -2,7 +2,7 @@
 @import 'base/variables.css';
 @import 'base/reset.css';
 @import 'layout/sidebar.css?v=20260530-secondary-menu-resize';
-@import 'layout/main.css';
+@import 'layout/main.css?v=20260531-main-width';
 @import 'layout/responsive.css?v=20260530-secondary-menu-resize';
 @import 'components/cards.css';
 @import 'components/buttons.css';
@@ -12,10 +12,9 @@
 @import 'components/dialogs.css';
 @import 'components/modals.css';
 @import 'components/tables.css';
-@import 'components/tasks.css?v=20260528-dropdowns';
+@import 'components/tasks.css?v=20260531-kanban-scroll';
 @import 'components/notifications.css';
 @import 'components/attachments.css';
 @import 'components/file-upload.css';
 @import 'components/auth.css';
-@import 'kanban-workspaces.css';
 @import 'calendar.css';

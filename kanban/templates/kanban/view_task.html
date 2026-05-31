@@ -1,0 +1,963 @@
+{% extends 'core/base.html' %}
+
+{% block extra_head %}
+    {% include 'kanban/includes/tasks_project_tree_initial_state.html' %}
+{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    {% include 'kanban/includes/tasks_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-issue-page">
+    <div class="tasks-issue-shell">
+        <header class="tasks-issue-header">
+            <div class="tasks-issue-breadcrumb">
+                <a href="{% if task.parent %}{% url 'kanban:view-task' task.parent.task_id %}{% else %}{% url 'kanban:tasks' %}{% endif %}"
+                   class="tasks-issue-close"
+                   aria-label="{% if task.parent %}Wróć do karty{% else %}Wróć do poprzedniej strony{% endif %}"
+                   title="{% if task.parent %}Wróć do karty{% else %}Wróć do poprzedniej strony{% endif %}"
+                   {% if not task.parent %}data-history-back{% endif %}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 12H5"/>
+                        <path d="m12 19-7-7 7-7"/>
+                    </svg>
+                </a>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-crumb">
+                    {% if task.section and task.section.project.icon %}
+                    <span class="tasks-issue-crumb-icon" aria-hidden="true" style="--project-icon-fg: {{ task.section.project.icon_color.foreground }};">
+                        {{ task.section.project.icon }}
+                    </span>
+                    {% endif %}
+                    <span>{% if task.section %}{{ task.section.project.name }}{% else %}Bez przestrzeni roboczej{% endif %}</span>
+                </span>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                <span class="tasks-issue-crumb">
+                    {% if task.section and task.section.icon %}
+                    <span class="tasks-issue-crumb-icon" aria-hidden="true">
+                        {{ task.section.icon }}
+                    </span>
+                    {% endif %}
+                    <span>{% if task.section %}{{ task.section.title }}{% else %}Bez kategorii{% endif %}</span>
+                </span>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                {% if task.parent %}
+                <a href="{% url 'kanban:view-task' task.parent.task_id %}" class="tasks-issue-crumb">
+                    <span>{{ task.parent.title }}</span>
+                </a>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                {% endif %}
+                <span class="tasks-issue-crumb tasks-issue-crumb--current">
+                    <span>{{ task.title }}</span>
+                </span>
+            </div>
+
+            <div class="tasks-issue-actions">
+                <button type="button" class="tasks-issue-icon-button" aria-label="Więcej" title="Więcej">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <circle cx="5" cy="12" r="1.6"/>
+                        <circle cx="12" cy="12" r="1.6"/>
+                        <circle cx="19" cy="12" r="1.6"/>
+                    </svg>
+                </button>
+                <button type="submit" form="task-detail-form" class="tasks-issue-save" title="Zapisz zmiany">
+                    Zapisz
+                </button>
+            </div>
+        </header>
+
+        <form id="activity-comment-form" method="POST" class="tasks-issue-comment-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_activity_comment">
+        </form>
+
+        <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form">
+            {% csrf_token %}
+            <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
+
+            <main class="tasks-issue-main">
+                <section class="tasks-issue-content" aria-label="Treść karty">
+                    {% if form.errors %}
+                    <div class="tasks-error-banner">
+                        <strong>Wystąpiły błędy:</strong>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="tasks-issue-title-field">
+                        {{ form.title }}
+                    </div>
+
+                    <div class="tasks-issue-description-field">
+                        {{ form.description }}
+                    </div>
+
+                    {% if can_add_attachments %}
+                    <div class="tasks-issue-tool-row" aria-label="Narzędzia karty">
+                        <label class="tasks-issue-tool tasks-issue-tool--labelled" for="file-input" title="Dodaj załącznik">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m21.4 11.6-8.5 8.5a6 6 0 0 1-8.5-8.5l8.5-8.5a4 4 0 0 1 5.7 5.7l-8.5 8.5a2 2 0 0 1-2.8-2.8l7.8-7.8"/>
+                            </svg>
+                            <span>Dodaj załącznik</span>
+                        </label>
+                    </div>
+
+                    <input type="file" name="attachments" id="file-input" multiple hidden
+                           accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                    {% endif %}
+
+                    {% if task.attachments.exists %}
+                    <section class="tasks-issue-attachments" aria-label="Załączniki">
+                        <div class="tasks-attachments-grid">
+                            {% for attachment in task.attachments.all %}
+                            <div class="tasks-attachment-card" id="attachment-{{ attachment.id }}">
+                                <a href="{{ attachment.file.url }}" target="_blank" rel="noopener" class="tasks-attachment-info" title="{{ attachment.filename }}">
+                                    {% include 'core/includes/attachment_icon.html' with type_class=attachment.get_type_class size='lg' %}
+                                    <span class="tasks-attachment-details">
+                                        <span class="tasks-attachment-name">{{ attachment.filename }}</span>
+                                        <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
+                                    </span>
+                                </a>
+                                <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+                    {% if can_add_attachments %}
+                    <div id="file-list" class="tasks-file-list"></div>
+                    {% endif %}
+
+                    {% if not task.parent %}
+                    <section class="tasks-issue-subtasks" aria-label="Podkarty">
+                        <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podkart">
+                            <button type="button" class="tasks-subtasks-title" data-subtasks-collapse aria-expanded="true">
+                                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                                <span>Podkarty ({{ task.subtasks.count }})</span>
+                            </button>
+                            <div class="tasks-subtasks-actions">
+                                <button type="button" class="tasks-issue-tool" title="Sortuj podkarty" aria-label="Sortuj podkarty" data-subtasks-sort>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M7 6h10"/>
+                                        <path d="M7 12h7"/>
+                                        <path d="M7 18h4"/>
+                                        <path d="M17 14v6"/>
+                                        <path d="m14 17 3 3 3-3"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podkarty" data-subtasks-delete>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18"/>
+                                        <path d="M8 6V4h8v2"/>
+                                        <path d="m19 6-1 14H6L5 6"/>
+                                        <path d="M10 11v5"/>
+                                        <path d="M14 11v5"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="tasks-issue-tool" title="Dodaj podkartę" aria-label="Dodaj podkartę" data-open-issue aria-haspopup="dialog" aria-controls="issue-modal">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 5v14"/>
+                                        <path d="M5 12h14"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        {% if task.subtasks.exists %}
+                        <div class="tasks-table-wrap tasks-board tasks-subtasks-board">
+                            {% for status_group in subtask_status_groups %}
+                            {% if status_group.count %}
+                            <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
+                                <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
+                                    <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
+                                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                                    </button>
+                                    <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
+                                    <span class="tasks-rail-count">{{ status_group.count }}</span>
+                                </header>
+                                <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
+                                    {% for subtask in status_group.tasks %}
+                                    {% include 'kanban/includes/task_issue_row.html' with task=subtask project_code=subtask.section.project.code|default:'TASK' compact=True only %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </section>
+                    {% endif %}
+
+                    <section class="tasks-issue-activity">
+                        <div class="tasks-issue-activity-head">
+                            <h2>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/>
+                                    <path d="M8 9h8"/>
+                                    <path d="M8 13h5"/>
+                                </svg>
+                                Aktywność
+                            </h2>
+                            <div class="tasks-issue-activity-filters">
+                                <div class="tasks-filter-dropdown tasks-issue-activity-dropdown" data-activity-dropdown>
+                                    <button type="button" class="tasks-issue-activity-chip" aria-haspopup="menu" aria-expanded="false" data-activity-toggle>
+                                        <span data-activity-label>Wszystko w jednym</span>
+                                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="m5 7.5 5 5 5-5"/>
+                                        </svg>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-activity-menu" role="menu" aria-label="Filtr aktywności">
+                                        <button type="button" class="is-active" role="menuitemradio" aria-checked="true" data-activity-filter="all">Wszystko w jednym</button>
+                                        <button type="button" role="menuitemradio" aria-checked="false" data-activity-filter="comment">Tylko czat</button>
+                                        <button type="button" role="menuitemradio" aria-checked="false" data-activity-filter="history">Tylko historia</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tasks-issue-comment">
+                            <textarea class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz wiadomość do karty..." form="activity-comment-form"></textarea>
+                            <div class="tasks-issue-comment-tools">
+                                <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m22 2-7 20-4-9-9-4Z"/>
+                                        <path d="M22 2 11 13"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tasks-issue-feed" data-activity-feed>
+                            {% for item in activity_items %}
+                            <article class="tasks-issue-feed-item {% if item.kind == 'comment' %}tasks-issue-feed-item--comment{% endif %}" data-activity-kind="{% if item.kind == 'comment' %}comment{% else %}history{% endif %}">
+                                <span class="tasks-issue-avatar">{{ item.actor.first_name|first|default:item.actor.username|first|default:"S"|upper }}</span>
+                                <div class="tasks-issue-feed-body">
+                                    {% if item.kind == 'comment' %}
+                                    <p>
+                                        <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
+                                        <time>{{ item.created_at|date:"d.m, H:i" }}</time>
+                                    </p>
+                                    <div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>
+                                    {% else %}
+                                    <p>
+                                        <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
+                                        {{ item.message }}
+                                        <time>{{ item.created_at|date:"d.m, H:i" }}</time>
+                                    </p>
+                                    {% if item.metadata.changes %}
+                                    {% for change in item.metadata.changes %}
+                                    <p class="tasks-issue-feed-note tasks-issue-change-line">
+                                        {{ change.field|capfirst }}:
+                                        {% if change.from_label %}<strong>{{ change.from_label }}</strong> → {% endif %}<strong>{{ change.to_label }}</strong>
+                                    </p>
+                                    {% endfor %}
+                                    {% elif item.metadata.from_label or item.metadata.to_label %}
+                                    <p class="tasks-issue-feed-note tasks-issue-change-line">
+                                        {% if item.metadata.from_label %}<strong>{{ item.metadata.from_label }}</strong> → {% endif %}<strong>{{ item.metadata.to_label }}</strong>
+                                    </p>
+                                    {% elif item.metadata.fields %}
+                                    <p class="tasks-issue-feed-note">Zmienione pola: <strong>{{ item.metadata.fields|join:", " }}</strong></p>
+                                    {% elif item.action == 'created' and item.metadata.title %}
+                                    <p class="tasks-issue-feed-note tasks-issue-change-line">Tytuł: <strong>{{ item.metadata.title }}</strong></p>
+                                    {% elif item.metadata.count %}
+                                    <p class="tasks-issue-feed-note">Liczba: <strong>{{ item.metadata.count }}</strong></p>
+                                    {% elif item.metadata.subtask_title %}
+                                    <p class="tasks-issue-feed-note"><strong>{{ item.metadata.subtask_title }}</strong></p>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </article>
+                            {% empty %}
+                            <p class="tasks-issue-empty-feed">Brak aktywności w karcie.</p>
+                            {% endfor %}
+                            <p class="tasks-issue-empty-feed" data-activity-empty-filter hidden>Brak wpisów dla wybranego filtra.</p>
+                        </div>
+                    </section>
+                </section>
+
+                <aside class="tasks-issue-sidebar" aria-label="Szczegóły karty">
+                    <button
+                        type="button"
+                        class="tasks-issue-sidebar-resizer"
+                        aria-label="Zmień szerokość panelu szczegółów"
+                        title="Zmień szerokość panelu szczegółów"
+                        data-issue-sidebar-resizer
+                    ></button>
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.status.id_for_label }}">Status</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-status-wrap tasks-issue-dropdown-wrap">
+                                {{ form.status }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.status.id_for_label }}">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-task-detail-status-icon></span>
+                                        <span data-task-detail-label>Status</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz status">
+                                        {% for value, label in form.status.field.choices %}
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ value }}">
+                                            <span class="status-indicator status-{{ value }}">{{ label }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.priority.id_for_label }}">Priorytet</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-priority-wrap tasks-issue-dropdown-wrap">
+                                {{ form.priority }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.priority.id_for_label }}">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <span class="tasks-filter-priority-icon" aria-hidden="true" data-task-detail-priority-icon></span>
+                                        <span data-task-detail-label>Priorytet</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet">
+                                        {% for value, label in form.priority.field.choices %}
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ value }}">
+                                            {% if value == 'urgent' %}
+                                            <span class="tasks-row-priority priority-urgent" aria-hidden="true">
+                                                <span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span>
+                                            </span>
+                                            {% elif value == 'none' %}
+                                            <span class="tasks-row-priority priority-none" aria-hidden="true">
+                                                <span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span>
+                                            </span>
+                                            {% else %}
+                                            <span class="tasks-row-priority priority-{{ value }}" aria-hidden="true">
+                                                <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                                            </span>
+                                            {% endif %}
+                                            <span>{{ label }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.tags.id_for_label }}">Tagi</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ form.tags }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.tags.id_for_label }}" data-task-detail-multiple>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/>
+                                            <path d="M7.5 7.5h.01"/>
+                                        </svg>
+                                        <span data-task-detail-label>Tagi</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi">
+                                        {% for tag in form.tags.field.queryset %}
+                                        <button type="button" role="menuitemcheckbox" aria-checked="false" data-task-detail-value="{{ tag.id }}">
+                                            <span class="tasks-tag-chip"><span>{{ tag.name }}</span></span>
+                                        </button>
+                                        {% empty %}
+                                        <button type="button" role="menuitem" disabled>
+                                            <span>Brak tagów</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="tasks-issue-selected-tags" data-task-detail-selected-tags aria-live="polite"></div>
+                            </div>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Kod przestrzeni roboczej</span>
+                            <strong class="tasks-issue-muted">
+                                {% if task.section and task.section.project.code %}
+                                {{ task.section.project.code }}
+                                {% else %}
+                                Brak kodu
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Utworzył</span>
+                            <strong class="tasks-issue-person">
+                                <span class="tasks-issue-mini-avatar">{{ task.user.first_name|first|default:task.user.username|first|upper }}</span>
+                                {{ task.user.get_full_name|default:task.user.username }}
+                            </strong>
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <span>Utworzono</span>
+                            <strong>{{ task.created_at|date:"d.m.Y, H:i" }}</strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Zamknięto</span>
+                            <strong class="tasks-issue-muted">
+                                {% if task.completion_date %}
+                                {{ task.completion_date|date:"d.m.Y, H:i" }}
+                                {% else %}
+                                Nie zamknięto
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Czas pracy</span>
+                            <div class="tasks-issue-time-spent">
+                                <label for="{{ form.time_spent_hours.id_for_label }}">
+                                    {{ form.time_spent_hours }}
+                                    <span>h</span>
+                                </label>
+                                <label for="{{ form.time_spent_minutes.id_for_label }}">
+                                    {{ form.time_spent_minutes }}
+                                    <span>min</span>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.project.id_for_label }}">Przestrzeń robocza</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ form.project }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-project-dropdown data-task-detail-select="#{{ form.project.id_for_label }}">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
+                                        <span data-task-detail-label data-task-detail-default-label="Przestrzeń robocza">Przestrzeń robocza</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz przestrzeń roboczą">
+                                        {% for project in form.project.field.queryset %}
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ project.id }}" data-task-detail-default-section="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
+                                            {% if project.icon %}
+                                            <span class="tasks-issue-mini-avatar" aria-hidden="true" data-task-detail-option-icon style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon }}</span>
+                                            {% endif %}
+                                            <span>{{ project.name }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.section.id_for_label }}">Tablica</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ form.section }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-section-dropdown data-task-detail-select="#{{ form.section.id_for_label }}">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
+                                        <span data-task-detail-label data-task-detail-default-label="Tablica">Tablica</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tablicę">
+                                        {% for section in form.section.field.queryset %}
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ section.id }}" data-task-detail-project-id="{{ section.project_id }}">
+                                            {% if section.icon %}
+                                            <span aria-hidden="true" data-task-detail-option-icon>{{ section.icon }}</span>
+                                            {% endif %}
+                                            <span>{{ section.title }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if task.parent %}
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.parent.id_for_label }}">Karta</label>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ form.parent }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-parent-dropdown data-task-detail-select="#{{ form.parent.id_for_label }}">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
+                                        <span data-task-detail-label data-task-detail-default-label="Karta">Karta</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz kartę">
+                                        {% for parent_task in form.parent.field.queryset %}
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ parent_task.id }}" data-task-detail-section-id="{{ parent_task.section_id }}" data-task-detail-project-id="{{ parent_task.section.project_id }}">
+                                            <span>{{ parent_task.title }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <h2>Historia statusu:</h2>
+                        <div class="tasks-issue-history-row">
+                            <span class="status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
+                            <strong>{{ task.created_at|timesince }}</strong>
+                        </div>
+                        {% if task.status != 'new' %}
+                        <div class="tasks-issue-history-row">
+                            <span class="status-indicator status-new">Nowe</span>
+                            <strong>{{ task.created_at|date:"d.m" }}</strong>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                </aside>
+            </main>
+        </form>
+    </div>
+</div>
+
+<div class="tasks-modal tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_subtask_modal">
+            <header class="tasks-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <strong id="issue-modal-title">Nowa podkarta</strong>
+                </div>
+                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="tasks-modal__body tasks-issue-modal__body">
+                {% if task_modal_form.errors %}
+                <div class="tasks-modal__errors">
+                    {% for field in task_modal_form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in task_modal_form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <label class="u-sr-only" for="{{ task_modal_form.title.id_for_label }}">Tytuł podkarty</label>
+                {{ task_modal_form.title }}
+                <label class="u-sr-only" for="{{ task_modal_form.description.id_for_label }}">Opis</label>
+                {{ task_modal_form.description }}
+
+                <div class="tasks-issue-fields">
+                    <label>
+                        <span>Status</span>
+                        <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                            {{ task_modal_form.status }}
+                            <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
+                                <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                    <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-inline-status-icon></span>
+                                    <span data-inline-select-label>Status</span>
+                                </button>
+                                <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz status">
+                                    {% for value, label in task_modal_form.status.field.choices %}
+                                    <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
+                                        <span class="status-indicator status-{{ value }}">{{ label }}</span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <footer class="tasks-modal__footer tasks-issue-modal__footer">
+                <button type="submit" class="tasks-modal__submit" id="issue-create-submit">Utwórz podkartę</button>
+            </footer>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('[data-history-back]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+        const storedReturnPoint = sessionStorage.getItem('kanban:lastTaskReturn');
+        if (storedReturnPoint) {
+            try {
+                const returnPoint = JSON.parse(storedReturnPoint);
+                const savedViewPath = returnPoint.viewUrl ? new URL(returnPoint.viewUrl, window.location.origin).pathname : '';
+                const isCurrentTask = savedViewPath === window.location.pathname;
+                const isFresh = Date.now() - Number(returnPoint.savedAt || 0) < 30 * 60 * 1000;
+
+                if (returnPoint.returnUrl && isCurrentTask && isFresh) {
+                    event.preventDefault();
+                    sessionStorage.setItem('kanban:restoreTaskReturn', storedReturnPoint);
+                    window.location.href = returnPoint.returnUrl;
+                    return;
+                }
+            } catch (error) {
+                sessionStorage.removeItem('kanban:lastTaskReturn');
+            }
+        }
+
+        if (window.history.length <= 1) return;
+
+        event.preventDefault();
+        window.history.back();
+    });
+});
+
+document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
+    const activitySection = feed.closest('.tasks-issue-activity');
+    const dropdown = activitySection ? activitySection.querySelector('[data-activity-dropdown]') : null;
+    const toggle = dropdown ? dropdown.querySelector('[data-activity-toggle]') : null;
+    const label = dropdown ? dropdown.querySelector('[data-activity-label]') : null;
+    const filterButtons = dropdown ? dropdown.querySelectorAll('[data-activity-filter]') : [];
+    const feedItems = feed.querySelectorAll('[data-activity-kind]');
+    const emptyFilterMessage = feed.querySelector('[data-activity-empty-filter]');
+
+    function closeActivityDropdown() {
+        if (!dropdown || !toggle) return;
+        dropdown.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function applyActivityFilter(filter) {
+        let visibleCount = 0;
+
+        feedItems.forEach((item) => {
+            const isVisible = filter === 'all' || item.dataset.activityKind === filter;
+            item.hidden = !isVisible;
+            item.style.display = isVisible ? '' : 'none';
+            if (isVisible) visibleCount += 1;
+        });
+
+        filterButtons.forEach((button) => {
+            const isActive = button.dataset.activityFilter === filter;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-checked', String(isActive));
+            if (isActive && label) label.textContent = button.textContent.trim();
+        });
+
+        if (emptyFilterMessage) {
+            const shouldHideEmptyMessage = visibleCount > 0 || feedItems.length === 0;
+            emptyFilterMessage.hidden = shouldHideEmptyMessage;
+            emptyFilterMessage.style.display = shouldHideEmptyMessage ? 'none' : '';
+        }
+    }
+
+    toggle?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpen = !dropdown.classList.contains('is-open');
+        dropdown.classList.toggle('is-open', isOpen);
+        toggle.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    dropdown?.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    filterButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            applyActivityFilter(button.dataset.activityFilter || 'all');
+            closeActivityDropdown();
+        });
+    });
+
+    document.addEventListener('click', closeActivityDropdown);
+    applyActivityFilter('all');
+});
+
+const taskDetailPriorityIcons = {
+    urgent: '<span class="tasks-row-priority priority-urgent"><span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span></span>',
+    none: '<span class="tasks-row-priority priority-none"><span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span></span>',
+    low: '<span class="tasks-row-priority priority-low"><span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span></span>',
+    medium: '<span class="tasks-row-priority priority-medium"><span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span></span>',
+    high: '<span class="tasks-row-priority priority-high"><span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span></span>',
+};
+
+function getTaskDetailButtonText(button) {
+    if (!button) return '';
+    const clone = button.cloneNode(true);
+    clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+    return clone.textContent.trim();
+}
+
+function closeTaskDetailDropdowns(exceptDropdown = null) {
+    document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
+        if (dropdown === exceptDropdown) return;
+        dropdown.classList.remove('is-open');
+        dropdown.querySelector('[data-task-detail-toggle]')?.setAttribute('aria-expanded', 'false');
+    });
+}
+
+function getTaskDetailSelect(dropdown) {
+    return dropdown ? document.querySelector(dropdown.dataset.taskDetailSelect) : null;
+}
+
+function syncTaskDetailProjectSections(changedDropdown = null) {
+    const projectDropdown = document.querySelector('[data-task-detail-project-dropdown]');
+    const sectionDropdown = document.querySelector('[data-task-detail-section-dropdown]');
+    const parentDropdown = document.querySelector('[data-task-detail-parent-dropdown]');
+    const projectSelect = getTaskDetailSelect(projectDropdown);
+    const sectionSelect = getTaskDetailSelect(sectionDropdown);
+    const parentSelect = getTaskDetailSelect(parentDropdown);
+    if (!projectDropdown || !sectionDropdown || !projectSelect || !sectionSelect) return;
+
+    if (changedDropdown === parentDropdown && parentSelect) {
+        const activeParentButton = parentDropdown.querySelector(`[data-task-detail-value="${parentSelect.value}"]`);
+        if (activeParentButton?.dataset.taskDetailSectionId) {
+            sectionSelect.value = activeParentButton.dataset.taskDetailSectionId;
+        }
+        if (activeParentButton?.dataset.taskDetailProjectId) {
+            projectSelect.value = activeParentButton.dataset.taskDetailProjectId;
+        }
+    }
+
+    if (changedDropdown === sectionDropdown) {
+        const activeSectionButton = sectionDropdown.querySelector(`[data-task-detail-value="${sectionSelect.value}"]`);
+        if (activeSectionButton?.dataset.taskDetailProjectId) {
+            projectSelect.value = activeSectionButton.dataset.taskDetailProjectId;
+        }
+    }
+
+    const projectId = projectSelect.value;
+    let firstVisibleSection = null;
+    sectionDropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
+        const isVisible = !projectId || button.dataset.taskDetailProjectId === projectId;
+        button.hidden = !isVisible;
+        if (isVisible && !firstVisibleSection) firstVisibleSection = button;
+    });
+
+    if (changedDropdown === projectDropdown) {
+        const currentSectionButton = sectionDropdown.querySelector(`[data-task-detail-value="${sectionSelect.value}"]`);
+        const currentSectionFits = currentSectionButton?.dataset.taskDetailProjectId === projectId;
+        if (!currentSectionFits) sectionSelect.value = '';
+    }
+
+    if (parentDropdown && parentSelect) {
+        const sectionId = sectionSelect.value;
+        let firstVisibleParent = null;
+        parentDropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
+            const matchesSection = sectionId && button.dataset.taskDetailSectionId === sectionId;
+            const matchesProject = !sectionId && (!projectId || button.dataset.taskDetailProjectId === projectId);
+            const isVisible = matchesSection || matchesProject;
+            button.hidden = !isVisible;
+            if (isVisible && !firstVisibleParent) firstVisibleParent = button;
+        });
+
+        if (changedDropdown === sectionDropdown || changedDropdown === projectDropdown) {
+            const currentParentButton = parentDropdown.querySelector(`[data-task-detail-value="${parentSelect.value}"]`);
+            if (currentParentButton?.hidden && firstVisibleParent) {
+                parentSelect.value = firstVisibleParent.dataset.taskDetailValue;
+                syncTaskDetailProjectSections(parentDropdown);
+            }
+        }
+    }
+}
+
+function syncTaskDetailDropdown(dropdown) {
+    if (!dropdown) return;
+    const select = document.querySelector(dropdown.dataset.taskDetailSelect);
+    const label = dropdown.querySelector('[data-task-detail-label]');
+    const detailIcon = dropdown.querySelector('[data-task-detail-icon]');
+    const statusIcon = dropdown.querySelector('[data-task-detail-status-icon]');
+    const priorityIcon = dropdown.querySelector('[data-task-detail-priority-icon]');
+    const isMultiple = dropdown.hasAttribute('data-task-detail-multiple');
+    const selectedTags = dropdown.closest('.tasks-issue-select-wrap')?.querySelector('[data-task-detail-selected-tags]');
+    const selectedValues = select ? Array.from(select.selectedOptions).map((option) => option.value) : [];
+    const currentValue = select ? select.value : '';
+
+    dropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
+        const isActive = isMultiple ? selectedValues.includes(button.dataset.taskDetailValue) : button.dataset.taskDetailValue === currentValue;
+        button.classList.toggle('is-active', isActive);
+        if (button.getAttribute('role') === 'menuitemcheckbox') {
+            button.setAttribute('aria-checked', String(isActive));
+        }
+    });
+
+    if (label) {
+        if (isMultiple) {
+            label.textContent = selectedValues.length ? `Tagi: ${selectedValues.length}` : 'Tagi';
+        } else {
+            const activeButton = dropdown.querySelector(`[data-task-detail-value="${currentValue}"]`);
+            label.textContent = activeButton ? getTaskDetailButtonText(activeButton) : label.dataset.taskDetailDefaultLabel || label.textContent;
+        }
+    }
+
+    if (detailIcon) {
+        detailIcon.replaceChildren();
+        const activeButton = !isMultiple ? dropdown.querySelector(`[data-task-detail-value="${currentValue}"]`) : null;
+        const optionIcon = activeButton?.querySelector('[data-task-detail-option-icon]');
+        if (optionIcon) detailIcon.appendChild(optionIcon.cloneNode(true));
+    }
+
+    if (selectedTags && isMultiple) {
+        selectedTags.replaceChildren();
+        dropdown.querySelectorAll('[data-task-detail-value].is-active').forEach((button) => {
+            const chip = button.querySelector('.tasks-tag-chip')?.cloneNode(true);
+            if (chip) selectedTags.appendChild(chip);
+        });
+    }
+
+    if (statusIcon) {
+        statusIcon.className = `status-indicator tasks-filter-status-icon ${currentValue ? `status-${currentValue}` : 'status-label-plain'}`;
+    }
+
+    if (priorityIcon) {
+        priorityIcon.innerHTML = taskDetailPriorityIcons[currentValue] || '';
+    }
+}
+
+document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
+    const select = document.querySelector(dropdown.dataset.taskDetailSelect);
+    const toggle = dropdown.querySelector('[data-task-detail-toggle]');
+    const isMultiple = dropdown.hasAttribute('data-task-detail-multiple');
+
+    syncTaskDetailDropdown(dropdown);
+
+    toggle?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpen = !dropdown.classList.contains('is-open');
+        closeTaskDetailDropdowns(dropdown);
+        dropdown.classList.toggle('is-open', isOpen);
+        toggle.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    dropdown.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    dropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!select) return;
+
+            if (isMultiple) {
+                const option = Array.from(select.options).find((item) => item.value === button.dataset.taskDetailValue);
+                if (option) option.selected = !option.selected;
+            } else {
+                select.value = button.dataset.taskDetailValue;
+                syncTaskDetailProjectSections(dropdown);
+                closeTaskDetailDropdowns();
+            }
+
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            if (dropdown.hasAttribute('data-task-detail-project-dropdown')) {
+                getTaskDetailSelect(document.querySelector('[data-task-detail-section-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            if (dropdown.hasAttribute('data-task-detail-section-dropdown')) {
+                getTaskDetailSelect(document.querySelector('[data-task-detail-project-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            syncTaskDetailDropdown(dropdown);
+            syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown]'));
+            syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
+            syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
+        });
+    });
+});
+
+syncTaskDetailProjectSections(document.querySelector('[data-task-detail-project-dropdown]'));
+syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown]'));
+syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
+syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
+
+document.addEventListener('click', () => closeTaskDetailDropdowns());
+
+function deleteAttachment(attachmentId) {
+    window.showConfirmModal({
+        title: 'Potwierdź usunięcie',
+        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana po kliknięciu „Zapisz”.',
+        confirmText: 'Usuń',
+        cancelText: 'Anuluj',
+        confirmClass: 'btn-danger',
+        onConfirm: () => {
+            const deletedInput = document.getElementById('deleted-attachments');
+            let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+            if (!deletedIds.includes(attachmentId.toString())) {
+                deletedIds.push(attachmentId.toString());
+                deletedInput.value = deletedIds.join(',');
+            }
+            const el = document.getElementById(`attachment-${attachmentId}`);
+            if (el) {
+                el.classList.add('marked-for-deletion');
+                const btn = el.querySelector('.tasks-delete-attach-btn');
+                if (btn) {
+                    btn.innerHTML = '<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>';
+                    btn.title = 'Cofnij usunięcie';
+                    btn.onclick = (e) => { e.stopPropagation(); undoDeleteAttachment(attachmentId); };
+                }
+            }
+        }
+    });
+}
+
+function undoDeleteAttachment(attachmentId) {
+    const deletedInput = document.getElementById('deleted-attachments');
+    let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+    deletedIds = deletedIds.filter(id => id !== attachmentId.toString());
+    deletedInput.value = deletedIds.join(',');
+    const el = document.getElementById(`attachment-${attachmentId}`);
+    if (el) {
+        el.classList.remove('marked-for-deletion');
+        const btn = el.querySelector('.tasks-delete-attach-btn');
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-trash" aria-hidden="true"></i>';
+            btn.title = 'Usuń załącznik';
+            btn.onclick = () => deleteAttachment(attachmentId);
+        }
+    }
+}
+
+function updateTaskStatus(isCompleted) {
+    const statusText = isCompleted ? 'zamknąć' : 'otworzyć ponownie';
+    window.showConfirmModal({
+        title: isCompleted ? 'Zamknij kartę' : 'Otwórz ponownie',
+        message: `Czy na pewno chcesz ${statusText} tę kartę?`,
+        confirmText: isCompleted ? 'Zamknij' : 'Otwórz ponownie',
+        cancelText: 'Anuluj',
+        confirmClass: isCompleted ? 'btn-success' : 'btn-secondary',
+        onConfirm: () => {
+            fetch("{% url 'kanban:update_task_status' task.task_id %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': window.getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ is_completed: isCompleted })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') window.location.reload();
+                else alert('Błąd: ' + (data.message || 'Nieznany błąd'));
+            })
+            .catch(() => alert('Błąd połączenia z serwerem.'));
+        }
+    });
+}
+
+function confirmDelete() {
+    window.showConfirmModal({
+        title: 'Potwierdź usunięcie',
+        message: 'Czy na pewno chcesz usunąć tę kartę? Tej operacji nie można cofnąć.',
+        confirmText: 'Usuń',
+        cancelText: 'Anuluj',
+        confirmClass: 'btn-danger',
+        onConfirm: () => {
+            fetch("{% url 'kanban:delete_task' task.task_id %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': window.getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(r => { if (r.ok) window.location.href = "{% url 'kanban:tasks' %}"; else alert('Błąd usuwania.'); })
+            .catch(() => alert('Błąd połączenia.'));
+        }
+    });
+}
+</script>
+{% endblock %}

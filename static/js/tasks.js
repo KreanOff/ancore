@@ -45,6 +45,14 @@ function initTasksPage() {
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
     const projectCheckboxes = document.querySelectorAll('.tasks-project-row .tasks-row-checkbox[data-project-id]');
     const tagCheckboxes = document.querySelectorAll('.tasks-all-groups-row .tasks-row-checkbox[data-tag-id]');
+    const sectionCopyRoot = document.querySelector('[data-section-empty-label], [data-section-delete-title]');
+    const sectionCopy = {
+        emptyLabel: sectionCopyRoot?.dataset.sectionEmptyLabel || 'Wybierz grupę',
+        deleteFallback: sectionCopyRoot?.dataset.sectionDeleteFallback || 'tę grupę',
+        deleteTitle: sectionCopyRoot?.dataset.sectionDeleteTitle || 'Usuń grupę',
+        deleteConfirm: sectionCopyRoot?.dataset.sectionDeleteConfirm || 'Usuń grupę',
+        deleteMessageTemplate: sectionCopyRoot?.dataset.sectionDeleteMessageTemplate || 'Czy na pewno chcesz usunąć grupę „{title}”? Zadania z grupy zostaną przeniesione do sekcji „Bez przestrzeni roboczej”.'
+    };
     const createMenu = document.querySelector('[data-create-menu]');
     const createMenuToggle = document.getElementById('open-create-menu');
     const createMenuPanel = document.getElementById('create-menu-panel');
@@ -79,8 +87,439 @@ function initTasksPage() {
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
     const projectRenameCodeValue = document.getElementById('project-rename-code');
 
-    const taskReturnStorageKey = 'tasks:lastTaskReturn';
-    const taskReturnRestoreKey = 'tasks:restoreTaskReturn';
+    const taskAppSegment = window.location.pathname.split('/').filter(Boolean)[0] === 'kanban' ? 'kanban' : 'tasks';
+    const taskCopy = taskAppSegment === 'kanban'
+        ? {
+            itemAcc: 'kartę',
+            itemPluralGen: 'kart',
+            itemMoveError: 'Błąd podczas przenoszenia karty',
+            itemDeleteError: 'Błąd podczas usuwania kart',
+            itemUpdateError: 'Błąd podczas aktualizacji kart',
+            closeOne: 'Zamknij kartę',
+            closeMany: 'Zamknij karty',
+            reopenMany: 'Otwórz ponownie karty',
+            subItems: 'Podkarty',
+            subItemAcc: 'podkartę',
+            projectDeleteNote: 'Karty z tej przestrzeni zostaną przeniesione do sekcji „Bez przestrzeni roboczej”.',
+            tagDetachNote: 'Tag zostanie odpięty od kart.'
+        }
+        : {
+            itemAcc: 'zadanie',
+            itemPluralGen: 'zadań',
+            itemMoveError: 'Błąd podczas przenoszenia zadania',
+            itemDeleteError: 'Błąd podczas usuwania zadań',
+            itemUpdateError: 'Błąd podczas aktualizacji zadań',
+            closeOne: 'Zamknij zadanie',
+            closeMany: 'Zamknij zadania',
+            reopenMany: 'Otwórz ponownie zadania',
+            subItems: 'Podzadania',
+            subItemAcc: 'podzadanie',
+            projectDeleteNote: 'Zadania z tej przestrzeni zostaną przeniesione do sekcji „Bez przestrzeni roboczej”.',
+            tagDetachNote: 'Tag zostanie odpięty od zadań.'
+        };
+    const taskReturnStorageKey = `${taskAppSegment}:lastTaskReturn`;
+    const taskReturnRestoreKey = `${taskAppSegment}:restoreTaskReturn`;
+
+    initKanbanColumnCreateForms();
+    initKanbanColumnReorder();
+    initKanbanWallpapers();
+
+    function initKanbanWallpapers() {
+        const panel = document.querySelector('[data-kanban-wallpaper-panel]');
+        const toggle = document.querySelector('[data-kanban-wallpaper-toggle]');
+        const closeButton = document.querySelector('[data-kanban-wallpaper-close]');
+        const input = document.querySelector('[data-kanban-wallpaper-input]');
+        const list = document.querySelector('[data-kanban-wallpaper-list]');
+        const clearButton = document.querySelector('[data-kanban-wallpaper-clear]');
+        const boards = document.querySelectorAll('.tasks-kanban-board');
+
+        if (!boards.length) return;
+
+        const wallpapersKey = 'ancore:kanban:wallpapers';
+        const selectedKey = `ancore:kanban:wallpaper:${window.location.pathname}`;
+
+        function readWallpapers() {
+            try {
+                const value = JSON.parse(localStorage.getItem(wallpapersKey) || '[]');
+                return Array.isArray(value) ? value : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function writeWallpapers(wallpapers) {
+            try {
+                localStorage.setItem(wallpapersKey, JSON.stringify(wallpapers));
+                return true;
+            } catch (error) {
+                showTaskNotification('Nie udało się zapisać tapety lokalnie', 'error');
+                return false;
+            }
+        }
+
+        function getSelectedWallpaperId() {
+            try {
+                return localStorage.getItem(selectedKey) || '';
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function setSelectedWallpaperId(id) {
+            try {
+                if (id) {
+                    localStorage.setItem(selectedKey, id);
+                } else {
+                    localStorage.removeItem(selectedKey);
+                }
+            } catch (error) {
+                showTaskNotification('Nie udało się zapisać wyboru tapety', 'error');
+            }
+        }
+
+        function applyWallpaper() {
+            const selectedId = getSelectedWallpaperId();
+            const selected = readWallpapers().find(wallpaper => wallpaper.id === selectedId);
+
+            boards.forEach(board => {
+                if (selected?.dataUrl) {
+                    board.style.backgroundImage = `url("${selected.dataUrl}")`;
+                    board.classList.add('has-wallpaper');
+                } else {
+                    board.style.backgroundImage = '';
+                    board.classList.remove('has-wallpaper');
+                }
+            });
+        }
+
+        function renderWallpapers() {
+            if (!list) return;
+
+            const wallpapers = readWallpapers();
+            const selectedId = getSelectedWallpaperId();
+            list.innerHTML = '';
+
+            wallpapers.forEach(wallpaper => {
+                const swatch = document.createElement('div');
+                swatch.className = `tasks-kanban-wallpaper-swatch${wallpaper.id === selectedId ? ' is-active' : ''}`;
+
+                const preview = document.createElement('button');
+                preview.type = 'button';
+                preview.className = 'tasks-kanban-wallpaper-swatch__preview';
+                preview.style.backgroundImage = `url("${wallpaper.dataUrl}")`;
+                preview.setAttribute('aria-label', `Ustaw tapetę ${wallpaper.name || ''}`.trim());
+                preview.title = wallpaper.name || 'Tapeta';
+                preview.addEventListener('click', () => {
+                    setSelectedWallpaperId(wallpaper.id);
+                    applyWallpaper();
+                    renderWallpapers();
+                });
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'tasks-kanban-wallpaper-swatch__remove';
+                remove.textContent = '×';
+                remove.setAttribute('aria-label', 'Usuń tapetę');
+                remove.addEventListener('click', event => {
+                    event.stopPropagation();
+                    const nextWallpapers = readWallpapers().filter(item => item.id !== wallpaper.id);
+                    if (!writeWallpapers(nextWallpapers)) return;
+                    if (getSelectedWallpaperId() === wallpaper.id) {
+                        setSelectedWallpaperId('');
+                        applyWallpaper();
+                    }
+                    renderWallpapers();
+                });
+
+                swatch.appendChild(preview);
+                swatch.appendChild(remove);
+                list.appendChild(swatch);
+            });
+        }
+
+        function resizeWallpaper(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Nie udało się odczytać pliku'));
+                reader.onload = () => {
+                    const image = new Image();
+                    image.onerror = () => reject(new Error('Nie udało się wczytać obrazu'));
+                    image.onload = () => {
+                        const maxSize = 1920;
+                        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+                        const width = Math.max(1, Math.round(image.width * scale));
+                        const height = Math.max(1, Math.round(image.height * scale));
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const context = canvas.getContext('2d');
+                        if (!context) {
+                            reject(new Error('Nie udało się przygotować tapety'));
+                            return;
+                        }
+                        context.drawImage(image, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.86));
+                    };
+                    image.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        applyWallpaper();
+
+        if (!panel || !toggle || toggle.dataset.wallpaperInitialized === 'true') return;
+        toggle.dataset.wallpaperInitialized = 'true';
+        renderWallpapers();
+
+        toggle.addEventListener('click', () => {
+            const willOpen = panel.hidden;
+            closeSectionActionMenu();
+            panel.hidden = !willOpen;
+            toggle.setAttribute('aria-expanded', String(willOpen));
+            if (willOpen) renderWallpapers();
+        });
+
+        closeButton?.addEventListener('click', () => {
+            panel.hidden = true;
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+
+        clearButton?.addEventListener('click', () => {
+            setSelectedWallpaperId('');
+            applyWallpaper();
+            renderWallpapers();
+        });
+
+        input?.addEventListener('change', async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+
+            try {
+                const dataUrl = await resizeWallpaper(file);
+                const wallpaper = {
+                    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                    name: file.name,
+                    dataUrl,
+                };
+                const nextWallpapers = [wallpaper, ...readWallpapers()].slice(0, 12);
+                if (!writeWallpapers(nextWallpapers)) return;
+                setSelectedWallpaperId(wallpaper.id);
+                applyWallpaper();
+                renderWallpapers();
+            } catch (error) {
+                showTaskNotification(error.message || 'Nie udało się dodać tapety', 'error');
+            } finally {
+                input.value = '';
+            }
+        });
+    }
+
+    function initKanbanColumnCreateForms() {
+        function closeColumnCreateForm(column) {
+            const button = column.querySelector('[data-kanban-column-create-toggle]');
+            const form = column.querySelector('.tasks-kanban-column__create-form');
+
+            if (!button || !form || form.hidden) return;
+
+            form.hidden = true;
+            button.hidden = false;
+            column.classList.remove('is-creating');
+        }
+
+        document.querySelectorAll('[data-kanban-column-create-toggle]').forEach(button => {
+            if (button.dataset.initialized === 'true') return;
+            button.dataset.initialized = 'true';
+
+            button.addEventListener('click', () => {
+                const column = button.closest('.tasks-kanban-column--new');
+                const form = column ? column.querySelector('.tasks-kanban-column__create-form') : null;
+                const input = form ? form.querySelector('input[name="title"]') : null;
+
+                if (!form) return;
+
+                document.querySelectorAll('.tasks-kanban-column--new.is-creating').forEach(openColumn => {
+                    if (openColumn !== column) closeColumnCreateForm(openColumn);
+                });
+                button.hidden = true;
+                form.hidden = false;
+                column?.classList.add('is-creating');
+                input?.focus();
+            });
+        });
+
+        if (window.ancoreKanbanColumnCreateOutsideInitialized) return;
+        window.ancoreKanbanColumnCreateOutsideInitialized = true;
+
+        document.addEventListener('click', event => {
+            document.querySelectorAll('.tasks-kanban-column--new.is-creating').forEach(column => {
+                if (!column.contains(event.target)) closeColumnCreateForm(column);
+            });
+        });
+    }
+
+    function initKanbanColumnReorder() {
+        document.querySelectorAll('[data-kanban-column-reorder-url]').forEach(board => {
+            if (board.dataset.columnReorderInitialized === 'true') return;
+            board.dataset.columnReorderInitialized = 'true';
+
+            let draggedColumn = null;
+            let originalOrder = [];
+
+            function orderedColumnIds() {
+                return Array.from(board.querySelectorAll(':scope > .tasks-kanban-column[data-kanban-column-id]'))
+                    .map(column => column.dataset.kanbanColumnId);
+            }
+
+            function reorderableColumns() {
+                return Array.from(board.querySelectorAll(':scope > .tasks-kanban-column[data-kanban-column-id]'));
+            }
+
+            function newColumnPanel() {
+                return board.querySelector(':scope > .tasks-kanban-column--new');
+            }
+
+            function insertBeforeNewColumn(column) {
+                board.insertBefore(column, newColumnPanel() || null);
+            }
+
+            function captureColumnPositions() {
+                return new Map(
+                    reorderableColumns().map(column => [column, column.getBoundingClientRect().left])
+                );
+            }
+
+            function animateColumnShift(previousPositions) {
+                reorderableColumns().forEach(column => {
+                    if (column === draggedColumn) return;
+
+                    const previousLeft = previousPositions.get(column);
+                    if (previousLeft === undefined) return;
+
+                    const nextLeft = column.getBoundingClientRect().left;
+                    const offset = previousLeft - nextLeft;
+                    if (!offset) return;
+
+                    column.style.transition = 'none';
+                    column.style.transform = `translateX(${offset}px)`;
+                    column.getBoundingClientRect();
+
+                    requestAnimationFrame(() => {
+                        column.style.transition = 'transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1)';
+                        column.style.transform = '';
+                    });
+
+                    column.addEventListener('transitionend', () => {
+                        column.style.transition = '';
+                        column.style.transform = '';
+                    }, { once: true });
+                });
+            }
+
+            function moveDraggedColumn(beforeColumn) {
+                const currentNextColumn = draggedColumn.nextElementSibling;
+                const newColumn = newColumnPanel();
+                const targetBeforeColumn = beforeColumn || newColumn || null;
+
+                if (currentNextColumn === targetBeforeColumn) return;
+
+                const previousPositions = captureColumnPositions();
+                board.insertBefore(draggedColumn, targetBeforeColumn);
+                animateColumnShift(previousPositions);
+            }
+
+            function restoreOriginalOrder(orderToRestore) {
+                const columnsById = new Map(
+                    reorderableColumns()
+                        .map(column => [column.dataset.kanbanColumnId, column])
+                );
+
+                orderToRestore.forEach(columnId => {
+                    const column = columnsById.get(columnId);
+                    if (column) insertBeforeNewColumn(column);
+                });
+            }
+
+            function getColumnAfterPointer(pointerX) {
+                const columns = reorderableColumns().filter(column => column !== draggedColumn);
+
+                return columns.reduce((closest, column) => {
+                    const box = column.getBoundingClientRect();
+                    const offset = pointerX - box.left - box.width / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset, column };
+                    }
+                    return closest;
+                }, { offset: Number.NEGATIVE_INFINITY, column: null }).column;
+            }
+
+            function persistColumnOrder() {
+                const nextOrder = orderedColumnIds();
+                if (nextOrder.join(',') === originalOrder.join(',')) return;
+                const orderBeforeDrag = [...originalOrder];
+
+                fetch(board.dataset.kanbanColumnReorderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': window.getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ column_ids: nextOrder })
+                })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(({ ok, data }) => {
+                    if (!ok || data.status !== 'success') {
+                        throw new Error(data.message || 'Nie udało się zapisać kolejności kolumn');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    restoreOriginalOrder(orderBeforeDrag);
+                    showMessage(error.message || 'Nie udało się zapisać kolejności kolumn', 'error');
+                });
+            }
+
+            board.querySelectorAll(':scope > .tasks-kanban-column[data-kanban-column-id]').forEach(column => {
+                column.addEventListener('dragstart', event => {
+                    const isCardDrag = event.target.closest('.task-row[draggable="true"], .tasks-issue-row[draggable="true"]');
+                    const isInteractiveDrag = event.target.closest('a, button, input, select, textarea, form');
+                    if (isCardDrag) return;
+                    if (isInteractiveDrag) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    draggedColumn = column;
+
+                    originalOrder = orderedColumnIds();
+                    draggedColumn.classList.add('is-column-dragging');
+                    board.classList.add('is-reordering-columns');
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('application/x-kanban-column-id', draggedColumn.dataset.kanbanColumnId);
+                });
+
+                column.addEventListener('dragend', event => {
+                    if (event.target.closest('.task-row[draggable="true"], .tasks-issue-row[draggable="true"]')) return;
+                    if (!draggedColumn) return;
+
+                    draggedColumn.classList.remove('is-column-dragging');
+                    board.classList.remove('is-reordering-columns');
+                    persistColumnOrder();
+                    draggedColumn = null;
+                    originalOrder = [];
+                });
+            });
+
+            board.addEventListener('dragover', event => {
+                if (!draggedColumn || !Array.from(event.dataTransfer.types).includes('application/x-kanban-column-id')) return;
+
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                const afterColumn = getColumnAfterPointer(event.clientX);
+                moveDraggedColumn(afterColumn);
+            });
+        });
+    }
 
     function getTaskScrollSnapshot() {
         const mainContent = document.querySelector('.main-content');
@@ -97,7 +536,7 @@ function initTasksPage() {
     }
 
     function rememberTaskReturnPoint(viewUrl) {
-        if (!viewUrl || !viewUrl.includes('/tasks/view-task/')) return;
+        if (!viewUrl || !viewUrl.includes(`/${taskAppSegment}/view-task/`)) return;
 
         sessionStorage.setItem(taskReturnStorageKey, JSON.stringify({
             viewUrl,
@@ -146,7 +585,43 @@ function initTasksPage() {
         });
     }
 
+    function focusKanbanColumnFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const focusColumnId = params.get('focus_column');
+        if (!focusColumnId) return;
+
+        const board = document.querySelector('.tasks-kanban-board');
+        const column = Array.from(document.querySelectorAll('.tasks-kanban-column[data-drop-column-id]'))
+            .find(element => element.dataset.dropColumnId === focusColumnId);
+
+        if (!board || !column) return;
+
+        const scrollToColumn = () => {
+            const boardRect = board.getBoundingClientRect();
+            const columnRect = column.getBoundingClientRect();
+            const targetLeft = board.scrollLeft + columnRect.left - boardRect.left - 16;
+
+            board.scrollTo({
+                left: Math.max(0, targetLeft),
+                behavior: 'smooth',
+            });
+        };
+
+        column.classList.add('is-newly-created');
+        requestAnimationFrame(() => {
+            scrollToColumn();
+            setTimeout(scrollToColumn, 120);
+        });
+
+        setTimeout(() => column.classList.remove('is-newly-created'), 1800);
+        params.delete('focus_column');
+        const nextSearch = params.toString();
+        const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+        window.history.replaceState({}, '', nextUrl);
+    }
+
     restoreTaskReturnPoint();
+    focusKanbanColumnFromUrl();
     const projectRenameIconInput = projectRenameForm ? projectRenameForm.querySelector('[name="icon"]') : null;
     const projectRenameIdInput = projectRenameForm ? projectRenameForm.querySelector('[name="project_id"]') : null;
     const sectionCreateTitleInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="title"]') : null;
@@ -159,7 +634,9 @@ function initTasksPage() {
     const sectionRenameIdInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="section_id"]') : null;
     const issueTitleInput = issueForm ? issueForm.querySelector('[name="title"]') : null;
     const issueProjectInput = issueForm ? issueForm.querySelector('[name="project_id"]') : null;
+    const issueColumnInput = issueForm ? issueForm.querySelector('[name="column_id"]') : null;
     const issueSectionSelect = issueForm ? issueForm.querySelector('[name="section"]') : null;
+    const issueStatusSelect = issueForm ? issueForm.querySelector('[name="status"]') : null;
     const issueProjectPicker = issueForm ? issueForm.querySelector('[data-issue-project-picker]') : null;
     const issueSectionPicker = issueForm ? issueForm.querySelector('[data-issue-section-picker]') : null;
     const issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
@@ -186,6 +663,11 @@ function initTasksPage() {
         closed: 'Zamknięte',
         reopened: 'Ponownie otwarte'
     };
+    document.querySelectorAll('[data-status-filter]').forEach(button => {
+        const status = button.dataset.statusFilter;
+        const label = getFilterButtonText(button);
+        if (status && label) statusLabels[status] = label;
+    });
     const projectIconSets = [
         {
             label: 'Najczęstsze',
@@ -586,16 +1068,16 @@ function initTasksPage() {
 
         projectTree.classList.toggle('is-collapsed', isCollapsed);
         projectTreeToggle.setAttribute('aria-expanded', String(!isCollapsed));
-        projectTreeToggle.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} Moje projekty`);
+        projectTreeToggle.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} Moje przestrzenie robocze`);
     }
 
     function setProjectCollapsed(projectNode, isCollapsed) {
         const toggle = projectNode.querySelector('[data-project-collapse-toggle]');
-        const projectName = projectNode.querySelector('.tasks-project-title span:not(.tasks-project-badge)')?.textContent?.trim() || 'projekt';
+        const projectName = projectNode.querySelector('.tasks-project-title span:not(.tasks-project-badge)')?.textContent?.trim() || 'przestrzeń roboczą';
 
         projectNode.classList.toggle('is-collapsed', isCollapsed);
         toggle?.setAttribute('aria-expanded', String(!isCollapsed));
-        toggle?.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} projekt ${projectName}`);
+        toggle?.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} przestrzeń roboczą ${projectName}`);
     }
 
     function clearProjectTreeInitialState() {
@@ -695,7 +1177,7 @@ function initTasksPage() {
         if (!sectionOption || !issueSectionSelect) return false;
 
         issueSectionSelect.value = sectionOption.dataset.sectionId || '';
-        setIssueChip(issueSectionPicker, sectionOption.dataset.sectionTitle || 'Wybierz grupę', sectionOption.dataset.sectionIcon || '');
+        setIssueChip(issueSectionPicker, sectionOption.dataset.sectionTitle || sectionCopy.emptyLabel, sectionOption.dataset.sectionIcon || '');
         return true;
     }
 
@@ -724,7 +1206,7 @@ function initTasksPage() {
         if (issueProjectInput) issueProjectInput.value = selectedProjectId;
         setIssueChip(
             issueProjectPicker,
-            projectOption.dataset.projectName || 'Wybierz projekt',
+            projectOption.dataset.projectName || 'Wybierz przestrzeń',
             projectOption.dataset.projectIcon || '',
             projectOption.dataset.projectColor || ''
         );
@@ -747,6 +1229,29 @@ function initTasksPage() {
         selectIssueProject(projectId, selectedSectionOption?.dataset.sectionId || '');
     }
 
+    function selectIssueSectionContext(sectionId) {
+        if (!sectionId) return false;
+        const sectionOption = issueSectionOptions.find(option => option.dataset.sectionId === String(sectionId));
+        if (!sectionOption) return false;
+
+        selectIssueProject(sectionOption.dataset.sectionProjectId || '', sectionId);
+        return true;
+    }
+
+    function setIssueStatus(status) {
+        if (!issueStatusSelect || !status) return;
+        const hasStatus = Array.from(issueStatusSelect.options).some(option => option.value === status);
+        if (!hasStatus) return;
+
+        issueStatusSelect.value = status;
+        issueStatusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function setIssueColumn(columnId) {
+        if (!issueColumnInput) return;
+        issueColumnInput.value = columnId || '';
+    }
+
     function syncProjectIconPickers() {
         projectIconGroups.forEach(group => {
             if (!group.input || !group.picker) return;
@@ -765,7 +1270,7 @@ function initTasksPage() {
         emojiPicker = document.createElement('div');
         emojiPicker.className = 'tasks-emoji-picker';
         emojiPicker.setAttribute('role', 'dialog');
-        emojiPicker.setAttribute('aria-label', 'Wybór ikony projektu');
+        emojiPicker.setAttribute('aria-label', 'Wybór ikony przestrzeni roboczej');
 
         const tabs = document.createElement('div');
         tabs.className = 'tasks-emoji-picker__tabs';
@@ -1071,12 +1576,12 @@ function initTasksPage() {
     document.querySelectorAll('[data-delete-project-form]').forEach(form => {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            const projectName = escapeHtml(this.dataset.projectName || 'ten projekt');
+            const projectName = escapeHtml(this.dataset.projectName || 'tę przestrzeń roboczą');
 
             window.showConfirmModal({
-                title: 'Usuń projekt',
-                message: `Czy na pewno chcesz usunąć projekt „${projectName}”? Zadania z projektu zostaną przeniesione do sekcji „Bez projektu”.`,
-                confirmText: 'Usuń projekt',
+                title: 'Usuń przestrzeń roboczą',
+                message: `Czy na pewno chcesz usunąć przestrzeń roboczą „${projectName}”? Zadania z tej przestrzeni zostaną przeniesione do sekcji „Bez przestrzeni roboczej”.`,
+                confirmText: 'Usuń przestrzeń',
                 cancelText: 'Anuluj',
                 confirmClass: 'btn-danger',
                 onConfirm: () => this.submit()
@@ -1139,7 +1644,12 @@ function initTasksPage() {
     openIssueButtons.forEach(button => {
         button.addEventListener('click', () => {
             if (button.disabled) return;
-            syncIssuePickers();
+            const sectionId = button.dataset.issueSectionId || '';
+            if (!selectIssueSectionContext(sectionId)) {
+                syncIssuePickers();
+            }
+            setIssueColumn(button.dataset.issueColumnId || '');
+            setIssueStatus(button.dataset.issueStatus || '');
             openModal(issueModal, issueTitleInput, updateIssueSubmitState);
         });
     });
@@ -1387,6 +1897,16 @@ function initTasksPage() {
                 window.location.href = viewUrl;
             }
         });
+
+        row.addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            if (shouldIgnoreRowClick(e, this)) return;
+            const viewUrl = this.getAttribute('data-view-url');
+            if (!viewUrl) return;
+            e.preventDefault();
+            rememberTaskReturnPoint(viewUrl);
+            window.location.href = viewUrl;
+        });
     });
 
     [...projectRows, ...sectionRows].forEach(row => {
@@ -1410,6 +1930,10 @@ function initTasksPage() {
         return dropTarget?.dataset.dropStatus || dropTarget?.closest('[data-drop-status]')?.dataset.dropStatus || '';
     }
 
+    function getDropColumnId(dropTarget) {
+        return dropTarget?.dataset.dropColumnId || dropTarget?.closest('[data-drop-column-id]')?.dataset.dropColumnId || '';
+    }
+
     function updateTaskStatusVisual(row, status) {
         row.dataset.status = status;
         row.classList.toggle('completed', status === 'closed');
@@ -1430,40 +1954,55 @@ function initTasksPage() {
             const countEl = group.querySelector(':scope > header .tasks-rail-count');
             if (countEl) countEl.textContent = count;
         });
+
+        document.querySelectorAll('.tasks-kanban-column').forEach(column => {
+            const count = column.querySelectorAll('.task-row').length;
+            const countEl = column.querySelector(':scope > header .tasks-rail-count');
+            if (countEl) countEl.textContent = count;
+        });
     }
 
     function updateSubtasksCount() {
         if (!subtasksToolbar || !subtasksBoard) return;
         const title = subtasksToolbar.querySelector('.tasks-subtasks-title span');
         if (!title) return;
-        title.textContent = `Podzadania (${subtasksBoard.querySelectorAll('.task-row').length})`;
+        title.textContent = `${taskCopy.subItems} (${subtasksBoard.querySelectorAll('.task-row').length})`;
     }
 
     function moveTaskRow(row, dropTarget) {
+        const columnId = getDropColumnId(dropTarget);
         const status = getDropStatus(dropTarget);
         const list = dropTarget.matches('.tasks-issue-list, .tasks-status-subgroup-list')
             ? dropTarget
             : dropTarget.querySelector('.tasks-issue-list, .tasks-status-subgroup-list');
+        const addCardButton = list?.querySelector(':scope > .tasks-kanban-column__add-card') || null;
 
-        if (!row || !status || !list || row.dataset.status === status) return;
+        if (!row || !list) return;
+        if (columnId && row.dataset.columnId === columnId) return;
+        if (!columnId && (!status || row.dataset.status === status)) return;
 
         const previousParent = row.parentElement;
         const previousStatus = row.dataset.status;
+        const previousColumnId = row.dataset.columnId || '';
         const taskId = row.dataset.taskId;
 
         row.dataset.dragSuppressClick = 'true';
-        list.appendChild(row);
-        updateTaskStatusVisual(row, status);
+        list.insertBefore(row, addCardButton);
+        if (columnId) {
+            row.dataset.columnId = columnId;
+        } else {
+            updateTaskStatusVisual(row, status);
+        }
         refreshGroupCounts();
         applyFilters();
 
-        fetch(`/tasks/update/${taskId}/`, {
+        fetch(`/${taskAppSegment}/update/${taskId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': window.getCookie('csrftoken')
             },
-            body: JSON.stringify({ status })
+            body: JSON.stringify(columnId ? { column_id: columnId } : { status })
         })
         .then(response => response.json().then(data => ({ ok: response.ok, data })))
         .then(({ ok, data }) => {
@@ -1474,14 +2013,15 @@ function initTasksPage() {
         .catch(error => {
             console.error('Error:', error);
             if (previousParent) previousParent.appendChild(row);
-            updateTaskStatusVisual(row, previousStatus);
+            row.dataset.columnId = previousColumnId;
+            if (!columnId) updateTaskStatusVisual(row, previousStatus);
             refreshGroupCounts();
             applyFilters();
-            showMessage(error.message || 'Błąd podczas przenoszenia zadania', 'error');
+            showMessage(error.message || taskCopy.itemMoveError, 'error');
         });
     }
 
-    document.querySelectorAll('.tasks-issue-row[draggable="true"]').forEach(row => {
+    document.querySelectorAll('.task-row[draggable="true"], .tasks-issue-row[draggable="true"]').forEach(row => {
         row.addEventListener('dragstart', function(event) {
             this.classList.add('is-dragging');
             event.dataTransfer.effectAllowed = 'move';
@@ -1494,15 +2034,22 @@ function initTasksPage() {
         });
     });
 
-    document.querySelectorAll('[data-drop-status]').forEach(dropTarget => {
+    document.querySelectorAll('[data-drop-status], [data-drop-column-id]').forEach(dropTarget => {
         dropTarget.addEventListener('dragover', function(event) {
             if (!Array.from(event.dataTransfer.types).includes('text/plain')) return;
             event.preventDefault();
+            event.stopPropagation();
             event.dataTransfer.dropEffect = 'move';
+            document.querySelectorAll('.is-drag-over').forEach(target => {
+                if (target !== this && !target.contains(this)) {
+                    target.classList.remove('is-drag-over');
+                }
+            });
             this.classList.add('is-drag-over');
         });
 
         dropTarget.addEventListener('dragleave', function(event) {
+            event.stopPropagation();
             if (!this.contains(event.relatedTarget)) {
                 this.classList.remove('is-drag-over');
             }
@@ -1510,9 +2057,11 @@ function initTasksPage() {
 
         dropTarget.addEventListener('drop', function(event) {
             event.preventDefault();
+            event.stopPropagation();
             this.classList.remove('is-drag-over');
             const taskId = event.dataTransfer.getData('text/plain');
-            const row = document.querySelector(`.tasks-issue-row[data-task-id="${taskId}"]`);
+            const escapedTaskId = window.CSS?.escape ? CSS.escape(taskId) : taskId.replace(/["\\]/g, '\\$&');
+            const row = document.querySelector(`.task-row[data-task-id="${escapedTaskId}"], .tasks-issue-row[data-task-id="${escapedTaskId}"]`);
             moveTaskRow(row, this);
         });
     });
@@ -1629,7 +2178,7 @@ function initTasksPage() {
                         statusToggleBtn.className = 'btn btn-secondary tasks-toolbar-btn';
                         statusToggleBtn.innerHTML = `
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                            Zamknij zadanie
+                            ${taskCopy.closeOne}
                         `;
                         statusToggleBtn.dataset.targetStatus = 'closed';
                     } else {
@@ -1777,7 +2326,7 @@ function initTasksPage() {
         if (selectedTaskCheckboxes.length !== 1) return;
 
         const taskId = selectedTaskCheckboxes[0].dataset.taskId;
-        if (taskId) window.location.href = `/tasks/view-task/${taskId}/`;
+        if (taskId) window.location.href = `/${taskAppSegment}/view-task/${taskId}/`;
     }
 
     function editSelectedSection() {
@@ -1826,14 +2375,14 @@ function initTasksPage() {
     function deleteSelectedSection() {
         const selectedSectionCheckbox = getSelectedSectionCheckbox();
         const sectionId = selectedSectionCheckbox?.dataset.sectionId || '';
-        const sectionTitle = escapeHtml(selectedSectionCheckbox?.dataset.sectionTitle || 'tę grupę');
+        const sectionTitle = escapeHtml(selectedSectionCheckbox?.dataset.sectionTitle || sectionCopy.deleteFallback);
         if (!sectionId) return;
 
         closeSectionActionMenu();
         window.showConfirmModal({
-            title: 'Usuń grupę',
-            message: `Czy na pewno chcesz usunąć grupę „${sectionTitle}”? Zadania z grupy zostaną przeniesione do sekcji „Bez projektu”.`,
-            confirmText: 'Usuń grupę',
+            title: sectionCopy.deleteTitle,
+            message: sectionCopy.deleteMessageTemplate.replace('{title}', sectionTitle),
+            confirmText: sectionCopy.deleteConfirm,
             cancelText: 'Anuluj',
             confirmClass: 'btn-danger',
             onConfirm: () => postDeleteSection(sectionId)
@@ -1843,14 +2392,14 @@ function initTasksPage() {
     function deleteSelectedProject() {
         const selectedProjectCheckbox = getSelectedProjectCheckbox();
         const projectId = selectedProjectCheckbox?.dataset.projectId || '';
-        const projectName = escapeHtml(selectedProjectCheckbox?.dataset.projectName || 'ten projekt');
+        const projectName = escapeHtml(selectedProjectCheckbox?.dataset.projectName || 'tę przestrzeń roboczą');
         if (!projectId) return;
 
         closeSectionActionMenu();
         window.showConfirmModal({
-            title: 'Usuń projekt',
-            message: `Czy na pewno chcesz usunąć projekt „${projectName}”? Zadania z projektu zostaną przeniesione do sekcji „Bez projektu”.`,
-            confirmText: 'Usuń projekt',
+            title: 'Usuń przestrzeń roboczą',
+            message: `Czy na pewno chcesz usunąć przestrzeń roboczą „${projectName}”? ${taskCopy.projectDeleteNote}`,
+            confirmText: 'Usuń przestrzeń',
             cancelText: 'Anuluj',
             confirmClass: 'btn-danger',
             onConfirm: () => postDeleteProject(projectId)
@@ -1866,7 +2415,7 @@ function initTasksPage() {
         closeSectionActionMenu();
         window.showConfirmModal({
             title: 'Usuń tag',
-            message: `Czy na pewno chcesz usunąć tag „${tagName}”? Tag zostanie odpięty od zadań.`,
+            message: `Czy na pewno chcesz usunąć tag „${tagName}”? ${taskCopy.tagDetachNote}`,
             confirmText: 'Usuń tag',
             cancelText: 'Anuluj',
             confirmClass: 'btn-danger',
@@ -1886,12 +2435,12 @@ function initTasksPage() {
         closeSectionActionMenu();
         window.showConfirmModal({
             title: 'Potwierdź usunięcie',
-            message: `Czy na pewno chcesz usunąć ${taskIds.length} ${taskIds.length === 1 ? 'zadanie' : 'zadań'}? Tej operacji nie można cofnąć.`,
+            message: `Czy na pewno chcesz usunąć ${taskIds.length} ${taskIds.length === 1 ? taskCopy.itemAcc : taskCopy.itemPluralGen}? Tej operacji nie można cofnąć.`,
             confirmText: 'Usuń',
             cancelText: 'Anuluj',
             confirmClass: 'btn-danger',
             onConfirm: () => {
-                fetch('/tasks/delete/', {
+                fetch(`/${taskAppSegment}/delete/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1913,12 +2462,12 @@ function initTasksPage() {
                         updateGroupVisibility();
                         showMessage(data.message, 'success');
                     } else {
-                        showMessage(data.message || 'Błąd podczas usuwania zadań', 'error');
+                        showMessage(data.message || taskCopy.itemDeleteError, 'error');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showMessage('Błąd podczas usuwania zadań', 'error');
+                    showMessage(taskCopy.itemDeleteError, 'error');
                 });
             }
         });
@@ -1941,13 +2490,13 @@ function initTasksPage() {
             
             if (taskIds.length > 0) {
                 window.showConfirmModal({
-                    title: isClosing ? 'Zamknij zadania' : 'Otwórz ponownie zadania',
-                    message: `Czy na pewno chcesz ${isClosing ? 'zamknąć' : 'ponownie otworzyć'} ${taskIds.length} ${taskIds.length === 1 ? 'zadanie' : 'zadań'}?`,
+                    title: isClosing ? taskCopy.closeMany : taskCopy.reopenMany,
+                    message: `Czy na pewno chcesz ${isClosing ? 'zamknąć' : 'ponownie otworzyć'} ${taskIds.length} ${taskIds.length === 1 ? taskCopy.itemAcc : taskCopy.itemPluralGen}?`,
                     confirmText: isClosing ? 'Zamknij' : 'Otwórz ponownie',
                     cancelText: 'Anuluj',
                     confirmClass: isClosing ? 'btn-success' : 'btn-secondary',
                     onConfirm: () => {
-                        fetch('/tasks/bulk-update-status/', {
+                        fetch(`/${taskAppSegment}/bulk-update-status/`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1963,12 +2512,12 @@ function initTasksPage() {
                             if (data.status === 'success') {
                                 window.location.reload();
                             } else {
-                                showMessage(data.message || 'Błąd podczas aktualizacji zadań', 'error');
+                                showMessage(data.message || taskCopy.itemUpdateError, 'error');
                             }
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            showMessage('Błąd podczas aktualizacji zadań', 'error');
+                            showMessage(taskCopy.itemUpdateError, 'error');
                         });
                     }
                 });
@@ -2110,6 +2659,11 @@ function initTasksPage() {
             const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row')).filter(row => row.style.display !== 'none');
             const hasEmptyState = group.querySelector('.tasks-empty-section, .tasks-empty-state') !== null;
             group.style.display = (visibleRows.length || hasEmptyState) ? '' : 'none';
+        });
+
+        document.querySelectorAll('.tasks-kanban-column').forEach(column => {
+            const visibleRows = Array.from(column.querySelectorAll('.task-row')).filter(row => row.style.display !== 'none');
+            column.classList.toggle('is-filter-empty', visibleRows.length === 0);
         });
     }
 
@@ -2266,7 +2820,7 @@ function initTasksPage() {
                 ? Array.from(subtasksBoard.querySelectorAll('.task-checkbox:checked'))
                 : [];
             if (!selectedSubtasks.length) {
-                showMessage('Zaznacz podzadanie do usunięcia', 'error');
+                showMessage(`Zaznacz ${taskCopy.subItemAcc} do usunięcia`, 'error');
                 return;
             }
             deleteSelectedTasks();

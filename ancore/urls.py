@@ -8,8 +8,8 @@ urlpatterns = [
     path('', include('dashboard.urls')),
     path('accounts/', include('accounts.urls')),
     path('tasks/', include('tasks.urls')),
-    path('tickets/', include('tickets.urls')),
     path('kanban/', include('kanban.urls')),
+    path('tickets/', include('tickets.urls')),
     path('calendar/', include('planner.urls')),
 ]
 
