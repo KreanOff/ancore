@@ -1,0 +1,286 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{% if is_create %}Nowy kontakt{% else %}{{ contact.display_name }}{% endif %} | ancore{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    {% include 'contacts/includes/contacts_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-issue-page contacts-page contacts-detail-page">
+    <div class="tasks-issue-shell">
+        <header class="tasks-issue-header">
+            <div class="tasks-issue-breadcrumb">
+                <a href="{% url 'contacts:contacts' %}" class="tasks-issue-close" aria-label="Wróć do kontaktów" title="Wróć do kontaktów">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 12H5"/>
+                        <path d="m12 19-7-7 7-7"/>
+                    </svg>
+                </a>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-crumb">
+                    <span>Kontakty</span>
+                </span>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                <span class="tasks-issue-crumb tasks-issue-crumb--current">
+                    <span>{% if is_create %}Nowy kontakt{% else %}{{ contact.display_name }}{% endif %}</span>
+                </span>
+            </div>
+
+            <div class="tasks-issue-actions">
+                {% if not is_create and contact.user == request.user %}
+                <form method="post" action="{% url 'contacts:delete' contact.pk %}" class="contacts-delete-form" data-confirm-delete="Usunąć kontakt {{ contact.display_name }}?">
+                    {% csrf_token %}
+                    <button type="submit" class="tasks-issue-icon-button contacts-delete-button" aria-label="Usuń kontakt" title="Usuń kontakt">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 6h18"/>
+                            <path d="M8 6V4h8v2"/>
+                            <path d="m19 6-1 14H6L5 6"/>
+                            <path d="M10 11v5"/>
+                            <path d="M14 11v5"/>
+                        </svg>
+                    </button>
+                </form>
+                {% endif %}
+                {% if is_create or can_edit_contact %}
+                <button type="submit" form="contact-detail-form" class="tasks-issue-save" title="Zapisz kontakt">
+                    {% if is_create %}Utwórz{% else %}Zapisz{% endif %}
+                </button>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if not is_create %}
+        <form id="activity-comment-form" method="POST" class="tasks-issue-comment-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_activity_comment">
+        </form>
+        {% endif %}
+
+        <form id="contact-detail-form" method="POST" class="tasks-issue-form contacts-detail-form">
+            {% csrf_token %}
+            <main class="tasks-issue-main contacts-issue-main">
+                <section class="tasks-issue-content contacts-issue-content" aria-label="Kontakt">
+                    {% if form.errors %}
+                    <div class="tasks-error-banner">
+                        <strong>Wystąpiły błędy:</strong>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="contacts-identity">
+                        <span class="contacts-avatar contacts-avatar--large" aria-hidden="true">
+                            {% if is_create %}K{% else %}{{ contact.initials }}{% endif %}
+                        </span>
+                        <div class="contacts-name-grid">
+                            <label class="u-sr-only" for="{{ form.first_name.id_for_label }}">Imię</label>
+                            {{ form.first_name }}
+                            <label class="u-sr-only" for="{{ form.last_name.id_for_label }}">Nazwisko</label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                    <div class="contacts-primary-fields">
+                        <label>
+                            <span>Firma</span>
+                            {{ form.company }}
+                        </label>
+                        <label>
+                            <span>Stanowisko</span>
+                            {{ form.role }}
+                        </label>
+                    </div>
+
+                    <section class="contacts-note-panel" aria-label="Notatki">
+                        <div class="tasks-issue-activity-head">
+                            <h2>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                                    <path d="M14 2v6h6"/>
+                                    <path d="M8 13h8"/>
+                                    <path d="M8 17h5"/>
+                                </svg>
+                                Notatki
+                            </h2>
+                        </div>
+                        {{ form.notes }}
+                    </section>
+
+                    {% if not is_create %}
+                    <section class="tasks-issue-activity contacts-activity">
+                        <div class="tasks-issue-activity-head">
+                            <h2>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/>
+                                    <path d="M8 9h8"/>
+                                    <path d="M8 13h5"/>
+                                </svg>
+                                Aktywność
+                            </h2>
+                        </div>
+
+                        <div class="tasks-issue-comment">
+                            <textarea class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Dodaj notatkę z rozmowy..." form="activity-comment-form"></textarea>
+                            <div class="tasks-issue-comment-tools">
+                                <button type="submit" class="tasks-issue-send" aria-label="Dodaj notatkę" title="Dodaj notatkę" form="activity-comment-form">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m22 2-7 20-4-9-9-4Z"/>
+                                        <path d="M22 2 11 13"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tasks-issue-feed">
+                            {% for item in activity_items %}
+                            <article class="tasks-issue-feed-item {% if item.kind == 'comment' %}tasks-issue-feed-item--comment{% endif %}">
+                                <span class="tasks-issue-avatar">{{ item.actor.first_name|first|default:item.actor.username|first|default:"S"|upper }}</span>
+                                <div class="tasks-issue-feed-body">
+                                    {% if item.kind == 'comment' %}
+                                    <p>
+                                        <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
+                                        <time>{{ item.created_at|date:"d.m, H:i" }}</time>
+                                    </p>
+                                    <div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>
+                                    {% else %}
+                                    <p>
+                                        <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
+                                        {{ item.message }}
+                                        <time>{{ item.created_at|date:"d.m, H:i" }}</time>
+                                    </p>
+                                    {% if item.metadata.changes %}
+                                    {% for change in item.metadata.changes %}
+                                    <p class="tasks-issue-feed-note tasks-issue-change-line">
+                                        {{ change.field|capfirst }}:
+                                        <strong>{{ change.from_label }}</strong> → <strong>{{ change.to_label }}</strong>
+                                    </p>
+                                    {% endfor %}
+                                    {% elif item.metadata.title %}
+                                    <p class="tasks-issue-feed-note tasks-issue-change-line">Kontakt: <strong>{{ item.metadata.title }}</strong></p>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </article>
+                            {% empty %}
+                            <p class="tasks-issue-empty-feed">Brak aktywności przy kontakcie.</p>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+                </section>
+
+                <aside class="tasks-issue-sidebar contacts-issue-sidebar" aria-label="Szczegóły kontaktu">
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.status.id_for_label }}">Status</label>
+                            {{ form.status }}
+                        </div>
+                        {% if not is_create %}
+                        <div class="tasks-issue-field">
+                            <span>ID kontaktu</span>
+                            <strong class="tasks-issue-muted">#{{ contact.pk }}</strong>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.company_record.id_for_label }}">Powiązana firma</label>
+                            {{ form.company_record }}
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.email.id_for_label }}">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.phone.id_for_label }}">Telefon</label>
+                            {{ form.phone }}
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.source.id_for_label }}">Źródło</label>
+                            {{ form.source }}
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.last_contacted_at.id_for_label }}">Ostatni kontakt</label>
+                            {{ form.last_contacted_at }}
+                        </div>
+                    </section>
+
+                    {% if not is_create %}
+                    {% if contact.user == request.user %}
+                    <section class="tasks-issue-side-section contacts-share-section">
+                        <div class="tasks-issue-field">
+                            <span>Udostępnianie</span>
+                            <form method="post" action="{% url 'contacts:share-contact' contact.pk %}" class="contacts-share-form">
+                                {% csrf_token %}
+                                {{ share_form.shared_with }}
+                                {{ share_form.permission }}
+                                {{ share_form.note }}
+                                <button type="submit" class="tasks-tag-topbar-button">Udostępnij</button>
+                            </form>
+                        </div>
+                        {% for share in contact_shares %}
+                        <div class="contacts-share-row">
+                            <span>{{ share.shared_with.get_full_name|default:share.shared_with.email }}</span>
+                            <small>{{ share.get_permission_display }}</small>
+                            <form method="post" action="{% url 'contacts:remove-share' share.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="tasks-issue-icon-button" aria-label="Usuń udostępnienie" title="Usuń udostępnienie">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+                                        <path d="M18 6 6 18"/>
+                                        <path d="m6 6 12 12"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                        {% empty %}
+                        <p class="contacts-share-empty">Nie udostępniono nikomu.</p>
+                        {% endfor %}
+                    </section>
+                    {% endif %}
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <span>Utworzono</span>
+                            <strong>{{ contact.created_at|date:"d.m.Y, H:i" }}</strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <span>Ostatnia zmiana</span>
+                            <strong>{{ contact.updated_at|date:"d.m.Y, H:i" }}</strong>
+                        </div>
+                    </section>
+                    {% endif %}
+                </aside>
+            </main>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('[data-confirm-delete]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+        if (!window.confirm(form.dataset.confirmDelete || 'Usunąć kontakt?')) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -22,22 +22,6 @@
 
     <nav class="tasks-rail-nav">
         <div class="tasks-rail-nav-group">
-            <a href="{% url 'kanban:tasks' %}?view=my-tasks" class="tasks-rail-link {% if active_view == 'my_tasks' %}is-active{% endif %}">
-                <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M5 19a7 7 0 0 1 14 0"/><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
-                </span>
-                Moje karty
-                <span class="tasks-rail-count">{{ total_task_count }}</span>
-            </a>
-            <a href="{% url 'kanban:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
-                <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
-                </span>
-                Wszystkie karty
-                <span class="tasks-rail-count">{{ total_task_count }}</span>
-            </a>
-        </div>
-        <div class="tasks-rail-nav-group">
             <a href="{% url 'kanban:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg>
@@ -127,13 +111,18 @@
             <div class="tasks-section-links" id="project-sections-{{ project.id }}" data-project-sections>
                 {% for section in project.sections.all %}
                 <a href="{% url 'kanban:task_group' section.id %}"
-                   class="tasks-rail-link {% if active_section.id == section.id %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        {% if section.icon %}
-                        {{ section.icon }}
-                        {% endif %}
+                   class="tasks-rail-link tasks-section-rail-card tasks-section-card--accent-{% cycle 'blue' 'teal' 'violet' 'green' %} {% if active_section.id == section.id %}is-active{% endif %}"
+                   data-kanban-wallpaper-key="{% url 'kanban:task_group' section.id %}">
+                    <span class="tasks-section-card__cover tasks-section-rail-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
+                        <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
+                        <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
                     </span>
-                    {{ section.title }}
+                    <span class="tasks-section-rail-card__body">
+                        {% if section.icon %}
+                        <span class="tasks-rail-icon tasks-section-rail-card__icon" aria-hidden="true">{{ section.icon }}</span>
+                        {% endif %}
+                        <span class="tasks-section-rail-card__title">{{ section.title }}</span>
+                    </span>
                 </a>
                 {% empty %}
                 <div class="tasks-empty-rail-note">Dodaj pierwszą tablicę</div>

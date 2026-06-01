@@ -1,0 +1,78 @@
+/* Shared checkbox visual system. Context-specific layout stays with each component. */
+.task-checkbox,
+.tasks-row-checkbox,
+.form-checkbox,
+.tasks-kanban-card .task-checkbox,
+.tasks-issue-row .task-checkbox,
+.tasks-issue-row .tasks-row-checkbox,
+.tasks-section-card .tasks-row-checkbox {
+    width: var(--checkbox-size);
+    height: var(--checkbox-size);
+    min-width: var(--checkbox-size);
+    flex: 0 0 var(--checkbox-size);
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--checkbox-border-color);
+    border-radius: 4px;
+    background-color: var(--checkbox-bg);
+    background-image: none;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: opacity 0.08s ease, border-color 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.task-checkbox:hover,
+.tasks-row-checkbox:hover,
+.form-checkbox:hover,
+.tasks-kanban-card .task-checkbox:hover,
+.tasks-issue-row .task-checkbox:hover,
+.tasks-issue-row .tasks-row-checkbox:hover,
+.tasks-section-card .tasks-row-checkbox:hover {
+    border-color: var(--checkbox-hover-border-color);
+}
+
+.task-checkbox:checked,
+.tasks-row-checkbox:checked,
+.form-checkbox:checked,
+.tasks-kanban-card .task-checkbox:checked,
+.tasks-issue-row .task-checkbox:checked,
+.tasks-issue-row .tasks-row-checkbox:checked,
+.tasks-section-card .tasks-row-checkbox:checked {
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
+    background-image: var(--checkbox-check-icon);
+}
+
+.task-checkbox:focus-visible,
+.tasks-row-checkbox:focus-visible,
+.form-checkbox:focus-visible,
+.tasks-kanban-card .task-checkbox:focus-visible,
+.tasks-issue-row .task-checkbox:focus-visible,
+.tasks-issue-row .tasks-row-checkbox:focus-visible,
+.tasks-section-card .tasks-row-checkbox:focus-visible {
+    outline: none;
+    box-shadow: var(--checkbox-focus-ring);
+}
+
+.tasks-issue-dropdown-menu button[role="menuitemcheckbox"]::before {
+    width: var(--checkbox-size);
+    height: var(--checkbox-size);
+    flex: 0 0 var(--checkbox-size);
+    border: 1px solid var(--checkbox-border-color);
+    border-radius: 4px;
+    background-color: var(--checkbox-bg);
+    background-image: none;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+}
+
+.tasks-issue-dropdown-menu button[role="menuitemcheckbox"].is-active::before {
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
+    background-image: var(--checkbox-check-icon);
+    box-shadow: none;
+}

@@ -1,0 +1,82 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Firmy | ancore{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    {% include 'contacts/includes/contacts_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-list-page contacts-page">
+    <section class="tasks-workspace contacts-workspace" aria-label="Firmy">
+        <header class="tasks-topbar">
+            <div class="tasks-titlebar-left">
+                <span class="tasks-topbar-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 21h18"/>
+                        <path d="M5 21V5a2 2 0 0 1 2-2h7v18"/>
+                        <path d="M14 8h3a2 2 0 0 1 2 2v11"/>
+                        <path d="M8 7h2"/>
+                        <path d="M8 11h2"/>
+                        <path d="M8 15h2"/>
+                    </svg>
+                    <span>Firmy</span>
+                </span>
+            </div>
+            <div class="tasks-section-actions">
+                <a href="{% url 'contacts:create-company' %}" class="tasks-tag-topbar-button">Nowa firma</a>
+            </div>
+        </header>
+
+        <form class="tasks-filterbar contacts-filterbar" method="get">
+            <div class="tasks-filterbar-left">
+                <label class="tasks-search-field">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="M16.5 16.5 21 21"/>
+                    </svg>
+                    <input type="search" name="q" value="{{ query }}" placeholder="Szukaj firmy">
+                </label>
+            </div>
+            <div class="tasks-filterbar-right">
+                <button type="submit" class="tasks-tag-topbar-button">Szukaj</button>
+            </div>
+        </form>
+
+        <div class="tasks-table-wrap contacts-list-wrap">
+            {% if companies %}
+            <div class="contacts-list" role="list">
+                {% for company in companies %}
+                <a href="{% url 'contacts:view-company' company.pk %}" class="contacts-row" role="listitem">
+                    <span class="contacts-avatar" aria-hidden="true">{{ company.initials }}</span>
+                    <span class="contacts-row-main">
+                        <strong>{{ company.name }}</strong>
+                        <small>{% if company.website %}{{ company.website }}{% else %}Brak strony{% endif %}</small>
+                    </span>
+                    <span class="contacts-row-channel">
+                        {% if company.email %}{{ company.email }}{% elif company.phone %}{{ company.phone }}{% else %}Brak danych kontaktowych{% endif %}
+                    </span>
+                    <span class="status-indicator contacts-status-customer">{{ company.contact_count }} kontaktów</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <section class="tasks-empty-state contacts-empty-state">
+                <div class="tasks-empty-state__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7v18"/><path d="M14 8h3a2 2 0 0 1 2 2v11"/></svg>
+                </div>
+                <h2>Brak firm</h2>
+                <p>Utwórz firmę i podpinaj do niej kontakty oraz udostępnienia.</p>
+                <a href="{% url 'contacts:create-company' %}" class="tasks-modal__submit contacts-empty-action">Nowa firma</a>
+            </section>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -36,22 +36,6 @@
 
         <nav class="tasks-rail-nav">
             <div class="tasks-rail-nav-group">
-                <a href="{% url 'kanban:tasks' %}?view=my-tasks" class="tasks-rail-link {% if active_view == 'my_tasks' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M5 19a7 7 0 0 1 14 0"/><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
-                    </span>
-                    Moje karty
-                    <span class="tasks-rail-count">{{ total_task_count }}</span>
-                </a>
-                <a href="{% url 'kanban:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
-                    </span>
-                    Wszystkie karty
-                    <span class="tasks-rail-count">{{ total_task_count }}</span>
-                </a>
-            </div>
-            <div class="tasks-rail-nav-group">
                 <a href="{% url 'kanban:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
                     <span class="tasks-rail-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/></svg>
@@ -141,13 +125,18 @@
                 <div class="tasks-section-links" id="project-sections-{{ project.id }}" data-project-sections>
                     {% for section in project.sections.all %}
                     <a href="{% url 'kanban:task_group' section.id %}"
-                       class="tasks-rail-link {% if active_section.id == section.id %}is-active{% endif %}">
-                        <span class="tasks-rail-icon" aria-hidden="true">
-                            {% if section.icon %}
-                            {{ section.icon }}
-                            {% endif %}
+                       class="tasks-rail-link tasks-section-rail-card tasks-section-card--accent-{% cycle 'blue' 'teal' 'violet' 'green' %} {% if active_section.id == section.id %}is-active{% endif %}"
+                       data-kanban-wallpaper-key="{% url 'kanban:task_group' section.id %}">
+                        <span class="tasks-section-card__cover tasks-section-rail-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
+                            <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
+                            <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
                         </span>
-                        {{ section.title }}
+                        <span class="tasks-section-rail-card__body">
+                            {% if section.icon %}
+                            <span class="tasks-rail-icon tasks-section-rail-card__icon" aria-hidden="true">{{ section.icon }}</span>
+                            {% endif %}
+                            <span class="tasks-section-rail-card__title">{{ section.title }}</span>
+                        </span>
                     </a>
                     {% empty %}
                     <div class="tasks-empty-rail-note">Dodaj pierwszą tablicę</div>
@@ -204,10 +193,8 @@
                     </span>
                     {% endif %}
                     {% else %}
-                    {% if active_view == 'all_tasks' %}
-                    <span>Wszystkie karty</span>
-                    {% elif active_view == 'my_tasks' %}
-                    <span>Moje karty</span>
+                    {% if active_view == 'all_tasks' or active_view == 'my_tasks' %}
+                    <span>Karty</span>
                     {% elif active_view == 'all_groups' %}
                     <span>Tagi</span>
                     {% else %}
@@ -425,22 +412,22 @@
                     <span class="status-indicator status-label-plain">Tablice</span>
                     <span class="tasks-rail-count">{{ active_project.sections.all|length }}</span>
                 </header>
-                <div class="tasks-issue-list tasks-section-list" aria-label="Lista tablic przestrzeni roboczej">
+                <div class="tasks-issue-list tasks-section-list tasks-section-card-grid" aria-label="Lista tablic przestrzeni roboczej">
                 {% for section in active_project.sections.all %}
-                <article class="tasks-issue-row tasks-section-row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }}" data-view-url="{% url 'kanban:task_group' section.id %}">
-                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
-                    <span class="tasks-row-spacer" aria-hidden="true"></span>
-                    <span class="tasks-row-id">{{ active_project.code }}</span>
-                    <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
-                    <span class="tasks-row-title tasks-section-row-title">
+                <article class="tasks-section-row tasks-section-card tasks-section-card--accent-{% cycle 'blue' 'teal' 'violet' 'green' %}" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }}" data-view-url="{% url 'kanban:task_group' section.id %}" data-kanban-wallpaper-key="{% url 'kanban:task_group' section.id %}">
+                    <div class="tasks-section-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
+                        <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
+                        <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
                         {% if section.icon %}
-                        <span class="tasks-section-row-icon" aria-hidden="true">{{ section.icon }}</span>
+                        <span class="tasks-section-row-icon tasks-section-card__icon">{{ section.icon }}</span>
                         {% endif %}
-                        <span>{{ section.title }}</span>
-                    </span>
-                    <span class="tasks-section-row-description">{{ section.description|default:"Brak opisu" }}</span>
-                    <span class="tasks-row-time">{{ section.tasks.count }} kart</span>
-                    <span class="tasks-row-date">{{ section.created_at|date:"d M" }}</span>
+                    </div>
+                    <div class="tasks-section-card__body">
+                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
+                        <span class="tasks-row-title tasks-section-row-title tasks-section-card__title">
+                            <span>{{ section.title }}</span>
+                        </span>
+                    </div>
                 </article>
                 {% empty %}
                 <div class="tasks-empty-state">
@@ -470,7 +457,7 @@
                 <button type="button" class="tasks-kanban-wallpaper-clear" data-kanban-wallpaper-clear>Usuń tło</button>
             </div>
         </div>
-        <div class="tasks-table-wrap tasks-board tasks-kanban-board"
+        <div class="tasks-table-wrap tasks-board tasks-kanban-board tasks-section-board tasks-section-card--accent-{{ active_section_accent }}"
              data-kanban-column-reorder-url="{% url 'kanban:reorder_board_columns' active_section.id %}">
             {% for column in task_board_columns %}
             <section class="tasks-kanban-column tasks-kanban-column--{{ column.key }} {% if column.is_done %}tasks-kanban-column--done{% endif %}"{% if column.id %} draggable="true" title="Przenieś kolumnę" data-drop-column-id="{{ column.id }}" data-kanban-column-id="{{ column.id }}"{% endif %}>
@@ -617,34 +604,49 @@
         </div>
         {% elif projects %}
         <div class="tasks-table-wrap tasks-board">
-            <section class="tasks-issue-group" data-section-status="">
+            {% for project in projects %}
+            <section class="tasks-issue-group tasks-project-board-group"
+                     data-section-status=""
+                     data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}"
+                     data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }}">
                 <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Przestrzenie robocze" aria-expanded="true">
+                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję {{ project.name }}" aria-expanded="true">
                         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
                     </button>
-                    <span class="status-indicator status-label-plain">Przestrzenie robocze</span>
-                    <span class="tasks-rail-count">{{ projects|length }}</span>
+                    {% if project.icon %}
+                    <span class="tasks-project-row-icon" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon }}</span>
+                    {% endif %}
+                    <span class="status-indicator status-label-plain tasks-project-board-group__title">{{ project.name }}</span>
+                    <button type="button" class="tasks-rail-add-button tasks-project-board-group__add" aria-label="Dodaj tablicę w przestrzeni {{ project.name }}" title="Dodaj tablicę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}">
+                        <span aria-hidden="true">+</span>
+                    </button>
+                    <span class="tasks-rail-count">{{ project.sections.all|length }}</span>
                 </header>
-                <div class="tasks-issue-list tasks-project-list" aria-label="Lista przestrzeni roboczych">
-                {% for project in projects %}
-                <article class="tasks-issue-row tasks-project-row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }}" data-view-url="{% url 'kanban:tasks' %}?project={{ project.id }}">
-                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz przestrzeń roboczą {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}">
-                    <span class="tasks-row-spacer" aria-hidden="true"></span>
-                    <span class="tasks-row-id">{{ project.code }}</span>
-                    <span class="status-indicator status-label-plain" aria-label="Przestrzeń robocza"></span>
-                    <span class="tasks-row-title tasks-project-row-title">
-                        {% if project.icon %}
-                        <span class="tasks-project-row-icon" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon }}</span>
+                <div class="tasks-issue-list tasks-section-list tasks-section-card-grid" aria-label="Tablice przestrzeni {{ project.name }}">
+                {% for section in project.sections.all %}
+                <article class="tasks-section-row tasks-section-card tasks-section-card--accent-{% cycle 'blue' 'teal' 'violet' 'green' %}" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ project.name|default:''|striptags }} {{ project.code|default:'' }}" data-view-url="{% url 'kanban:task_group' section.id %}" data-kanban-wallpaper-key="{% url 'kanban:task_group' section.id %}">
+                    <div class="tasks-section-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
+                        <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
+                        <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
+                        {% if section.icon %}
+                        <span class="tasks-section-row-icon tasks-section-card__icon">{{ section.icon }}</span>
                         {% endif %}
-                        <span>{{ project.name }}</span>
-                    </span>
-                    <span class="tasks-project-row-description">{{ project.description|default:"Brak opisu" }}</span>
-                    <span class="tasks-row-time">{{ project.total_tasks }} kart</span>
-                    <span class="tasks-row-date">{{ project.created_at|date:"d M" }}</span>
+                    </div>
+                    <div class="tasks-section-card__body">
+                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
+                        <span class="tasks-row-title tasks-section-row-title tasks-section-card__title">
+                            <span>{{ section.title }}</span>
+                        </span>
+                    </div>
                 </article>
+                {% empty %}
+                <div class="tasks-empty-state">
+                    <p>Ta przestrzeń robocza nie ma jeszcze tablic.</p>
+                </div>
                 {% endfor %}
                 </div>
             </section>
+            {% endfor %}
         </div>
         {% else %}
         <div class="tasks-empty-state">
@@ -789,7 +791,7 @@
                     <label for="project-rename-description">Opis</label>
                     <textarea id="project-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ project_rename_form.description.value|default_if_none:'' }}</textarea>
 
-                    <span>Kod przestrzeni roboczej</span>
+                    <span>Kod przestrzeni</span>
                     <span class="tasks-inline-input tasks-inline-code tasks-inline-code--readonly" id="project-rename-code">{{ project_rename_form.instance.code|default:'Zostanie nadany automatycznie' }}</span>
 
                     <label for="project-rename-icon">Ikona przestrzeni roboczej</label>

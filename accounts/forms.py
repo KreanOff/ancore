@@ -37,3 +37,47 @@ class UserRegistrationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class UserProfileForm(forms.ModelForm):
+    _input_attrs = {'class': 'form-input'}
+
+    first_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
+        **{'placeholder': 'Imię'},
+        **_input_attrs,
+    }))
+    last_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
+        **{'placeholder': 'Nazwisko'},
+        **_input_attrs,
+    }))
+    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
+        **{'placeholder': 'Adres Email'},
+        **_input_attrs,
+    }))
+    presence_status = forms.ChoiceField(
+        label='Status',
+        choices=User.PresenceStatus.choices,
+        required=True,
+        widget=forms.Select(attrs={
+            **{'aria-label': 'Status użytkownika'},
+            **_input_attrs,
+        }),
+    )
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email', 'presence_status')
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        exists = User.objects.exclude(pk=self.instance.pk).filter(email__iexact=email).exists()
+        if exists:
+            raise forms.ValidationError('Ten adres email jest już używany.')
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.username = self.cleaned_data['email']
+        if commit:
+            user.save()
+        return user

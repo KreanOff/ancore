@@ -517,6 +517,11 @@
             btn.classList.toggle('is-active', active);
             btn.setAttribute('aria-selected', active ? 'true' : 'false');
         });
+        document.querySelectorAll('.calendar-mini-nav__button').forEach((btn) => {
+            const active = btn.dataset.view === view;
+            btn.classList.toggle('is-active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
 
         renderCurrentView();
         fetchEvents();
@@ -700,8 +705,14 @@
     document.getElementById('cal-next')?.addEventListener('click', () => navigate(1));
     document.getElementById('cal-today')?.addEventListener('click', goToToday);
     document.getElementById('cal-add-event')?.addEventListener('click', () => openDialog('create', null, null));
+    document.querySelectorAll('[data-calendar-add]').forEach((btn) => {
+        btn.addEventListener('click', () => openDialog('create', null, null));
+    });
 
     document.querySelectorAll('.calendar-view-btn').forEach((btn) => {
+        btn.addEventListener('click', () => setView(btn.dataset.view));
+    });
+    document.querySelectorAll('.calendar-mini-nav__button').forEach((btn) => {
         btn.addEventListener('click', () => setView(btn.dataset.view));
     });
 

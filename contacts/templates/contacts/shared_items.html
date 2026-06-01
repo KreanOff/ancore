@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Udostępnione | ancore{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    {% include 'contacts/includes/contacts_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-list-page contacts-page">
+    <section class="tasks-workspace contacts-workspace" aria-label="Udostępnione elementy">
+        <header class="tasks-topbar">
+            <div class="tasks-titlebar-left">
+                <span class="tasks-topbar-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="18" cy="5" r="3"/>
+                        <circle cx="6" cy="12" r="3"/>
+                        <circle cx="18" cy="19" r="3"/>
+                        <path d="m8.6 13.5 6.8 4"/>
+                        <path d="m15.4 6.5-6.8 4"/>
+                    </svg>
+                    <span>Udostępnione</span>
+                </span>
+            </div>
+        </header>
+
+        <div class="tasks-table-wrap contacts-list-wrap">
+            {% if shares %}
+            <div class="contacts-list" role="list">
+                {% for share in shares %}
+                    {% if share.content_object %}
+                    <a href="{% if share.content_type.model == 'contact' %}{% url 'contacts:view-contact' share.object_id %}{% elif share.content_type.model == 'company' %}{% url 'contacts:view-company' share.object_id %}{% else %}#{% endif %}" class="contacts-row" role="listitem">
+                        <span class="contacts-avatar" aria-hidden="true">
+                            {% if share.content_type.model == 'company' %}{{ share.content_object.initials }}{% else %}{{ share.content_object.initials }}{% endif %}
+                        </span>
+                        <span class="contacts-row-main">
+                            <strong>{{ share.content_object }}</strong>
+                            <small>Od: {{ share.shared_by.get_full_name|default:share.shared_by.email }}</small>
+                        </span>
+                        <span class="contacts-row-channel">{{ share.note|default:"Bez wiadomości" }}</span>
+                        <span class="status-indicator contacts-status-partner">{{ share.get_permission_display }}</span>
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <section class="tasks-empty-state contacts-empty-state">
+                <div class="tasks-empty-state__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/></svg>
+                </div>
+                <h2>Nic nie jest udostępnione</h2>
+                <p>Gdy ktoś udostępni Ci kontakt albo firmę, zobaczysz to tutaj.</p>
+            </section>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -91,17 +91,52 @@ body.secondary-menu-resizing .main-content {
     appearance: none;
     background: transparent;
     cursor: pointer;
+    display: flex;
     font: inherit;
+    overflow: hidden;
+    position: relative;
 }
 
 .secondary-menu-toggle .nav-icon {
     display: block;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
+    flex-basis: 22px;
 }
 
 .secondary-menu-toggle .nav-icon path {
     transition: none;
+}
+
+.secondary-menu-toggle-icon {
+    left: 50%;
+    opacity: 1;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    transform-origin: center;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.secondary-menu-toggle-icon--expand {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-90deg) scale(0.78);
+}
+
+body.secondary-menu-collapsed .secondary-menu-toggle-icon--collapse {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.78);
+}
+
+body.secondary-menu-collapsed .secondary-menu-toggle-icon--expand {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .secondary-menu-toggle-icon {
+        transition: none;
+    }
 }
 
 body.secondary-menu-collapsed {
@@ -181,10 +216,41 @@ body.secondary-menu-collapsed .secondary-menu-resizer {
     border-radius: 8px;
 }
 
+.nav-separator {
+    width: 28px;
+    height: 1px;
+    margin: 0.45rem auto;
+    background: var(--border-color);
+}
+
 .nav-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
+    --nav-icon-optical-scale: 1;
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+}
+
+.nav-link:not(.secondary-menu-toggle) .nav-icon {
+    transform: scale(var(--nav-icon-optical-scale));
+    transform-origin: center;
+}
+
+.nav-icon--home {
+    --nav-icon-optical-scale: 0.96;
+}
+
+.nav-icon--tasks,
+.nav-icon--calendar,
+.nav-icon--admin,
+.nav-icon--logout {
+    --nav-icon-optical-scale: 1.04;
+}
+
+.nav-icon--kanban,
+.nav-icon--contacts,
+.nav-icon--profile {
+    --nav-icon-optical-scale: 1.12;
 }
 
 .nav-label {

@@ -1,0 +1,196 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{% if is_create %}Nowa firma{% else %}{{ company.name }}{% endif %} | ancore{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    {% include 'contacts/includes/contacts_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-issue-page contacts-page contacts-detail-page">
+    <div class="tasks-issue-shell">
+        <header class="tasks-issue-header">
+            <div class="tasks-issue-breadcrumb">
+                <a href="{% url 'contacts:companies' %}" class="tasks-issue-close" aria-label="Wróć do firm" title="Wróć do firm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 12H5"/>
+                        <path d="m12 19-7-7 7-7"/>
+                    </svg>
+                </a>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-crumb"><span>Firmy</span></span>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                <span class="tasks-issue-crumb tasks-issue-crumb--current">
+                    <span>{% if is_create %}Nowa firma{% else %}{{ company.name }}{% endif %}</span>
+                </span>
+            </div>
+
+            <div class="tasks-issue-actions">
+                {% if not is_create and company.owner == request.user %}
+                <form method="post" action="{% url 'contacts:delete-company' company.pk %}" class="contacts-delete-form" data-confirm-delete="Usunąć firmę {{ company.name }}?">
+                    {% csrf_token %}
+                    <button type="submit" class="tasks-issue-icon-button contacts-delete-button" aria-label="Usuń firmę" title="Usuń firmę">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 6h18"/>
+                            <path d="M8 6V4h8v2"/>
+                            <path d="m19 6-1 14H6L5 6"/>
+                            <path d="M10 11v5"/>
+                            <path d="M14 11v5"/>
+                        </svg>
+                    </button>
+                </form>
+                {% endif %}
+                {% if is_create or can_edit_company %}
+                <button type="submit" form="company-detail-form" class="tasks-issue-save" title="Zapisz firmę">
+                    {% if is_create %}Utwórz{% else %}Zapisz{% endif %}
+                </button>
+                {% endif %}
+            </div>
+        </header>
+
+        <form id="company-detail-form" method="POST" class="tasks-issue-form contacts-detail-form">
+            {% csrf_token %}
+            <main class="tasks-issue-main contacts-issue-main">
+                <section class="tasks-issue-content contacts-issue-content" aria-label="Firma">
+                    {% if form.errors %}
+                    <div class="tasks-error-banner">
+                        <strong>Wystąpiły błędy:</strong>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="contacts-identity">
+                        <span class="contacts-avatar contacts-avatar--large" aria-hidden="true">
+                            {% if is_create %}F{% else %}{{ company.initials }}{% endif %}
+                        </span>
+                        <div class="contacts-name-grid contacts-name-grid--single">
+                            <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa firmy</label>
+                            {{ form.name }}
+                        </div>
+                    </div>
+
+                    <section class="contacts-note-panel" aria-label="Notatki">
+                        <div class="tasks-issue-activity-head">
+                            <h2>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                                    <path d="M14 2v6h6"/>
+                                    <path d="M8 13h8"/>
+                                    <path d="M8 17h5"/>
+                                </svg>
+                                Notatki
+                            </h2>
+                        </div>
+                        {{ form.notes }}
+                    </section>
+
+                    {% if not is_create %}
+                    <section class="tasks-issue-activity contacts-activity">
+                        <div class="tasks-issue-activity-head">
+                            <h2>Kontakty w firmie</h2>
+                        </div>
+                        <div class="contacts-company-links">
+                            {% for contact in company_contacts %}
+                            <a href="{% url 'contacts:view-contact' contact.pk %}" class="contacts-share-row contacts-share-row--link">
+                                <span>{{ contact.display_name }}</span>
+                                <small>{% if contact.email %}{{ contact.email }}{% else %}{{ contact.get_status_display }}{% endif %}</small>
+                            </a>
+                            {% empty %}
+                            <p class="tasks-issue-empty-feed">Brak kontaktów powiązanych z firmą.</p>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+                </section>
+
+                <aside class="tasks-issue-sidebar contacts-issue-sidebar" aria-label="Szczegóły firmy">
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.website.id_for_label }}">Strona</label>
+                            {{ form.website }}
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.email.id_for_label }}">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.phone.id_for_label }}">Telefon</label>
+                            {{ form.phone }}
+                        </div>
+                    </section>
+
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.address.id_for_label }}">Adres</label>
+                            {{ form.address }}
+                        </div>
+                        {% if not is_create %}
+                        <div class="tasks-issue-field">
+                            <span>Właściciel</span>
+                            <strong>{{ company.owner.get_full_name|default:company.owner.email }}</strong>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    {% if not is_create and company.owner == request.user %}
+                    <section class="tasks-issue-side-section contacts-share-section">
+                        <div class="tasks-issue-field">
+                            <span>Udostępnianie</span>
+                            <form method="post" action="{% url 'contacts:share-company' company.pk %}" class="contacts-share-form">
+                                {% csrf_token %}
+                                {{ share_form.shared_with }}
+                                {{ share_form.permission }}
+                                {{ share_form.note }}
+                                <button type="submit" class="tasks-tag-topbar-button">Udostępnij</button>
+                            </form>
+                        </div>
+                        {% for share in company_shares %}
+                        <div class="contacts-share-row">
+                            <span>{{ share.shared_with.get_full_name|default:share.shared_with.email }}</span>
+                            <small>{{ share.get_permission_display }}</small>
+                            <form method="post" action="{% url 'contacts:remove-share' share.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="tasks-issue-icon-button" aria-label="Usuń udostępnienie" title="Usuń udostępnienie">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+                                        <path d="M18 6 6 18"/>
+                                        <path d="m6 6 12 12"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                        {% empty %}
+                        <p class="contacts-share-empty">Nie udostępniono nikomu.</p>
+                        {% endfor %}
+                    </section>
+                    {% endif %}
+                </aside>
+            </main>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('[data-confirm-delete]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+        if (!window.confirm(form.dataset.confirmDelete || 'Usunąć firmę?')) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

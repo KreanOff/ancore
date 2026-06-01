@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Szukaj osób | ancore{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    {% include 'contacts/includes/contacts_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-list-page contacts-page">
+    <section class="tasks-workspace contacts-workspace" aria-label="Szukaj użytkowników">
+        <header class="tasks-topbar">
+            <div class="tasks-titlebar-left">
+                <span class="tasks-topbar-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="M16.5 16.5 21 21"/>
+                        <path d="M11 8v6"/>
+                        <path d="M8 11h6"/>
+                    </svg>
+                    <span>Szukaj osób</span>
+                </span>
+            </div>
+        </header>
+
+        <form class="tasks-filterbar contacts-filterbar" method="get">
+            <div class="tasks-filterbar-left">
+                <label class="tasks-search-field">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="M16.5 16.5 21 21"/>
+                    </svg>
+                    <input type="search" name="q" value="{{ query }}" placeholder="Imię, nazwisko albo email">
+                </label>
+            </div>
+            <div class="tasks-filterbar-right">
+                <button type="submit" class="tasks-tag-topbar-button">Szukaj</button>
+            </div>
+        </form>
+
+        <div class="tasks-table-wrap contacts-list-wrap">
+            {% if users %}
+            <div class="contacts-list" role="list">
+                {% for user_item in users %}
+                <div class="contacts-row contacts-row--static" role="listitem">
+                    <span class="contacts-avatar" aria-hidden="true">
+                        {{ user_item.first_name|first|default:user_item.email|first|upper }}{{ user_item.last_name|first|upper }}
+                    </span>
+                    <span class="contacts-row-main">
+                        <strong>{{ user_item.get_full_name|default:user_item.email }}</strong>
+                        <small>{{ user_item.email }}</small>
+                    </span>
+                    <span class="contacts-row-channel">{{ user_item.get_presence_status_display }}</span>
+                    {% if user_item.pk in existing_user_contact_ids %}
+                    <span class="status-indicator contacts-status-active">W kontaktach</span>
+                    {% else %}
+                    <form method="post" action="{% url 'contacts:add-user-contact' user_item.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="tasks-tag-topbar-button">Dodaj</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <section class="tasks-empty-state contacts-empty-state">
+                <div class="tasks-empty-state__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+                </div>
+                <h2>{% if query %}Brak wyników{% else %}Wpisz szukaną osobę{% endif %}</h2>
+                <p>Po dodaniu użytkownika powstanie kontakt z jego danymi profilowymi.</p>
+            </section>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'accounts/auth_base.html' %}
+
+{% block title %}Dodaj konto | ancore{% endblock %}
+{% block auth_subtitle %}Dodaj konto do szybkiego przełączania{% endblock %}
+
+{% block auth_content %}
+<form method="post">
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="alert alert-error">
+        Nieprawidłowy email lub hasło.
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+        <label class="form-label" for="email">Adres Email</label>
+        <input type="email" name="username" id="email" class="form-input" required autofocus>
+    </div>
+    <div class="form-group">
+        <label class="form-label" for="password">Hasło</label>
+        <input type="password" name="password" id="password" class="form-input" required>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Dodaj konto</button>
+</form>
+
+<div class="auth-footer">
+    <a href="{% url 'profile' %}">Wróć do profilu</a>
+</div>
+{% endblock %}

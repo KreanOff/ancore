@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'accounts',
     'tasks',
     'kanban',
-    'tickets',
+    'contacts',
     'dashboard',
     'planner',
 ]

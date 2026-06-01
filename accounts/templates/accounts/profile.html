@@ -1,0 +1,290 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Profil | ancore{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    <aside class="tasks-tracker-rail profile-rail" aria-label="Nawigacja profilu">
+        <div class="tasks-rail-header">
+            <h1>Profil</h1>
+        </div>
+
+        <nav class="tasks-rail-nav">
+            <div class="tasks-rail-nav-group">
+                <a href="{% url 'profile' %}" class="tasks-rail-link is-active">
+                    <span class="tasks-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                    </span>
+                    Profil użytkownika
+                </a>
+                <a href="{% url 'add_account' %}" class="tasks-rail-link">
+                    <span class="tasks-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                    </span>
+                    Dodaj konto
+                </a>
+                <a href="/admin/" class="tasks-rail-link">
+                    <span class="tasks-rail-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.08.08a2 2 0 1 1-3.84 0L10 20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.08a2 2 0 1 1 0-3.84L4 10a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.08-.08a2 2 0 1 1 3.84 0L14 4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.1.35.3.69.6 1l.08.08a2 2 0 1 1 0 3.84L20 14c-.3.31-.5.65-.6 1z"/></svg>
+                    </span>
+                    Administracja
+                </a>
+            </div>
+        </nav>
+
+        <div class="tasks-rail-section">
+            <div class="tasks-rail-section-title">Aktywne konto</div>
+            <div class="profile-rail-account">
+                <span class="profile-avatar profile-rail-avatar {{ current_account_avatar.color_class }}" aria-hidden="true">
+                    {{ current_account_avatar.initials }}
+                </span>
+                <span class="profile-rail-copy">
+                    <strong>{{ request.user.get_full_name|default:request.user.email }}</strong>
+                    <span>{{ request.user.email }}</span>
+                    <span class="profile-presence-badge {{ request.user.presence_status_class }}">
+                        <span class="profile-presence-dot" aria-hidden="true"></span>
+                        {{ request.user.get_presence_status_display }}
+                    </span>
+                </span>
+            </div>
+        </div>
+    </aside>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page tasks-page tasks-issue-page" aria-labelledby="profile-title">
+    <div class="tasks-issue-shell profile-issue-shell">
+        <header class="tasks-issue-header">
+            <div class="tasks-issue-breadcrumb">
+                <a href="{% url 'home' %}"
+                   class="tasks-issue-close"
+                   aria-label="Wróć do panelu głównego"
+                   title="Wróć do panelu głównego">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 12H5"/>
+                        <path d="m12 19-7-7 7-7"/>
+                    </svg>
+                </a>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-crumb">
+                    <span class="tasks-issue-crumb-icon profile-crumb-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                    </span>
+                    <span>Konto</span>
+                </span>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                <span class="tasks-issue-crumb tasks-issue-crumb--current">
+                    <span id="profile-title">Profil użytkownika</span>
+                </span>
+            </div>
+
+            <div class="tasks-issue-actions">
+                <a href="/admin/" class="tasks-issue-icon-button" aria-label="Administracja" title="Administracja">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5z"/>
+                        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.08.08a2 2 0 1 1-3.84 0L10 20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.08a2 2 0 1 1 0-3.84L4 10a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.08-.08a2 2 0 1 1 3.84 0L14 4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.1.35.3.69.6 1l.08.08a2 2 0 1 1 0 3.84L20 14c-.3.31-.5.65-.6 1z"/>
+                    </svg>
+                </a>
+                <button type="submit" form="profile-detail-form" class="tasks-issue-save" title="Zapisz profil">
+                    Zapisz
+                </button>
+            </div>
+        </header>
+
+        <main class="tasks-issue-main profile-issue-main">
+            <section class="tasks-issue-content profile-issue-content" aria-label="Dane profilu">
+                <form method="post" id="profile-detail-form" class="profile-detail-form" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="tasks-error-banner">
+                        <strong>Wystąpiły błędy:</strong>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="profile-title-area">
+                        <span class="profile-avatar profile-page-avatar {{ current_account_avatar.color_class }}" aria-hidden="true">
+                            {{ current_account_avatar.initials }}
+                        </span>
+                        <div class="profile-title-fields">
+                            <div class="tasks-issue-title-field profile-name-fields">
+                                <div class="profile-inline-field">
+                                    <label class="u-sr-only" for="{{ form.first_name.id_for_label }}">Imię</label>
+                                    {{ form.first_name }}
+                                </div>
+                                <div class="profile-inline-field">
+                                    <label class="u-sr-only" for="{{ form.last_name.id_for_label }}">Nazwisko</label>
+                                    {{ form.last_name }}
+                                </div>
+                            </div>
+
+                            <div class="tasks-issue-description-field profile-email-field">
+                                <label class="u-sr-only" for="{{ form.email.id_for_label }}">Adres e-mail</label>
+                                {{ form.email }}
+                            </div>
+
+                            <div class="profile-status-field">
+                                <label for="{{ form.presence_status.id_for_label }}">Status</label>
+                                <span class="profile-presence-dot {{ request.user.presence_status_class }}" aria-hidden="true"></span>
+                                {{ form.presence_status }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tasks-issue-tool-row profile-tool-row" aria-label="Narzędzia profilu">
+                        <a href="{% url 'add_account' %}" class="tasks-issue-tool tasks-issue-tool--labelled" title="Dodaj konto">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 5v14"/>
+                                <path d="M5 12h14"/>
+                            </svg>
+                            <span>Dodaj konto</span>
+                        </a>
+                    </div>
+                </form>
+
+                <section class="tasks-issue-activity profile-accounts-activity" aria-label="Konta w sesji">
+                    <div class="tasks-issue-activity-head">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M17 21a5 5 0 0 0-10 0"/>
+                                <circle cx="12" cy="8" r="4"/>
+                                <path d="M21 21a4 4 0 0 0-3-3.87"/>
+                                <path d="M3 21a4 4 0 0 1 3-3.87"/>
+                            </svg>
+                            Konta w sesji
+                        </h2>
+                        <a href="{% url 'add_account' %}" class="tasks-issue-activity-chip profile-add-chip">
+                            <span>Dodaj konto</span>
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M10 4v12"/>
+                                <path d="M4 10h12"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="tasks-issue-feed profile-account-feed">
+                        {% for account in switch_accounts %}
+                        <article class="tasks-issue-feed-item profile-account-feed-item {% if account.is_current %}is-current{% endif %}">
+                            <span class="profile-avatar tasks-issue-avatar {{ account.avatar.color_class }}" aria-hidden="true">
+                                {{ account.avatar.initials }}
+                            </span>
+                            <div class="tasks-issue-feed-body profile-account-feed-body">
+                                <p>
+                                    <strong>{{ account.user.get_full_name|default:account.user.email }}</strong>
+                                    {% if account.is_current %}
+                                    <time>aktywne teraz</time>
+                                    {% else %}
+                                    <time>dodane do przełącznika</time>
+                                    {% endif %}
+                                </p>
+                                <div class="profile-account-line">{{ account.user.email }}</div>
+                                <span class="profile-presence-badge {{ account.user.presence_status_class }}">
+                                    <span class="profile-presence-dot" aria-hidden="true"></span>
+                                    {{ account.user.get_presence_status_display }}
+                                </span>
+                                <div class="profile-account-actions">
+                                    {% if account.is_current %}
+                                    <span class="profile-current-badge">Teraz</span>
+                                    {% else %}
+                                    <form method="post" action="{% url 'switch_account' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{ account.user.pk }}">
+                                        <button type="submit" class="profile-inline-button">Przełącz</button>
+                                    </form>
+                                    {% endif %}
+                                    <form method="post" action="{% url 'remove_account' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{ account.user.pk }}">
+                                        <button type="submit" class="profile-icon-button" aria-label="Usuń konto z przełącznika" title="Usuń konto z przełącznika">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M3 6h18"/>
+                                                <path d="M8 6V4h8v2"/>
+                                                <path d="M19 6l-1 14H6L5 6"/>
+                                                <path d="M10 11v5"/>
+                                                <path d="M14 11v5"/>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            </section>
+
+            <aside class="tasks-issue-sidebar profile-issue-sidebar" aria-label="Szczegóły profilu">
+                <section class="tasks-issue-side-section">
+                    <div class="tasks-issue-field">
+                        <span>Status</span>
+                        <strong class="profile-side-status profile-presence-badge {{ request.user.presence_status_class }}">
+                            <span class="profile-presence-dot" aria-hidden="true"></span>
+                            {{ request.user.get_presence_status_display }}
+                        </strong>
+                    </div>
+                    <div class="tasks-issue-field">
+                        <span>Dostęp</span>
+                        <strong class="profile-account-access {% if request.user.is_active %}is-active{% endif %}">
+                            {% if request.user.is_active %}Aktywne{% else %}Nieaktywne{% endif %}
+                        </strong>
+                    </div>
+                    <div class="tasks-issue-field">
+                        <span>Rola</span>
+                        <strong>{% if request.user.is_superuser %}Administrator{% elif request.user.is_staff %}Pracownik{% else %}Użytkownik{% endif %}</strong>
+                    </div>
+                    <div class="tasks-issue-field">
+                        <span>Dołączono</span>
+                        <strong>{{ request.user.date_joined|date:"d.m.Y, H:i" }}</strong>
+                    </div>
+                    <div class="tasks-issue-field">
+                        <span>Ostatnie logowanie</span>
+                        <strong class="tasks-issue-muted">{{ request.user.last_login|date:"d.m.Y, H:i"|default:"Brak danych" }}</strong>
+                    </div>
+                    <div class="tasks-issue-field">
+                        <span>Użytkownik</span>
+                        <strong class="tasks-issue-person">
+                            <span class="profile-avatar tasks-issue-mini-avatar {{ current_account_avatar.color_class }}">{{ current_account_avatar.initials }}</span>
+                            {{ request.user.get_full_name|default:request.user.email }}
+                        </strong>
+                    </div>
+                </section>
+
+                <section class="tasks-issue-side-section">
+                    <h2>Sesja</h2>
+                    <div class="tasks-issue-field">
+                        <span>Konta</span>
+                        <strong>{{ switch_accounts|length }}</strong>
+                    </div>
+                    <div class="tasks-issue-field">
+                        <span>Aktywne</span>
+                        <strong>{{ request.user.email }}</strong>
+                    </div>
+                </section>
+
+                <section class="tasks-issue-side-section">
+                    <h2>Akcje</h2>
+                    <div class="profile-side-actions">
+                        <a href="{% url 'add_account' %}" class="tasks-issue-side-button">Dodaj konto</a>
+                        <a href="/admin/" class="tasks-issue-side-button">Panel admina</a>
+                    </div>
+                </section>
+            </aside>
+        </main>
+    </div>
+</div>
+{% endblock %}

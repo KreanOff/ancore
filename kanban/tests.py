@@ -10,6 +10,8 @@ from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn,
 
 
 class KanbanProjectCreationTests(TestCase):
+    PROJECT_CODE_PATTERN = r'^[A-Z]{3}-\d{4}-\d{3}$'
+
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username='task-user',
@@ -36,7 +38,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(project.description, 'Opis projektu')
         self.assertEqual(project.icon, '☆')
         self.assertNotEqual(project.code, 'PT')
-        self.assertRegex(project.code, r'^PRJ-\d{4}-001$')
+        self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
         self.assertEqual(section.title, 'Nowa Tablica')
         self.assertEqual(section.kind, 'custom')
         self.assertEqual(section.icon, '')
@@ -53,10 +55,10 @@ class KanbanProjectCreationTests(TestCase):
         project = KanbanProject.objects.get(user=self.user, name='Projekt bez kodu')
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?project={project.id}")
-        self.assertRegex(project.code, r'^PRJ-\d{4}-001$')
+        self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
         self.assertEqual(project.icon, '')
 
-    def test_create_project_uses_next_project_number_for_current_year(self):
+    def test_create_project_generates_unique_random_code(self):
         first = KanbanProject.objects.create(user=self.user, name='Projekt pierwszy')
 
         response = self.client.post(reverse('kanban:tasks'), {
@@ -67,12 +69,12 @@ class KanbanProjectCreationTests(TestCase):
         })
 
         project = KanbanProject.objects.get(user=self.user, name='Projekt drugi')
-        prefix = first.code.rsplit('-', 1)[0]
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?project={project.id}")
-        self.assertEqual(project.code, f'{prefix}-002')
+        self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
+        self.assertNotEqual(project.code, first.code)
 
-    def test_project_numbering_is_per_user(self):
+    def test_project_codes_are_unique_across_users(self):
         other_user = get_user_model().objects.create_user(username='other-user', password='test-pass-123')
         other_project = KanbanProject.objects.create(user=other_user, name='Projekt innej osoby')
 
@@ -86,7 +88,26 @@ class KanbanProjectCreationTests(TestCase):
         project = KanbanProject.objects.get(user=self.user, name='Mój projekt')
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?project={project.id}")
-        self.assertEqual(project.code, other_project.code)
+        self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
+        self.assertNotEqual(project.code, other_project.code)
+
+    def test_project_codes_avoid_task_project_codes(self):
+        from tasks.models import TaskProject
+
+        task_project = TaskProject.objects.create(user=self.user, name='Projekt z modułu zadań')
+
+        response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'create_project',
+            'name': 'Moja przestrzeń',
+            'description': '',
+            'icon': '',
+        })
+
+        project = KanbanProject.objects.get(user=self.user, name='Moja przestrzeń')
+
+        self.assertRedirects(response, f"{reverse('kanban:tasks')}?project={project.id}")
+        self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
+        self.assertNotEqual(project.code, task_project.code)
 
     def test_project_icons_get_different_badge_colors(self):
         first = KanbanProject.objects.create(user=self.user, name='Pierwszy')
@@ -490,10 +511,10 @@ class KanbanProjectCreationTests(TestCase):
         response = self.client.get(reverse('kanban:view-task', args=[task.task_id]))
         content = response.content.decode()
 
-        self.assertContains(response, '<span>Kod przestrzeni roboczej</span>', html=True)
-        self.assertContains(response, '<strong class="tasks-issue-muted">PRJ</strong>', html=True)
-        self.assertLess(content.index('<label for="id_tags">Tagi</label>'), content.index('<span>Kod przestrzeni roboczej</span>'))
-        self.assertLess(content.index('<span>Kod przestrzeni roboczej</span>'), content.index('<span>Utworzył</span>'))
+        self.assertContains(response, '<span>Kod przestrzeni</span>', html=True)
+        self.assertContains(response, f'<strong class="tasks-issue-muted">{project.code}</strong>', html=True)
+        self.assertLess(content.index('<label for="id_tags">Tagi</label>'), content.index('<span>Kod przestrzeni</span>'))
+        self.assertLess(content.index('<span>Kod przestrzeni</span>'), content.index('<span>Utworzył</span>'))
 
     def test_subtask_detail_can_change_parent_task(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
@@ -629,22 +650,20 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(activity.metadata['from_label'], 'Nowe')
         self.assertEqual(activity.metadata['to_label'], 'Realizowane')
 
-    def test_my_tasks_view_is_available_from_secondary_navigation(self):
+    def test_my_tasks_view_does_not_show_removed_secondary_navigation_labels(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = KanbanSection.objects.create(project=project, title='Frontend')
         Kanban.objects.create(user=self.user, section=section, title='Moje zadanie testowe')
 
         response = self.client.get(f"{reverse('kanban:tasks')}?view=my-tasks")
 
-        self.assertContains(response, 'Moje karty')
+        self.assertNotContains(response, 'Moje karty')
+        self.assertNotContains(response, 'Wszystkie karty')
         self.assertContains(response, 'Moje zadanie testowe')
-        self.assertContains(
-            response,
-            f'<a href="{reverse("kanban:tasks")}?view=my-tasks" class="tasks-rail-link is-active">',
-        )
 
     def test_edit_project_updates_details_without_changing_code(self):
         project = KanbanProject.objects.create(user=self.user, name='Stara nazwa', description='Stary opis', code='OLD')
+        old_code = project.code
 
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'edit_project',
@@ -661,7 +680,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(project.name, 'Nowa nazwa')
         self.assertEqual(project.description, 'Nowy opis')
         self.assertEqual(project.icon, '🚀')
-        self.assertEqual(project.code, 'OLD')
+        self.assertEqual(project.code, old_code)
 
     def test_edit_project_can_remove_icon(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ', icon='🚀')
@@ -683,6 +702,7 @@ class KanbanProjectCreationTests(TestCase):
     def test_edit_project_ignores_posted_code(self):
         KanbanProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
         project = KanbanProject.objects.create(user=self.user, name='Drugi projekt', code='TWO')
+        old_code = project.code
 
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'edit_project',
@@ -696,7 +716,7 @@ class KanbanProjectCreationTests(TestCase):
         project.refresh_from_db()
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?project={project.id}")
-        self.assertEqual(project.code, 'TWO')
+        self.assertEqual(project.code, old_code)
 
     def test_create_section_saves_description(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')

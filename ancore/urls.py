@@ -9,7 +9,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('tasks/', include('tasks.urls')),
     path('kanban/', include('kanban.urls')),
-    path('tickets/', include('tickets.urls')),
+    path('contacts/', include('contacts.urls')),
     path('calendar/', include('planner.urls')),
 ]
 

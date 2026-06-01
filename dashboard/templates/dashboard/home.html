@@ -2,106 +2,177 @@
 
 {% block title %}Panel Główny | ancore{% endblock %}
 
-{% block content %}
-<section class="dashboard-shell" aria-labelledby="dashboard-title">
-    <div class="dashboard-hero">
-        <div>
-            <p class="dashboard-eyebrow">Panel Główny</p>
-            <h2 id="dashboard-title">Dashboard</h2>
-            <p>Najważniejsze zadania i terminy w jednym miejscu.</p>
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    <aside class="dashboard-rail tasks-tracker-rail dashboard-notifications-rail" aria-label="Powiadomienia systemowe">
+        <div class="dashboard-rail-header tasks-rail-header dashboard-notifications-header">
+            <h1>Powiadomienia</h1>
         </div>
-        <div class="dashboard-hero-actions">
-            <a href="{% url 'tasks:tasks' %}" class="btn btn-primary">Nowe zadanie</a>
-            <a href="{% url 'planner:index' %}" class="btn btn-secondary">Kalendarz</a>
-        </div>
-    </div>
 
-    <div class="dashboard-stats" aria-label="Podsumowanie">
-        <article class="dashboard-stat">
-            <span class="dashboard-stat__label">Otwarte zadania</span>
-            <strong>{{ open_tasks_count }}</strong>
-            <span class="dashboard-stat__hint">Łącznie: {{ total_tasks }}</span>
-        </article>
-        <article class="dashboard-stat">
-            <span class="dashboard-stat__label">Wysoki priorytet</span>
-            <strong>{{ high_priority_count }}</strong>
-            <span class="dashboard-stat__hint">Wymaga uwagi</span>
-        </article>
-        <article class="dashboard-stat">
-            <span class="dashboard-stat__label">Nadchodzące terminy</span>
-            <strong>{{ events_count }}</strong>
-            <span class="dashboard-stat__hint">Najbliższe wpisy</span>
-        </article>
-    </div>
-
-    <div class="dashboard-grid">
-        <section class="dashboard-panel dashboard-panel--large" aria-labelledby="recent-tasks-title">
-            <div class="dashboard-panel__header">
-                <div>
-                    <p class="dashboard-panel__kicker">Zadania</p>
-                    <h3 id="recent-tasks-title">Ostatnie aktywne</h3>
-                </div>
-                <a href="{% url 'tasks:tasks' %}" class="dashboard-link">Pokaż wszystko</a>
-            </div>
-
-            {% if recent_tasks %}
-            <div class="dashboard-list">
-                {% for task in recent_tasks %}
-                <a href="{% url 'tasks:view-task' task.task_id %}" class="dashboard-list-item">
-                    <span class="dashboard-list-item__main">
-                        <strong>#{{ task.task_id }} {{ task.title }}</strong>
-                        <small>{{ task.get_status_display }} · {{ task.created_at|date:"d.m.Y" }}</small>
+        <div class="dashboard-notifications-list" role="list">
+            {% for notification in dashboard_notifications %}
+            <a href="{{ notification.url }}" class="dashboard-notification dashboard-notification--{{ notification.source }}" role="listitem">
+                <span class="dashboard-notification-avatar" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-bell">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
+                        <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
+                    </svg>
+                </span>
+                <span class="dashboard-notification-body">
+                    <span class="dashboard-notification-line">
+                        <strong>{{ notification.actor_label }}</strong>
+                        <span>{{ notification.action_message }}</span>
+                        <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"d.m, H:i" }}</time>
                     </span>
-                    <span class="dashboard-badge dashboard-badge--{{ task.priority }}">{{ task.get_priority_display }}</span>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="dashboard-empty">Brak aktywnych zadań.</p>
-            {% endif %}
-        </section>
+                    {% for detail in notification.detail_lines %}
+                    <span class="dashboard-notification-note dashboard-notification-change-line">
+                        {{ detail.label }}:
+                        {% if detail.from_label %}<strong>{{ detail.from_label }}</strong> → {% endif %}<strong>{% if detail.to_label %}{{ detail.to_label }}{% else %}{{ detail.value }}{% endif %}</strong>
+                    </span>
+                    {% endfor %}
+                    <span class="dashboard-notification-note dashboard-notification-location">Gdzie: <strong>{{ notification.location_label }}</strong></span>
+                </span>
+            </a>
+            {% empty %}
+            <p class="dashboard-empty dashboard-notifications-empty">Brak nowych powiadomień.</p>
+            {% endfor %}
+        </div>
+    </aside>
+{% endblock %}
 
-        <section class="dashboard-panel" aria-labelledby="status-title">
-            <div class="dashboard-panel__header">
-                <div>
-                    <p class="dashboard-panel__kicker">Status</p>
-                    <h3 id="status-title">Przekrój zadań</h3>
+{% block content %}
+<div class="tasks-page tasks-issue-page dashboard-issue-page">
+    <div class="tasks-issue-shell">
+        <header class="tasks-issue-header">
+            <div class="tasks-issue-breadcrumb">
+                <span class="tasks-issue-icon-button dashboard-issue-home" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg>
+                </span>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-crumb">
+                    <span>ancore</span>
+                </span>
+                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
+                <span class="tasks-issue-crumb tasks-issue-crumb--current">
+                    <span>Panel Główny</span>
+                </span>
+            </div>
+
+            <div class="tasks-issue-actions">
+                <a href="{% url 'planner:index' %}" class="dashboard-toolbar-link tasks-issue-side-button">Kalendarz</a>
+                <a href="{% url 'tasks:tasks' %}" class="dashboard-toolbar-link tasks-issue-save">Zadania</a>
+            </div>
+        </header>
+
+        <main class="tasks-issue-main dashboard-issue-main">
+            <section class="tasks-issue-content dashboard-issue-content" aria-label="Przegląd pracy">
+                <div class="dashboard-issue-title">
+                    <p>Panel Główny</p>
+                    <h1 id="dashboard-title">Dashboard</h1>
                 </div>
-            </div>
-            <div class="dashboard-status-list">
-                {% for row in status_rows %}
-                <div class="dashboard-status-row">
-                    <span>{{ row.label }}</span>
-                    <strong>{{ row.count }}</strong>
+
+                <div class="dashboard-metrics" aria-label="Metryki">
+                    <article class="dashboard-metric">
+                        <span>Otwarte zadania</span>
+                        <strong>{{ open_tasks_count }}</strong>
+                        <small>Łącznie: {{ total_tasks }}</small>
+                    </article>
+                    <article class="dashboard-metric">
+                        <span>Wysoki priorytet</span>
+                        <strong>{{ high_priority_count }}</strong>
+                        <small>Wymaga uwagi</small>
+                    </article>
+                    <article class="dashboard-metric">
+                        <span>Nadchodzące terminy</span>
+                        <strong>{{ events_count }}</strong>
+                        <small>Najbliższe wpisy</small>
+                    </article>
                 </div>
-                {% endfor %}
-            </div>
-        </section>
 
-        <section class="dashboard-panel" aria-labelledby="calendar-title">
-            <div class="dashboard-panel__header">
-                <div>
-                    <p class="dashboard-panel__kicker">Kalendarz</p>
-                    <h3 id="calendar-title">Najbliższe terminy</h3>
-                </div>
-                <a href="{% url 'planner:index' %}" class="dashboard-link">Kalendarz</a>
-            </div>
+                <section class="tasks-issue-subtasks dashboard-panel dashboard-panel--tasks" aria-labelledby="recent-tasks-title">
+                    <div class="tasks-subtasks-toolbar">
+                        <div>
+                            <p class="dashboard-panel__kicker">Zadania</p>
+                            <h2 id="recent-tasks-title" class="dashboard-section-title">Ostatnie aktywne</h2>
+                        </div>
+                        <a href="{% url 'tasks:tasks' %}" class="dashboard-panel-link tasks-issue-side-button">Pokaż wszystko</a>
+                    </div>
 
-            {% if upcoming_events %}
-            <div class="dashboard-timeline">
-                {% for event in upcoming_events %}
-                <article class="dashboard-timeline-item dashboard-timeline-item--{{ event.color }}">
-                    <strong>{{ event.title }}</strong>
-                    <time datetime="{{ event.start|date:'c' }}">{{ event.start|date:"d.m.Y H:i" }}</time>
-                    {% if event.description %}<small>{{ event.description|truncatechars:70 }}</small>{% endif %}
-                </article>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="dashboard-empty">Brak nadchodzących terminów.</p>
-            {% endif %}
-        </section>
+                    {% if recent_tasks %}
+                    <div class="tasks-table-wrap tasks-board dashboard-task-board">
+                        <section class="tasks-issue-group tasks-status-block">
+                            <header class="tasks-issue-group-header tasks-status-block-header">
+                                <span class="status-indicator status-label-plain">Aktywne</span>
+                                <span class="tasks-rail-count">{{ recent_tasks|length }}</span>
+                            </header>
+                            <div class="tasks-issue-list">
+                                {% for task in recent_tasks %}
+                                <a href="{% url 'tasks:view-task' task.task_id %}" class="dashboard-task-row">
+                                    <span class="dashboard-task-priority tasks-row-priority priority-{{ task.priority }}" title="Priorytet: {{ task.get_priority_display }}" aria-label="Priorytet: {{ task.get_priority_display }}">
+                                        <span class="tasks-priority-icon" aria-hidden="true">
+                                            {% if task.priority == 'urgent' %}
+                                                <span class="tasks-priority-urgent-mark">!</span>
+                                            {% elif task.priority == 'none' %}
+                                                <span class="tasks-priority-no-mark"></span>
+                                            {% else %}
+                                                <span class="tasks-priority-bars"><span></span><span></span><span></span></span>
+                                            {% endif %}
+                                        </span>
+                                    </span>
+                                    <span class="dashboard-task-id">#{{ task.task_id }}</span>
+                                    <span class="status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
+                                    <span class="dashboard-task-title">{{ task.title }}</span>
+                                    <time class="dashboard-task-date" datetime="{{ task.created_at|date:'c' }}">{{ task.created_at|date:"d M" }}</time>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </section>
+                    </div>
+                    {% else %}
+                    <p class="tasks-issue-empty-feed dashboard-empty">Brak aktywnych zadań.</p>
+                    {% endif %}
+                </section>
+            </section>
 
+            <aside class="tasks-issue-sidebar dashboard-issue-sidebar" aria-label="Statusy i terminy">
+                <section class="tasks-issue-side-section" aria-labelledby="status-title">
+                    <h2 id="status-title">Przekrój zadań</h2>
+                    <div class="dashboard-status-list">
+                        {% for row in status_rows %}
+                        <div class="tasks-issue-history-row dashboard-status-row">
+                            <span>{{ row.label }}</span>
+                            <strong>{{ row.count }}</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="tasks-issue-side-section" aria-labelledby="calendar-title">
+                    <div class="dashboard-side-heading">
+                        <h2 id="calendar-title">Najbliższe terminy</h2>
+                        <a href="{% url 'planner:index' %}" class="dashboard-panel-link tasks-issue-side-button">Otwórz</a>
+                    </div>
+
+                    {% if upcoming_events %}
+                    <div class="dashboard-timeline">
+                        {% for event in upcoming_events %}
+                        <article class="dashboard-timeline-item dashboard-timeline-item--{{ event.color }}">
+                            <strong>{{ event.title }}</strong>
+                            <time datetime="{{ event.start|date:'c' }}">{{ event.start|date:"d.m.Y H:i" }}</time>
+                            {% if event.description %}<small>{{ event.description|truncatechars:70 }}</small>{% endif %}
+                        </article>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="dashboard-empty">Brak nadchodzących terminów.</p>
+                    {% endif %}
+                </section>
+            </aside>
+        </main>
     </div>
-</section>
+</div>
 {% endblock %}

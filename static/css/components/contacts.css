@@ -1,0 +1,358 @@
+.contacts-page {
+    background: #ffffff;
+    color: #1f2328;
+}
+
+.contacts-status-lead {
+    --tasks-status-color: #638fcf;
+    color: var(--tasks-status-color);
+}
+
+.contacts-status-active {
+    --tasks-status-color: #c18a34;
+    color: var(--tasks-status-color);
+}
+
+.contacts-status-customer {
+    --tasks-status-color: #3f8f5b;
+    color: var(--tasks-status-color);
+}
+
+.contacts-status-partner {
+    --tasks-status-color: #7c6bd0;
+    color: var(--tasks-status-color);
+}
+
+.contacts-status-archived {
+    --tasks-status-color: #8a909a;
+    color: var(--tasks-status-color);
+}
+
+.contacts-mini-avatar,
+.contacts-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #edf1ff;
+    color: #365bb5;
+    font-weight: 750;
+}
+
+.contacts-mini-avatar {
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
+}
+
+.contacts-avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 0.9rem;
+}
+
+.contacts-avatar--large {
+    width: 72px;
+    height: 72px;
+    font-size: 1.35rem;
+}
+
+.contacts-list-wrap {
+    padding: 1rem;
+}
+
+.contacts-list {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.contacts-row {
+    min-height: 64px;
+    display: grid;
+    grid-template-columns: auto minmax(180px, 1.4fr) minmax(180px, 1fr) 128px;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.contacts-row:hover {
+    border-color: #e0e5fa;
+    background: #f7f9ff;
+}
+
+.contacts-row-main {
+    min-width: 0;
+    display: grid;
+    gap: 0.18rem;
+}
+
+.contacts-row-main strong,
+.contacts-row-main small,
+.contacts-row-channel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contacts-row-main strong {
+    color: #242830;
+    font-size: 0.92rem;
+}
+
+.contacts-row-main small,
+.contacts-row-channel {
+    color: #6c7484;
+    font-size: 0.8rem;
+}
+
+.contacts-filterbar {
+    grid-template-columns: minmax(240px, auto) minmax(0, 1fr) auto;
+}
+
+.contacts-filterbar .tasks-filterbar-center {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.contacts-filter-select {
+    width: min(220px, 100%);
+}
+
+.contacts-toggle-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #4c5565;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.contacts-empty-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    text-decoration: none;
+}
+
+.contacts-empty-state {
+    max-width: 420px;
+    margin: 4rem auto 0;
+    padding: 3rem 2rem !important;
+}
+
+.contacts-empty-state .tasks-empty-state__icon {
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    border-radius: 50%;
+    background: #edf1ff;
+    color: #4268d4;
+}
+
+.contacts-empty-state .tasks-empty-state__icon svg {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    opacity: 1;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.contacts-empty-state h2 {
+    margin: 0 0 0.5rem;
+    color: #242830;
+    font-size: 1.1rem;
+}
+
+.contacts-empty-state p {
+    margin: 0;
+    color: #6c7484;
+    font-size: 0.9rem;
+}
+
+.contacts-issue-main {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 520px);
+}
+
+.contacts-identity {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.contacts-name-grid {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.contacts-name-grid .form-input {
+    height: auto;
+    padding: 0.2rem 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #20242b;
+    box-shadow: none;
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    font-weight: 650;
+    line-height: 1.2;
+}
+
+.contacts-primary-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.contacts-primary-fields label,
+.contacts-note-panel {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.contacts-primary-fields span {
+    color: #6f7786;
+    font-size: 0.74rem;
+    font-weight: 750;
+    text-transform: uppercase;
+}
+
+.contacts-note-panel textarea.form-input {
+    min-height: 180px;
+    border-radius: 6px;
+    font-size: 0.92rem;
+}
+
+.contacts-issue-sidebar .form-input {
+    min-height: 34px;
+    padding: 0.45rem 0.55rem;
+    border-radius: 5px;
+    font-size: 0.84rem;
+}
+
+.contacts-delete-form {
+    margin: 0;
+}
+
+.contacts-delete-button:hover {
+    color: #b42318;
+}
+
+.contacts-new-button--secondary {
+    margin-top: 0.5rem;
+    background: #f7f9ff;
+    color: #365bb5;
+}
+
+.contacts-row--static {
+    color: inherit;
+    text-decoration: none;
+}
+
+.contacts-row--static:hover {
+    border-color: transparent;
+    background: transparent;
+}
+
+.contacts-name-grid--single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.contacts-share-section {
+    gap: 0.75rem;
+}
+
+.contacts-share-form {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.contacts-share-form .tasks-tag-topbar-button {
+    justify-content: center;
+}
+
+.contacts-share-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 36px;
+    padding: 0.45rem 0;
+    border-top: 1px solid #eceff7;
+    color: inherit;
+    text-decoration: none;
+}
+
+.contacts-share-row span,
+.contacts-share-row small {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contacts-share-row small,
+.contacts-share-empty {
+    color: #6c7484;
+    font-size: 0.78rem;
+}
+
+.contacts-share-row--link {
+    grid-template-columns: minmax(0, 1fr) auto;
+    border: 1px solid #eceff7;
+    border-radius: 6px;
+    padding: 0.65rem 0.75rem;
+}
+
+.contacts-share-row--link:hover {
+    border-color: #dbe4ff;
+    background: #f7f9ff;
+}
+
+.contacts-company-links {
+    display: grid;
+    gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+    .contacts-row {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .contacts-row-channel,
+    .contacts-row .status-indicator {
+        display: none;
+    }
+
+    .contacts-filterbar {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .contacts-name-grid,
+    .contacts-primary-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .contacts-identity {
+        align-items: flex-start;
+    }
+}

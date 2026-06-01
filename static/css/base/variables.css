@@ -28,6 +28,12 @@
     --bp-2xl: 1920px;
     --control-height: 32px;
     --checkbox-size: 18px;
+    --checkbox-bg: #ffffff;
+    --checkbox-border-color: #c6ccd6;
+    --checkbox-hover-border-color: #9aa4b2;
+    --checkbox-checked-color: var(--accent-blue);
+    --checkbox-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    --checkbox-check-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 8.2 6.7 11.4 12.8 4.9' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     --dropdown-control-height: 36px;
     --dropdown-control-radius: 6px;
     --dropdown-menu-width: 188px;

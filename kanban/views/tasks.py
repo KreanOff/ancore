@@ -132,6 +132,21 @@ def _sections_for_projects(projects):
     return [section for project in projects for section in project.sections.all()]
 
 
+def _section_accent(section):
+    if not section:
+        return 'blue'
+
+    accent_names = ['blue', 'teal', 'violet', 'green']
+    section_ids = list(section.project.sections.order_by('order', 'created_at').values_list('id', flat=True))
+
+    try:
+        section_index = section_ids.index(section.id)
+    except ValueError:
+        section_index = 0
+
+    return accent_names[section_index % len(accent_names)]
+
+
 def _tasks_navigation_context(user, active_section=None, active_view=None):
     tasks_qs = Kanban.objects.filter(user=user, parent__isnull=True).select_related('section', 'section__project', 'column').prefetch_related('tags').annotate(
         is_closed_sort=Case(
@@ -172,6 +187,7 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
         'projects': projects,
         'active_project': active_project,
         'active_section': active_section,
+        'active_section_accent': _section_accent(active_section),
         'active_view': active_view,
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
@@ -608,6 +624,7 @@ def _tasks_page(request, active_section=None):
         'projects': projects,
         'active_project': active_project,
         'active_section': active_section,
+        'active_section_accent': _section_accent(active_section),
         'active_view': active_view,
         'visible_sections': [active_section] if active_section else [],
         'task_board_columns': _task_board_columns(active_section, active_section.tasks.select_related('column').all()) if active_section else [],

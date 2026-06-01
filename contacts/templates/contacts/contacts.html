@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Kontakty | ancore{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    {% include 'contacts/includes/contacts_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="tasks-page tasks-list-page contacts-page">
+    <section class="tasks-workspace contacts-workspace" aria-label="Lista kontaktów">
+        <header class="tasks-topbar">
+            <div class="tasks-titlebar-left">
+                <span class="tasks-topbar-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Kontakty</span>
+                </span>
+            </div>
+            <div class="tasks-section-actions">
+                <a href="{% url 'contacts:user-directory' %}" class="tasks-tag-topbar-button">Szukaj osób</a>
+                <a href="{% url 'contacts:create-company' %}" class="tasks-tag-topbar-button">Nowa firma</a>
+                <a href="{% url 'contacts:create' %}" class="tasks-tag-topbar-button">Nowy kontakt</a>
+            </div>
+        </header>
+
+        <form class="tasks-filterbar contacts-filterbar" method="get">
+            <div class="tasks-filterbar-left">
+                <label class="tasks-search-field">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="M16.5 16.5 21 21"/>
+                    </svg>
+                    <input type="search" name="q" value="{{ query }}" placeholder="Szukaj kontaktu">
+                </label>
+            </div>
+            <div class="tasks-filterbar-center">
+                <select name="status" class="tasks-inline-select contacts-filter-select" aria-label="Status kontaktu">
+                    <option value="all" {% if status == 'all' %}selected{% endif %}>Wszystkie statusy</option>
+                    {% for value, label in contact_status_choices %}
+                    <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="tasks-filterbar-right">
+                <button type="submit" class="tasks-tag-topbar-button">Filtruj</button>
+            </div>
+        </form>
+
+        <div class="tasks-table-wrap contacts-list-wrap">
+            {% if contacts %}
+            <div class="contacts-list" role="list">
+                {% for item in contacts %}
+                <a href="{% url 'contacts:view-contact' item.pk %}" class="contacts-row" role="listitem">
+                    <span class="contacts-avatar" aria-hidden="true">{{ item.initials }}</span>
+                    <span class="contacts-row-main">
+                        <strong>{{ item.display_name }}</strong>
+                        <small>
+                            {% if item.company %}{{ item.company }}{% else %}Brak firmy{% endif %}
+                            {% if item.role %} · {{ item.role }}{% endif %}
+                        </small>
+                    </span>
+                    <span class="contacts-row-channel">
+                        {% if item.email %}{{ item.email }}{% elif item.phone %}{{ item.phone }}{% else %}Brak danych kontaktowych{% endif %}
+                    </span>
+                    <span class="status-indicator contacts-status-{{ item.status }}">{{ item.get_status_display }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <section class="tasks-empty-state contacts-empty-state">
+                <div class="tasks-empty-state__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                </div>
+                <h2>Brak kontaktów</h2>
+                <p>Dodaj pierwszy kontakt i trzymaj notatki z rozmów w jednym miejscu.</p>
+                <a href="{% url 'contacts:create' %}" class="tasks-modal__submit contacts-empty-action">Nowy kontakt</a>
+            </section>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

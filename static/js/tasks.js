@@ -43,7 +43,7 @@ function initTasksPage() {
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
-    const projectCheckboxes = document.querySelectorAll('.tasks-project-row .tasks-row-checkbox[data-project-id]');
+    const projectCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-project-id]');
     const tagCheckboxes = document.querySelectorAll('.tasks-all-groups-row .tasks-row-checkbox[data-tag-id]');
     const sectionCopyRoot = document.querySelector('[data-section-empty-label], [data-section-delete-title]');
     const sectionCopy = {
@@ -133,8 +133,6 @@ function initTasksPage() {
         const clearButton = document.querySelector('[data-kanban-wallpaper-clear]');
         const boards = document.querySelectorAll('.tasks-kanban-board');
 
-        if (!boards.length) return;
-
         const wallpapersKey = 'ancore:kanban:wallpapers';
         const selectedKey = `ancore:kanban:wallpaper:${window.location.pathname}`;
 
@@ -177,6 +175,32 @@ function initTasksPage() {
             }
         }
 
+        function applyWallpaperPreviews() {
+            const wallpapers = readWallpapers();
+
+            document.querySelectorAll('[data-kanban-wallpaper-key]').forEach(card => {
+                const preview = card.querySelector('[data-kanban-wallpaper-preview]');
+                const boardPath = card.dataset.kanbanWallpaperKey || '';
+                let selectedId = '';
+
+                try {
+                    selectedId = boardPath ? localStorage.getItem(`ancore:kanban:wallpaper:${boardPath}`) || '' : '';
+                } catch (error) {
+                    selectedId = '';
+                }
+
+                const selected = wallpapers.find(wallpaper => wallpaper.id === selectedId);
+
+                if (preview && selected?.dataUrl) {
+                    preview.style.backgroundImage = `url("${selected.dataUrl}")`;
+                    preview.classList.add('has-wallpaper');
+                } else if (preview) {
+                    preview.style.backgroundImage = '';
+                    preview.classList.remove('has-wallpaper');
+                }
+            });
+        }
+
         function applyWallpaper() {
             const selectedId = getSelectedWallpaperId();
             const selected = readWallpapers().find(wallpaper => wallpaper.id === selectedId);
@@ -191,6 +215,10 @@ function initTasksPage() {
                 }
             });
         }
+
+        applyWallpaperPreviews();
+
+        if (!boards.length) return;
 
         function renderWallpapers() {
             if (!list) return;
@@ -212,6 +240,7 @@ function initTasksPage() {
                 preview.addEventListener('click', () => {
                     setSelectedWallpaperId(wallpaper.id);
                     applyWallpaper();
+                    applyWallpaperPreviews();
                     renderWallpapers();
                 });
 
@@ -228,6 +257,7 @@ function initTasksPage() {
                         setSelectedWallpaperId('');
                         applyWallpaper();
                     }
+                    applyWallpaperPreviews();
                     renderWallpapers();
                 });
 
@@ -288,6 +318,7 @@ function initTasksPage() {
         clearButton?.addEventListener('click', () => {
             setSelectedWallpaperId('');
             applyWallpaper();
+            applyWallpaperPreviews();
             renderWallpapers();
         });
 
@@ -306,6 +337,7 @@ function initTasksPage() {
                 if (!writeWallpapers(nextWallpapers)) return;
                 setSelectedWallpaperId(wallpaper.id);
                 applyWallpaper();
+                applyWallpaperPreviews();
                 renderWallpapers();
             } catch (error) {
                 showTaskNotification(error.message || 'Nie udało się dodać tapety', 'error');
@@ -2213,7 +2245,8 @@ function initTasksPage() {
         });
 
         projectCheckboxes.forEach(cb => {
-            cb.closest('.tasks-project-row')?.classList.toggle('checked', cb.checked);
+            const projectContainer = cb.closest('.tasks-project-row, .tasks-project-board-group');
+            projectContainer?.classList.toggle('checked', cb.checked);
         });
 
         tagCheckboxes.forEach(cb => {
@@ -2655,10 +2688,14 @@ function initTasksPage() {
             group.style.display = visibleRows.length ? '' : 'none';
         });
 
+        const activeSearch = document.getElementById('filter-search');
+        const searchVal = normalizeFilterText(activeSearch ? activeSearch.value : '');
+
         document.querySelectorAll('.tasks-issue-group').forEach(group => {
             const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row')).filter(row => row.style.display !== 'none');
             const hasEmptyState = group.querySelector('.tasks-empty-section, .tasks-empty-state') !== null;
-            group.style.display = (visibleRows.length || hasEmptyState) ? '' : 'none';
+            const groupMatchesSearch = rowMatchesSearch(group, searchVal);
+            group.style.display = (visibleRows.length || (hasEmptyState && groupMatchesSearch)) ? '' : 'none';
         });
 
         document.querySelectorAll('.tasks-kanban-column').forEach(column => {

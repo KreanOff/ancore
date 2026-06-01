@@ -1,0 +1,415 @@
+.profile-page {
+    flex: 1 1 auto;
+}
+
+.profile-rail .tasks-rail-nav {
+    border-bottom: 1px solid #e6e8ec;
+}
+
+.profile-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--profile-avatar-bg, #356bbf);
+    color: #ffffff;
+    font-weight: 750;
+    letter-spacing: 0;
+    line-height: 1;
+}
+
+.profile-avatar--blue { --profile-avatar-bg: #356bbf; }
+.profile-avatar--teal { --profile-avatar-bg: #16807a; }
+.profile-avatar--green { --profile-avatar-bg: #2f7d4f; }
+.profile-avatar--violet { --profile-avatar-bg: #6f62c7; }
+.profile-avatar--rose { --profile-avatar-bg: #b84f73; }
+.profile-avatar--amber { --profile-avatar-bg: #b56a1b; }
+
+.presence-active { --profile-presence-color: #197347; }
+.presence-inactive { --profile-presence-color: #858c98; }
+.presence-recently_seen { --profile-presence-color: #356bbf; }
+.presence-out_of_office { --profile-presence-color: #b56a1b; }
+.presence-busy { --profile-presence-color: #b84f73; }
+.presence-do_not_disturb { --profile-presence-color: #b3263c; }
+
+.profile-presence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: max-content;
+    max-width: 100%;
+    color: var(--profile-presence-color, #687083);
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1.2;
+}
+
+.profile-presence-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    border-radius: 999px;
+    background: var(--profile-presence-color, #687083);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--profile-presence-color, #687083) 14%, transparent);
+}
+
+.profile-rail-account {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 40px;
+    padding: 0 0.625rem;
+}
+
+.profile-rail-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+}
+
+.profile-rail-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.15rem;
+}
+
+.profile-rail-copy strong,
+.profile-rail-copy span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-rail-copy strong {
+    color: #252a32;
+    font-size: 0.875rem;
+    font-weight: 650;
+}
+
+.profile-rail-copy span {
+    color: #7a8190;
+    font-size: 0.75rem;
+}
+
+.profile-rail-copy .profile-presence-badge {
+    font-size: 0.72rem;
+}
+
+.profile-rail-copy .profile-presence-dot {
+    min-width: auto;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.profile-issue-shell {
+    background: #ffffff;
+}
+
+.profile-crumb-icon svg {
+    width: 17px;
+    height: 17px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.profile-detail-form {
+    width: min(100%, 980px);
+}
+
+.profile-title-area {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr);
+    align-items: start;
+    gap: 0.9rem;
+}
+
+.profile-page-avatar {
+    width: 48px;
+    height: 48px;
+    margin-top: 0.1rem;
+    font-size: 1.18rem;
+}
+
+.profile-title-fields {
+    min-width: 0;
+}
+
+.profile-name-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.6rem;
+}
+
+.profile-inline-field,
+.profile-email-field {
+    min-width: 0;
+}
+
+.profile-name-fields .form-input,
+.profile-email-field .form-input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.profile-name-fields .form-input {
+    min-height: 46px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #242830;
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.profile-name-fields .form-input::placeholder {
+    color: #8b8f97;
+}
+
+.profile-email-field {
+    margin-top: 0.45rem;
+}
+
+.profile-email-field .form-input {
+    min-height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #525963;
+    font-size: 0.94rem;
+    font-weight: 500;
+}
+
+.profile-email-field .form-input::placeholder {
+    color: #a1a6ae;
+}
+
+.profile-status-field {
+    display: inline-grid;
+    grid-template-columns: max-content max-content minmax(10rem, 14rem);
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.7rem;
+}
+
+.profile-status-field label {
+    color: #6d7481;
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.profile-status-field .form-input {
+    min-height: 32px;
+    padding: 0 2rem 0 0.65rem;
+    border-radius: 6px;
+    border-color: #dfe3e9;
+    background-color: #ffffff;
+    color: #3f444d;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.profile-name-fields .form-input:focus,
+.profile-email-field .form-input:focus,
+.profile-status-field .form-input:focus {
+    outline: none;
+    box-shadow: inset 0 -1px #9aa8ff;
+}
+
+.profile-tool-row {
+    margin-top: 1.15rem;
+}
+
+.profile-tool-row a {
+    color: #5f6673;
+    text-decoration: none;
+}
+
+.profile-accounts-activity {
+    width: min(100%, 980px);
+}
+
+.profile-add-chip {
+    text-decoration: none;
+}
+
+.profile-add-chip svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+.profile-account-feed {
+    gap: 0;
+    margin-top: 0;
+}
+
+.profile-account-feed-item {
+    grid-template-columns: 38px minmax(0, 1fr);
+    padding: 0.9rem 0;
+    border-bottom: 1px solid #e8ebef;
+}
+
+.profile-account-feed-item:first-child {
+    padding-top: 1rem;
+}
+
+.profile-account-feed-item.is-current .tasks-issue-avatar {
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.65);
+}
+
+.profile-account-feed-body {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.profile-account-feed-body p {
+    margin: 0;
+}
+
+.profile-account-line {
+    min-width: 0;
+    overflow: hidden;
+    color: #525963;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-account-actions {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.1rem;
+}
+
+.profile-account-actions form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.profile-inline-button,
+.profile-icon-button,
+.profile-current-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 1;
+}
+
+.profile-inline-button,
+.profile-icon-button {
+    border: 0;
+    cursor: pointer;
+}
+
+.profile-inline-button {
+    padding: 0 0.65rem;
+    background: #edf1ff;
+    color: #4268d4;
+}
+
+.profile-inline-button:hover {
+    background: #dfe5fb;
+    color: #315ab7;
+}
+
+.profile-icon-button {
+    width: 30px;
+    padding: 0;
+    background: transparent;
+    color: #687083;
+}
+
+.profile-icon-button:hover {
+    background: #f1f3f6;
+    color: #20242b;
+}
+
+.profile-icon-button svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.profile-current-badge {
+    padding: 0 0.65rem;
+    background: #edf8f1;
+    color: #197347;
+}
+
+.profile-account-access.is-active {
+    color: #197347;
+}
+
+.profile-side-status {
+    justify-content: flex-start;
+}
+
+.profile-side-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.profile-side-actions .tasks-issue-side-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding-inline: 0.6rem;
+    text-decoration: none;
+}
+
+.profile-issue-sidebar .tasks-issue-field strong {
+    min-width: 0;
+}
+
+.profile-issue-sidebar .tasks-issue-person {
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .profile-name-fields {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
+    }
+
+    .profile-name-fields .form-input {
+        font-size: 1.35rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-title-area {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-page-avatar {
+        width: 42px;
+        height: 42px;
+        font-size: 1rem;
+    }
+}

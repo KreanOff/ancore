@@ -2,17 +2,20 @@ from django.db import models
 from django.db.models import Max
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.apps import apps
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 from django.utils.formats import date_format
 import os
+import secrets
+import string
 import re
 
 
 class KanbanProject(models.Model):
-    CODE_PREFIX = 'PRJ'
-    CODE_NUMBER_WIDTH = 3
+    CODE_LETTERS = string.ascii_uppercase
+    CODE_DIGITS = string.digits
 
     ICON_COLORS = [
         {'background': '#e8f1ff', 'foreground': '#2563eb'},
@@ -35,34 +38,38 @@ class KanbanProject(models.Model):
     class Meta:
         ordering = ['name']
         constraints = [
-            models.UniqueConstraint(fields=['user', 'code'], name='unique_kanban_project_code_per_user'),
+            models.UniqueConstraint(fields=['code'], name='unique_kanban_project_code'),
         ]
 
+    def _code_scope_models(self):
+        code_models = [self.__class__]
+        for app_label, model_name in (('tasks', 'TaskProject'), ('kanban', 'KanbanProject')):
+            try:
+                model = apps.get_model(app_label, model_name)
+            except LookupError:
+                continue
+            if model not in code_models:
+                code_models.append(model)
+        return code_models
+
     def _generate_unique_code(self):
-        year = timezone.localtime(self.created_at).year if self.created_at else timezone.localtime().year
-        code_prefix = f'{self.CODE_PREFIX}-{year}-'
-        existing_codes = list(
-            KanbanProject.objects.filter(user=self.user)
-            .exclude(pk=self.pk)
-            .values_list('code', flat=True)
-        )
-        highest_number = 0
-        code_pattern = re.compile(rf'^{re.escape(code_prefix)}(\d+)$')
+        existing_codes = set()
+        for model in self._code_scope_models():
+            queryset = model.objects.all()
+            if model is self.__class__:
+                queryset = queryset.exclude(pk=self.pk)
+            existing_codes.update(queryset.values_list('code', flat=True))
 
-        for code in existing_codes:
-            match = code_pattern.match(code or '')
-            if match:
-                highest_number = max(highest_number, int(match.group(1)))
-
-        next_number = highest_number + 1
         while True:
-            candidate = f'{code_prefix}{next_number:0{self.CODE_NUMBER_WIDTH}d}'
+            letters = ''.join(secrets.choice(self.CODE_LETTERS) for _ in range(3))
+            first_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(4))
+            second_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(3))
+            candidate = f'{letters}-{first_digits}-{second_digits}'
             if candidate not in existing_codes:
                 return candidate
-            next_number += 1
 
     def save(self, *args, **kwargs):
-        if not self.code:
+        if not self.pk or not self.code:
             self.code = self._generate_unique_code()
         self.code = self.code.upper()
         super().save(*args, **kwargs)
