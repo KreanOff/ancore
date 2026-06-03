@@ -64,16 +64,16 @@
     gap: 0.5rem;
     padding: 0 0.7rem;
     border-radius: 6px;
-    background: #3764c8;
-    color: #ffffff;
+    background: #fae6dc;
+    color: #1f2328;
     font-size: 0.8125rem;
     font-weight: 600;
     text-decoration: none;
 }
 
 .dashboard-primary-action:hover {
-    background: #315ab7;
-    color: #ffffff;
+    background: #fae6dc;
+    color: #1f2328;
 }
 
 .dashboard-primary-action span {
@@ -286,7 +286,7 @@
     width: 18px;
     height: 18px;
     display: inline-flex;
-    color: #4268d4;
+    color: #fae6dc;
 }
 
 .dashboard-topbar-title {
@@ -314,20 +314,20 @@
 
 .dashboard-toolbar-link:hover,
 .dashboard-panel-link:hover {
-    background: #edf1ff;
-    border-color: #e0e5fa;
-    color: #4268d4;
+    background: #fae6dc;
+    border-color: #fae6dc;
+    color: #1f2328;
 }
 
 .dashboard-toolbar-link.is-primary {
-    background: #3764c8;
-    border-color: #3764c8;
-    color: #ffffff;
+    background: #fae6dc;
+    border-color: #fae6dc;
+    color: #1f2328;
 }
 
 .dashboard-toolbar-link.is-primary:hover {
-    background: #315ab7;
-    color: #ffffff;
+    background: #fae6dc;
+    color: #1f2328;
 }
 
 .dashboard-metrics {
@@ -453,7 +453,7 @@
     background: #9ca3af;
 }
 
-.dashboard-status-dot--new { background: #5f95db; }
+.dashboard-status-dot--new { background: #fae6dc; }
 .dashboard-status-dot--in_progress { background: #d79a35; }
 .dashboard-status-dot--resolved { background: #55a86a; }
 .dashboard-status-dot--closed { background: #9ca3af; }
@@ -498,7 +498,7 @@
 .dashboard-priority--high {
     border-color: #ffd0da;
     background: #fff5f7;
-    color: #be123c;
+    color: #75533e;
 }
 
 .dashboard-priority--urgent {

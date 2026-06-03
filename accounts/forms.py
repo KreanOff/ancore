@@ -6,15 +6,15 @@ class UserRegistrationForm(UserCreationForm):
     _input_attrs = {'class': 'form-input'}
 
     first_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
-        **{'placeholder': 'Imię', 'id': 'first-name'},
+        **{'placeholder': 'Imię', 'id': 'first-name', 'autocomplete': 'given-name'},
         **_input_attrs,
     }))
     last_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
-        **{'placeholder': 'Nazwisko', 'id': 'last-name'},
+        **{'placeholder': 'Nazwisko', 'id': 'last-name', 'autocomplete': 'family-name'},
         **_input_attrs,
     }))
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
-        **{'placeholder': 'Adres Email', 'id': 'email'},
+        **{'placeholder': 'email@firma.pl', 'id': 'email', 'autocomplete': 'email'},
         **_input_attrs,
     }))
 
@@ -26,6 +26,14 @@ class UserRegistrationForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.setdefault('class', 'form-input')
+        self.fields['password1'].widget.attrs.update({
+            'autocomplete': 'new-password',
+            'placeholder': 'Wpisz hasło',
+        })
+        self.fields['password2'].widget.attrs.update({
+            'autocomplete': 'new-password',
+            'placeholder': 'Powtórz hasło',
+        })
 
     def save(self, commit=True):
         user = super().save(commit=False)

@@ -23,7 +23,7 @@
             document.documentElement.style.setProperty('--secondary-menu-width', width + 'px');
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260602-sidebar-icons">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260603-status-indicator">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -72,13 +72,10 @@
         </div>
         <nav class="nav-section">
             <button type="button" class="nav-link secondary-menu-toggle" id="secondary-menu-toggle" aria-label="Zwiń drugie menu" aria-controls="secondary-menu" aria-expanded="true" title="Zwiń drugie menu">
-                <svg class="nav-icon nav-icon--toggle secondary-menu-toggle-icon secondary-menu-toggle-icon--collapse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <svg class="nav-icon nav-icon--toggle secondary-menu-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                    <path d="M15 6l-6 6l6 6"/>
-                </svg>
-                <svg class="nav-icon nav-icon--toggle secondary-menu-toggle-icon secondary-menu-toggle-icon--expand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                    <path d="M9 6l6 6l-6 6"/>
+                    <path d="M4 8l16 0"/>
+                    <path d="M4 16l16 0"/>
                 </svg>
                 <span class="nav-label">Drugie menu</span>
             </button>

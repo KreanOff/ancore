@@ -11,23 +11,23 @@
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    background: var(--profile-avatar-bg, #356bbf);
-    color: #ffffff;
+    background: var(--profile-avatar-bg, #fae6dc);
+    color: var(--profile-avatar-fg, #1f2328);
     font-weight: 750;
     letter-spacing: 0;
     line-height: 1;
 }
 
-.profile-avatar--blue { --profile-avatar-bg: #356bbf; }
-.profile-avatar--teal { --profile-avatar-bg: #16807a; }
-.profile-avatar--green { --profile-avatar-bg: #2f7d4f; }
-.profile-avatar--violet { --profile-avatar-bg: #6f62c7; }
-.profile-avatar--rose { --profile-avatar-bg: #b84f73; }
-.profile-avatar--amber { --profile-avatar-bg: #b56a1b; }
+.profile-avatar--blue { --profile-avatar-bg: #fae6dc; --profile-avatar-fg: #1f2328; }
+.profile-avatar--teal { --profile-avatar-bg: #16807a; --profile-avatar-fg: #ffffff; }
+.profile-avatar--green { --profile-avatar-bg: #2f7d4f; --profile-avatar-fg: #ffffff; }
+.profile-avatar--violet { --profile-avatar-bg: #6f62c7; --profile-avatar-fg: #ffffff; }
+.profile-avatar--rose { --profile-avatar-bg: #b84f73; --profile-avatar-fg: #ffffff; }
+.profile-avatar--amber { --profile-avatar-bg: #b56a1b; --profile-avatar-fg: #ffffff; }
 
 .presence-active { --profile-presence-color: #197347; }
 .presence-inactive { --profile-presence-color: #858c98; }
-.presence-recently_seen { --profile-presence-color: #356bbf; }
+.presence-recently_seen { --profile-presence-color: #fae6dc; }
 .presence-out_of_office { --profile-presence-color: #b56a1b; }
 .presence-busy { --profile-presence-color: #b84f73; }
 .presence-do_not_disturb { --profile-presence-color: #b3263c; }
@@ -225,7 +225,7 @@
 .profile-email-field .form-input:focus,
 .profile-status-field .form-input:focus {
     outline: none;
-    box-shadow: inset 0 -1px #9aa8ff;
+    box-shadow: inset 0 -1px #fae6dc;
 }
 
 .profile-tool-row {
@@ -324,13 +324,13 @@
 
 .profile-inline-button {
     padding: 0 0.65rem;
-    background: #edf1ff;
-    color: #4268d4;
+    background: #fae6dc;
+    color: #1f2328;
 }
 
 .profile-inline-button:hover {
-    background: #dfe5fb;
-    color: #315ab7;
+    background: #fae6dc;
+    color: #1f2328;
 }
 
 .profile-icon-button {

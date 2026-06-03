@@ -31,7 +31,7 @@
             </a>
             <a href="{% url 'kanban:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><path d="M7.5 7.5h.01"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/></svg>
                 </span>
                 Tagi
                 <span class="tasks-rail-count">{{ total_tag_count }}</span>

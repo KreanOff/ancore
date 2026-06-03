@@ -1,30 +1,41 @@
 {% extends 'accounts/auth_base.html' %}
 
 {% block title %}Dodaj konto | ancore{% endblock %}
+{% block auth_kicker %}Przełącznik{% endblock %}
+{% block auth_heading %}Dodaj konto{% endblock %}
+{% block auth_lead %}Podłącz drugi profil do bieżącej sesji.{% endblock %}
+{% block auth_panel_label %}Konto użytkownika{% endblock %}
+{% block auth_card_title %}Dodaj konto{% endblock %}
 {% block auth_subtitle %}Dodaj konto do szybkiego przełączania{% endblock %}
 
 {% block auth_content %}
-<form method="post">
+<form method="post" class="auth-form">
     {% csrf_token %}
 
     {% if form.errors %}
-    <div class="alert alert-error">
+    <div class="alert alert-error" role="alert">
         Nieprawidłowy email lub hasło.
     </div>
     {% endif %}
 
     <div class="form-group">
-        <label class="form-label" for="email">Adres Email</label>
-        <input type="email" name="username" id="email" class="form-input" required autofocus>
+        <label class="form-label" for="email">Adres email</label>
+        <input type="email" name="username" id="email" class="form-input" autocomplete="username" placeholder="email@firma.pl" required autofocus>
     </div>
     <div class="form-group">
         <label class="form-label" for="password">Hasło</label>
-        <input type="password" name="password" id="password" class="form-input" required>
+        <input type="password" name="password" id="password" class="form-input" autocomplete="current-password" placeholder="Wpisz hasło" required>
     </div>
-    <button type="submit" class="btn btn-primary btn-block">Dodaj konto</button>
+    <button type="submit" class="btn btn-primary btn-block auth-submit">
+        <span>Dodaj konto</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14"></path>
+            <path d="m13 6 6 6-6 6"></path>
+        </svg>
+    </button>
 </form>
 
-<div class="auth-footer">
+<p class="auth-footer">
     <a href="{% url 'profile' %}">Wróć do profilu</a>
-</div>
+</p>
 {% endblock %}

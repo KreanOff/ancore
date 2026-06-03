@@ -1,6 +1,6 @@
 .sidebar {
     width: var(--sidebar-width);
-    background: rgb(251, 251, 252);
+    background: #f5f5f5;
     color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
@@ -8,7 +8,6 @@
     top: var(--topbar-height);
     bottom: 0;
     z-index: 100;
-    border-right: 1px solid var(--border-color);
 }
 
 .secondary-menu {
@@ -19,7 +18,7 @@
     width: var(--secondary-menu-width);
     z-index: 95;
     display: flex;
-    background: rgb(251, 251, 252);
+    background: #f5f5f5;
     border-right: 0;
     transition: none;
 }
@@ -28,10 +27,15 @@
     width: 100%;
     min-height: 0;
     display: flex;
-    background: linear-gradient(180deg, #fbfbfc 0%, #f8f9fb 100%);
-    border: none;
+    background: #f5f5f5;
+    border: 0;
     overflow: hidden;
     transition: none;
+}
+
+.secondary-menu-panel > .tasks-tracker-rail,
+.secondary-menu-panel > .dashboard-rail {
+    background: #f5f5f5;
 }
 
 body.secondary-menu-toggling .secondary-menu {
@@ -98,14 +102,11 @@ body.secondary-menu-resizing .main-content {
 }
 
 .secondary-menu-toggle .nav-icon {
+    --nav-icon-size: 22px;
     display: block;
-    width: 22px;
-    height: 22px;
-    flex-basis: 22px;
-}
-
-.secondary-menu-toggle .nav-icon path {
-    transition: none;
+    width: var(--nav-icon-size);
+    height: var(--nav-icon-size);
+    flex-basis: var(--nav-icon-size);
 }
 
 .secondary-menu-toggle-icon {
@@ -113,30 +114,8 @@ body.secondary-menu-resizing .main-content {
     opacity: 1;
     position: absolute;
     top: 50%;
-    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    transform: translate(-50%, -50%);
     transform-origin: center;
-    transition: opacity 0.16s ease, transform 0.16s ease;
-}
-
-.secondary-menu-toggle-icon--expand {
-    opacity: 0;
-    transform: translate(-50%, -50%) rotate(-90deg) scale(0.78);
-}
-
-body.secondary-menu-collapsed .secondary-menu-toggle-icon--collapse {
-    opacity: 0;
-    transform: translate(-50%, -50%) rotate(90deg) scale(0.78);
-}
-
-body.secondary-menu-collapsed .secondary-menu-toggle-icon--expand {
-    opacity: 1;
-    transform: translate(-50%, -50%) rotate(0deg) scale(1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .secondary-menu-toggle-icon {
-        transition: none;
-    }
 }
 
 body.secondary-menu-collapsed {
@@ -224,11 +203,12 @@ body.secondary-menu-collapsed .secondary-menu-resizer {
 }
 
 .nav-icon {
+    --nav-icon-size: 20px;
     --nav-icon-optical-scale: 1;
     display: block;
-    width: 20px;
-    height: 20px;
-    flex: 0 0 20px;
+    width: var(--nav-icon-size);
+    height: var(--nav-icon-size);
+    flex: 0 0 var(--nav-icon-size);
 }
 
 .nav-link:not(.secondary-menu-toggle) .nav-icon {
@@ -250,7 +230,7 @@ body.secondary-menu-collapsed .secondary-menu-resizer {
 .nav-icon--kanban,
 .nav-icon--contacts,
 .nav-icon--profile {
-    --nav-icon-optical-scale: 1.12;
+    --nav-icon-optical-scale: 1.08;
 }
 
 .nav-label {

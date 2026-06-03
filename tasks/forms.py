@@ -12,6 +12,13 @@ class TwoDigitNumberInput(forms.NumberInput):
             return super().format_value(value)
 
 
+class DateTimeLocalInput(forms.DateTimeInput):
+    input_type = 'datetime-local'
+
+    def __init__(self, attrs=None, format=None):
+        super().__init__(attrs=attrs, format=format or '%Y-%m-%dT%H:%M')
+
+
 def clean_optional_icon(value):
     icon = (value or '').strip()[:8]
     return '' if icon == 'check' else icon
@@ -19,6 +26,9 @@ def clean_optional_icon(value):
 
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
+
+
+DATETIME_LOCAL_INPUT_FORMATS = ['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S']
 
 
 class TaskForm(forms.ModelForm):
@@ -67,6 +77,8 @@ class TaskForm(forms.ModelForm):
         self.fields['parent'].required = bool(getattr(self.instance, 'parent_id', None))
         self.fields['tags'].required = False
         self.fields['tags'].label = 'Tagi'
+        self.fields['due_at'].label = 'Termin wykonania'
+        self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
     def clean(self):
         cleaned_data = super().clean()
         parent = cleaned_data.get('parent')
@@ -87,7 +99,7 @@ class TaskForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'time_spent_hours', 'time_spent_minutes']
+        fields = ['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'due_at', 'time_spent_hours', 'time_spent_minutes']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Wprowadź tytuł zadania...',
@@ -110,6 +122,9 @@ class TaskForm(forms.ModelForm):
             }),
             'status': forms.Select(attrs={
                 'class': 'form-input'
+            }),
+            'due_at': DateTimeLocalInput(attrs={
+                'class': 'form-input tasks-due-input',
             }),
             'time_spent_hours': TwoDigitNumberInput(attrs={
                 'placeholder': '00',
@@ -268,12 +283,14 @@ class TaskModalForm(forms.ModelForm):
         self.fields['section'].label = 'Grupa projektu'
         self.fields['tags'].required = False
         self.fields['tags'].label = 'Tagi'
+        self.fields['due_at'].label = 'Termin wykonania'
+        self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         if section:
             self.fields['section'].initial = section
 
     class Meta:
         model = Task
-        fields = ['title', 'section', 'tags', 'description', 'priority', 'status']
+        fields = ['title', 'section', 'tags', 'description', 'priority', 'status', 'due_at']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Tytuł zadania',
@@ -297,13 +314,21 @@ class TaskModalForm(forms.ModelForm):
             'status': forms.Select(attrs={
                 'class': 'tasks-inline-select',
             }),
+            'due_at': DateTimeLocalInput(attrs={
+                'class': 'tasks-inline-input tasks-due-input',
+            }),
         }
 
 
 class SubTaskModalForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['due_at'].label = 'Termin wykonania'
+        self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
+
     class Meta:
         model = Task
-        fields = ['title', 'description', 'status']
+        fields = ['title', 'description', 'status', 'due_at']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Tytuł podzadania',
@@ -316,5 +341,8 @@ class SubTaskModalForm(forms.ModelForm):
             }),
             'status': forms.Select(attrs={
                 'class': 'tasks-inline-select',
+            }),
+            'due_at': DateTimeLocalInput(attrs={
+                'class': 'tasks-inline-input tasks-due-input',
             }),
         }

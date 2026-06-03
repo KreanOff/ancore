@@ -1,0 +1,610 @@
+/* Light CRM palette based on the supplied reference screenshots. */
+
+body {
+    background: var(--panel-bg);
+    color: var(--text-main);
+}
+
+.app-topbar,
+.sidebar,
+.secondary-menu,
+.secondary-menu-panel,
+.secondary-menu-panel > .tasks-tracker-rail,
+.secondary-menu-panel > .dashboard-rail,
+.tasks-tracker-rail {
+    background: var(--chrome-bg);
+}
+
+.app-topbar {
+    color: var(--text-muted);
+}
+
+.main-content {
+    background: var(--panel-bg);
+}
+
+.page-container,
+.page-container.full-width {
+    background: var(--bg-main);
+}
+
+.page-container.full-width {
+    border-color: var(--border-color);
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.logo {
+    background: transparent;
+}
+
+.sidebar-header::after,
+.sidebar-footer::after,
+.nav-separator,
+.tasks-rail-nav,
+.tasks-rail-nav-group + .tasks-rail-nav-group,
+.tasks-topbar,
+.tasks-filterbar,
+.tasks-actionbar,
+.profile-page-header,
+.calendar-sidebar-header,
+.calendar-main-header {
+    border-color: var(--border-color);
+}
+
+.topbar-icon-button,
+.nav-link,
+.tasks-rail-link,
+.tasks-rail-add-button {
+    color: var(--text-muted);
+}
+
+.topbar-icon-button:hover,
+.nav-link:hover,
+.nav-link.active,
+.tasks-rail-link:hover,
+.tasks-rail-link.is-active,
+.tasks-rail-add-button:hover,
+.tasks-rail-add-button:focus-visible {
+    background: var(--surface-selected);
+    border-color: transparent;
+    color: var(--text-strong);
+}
+
+.topbar-tab {
+    background: #efedea;
+    border-color: var(--chrome-border);
+    color: var(--text-muted);
+}
+
+.topbar-tab:hover {
+    background: var(--surface-selected);
+    color: var(--text-strong);
+}
+
+.topbar-tab.is-active {
+    background: var(--accent-peach);
+    border-color: var(--accent-peach-border);
+    color: var(--accent-brown);
+    box-shadow: 0 1px 3px rgba(117, 83, 62, 0.18);
+}
+
+.topbar-clock,
+.tasks-rail-count,
+.tasks-rail-section-title,
+.tasks-topbar-title,
+.tasks-topbar-title-separator,
+.contacts-row-main small,
+.contacts-row-channel,
+.contacts-share-row small,
+.contacts-share-empty,
+.calendar-sidebar-subtitle,
+.calendar-day-muted,
+.profile-muted {
+    color: var(--text-muted);
+}
+
+.tasks-rail-header h1,
+.tasks-topbar-title,
+.page-title,
+.contacts-row-main strong,
+.calendar-title,
+.profile-title {
+    color: var(--text-strong);
+}
+
+.tasks-new-button,
+.contacts-new-button--secondary,
+.tasks-tag-topbar-button,
+.tasks-modal__submit,
+.btn-primary,
+.calendar-nav-button.is-active,
+.calendar-event--blue,
+.contacts-avatar,
+.contacts-mini-avatar,
+.contacts-empty-state .tasks-empty-state__icon,
+.profile-avatar--blue {
+    background: var(--accent-peach);
+    border-color: var(--accent-peach-border);
+    color: var(--accent-brown);
+    box-shadow: none;
+}
+
+.tasks-new-button:hover,
+.contacts-new-button--secondary:hover,
+.tasks-tag-topbar-button:hover,
+.tasks-modal__submit:hover:not(:disabled),
+.btn-primary:hover:not(:disabled),
+.calendar-nav-button.is-active:hover {
+    background: var(--accent-peach-hover);
+    color: var(--accent-brown-hover);
+    box-shadow: 0 4px 12px rgba(117, 83, 62, 0.16);
+}
+
+.tasks-icon-button,
+.btn-secondary,
+.btn-cancel,
+.tasks-btn-cancel,
+.selection-badge,
+.tasks-selection-badge,
+.filter-select,
+.tasks-filter-select,
+.form-select,
+.tasks-search-field,
+.form-input,
+.calendar-nav-button,
+.calendar-panel,
+.section-panel,
+.tasks-section-panel {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+.tasks-icon-button:hover,
+.tasks-icon-button.is-active,
+.tasks-section-actions.is-open [data-section-menu-toggle],
+.tasks-create-menu__panel button:hover,
+.tasks-create-menu__panel button:focus,
+.calendar-day.is-today,
+.calendar-day.is-selected,
+.calendar-list-item--blue,
+.profile-action-primary {
+    background: var(--accent-peach);
+    border-color: var(--accent-peach-border);
+    color: var(--accent-brown);
+}
+
+.tasks-search-field:focus-within,
+.form-input:focus,
+.filter-select:focus,
+.tasks-filter-select:focus,
+.form-select:focus {
+    border-color: var(--accent-peach-border);
+    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.12);
+}
+
+.form-input::placeholder,
+.tasks-search-field input::placeholder {
+    color: #aaa6a0;
+}
+
+.btn-ghost:hover:not(:disabled),
+.tasks-link-btn,
+.link-btn,
+.nav-link--danger,
+.calendar-add-button,
+.profile-link {
+    color: var(--accent-brown);
+}
+
+.btn-danger {
+    background: #f5d7cb;
+    color: #7a3428;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #edc5b5;
+}
+
+.table-container,
+.tasks-table-wrap,
+.contacts-list-wrap {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+.data-table th {
+    background: #fbfaf8;
+    border-bottom-color: var(--border-color);
+    color: #9b9690;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.data-table td {
+    border-bottom-color: var(--border-color);
+    color: var(--text-main);
+}
+
+.data-table tr:hover,
+.contacts-row:hover,
+.contacts-share-row--link:hover,
+.tasks-issue-row:hover,
+.tasks-project-row:hover {
+    background: #fbf6f3;
+    border-color: var(--accent-peach-border);
+}
+
+.task-checkbox {
+    accent-color: var(--accent-brown);
+}
+
+.task-row.checked {
+    background: rgba(251, 225, 213, 0.46);
+}
+
+.status-new {
+    --tasks-status-color: var(--accent-brown);
+    color: var(--tasks-status-color);
+}
+
+.status-in_progress {
+    --tasks-status-color: #a96f2e;
+    color: var(--tasks-status-color);
+}
+
+.status-resolved,
+.status-implemented {
+    --tasks-status-color: #667c55;
+    color: var(--tasks-status-color);
+}
+
+.status-closed,
+.status-canceled,
+.status-cancelled {
+    --tasks-status-color: var(--text-muted);
+    color: var(--tasks-status-color);
+}
+
+.status-reopened {
+    --tasks-status-color: #8d5f59;
+    color: var(--tasks-status-color);
+}
+
+.tasks-status-block-header--new,
+.tasks-status-subgroup-header--new {
+    background: var(--accent-peach);
+    border-color: var(--accent-peach-border);
+    color: var(--accent-brown);
+}
+
+.tasks-status-block-header--in_progress,
+.tasks-status-subgroup-header--in_progress {
+    background: #f8ead9;
+    border-color: #e8d0b1;
+    color: #875b2a;
+}
+
+.tasks-status-block-header--resolved,
+.tasks-status-subgroup-header--resolved {
+    background: #e8eee4;
+    border-color: #d2ddcc;
+    color: #596f4c;
+}
+
+.tasks-status-block-header--closed,
+.tasks-status-subgroup-header--closed {
+    background: var(--surface-selected);
+    border-color: var(--chrome-border);
+    color: #66615c;
+}
+
+.tasks-status-block-header--reopened,
+.tasks-status-subgroup-header--reopened {
+    background: #f2e4e1;
+    border-color: #dfc9c2;
+    color: #7f5750;
+}
+
+.dot-blue,
+.calendar-color-dot--blue,
+.presence-recently_seen,
+.contacts-status-lead {
+    color: var(--accent-brown);
+}
+
+.calendar-list-item--blue,
+.calendar-event--blue {
+    border-left-color: var(--accent-peach-border);
+}
+
+.secondary-menu-resizer:hover::after,
+.secondary-menu-resizer:focus-visible::after,
+body.secondary-menu-resizing .secondary-menu-resizer::after {
+    background: var(--accent-peach-border);
+}
+
+body.auth-page,
+.auth-panel {
+    background: var(--panel-bg);
+    color: var(--text-main);
+}
+
+.auth-visual {
+    background: var(--chrome-bg);
+    color: var(--text-main);
+    border-right: 1px solid var(--chrome-border);
+}
+
+.auth-visual::before {
+    opacity: 0.55;
+    background-image:
+        linear-gradient(rgba(117, 83, 62, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(117, 83, 62, 0.06) 1px, transparent 1px);
+}
+
+.auth-brand,
+.auth-visual-copy h1,
+.auth-preview-header strong,
+.auth-preview-row strong {
+    color: var(--text-strong);
+}
+
+.auth-brand-copy strong {
+    color: var(--text-strong);
+}
+
+.auth-brand-copy small,
+.auth-visual-copy p,
+.auth-preview-header span,
+.auth-preview-row small {
+    color: var(--text-muted);
+}
+
+.auth-section-label,
+.auth-card-label {
+    border-color: var(--accent-peach-border);
+    background: var(--accent-peach);
+    color: var(--accent-brown);
+}
+
+.auth-workspace-preview {
+    border-color: var(--border-color);
+    background: rgba(255, 255, 255, 0.64);
+    box-shadow: 0 16px 38px rgba(63, 59, 56, 0.08);
+}
+
+.auth-preview-header,
+.auth-preview-row,
+.auth-header,
+.auth-footer {
+    border-color: var(--border-color);
+}
+
+.auth-preview-meter {
+    background: #ece7e2;
+}
+
+.auth-preview-meter span,
+.auth-dot--red,
+.auth-dot--blue {
+    background: var(--accent-peach-border);
+}
+
+.auth-back-link,
+.auth-switch-link,
+.auth-card {
+    border-color: var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-main);
+}
+
+.auth-back-link:hover,
+.auth-switch-link:hover {
+    border-color: var(--accent-peach-border);
+    background: #fbf6f3;
+    color: var(--text-strong);
+    box-shadow: 0 6px 18px rgba(63, 59, 56, 0.08);
+}
+
+.auth-card {
+    box-shadow: 0 18px 45px rgba(63, 59, 56, 0.08);
+}
+
+.auth-header,
+.auth-footer {
+    background: var(--card-bg);
+}
+
+.auth-header h2,
+.auth-card .form-label {
+    color: var(--text-strong);
+}
+
+.auth-subtitle,
+.auth-footer {
+    color: var(--text-muted);
+}
+
+.auth-card .form-input {
+    border-color: #d8d2cc;
+    color: var(--text-main);
+}
+
+.auth-card .form-input:focus {
+    border-color: var(--accent-peach-border);
+    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.14);
+}
+
+.auth-input-shell > i,
+.auth-input-shell:focus-within > i,
+.auth-footer a {
+    color: var(--accent-brown);
+}
+
+.auth-submit {
+    border: 1px solid var(--accent-peach-border);
+    background: var(--accent-peach);
+    color: var(--accent-brown);
+}
+
+.auth-submit:hover {
+    background: var(--accent-peach-hover);
+    color: var(--accent-brown-hover);
+    box-shadow: 0 10px 24px rgba(117, 83, 62, 0.16);
+}
+
+.auth-submit:focus-visible {
+    outline-color: var(--accent-peach-border);
+}
+
+.dashboard-topbar-icon,
+.tasks-section-row-icon,
+.tasks-project-row-icon,
+.tasks-project-chip span,
+.tasks-chip-picker__menu button span,
+.tasks-project-tree-toggle:hover,
+.tasks-project-tree-toggle:focus-visible,
+.tasks-project-collapse-toggle:hover,
+.tasks-project-collapse-toggle:focus-visible,
+.tasks-project-more:hover,
+.tasks-project-more:focus,
+.tasks-kanban-wallpaper-clear:hover,
+.tasks-attachment-info:hover .tasks-attachment-name,
+.tasks-section-links .tasks-section-rail-card__icon,
+.calendar-year-month-title:hover {
+    color: var(--accent-brown);
+}
+
+.tasks-project-row-icon,
+.tasks-section-row-icon {
+    background: #f6eee9;
+}
+
+.tasks-status-block,
+.tasks-status-subgroup {
+    border-color: var(--accent-peach-border);
+    background: var(--chrome-bg-soft);
+}
+
+.tasks-issue-group:not(.tasks-status-block) {
+    border-color: var(--chrome-border);
+    background: var(--sidebar-bg);
+}
+
+.tasks-issue-group-header:not(.tasks-status-block-header),
+.tasks-group-row td {
+    border-color: var(--chrome-border);
+    background: var(--sidebar-bg);
+    color: var(--text-strong);
+}
+
+.tasks-issue-group-header:not(.tasks-status-block-header) .tasks-group-caret,
+.tasks-issue-group-header:not(.tasks-status-block-header) .tasks-rail-count {
+    color: var(--text-main);
+}
+
+.tasks-issue-group-header:not(.tasks-status-block-header) .tasks-group-caret:hover {
+    background: rgba(63, 59, 56, 0.08);
+}
+
+.tasks-issue-list.tasks-project-list {
+    background: #fffdfb;
+}
+
+.tasks-issue-row {
+    border-top-color: var(--chrome-border);
+    background: #fffdfb;
+    color: var(--text-main);
+}
+
+.tasks-table .task-row:hover td,
+.tasks-issue-row:hover,
+.tasks-project-row:hover,
+.tasks-section-row:hover {
+    background: #fbf6f3;
+    border-color: var(--accent-peach-border);
+}
+
+.tasks-project-row,
+.tasks-section-row,
+.tasks-all-groups-row {
+    border-top-color: var(--border-color);
+    background: var(--sidebar-bg);
+    color: var(--text-main);
+}
+
+.tasks-project-list .tasks-project-row {
+    background: #fffdfb;
+}
+
+.tasks-table .task-row:hover td,
+.tasks-project-row:hover,
+.tasks-section-row:hover,
+.tasks-all-groups-row:hover {
+    background: var(--surface-hover);
+    border-color: var(--chrome-border);
+}
+
+.tasks-project-row:focus-visible,
+.tasks-section-row:focus-visible {
+    background: var(--surface-hover);
+    outline: 2px solid var(--chrome-border);
+    outline-offset: -2px;
+}
+
+.tasks-row-title,
+.task-title {
+    color: var(--text-strong);
+}
+
+.tasks-row-id,
+.tasks-row-time,
+.tasks-row-date,
+.task-desc,
+.tasks-project-row-description,
+.tasks-section-row-description {
+    color: var(--text-muted);
+}
+
+.tasks-issue-group-header.tasks-status-block-header--new,
+.tasks-status-subgroup-header.tasks-status-subgroup-header--new {
+    background: var(--accent-peach);
+    border-color: var(--accent-peach-border);
+    color: var(--accent-brown);
+}
+
+.tasks-issue-group-header.tasks-status-block-header--in_progress,
+.tasks-status-subgroup-header.tasks-status-subgroup-header--in_progress {
+    background: #f8ead9;
+    border-color: #e8d0b1;
+    color: #875b2a;
+}
+
+.tasks-issue-group-header.tasks-status-block-header--resolved,
+.tasks-status-subgroup-header.tasks-status-subgroup-header--resolved {
+    background: #e8eee4;
+    border-color: #d2ddcc;
+    color: #596f4c;
+}
+
+.tasks-issue-group-header.tasks-status-block-header--closed,
+.tasks-status-subgroup-header.tasks-status-subgroup-header--closed {
+    background: var(--surface-selected);
+    border-color: var(--chrome-border);
+    color: #66615c;
+}
+
+.tasks-issue-group-header.tasks-status-block-header--reopened,
+.tasks-status-subgroup-header.tasks-status-subgroup-header--reopened {
+    background: #f2e4e1;
+    border-color: #dfc9c2;
+    color: #7f5750;
+}
+
+.tasks-tag-dot,
+.dot-blue,
+.calendar-color-dot--blue {
+    color: var(--accent-brown);
+}

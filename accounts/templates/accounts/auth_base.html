@@ -10,16 +10,78 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     {% include 'core/includes/bootstrap.html' %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260603-font-sizes">
 </head>
 <body class="auth-page">
-    <div class="auth-card">
-        <div class="auth-header">
-            <div class="logo">ANCORE<span>.</span></div>
-            <p class="auth-subtitle">{% block auth_subtitle %}{% endblock %}</p>
-        </div>
-        {% block auth_content %}{% endblock %}
-    </div>
+    <a class="auth-skip-link" href="#auth-form-title">Przejdź do formularza</a>
+
+    <main class="auth-shell">
+        <section class="auth-visual" aria-labelledby="auth-page-title">
+            <a href="{% url 'home' %}" class="auth-brand" aria-label="Ancore">
+                <span class="auth-brand-mark">
+                    <img src="{% static 'img/logo.png' %}" alt="">
+                </span>
+                <span class="auth-brand-copy">
+                    <strong>ANCORE</strong>
+                    <small>{% block auth_kicker %}Workspace{% endblock %}</small>
+                </span>
+            </a>
+
+            <div class="auth-visual-copy">
+                <span class="auth-section-label">{% block auth_panel_label %}Konto{% endblock %}</span>
+                <h1 id="auth-page-title">{% block auth_heading %}Panel gotowy do pracy{% endblock %}</h1>
+                <p>{% block auth_lead %}Zarządzaj zadaniami, kontaktami i pracą zespołu w jednym miejscu.{% endblock %}</p>
+            </div>
+
+            <div class="auth-workspace-preview" aria-hidden="true">
+                <div class="auth-preview-header">
+                    <span>Workspace</span>
+                    <strong>ANCORE</strong>
+                </div>
+                <div class="auth-preview-meter">
+                    <span></span>
+                </div>
+                <div class="auth-preview-list">
+                    <span class="auth-preview-row">
+                        <i class="auth-dot auth-dot--red"></i>
+                        <small>Inbox</small>
+                        <strong>6 nowych</strong>
+                    </span>
+                    <span class="auth-preview-row">
+                        <i class="auth-dot auth-dot--green"></i>
+                        <small>Kontakty</small>
+                        <strong>Aktywne</strong>
+                    </span>
+                    <span class="auth-preview-row">
+                        <i class="auth-dot auth-dot--blue"></i>
+                        <small>Zadania</small>
+                        <strong>18 w toku</strong>
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <section class="auth-panel" aria-labelledby="auth-form-title">
+            <div class="auth-panel-top">
+                <a href="{% url 'home' %}" class="auth-back-link">
+                    <i class="bi bi-arrow-left-short" aria-hidden="true"></i>
+                    <span>Panel</span>
+                </a>
+                <div class="auth-panel-action">
+                    {% block auth_header_action %}{% endblock %}
+                </div>
+            </div>
+
+            <section class="auth-card" aria-labelledby="auth-form-title">
+                <div class="auth-header">
+                    <span class="auth-card-label">{% block auth_card_label %}Dostęp{% endblock %}</span>
+                    <h2 id="auth-form-title">{% block auth_card_title %}Zaloguj się{% endblock %}</h2>
+                    <p class="auth-subtitle">{% block auth_subtitle %}{% endblock %}</p>
+                </div>
+                {% block auth_content %}{% endblock %}
+            </section>
+        </section>
+    </main>
 
     {% if messages %}
     <div class="notifications-container">

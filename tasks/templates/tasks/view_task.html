@@ -111,8 +111,9 @@
                     {% if can_add_attachments %}
                     <div class="tasks-issue-tool-row" aria-label="Narzędzia zadania">
                         <label class="tasks-issue-tool tasks-issue-tool--labelled" for="file-input" title="Dodaj załącznik">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="m21.4 11.6-8.5 8.5a6 6 0 0 1-8.5-8.5l8.5-8.5a4 4 0 0 1 5.7 5.7l-8.5 8.5a2 2 0 0 1-2.8-2.8l7.8-7.8"/>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"/>
                             </svg>
                             <span>Dodaj załącznik</span>
                         </label>
@@ -359,8 +360,8 @@
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.tags.id_for_label }}" data-task-detail-multiple>
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/>
-                                            <path d="M7.5 7.5h.01"/>
+                                            <path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
+                                            <path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/>
                                         </svg>
                                         <span data-task-detail-label>Tagi</span>
                                     </button>
@@ -412,6 +413,10 @@
                                 Nie zamknięto
                                 {% endif %}
                             </strong>
+                        </div>
+                        <div class="tasks-issue-field">
+                            <label for="{{ form.due_at.id_for_label }}">Termin wykonania</label>
+                            {{ form.due_at }}
                         </div>
                         <div class="tasks-issue-field">
                             <span>Czas pracy</span>
@@ -571,6 +576,10 @@
                                 </div>
                             </div>
                         </div>
+                    </label>
+                    <label>
+                        <span>Termin wykonania</span>
+                        {{ task_modal_form.due_at }}
                     </label>
                 </div>
             </div>

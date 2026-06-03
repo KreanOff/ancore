@@ -1,8 +1,8 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260531-checkboxes';
+@import 'base/variables.css?v=20260603-font-sizes';
 @import 'base/reset.css';
-@import 'layout/sidebar.css?v=20260602-sidebar-icons';
-@import 'layout/main.css?v=20260531-main-width';
+@import 'layout/sidebar.css?v=20260603-icon-sizes';
+@import 'layout/main.css?v=20260603-icon-sizes';
 @import 'layout/responsive.css?v=20260530-secondary-menu-resize';
 @import 'components/cards.css?v=20260531-dashboard-issue';
 @import 'components/buttons.css';
@@ -12,12 +12,13 @@
 @import 'components/dialogs.css';
 @import 'components/modals.css';
 @import 'components/tables.css';
-@import 'components/tasks.css?v=20260531-kanban-polish';
+@import 'components/tasks.css?v=20260603-icon-sizes';
 @import 'components/contacts.css?v=20260601-contacts-sharing';
 @import 'components/notifications.css';
 @import 'components/attachments.css';
 @import 'components/file-upload.css';
-@import 'components/auth.css';
+@import 'components/auth.css?v=20260603-icon-sizes';
 @import 'components/profile.css?v=20260531-compact-actions';
 @import 'calendar.css';
 @import 'components/checkboxes.css?v=20260531-unified';
+@import 'theme/elestio.css?v=20260603-project-list-bg';

@@ -8,12 +8,14 @@
     };
 
     const TYPE_COLORS = {
-        image: { color: '#1976d2', bg: '#e3f2fd' },
+        image: { color: '#1f2328', bg: '#ADD8E6' },
         pdf: { color: '#c2185b', bg: '#fce4ec' },
         document: { color: '#388e3c', bg: '#e8f5e8' },
         archive: { color: '#f57c00', bg: '#fff3e0' },
         default: { color: '#616161', bg: '#f5f5f5' },
     };
+
+    const PAPERCLIP_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"/></svg>';
 
     function normalizeExt(ext) {
         if (!ext) return '';
@@ -66,6 +68,7 @@
         iconHtmlByExtension,
         createIconElement,
         PAPERCLIP: 'bi-paperclip',
+        PAPERCLIP_SVG,
         UPLOAD: 'bi-cloud-arrow-up',
         TRASH: 'bi-trash',
     };

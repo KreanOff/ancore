@@ -18,7 +18,7 @@ class TaskProject(models.Model):
     CODE_DIGITS = string.digits
 
     ICON_COLORS = [
-        {'background': '#e8f1ff', 'foreground': '#2563eb'},
+        {'background': '#ADD8E6', 'foreground': '#1f2328'},
         {'background': '#eaf7ef', 'foreground': '#16803f'},
         {'background': '#fff1df', 'foreground': '#c25a00'},
         {'background': '#f0eaff', 'foreground': '#7c3aed'},
@@ -182,6 +182,7 @@ class Task(models.Model):
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     completion_date = models.DateTimeField(null=True, blank=True)
+    due_at = models.DateTimeField(null=True, blank=True)
     time_spent_hours = models.PositiveIntegerField(null=True, blank=True)
     time_spent_minutes = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(59)])
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
@@ -245,6 +246,20 @@ class Task(models.Model):
         if not hours and not minutes:
             return '00:00'
         return f'{hours:02d}:{minutes:02d}'
+
+    @property
+    def due_urgency(self):
+        if not self.due_at:
+            return 'none'
+
+        seconds_left = (self.due_at - timezone.now()).total_seconds()
+        if seconds_left <= 24 * 60 * 60:
+            return 'red'
+        if seconds_left <= 3 * 24 * 60 * 60:
+            return 'yellow'
+        if seconds_left <= 7 * 24 * 60 * 60:
+            return 'green'
+        return 'white'
 
     def get_file_extension(self):
         """Return file extension for icon selection"""

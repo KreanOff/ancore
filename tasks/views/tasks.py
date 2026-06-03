@@ -124,6 +124,7 @@ def _task_activity_snapshot(task):
         'project_id': project.id if project else None,
         'project_label': project.name if project else '',
         'parent_id': task.parent_id,
+        'due_at': task.due_at,
         'time_spent_hours': task.time_spent_hours,
         'time_spent_minutes': task.time_spent_minutes,
         'completion_date': task.completion_date,
@@ -167,6 +168,8 @@ def _task_change_activities(task, before):
         add_change('grupa', before['section_label'], task.section.title if task.section_id else '')
     if before['parent_id'] != task.parent_id:
         add_change('zadanie nadrzędne', before['parent_id'], task.parent_id)
+    if before['due_at'] != task.due_at:
+        add_change('termin wykonania', before['due_at'], task.due_at)
     if (
         before['time_spent_hours'] != task.time_spent_hours
         or before['time_spent_minutes'] != task.time_spent_minutes

@@ -7,8 +7,8 @@ class TaskAttachmentInline(admin.TabularInline):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ('task_id', 'title', 'section', 'user', 'status', 'priority', 'created_at')
-    list_filter = ('status', 'priority', 'created_at')
+    list_display = ('task_id', 'title', 'section', 'user', 'status', 'priority', 'due_at', 'created_at')
+    list_filter = ('status', 'priority', 'due_at', 'created_at')
     search_fields = ('title', 'description')
     inlines = [TaskAttachmentInline]
 

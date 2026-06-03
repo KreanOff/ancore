@@ -4,7 +4,7 @@
 }
 
 .contacts-status-lead {
-    --tasks-status-color: #638fcf;
+    --tasks-status-color: #fae6dc;
     color: var(--tasks-status-color);
 }
 
@@ -35,8 +35,8 @@
     justify-content: center;
     flex: 0 0 auto;
     border-radius: 50%;
-    background: #edf1ff;
-    color: #365bb5;
+    background: #fae6dc;
+    color: #1f2328;
     font-weight: 750;
 }
 
@@ -81,8 +81,8 @@
 }
 
 .contacts-row:hover {
-    border-color: #e0e5fa;
-    background: #f7f9ff;
+    border-color: #fae6dc;
+    background: #fae6dc;
 }
 
 .contacts-row-main {
@@ -156,8 +156,8 @@
     justify-content: center;
     margin-bottom: 1rem;
     border-radius: 50%;
-    background: #edf1ff;
-    color: #4268d4;
+    background: #fae6dc;
+    color: #1f2328;
 }
 
 .contacts-empty-state .tasks-empty-state__icon svg {
@@ -257,8 +257,8 @@
 
 .contacts-new-button--secondary {
     margin-top: 0.5rem;
-    background: #f7f9ff;
-    color: #365bb5;
+    background: #fae6dc;
+    color: #1f2328;
 }
 
 .contacts-row--static {
@@ -322,8 +322,8 @@
 }
 
 .contacts-share-row--link:hover {
-    border-color: #dbe4ff;
-    background: #f7f9ff;
+    border-color: #fae6dc;
+    background: #fae6dc;
 }
 
 .contacts-company-links {

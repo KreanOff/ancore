@@ -35,7 +35,6 @@ body.sidebar-open .sidebar-backdrop {
         left: var(--sidebar-width);
         width: min(var(--secondary-menu-width), calc(100vw - var(--sidebar-width)));
         z-index: 95;
-        border-right: 1px solid var(--border-color);
         box-shadow: 12px 0 30px rgba(15, 23, 42, 0.12);
         transform: translateX(0);
         transition: none;

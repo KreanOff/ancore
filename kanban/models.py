@@ -18,7 +18,7 @@ class KanbanProject(models.Model):
     CODE_DIGITS = string.digits
 
     ICON_COLORS = [
-        {'background': '#e8f1ff', 'foreground': '#2563eb'},
+        {'background': '#ADD8E6', 'foreground': '#1f2328'},
         {'background': '#eaf7ef', 'foreground': '#16803f'},
         {'background': '#fff1df', 'foreground': '#c25a00'},
         {'background': '#f0eaff', 'foreground': '#7c3aed'},

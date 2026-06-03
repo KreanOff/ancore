@@ -1,9 +1,11 @@
 import json
 import re
+from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.utils import timezone
 from django.urls import reverse
 
 from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
@@ -279,6 +281,36 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
         self.assertEqual(list(task.tags.all()), [tag])
 
+    def test_create_task_modal_saves_due_at(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_task_modal',
+            'project_id': project.id,
+            'title': 'Zadanie z terminem',
+            'section': section.id,
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+            'due_at': '2026-06-12T14:30',
+        })
+
+        task = Task.objects.get(user=self.user, title='Zadanie z terminem')
+
+        self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
+        self.assertEqual(timezone.localtime(task.due_at).strftime('%Y-%m-%dT%H:%M'), '2026-06-12T14:30')
+
+    def test_task_due_urgency_uses_time_remaining(self):
+        now = timezone.now()
+
+        self.assertEqual(Task(due_at=None).due_urgency, 'none')
+        self.assertEqual(Task(due_at=now + timedelta(days=8)).due_urgency, 'white')
+        self.assertEqual(Task(due_at=now + timedelta(days=5)).due_urgency, 'green')
+        self.assertEqual(Task(due_at=now + timedelta(days=2)).due_urgency, 'yellow')
+        self.assertEqual(Task(due_at=now + timedelta(hours=2)).due_urgency, 'red')
+        self.assertEqual(Task(due_at=now - timedelta(minutes=1)).due_urgency, 'red')
+
     def test_create_subtask_from_task_detail(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
@@ -442,6 +474,7 @@ class TaskProjectCreationTests(TestCase):
             'description': 'Nowy opis',
             'priority': 'high',
             'status': 'in_progress',
+            'due_at': '2026-06-15T09:45',
             'time_spent_hours': 1,
             'time_spent_minutes': 15,
         })
@@ -452,11 +485,12 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:view-task', args=[task.task_id]))
         self.assertEqual(activity.action, 'updated')
         self.assertEqual(activity.message, 'zaktualizował zadanie')
-        self.assertEqual(activity.metadata['fields'], ['status', 'priorytet', 'tytuł', 'opis', 'czas pracy'])
+        self.assertEqual(activity.metadata['fields'], ['status', 'priorytet', 'tytuł', 'opis', 'termin wykonania', 'czas pracy'])
         self.assertEqual(activity.metadata['changes'][0]['from_label'], 'Nowe')
         self.assertEqual(activity.metadata['changes'][0]['to_label'], 'Realizowane')
         self.assertEqual(activity.metadata['changes'][1]['from_label'], 'Średni')
         self.assertEqual(activity.metadata['changes'][1]['to_label'], 'Wysoki')
+        self.assertEqual(activity.metadata['changes'][4]['to_label'], '15.06.2026 09:45')
 
     def test_update_task_status_records_activity(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')

@@ -1,30 +1,51 @@
 {% extends 'accounts/auth_base.html' %}
 
-{% block title %}ancore{% endblock %}
-{% block auth_subtitle %}Zaloguj się na swoje konto{% endblock %}
+{% block title %}Logowanie | ancore{% endblock %}
+{% block auth_kicker %}Logowanie{% endblock %}
+{% block auth_panel_label %}Bezpieczny dostęp{% endblock %}
+{% block auth_heading %}Wróć do swojego workspace'u{% endblock %}
+{% block auth_lead %}Otwórz bieżące zadania, kontakty i kalendarz bez opuszczania przepływu pracy.{% endblock %}
+{% block auth_card_label %}Logowanie{% endblock %}
+{% block auth_card_title %}Zaloguj się{% endblock %}
+{% block auth_subtitle %}Podaj dane konta Ancore.{% endblock %}
+{% block auth_header_action %}
+<a href="{% url 'register' %}" class="auth-switch-link">
+    <i class="bi bi-person-plus" aria-hidden="true"></i>
+    <span>Utwórz konto</span>
+</a>
+{% endblock %}
 
 {% block auth_content %}
-<form method="post">
+<form method="post" class="auth-form">
     {% csrf_token %}
 
     {% if form.errors %}
-    <div class="alert alert-error">
+    <div class="auth-alert" role="alert">
         Nieprawidłowy email lub hasło.
     </div>
     {% endif %}
 
-    <div class="form-group">
-        <label class="form-label" for="email">Adres Email</label>
-        <input type="email" name="username" id="email" class="form-input" required autofocus>
+    <div class="form-group auth-field">
+        <label class="form-label" for="email">Adres email</label>
+        <div class="auth-input-shell">
+            <i class="bi bi-envelope" aria-hidden="true"></i>
+            <input type="email" name="username" id="email" class="form-input" autocomplete="username" placeholder="email@firma.pl" required autofocus>
+        </div>
     </div>
-    <div class="form-group">
+    <div class="form-group auth-field">
         <label class="form-label" for="password">Hasło</label>
-        <input type="password" name="password" id="password" class="form-input" required>
+        <div class="auth-input-shell">
+            <i class="bi bi-lock" aria-hidden="true"></i>
+            <input type="password" name="password" id="password" class="form-input" autocomplete="current-password" placeholder="Wpisz hasło" required>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary btn-block">Zaloguj się</button>
+    <button type="submit" class="auth-submit">
+        <span>Zaloguj się</span>
+        <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+    </button>
 </form>
 
-<div class="auth-footer">
+<p class="auth-footer">
     Nie masz konta? <a href="{% url 'register' %}">Zarejestruj się</a>
-</div>
+</p>
 {% endblock %}
