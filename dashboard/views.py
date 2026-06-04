@@ -162,6 +162,7 @@ def home(request):
 
     status_rows = [
         {
+            'value': value,
             'label': label,
             'count': user_tasks.filter(status=value).count(),
         }

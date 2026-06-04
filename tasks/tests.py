@@ -305,7 +305,7 @@ class TaskProjectCreationTests(TestCase):
         now = timezone.now()
 
         self.assertEqual(Task(due_at=None).due_urgency, 'none')
-        self.assertEqual(Task(due_at=now + timedelta(days=8)).due_urgency, 'white')
+        self.assertEqual(Task(due_at=now + timedelta(days=8)).due_urgency, 'green')
         self.assertEqual(Task(due_at=now + timedelta(days=5)).due_urgency, 'green')
         self.assertEqual(Task(due_at=now + timedelta(days=2)).due_urgency, 'yellow')
         self.assertEqual(Task(due_at=now + timedelta(hours=2)).due_urgency, 'red')

@@ -962,7 +962,7 @@
 }
 
 .status-new {
-    --tasks-status-color: #fae6dc;
+    --tasks-status-color: #2563eb;
     color: var(--tasks-status-color);
 }
 
@@ -2842,9 +2842,9 @@
 }
 
 .tasks-status-block-header--new {
-    background: #fae6dc;
-    border-color: #fae6dc;
-    color: #1f2328;
+    background: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
 }
 
 .tasks-status-block-header--in_progress {
@@ -2941,8 +2941,8 @@
 }
 
 .tasks-status-subgroup-header--new {
-    background: #fae6dc;
-    color: #1f2328;
+    background: #dbeafe;
+    color: #1d4ed8;
 }
 
 .tasks-status-subgroup-header--in_progress {
@@ -3698,24 +3698,19 @@
     height: var(--tasks-row-due-icon-size);
 }
 
-.tasks-row-due--white {
-    color: #ffffff;
-    filter: drop-shadow(0 0 1px rgba(36, 40, 48, 0.55));
-}
-
-.tasks-row-due--green {
+.tasks-row-due.tasks-row-due--green {
     color: #22c55e;
 }
 
-.tasks-row-due--yellow {
+.tasks-row-due.tasks-row-due--yellow {
     color: #f2b705;
 }
 
-.tasks-row-due--red {
+.tasks-row-due.tasks-row-due--red {
     color: #ef4444;
 }
 
-.tasks-row-due--none {
+.tasks-row-due.tasks-row-due--none {
     color: transparent;
 }
 
@@ -5032,6 +5027,19 @@ body.is-resizing-tasks-sidebar {
     color: #3f444d;
     font-size: 0.875rem;
     font-weight: 500;
+}
+
+.tasks-issue-due-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    justify-self: start;
+    max-width: 100%;
+}
+
+.tasks-issue-due-control .tasks-row-due {
+    flex: 0 0 22px;
 }
 
 .tasks-issue-field .tasks-due-input {

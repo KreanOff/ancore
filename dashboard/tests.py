@@ -18,7 +18,7 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('home'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Dashboard')
+        self.assertContains(response, 'Centrum pracy')
         self.assertContains(response, reverse('tasks:tasks'))
 
     def test_home_rail_lists_task_and_kanban_notifications(self):

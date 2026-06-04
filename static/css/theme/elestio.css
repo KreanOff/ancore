@@ -245,7 +245,7 @@ body {
 }
 
 .status-new {
-    --tasks-status-color: var(--accent-brown);
+    --tasks-status-color: #2563eb;
     color: var(--tasks-status-color);
 }
 
@@ -274,9 +274,9 @@ body {
 
 .tasks-status-block-header--new,
 .tasks-status-subgroup-header--new {
-    background: var(--accent-peach);
-    border-color: var(--accent-peach-border);
-    color: var(--accent-brown);
+    background: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
 }
 
 .tasks-status-block-header--in_progress,
@@ -484,7 +484,7 @@ body.auth-page,
 
 .tasks-status-block,
 .tasks-status-subgroup {
-    border-color: var(--accent-peach-border);
+    border-color: var(--chrome-border);
     background: var(--chrome-bg-soft);
 }
 
@@ -570,9 +570,9 @@ body.auth-page,
 
 .tasks-issue-group-header.tasks-status-block-header--new,
 .tasks-status-subgroup-header.tasks-status-subgroup-header--new {
-    background: var(--accent-peach);
-    border-color: var(--accent-peach-border);
-    color: var(--accent-brown);
+    background: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
 }
 
 .tasks-issue-group-header.tasks-status-block-header--in_progress,

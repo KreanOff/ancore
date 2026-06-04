@@ -416,7 +416,18 @@
                         </div>
                         <div class="tasks-issue-field">
                             <label for="{{ form.due_at.id_for_label }}">Termin wykonania</label>
-                            {{ form.due_at }}
+                            <div class="tasks-issue-due-control">
+                                <span class="tasks-row-date tasks-row-due tasks-row-due--{{ task.due_urgency }}"
+                                      data-task-detail-due-icon
+                                      title="{% if task.due_at %}Termin: {{ task.due_at|date:'d.m.Y, H:i' }}{% else %}Brak terminu{% endif %}"
+                                      aria-label="{% if task.due_at %}Termin: {{ task.due_at|date:'d.m.Y, H:i' }}{% else %}Brak terminu{% endif %}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.294 -2.333 5.588c0 3.704 3.134 6.706 7 6.706c3.866 0 7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/>
+                                    </svg>
+                                </span>
+                                {{ form.due_at }}
+                            </div>
                         </div>
                         <div class="tasks-issue-field">
                             <span>Czas pracy</span>
@@ -680,6 +691,34 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
     document.addEventListener('click', closeActivityDropdown);
     applyActivityFilter('all');
 });
+
+function getTaskDetailDueState(value) {
+    if (!value) return 'none';
+
+    const dueAt = new Date(value);
+    if (Number.isNaN(dueAt.getTime())) return 'none';
+
+    const secondsLeft = (dueAt.getTime() - Date.now()) / 1000;
+    if (secondsLeft <= 24 * 60 * 60) return 'red';
+    if (secondsLeft <= 3 * 24 * 60 * 60) return 'yellow';
+    return 'green';
+}
+
+function syncTaskDetailDueIcon() {
+    const dueInput = document.querySelector('.tasks-issue-due-control .tasks-due-input');
+    const dueIcon = document.querySelector('[data-task-detail-due-icon]');
+    if (!dueInput || !dueIcon) return;
+
+    const state = getTaskDetailDueState(dueInput.value);
+    dueIcon.classList.remove('tasks-row-due--none', 'tasks-row-due--green', 'tasks-row-due--yellow', 'tasks-row-due--red');
+    dueIcon.classList.add(`tasks-row-due--${state}`);
+    dueIcon.title = state === 'none' ? 'Brak terminu' : `Termin: ${dueInput.value.replace('T', ' ')}`;
+    dueIcon.setAttribute('aria-label', dueIcon.title);
+}
+
+document.querySelector('.tasks-issue-due-control .tasks-due-input')?.addEventListener('input', syncTaskDetailDueIcon);
+document.querySelector('.tasks-issue-due-control .tasks-due-input')?.addEventListener('change', syncTaskDetailDueIcon);
+syncTaskDetailDueIcon();
 
 const taskDetailPriorityIcons = {
     urgent: '<span class="tasks-row-priority priority-urgent"><span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span></span>',

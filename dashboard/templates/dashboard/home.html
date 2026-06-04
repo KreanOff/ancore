@@ -7,163 +7,217 @@
 {% block secondary_menu_panel_attrs %}{% endblock %}
 
 {% block secondary_menu %}
-    <aside class="dashboard-rail tasks-tracker-rail dashboard-notifications-rail" aria-label="Powiadomienia systemowe">
-        <div class="dashboard-rail-header tasks-rail-header dashboard-notifications-header">
-            <h1>Powiadomienia</h1>
-        </div>
+    <aside class="dashboard-rail" aria-label="Powiadomienia systemowe">
+        <header class="dashboard-rail-header">
+            <div>
+                <p>Aktywność</p>
+                <h1>Powiadomienia</h1>
+            </div>
+            <span class="dashboard-rail-badge" aria-label="Liczba powiadomień">{{ dashboard_notification_count }}</span>
+        </header>
 
         <div class="dashboard-notifications-list" role="list">
             {% for notification in dashboard_notifications %}
             <a href="{{ notification.url }}" class="dashboard-notification dashboard-notification--{{ notification.source }}" role="listitem">
                 <span class="dashboard-notification-avatar" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-bell">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
-                        <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3H4a4 4 0 0 0 2-3v-3a7 7 0 0 1 4-6"/>
+                        <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
                     </svg>
                 </span>
                 <span class="dashboard-notification-body">
                     <span class="dashboard-notification-line">
                         <strong>{{ notification.actor_label }}</strong>
                         <span>{{ notification.action_message }}</span>
-                        <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"d.m, H:i" }}</time>
                     </span>
                     {% for detail in notification.detail_lines %}
-                    <span class="dashboard-notification-note dashboard-notification-change-line">
+                    <span class="dashboard-notification-note">
                         {{ detail.label }}:
-                        {% if detail.from_label %}<strong>{{ detail.from_label }}</strong> → {% endif %}<strong>{% if detail.to_label %}{{ detail.to_label }}{% else %}{{ detail.value }}{% endif %}</strong>
+                        {% if detail.from_label %}<strong>{{ detail.from_label }}</strong> &rarr; {% endif %}<strong>{% if detail.to_label %}{{ detail.to_label }}{% else %}{{ detail.value }}{% endif %}</strong>
                     </span>
                     {% endfor %}
-                    <span class="dashboard-notification-note dashboard-notification-location">Gdzie: <strong>{{ notification.location_label }}</strong></span>
+                    <span class="dashboard-notification-location">Gdzie: <strong>{{ notification.location_label }}</strong></span>
+                    <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"d.m, H:i" }}</time>
                 </span>
             </a>
             {% empty %}
-            <p class="dashboard-empty dashboard-notifications-empty">Brak nowych powiadomień.</p>
+            <p class="dashboard-empty dashboard-empty--rail">Brak nowych powiadomień.</p>
             {% endfor %}
         </div>
     </aside>
 {% endblock %}
 
 {% block content %}
-<div class="tasks-page tasks-issue-page dashboard-issue-page">
-    <div class="tasks-issue-shell">
-        <header class="tasks-issue-header">
-            <div class="tasks-issue-breadcrumb">
-                <span class="tasks-issue-icon-button dashboard-issue-home" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg>
-                </span>
-                <span class="tasks-issue-divider" aria-hidden="true"></span>
-                <span class="tasks-issue-crumb">
-                    <span>ancore</span>
-                </span>
-                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
-                <span class="tasks-issue-crumb tasks-issue-crumb--current">
-                    <span>Panel Główny</span>
-                </span>
+<div class="dashboard-page">
+    <header class="dashboard-header">
+        <nav class="dashboard-breadcrumb" aria-label="Ścieżka">
+            <span class="dashboard-breadcrumb-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M5 12l-2 0l9-9l9 9l-2 0"/>
+                    <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
+                    <path d="M9 21v-6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/>
+                </svg>
+            </span>
+            <span>ancore</span>
+            <span class="dashboard-breadcrumb-separator" aria-hidden="true">/</span>
+            <strong>Panel Główny</strong>
+        </nav>
+
+        <div class="dashboard-header-actions">
+            <a href="{% url 'planner:index' %}" class="dashboard-action">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7"/>
+                    <path d="M16 3v4"/>
+                    <path d="M8 3v4"/>
+                    <path d="M4 11h16"/>
+                </svg>
+                <span>Kalendarz</span>
+            </a>
+            <a href="{% url 'tasks:tasks' %}" class="dashboard-action dashboard-action--primary">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M13 5h8"/>
+                    <path d="M13 9h5"/>
+                    <path d="M13 15h8"/>
+                    <path d="M13 19h5"/>
+                    <path d="M3 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5"/>
+                    <path d="M3 15a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4"/>
+                </svg>
+                <span>Zadania</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="dashboard-main" aria-labelledby="dashboard-title">
+        <section class="dashboard-summary">
+            <div class="dashboard-summary-copy">
+                <p>Panel Główny</p>
+                <h1 id="dashboard-title">Centrum pracy</h1>
+                <span>Dzień dobry, {% firstof request.user.first_name request.user.username %}.</span>
             </div>
-
-            <div class="tasks-issue-actions">
-                <a href="{% url 'planner:index' %}" class="dashboard-toolbar-link tasks-issue-side-button">Kalendarz</a>
-                <a href="{% url 'tasks:tasks' %}" class="dashboard-toolbar-link tasks-issue-save">Zadania</a>
+            <div class="dashboard-summary-meta" aria-label="Podsumowanie">
+                <span>{{ dashboard_notification_count }} powiadomień</span>
+                <span>{{ open_tasks_count }} otwartych zadań</span>
             </div>
-        </header>
+        </section>
 
-        <main class="tasks-issue-main dashboard-issue-main">
-            <section class="tasks-issue-content dashboard-issue-content" aria-label="Przegląd pracy">
-                <div class="dashboard-issue-title">
-                    <p>Panel Główny</p>
-                    <h1 id="dashboard-title">Dashboard</h1>
+        <section class="dashboard-stat-grid" aria-label="Najważniejsze liczby">
+            <article class="dashboard-stat dashboard-stat--open">
+                <span class="dashboard-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                </span>
+                <div>
+                    <p>Otwarte zadania</p>
+                    <strong>{{ open_tasks_count }}</strong>
+                    <small>Łącznie: {{ total_tasks }}</small>
                 </div>
-
-                <div class="dashboard-metrics" aria-label="Metryki">
-                    <article class="dashboard-metric">
-                        <span>Otwarte zadania</span>
-                        <strong>{{ open_tasks_count }}</strong>
-                        <small>Łącznie: {{ total_tasks }}</small>
-                    </article>
-                    <article class="dashboard-metric">
-                        <span>Wysoki priorytet</span>
-                        <strong>{{ high_priority_count }}</strong>
-                        <small>Wymaga uwagi</small>
-                    </article>
-                    <article class="dashboard-metric">
-                        <span>Nadchodzące terminy</span>
-                        <strong>{{ events_count }}</strong>
-                        <small>Najbliższe wpisy</small>
-                    </article>
+            </article>
+            <article class="dashboard-stat dashboard-stat--priority">
+                <span class="dashboard-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+                </span>
+                <div>
+                    <p>Wysoki priorytet</p>
+                    <strong>{{ high_priority_count }}</strong>
+                    <small>Do przejrzenia</small>
                 </div>
+            </article>
+            <article class="dashboard-stat dashboard-stat--events">
+                <span class="dashboard-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
+                </span>
+                <div>
+                    <p>Nadchodzące terminy</p>
+                    <strong>{{ events_count }}</strong>
+                    <small>Najbliższe wpisy</small>
+                </div>
+            </article>
+            <article class="dashboard-stat dashboard-stat--done">
+                <span class="dashboard-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M7 12l3 3l7-7"/><path d="M5 5h14v14H5z"/></svg>
+                </span>
+                <div>
+                    <p>Zamknięte</p>
+                    <strong>{{ completed_tasks_count }}</strong>
+                    <small>Ukończone zadania</small>
+                </div>
+            </article>
+        </section>
 
-                <section class="tasks-issue-subtasks dashboard-panel dashboard-panel--tasks" aria-labelledby="recent-tasks-title">
-                    <div class="tasks-subtasks-toolbar">
-                        <div>
-                            <p class="dashboard-panel__kicker">Zadania</p>
-                            <h2 id="recent-tasks-title" class="dashboard-section-title">Ostatnie aktywne</h2>
-                        </div>
-                        <a href="{% url 'tasks:tasks' %}" class="dashboard-panel-link tasks-issue-side-button">Pokaż wszystko</a>
+        <div class="dashboard-work-grid">
+            <section class="dashboard-panel dashboard-panel--tasks" aria-labelledby="recent-tasks-title">
+                <header class="dashboard-panel-header">
+                    <div>
+                        <p>Lista pracy</p>
+                        <h2 id="recent-tasks-title">Ostatnie aktywne zadania</h2>
                     </div>
+                    <a href="{% url 'tasks:tasks' %}" class="dashboard-panel-link">
+                        <span>Pokaż wszystko</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6l-6 6"/></svg>
+                    </a>
+                </header>
 
-                    {% if recent_tasks %}
-                    <div class="tasks-table-wrap tasks-board dashboard-task-board">
-                        <section class="tasks-issue-group tasks-status-block">
-                            <header class="tasks-issue-group-header tasks-status-block-header">
-                                <span class="status-indicator status-label-plain">Aktywne</span>
-                                <span class="tasks-rail-count">{{ recent_tasks|length }}</span>
-                            </header>
-                            <div class="tasks-issue-list">
-                                {% for task in recent_tasks %}
-                                <a href="{% url 'tasks:view-task' task.task_id %}" class="dashboard-task-row">
-                                    <span class="dashboard-task-priority tasks-row-priority priority-{{ task.priority }}" title="Priorytet: {{ task.get_priority_display }}" aria-label="Priorytet: {{ task.get_priority_display }}">
-                                        <span class="tasks-priority-icon" aria-hidden="true">
-                                            {% if task.priority == 'urgent' %}
-                                                <span class="tasks-priority-urgent-mark">!</span>
-                                            {% elif task.priority == 'none' %}
-                                                <span class="tasks-priority-no-mark"></span>
-                                            {% else %}
-                                                <span class="tasks-priority-bars"><span></span><span></span><span></span></span>
-                                            {% endif %}
-                                        </span>
-                                    </span>
-                                    <span class="dashboard-task-id">#{{ task.task_id }}</span>
-                                    <span class="status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
-                                    <span class="dashboard-task-title">{{ task.title }}</span>
-                                    <time class="dashboard-task-date" datetime="{{ task.created_at|date:'c' }}">{{ task.created_at|date:"d M" }}</time>
-                                </a>
-                                {% endfor %}
-                            </div>
-                        </section>
-                    </div>
-                    {% else %}
-                    <p class="tasks-issue-empty-feed dashboard-empty">Brak aktywnych zadań.</p>
-                    {% endif %}
-                </section>
+                {% if recent_tasks %}
+                <div class="dashboard-task-list" role="list">
+                    {% for task in recent_tasks %}
+                    <a href="{% url 'tasks:view-task' task.task_id %}" class="dashboard-task-item" role="listitem">
+                        <span class="dashboard-priority-dot dashboard-priority-dot--{{ task.priority }}" title="Priorytet: {{ task.get_priority_display }}" aria-label="Priorytet: {{ task.get_priority_display }}"></span>
+                        <span class="dashboard-task-main">
+                            <strong>{{ task.title }}</strong>
+                            <small>#{{ task.task_id }}{% if task.section %} · {{ task.section.title }}{% endif %}</small>
+                        </span>
+                        <span class="dashboard-task-state">
+                            <span class="status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
+                            <time datetime="{{ task.created_at|date:'c' }}">{{ task.created_at|date:"d M" }}</time>
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="dashboard-empty">Brak aktywnych zadań.</p>
+                {% endif %}
             </section>
 
-            <aside class="tasks-issue-sidebar dashboard-issue-sidebar" aria-label="Statusy i terminy">
-                <section class="tasks-issue-side-section" aria-labelledby="status-title">
-                    <h2 id="status-title">Przekrój zadań</h2>
+            <aside class="dashboard-side-stack" aria-label="Statusy i terminy">
+                <section class="dashboard-panel" aria-labelledby="status-title">
+                    <header class="dashboard-panel-header">
+                        <div>
+                            <p>Status</p>
+                            <h2 id="status-title">Przekrój zadań</h2>
+                        </div>
+                    </header>
                     <div class="dashboard-status-list">
                         {% for row in status_rows %}
-                        <div class="tasks-issue-history-row dashboard-status-row">
-                            <span>{{ row.label }}</span>
+                        <div class="dashboard-status-item">
+                            <span class="dashboard-status-label">
+                                <span class="dashboard-status-mark status-{{ row.value }}" aria-hidden="true"></span>
+                                {{ row.label }}
+                            </span>
                             <strong>{{ row.count }}</strong>
                         </div>
                         {% endfor %}
                     </div>
                 </section>
 
-                <section class="tasks-issue-side-section" aria-labelledby="calendar-title">
-                    <div class="dashboard-side-heading">
-                        <h2 id="calendar-title">Najbliższe terminy</h2>
-                        <a href="{% url 'planner:index' %}" class="dashboard-panel-link tasks-issue-side-button">Otwórz</a>
-                    </div>
+                <section class="dashboard-panel" aria-labelledby="calendar-title">
+                    <header class="dashboard-panel-header">
+                        <div>
+                            <p>Kalendarz</p>
+                            <h2 id="calendar-title">Najbliższe terminy</h2>
+                        </div>
+                        <a href="{% url 'planner:index' %}" class="dashboard-panel-link dashboard-panel-link--icon" aria-label="Otwórz kalendarz" title="Otwórz kalendarz">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
+                        </a>
+                    </header>
 
                     {% if upcoming_events %}
-                    <div class="dashboard-timeline">
+                    <div class="dashboard-event-list">
                         {% for event in upcoming_events %}
-                        <article class="dashboard-timeline-item dashboard-timeline-item--{{ event.color }}">
+                        <article class="dashboard-event dashboard-event--{{ event.color }}">
                             <strong>{{ event.title }}</strong>
-                            <time datetime="{{ event.start|date:'c' }}">{{ event.start|date:"d.m.Y H:i" }}</time>
-                            {% if event.description %}<small>{{ event.description|truncatechars:70 }}</small>{% endif %}
+                            <time datetime="{{ event.start|date:'c' }}">
+                                {% if event.all_day %}Cały dzień{% else %}{{ event.start|date:"d.m.Y H:i" }}{% endif %}
+                            </time>
+                            {% if event.description %}<small>{{ event.description|truncatechars:72 }}</small>{% endif %}
                         </article>
                         {% endfor %}
                     </div>
@@ -172,7 +226,7 @@
                     {% endif %}
                 </section>
             </aside>
-        </main>
-    </div>
+        </div>
+    </main>
 </div>
 {% endblock %}

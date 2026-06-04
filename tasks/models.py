@@ -257,9 +257,7 @@ class Task(models.Model):
             return 'red'
         if seconds_left <= 3 * 24 * 60 * 60:
             return 'yellow'
-        if seconds_left <= 7 * 24 * 60 * 60:
-            return 'green'
-        return 'white'
+        return 'green'
 
     def get_file_extension(self):
         """Return file extension for icon selection"""

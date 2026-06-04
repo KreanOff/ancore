@@ -131,8 +131,8 @@
 }
 
 .status-new {
-    background-color: #fef2f2;
-    color: #ef4444;
+    background-color: #eff6ff;
+    color: #2563eb;
     padding: 0.25rem 0.75rem;
 }
 
@@ -161,7 +161,7 @@
 }
 
 .status-new::before {
-    background-color: #ef4444;
+    background-color: #2563eb;
 }
 
 .status-in_progress::before {
