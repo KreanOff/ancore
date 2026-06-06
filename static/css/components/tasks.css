@@ -2952,6 +2952,19 @@
     cursor: pointer;
 }
 
+.tasks-issue-group-header .tasks-select-all-checkbox {
+    margin: 0;
+    opacity: 0;
+    transition: opacity 0.08s ease;
+}
+
+.tasks-issue-group-header:hover .tasks-select-all-checkbox,
+.tasks-issue-group-header .tasks-select-all-checkbox:focus-visible,
+.tasks-issue-group-header .tasks-select-all-checkbox:checked,
+.tasks-issue-group-header .tasks-select-all-checkbox:indeterminate {
+    opacity: 1;
+}
+
 .tasks-issue-group-header > span[aria-hidden="true"] {
     width: 24px;
     height: 24px;

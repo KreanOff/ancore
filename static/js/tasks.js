@@ -40,7 +40,7 @@ function initTasksPage() {
     const descriptionEditor = enhanceDescriptionEditor(descriptionInput);
     const issueDetailMain = document.querySelector('.tasks-issue-main');
     const issueSidebarResizer = document.querySelector('[data-issue-sidebar-resizer]');
-    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const selectAllCheckbox = document.querySelector('[data-select-all-checkbox], #select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
     const projectCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-project-id]');
@@ -2158,16 +2158,51 @@ function initTasksPage() {
             .filter(cb => cb.id !== 'select-all-checkbox');
     }
 
+    function getSelectedSectionCheckboxes() {
+        return Array.from(sectionCheckboxes).filter(cb => cb.checked);
+    }
+
     function getSelectedSectionCheckbox() {
-        return Array.from(sectionCheckboxes).find(cb => cb.checked) || null;
+        const selected = getSelectedSectionCheckboxes();
+        return selected.length === 1 ? selected[0] : null;
+    }
+
+    function getSelectedProjectCheckboxes() {
+        return Array.from(projectCheckboxes).filter(cb => cb.checked);
     }
 
     function getSelectedProjectCheckbox() {
-        return Array.from(projectCheckboxes).find(cb => cb.checked) || null;
+        const selected = getSelectedProjectCheckboxes();
+        return selected.length === 1 ? selected[0] : null;
     }
 
     function getSelectedTagCheckbox() {
         return Array.from(tagCheckboxes).find(cb => cb.checked) || null;
+    }
+
+    function rowIsShown(row) {
+        return row && row.style.display !== 'none';
+    }
+
+    function checkboxRow(checkbox) {
+        return checkbox.closest('.task-row, .tasks-project-row, .tasks-section-row, .tasks-all-groups-row');
+    }
+
+    function getSelectAllTargetCheckboxes(visibleOnly = false) {
+        const target = selectAllCheckbox?.dataset.selectAllTarget || '';
+        let targetCheckboxes = [];
+
+        if (target === 'projects') {
+            targetCheckboxes = Array.from(projectCheckboxes);
+        } else if (target === 'sections') {
+            targetCheckboxes = Array.from(sectionCheckboxes);
+        } else {
+            targetCheckboxes = Array.from(checkboxes).filter(cb => cb.id !== 'select-all-checkbox');
+        }
+
+        if (!visibleOnly) return targetCheckboxes;
+
+        return targetCheckboxes.filter(cb => rowIsShown(checkboxRow(cb)));
     }
 
     function setMenuButtonState(button, isEnabled, dataset = {}) {
@@ -2192,21 +2227,23 @@ function initTasksPage() {
             { taskCount: String(selectedTaskCheckboxes.length) }
         );
 
-        const selectedSectionCheckbox = getSelectedSectionCheckbox();
+        const selectedSectionCheckboxes = getSelectedSectionCheckboxes();
+        const selectedSectionCheckbox = selectedSectionCheckboxes.length === 1 ? selectedSectionCheckboxes[0] : null;
         const sectionDataset = {
             sectionId: selectedSectionCheckbox?.dataset.sectionId || '',
             sectionTitle: selectedSectionCheckbox?.dataset.sectionTitle || '',
             sectionDescription: selectedSectionCheckbox?.dataset.sectionDescription || '',
             sectionIcon: selectedSectionCheckbox?.dataset.sectionIcon || ''
         };
-        setMenuButtonState(editSelectedSectionMenuBtn, Boolean(selectedSectionCheckbox), sectionDataset);
+        setMenuButtonState(editSelectedSectionMenuBtn, selectedSectionCheckboxes.length === 1, sectionDataset);
         setMenuButtonState(
             deleteSelectedSectionMenuBtn,
-            Boolean(selectedSectionCheckbox),
+            selectedSectionCheckboxes.length > 0,
             sectionDataset
         );
 
-        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+        const selectedProjectCheckboxes = getSelectedProjectCheckboxes();
+        const selectedProjectCheckbox = selectedProjectCheckboxes.length === 1 ? selectedProjectCheckboxes[0] : null;
         const projectDataset = {
             projectId: selectedProjectCheckbox?.dataset.projectId || '',
             projectName: selectedProjectCheckbox?.dataset.projectName || '',
@@ -2214,10 +2251,10 @@ function initTasksPage() {
             projectCode: selectedProjectCheckbox?.dataset.projectCode || '',
             projectIcon: selectedProjectCheckbox?.dataset.projectIcon || ''
         };
-        setMenuButtonState(editSelectedProjectMenuBtn, Boolean(selectedProjectCheckbox), projectDataset);
+        setMenuButtonState(editSelectedProjectMenuBtn, selectedProjectCheckboxes.length === 1, projectDataset);
         setMenuButtonState(
             deleteSelectedProjectMenuBtn,
-            Boolean(selectedProjectCheckbox),
+            selectedProjectCheckboxes.length > 0,
             projectDataset
         );
 
@@ -2309,14 +2346,19 @@ function initTasksPage() {
 
         // Update select all state
         if (selectAllCheckbox) {
-            const taskCheckboxes = Array.from(checkboxes).filter(cb => cb.id !== 'select-all-checkbox');
-            selectAllCheckbox.checked = count === taskCheckboxes.length && taskCheckboxes.length > 0;
+            const targetCheckboxes = getSelectAllTargetCheckboxes(true);
+            const selectedTargetCheckboxes = targetCheckboxes.filter(cb => cb.checked);
+            selectAllCheckbox.checked = targetCheckboxes.length > 0 && selectedTargetCheckboxes.length === targetCheckboxes.length;
+            selectAllCheckbox.indeterminate = selectedTargetCheckboxes.length > 0 && selectedTargetCheckboxes.length < targetCheckboxes.length;
+            selectAllCheckbox.disabled = targetCheckboxes.length === 0;
         }
     }
 
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
-            checkboxes.forEach(cb => cb.checked = this.checked);
+            getSelectAllTargetCheckboxes(true).forEach(cb => {
+                cb.checked = this.checked;
+            });
             updateSelection();
         });
     }
@@ -2331,11 +2373,6 @@ function initTasksPage() {
     sectionCheckboxes.forEach(cb => {
         cb.addEventListener('change', function(e) {
             e.stopPropagation();
-            if (this.checked) {
-                sectionCheckboxes.forEach(other => {
-                    if (other !== this) other.checked = false;
-                });
-            }
             updateSelection();
         });
     });
@@ -2343,11 +2380,6 @@ function initTasksPage() {
     projectCheckboxes.forEach(cb => {
         cb.addEventListener('change', function(e) {
             e.stopPropagation();
-            if (this.checked) {
-                projectCheckboxes.forEach(other => {
-                    if (other !== this) other.checked = false;
-                });
-            }
             updateSelection();
         });
     });
@@ -2385,23 +2417,28 @@ function initTasksPage() {
         form.append(csrfInput, actionInput);
 
         Object.entries(fields).forEach(([name, value]) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name;
-            input.value = value;
-            form.appendChild(input);
+            const values = Array.isArray(value) ? value : [value];
+            values.forEach(item => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = item;
+                form.appendChild(input);
+            });
         });
 
         document.body.appendChild(form);
         form.submit();
     }
 
-    function postDeleteSection(sectionId) {
-        postPageAction('delete_section', { section_id: sectionId });
+    function postDeleteSection(sectionIds) {
+        const ids = Array.isArray(sectionIds) ? sectionIds : [sectionIds];
+        postPageAction('delete_section', { section_ids: ids });
     }
 
-    function postDeleteProject(projectId) {
-        postPageAction('delete_project', { project_id: projectId });
+    function postDeleteProject(projectIds) {
+        const ids = Array.isArray(projectIds) ? projectIds : [projectIds];
+        postPageAction('delete_project', { project_ids: ids });
     }
 
     function postDeleteTag(tagId) {
@@ -2460,36 +2497,44 @@ function initTasksPage() {
     }
 
     function deleteSelectedSection() {
-        const selectedSectionCheckbox = getSelectedSectionCheckbox();
-        const sectionId = selectedSectionCheckbox?.dataset.sectionId || '';
-        const sectionTitle = escapeHtml(selectedSectionCheckbox?.dataset.sectionTitle || sectionCopy.deleteFallback);
-        if (!sectionId) return;
+        const selectedSectionCheckboxes = getSelectedSectionCheckboxes();
+        const sectionIds = selectedSectionCheckboxes.map(cb => cb.dataset.sectionId).filter(Boolean);
+        if (!sectionIds.length) return;
+
+        const isBulk = sectionIds.length > 1;
+        const sectionTitle = escapeHtml(selectedSectionCheckboxes[0]?.dataset.sectionTitle || sectionCopy.deleteFallback);
 
         closeSectionActionMenu();
         window.showConfirmModal({
-            title: sectionCopy.deleteTitle,
-            message: sectionCopy.deleteMessageTemplate.replace('{title}', sectionTitle),
-            confirmText: sectionCopy.deleteConfirm,
+            title: isBulk ? 'Usuń grupy' : sectionCopy.deleteTitle,
+            message: isBulk
+                ? `Czy na pewno chcesz usunąć ${sectionIds.length} zaznaczone grupy? Zostaną usunięte razem z zadaniami.`
+                : sectionCopy.deleteMessageTemplate.replace('{title}', sectionTitle),
+            confirmText: isBulk ? 'Usuń grupy' : sectionCopy.deleteConfirm,
             cancelText: 'Anuluj',
             confirmClass: 'btn-danger',
-            onConfirm: () => postDeleteSection(sectionId)
+            onConfirm: () => postDeleteSection(sectionIds)
         });
     }
 
     function deleteSelectedProject() {
-        const selectedProjectCheckbox = getSelectedProjectCheckbox();
-        const projectId = selectedProjectCheckbox?.dataset.projectId || '';
-        const projectName = escapeHtml(selectedProjectCheckbox?.dataset.projectName || 'tę przestrzeń roboczą');
-        if (!projectId) return;
+        const selectedProjectCheckboxes = getSelectedProjectCheckboxes();
+        const projectIds = selectedProjectCheckboxes.map(cb => cb.dataset.projectId).filter(Boolean);
+        if (!projectIds.length) return;
+
+        const isBulk = projectIds.length > 1;
+        const projectName = escapeHtml(selectedProjectCheckboxes[0]?.dataset.projectName || 'tę przestrzeń roboczą');
 
         closeSectionActionMenu();
         window.showConfirmModal({
-            title: 'Usuń przestrzeń roboczą',
-            message: `Czy na pewno chcesz usunąć przestrzeń roboczą „${projectName}”? ${taskCopy.projectDeleteNote}`,
-            confirmText: 'Usuń przestrzeń',
+            title: isBulk ? 'Usuń projekty' : 'Usuń przestrzeń roboczą',
+            message: isBulk
+                ? `Czy na pewno chcesz usunąć ${projectIds.length} zaznaczone projekty? Zostaną usunięte razem z grupami i zadaniami.`
+                : `Czy na pewno chcesz usunąć przestrzeń roboczą „${projectName}”? ${taskCopy.projectDeleteNote}`,
+            confirmText: isBulk ? 'Usuń projekty' : 'Usuń przestrzeń',
             cancelText: 'Anuluj',
             confirmClass: 'btn-danger',
-            onConfirm: () => postDeleteProject(projectId)
+            onConfirm: () => postDeleteProject(projectIds)
         });
     }
 
@@ -2570,7 +2615,7 @@ function initTasksPage() {
     // Status Toggle selected tasks
     if (statusToggleBtn) {
         statusToggleBtn.addEventListener('click', function() {
-            const selectedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
+            const selectedCheckboxes = getSelectedTaskCheckboxes();
             const taskIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.taskId));
             const targetStatus = this.dataset.targetStatus;
             const isClosing = targetStatus === 'closed';
@@ -2831,6 +2876,7 @@ function initTasksPage() {
 
         updateGroupVisibility();
         setActiveFilterButtons();
+        updateSelection();
     }
 
     if (filterStatus) filterStatus.addEventListener('change', applyFilters);

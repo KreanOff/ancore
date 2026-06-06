@@ -233,7 +233,6 @@ body {
 .data-table tr:hover,
 .contacts-row:hover,
 .contacts-share-row--link:hover,
-.tasks-issue-row:hover,
 .tasks-project-row:hover {
     background: #fbf6f3;
     border-color: var(--accent-peach-border);
@@ -525,7 +524,6 @@ body.auth-page,
 }
 
 .tasks-table .task-row:hover td,
-.tasks-issue-row:hover,
 .tasks-project-row:hover,
 .tasks-section-row:hover {
     background: #fbf6f3;
@@ -554,6 +552,11 @@ body.auth-page,
 .tasks-all-groups-row:hover {
     background: var(--surface-hover);
     border-color: var(--chrome-border);
+}
+
+.tasks-issue-row:hover {
+    background: #f0f2f6;
+    border-color: #d6d9df;
 }
 
 .tasks-project-row:focus-visible,

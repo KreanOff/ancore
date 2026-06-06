@@ -41,6 +41,13 @@ def _sections_for_projects(projects):
     return [section for project in projects for section in project.sections.all()]
 
 
+def _posted_ids(request, plural_name, singular_name):
+    ids = request.POST.getlist(plural_name)
+    if not ids:
+        ids = [request.POST.get(singular_name)]
+    return [item for item in ids if item]
+
+
 def _tasks_navigation_context(user, active_section=None, active_view=None):
     tasks_qs = Task.objects.filter(user=user, parent__isnull=True).select_related('section', 'section__project').prefetch_related('tags').annotate(
         is_closed_sort=Case(
@@ -273,13 +280,23 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się dodać projektu.')
 
         if action == 'delete_project':
-            project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
-            task_count = Task.objects.filter(section__project=project, user=request.user).count()
-            project.delete()
-            if task_count:
-                messages.success(request, 'Projekt usunięty. Zadania przeniesiono do sekcji „Bez projektu”.')
-            else:
+            project_ids = _posted_ids(request, 'project_ids', 'project_id')
+            projects_to_delete = TaskProject.objects.filter(id__in=project_ids, user=request.user)
+            if not projects_to_delete.exists():
+                get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
+            project_count = projects_to_delete.count()
+            task_count = Task.objects.filter(section__project__in=projects_to_delete, user=request.user).count()
+            with transaction.atomic():
+                projects_to_delete.delete()
+                Task._renumber_user_tasks(request.user)
+            if project_count == 1 and task_count:
+                messages.success(request, 'Projekt usunięty razem z zadaniami.')
+            elif project_count == 1:
                 messages.success(request, 'Projekt usunięty.')
+            elif task_count:
+                messages.success(request, f'Usunięto {project_count} projekty razem z zadaniami.')
+            else:
+                messages.success(request, f'Usunięto {project_count} projekty.')
             return redirect('tasks:tasks')
 
         if action in ('edit_project', 'rename_project'):
@@ -361,14 +378,24 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się zaktualizować grupy.')
 
         if action == 'delete_section':
-            section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
-            project_id = section.project_id
-            task_count = Task.objects.filter(section=section, user=request.user).count()
-            section.delete()
-            if task_count:
-                messages.success(request, 'Grupa usunięta. Zadania przeniesiono do sekcji „Bez projektu”.')
-            else:
+            section_ids = _posted_ids(request, 'section_ids', 'section_id')
+            sections_to_delete = TaskSection.objects.filter(id__in=section_ids, project__user=request.user)
+            if not sections_to_delete.exists():
+                get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
+            section_count = sections_to_delete.count()
+            project_id = sections_to_delete.values_list('project_id', flat=True).first()
+            task_count = Task.objects.filter(section__in=sections_to_delete, user=request.user).count()
+            with transaction.atomic():
+                sections_to_delete.delete()
+                Task._renumber_user_tasks(request.user)
+            if section_count == 1 and task_count:
+                messages.success(request, 'Grupa usunięta razem z zadaniami.')
+            elif section_count == 1:
                 messages.success(request, 'Grupa usunięta.')
+            elif task_count:
+                messages.success(request, f'Usunięto {section_count} grupy razem z zadaniami.')
+            else:
+                messages.success(request, f'Usunięto {section_count} grupy.')
             if all_groups_view:
                 return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
             return redirect(f"{reverse('tasks:tasks')}?project={project_id}")

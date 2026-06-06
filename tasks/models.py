@@ -186,7 +186,7 @@ class Task(models.Model):
     time_spent_hours = models.PositiveIntegerField(null=True, blank=True)
     time_spent_minutes = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(59)])
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
-    section = models.ForeignKey(TaskSection, on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
+    section = models.ForeignKey(TaskSection, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
     tags = models.ManyToManyField(TaskTag, related_name='tasks', blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='subtasks', null=True, blank=True)
 

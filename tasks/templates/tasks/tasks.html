@@ -442,6 +442,7 @@
                     <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
                         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
                     </button>
+                    <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     <span class="status-indicator status-label-plain">Grupy</span>
                     <span class="tasks-rail-count">{{ active_project.sections.all|length }}</span>
                 </header>
@@ -541,6 +542,7 @@
                     <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
                         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
                     </button>
+                    <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     <span class="status-indicator status-label-plain">Grupy</span>
                     <span class="tasks-rail-count">{{ total_group_count }}</span>
                 </header>
@@ -620,6 +622,7 @@
                     <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Projekty" aria-expanded="true">
                         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
                     </button>
+                    <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie projekty" title="Zaznacz wszystkie projekty" data-select-all-checkbox data-select-all-target="projects">
                     <span class="status-indicator status-label-plain">Projekty</span>
                     <span class="tasks-rail-count">{{ projects|length }}</span>
                 </header>

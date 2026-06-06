@@ -3,6 +3,7 @@ import re
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
@@ -168,6 +169,62 @@ class TaskProjectCreationTests(TestCase):
             html=True,
         )
 
+    def test_delete_project_removes_related_tasks_and_renumbers_remaining_tasks(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt do usunięcia', code='DEL')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        parent = Task.objects.create(user=self.user, section=section, title='Zadanie projektu')
+        subtask = Task.objects.create(user=self.user, section=section, parent=parent, title='Podzadanie projektu')
+        TaskActivity.objects.create(task=parent, actor=self.user, action='commented', message='Komentarz')
+        TaskAttachment.objects.create(
+            task=parent,
+            file=SimpleUploadedFile('notatka.txt', b'tresc', content_type='text/plain'),
+        )
+        remaining_project = TaskProject.objects.create(user=self.user, name='Projekt zostaje', code='STAY')
+        remaining_section = TaskSection.objects.create(project=remaining_project, title='Backend')
+        remaining_task = Task.objects.create(user=self.user, section=remaining_section, title='Zadanie zostaje')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_project',
+            'project_id': project.id,
+        })
+
+        remaining_task.refresh_from_db()
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(TaskProject.objects.filter(id=project.id).exists())
+        self.assertFalse(TaskSection.objects.filter(id=section.id).exists())
+        self.assertFalse(Task.objects.filter(id__in=[parent.id, subtask.id]).exists())
+        self.assertFalse(TaskActivity.objects.filter(task_id=parent.id).exists())
+        self.assertFalse(TaskAttachment.objects.filter(task_id=parent.id).exists())
+        self.assertEqual(remaining_task.task_id, 1)
+        self.assertEqual(messages, ['Projekt usunięty razem z zadaniami.'])
+
+    def test_bulk_delete_projects_removes_related_tasks_and_renumbers_remaining_tasks(self):
+        first_project = TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
+        first_section = TaskSection.objects.create(project=first_project, title='Frontend')
+        second_project = TaskProject.objects.create(user=self.user, name='Drugi projekt', code='TWO')
+        second_section = TaskSection.objects.create(project=second_project, title='Backend')
+        first_task = Task.objects.create(user=self.user, section=first_section, title='Pierwsze zadanie')
+        second_task = Task.objects.create(user=self.user, section=second_section, title='Drugie zadanie')
+        remaining_project = TaskProject.objects.create(user=self.user, name='Projekt zostaje', code='STAY')
+        remaining_section = TaskSection.objects.create(project=remaining_project, title='QA')
+        remaining_task = Task.objects.create(user=self.user, section=remaining_section, title='Zadanie zostaje')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_project',
+            'project_ids': [first_project.id, second_project.id],
+        })
+
+        remaining_task.refresh_from_db()
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(TaskProject.objects.filter(id__in=[first_project.id, second_project.id]).exists())
+        self.assertFalse(Task.objects.filter(id__in=[first_task.id, second_task.id]).exists())
+        self.assertEqual(remaining_task.task_id, 1)
+        self.assertEqual(messages, ['Usunięto 2 projekty razem z zadaniami.'])
+
     def test_all_groups_view_lists_sections(self):
         first_project = TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
         second_project = TaskProject.objects.create(user=self.user, name='Drugi projekt', code='TWO')
@@ -186,6 +243,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, second_project.code)
         self.assertContains(response, '1 zadań')
         self.assertContains(response, '0 zadań')
+        self.assertContains(response, 'data-select-all-target="sections"')
 
     def test_all_groups_link_shows_group_count(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
@@ -313,8 +371,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(my_tasks_response, 'id="edit-selected-task-menu-btn"')
         self.assertContains(projects_response, 'id="delete-selected-project-menu-btn"')
         self.assertContains(projects_response, 'id="edit-selected-project-menu-btn"')
+        self.assertContains(projects_response, 'data-select-all-target="projects"')
         self.assertContains(groups_response, 'id="delete-selected-section-menu-btn"')
         self.assertContains(groups_response, 'id="edit-selected-section-menu-btn"')
+        self.assertContains(groups_response, 'data-select-all-target="sections"')
         self.assertNotContains(groups_response, 'id="delete-selected-tag-menu-btn"')
         self.assertNotContains(groups_response, 'id="edit-selected-tag-menu-btn"')
         self.assertContains(tags_response, 'id="delete-selected-tag-menu-btn"')
@@ -735,6 +795,30 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
         self.assertEqual(section.title, 'API')
         self.assertEqual(section.description, 'Nowy opis')
+
+    def test_bulk_delete_sections_from_all_groups_view(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        first_section = TaskSection.objects.create(project=project, title='Frontend')
+        second_section = TaskSection.objects.create(project=project, title='Backend')
+        remaining_section = TaskSection.objects.create(project=project, title='QA')
+        first_task = Task.objects.create(user=self.user, section=first_section, title='Pierwsze zadanie')
+        second_task = Task.objects.create(user=self.user, section=second_section, title='Drugie zadanie')
+        remaining_task = Task.objects.create(user=self.user, section=remaining_section, title='Zadanie zostaje')
+
+        response = self.client.post(f"{reverse('tasks:tasks')}?view=all-groups", {
+            'action': 'delete_section',
+            'section_ids': [first_section.id, second_section.id],
+        })
+
+        remaining_task.refresh_from_db()
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+
+        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=all-groups")
+        self.assertFalse(TaskSection.objects.filter(id__in=[first_section.id, second_section.id]).exists())
+        self.assertFalse(Task.objects.filter(id__in=[first_task.id, second_task.id]).exists())
+        self.assertTrue(TaskSection.objects.filter(id=remaining_section.id).exists())
+        self.assertEqual(remaining_task.task_id, 1)
+        self.assertEqual(messages, ['Usunięto 2 grupy razem z zadaniami.'])
 
     def test_bulk_update_status_runs_task_completion_logic(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
