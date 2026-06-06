@@ -92,7 +92,7 @@
                                 <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
                             </div>
                         </div>
-                        <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">{% include 'core/includes/trash_icon.html' %}</button>
                     </div>
                     {% endfor %}
                 </div>
@@ -117,6 +117,8 @@
 </div>
 
 <script>
+const ATTACHMENT_TRASH_ICON_HTML = `{% include 'core/includes/trash_icon.html' %}`;
+
 function deleteAttachment(attachmentId) {
     window.showConfirmModal({
         title: 'Potwierdź usunięcie',
@@ -155,7 +157,7 @@ function undoDeleteAttachment(attachmentId) {
         el.classList.remove('marked-for-deletion');
         const btn = el.querySelector('.tasks-delete-attach-btn');
         if (btn) {
-            btn.innerHTML = '<i class="bi bi-trash" aria-hidden="true"></i>';
+            btn.innerHTML = ATTACHMENT_TRASH_ICON_HTML;
             btn.title = 'Usuń załącznik';
             btn.onclick = () => deleteAttachment(attachmentId);
         }

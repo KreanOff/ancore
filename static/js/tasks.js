@@ -60,6 +60,7 @@ function initTasksPage() {
     const projectActionMenus = document.querySelectorAll('[data-project-actions]');
     const projectTree = document.querySelector('[data-project-tree]');
     const projectTreeToggle = document.querySelector('[data-project-tree-toggle]');
+    const railNavGroups = document.querySelectorAll('[data-rail-nav-group]');
     const projectNodes = document.querySelectorAll('[data-project-node]');
     const openProjectButtons = document.querySelectorAll('[data-open-project]');
     const openTagButtons = document.querySelectorAll('[data-open-tag]');
@@ -1095,6 +1096,31 @@ function initTasksPage() {
         }
     }
 
+    function getCollapsedRailNavGroups() {
+        try {
+            return new Set(JSON.parse(localStorage.getItem('collapsedTaskRailNavGroups') || '[]'));
+        } catch (error) {
+            return new Set();
+        }
+    }
+
+    function saveCollapsedRailNavGroups(collapsedGroups) {
+        try {
+            localStorage.setItem('collapsedTaskRailNavGroups', JSON.stringify([...collapsedGroups]));
+        } catch (error) {
+            // Ignore storage failures; the in-page collapse state still works.
+        }
+    }
+
+    function setRailNavGroupCollapsed(group, isCollapsed) {
+        const toggle = group.querySelector('[data-rail-nav-group-toggle]');
+        const label = toggle?.querySelector('span')?.textContent?.trim() || 'sekcję';
+
+        group.classList.toggle('is-collapsed', isCollapsed);
+        toggle?.setAttribute('aria-expanded', String(!isCollapsed));
+        toggle?.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} sekcję ${label}`);
+    }
+
     function setProjectTreeCollapsed(isCollapsed) {
         if (!projectTree || !projectTreeToggle) return;
 
@@ -1336,7 +1362,7 @@ function initTasksPage() {
         clearButton.className = 'tasks-emoji-clear';
         clearButton.title = 'Usuń ikonę';
         clearButton.setAttribute('aria-label', 'Usuń ikonę');
-        clearButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>';
+        clearButton.innerHTML = AttachmentIcons.TRASH_SVG;
         clearButton.addEventListener('click', () => {
             setIconValue(activeIconInput, activeIconPicker, '');
             closeEmojiPicker();
@@ -1571,6 +1597,34 @@ function initTasksPage() {
             const isCollapsed = !projectTree.classList.contains('is-collapsed');
             setProjectTreeCollapsed(isCollapsed);
             saveProjectTreeCollapsed(isCollapsed);
+        });
+    }
+
+    if (railNavGroups.length) {
+        const collapsedRailNavGroups = getCollapsedRailNavGroups();
+
+        railNavGroups.forEach(group => {
+            const groupKey = group.dataset.railNavGroup || '';
+            const toggle = group.querySelector('[data-rail-nav-group-toggle]');
+            const shouldCollapse = collapsedRailNavGroups.has(groupKey) && !group.classList.contains('is-current');
+
+            setRailNavGroupCollapsed(group, shouldCollapse);
+
+            toggle?.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const isCollapsed = !group.classList.contains('is-collapsed');
+                setRailNavGroupCollapsed(group, isCollapsed);
+
+                if (groupKey) {
+                    if (isCollapsed) {
+                        collapsedRailNavGroups.add(groupKey);
+                    } else {
+                        collapsedRailNavGroups.delete(groupKey);
+                    }
+                    saveCollapsedRailNavGroups(collapsedRailNavGroups);
+                }
+            });
         });
     }
 

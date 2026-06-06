@@ -143,7 +143,7 @@ class FileUploadManager {
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'file-remove';
-        removeBtn.innerHTML = `<i class="bi ${AttachmentIcons.TRASH}" aria-hidden="true"></i>`;
+        removeBtn.innerHTML = AttachmentIcons.TRASH_SVG;
         removeBtn.addEventListener('click', () => this.removeFile(index));
         fileItem.appendChild(removeBtn);
 
@@ -181,7 +181,7 @@ class FileUploadManager {
         removeBtn.className = 'tasks-delete-attach-btn';
         removeBtn.title = 'Usuń załącznik';
         removeBtn.setAttribute('aria-label', `Usuń ${file.name}`);
-        removeBtn.innerHTML = `<i class="bi ${AttachmentIcons.TRASH}" aria-hidden="true"></i>`;
+        removeBtn.innerHTML = AttachmentIcons.TRASH_SVG;
         removeBtn.addEventListener('click', () => this.removeFile(index));
         fileItem.appendChild(removeBtn);
 

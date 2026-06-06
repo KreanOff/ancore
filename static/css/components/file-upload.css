@@ -88,6 +88,13 @@
     background-color: var(--primary-color-light);
 }
 
+.file-remove svg,
+.file-item-remove svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
 .upload-progress {
     margin-top: 0.5rem;
 }

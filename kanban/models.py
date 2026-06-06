@@ -271,6 +271,14 @@ class Kanban(models.Model):
             return '00:00'
         return f'{hours:02d}:{minutes:02d}'
 
+    @property
+    def has_time_spent(self):
+        return bool((self.time_spent_hours or 0) or (self.time_spent_minutes or 0))
+
+    @property
+    def time_spent_label(self):
+        return self._activity_time_spent()
+
     def get_file_extension(self):
         """Return file extension for icon selection"""
         if self.attachments.exists():

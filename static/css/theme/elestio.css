@@ -55,6 +55,7 @@ body {
 .topbar-icon-button,
 .nav-link,
 .tasks-rail-link,
+.tasks-rail-nav-group-toggle,
 .tasks-rail-add-button {
     color: var(--text-muted);
 }
@@ -64,6 +65,8 @@ body {
 .nav-link.active,
 .tasks-rail-link:hover,
 .tasks-rail-link.is-active,
+.tasks-rail-nav-group-toggle:hover,
+.tasks-rail-nav-group-toggle:focus-visible,
 .tasks-rail-add-button:hover,
 .tasks-rail-add-button:focus-visible {
     background: var(--surface-selected);
@@ -241,7 +244,7 @@ body {
 }
 
 .task-row.checked {
-    background: rgba(251, 225, 213, 0.46);
+    background: #e9ebef;
 }
 
 .status-new {
@@ -479,7 +482,7 @@ body.auth-page,
 
 .tasks-project-row-icon,
 .tasks-section-row-icon {
-    background: #f6eee9;
+    background: transparent;
 }
 
 .tasks-status-block,
@@ -490,7 +493,7 @@ body.auth-page,
 
 .tasks-issue-group:not(.tasks-status-block) {
     border-color: var(--chrome-border);
-    background: var(--sidebar-bg);
+    background: #fffdfb;
 }
 
 .tasks-issue-group-header:not(.tasks-status-block-header),
@@ -509,6 +512,8 @@ body.auth-page,
     background: rgba(63, 59, 56, 0.08);
 }
 
+.tasks-issue-group:not(.tasks-status-block) > .tasks-issue-list,
+.tasks-issue-group:not(.tasks-status-block) > .tasks-section-list,
 .tasks-issue-list.tasks-project-list {
     background: #fffdfb;
 }
@@ -528,14 +533,18 @@ body.auth-page,
 }
 
 .tasks-project-row,
-.tasks-section-row,
+.tasks-section-row:not(.tasks-section-card),
 .tasks-all-groups-row {
     border-top-color: var(--border-color);
-    background: var(--sidebar-bg);
+    background: #fffdfb;
     color: var(--text-main);
 }
 
-.tasks-project-list .tasks-project-row {
+.tasks-issue-group:not(.tasks-status-block) .tasks-project-row,
+.tasks-issue-group:not(.tasks-status-block) .tasks-section-row:not(.tasks-section-card),
+.tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row,
+.tasks-issue-group:not(.tasks-status-block) .tasks-empty-state,
+.tasks-issue-group:not(.tasks-status-block) .tasks-empty-section {
     background: #fffdfb;
 }
 
@@ -552,6 +561,30 @@ body.auth-page,
     background: var(--surface-hover);
     outline: 2px solid var(--chrome-border);
     outline-offset: -2px;
+}
+
+.tasks-issue-row.checked,
+.tasks-issue-row.checked:hover,
+.tasks-table .task-row.checked td,
+.tasks-table .task-row.checked:hover td,
+.tasks-issue-row:has(.task-checkbox:checked),
+.tasks-issue-row:has(.task-checkbox:checked):hover,
+.tasks-issue-row:has(.tasks-row-checkbox:checked),
+.tasks-issue-row:has(.tasks-row-checkbox:checked):hover,
+.tasks-project-row.checked,
+.tasks-project-row.checked:hover,
+.tasks-section-row.checked:not(.tasks-section-card),
+.tasks-section-row.checked:not(.tasks-section-card):hover,
+.tasks-all-groups-row.checked,
+.tasks-all-groups-row.checked:hover,
+.tasks-issue-group:not(.tasks-status-block) .tasks-project-row.checked,
+.tasks-issue-group:not(.tasks-status-block) .tasks-project-row.checked:hover,
+.tasks-issue-group:not(.tasks-status-block) .tasks-section-row.checked:not(.tasks-section-card),
+.tasks-issue-group:not(.tasks-status-block) .tasks-section-row.checked:not(.tasks-section-card):hover,
+.tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row.checked,
+.tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row.checked:hover {
+    background: #e9ebef;
+    border-color: #d6d9df;
 }
 
 .tasks-row-title,

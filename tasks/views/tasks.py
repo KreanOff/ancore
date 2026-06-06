@@ -87,6 +87,9 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
         'total_group_count': len(_sections_for_projects(projects)),
         'tags': TaskTag.objects.filter(user=user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=user, tasks__parent__isnull=True))),
         'total_tag_count': TaskTag.objects.filter(user=user).count(),
+        'shared_task_count': 0,
+        'shared_group_count': 0,
+        'shared_project_count': 0,
         'can_create_issue': can_create_issue,
     }
 
@@ -212,8 +215,20 @@ def _tasks_page(request, active_section=None):
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
     all_groups_view = request.GET.get('view') == 'all-groups' and not active_section
+    tags_view = request.GET.get('view') == 'tags' and not active_section
+    shared_tasks_view = request.GET.get('view') == 'shared-tasks' and not active_section
+    shared_groups_view = request.GET.get('view') == 'shared-groups' and not active_section
+    shared_projects_view = request.GET.get('view') == 'shared-projects' and not active_section
     active_project_id = request.POST.get('project_id') if request.method == 'POST' else request.GET.get('project')
-    if all_tasks_view or my_tasks_view or all_groups_view:
+    if (
+        all_tasks_view
+        or my_tasks_view
+        or all_groups_view
+        or tags_view
+        or shared_tasks_view
+        or shared_groups_view
+        or shared_projects_view
+    ):
         active_project_id = None
     if active_section:
         active_project_id = active_section.project_id
@@ -245,9 +260,10 @@ def _tasks_page(request, active_section=None):
                     project = project_form.save(commit=False)
                     project.user = request.user
                     project.save()
+                    section_title = project_form.cleaned_data.get('section_title') or 'Nowa Grupa'
                     TaskSection.objects.create(
                         project=project,
-                        title='Nowa Grupa',
+                        title=section_title,
                         kind='custom',
                         order=0,
                     )
@@ -303,7 +319,7 @@ def _tasks_page(request, active_section=None):
                     tag.user = request.user
                     tag.save()
                     messages.success(request, 'Tag dodany.')
-                    return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
+                    return redirect(f"{reverse('tasks:tasks')}?view=tags")
             tag_modal_open = True
             messages.error(request, 'Nie udało się dodać tagu.')
 
@@ -317,7 +333,7 @@ def _tasks_page(request, active_section=None):
                 else:
                     tag_form.save()
                     messages.success(request, 'Tag zaktualizowany.')
-                    return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
+                    return redirect(f"{reverse('tasks:tasks')}?view=tags")
             tag_modal_open = True
             tag_edit_mode = True
             tag_edit_tag_id = tag.id
@@ -327,7 +343,7 @@ def _tasks_page(request, active_section=None):
             tag = get_object_or_404(TaskTag, id=request.POST.get('tag_id'), user=request.user)
             tag.delete()
             messages.success(request, 'Tag usunięty.')
-            return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
+            return redirect(f"{reverse('tasks:tasks')}?view=tags")
 
         if action in ('edit_section', 'rename_section'):
             section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
@@ -335,6 +351,8 @@ def _tasks_page(request, active_section=None):
             if section_rename_form.is_valid():
                 section_rename_form.save()
                 messages.success(request, 'Grupa zaktualizowana.')
+                if all_groups_view:
+                    return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
                 return redirect('tasks:task_group', section_id=section.id)
             section_rename_modal_open = True
             section_rename_section_id = section.id
@@ -351,6 +369,8 @@ def _tasks_page(request, active_section=None):
                 messages.success(request, 'Grupa usunięta. Zadania przeniesiono do sekcji „Bez projektu”.')
             else:
                 messages.success(request, 'Grupa usunięta.')
+            if all_groups_view:
+                return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
             return redirect(f"{reverse('tasks:tasks')}?project={project_id}")
 
         if action == 'create_task':
@@ -429,10 +449,18 @@ def _tasks_page(request, active_section=None):
         active_view = 'project'
     elif all_groups_view:
         active_view = 'all_groups'
+    elif tags_view:
+        active_view = 'tags'
     elif my_tasks_view:
         active_view = 'my_tasks'
     elif all_tasks_view:
         active_view = 'all_tasks'
+    elif shared_tasks_view:
+        active_view = 'shared_tasks'
+    elif shared_groups_view:
+        active_view = 'shared_groups'
+    elif shared_projects_view:
+        active_view = 'shared_projects'
     else:
         active_view = 'projects'
 
@@ -451,6 +479,9 @@ def _tasks_page(request, active_section=None):
         'total_group_count': len(all_sections),
         'tags': tags,
         'total_tag_count': tags.count(),
+        'shared_task_count': 0,
+        'shared_group_count': 0,
+        'shared_project_count': 0,
         'project_form': project_form,
         'project_rename_form': project_rename_form,
         'project_rename_project_id': project_rename_project_id,
@@ -650,6 +681,26 @@ def _task_detail_response(request, task_id):
                 messages.success(request, 'Komentarz dodany.')
             else:
                 messages.error(request, 'Wpisz treść komentarza.')
+            detail_route = 'tasks:view-subtask' if task.parent_id else 'tasks:view-task'
+            return redirect(detail_route, task_id=task.task_id)
+        elif action == 'clear_time_spent':
+            if task.has_time_spent:
+                before = _task_activity_snapshot(task)
+                task.time_spent_hours = None
+                task.time_spent_minutes = None
+                task.save(update_fields=['time_spent_hours', 'time_spent_minutes'])
+
+                for change in _task_change_activities(task, before):
+                    _record_task_activity(
+                        task,
+                        request.user,
+                        change['action'],
+                        change['message'],
+                        metadata=change['metadata'],
+                    )
+                messages.success(request, 'Czas pracy usunięty.')
+            else:
+                messages.info(request, 'Brak czasu pracy do usunięcia.')
             detail_route = 'tasks:view-subtask' if task.parent_id else 'tasks:view-task'
             return redirect(detail_route, task_id=task.task_id)
         else:

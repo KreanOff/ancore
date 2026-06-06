@@ -12,11 +12,6 @@ class TwoDigitNumberInput(forms.NumberInput):
             return super().format_value(value)
 
 
-def clean_optional_icon(value):
-    icon = (value or '').strip()[:8]
-    return '' if icon == 'check' else icon
-
-
 def board_column_status_choices(user=None):
     return list(Kanban.STATUS_CHOICES)
 
@@ -152,14 +147,23 @@ class KanbanProjectBaseForm(forms.ModelForm):
         kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-    def clean_icon(self):
-        return clean_optional_icon(self.cleaned_data.get('icon'))
-
 
 class KanbanProjectForm(KanbanProjectBaseForm):
+    section_title = forms.CharField(
+        required=False,
+        label='Nazwa pierwszej tablicy',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Nowa Tablica',
+            'class': 'tasks-inline-input',
+        }),
+    )
+
+    def clean_section_title(self):
+        return (self.cleaned_data.get('section_title') or '').strip()
+
     class Meta:
         model = KanbanProject
-        fields = ['name', 'description', 'icon']
+        fields = ['name', 'section_title', 'description']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nowa przestrzeń robocza',
@@ -170,16 +174,13 @@ class KanbanProjectForm(KanbanProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'icon': forms.HiddenInput(attrs={
-                'maxlength': 8,
-            }),
         }
 
 
 class KanbanProjectRenameForm(KanbanProjectBaseForm):
     class Meta:
         model = KanbanProject
-        fields = ['name', 'description', 'icon']
+        fields = ['name', 'description']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa przestrzeni roboczej',
@@ -190,16 +191,13 @@ class KanbanProjectRenameForm(KanbanProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'icon': forms.HiddenInput(attrs={
-                'maxlength': 8,
-            }),
         }
 
 
 class KanbanSectionForm(forms.ModelForm):
     class Meta:
         model = KanbanSection
-        fields = ['title', 'description', 'icon']
+        fields = ['title', 'description']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa tablicy',
@@ -210,19 +208,13 @@ class KanbanSectionForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'icon': forms.HiddenInput(attrs={
-                'maxlength': 8,
-            }),
         }
-
-    def clean_icon(self):
-        return clean_optional_icon(self.cleaned_data.get('icon'))
 
 
 class KanbanSectionRenameForm(forms.ModelForm):
     class Meta:
         model = KanbanSection
-        fields = ['title', 'description', 'icon']
+        fields = ['title', 'description']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa tablicy',
@@ -233,13 +225,7 @@ class KanbanSectionRenameForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'icon': forms.HiddenInput(attrs={
-                'maxlength': 8,
-            }),
         }
-
-    def clean_icon(self):
-        return clean_optional_icon(self.cleaned_data.get('icon'))
 
 
 class KanbanTagForm(forms.ModelForm):

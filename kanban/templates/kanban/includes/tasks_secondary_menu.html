@@ -33,6 +33,13 @@
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/></svg>
                 </span>
+                Wszystkie tablice
+                <span class="tasks-rail-count">{{ total_group_count }}</span>
+            </a>
+            <a href="{% url 'kanban:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/></svg>
+                </span>
                 Tagi
                 <span class="tasks-rail-count">{{ total_tag_count }}</span>
             </a>
@@ -95,13 +102,7 @@
                             <input type="hidden" name="action" value="delete_project">
                             <input type="hidden" name="project_id" value="{{ project.id }}">
                             <button type="submit" class="tasks-project-delete-button">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M3 6h18"/>
-                                    <path d="M8 6V4h8v2"/>
-                                    <path d="M19 6l-1 14H6L5 6"/>
-                                    <path d="M10 11v5"/>
-                                    <path d="M14 11v5"/>
-                                </svg>
+                                {% include 'core/includes/trash_icon.html' %}
                                 Usuń przestrzeń
                             </button>
                         </form>

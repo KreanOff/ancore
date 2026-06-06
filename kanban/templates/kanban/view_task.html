@@ -136,7 +136,7 @@
                                     </span>
                                 </a>
                                 <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">
-                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                    {% include 'core/includes/trash_icon.html' %}
                                 </button>
                             </div>
                             {% endfor %}
@@ -384,15 +384,30 @@
                         </div>
                         <div class="tasks-issue-field">
                             <span>Czas pracy</span>
-                            <div class="tasks-issue-time-spent">
-                                <label for="{{ form.time_spent_hours.id_for_label }}">
-                                    {{ form.time_spent_hours }}
-                                    <span>h</span>
-                                </label>
-                                <label for="{{ form.time_spent_minutes.id_for_label }}">
-                                    {{ form.time_spent_minutes }}
-                                    <span>min</span>
-                                </label>
+                            <div class="tasks-issue-time-spent-stack">
+                                <div class="tasks-issue-time-spent">
+                                    <label for="{{ form.time_spent_hours.id_for_label }}">
+                                        {{ form.time_spent_hours }}
+                                        <span>h</span>
+                                    </label>
+                                    <label for="{{ form.time_spent_minutes.id_for_label }}">
+                                        {{ form.time_spent_minutes }}
+                                        <span>min</span>
+                                    </label>
+                                </div>
+                                {% if task.has_time_spent %}
+                                <div class="tasks-issue-time-entries" aria-label="Dodany czas pracy">
+                                    <div class="tasks-issue-time-entry">
+                                        <span>{{ task.time_spent_label }}</span>
+                                        <button type="submit" name="action" value="clear_time_spent" title="Usuń czas pracy" aria-label="Usuń czas pracy" formnovalidate>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M18 6 6 18"/>
+                                                <path d="m6 6 12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </section>
@@ -552,6 +567,8 @@
 </div>
 
 <script>
+const ATTACHMENT_TRASH_ICON_HTML = `{% include 'core/includes/trash_icon.html' %}`;
+
 document.querySelectorAll('[data-history-back]').forEach((link) => {
     link.addEventListener('click', (event) => {
         const storedReturnPoint = sessionStorage.getItem('kanban:lastTaskReturn');
@@ -874,7 +891,7 @@ function undoDeleteAttachment(attachmentId) {
         el.classList.remove('marked-for-deletion');
         const btn = el.querySelector('.tasks-delete-attach-btn');
         if (btn) {
-            btn.innerHTML = '<i class="bi bi-trash" aria-hidden="true"></i>';
+            btn.innerHTML = ATTACHMENT_TRASH_ICON_HTML;
             btn.title = 'Usuń załącznik';
             btn.onclick = () => deleteAttachment(attachmentId);
         }

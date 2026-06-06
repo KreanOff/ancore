@@ -12,13 +12,13 @@
 @import 'components/dialogs.css';
 @import 'components/modals.css';
 @import 'components/tables.css?v=20260604-status-new-blue';
-@import 'components/tasks.css?v=20260604-status-new-blue';
+@import 'components/tasks.css?v=20260606-selected-gray';
 @import 'components/contacts.css?v=20260601-contacts-sharing';
 @import 'components/notifications.css';
 @import 'components/attachments.css';
-@import 'components/file-upload.css';
+@import 'components/file-upload.css?v=20260605-trash-icon';
 @import 'components/auth.css?v=20260603-icon-sizes';
 @import 'components/profile.css?v=20260531-compact-actions';
 @import 'calendar.css';
 @import 'components/checkboxes.css?v=20260531-unified';
-@import 'theme/elestio.css?v=20260604-status-new-blue';
+@import 'theme/elestio.css?v=20260606-selected-gray';

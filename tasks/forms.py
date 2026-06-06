@@ -19,11 +19,6 @@ class DateTimeLocalInput(forms.DateTimeInput):
         super().__init__(attrs=attrs, format=format or '%Y-%m-%dT%H:%M')
 
 
-def clean_optional_icon(value):
-    icon = (value or '').strip()[:8]
-    return '' if icon == 'check' else icon
-
-
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
 
@@ -145,14 +140,23 @@ class TaskProjectBaseForm(forms.ModelForm):
         kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-    def clean_icon(self):
-        return clean_optional_icon(self.cleaned_data.get('icon'))
-
 
 class TaskProjectForm(TaskProjectBaseForm):
+    section_title = forms.CharField(
+        required=False,
+        label='Nazwa grupy',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Nowa Grupa',
+            'class': 'tasks-inline-input',
+        }),
+    )
+
+    def clean_section_title(self):
+        return (self.cleaned_data.get('section_title') or '').strip()
+
     class Meta:
         model = TaskProject
-        fields = ['name', 'description', 'icon']
+        fields = ['name', 'section_title', 'description']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nowy projekt',
@@ -163,16 +167,13 @@ class TaskProjectForm(TaskProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'icon': forms.HiddenInput(attrs={
-                'maxlength': 8,
-            }),
         }
 
 
 class TaskProjectRenameForm(TaskProjectBaseForm):
     class Meta:
         model = TaskProject
-        fields = ['name', 'description', 'icon']
+        fields = ['name', 'description']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa projektu',
@@ -183,16 +184,13 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'icon': forms.HiddenInput(attrs={
-                'maxlength': 8,
-            }),
         }
 
 
 class TaskSectionForm(forms.ModelForm):
     class Meta:
         model = TaskSection
-        fields = ['title', 'description', 'icon']
+        fields = ['title', 'description']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
@@ -203,19 +201,13 @@ class TaskSectionForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'icon': forms.HiddenInput(attrs={
-                'maxlength': 8,
-            }),
         }
-
-    def clean_icon(self):
-        return clean_optional_icon(self.cleaned_data.get('icon'))
 
 
 class TaskSectionRenameForm(forms.ModelForm):
     class Meta:
         model = TaskSection
-        fields = ['title', 'description', 'icon']
+        fields = ['title', 'description']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
@@ -226,13 +218,7 @@ class TaskSectionRenameForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
-            'icon': forms.HiddenInput(attrs={
-                'maxlength': 8,
-            }),
         }
-
-    def clean_icon(self):
-        return clean_optional_icon(self.cleaned_data.get('icon'))
 
 
 class TaskTagForm(forms.ModelForm):

@@ -331,8 +331,9 @@ def _tasks_page(request, active_section=None):
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
     all_groups_view = request.GET.get('view') == 'all-groups' and not active_section
+    tags_view = request.GET.get('view') == 'tags' and not active_section
     active_project_id = request.POST.get('project_id') if request.method == 'POST' else request.GET.get('project')
-    if all_tasks_view or my_tasks_view or all_groups_view:
+    if all_tasks_view or my_tasks_view or all_groups_view or tags_view:
         active_project_id = None
     if active_section:
         active_project_id = active_section.project_id
@@ -376,9 +377,10 @@ def _tasks_page(request, active_section=None):
                     project = project_form.save(commit=False)
                     project.user = request.user
                     project.save()
+                    section_title = project_form.cleaned_data.get('section_title') or 'Nowa Tablica'
                     section = KanbanSection.objects.create(
                         project=project,
-                        title='Nowa Tablica',
+                        title=section_title,
                         kind='custom',
                         order=0,
                     )
@@ -434,7 +436,7 @@ def _tasks_page(request, active_section=None):
                     tag.user = request.user
                     tag.save()
                     messages.success(request, 'Tag dodany.')
-                    return redirect(f"{reverse('kanban:tasks')}?view=all-groups")
+                    return redirect(f"{reverse('kanban:tasks')}?view=tags")
             tag_modal_open = True
             messages.error(request, 'Nie udało się dodać tagu.')
 
@@ -448,7 +450,7 @@ def _tasks_page(request, active_section=None):
                 else:
                     tag_form.save()
                     messages.success(request, 'Tag zaktualizowany.')
-                    return redirect(f"{reverse('kanban:tasks')}?view=all-groups")
+                    return redirect(f"{reverse('kanban:tasks')}?view=tags")
             tag_modal_open = True
             tag_edit_mode = True
             tag_edit_tag_id = tag.id
@@ -458,7 +460,7 @@ def _tasks_page(request, active_section=None):
             tag = get_object_or_404(KanbanTag, id=request.POST.get('tag_id'), user=request.user)
             tag.delete()
             messages.success(request, 'Tag usunięty.')
-            return redirect(f"{reverse('kanban:tasks')}?view=all-groups")
+            return redirect(f"{reverse('kanban:tasks')}?view=tags")
 
         if action == 'create_board_column':
             if not active_section:
@@ -506,6 +508,8 @@ def _tasks_page(request, active_section=None):
             if section_rename_form.is_valid():
                 section_rename_form.save()
                 messages.success(request, 'Tablica zaktualizowana.')
+                if all_groups_view:
+                    return redirect(f"{reverse('kanban:tasks')}?view=all-groups")
                 return redirect('kanban:task_group', section_id=section.id)
             section_rename_modal_open = True
             section_rename_section_id = section.id
@@ -522,6 +526,8 @@ def _tasks_page(request, active_section=None):
                 messages.success(request, 'Tablica usunięta. Karty przeniesiono do sekcji „Bez przestrzeni roboczej”.')
             else:
                 messages.success(request, 'Tablica usunięta.')
+            if all_groups_view:
+                return redirect(f"{reverse('kanban:tasks')}?view=all-groups")
             return redirect(f"{reverse('kanban:tasks')}?project={project_id}")
 
         if action == 'create_task':
@@ -613,6 +619,8 @@ def _tasks_page(request, active_section=None):
         active_view = 'project'
     elif all_groups_view:
         active_view = 'all_groups'
+    elif tags_view:
+        active_view = 'tags'
     elif my_tasks_view:
         active_view = 'my_tasks'
     elif all_tasks_view:
@@ -878,6 +886,26 @@ def _task_detail_response(request, task_id):
                 messages.success(request, 'Komentarz dodany.')
             else:
                 messages.error(request, 'Wpisz treść komentarza.')
+            detail_route = 'kanban:view-subtask' if task.parent_id else 'kanban:view-task'
+            return redirect(detail_route, task_id=task.task_id)
+        elif action == 'clear_time_spent':
+            if task.has_time_spent:
+                before = _task_activity_snapshot(task)
+                task.time_spent_hours = None
+                task.time_spent_minutes = None
+                task.save(update_fields=['time_spent_hours', 'time_spent_minutes'])
+
+                for change in _task_change_activities(task, before):
+                    _record_task_activity(
+                        task,
+                        request.user,
+                        change['action'],
+                        change['message'],
+                        metadata=change['metadata'],
+                    )
+                messages.success(request, 'Czas pracy usunięty.')
+            else:
+                messages.info(request, 'Brak czasu pracy do usunięcia.')
             detail_route = 'kanban:view-subtask' if task.parent_id else 'kanban:view-task'
             return redirect(detail_route, task_id=task.task_id)
         else:

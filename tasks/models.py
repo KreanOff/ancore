@@ -248,6 +248,14 @@ class Task(models.Model):
         return f'{hours:02d}:{minutes:02d}'
 
     @property
+    def has_time_spent(self):
+        return bool((self.time_spent_hours or 0) or (self.time_spent_minutes or 0))
+
+    @property
+    def time_spent_label(self):
+        return self._activity_time_spent()
+
+    @property
     def due_urgency(self):
         if not self.due_at:
             return 'none'

@@ -12,6 +12,14 @@
                 );
             }
 
+            JSON.parse(localStorage.getItem('collapsedTaskRailNavGroups') || '[]').forEach(function (groupKey) {
+                var safeKey = String(groupKey).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                styles.push(
+                    '.tasks-rail-nav-group:not(.is-current)[data-rail-nav-group="' + safeKey + '"] .tasks-rail-nav-group-content{display:none}',
+                    '.tasks-rail-nav-group:not(.is-current)[data-rail-nav-group="' + safeKey + '"] .tasks-rail-nav-group-toggle svg{transform:rotate(-90deg)}'
+                );
+            });
+
             JSON.parse(localStorage.getItem('collapsedTaskProjects') || '[]').forEach(function (projectId) {
                 var safeId = String(projectId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 styles.push(
