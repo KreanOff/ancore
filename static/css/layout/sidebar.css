@@ -258,11 +258,11 @@ body.secondary-menu-collapsed .secondary-menu-resizer {
 }
 
 .nav-link .sidebar-profile-avatar {
-    width: 28px;
-    height: 28px;
-    flex: 0 0 28px;
-    border-radius: 7px;
-    font-size: 0.72rem;
+    width: 33.6px;
+    height: 33.6px;
+    flex: 0 0 33.6px;
+    border-radius: 8.4px;
+    font-size: 0.864rem;
 }
 
 .nav-link .sidebar-profile-avatar .profile-avatar-icon {

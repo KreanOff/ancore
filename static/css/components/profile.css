@@ -91,6 +91,21 @@
     font-size: 0.72rem;
 }
 
+.contacts-person-avatar.profile-avatar {
+    --profile-avatar-bg: #3f3b38;
+    --profile-avatar-fg: var(--accent-on-peach);
+}
+
+.contacts-mini-avatar.contacts-person-avatar.profile-avatar {
+    border-radius: 4px;
+    font-size: 0.54rem;
+}
+
+.contacts-avatar--large.contacts-person-avatar.profile-avatar {
+    border-radius: 8px;
+    font-size: 1.32rem;
+}
+
 .profile-avatar--blue { --profile-avatar-bg: #3f3b38; --profile-avatar-fg: var(--accent-on-peach); }
 .profile-avatar--teal { --profile-avatar-bg: #16807a; --profile-avatar-fg: #ffffff; }
 .profile-avatar--green { --profile-avatar-bg: #2f7d4f; --profile-avatar-fg: #ffffff; }

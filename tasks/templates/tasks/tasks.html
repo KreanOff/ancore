@@ -402,13 +402,16 @@
                     </div>
                 </div>
             </div>
-            <div class="tasks-filterbar-center">
+            <div class="tasks-filterbar-center tasks-search-actions">
                 <label class="tasks-search-field" for="filter-search">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                        <path d="M21 21l-6 -6" />
                     </svg>
                     <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
                 </label>
+                <button type="button" class="tasks-tag-topbar-button" data-filter-search-submit>Szukaj</button>
             </div>
             <div class="tasks-filterbar-right">
                 {% if active_view == 'projects' %}
@@ -905,8 +908,9 @@
                         </button>
                         <div class="tasks-chip-picker__menu" role="menu">
                             <div class="tasks-chip-picker__search">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
                                 <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
+                                <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
                             </div>
                             {% for project in projects %}
                             <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
@@ -925,8 +929,9 @@
                         </button>
                         <div class="tasks-chip-picker__menu" role="menu">
                             <div class="tasks-chip-picker__search">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
                                 <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
+                                <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
                             </div>
                             {% for project in projects %}
                                 {% for section in project.sections.all %}

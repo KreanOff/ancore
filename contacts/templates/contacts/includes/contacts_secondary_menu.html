@@ -1,64 +1,82 @@
+{% load account_avatar %}
+
 <aside class="tasks-tracker-rail contacts-rail" aria-label="Nawigacja kontaktów">
     <div class="tasks-rail-header">
         <h1>Kontakty</h1>
     </div>
 
+    {% if contact_modal_form %}
+    <button type="button" class="tasks-new-button contacts-new-button" aria-haspopup="dialog" aria-controls="contact-create-modal" data-open-contact>
+        <span aria-hidden="true">+</span>
+        Nowy kontakt
+    </button>
+    {% else %}
     <a href="{% url 'contacts:create' %}" class="tasks-new-button contacts-new-button">
         <span aria-hidden="true">+</span>
         Nowy kontakt
     </a>
-    <a href="{% url 'contacts:create-company' %}" class="tasks-new-button contacts-new-button contacts-new-button--secondary">
-        <span aria-hidden="true">+</span>
-        Nowa firma
-    </a>
-
+    {% endif %}
     <nav class="tasks-rail-nav">
+        <div class="tasks-rail-nav-group">
+            <a href="{% url 'contacts:user-directory' %}" class="tasks-rail-link {% if active_contact_status == 'users' and active_user_presence == 'all' %}is-active{% endif %}">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                </span>
+                Szukaj osób
+            </a>
+        </div>
         <div class="tasks-rail-nav-group">
             <a href="{% url 'contacts:contacts' %}" class="tasks-rail-link {% if active_contact_status == 'all' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <svg viewBox="0 0 24 24"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg>
                 </span>
-                Wszystkie
+                Kontakty
                 <span class="tasks-rail-count">{{ total_contact_count }}</span>
-            </a>
-            <a href="{% url 'contacts:user-directory' %}" class="tasks-rail-link {% if active_contact_status == 'users' %}is-active{% endif %}">
-                <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
-                </span>
-                Szukaj osób
-                <span class="tasks-rail-count">{{ total_user_contact_count }}</span>
             </a>
             <a href="{% url 'contacts:companies' %}" class="tasks-rail-link {% if active_contact_status == 'companies' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7v18"/><path d="M14 8h3a2 2 0 0 1 2 2v11"/><path d="M8 7h2"/><path d="M8 11h2"/><path d="M8 15h2"/></svg>
+                    <svg viewBox="0 0 24 24"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21h18"/><path d="M5 21v-12l5 4v-4l5 4h4"/><path d="M19 21v-8l-1.436 -9.574a.5 .5 0 0 0 -.495 -.426h-1.145a.5 .5 0 0 0 -.494 .418l-1.43 8.582"/><path d="M9 17h1"/><path d="M14 17h1"/></svg>
                 </span>
                 Firmy
                 <span class="tasks-rail-count">{{ total_company_count }}</span>
             </a>
-            <a href="{% url 'contacts:shared' %}" class="tasks-rail-link {% if active_contact_status == 'shared' %}is-active{% endif %}">
+            <a href="{% url 'contacts:guests' %}" class="tasks-rail-link {% if active_contact_status == 'guests' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-exclamation"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4c.348 0 .686 .045 1.008 .128" /><path d="M19 16v3" /><path d="M19 22v.01" /></svg>
                 </span>
-                Udostępnione
-                <span class="tasks-rail-count">{{ shared_received_count }}</span>
+                Goście
+                <span class="tasks-rail-count">{{ total_guest_contact_count }}</span>
             </a>
         </div>
-        <div class="tasks-rail-nav-group">
-            {% for row in contact_status_rows %}
-            <a href="{% url 'contacts:contacts' %}?status={{ row.value }}" class="tasks-rail-link {% if active_contact_status == row.value %}is-active{% endif %}">
-                <span class="tasks-rail-dot contacts-status-dot contacts-status-{{ row.value }}" aria-hidden="true"></span>
-                {{ row.label }}
-                <span class="tasks-rail-count">{{ row.count }}</span>
-            </a>
+        <ul class="tasks-rail-nav-group contacts-presence-list" aria-label="Status użytkownika">
+            {% for row in user_presence_status_rows %}
+            <li>
+                <a href="{% url 'contacts:user-directory' %}?presence={{ row.value }}" class="tasks-rail-link contacts-presence-link {% if active_contact_status == 'users' and active_user_presence == row.value %}is-active{% endif %}">
+                    <span class="contacts-presence-icon presence-{{ row.value }}" aria-hidden="true">
+                        {% include 'accounts/includes/presence_status_icon.html' with status=row.value %}
+                    </span>
+                    {{ row.label }}
+                    <span class="tasks-rail-count">{{ row.count }}</span>
+                </a>
+            </li>
             {% endfor %}
-        </div>
+        </ul>
     </nav>
 
     <div class="tasks-rail-section contacts-recent">
         <div class="tasks-rail-section-title">Ostatnie kontakty</div>
         {% for item in contacts_nav %}
         <a href="{% url 'contacts:view-contact' item.pk %}" class="tasks-rail-link {% if contact.pk == item.pk %}is-active{% endif %}">
-            <span class="tasks-rail-icon contacts-mini-avatar" aria-hidden="true">{{ item.initials }}</span>
+            {% with linked_user_contact=item.current_user_links.0 %}
+                {% if linked_user_contact %}
+                    {% user_avatar linked_user_contact.target_user as contact_user_avatar %}
+                    {% include 'accounts/includes/user_avatar.html' with avatar=contact_user_avatar avatar_class='tasks-rail-icon contacts-mini-avatar contacts-person-avatar' only %}
+                {% else %}
+                    <span class="profile-avatar profile-avatar--blue tasks-rail-icon contacts-mini-avatar contacts-person-avatar" aria-hidden="true">
+                        {% include 'accounts/includes/user_avatar_icon.html' %}
+                    </span>
+                {% endif %}
+            {% endwith %}
             {{ item.display_name }}
         </a>
         {% empty %}

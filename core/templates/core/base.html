@@ -46,9 +46,10 @@
         </div>
         <div class="app-topbar-right">
             <button type="button" class="topbar-icon-button" aria-label="Szukaj" title="Szukaj">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
-                    <circle cx="11" cy="11" r="7"/>
-                    <path d="M16.5 16.5L21 21"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                    <path d="M21 21l-6 -6" />
                 </svg>
             </button>
             <div class="topbar-clock" aria-live="polite">
@@ -178,8 +179,19 @@
     </div>
     {% endif %}
 
+    {% if request.user.is_authenticated %}
+    <script>
+        window.AncorePresence = {
+            pingUrl: "{% url 'presence_ping' %}",
+            csrfToken: "{{ csrf_token }}",
+            idleSeconds: {{ user_presence_idle_seconds|default:120 }},
+            heartbeatSeconds: {{ user_presence_heartbeat_seconds|default:30 }}
+        };
+    </script>
+    {% endif %}
     <script src="{% static 'js/layout.js' %}?v=20260530-secondary-menu-resize"></script>
     <script src="{% static 'js/topbar.js' %}"></script>
+    <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/topbar-tabs.js' %}"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}"></script>

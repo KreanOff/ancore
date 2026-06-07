@@ -24,6 +24,10 @@ def avatar_color_seed(user):
 
 def avatar_color_style(user):
     seed = avatar_color_seed(user)
+    return avatar_color_style_from_seed(seed)
+
+
+def avatar_color_style_from_seed(seed):
     hue = (seed * 137) % 360
     saturation = 50 + (seed % 18)
     lightness = 36 + ((seed // 7) % 10)
@@ -36,6 +40,10 @@ def avatar_color_style(user):
         'foreground_color': foreground_color,
         'color_style': f'--profile-avatar-bg: {background_color}; --profile-avatar-fg: {foreground_color};',
     }
+
+
+def avatar_color_class(seed):
+    return AVATAR_COLOR_CLASSES[seed % len(AVATAR_COLOR_CLASSES)]
 
 
 def account_avatar(user, color_index=None):
@@ -64,7 +72,7 @@ def account_avatar(user, color_index=None):
 
     return {
         'initials': initials,
-        'color_class': AVATAR_COLOR_CLASSES[color_index % len(AVATAR_COLOR_CLASSES)],
+        'color_class': avatar_color_class(color_index),
         'photo_url': photo_url,
         **avatar_color_style(user),
     }

@@ -527,6 +527,13 @@
     min-width: 0;
 }
 
+.tasks-search-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 .tasks-filterbar-right {
     justify-self: end;
 }
@@ -1308,6 +1315,27 @@
     color: #9aa1ad;
 }
 
+.tasks-chip-picker__search .tasks-chip-picker__search-button {
+    width: auto;
+    height: 26px;
+    min-height: 26px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    border: 0;
+    border-radius: 5px;
+    padding: 0 0.55rem;
+    background: #3f3b38;
+    color: var(--accent-on-peach);
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
 .tasks-chip-picker__menu button {
     width: 100%;
     min-height: var(--dropdown-menu-item-height);
@@ -1330,6 +1358,12 @@
 .tasks-chip-picker__menu button:focus-visible {
     background: #f1f4f8;
     outline: none;
+}
+
+.tasks-chip-picker__search .tasks-chip-picker__search-button:hover,
+.tasks-chip-picker__search .tasks-chip-picker__search-button:focus-visible {
+    background: #312d2a;
+    color: var(--accent-on-peach);
 }
 
 .tasks-chip-picker__menu button[hidden] {

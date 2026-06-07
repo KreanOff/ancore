@@ -19,11 +19,10 @@
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
                 <span class="tasks-topbar-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7"/>
-                        <path d="M16.5 16.5 21 21"/>
-                        <path d="M11 8v6"/>
-                        <path d="M8 11h6"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                        <path d="M21 21l-6 -6" />
                     </svg>
                     <span>Szukaj osób</span>
                 </span>
@@ -33,14 +32,16 @@
         <form class="tasks-filterbar contacts-filterbar" method="get">
             <div class="tasks-filterbar-left">
                 <label class="tasks-search-field">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7"/>
-                        <path d="M16.5 16.5 21 21"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                        <path d="M21 21l-6 -6" />
                     </svg>
                     <input type="search" name="q" value="{{ query }}" placeholder="Imię, nazwisko, login albo email">
                 </label>
-            </div>
-            <div class="tasks-filterbar-right">
+                {% if presence != 'all' %}
+                <input type="hidden" name="presence" value="{{ presence }}">
+                {% endif %}
                 <button type="submit" class="tasks-tag-topbar-button">Szukaj</button>
             </div>
         </form>
@@ -56,7 +57,10 @@
                         <strong>{{ user_item.get_full_name|default:user_item.email }}</strong>
                         <small>{{ user_item.username }} · {{ user_item.email }}</small>
                     </span>
-                    <span class="contacts-row-channel">{{ user_item.get_presence_status_display }}</span>
+                    <span class="contacts-row-channel profile-presence-badge {{ user_item.presence_status_class }}">
+                        {% include 'accounts/includes/presence_status_icon.html' with status=user_item.presence_status %}
+                        {{ user_item.get_presence_status_display }}
+                    </span>
                     {% if user_item.pk in existing_user_contact_ids %}
                     <span class="status-indicator contacts-status-active">W kontaktach</span>
                     {% else %}
@@ -71,7 +75,7 @@
             {% else %}
             <section class="tasks-empty-state contacts-empty-state">
                 <div class="tasks-empty-state__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
                 </div>
                 <h2>{% if query %}Brak wyników{% else %}Wpisz szukaną osobę{% endif %}</h2>
                 <p>Po dodaniu użytkownika powstanie kontakt z jego danymi profilowymi.</p>

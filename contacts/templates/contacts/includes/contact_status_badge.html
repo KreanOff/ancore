@@ -1,0 +1,10 @@
+{% with linked_user_contact=contact.current_user_links.0 %}
+    {% if linked_user_contact %}
+    <span class="contacts-user-presence profile-presence-badge {{ linked_user_contact.target_user.presence_status_class }}">
+        {% include 'accounts/includes/presence_status_icon.html' with status=linked_user_contact.target_user.presence_status %}
+        {{ linked_user_contact.target_user.get_presence_status_display }}
+    </span>
+    {% else %}
+    <span class="status-indicator contacts-status-{{ contact.status }}">{{ contact.get_status_display }}</span>
+    {% endif %}
+{% endwith %}

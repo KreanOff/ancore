@@ -18,6 +18,7 @@ function initTasksPage() {
     const filterStatus = document.getElementById('filter-status');
     const filterPriority = document.getElementById('filter-priority');
     const filterSearch = document.getElementById('filter-search');
+    const filterSearchButtons = document.querySelectorAll('[data-filter-search-submit]');
     const filterButtons = document.querySelectorAll('[data-status-filter], [data-priority-filter]');
     const statusFilterMenu = document.querySelector('[data-status-filter-menu]');
     const statusFilterToggle = document.querySelector('[data-status-filter-toggle]');
@@ -67,18 +68,24 @@ function initTasksPage() {
     const openProjectRenameButtons = document.querySelectorAll('[data-open-project-rename]');
     const openSectionCreateButtons = document.querySelectorAll('[data-open-section-create]');
     const openIssueButtons = document.querySelectorAll('#open-issue-modal, [data-open-issue]');
+    const openContactButtons = document.querySelectorAll('[data-open-contact]');
+    const openCompanyButtons = document.querySelectorAll('[data-open-company]');
     const projectModal = document.getElementById('project-modal');
     const tagModal = document.getElementById('tag-modal');
     const projectRenameModal = document.getElementById('project-rename-modal');
     const sectionCreateModal = document.getElementById('section-create-modal');
     const sectionRenameModal = document.getElementById('section-rename-modal');
     const issueModal = document.getElementById('issue-modal');
+    const contactCreateModal = document.getElementById('contact-create-modal');
+    const companyCreateModal = document.getElementById('company-create-modal');
     const projectForm = document.getElementById('project-create-form');
     const tagForm = document.getElementById('tag-create-form');
     const projectRenameForm = document.getElementById('project-rename-form');
     const sectionCreateForm = document.getElementById('section-create-form');
     const sectionRenameForm = document.getElementById('section-rename-form');
     const issueForm = document.getElementById('issue-create-form');
+    const contactCreateForm = document.getElementById('contact-create-form');
+    const companyCreateForm = document.getElementById('company-create-form');
     const projectNameInput = projectForm ? projectForm.querySelector('[name="name"]') : null;
     const tagActionInput = tagForm ? tagForm.querySelector('[name="action"]') : null;
     const tagIdInput = tagForm ? tagForm.querySelector('[name="tag_id"]') : null;
@@ -675,6 +682,12 @@ function initTasksPage() {
     const issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
     const issueSectionOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-section-option]')) : [];
     const issuePickerSearchInputs = issueForm ? Array.from(issueForm.querySelectorAll('[data-picker-search]')) : [];
+    const issuePickerSearchButtons = issueForm ? Array.from(issueForm.querySelectorAll('[data-picker-search-submit]')) : [];
+    const contactAncoreLoginInput = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-input]') : null;
+    const contactAncoreLoginStatus = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-status]') : null;
+    const contactAncoreLoginUrl = contactCreateForm ? (contactCreateForm.dataset.ancoreLoginUrl || '') : '';
+    const contactFirstNameInput = contactCreateForm ? contactCreateForm.querySelector('[name="first_name"]') : null;
+    const companyNameInput = companyCreateForm ? companyCreateForm.querySelector('[name="name"]') : null;
     const projectSubmitBtn = document.getElementById('project-create-submit');
     const tagSubmitBtn = document.getElementById('tag-create-submit');
     const projectRenameSubmitBtn = document.getElementById('project-rename-submit');
@@ -883,6 +896,8 @@ function initTasksPage() {
     let emojiPickerSearch = null;
     let emojiPickerBody = null;
     let activeIconSetIndex = 0;
+    let contactAncoreLoginTimer = null;
+    let contactAncoreLoginRequestId = 0;
 
     function updateProjectSubmitState() {
         if (!projectSubmitBtn || !projectNameInput) return;
@@ -912,6 +927,72 @@ function initTasksPage() {
     function updateSectionRenameSubmitState() {
         if (!sectionRenameSubmitBtn || !sectionRenameTitleInput) return;
         sectionRenameSubmitBtn.disabled = sectionRenameTitleInput.value.trim().length === 0;
+    }
+
+    function setContactAncoreLoginStatus(message, state = '') {
+        if (!contactAncoreLoginStatus) return;
+        contactAncoreLoginStatus.textContent = message;
+        contactAncoreLoginStatus.dataset.state = state;
+    }
+
+    function setContactFieldValue(name, value) {
+        const field = contactCreateForm ? contactCreateForm.querySelector(`[name="${name}"]`) : null;
+        if (!field) return;
+        field.value = value || '';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function fillContactFromAncoreUser(user) {
+        if (!user) return;
+        setContactFieldValue('first_name', user.first_name);
+        setContactFieldValue('last_name', user.last_name);
+        setContactFieldValue('email', user.email);
+        setContactFieldValue('phone', user.phone);
+        setContactFieldValue('role', user.role);
+        setContactFieldValue('source', user.source);
+    }
+
+    async function lookupContactAncoreLogin() {
+        if (!contactAncoreLoginInput || !contactAncoreLoginUrl) return;
+        const login = contactAncoreLoginInput.value.trim();
+        contactAncoreLoginRequestId += 1;
+        const requestId = contactAncoreLoginRequestId;
+
+        if (!login) {
+            setContactAncoreLoginStatus('');
+            return;
+        }
+
+        if (login.length < 2) {
+            setContactAncoreLoginStatus('Wpisz Login Ancore.', 'muted');
+            return;
+        }
+
+        setContactAncoreLoginStatus('Szukam...', 'loading');
+
+        try {
+            const url = new URL(contactAncoreLoginUrl, window.location.origin);
+            url.searchParams.set('login', login);
+            const response = await fetch(url.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            if (requestId !== contactAncoreLoginRequestId) return;
+            if (!response.ok) throw new Error('Lookup failed');
+            const payload = await response.json();
+            if (payload.found && payload.user) {
+                fillContactFromAncoreUser(payload.user);
+                if (contactAncoreLoginInput.value !== payload.user.username) {
+                    contactAncoreLoginInput.value = payload.user.username;
+                }
+                setContactAncoreLoginStatus('Dane uzupełnione.', 'success');
+            } else {
+                setContactAncoreLoginStatus('Nie znaleziono użytkownika.', 'error');
+            }
+        } catch (error) {
+            if (requestId !== contactAncoreLoginRequestId) return;
+            setContactAncoreLoginStatus('Nie udało się sprawdzić loginu.', 'error');
+        }
     }
 
     function closeCreateMenu() {
@@ -1348,7 +1429,7 @@ function initTasksPage() {
 
         const searchWrap = document.createElement('div');
         searchWrap.className = 'tasks-emoji-picker__search';
-        searchWrap.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg>';
+        searchWrap.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>';
 
         emojiPickerSearch = document.createElement('input');
         emojiPickerSearch.type = 'search';
@@ -1740,6 +1821,20 @@ function initTasksPage() {
         });
     });
 
+    openContactButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (button.disabled) return;
+            openModal(contactCreateModal, contactAncoreLoginInput || contactFirstNameInput);
+        });
+    });
+
+    openCompanyButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (button.disabled) return;
+            openModal(companyCreateModal, companyNameInput);
+        });
+    });
+
     issueProjectPicker?.querySelector('[data-picker-toggle]')?.addEventListener('click', function(e) {
         e.stopPropagation();
         const isOpen = !issueProjectPicker.classList.contains('is-open');
@@ -1790,6 +1885,16 @@ function initTasksPage() {
                 e.stopPropagation();
                 closeIssuePickers();
             }
+        });
+    });
+
+    issuePickerSearchButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const input = this.closest('.tasks-chip-picker__search')?.querySelector('[data-picker-search]');
+            if (!input) return;
+            filterPickerSearch(input);
+            input.focus();
         });
     });
 
@@ -1879,6 +1984,17 @@ function initTasksPage() {
         updateIssueSubmitState();
     }
 
+    if (contactAncoreLoginInput) {
+        contactAncoreLoginInput.addEventListener('input', () => {
+            window.clearTimeout(contactAncoreLoginTimer);
+            contactAncoreLoginTimer = window.setTimeout(lookupContactAncoreLogin, 280);
+        });
+        contactAncoreLoginInput.addEventListener('blur', lookupContactAncoreLogin);
+        if (contactAncoreLoginInput.value.trim()) {
+            lookupContactAncoreLogin();
+        }
+    }
+
     if (issueSectionSelect) {
         issueSectionSelect.addEventListener('change', syncIssuePickers);
         syncIssuePickers();
@@ -1925,6 +2041,14 @@ function initTasksPage() {
             if (modal.id === 'section-rename-modal') {
                 focusTarget = sectionRenameTitleInput;
                 onOpen = updateSectionRenameSubmitState;
+            }
+            if (modal.id === 'contact-create-modal') {
+                focusTarget = contactAncoreLoginInput || contactFirstNameInput;
+                onOpen = null;
+            }
+            if (modal.id === 'company-create-modal') {
+                focusTarget = companyNameInput;
+                onOpen = null;
             }
             openModal(modal, focusTarget, onOpen);
         }
@@ -2882,6 +3006,12 @@ function initTasksPage() {
     if (filterStatus) filterStatus.addEventListener('change', applyFilters);
     if (filterPriority) filterPriority.addEventListener('change', applyFilters);
     if (filterSearch) filterSearch.addEventListener('input', applyFilters);
+    filterSearchButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            applyFilters();
+            filterSearch?.focus();
+        });
+    });
 
     filterButtons.forEach(button => {
         button.addEventListener('click', function() {

@@ -31,8 +31,9 @@ class User(AbstractUser):
     presence_status = models.CharField(
         max_length=20,
         choices=PresenceStatus.choices,
-        default=PresenceStatus.ACTIVE,
+        default=PresenceStatus.INACTIVE,
     )
+    last_seen_at = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

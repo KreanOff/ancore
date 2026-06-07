@@ -1,7 +1,7 @@
 /* Main Style Entry Point */
 @import 'base/variables.css?v=20260607-sidebar-readable';
 @import 'base/reset.css';
-@import 'layout/sidebar.css?v=20260607-profile-avatar';
+@import 'layout/sidebar.css?v=20260607-profile-avatar-20';
 @import 'layout/main.css?v=20260607-accent-contrast';
 @import 'layout/responsive.css?v=20260530-secondary-menu-resize';
 @import 'components/cards.css?v=20260607-accent-contrast';
@@ -13,7 +13,7 @@
 @import 'components/modals.css';
 @import 'components/tables.css?v=20260604-status-new-blue';
 @import 'components/tasks.css?v=20260607-accent-contrast';
-@import 'components/contacts.css?v=20260607-accent-contrast';
+@import 'components/contacts.css?v=20260607-company-avatar-colors';
 @import 'components/notifications.css?v=20260607-accent-contrast';
 @import 'components/attachments.css?v=20260607-accent-contrast';
 @import 'components/file-upload.css?v=20260605-trash-icon';

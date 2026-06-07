@@ -1,0 +1,6 @@
+{% load company_avatar %}
+
+{% company_avatar company as avatar %}
+<span class="profile-avatar {{ avatar_class }} {{ avatar.color_class }}" style="{{ avatar.color_style }}" aria-hidden="true">
+    {% include 'contacts/includes/company_avatar_icon.html' %}
+</span>

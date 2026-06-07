@@ -79,9 +79,16 @@
                     {% endif %}
 
                     <div class="contacts-identity">
-                        <span class="contacts-avatar contacts-avatar--large" aria-hidden="true">
-                            {% if is_create %}K{% else %}{{ contact.initials }}{% endif %}
-                        </span>
+                        {% with linked_user_contact=contact.current_user_links.0 %}
+                            {% if linked_user_contact %}
+                                {% user_avatar linked_user_contact.target_user as contact_user_avatar %}
+                                {% include 'accounts/includes/user_avatar.html' with avatar=contact_user_avatar avatar_class='contacts-avatar contacts-avatar--large contacts-person-avatar' only %}
+                            {% else %}
+                                <span class="profile-avatar profile-avatar--blue contacts-avatar contacts-avatar--large contacts-person-avatar" aria-hidden="true">
+                                    {% include 'accounts/includes/user_avatar_icon.html' %}
+                                </span>
+                            {% endif %}
+                        {% endwith %}
                         <div class="contacts-name-grid">
                             <label class="u-sr-only" for="{{ form.first_name.id_for_label }}">Imię</label>
                             {{ form.first_name }}
@@ -181,18 +188,14 @@
                 </section>
 
                 <aside class="tasks-issue-sidebar contacts-issue-sidebar" aria-label="Szczegóły kontaktu">
+                    {% if not is_create %}
                     <section class="tasks-issue-side-section">
-                        <div class="tasks-issue-field">
-                            <label for="{{ form.status.id_for_label }}">Status</label>
-                            {{ form.status }}
-                        </div>
-                        {% if not is_create %}
                         <div class="tasks-issue-field">
                             <span>ID kontaktu</span>
                             <strong class="tasks-issue-muted">#{{ contact.pk }}</strong>
                         </div>
-                        {% endif %}
                     </section>
+                    {% endif %}
 
                     <section class="tasks-issue-side-section">
                         <div class="tasks-issue-field">

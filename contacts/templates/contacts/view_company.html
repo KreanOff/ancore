@@ -69,9 +69,7 @@
                     {% endif %}
 
                     <div class="contacts-identity">
-                        <span class="contacts-avatar contacts-avatar--large" aria-hidden="true">
-                            {% if is_create %}F{% else %}{{ company.initials }}{% endif %}
-                        </span>
+                        {% include 'contacts/includes/company_avatar.html' with company=company avatar_class='contacts-avatar contacts-avatar--large contacts-company-avatar' only %}
                         <div class="contacts-name-grid contacts-name-grid--single">
                             <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa firmy</label>
                             {{ form.name }}

@@ -1,19 +1,25 @@
+import json
+
 from django.conf import settings
 from django.contrib.auth import get_user_model, login as auth_login
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from .avatar import account_avatar as _account_avatar
 from .forms import UserProfileForm, UserRegistrationForm
+from .presence import mark_user_inactive, mark_user_seen
 
 SWITCH_ACCOUNTS_SESSION_KEY = 'switch_account_user_ids'
 
 
 class AccountLogoutView(LogoutView):
     def post(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            mark_user_inactive(request.user)
         request.session.pop(SWITCH_ACCOUNTS_SESSION_KEY, None)
         return super().post(request, *args, **kwargs)
 
@@ -45,7 +51,10 @@ def _save_account_ids(request, account_ids):
 
 def _login_preserving_switcher(request, user, account_ids):
     backend = settings.AUTHENTICATION_BACKENDS[0]
+    if request.user.is_authenticated and request.user.pk != user.pk:
+        mark_user_inactive(request.user)
     auth_login(request, user, backend=backend)
+    mark_user_seen(user, force=True)
     _save_account_ids(request, [user.pk, *account_ids])
 
 
@@ -175,3 +184,24 @@ def remove_account(request):
         messages.success(request, 'Konto zostało usunięte z przełącznika.')
 
     return redirect('profile')
+
+
+@login_required
+@require_POST
+def presence_ping(request):
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        payload = {}
+
+    is_active = payload.get('active', True) is not False
+    if is_active:
+        presence_status = mark_user_seen(request.user, force=True)
+    else:
+        presence_status = mark_user_inactive(request.user)
+
+    return JsonResponse({
+        'status': 'success',
+        'presence_status': presence_status,
+        'presence_status_display': request.user.get_presence_status_display(),
+    })

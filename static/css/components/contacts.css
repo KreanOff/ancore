@@ -9,7 +9,7 @@
 }
 
 .contacts-status-active {
-    --tasks-status-color: #c18a34;
+    --tasks-status-color: #197347;
     color: var(--tasks-status-color);
 }
 
@@ -26,6 +26,36 @@
 .contacts-status-archived {
     --tasks-status-color: #8a909a;
     color: var(--tasks-status-color);
+}
+
+.contacts-presence-list {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.contacts-presence-list > li {
+    min-width: 0;
+}
+
+.contacts-presence-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 16px;
+}
+
+.contacts-presence-icon .profile-presence-icon,
+.contacts-row-channel .profile-presence-icon {
+    width: 16px;
+    height: 16px;
+    flex-basis: 16px;
+}
+
+.contacts-row-channel.profile-presence-badge {
+    justify-self: start;
 }
 
 .contacts-mini-avatar,
@@ -52,10 +82,26 @@
     font-size: 0.9rem;
 }
 
+.contacts-company-avatar-icon {
+    width: 64%;
+    height: 64%;
+    display: block;
+    flex: 0 0 auto;
+}
+
 .contacts-avatar--large {
     width: 72px;
     height: 72px;
     font-size: 1.35rem;
+}
+
+.contacts-avatar--large .contacts-company-avatar-icon {
+    width: 64%;
+    height: 64%;
+}
+
+.contacts-avatar--large.contacts-company-avatar.profile-avatar {
+    border-radius: 8px;
 }
 
 .contacts-list-wrap {
@@ -83,6 +129,38 @@
 .contacts-row:hover {
     border-color: #3f3b38;
     background: #3f3b38;
+}
+
+.contacts-row > .status-indicator,
+.contacts-row > .contacts-user-presence {
+    --tasks-status-icon-size: 9px;
+    justify-self: end;
+    max-width: 100%;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.contacts-row > .status-indicator {
+    color: var(--tasks-status-color);
+}
+
+.contacts-row > .contacts-user-presence {
+    color: var(--profile-presence-color, #687083);
+}
+
+.contacts-row > .contacts-user-presence .profile-presence-icon {
+    width: 16px;
+    height: 16px;
+    flex-basis: 16px;
+}
+
+.contacts-row > .status-indicator::before {
+    width: var(--tasks-status-icon-size);
+    height: var(--tasks-status-icon-size);
+    flex-basis: var(--tasks-status-icon-size);
 }
 
 .contacts-row-main {
@@ -115,14 +193,14 @@
     grid-template-columns: minmax(240px, auto) minmax(0, 1fr) auto;
 }
 
+.contacts-search-filterbar {
+    grid-template-columns: minmax(240px, auto) minmax(0, 1fr);
+}
+
 .contacts-filterbar .tasks-filterbar-center {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-}
-
-.contacts-filter-select {
-    width: min(220px, 100%);
 }
 
 .contacts-toggle-row {
@@ -331,6 +409,117 @@
     gap: 0.5rem;
 }
 
+.contacts-create-modal__dialog {
+    width: min(820px, 100%);
+}
+
+.contacts-modal-chip {
+    width: auto;
+}
+
+.contacts-modal-chip__icon,
+.contacts-modal-chip__icon svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+}
+
+.contacts-modal-chip__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.contacts-modal-chip__icon svg {
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.contacts-create-modal__body .tasks-inline-input,
+.contacts-create-modal__body .tasks-inline-select {
+    width: 100%;
+}
+
+.contacts-modal-title-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.contacts-create-modal__body .tasks-inline-input[name="first_name"],
+.contacts-create-modal__body .tasks-inline-input[name="last_name"],
+.contacts-create-modal__body .tasks-inline-input[name="name"] {
+    height: 50px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #23272f;
+    font-size: 1.55rem;
+    font-weight: 500;
+    outline: none;
+}
+
+.contacts-create-modal__body .tasks-inline-input[name="name"] {
+    display: block;
+}
+
+.contacts-create-modal__body .tasks-modal-textarea {
+    min-height: 118px;
+    margin-top: 0.85rem;
+    font-size: 0.95rem;
+}
+
+.contacts-modal-fields label {
+    flex: 1 1 180px;
+}
+
+.contacts-modal-fields .contacts-ancore-login-field {
+    flex-basis: 100%;
+}
+
+.contacts-modal-fields .tasks-inline-input,
+.contacts-modal-fields .tasks-inline-select {
+    height: 38px;
+    padding: 0 0.65rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #242830;
+    font-size: 0.84rem;
+}
+
+.contacts-ancore-login-status {
+    min-height: 1rem;
+    color: #6c7484;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.contacts-ancore-login-status[data-state="success"] {
+    color: #3f8f5b;
+}
+
+.contacts-ancore-login-status[data-state="error"] {
+    color: #b42318;
+}
+
+.contacts-ancore-login-status[data-state="loading"] {
+    color: #6c7484;
+}
+
+.contacts-modal-fields .tasks-inline-input:focus,
+.contacts-modal-fields .tasks-inline-select:focus,
+.contacts-create-modal__body .tasks-modal-textarea:focus {
+    border-color: #3f3b38;
+    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.14);
+    outline: none;
+}
+
 @media (max-width: 900px) {
     .contacts-row {
         grid-template-columns: auto minmax(0, 1fr) auto;
@@ -348,7 +537,8 @@
 
 @media (max-width: 768px) {
     .contacts-name-grid,
-    .contacts-primary-fields {
+    .contacts-primary-fields,
+    .contacts-modal-title-grid {
         grid-template-columns: 1fr;
     }
 

@@ -1,13 +1,17 @@
 import base64
+import json
 import os
 import tempfile
+from datetime import timedelta
 
 from django.contrib.auth import SESSION_KEY
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from .forms import UserRegistrationForm
+from .presence import sync_stale_presence_statuses
 from .views import SWITCH_ACCOUNTS_SESSION_KEY, _account_avatar
 
 
@@ -191,6 +195,66 @@ class ProfileViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Ten login jest już zajęty.')
+
+    def test_presence_ping_marks_auto_status_active(self):
+        self.user.presence_status = get_user_model().PresenceStatus.INACTIVE
+        self.user.save(update_fields=['presence_status'])
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('presence_ping'),
+            json.dumps({'active': True}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.presence_status, get_user_model().PresenceStatus.ACTIVE)
+        self.assertIsNotNone(self.user.last_seen_at)
+
+    def test_presence_ping_marks_auto_status_inactive(self):
+        self.user.presence_status = get_user_model().PresenceStatus.ACTIVE
+        self.user.last_seen_at = timezone.now()
+        self.user.save(update_fields=['presence_status', 'last_seen_at'])
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('presence_ping'),
+            json.dumps({'active': False}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.presence_status, get_user_model().PresenceStatus.INACTIVE)
+
+    def test_presence_heartbeat_does_not_override_manual_status(self):
+        self.user.presence_status = get_user_model().PresenceStatus.BUSY
+        self.user.save(update_fields=['presence_status'])
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('presence_ping'),
+            json.dumps({'active': True}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.presence_status, get_user_model().PresenceStatus.BUSY)
+        self.assertIsNotNone(self.user.last_seen_at)
+
+    @override_settings(USER_PRESENCE_IDLE_SECONDS=60)
+    def test_stale_active_presence_becomes_inactive(self):
+        self.user.presence_status = get_user_model().PresenceStatus.ACTIVE
+        self.user.last_seen_at = timezone.now() - timedelta(minutes=5)
+        self.user.save(update_fields=['presence_status', 'last_seen_at'])
+
+        updated_count = sync_stale_presence_statuses()
+
+        self.assertEqual(updated_count, 1)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.presence_status, get_user_model().PresenceStatus.INACTIVE)
 
 
 class AccountSwitcherTests(TestCase):

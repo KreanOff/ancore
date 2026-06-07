@@ -36,9 +36,13 @@
                 {% for share in shares %}
                     {% if share.content_object %}
                     <a href="{% if share.content_type.model == 'contact' %}{% url 'contacts:view-contact' share.object_id %}{% elif share.content_type.model == 'company' %}{% url 'contacts:view-company' share.object_id %}{% else %}#{% endif %}" class="contacts-row" role="listitem">
-                        <span class="contacts-avatar" aria-hidden="true">
-                            {% if share.content_type.model == 'company' %}{{ share.content_object.initials }}{% else %}{{ share.content_object.initials }}{% endif %}
+                        {% if share.content_type.model == 'company' %}
+                        {% include 'contacts/includes/company_avatar.html' with company=share.content_object avatar_class='contacts-avatar contacts-company-avatar' only %}
+                        {% else %}
+                        <span class="profile-avatar profile-avatar--blue contacts-avatar contacts-person-avatar" aria-hidden="true">
+                            {% include 'accounts/includes/user_avatar_icon.html' %}
                         </span>
+                        {% endif %}
                         <span class="contacts-row-main">
                             <strong>{{ share.content_object }}</strong>
                             <small>Od: {{ share.shared_by.get_full_name|default:share.shared_by.email }}</small>
