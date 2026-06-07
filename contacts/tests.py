@@ -198,7 +198,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'data-open-company')
         self.assertContains(response, 'value="create_contact_modal"')
         self.assertContains(response, 'value="create_company_modal"')
-        self.assertContains(response, 'Login Ancore')
+        self.assertContains(response, 'ID Ancore')
         self.assertContains(response, reverse('contacts:lookup-ancore-login'))
         self.assertNotIn('status', response.context['contact_modal_form'].fields)
 
@@ -321,3 +321,95 @@ class ContactCollaborationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Kamil')
         self.assertNotContains(response, 'Zapisz')
+
+    def test_contact_detail_is_read_only_and_links_to_edit(self):
+        contact = Contact.objects.create(
+            user=self.owner,
+            first_name='Ewa',
+            last_name='Lis',
+            email='ewa@example.com',
+            phone='+48 500 600 700',
+            notes='Rozmowa po demo.',
+        )
+
+        response = self.client.get(reverse('contacts:view-contact', args=[contact.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Ewa Lis')
+        self.assertContains(response, 'ewa@example.com')
+        self.assertContains(response, reverse('contacts:edit-contact', args=[contact.pk]))
+        self.assertContains(response, 'Edytuj')
+        self.assertContains(response, 'data-contact-actions')
+        self.assertContains(response, 'tasks-icon-button contacts-actions-menu__toggle')
+        self.assertContains(response, 'M18 12h.01')
+        self.assertContains(response, 'Opcje kontaktu')
+        self.assertContains(response, 'Usuń')
+        self.assertContains(response, 'profile-summary')
+        self.assertContains(response, 'profile-display-name')
+        self.assertContains(response, 'profile-issue-sidebar')
+        self.assertNotContains(response, 'id="contact-detail-form"')
+        self.assertNotContains(response, 'name="first_name"')
+        self.assertNotContains(response, 'Zapisz')
+        self.assertNotContains(response, 'contacts-delete-button')
+
+    def test_contact_detail_post_does_not_update_contact_fields(self):
+        contact = Contact.objects.create(
+            user=self.owner,
+            first_name='Kamil',
+            last_name='Testowy',
+            email='kamil@example.com',
+        )
+
+        response = self.client.post(reverse('contacts:view-contact', args=[contact.pk]), {
+            'first_name': 'Zmieniony',
+            'last_name': 'Testowy',
+            'company': '',
+            'company_record': '',
+            'role': '',
+            'email': 'changed@example.com',
+            'phone': '',
+            'source': '',
+            'last_contacted_at': '',
+            'notes': '',
+        })
+
+        contact.refresh_from_db()
+        self.assertRedirects(response, reverse('contacts:view-contact', args=[contact.pk]))
+        self.assertEqual(contact.first_name, 'Kamil')
+        self.assertEqual(contact.email, 'kamil@example.com')
+
+    def test_contact_edit_page_updates_contact_fields(self):
+        contact = Contact.objects.create(
+            user=self.owner,
+            first_name='Kamil',
+            last_name='Testowy',
+            email='kamil@example.com',
+        )
+
+        response = self.client.get(reverse('contacts:edit-contact', args=[contact.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="contact-detail-form"')
+        self.assertContains(response, 'contacts-edit-modal is-open')
+        self.assertContains(response, 'contacts-edit-modal__dialog')
+        self.assertContains(response, 'tasks-modal__form tasks-issue-modal__form contacts-edit-form')
+        self.assertContains(response, 'contacts-edit-modal__body')
+        self.assertContains(response, 'Zapisz')
+
+        response = self.client.post(reverse('contacts:edit-contact', args=[contact.pk]), {
+            'first_name': 'Karol',
+            'last_name': 'Testowy',
+            'company': 'Ancore',
+            'company_record': '',
+            'role': 'Konsultant',
+            'email': 'karol@example.com',
+            'phone': '+48 123 456 789',
+            'source': 'Polecenie',
+            'last_contacted_at': '',
+            'notes': 'Przeniesione do osobnej edycji.',
+        })
+
+        contact.refresh_from_db()
+        self.assertRedirects(response, reverse('contacts:view-contact', args=[contact.pk]))
+        self.assertEqual(contact.first_name, 'Karol')
+        self.assertEqual(contact.email, 'karol@example.com')
+        self.assertEqual(contact.role, 'Konsultant')

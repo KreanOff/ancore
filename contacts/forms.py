@@ -106,7 +106,7 @@ class ContactForm(forms.ModelForm):
 class ContactModalForm(ContactForm):
     ancore_login = forms.CharField(
         required=False,
-        label='Login Ancore',
+        label='ID Ancore',
         widget=forms.TextInput(attrs={
             'placeholder': '@login.ancore',
             'class': 'tasks-inline-input',
@@ -162,7 +162,7 @@ class ContactModalForm(ContactForm):
         if ancore_login:
             self.ancore_user = self._lookup_ancore_user(ancore_login)
             if self.ancore_user is None:
-                self.add_error('ancore_login', 'Nie znaleziono użytkownika z takim Loginem Ancore.')
+                self.add_error('ancore_login', 'Nie znaleziono użytkownika z takim ID Ancore.')
             else:
                 cleaned_data['first_name'] = cleaned_data.get('first_name') or self.ancore_user.first_name
                 cleaned_data['last_name'] = cleaned_data.get('last_name') or self.ancore_user.last_name

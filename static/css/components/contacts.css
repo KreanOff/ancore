@@ -293,6 +293,111 @@
     line-height: 1.2;
 }
 
+.contacts-edit-link,
+.contacts-cancel-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.contacts-cancel-link {
+    min-height: 32px;
+    padding: 0 0.6rem;
+    border-radius: 6px;
+    color: #5f6673;
+    font-size: 0.875rem;
+    font-weight: 650;
+}
+
+.contacts-cancel-link:hover {
+    background: #f1f3f6;
+    color: #20242b;
+}
+
+.contacts-actions-menu {
+    position: relative;
+    display: inline-flex;
+}
+
+.contacts-actions-menu__toggle svg {
+    width: 19px;
+    height: 19px;
+}
+
+.contacts-actions-menu.is-open .contacts-actions-menu__toggle {
+    background: #3f3b38;
+    border-color: #3f3b38;
+    color: var(--accent-on-peach);
+}
+
+.contacts-actions-menu__panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 150;
+    width: 180px;
+    display: none;
+    gap: 2px;
+    padding: var(--dropdown-menu-padding);
+    border: 1px solid #dfe3e8;
+    border-radius: var(--dropdown-menu-radius);
+    background: #ffffff;
+    box-shadow: var(--dropdown-menu-shadow);
+}
+
+.contacts-actions-menu.is-open .contacts-actions-menu__panel {
+    display: grid;
+}
+
+.contacts-actions-menu__item {
+    width: 100%;
+    min-height: var(--dropdown-menu-item-height);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.65rem;
+    border: 0;
+    border-radius: var(--dropdown-menu-item-radius);
+    background: transparent;
+    color: #4c5565;
+    font: inherit;
+    font-size: var(--dropdown-menu-font-size);
+    font-weight: 600;
+    line-height: 1;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.contacts-actions-menu__item:hover,
+.contacts-actions-menu__item:focus-visible {
+    background: #3f3b38;
+    color: var(--accent-on-peach);
+    outline: none;
+}
+
+.contacts-actions-menu__item--danger {
+    color: #b42318;
+}
+
+.contacts-actions-menu__item--danger:hover,
+.contacts-actions-menu__item--danger:focus-visible {
+    background: #fff2ef;
+    color: #b42318;
+}
+
+.contacts-actions-menu__item svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .contacts-primary-fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -316,6 +421,64 @@
     min-height: 180px;
     border-radius: 6px;
     font-size: 0.92rem;
+}
+
+.contacts-field-value {
+    min-width: 0;
+    color: #343941;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.contacts-field-value:hover {
+    color: #20242b;
+    text-decoration: underline;
+}
+
+.contacts-profile-summary {
+    width: min(100%, 980px);
+}
+
+.contacts-profile-summary .profile-display-name-fields {
+    min-height: 68px;
+}
+
+.contacts-profile-link {
+    text-decoration: none;
+}
+
+.contacts-profile-link:hover {
+    color: #20242b;
+    text-decoration: underline;
+}
+
+.contacts-profile-company-field {
+    margin-top: 1rem;
+    width: min(100%, 640px);
+}
+
+.contacts-profile-notes-field {
+    margin-top: 0.85rem;
+}
+
+.contacts-profile-view .contacts-activity {
+    width: min(100%, 980px);
+}
+
+.contacts-edit-readonly-field .profile-display-value {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #dfe3e9;
+    border-radius: 6px;
+    background: #f7f8fa;
+    box-sizing: border-box;
+    color: #687083;
+    font-size: 0.9rem;
 }
 
 .contacts-issue-sidebar .form-input {
@@ -468,10 +631,41 @@
     display: block;
 }
 
+.contacts-edit-modal__body .form-input {
+    width: 100%;
+}
+
+.contacts-edit-modal__body .form-input[name="first_name"],
+.contacts-edit-modal__body .form-input[name="last_name"] {
+    height: 50px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #23272f;
+    box-shadow: none;
+    font-size: 1.55rem;
+    font-weight: 500;
+    outline: none;
+}
+
 .contacts-create-modal__body .tasks-modal-textarea {
     min-height: 118px;
     margin-top: 0.85rem;
     font-size: 0.95rem;
+}
+
+.contacts-edit-modal__body textarea.form-input {
+    min-height: 118px;
+    margin-top: 0.85rem;
+    padding: 0.65rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #242830;
+    box-shadow: none;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 
 .contacts-modal-fields label {
@@ -491,6 +685,27 @@
     background: #ffffff;
     color: #242830;
     font-size: 0.84rem;
+}
+
+.contacts-edit-modal__fields .form-input,
+.contacts-edit-readonly-value {
+    height: 38px;
+    padding: 0 0.65rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #242830;
+    box-shadow: none;
+    font-size: 0.84rem;
+    font-weight: 500;
+}
+
+.contacts-edit-readonly-value {
+    display: flex;
+    align-items: center;
+    background-color: #f7f8fa;
+    color: #687083;
+    font-weight: 650;
 }
 
 .contacts-ancore-login-status {
@@ -514,9 +729,44 @@
 
 .contacts-modal-fields .tasks-inline-input:focus,
 .contacts-modal-fields .tasks-inline-select:focus,
+.contacts-edit-modal__body .form-input:focus,
 .contacts-create-modal__body .tasks-modal-textarea:focus {
     border-color: #3f3b38;
     box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.14);
+    outline: none;
+}
+
+.contacts-edit-modal__body .form-input[name="first_name"]:focus,
+.contacts-edit-modal__body .form-input[name="last_name"]:focus {
+    border: 0;
+    box-shadow: none;
+}
+
+.contacts-edit-modal__footer {
+    gap: 0.5rem;
+}
+
+.contacts-edit-modal__cancel {
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.15rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #4c5565;
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.contacts-edit-modal__cancel:hover,
+.contacts-edit-modal__cancel:focus-visible {
+    border-color: #cfd5dd;
+    background: #f7f8fa;
+    color: #242830;
     outline: none;
 }
 

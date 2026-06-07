@@ -381,7 +381,7 @@ def guest_contacts(request):
         'contacts_page_label': 'Lista gości',
         'contacts_search_placeholder': 'Szukaj gościa',
         'contacts_empty_heading': 'Brak gości',
-        'contacts_empty_copy': 'Kontakty bez Loginu Ancore pojawią się tutaj.',
+        'contacts_empty_copy': 'Kontakty bez ID Ancore pojawią się tutaj.',
         'contact_modal_form': contact_modal_form,
         'company_modal_form': company_modal_form,
         'contact_modal_open': contact_modal_open,
@@ -409,21 +409,21 @@ def create_contact(request):
     return render(request, 'contacts/view_contact.html', context)
 
 
+def _contact_detail_queryset(user):
+    return _visible_contacts_queryset(user).prefetch_related(
+        'activities__actor',
+        Prefetch(
+            'linked_user_contacts',
+            queryset=UserContact.objects.filter(owner=user).select_related('target_user'),
+            to_attr='current_user_links',
+        ),
+    )
+
+
 @login_required
 def view_contact(request, contact_id):
-    contact = get_object_or_404(
-        _visible_contacts_queryset(request.user).prefetch_related(
-            'activities__actor',
-            Prefetch(
-                'linked_user_contacts',
-                queryset=UserContact.objects.filter(owner=request.user).select_related('target_user'),
-                to_attr='current_user_links',
-            ),
-        ),
-        pk=contact_id,
-    )
+    contact = get_object_or_404(_contact_detail_queryset(request.user), pk=contact_id)
     can_edit_contact = _has_edit_access(request.user, contact)
-    form = ContactForm(instance=contact, user=request.user)
     share_form = ShareItemForm(user=request.user)
 
     if request.method == 'POST':
@@ -437,12 +437,37 @@ def view_contact(request, contact_id):
                 messages.error(request, 'Wpisz treść notatki.')
             return redirect('contacts:view-contact', contact_id=contact.pk)
 
-        if not can_edit_contact:
-            messages.error(request, 'Nie masz uprawnień do edycji tego kontaktu.')
-            return redirect('contacts:view-contact', contact_id=contact.pk)
+        messages.error(request, 'Edycja kontaktu jest dostępna w osobnym widoku.')
+        return redirect('contacts:view-contact', contact_id=contact.pk)
 
+    context = {
+        'contact': contact,
+        'share_form': share_form,
+        'can_edit_contact': can_edit_contact,
+        'contact_shares': SharedItem.objects.filter(
+            content_type=_content_type_for(Contact),
+            object_id=contact.pk,
+            shared_by=request.user,
+        ).select_related('shared_with'),
+        'activity_items': contact.activities.select_related('actor'),
+        **_contacts_navigation_context(request.user, active_status=contact.status),
+    }
+    return render(request, 'contacts/view_contact.html', context)
+
+
+@login_required
+def edit_contact(request, contact_id):
+    contact = get_object_or_404(_contact_detail_queryset(request.user), pk=contact_id)
+    can_edit_contact = _has_edit_access(request.user, contact)
+
+    if not can_edit_contact:
+        messages.error(request, 'Nie masz uprawnień do edycji tego kontaktu.')
+        return redirect('contacts:view-contact', contact_id=contact.pk)
+
+    form = ContactForm(request.POST or None, instance=contact, user=request.user)
+
+    if request.method == 'POST':
         before = _contact_snapshot(contact)
-        form = ContactForm(request.POST, instance=contact, user=request.user)
         if form.is_valid():
             form.save()
             for change in _contact_change_activities(contact, before):
@@ -457,14 +482,11 @@ def view_contact(request, contact_id):
             return redirect('contacts:view-contact', contact_id=contact.pk)
         messages.error(request, 'Nie udało się zaktualizować kontaktu.')
 
-    if not can_edit_contact:
-        for field in form.fields.values():
-            field.widget.attrs['disabled'] = 'disabled'
-
     context = {
         'contact': contact,
         'form': form,
-        'share_form': share_form,
+        'is_edit': True,
+        'share_form': ShareItemForm(user=request.user),
         'can_edit_contact': can_edit_contact,
         'contact_shares': SharedItem.objects.filter(
             content_type=_content_type_for(Contact),

@@ -194,7 +194,7 @@ class ProfileViewTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Ten login jest już zajęty.')
+        self.assertContains(response, 'To ID Ancore jest już zajęte.')
 
     def test_presence_ping_marks_auto_status_active(self):
         self.user.presence_status = get_user_model().PresenceStatus.INACTIVE

@@ -965,7 +965,7 @@ function initTasksPage() {
         }
 
         if (login.length < 2) {
-            setContactAncoreLoginStatus('Wpisz Login Ancore.', 'muted');
+            setContactAncoreLoginStatus('Wpisz ID Ancore.', 'muted');
             return;
         }
 
@@ -991,7 +991,7 @@ function initTasksPage() {
             }
         } catch (error) {
             if (requestId !== contactAncoreLoginRequestId) return;
-            setContactAncoreLoginStatus('Nie udało się sprawdzić loginu.', 'error');
+            setContactAncoreLoginStatus('Nie udało się sprawdzić ID Ancore.', 'error');
         }
     }
 

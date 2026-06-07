@@ -85,7 +85,7 @@ class UserProfileForm(forms.ModelForm):
         **{'placeholder': 'Adres email', 'autocomplete': 'email'},
         **_input_attrs,
     }))
-    username = forms.CharField(label='Login Ancore', max_length=150, required=True, widget=forms.TextInput(attrs={
+    username = forms.CharField(label='ID Ancore', max_length=150, required=True, widget=forms.TextInput(attrs={
         **{'placeholder': '@imie.nazwisko', 'autocomplete': 'off', 'spellcheck': 'false'},
         **_profile_input_attrs,
     }))
@@ -196,12 +196,12 @@ class UserProfileForm(forms.ModelForm):
 
         if not PUBLIC_USERNAME_RE.fullmatch(username):
             raise forms.ValidationError(
-                'Login musi zaczynać się od @ i mieć minimum 3 znaki: litery, cyfry, kropki, podkreślenia albo myślniki.'
+                'ID Ancore musi zaczynać się od @ i mieć minimum 3 znaki: litery, cyfry, kropki, podkreślenia albo myślniki.'
             )
 
         exists = User.objects.exclude(pk=self.instance.pk).filter(username__iexact=username).exists()
         if exists:
-            raise forms.ValidationError('Ten login jest już zajęty.')
+            raise forms.ValidationError('To ID Ancore jest już zajęte.')
 
         return username
 
