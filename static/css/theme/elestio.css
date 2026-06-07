@@ -54,10 +54,18 @@ body {
 
 .topbar-icon-button,
 .nav-link,
-.tasks-rail-link,
-.tasks-rail-nav-group-toggle,
 .tasks-rail-add-button {
     color: var(--text-muted);
+}
+
+.tasks-rail-link {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.tasks-rail-nav-group-toggle {
+    color: var(--text-main);
+    font-weight: 800;
 }
 
 .topbar-icon-button:hover,
@@ -88,7 +96,7 @@ body {
 .topbar-tab.is-active {
     background: var(--accent-peach);
     border-color: var(--accent-peach-border);
-    color: var(--accent-brown);
+    color: var(--accent-on-peach);
     box-shadow: 0 1px 3px rgba(117, 83, 62, 0.18);
 }
 
@@ -105,6 +113,15 @@ body {
 .calendar-day-muted,
 .profile-muted {
     color: var(--text-muted);
+}
+
+.tasks-rail-count {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.tasks-rail-section-title {
+    color: var(--text-main);
 }
 
 .tasks-rail-header h1,
@@ -129,7 +146,7 @@ body {
 .profile-avatar--blue {
     background: var(--accent-peach);
     border-color: var(--accent-peach-border);
-    color: var(--accent-brown);
+    color: var(--accent-on-peach);
     box-shadow: none;
 }
 
@@ -140,7 +157,7 @@ body {
 .btn-primary:hover:not(:disabled),
 .calendar-nav-button.is-active:hover {
     background: var(--accent-peach-hover);
-    color: var(--accent-brown-hover);
+    color: var(--accent-on-peach-hover);
     box-shadow: 0 4px 12px rgba(117, 83, 62, 0.16);
 }
 
@@ -175,7 +192,7 @@ body {
 .profile-action-primary {
     background: var(--accent-peach);
     border-color: var(--accent-peach-border);
-    color: var(--accent-brown);
+    color: var(--accent-on-peach);
 }
 
 .tasks-search-field:focus-within,
@@ -367,7 +384,7 @@ body.auth-page,
 .auth-card-label {
     border-color: var(--accent-peach-border);
     background: var(--accent-peach);
-    color: var(--accent-brown);
+    color: var(--accent-on-peach);
 }
 
 .auth-workspace-preview {
@@ -447,12 +464,12 @@ body.auth-page,
 .auth-submit {
     border: 1px solid var(--accent-peach-border);
     background: var(--accent-peach);
-    color: var(--accent-brown);
+    color: var(--accent-on-peach);
 }
 
 .auth-submit:hover {
     background: var(--accent-peach-hover);
-    color: var(--accent-brown-hover);
+    color: var(--accent-on-peach-hover);
     box-shadow: 0 10px 24px rgba(117, 83, 62, 0.16);
 }
 
@@ -465,17 +482,20 @@ body.auth-page,
 .tasks-project-row-icon,
 .tasks-project-chip span,
 .tasks-chip-picker__menu button span,
-.tasks-project-tree-toggle:hover,
-.tasks-project-tree-toggle:focus-visible,
 .tasks-project-collapse-toggle:hover,
 .tasks-project-collapse-toggle:focus-visible,
-.tasks-project-more:hover,
-.tasks-project-more:focus,
 .tasks-kanban-wallpaper-clear:hover,
 .tasks-attachment-info:hover .tasks-attachment-name,
 .tasks-section-links .tasks-section-rail-card__icon,
 .calendar-year-month-title:hover {
     color: var(--accent-brown);
+}
+
+.tasks-project-tree-toggle:hover,
+.tasks-project-tree-toggle:focus-visible,
+.tasks-project-more:hover,
+.tasks-project-more:focus {
+    color: var(--accent-on-peach);
 }
 
 .tasks-project-row-icon,

@@ -25,11 +25,16 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Ustawienia Ancore')
-        self.assertContains(response, f'href="{reverse("settings")}"')
+        self.assertNotContains(response, 'Przegląd')
         self.assertContains(response, 'href="/admin/"')
         self.assertContains(response, reverse('profile'))
         self.assertContains(response, 'Profil użytkownika')
-        self.assertContains(response, 'Konta w sesji')
+        self.assertContains(response, reverse('add_account'))
+        self.assertContains(response, 'Dodaj konto')
+        self.assertNotContains(response, 'Konta w sesji')
+        self.assertContains(response, 'Sesja')
+        self.assertContains(response, f'action="{reverse("logout")}"')
+        self.assertContains(response, 'Wyloguj się')
         self.assertContains(response, 'Bezpieczeństwo')
         self.assertContains(response, 'Powiadomienia')
         self.assertContains(response, 'Wygląd')
@@ -37,7 +42,10 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'Dane i eksport')
         self.assertContains(response, 'Integracje')
         self.assertContains(response, 'Pomoc')
-        self.assertContains(response, reverse('logout'))
+        content = response.content.decode()
+        self.assertLess(content.index('</nav>'), content.index('profile-rail-actions'))
+        self.assertLess(content.index('Pomoc'), content.index('Dodaj konto'))
+        self.assertLess(content.index('Dodaj konto'), content.index('Wyloguj się'))
 
     def test_home_renders_for_authenticated_user(self):
         user = get_user_model().objects.create_user(

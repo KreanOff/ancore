@@ -45,7 +45,7 @@
 .tasks-file-icon.image,
 .file-icon.image,
 .attach-icon.image,
-.file-icon-mini.image { background-color: #3f3b38; color: #1f2328; }
+.file-icon-mini.image { background-color: #3f3b38; color: var(--accent-on-peach); }
 
 .attachment-icon.pdf,
 .tasks-file-icon.pdf,

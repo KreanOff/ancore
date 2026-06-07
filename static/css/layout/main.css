@@ -119,7 +119,7 @@
 .topbar-tab.is-active {
     background: #3f3b38;
     border-color: #3f3b38;
-    color: #1f2328;
+    color: var(--accent-on-peach);
     box-shadow: 0 1px 3px rgba(117, 83, 62, 0.28);
 }
 

@@ -4,11 +4,13 @@
     --chrome-bg-soft: #faf9f7;
     --chrome-border: #e9e6e2;
     --sidebar-bg: var(--chrome-bg);
-    --sidebar-text: #74716d;
+    --sidebar-text: #625d57;
     --sidebar-active: #4f4b47;
     --accent-peach: #3f3b38;
-    --accent-peach-hover: #f8ded2;
-    --accent-peach-border: #ead2c6;
+    --accent-peach-hover: #2f2b28;
+    --accent-peach-border: #3f3b38;
+    --accent-on-peach: #ffffff;
+    --accent-on-peach-hover: #ffffff;
     --accent-brown: #75533e;
     --accent-brown-hover: #684933;
     --accent-blue: var(--accent-peach);
@@ -18,7 +20,7 @@
     --accent-green-hover: #3f754f;
     --text-main: #56524e;
     --text-strong: #3f3b38;
-    --text-muted: #8a8782;
+    --text-muted: #6f6a64;
     --border-color: #ece9e5;
     --card-bg: #ffffff;
     --panel-bg: #f7f6f4;

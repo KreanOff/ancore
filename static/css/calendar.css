@@ -225,7 +225,7 @@
 .calendar-week-day-head--today .calendar-week-day-num,
 .calendar-year-day--today {
     background: #3f3b38;
-    color: #1f2328;
+    color: var(--accent-on-peach);
 }
 
 .calendar-day-number {
@@ -472,7 +472,7 @@
 
 .calendar-year-day--has-events:not(.calendar-year-day--today) {
     background: #3f3b38;
-    color: #1f2328;
+    color: var(--accent-on-peach);
 }
 
 .calendar-year-day:not(:disabled):hover {
@@ -608,7 +608,7 @@
 .calendar-event--blue {
     border-left-color: #3f3b38;
     background: #3f3b38;
-    color: #1f2328;
+    color: var(--accent-on-peach);
 }
 
 .calendar-event--green {

@@ -803,7 +803,7 @@ a.settings-option:hover,
     border: 1px solid var(--accent-peach-border);
     border-radius: 7px;
     background: var(--accent-peach);
-    color: var(--accent-brown);
+    color: var(--accent-on-peach);
     font-size: 0.8rem;
     font-weight: 750;
 }

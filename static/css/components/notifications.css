@@ -41,7 +41,7 @@
 .notification.info {
     background: #3f3b38;
     border-color: #3f3b38;
-    color: #1f2328;
+    color: var(--accent-on-peach);
 }
 
 body:has(.tasks-page) .notifications-container,

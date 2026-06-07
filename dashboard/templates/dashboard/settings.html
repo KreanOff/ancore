@@ -56,14 +56,14 @@
                     </span>
                 </a>
 
-                <a href="{% url 'profile' %}#accounts" class="dashboard-stat settings-option settings-option--accounts">
+                <a href="{% url 'add_account' %}" class="dashboard-stat settings-option settings-option--accounts">
                     <span class="dashboard-stat-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M17 21a5 5 0 0 0-10 0"/><circle cx="12" cy="8" r="4"/><path d="M21 21a4 4 0 0 0-3-3.87"/><path d="M3 21a4 4 0 0 1 3-3.87"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M16 21a5 5 0 0 0-10 0"/><circle cx="11" cy="8" r="4"/><path d="M19 8v6"/><path d="M16 11h6"/></svg>
                     </span>
                     <div>
-                        <p>Sesja</p>
-                        <strong>Konta w sesji</strong>
-                        <small>Przełączanie aktywnych kont</small>
+                        <p>Przełącznik</p>
+                        <strong>Dodaj konto</strong>
+                        <small>Połącz drugi profil z sesją</small>
                     </div>
                     <span class="settings-option-arrow" aria-hidden="true">
                         <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6l-6 6"/></svg>
@@ -77,21 +77,24 @@
                     <div>
                         <p>Dostęp</p>
                         <strong>Bezpieczeństwo</strong>
-                        <small>Hasło, sesje i uprawnienia</small>
+                        <small>Hasło i uprawnienia</small>
                     </div>
                     <span class="settings-option-state">Wkrótce</span>
                 </article>
 
-                <form action="{% url 'logout' %}" method="post" class="settings-option-form">
+                <form method="post" action="{% url 'logout' %}" class="settings-option-form">
                     {% csrf_token %}
                     <button type="submit" class="dashboard-stat settings-option settings-option--logout">
                         <span class="dashboard-stat-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5l-5-5"/><path d="M21 12H9"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M10 17l-5-5l5-5"/><path d="M5 12h12"/><path d="M14 5h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"/></svg>
                         </span>
-                        <span class="settings-option-copy">
-                            <span class="settings-option-kicker">Sesja</span>
+                        <div>
+                            <p>Sesja</p>
                             <strong>Wyloguj się</strong>
-                            <small>Zakończ aktywną sesję</small>
+                            <small>Zakończ pracę na tym urządzeniu</small>
+                        </div>
+                        <span class="settings-option-arrow" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6l-6 6"/></svg>
                         </span>
                     </button>
                 </form>

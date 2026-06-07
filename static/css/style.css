@@ -1,10 +1,10 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260603-font-sizes';
+@import 'base/variables.css?v=20260607-sidebar-readable';
 @import 'base/reset.css';
 @import 'layout/sidebar.css?v=20260607-profile-avatar';
-@import 'layout/main.css?v=20260606-sidebar-settings';
+@import 'layout/main.css?v=20260607-accent-contrast';
 @import 'layout/responsive.css?v=20260530-secondary-menu-resize';
-@import 'components/cards.css?v=20260606-ancore-settings';
+@import 'components/cards.css?v=20260607-accent-contrast';
 @import 'components/buttons.css';
 @import 'components/toolbar.css';
 @import 'components/alerts.css';
@@ -12,13 +12,13 @@
 @import 'components/dialogs.css';
 @import 'components/modals.css';
 @import 'components/tables.css?v=20260604-status-new-blue';
-@import 'components/tasks.css?v=20260606-selected-gray';
-@import 'components/contacts.css?v=20260601-contacts-sharing';
-@import 'components/notifications.css';
-@import 'components/attachments.css';
+@import 'components/tasks.css?v=20260607-accent-contrast';
+@import 'components/contacts.css?v=20260607-accent-contrast';
+@import 'components/notifications.css?v=20260607-accent-contrast';
+@import 'components/attachments.css?v=20260607-accent-contrast';
 @import 'components/file-upload.css?v=20260605-trash-icon';
 @import 'components/auth.css?v=20260603-icon-sizes';
-@import 'calendar.css';
+@import 'calendar.css?v=20260607-accent-contrast';
 @import 'components/checkboxes.css?v=20260531-unified';
-@import 'theme/elestio.css?v=20260606-task-hover-gray';
-@import 'components/profile.css?v=20260607-profile-photo-crop';
+@import 'theme/elestio.css?v=20260607-sidebar-readable';
+@import 'components/profile.css?v=20260607-accent-contrast';

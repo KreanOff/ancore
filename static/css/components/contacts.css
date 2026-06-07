@@ -36,7 +36,7 @@
     flex: 0 0 auto;
     border-radius: 50%;
     background: #3f3b38;
-    color: #1f2328;
+    color: var(--accent-on-peach);
     font-weight: 750;
 }
 
@@ -157,7 +157,7 @@
     margin-bottom: 1rem;
     border-radius: 50%;
     background: #3f3b38;
-    color: #1f2328;
+    color: var(--accent-on-peach);
 }
 
 .contacts-empty-state .tasks-empty-state__icon svg {
@@ -258,7 +258,7 @@
 .contacts-new-button--secondary {
     margin-top: 0.5rem;
     background: #3f3b38;
-    color: #1f2328;
+    color: var(--accent-on-peach);
 }
 
 .contacts-row--static {
