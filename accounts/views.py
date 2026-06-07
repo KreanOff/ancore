@@ -6,17 +6,10 @@ from django.contrib.auth.views import LogoutView
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from .avatar import account_avatar as _account_avatar
 from .forms import UserProfileForm, UserRegistrationForm
 
 SWITCH_ACCOUNTS_SESSION_KEY = 'switch_account_user_ids'
-AVATAR_COLOR_CLASSES = [
-    'profile-avatar--blue',
-    'profile-avatar--teal',
-    'profile-avatar--green',
-    'profile-avatar--violet',
-    'profile-avatar--rose',
-    'profile-avatar--amber',
-]
 
 
 class AccountLogoutView(LogoutView):
@@ -56,24 +49,6 @@ def _login_preserving_switcher(request, user, account_ids):
     _save_account_ids(request, [user.pk, *account_ids])
 
 
-def _account_avatar(user, color_index=None):
-    first_initial = (user.first_name or '').strip()[:1]
-    last_initial = (user.last_name or '').strip()[:1]
-    initials = f'{first_initial}{last_initial}'.upper()
-
-    if not initials:
-        initials = (user.email or user.username or '?').strip()[:1].upper()
-
-    if color_index is None:
-        color_basis = str(user.pk or user.email or user.username or initials)
-        color_index = sum(ord(char) for char in color_basis)
-
-    return {
-        'initials': initials,
-        'color_class': AVATAR_COLOR_CLASSES[color_index % len(AVATAR_COLOR_CLASSES)],
-    }
-
-
 def _switch_account_context(request):
     user_model = get_user_model()
     account_ids = _normalized_account_ids(request)
@@ -81,17 +56,34 @@ def _switch_account_context(request):
     users_by_id = {str(user.pk): user for user in users}
 
     switch_accounts = []
-    for color_index, account_id in enumerate(account_ids):
+    for account_id in account_ids:
         if account_id not in users_by_id:
             continue
 
         switch_accounts.append({
             'user': users_by_id[account_id],
             'is_current': account_id == str(request.user.pk),
-            'avatar': _account_avatar(users_by_id[account_id], color_index),
+            'avatar': _account_avatar(users_by_id[account_id]),
         })
 
     return switch_accounts
+
+
+def _presence_status_options(form):
+    selected_value = form['presence_status'].value()
+    choice_values = [value for value, _label in form.fields['presence_status'].choices]
+
+    if selected_value not in choice_values and choice_values:
+        selected_value = choice_values[0]
+
+    return [
+        {
+            'value': value,
+            'label': label,
+            'is_selected': value == selected_value,
+        }
+        for value, label in form.fields['presence_status'].choices
+    ]
 
 
 def register(request):
@@ -109,7 +101,7 @@ def register(request):
 @login_required
 def profile(request):
     if request.method == 'POST':
-        form = UserProfileForm(request.POST, instance=request.user)
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Profil został zaktualizowany.')
@@ -120,7 +112,8 @@ def profile(request):
     _save_account_ids(request, _normalized_account_ids(request))
     return render(request, 'accounts/profile.html', {
         'form': form,
-        'current_account_avatar': _account_avatar(request.user, 0),
+        'current_account_avatar': _account_avatar(request.user),
+        'presence_status_options': _presence_status_options(form),
         'switch_accounts': _switch_account_context(request),
     })
 

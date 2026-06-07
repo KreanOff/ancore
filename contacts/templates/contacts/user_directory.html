@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load account_avatar %}
 
 {% block title %}Szukaj osób | ancore{% endblock %}
 
@@ -36,7 +37,7 @@
                         <circle cx="11" cy="11" r="7"/>
                         <path d="M16.5 16.5 21 21"/>
                     </svg>
-                    <input type="search" name="q" value="{{ query }}" placeholder="Imię, nazwisko albo email">
+                    <input type="search" name="q" value="{{ query }}" placeholder="Imię, nazwisko, login albo email">
                 </label>
             </div>
             <div class="tasks-filterbar-right">
@@ -49,12 +50,11 @@
             <div class="contacts-list" role="list">
                 {% for user_item in users %}
                 <div class="contacts-row contacts-row--static" role="listitem">
-                    <span class="contacts-avatar" aria-hidden="true">
-                        {{ user_item.first_name|first|default:user_item.email|first|upper }}{{ user_item.last_name|first|upper }}
-                    </span>
+                    {% user_avatar user_item as user_item_avatar %}
+                    {% include 'accounts/includes/user_avatar.html' with avatar=user_item_avatar avatar_class='contacts-avatar' only %}
                     <span class="contacts-row-main">
                         <strong>{{ user_item.get_full_name|default:user_item.email }}</strong>
-                        <small>{{ user_item.email }}</small>
+                        <small>{{ user_item.username }} · {{ user_item.email }}</small>
                     </span>
                     <span class="contacts-row-channel">{{ user_item.get_presence_status_display }}</span>
                     {% if user_item.pk in existing_user_contact_ids %}

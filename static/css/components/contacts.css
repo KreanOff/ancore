@@ -4,7 +4,7 @@
 }
 
 .contacts-status-lead {
-    --tasks-status-color: #fae6dc;
+    --tasks-status-color: #3f3b38;
     color: var(--tasks-status-color);
 }
 
@@ -35,7 +35,7 @@
     justify-content: center;
     flex: 0 0 auto;
     border-radius: 50%;
-    background: #fae6dc;
+    background: #3f3b38;
     color: #1f2328;
     font-weight: 750;
 }
@@ -81,8 +81,8 @@
 }
 
 .contacts-row:hover {
-    border-color: #fae6dc;
-    background: #fae6dc;
+    border-color: #3f3b38;
+    background: #3f3b38;
 }
 
 .contacts-row-main {
@@ -156,7 +156,7 @@
     justify-content: center;
     margin-bottom: 1rem;
     border-radius: 50%;
-    background: #fae6dc;
+    background: #3f3b38;
     color: #1f2328;
 }
 
@@ -257,7 +257,7 @@
 
 .contacts-new-button--secondary {
     margin-top: 0.5rem;
-    background: #fae6dc;
+    background: #3f3b38;
     color: #1f2328;
 }
 
@@ -322,8 +322,8 @@
 }
 
 .contacts-share-row--link:hover {
-    border-color: #fae6dc;
-    background: #fae6dc;
+    border-color: #3f3b38;
+    background: #3f3b38;
 }
 
 .contacts-company-links {

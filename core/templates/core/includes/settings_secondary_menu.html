@@ -1,0 +1,99 @@
+<aside class="tasks-tracker-rail profile-rail" aria-label="Nawigacja ustawień">
+    <div class="tasks-rail-header">
+        <h1>Ustawienia</h1>
+    </div>
+
+    <nav class="tasks-rail-nav">
+        <div class="tasks-rail-nav-group">
+            <a href="{% url 'settings' %}" class="tasks-rail-link {% if request.resolver_match.view_name == 'settings' %}is-active{% endif %}">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+                </span>
+                Przegląd
+            </a>
+            <a href="{% url 'profile' %}" class="tasks-rail-link {% if request.resolver_match.view_name == 'profile' %}is-active{% endif %}">
+                {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='tasks-rail-icon profile-rail-menu-avatar' only %}
+                Profil użytkownika
+            </a>
+            <a href="{% url 'profile' %}#accounts" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M17 21a5 5 0 0 0-10 0"/><circle cx="12" cy="8" r="4"/><path d="M21 21a4 4 0 0 0-3-3.87"/><path d="M3 21a4 4 0 0 1 3-3.87"/></svg>
+                </span>
+                Konta w sesji
+            </a>
+        </div>
+
+        <div class="tasks-rail-nav-group">
+            <a href="{% url 'settings' %}#security" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9c-4.6-1-8-4-8-9V7l8-4z"/><path d="M9.5 12l1.7 1.7L15 10"/></svg>
+                </span>
+                Bezpieczeństwo
+            </a>
+            <a href="{% url 'settings' %}#notifications" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3H4a4 4 0 0 0 2-3v-3a7 7 0 0 1 4-6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>
+                </span>
+                Powiadomienia
+            </a>
+            <a href="{% url 'settings' %}#appearance" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18h1.5a2 2 0 0 0 0-4H13a2 2 0 0 1 0-4h1a7 7 0 0 0-2-10z"/><path d="M7.5 10.5h.01"/><path d="M9.5 7.5h.01"/><path d="M14.5 7.5h.01"/></svg>
+                </span>
+                Wygląd
+            </a>
+            <a href="{% url 'settings' %}#region" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a13 13 0 0 1 0 18"/><path d="M12 3a13 13 0 0 0 0 18"/></svg>
+                </span>
+                Język i region
+            </a>
+        </div>
+
+        <div class="tasks-rail-nav-group">
+            <a href="{% url 'settings' %}#data" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M4 7c0 1.7 3.6 3 8 3s8-1.3 8-3s-3.6-3-8-3s-8 1.3-8 3z"/><path d="M4 7v5c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5"/></svg>
+                </span>
+                Dane i eksport
+            </a>
+            <a href="{% url 'settings' %}#integrations" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"/></svg>
+                </span>
+                Integracje
+            </a>
+            <a href="/admin/" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.08.08a2 2 0 1 1-3.84 0L10 20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.08a2 2 0 1 1 0-3.84L4 10a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.08-.08a2 2 0 1 1 3.84 0L14 4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.1.35.3.69.6 1l.08.08a2 2 0 1 1 0 3.84L20 14c-.3.31-.5.65-.6 1z"/></svg>
+                </span>
+                Admin
+            </a>
+            <a href="{% url 'settings' %}#help" class="tasks-rail-link">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 0 1 5.1 1.2c0 1.8-2.6 2-2.6 3.8"/><path d="M12 17h.01"/></svg>
+                </span>
+                Pomoc
+            </a>
+        </div>
+    </nav>
+
+    <div class="profile-rail-actions" aria-label="Akcje konta">
+        <a href="{% url 'add_account' %}" class="tasks-rail-link profile-rail-action">
+            <span class="tasks-rail-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>
+            </span>
+            Dodaj konto
+        </a>
+        <form action="{% url 'logout' %}" method="post" class="profile-rail-action-form">
+            {% csrf_token %}
+            <button type="submit" class="tasks-rail-link profile-rail-action profile-rail-action--logout">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5l-5-5"/><path d="M21 12H9"/></svg>
+                </span>
+                Wyloguj się
+            </button>
+        </form>
+    </div>
+
+</aside>

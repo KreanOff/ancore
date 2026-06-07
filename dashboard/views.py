@@ -3,6 +3,8 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.avatar import account_avatar
+from accounts.views import _switch_account_context
 from kanban.models import KanbanActivity
 from planner.models import CalendarEvent
 from tasks.models import Task, TaskActivity
@@ -105,6 +107,7 @@ def _activity_notification(activity, app_name, source_label, object_label, subit
         'object_id': task.task_id,
         'title': task.title,
         'actor_label': _actor_label(activity.actor),
+        'actor_avatar': account_avatar(activity.actor),
         'action_message': _activity_action_message(activity),
         'detail_lines': _activity_detail_lines(activity, subitem_label),
         'location_label': _activity_location(task, source_label, object_label),
@@ -146,6 +149,14 @@ def _dashboard_notifications(user):
         key=lambda notification: notification['sort_key'],
         reverse=True,
     )[:DASHBOARD_NOTIFICATION_LIMIT]
+
+
+@login_required
+def settings(request):
+    return render(request, 'dashboard/settings.html', {
+        'current_account_avatar': account_avatar(request.user),
+        'switch_accounts': _switch_account_context(request),
+    })
 
 
 @login_required

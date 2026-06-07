@@ -6,7 +6,7 @@ from .models import User
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
-        ('Status obecności', {'fields': ('presence_status',)}),
+        ('Profil', {'fields': ('profile_photo', 'phone_number', 'job_title', 'bio', 'presence_status')}),
     )
-    list_display = ('email', 'first_name', 'last_name', 'presence_status', 'is_staff', 'is_active')
+    list_display = ('email', 'username', 'first_name', 'last_name', 'job_title', 'presence_status', 'is_staff', 'is_active')
     list_filter = UserAdmin.list_filter + ('presence_status',)

@@ -39,8 +39,8 @@
 }
 
 .notification.info {
-    background: #fae6dc;
-    border-color: #fae6dc;
+    background: #3f3b38;
+    border-color: #3f3b38;
     color: #1f2328;
 }
 
@@ -83,7 +83,7 @@ body:has(.tasks-page) .notification.warning,
 
 body:has(.tasks-page) .notification.info,
 .tasks-ui .notification.info {
-    border-left: 3px solid #fae6dc;
+    border-left: 3px solid #3f3b38;
 }
 
 @keyframes slideDown {

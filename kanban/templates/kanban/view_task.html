@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load account_avatar %}
 
 {% block extra_head %}
     {% include 'kanban/includes/tasks_project_tree_initial_state.html' %}
@@ -216,7 +217,8 @@
                         <div class="tasks-issue-feed" data-activity-feed>
                             {% for item in activity_items %}
                             <article class="tasks-issue-feed-item {% if item.kind == 'comment' %}tasks-issue-feed-item--comment{% endif %}" data-activity-kind="{% if item.kind == 'comment' %}comment{% else %}history{% endif %}">
-                                <span class="tasks-issue-avatar">{{ item.actor.first_name|first|default:item.actor.username|first|default:"S"|upper }}</span>
+                                {% user_avatar item.actor as actor_avatar %}
+                                {% include 'accounts/includes/user_avatar.html' with avatar=actor_avatar avatar_class='tasks-issue-avatar' only %}
                                 <div class="tasks-issue-feed-body">
                                     {% if item.kind == 'comment' %}
                                     <p>
@@ -361,7 +363,8 @@
                         <div class="tasks-issue-field">
                             <span>Utworzył</span>
                             <strong class="tasks-issue-person">
-                                <span class="tasks-issue-mini-avatar">{{ task.user.first_name|first|default:task.user.username|first|upper }}</span>
+                                {% user_avatar task.user as creator_avatar %}
+                                {% include 'accounts/includes/user_avatar.html' with avatar=creator_avatar avatar_class='tasks-issue-mini-avatar' only %}
                                 {{ task.user.get_full_name|default:task.user.username }}
                             </strong>
                         </div>

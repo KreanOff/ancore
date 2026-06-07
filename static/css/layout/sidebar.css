@@ -256,3 +256,16 @@ body.secondary-menu-collapsed .secondary-menu-resizer {
     background-color: #f0f3f6;
     border-color: #dde2e9;
 }
+
+.nav-link .sidebar-profile-avatar {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    border-radius: 7px;
+    font-size: 0.72rem;
+}
+
+.nav-link .sidebar-profile-avatar .profile-avatar-icon {
+    width: 70%;
+    height: 70%;
+}

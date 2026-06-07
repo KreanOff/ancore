@@ -117,8 +117,8 @@
 }
 
 .topbar-tab.is-active {
-    background: #fae6dc;
-    border-color: #fae6dc;
+    background: #3f3b38;
+    border-color: #3f3b38;
     color: #1f2328;
     box-shadow: 0 1px 3px rgba(117, 83, 62, 0.28);
 }
@@ -197,6 +197,11 @@
 
 .sidebar-footer {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding-top: 0.65rem;
     padding-bottom: 1.5rem;
 }
 

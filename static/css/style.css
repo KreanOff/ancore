@@ -1,10 +1,10 @@
 /* Main Style Entry Point */
 @import 'base/variables.css?v=20260603-font-sizes';
 @import 'base/reset.css';
-@import 'layout/sidebar.css?v=20260603-icon-sizes';
-@import 'layout/main.css?v=20260603-icon-sizes';
+@import 'layout/sidebar.css?v=20260607-profile-avatar';
+@import 'layout/main.css?v=20260606-sidebar-settings';
 @import 'layout/responsive.css?v=20260530-secondary-menu-resize';
-@import 'components/cards.css?v=20260604-dashboard-redesign';
+@import 'components/cards.css?v=20260606-ancore-settings';
 @import 'components/buttons.css';
 @import 'components/toolbar.css';
 @import 'components/alerts.css';
@@ -18,7 +18,7 @@
 @import 'components/attachments.css';
 @import 'components/file-upload.css?v=20260605-trash-icon';
 @import 'components/auth.css?v=20260603-icon-sizes';
-@import 'components/profile.css?v=20260531-compact-actions';
 @import 'calendar.css';
 @import 'components/checkboxes.css?v=20260531-unified';
 @import 'theme/elestio.css?v=20260606-task-hover-gray';
+@import 'components/profile.css?v=20260607-profile-photo-crop';

@@ -311,7 +311,6 @@ body {
 
 .dot-blue,
 .calendar-color-dot--blue,
-.presence-recently_seen,
 .contacts-status-lead {
     color: var(--accent-brown);
 }

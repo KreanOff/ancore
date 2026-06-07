@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load account_avatar %}
 
 {% block title %}{% if is_create %}Nowy kontakt{% else %}{{ contact.display_name }}{% endif %} | ancore{% endblock %}
 
@@ -143,7 +144,8 @@
                         <div class="tasks-issue-feed">
                             {% for item in activity_items %}
                             <article class="tasks-issue-feed-item {% if item.kind == 'comment' %}tasks-issue-feed-item--comment{% endif %}">
-                                <span class="tasks-issue-avatar">{{ item.actor.first_name|first|default:item.actor.username|first|default:"S"|upper }}</span>
+                                {% user_avatar item.actor as actor_avatar %}
+                                {% include 'accounts/includes/user_avatar.html' with avatar=actor_avatar avatar_class='tasks-issue-avatar' only %}
                                 <div class="tasks-issue-feed-body">
                                     {% if item.kind == 'comment' %}
                                     <p>

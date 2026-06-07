@@ -10,26 +10,30 @@ class ContactCollaborationTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
         self.owner = user_model.objects.create_user(
-            username='anna@example.com',
+            username='@anna.kowalska',
             email='anna@example.com',
             first_name='Anna',
             last_name='Kowalska',
             password='test-pass-123',
         )
         self.other_user = user_model.objects.create_user(
-            username='marek@example.com',
+            username='@marek.nowak',
             email='marek@example.com',
             first_name='Marek',
             last_name='Nowak',
             password='test-pass-123',
         )
+        self.other_user.profile_photo = 'profile_photos/marek.webp'
+        self.other_user.save(update_fields=['profile_photo'])
         self.client.force_login(self.owner)
 
     def test_user_directory_search_adds_application_user_as_contact(self):
-        response = self.client.get(reverse('contacts:user-directory'), {'q': 'marek'})
+        response = self.client.get(reverse('contacts:user-directory'), {'q': '@marek.nowak'})
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '@marek.nowak')
         self.assertContains(response, 'marek@example.com')
+        self.assertContains(response, '/media/profile_photos/marek.webp')
 
         response = self.client.post(reverse('contacts:add-user-contact', args=[self.other_user.pk]))
 

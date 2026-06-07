@@ -169,6 +169,17 @@ class TaskProjectCreationTests(TestCase):
             html=True,
         )
 
+    def test_view_task_uses_profile_photo_for_user_avatars(self):
+        self.user.profile_photo = 'profile_photos/task-user.webp'
+        self.user.save(update_fields=['profile_photo'])
+        task = Task.objects.create(user=self.user, title='Zadanie z avatarem')
+        TaskActivity.objects.create(task=task, actor=self.user, action='commented', message='Komentarz')
+
+        response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '/media/profile_photos/task-user.webp')
+
     def test_delete_project_removes_related_tasks_and_renumbers_remaining_tasks(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt do usunięcia', code='DEL')
         section = TaskSection.objects.create(project=project, title='Frontend')
