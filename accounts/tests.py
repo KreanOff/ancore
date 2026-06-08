@@ -102,6 +102,13 @@ class ProfileViewTests(TestCase):
         self.assertIn('class="contacts-actions-menu__item" role="menuitem" data-profile-edit-open', content)
         self.assertIn(f'action="{reverse("update_presence_status")}"', content)
         self.assertIn('data-profile-status-form', content)
+        self.assertIn('data-profile-photo-editor', content)
+        self.assertIn('data-profile-photo-modal', content)
+        self.assertIn('data-profile-photo-open', content)
+        self.assertIn('data-profile-photo-remove', content)
+        self.assertIn('data-profile-photo-change', content)
+        self.assertIn('data-profile-photo-save', content)
+        self.assertIn('data-profile-photo-remove-input', content)
 
     def test_account_avatar_uses_user_specific_background_color(self):
         other_user = get_user_model().objects.create_user(
@@ -198,6 +205,27 @@ class ProfileViewTests(TestCase):
             self.assertTrue(os.path.exists(self.user.profile_photo.path))
             with open(self.user.profile_photo.path, 'rb') as photo_file:
                 self.assertEqual(photo_file.read(), image_content)
+
+            response = self.client.get(reverse('profile'))
+            self.assertContains(response, f'data-profile-photo-url="{self.user.profile_photo.url}"')
+            self.assertContains(response, 'Edytuj zdjęcie użytkownika')
+
+            response = self.client.post(reverse('profile'), {
+                'first_name': 'Anna',
+                'middle_name': 'Maria',
+                'last_name': 'Kowalska',
+                'email': 'anna@example.com',
+                'username': '@anna.kowalska',
+                'phone_number': '+48 500 600 700',
+                'job_title': 'Product Manager',
+                'bio': 'Zajmuje sie wdrozeniami i komunikacja z klientami.',
+                'presence_status': 'active',
+                'profile_photo_remove': '1',
+            })
+
+            self.assertRedirects(response, reverse('profile'))
+            self.user.refresh_from_db()
+            self.assertFalse(self.user.profile_photo)
 
     def test_profile_rejects_duplicate_email(self):
         get_user_model().objects.create_user(

@@ -23,7 +23,16 @@ def company_avatar_seed(company):
 @register.simple_tag
 def company_avatar(company):
     seed = company_avatar_seed(company)
+    photo_url = ''
+
+    if company is not None and getattr(company, 'company_photo', None):
+        try:
+            photo_url = company.company_photo.url
+        except ValueError:
+            photo_url = ''
+
     return {
         'color_class': avatar_color_class(seed),
+        'photo_url': photo_url,
         **avatar_color_style_from_seed(seed),
     }

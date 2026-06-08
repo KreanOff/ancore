@@ -1,8 +1,22 @@
+import base64
+import binascii
+import uuid
+
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
 
 from accounts.models import normalize_public_username
 from .models import Company, Contact, SharedItem
+
+
+COMPANY_PHOTO_CROP_TYPES = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+}
+COMPANY_PHOTO_MAX_SIZE = 5 * 1024 * 1024
 
 
 class ContactForm(forms.ModelForm):
@@ -197,9 +211,30 @@ class ContactModalForm(ContactForm):
 
 
 class CompanyForm(forms.ModelForm):
+    company_photo = forms.FileField(label='Zdjęcie firmy', required=False, widget=forms.FileInput(attrs={
+        'accept': 'image/*',
+        'class': 'profile-photo-input',
+        'hidden': True,
+    }))
+    company_photo_crop = forms.CharField(
+        label='Przycięte zdjęcie',
+        required=False,
+        widget=forms.HiddenInput(attrs={
+            'class': 'profile-photo-crop-input',
+            'data-profile-photo-crop-input': True,
+        }),
+    )
+    company_photo_remove = forms.CharField(
+        label='Usuń zdjęcie',
+        required=False,
+        widget=forms.HiddenInput(attrs={
+            'data-profile-photo-remove-input': True,
+        }),
+    )
+
     class Meta:
         model = Company
-        fields = ['name', 'website', 'email', 'phone', 'address', 'notes']
+        fields = ['company_photo', 'name', 'website', 'email', 'phone', 'address', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa firmy',
@@ -230,6 +265,71 @@ class CompanyForm(forms.ModelForm):
 
     def clean_name(self):
         return (self.cleaned_data.get('name') or '').strip()
+
+    def clean_company_photo_crop(self):
+        crop_data = (self.cleaned_data.get('company_photo_crop') or '').strip()
+
+        if not crop_data:
+            return None
+
+        header, separator, encoded = crop_data.partition(',')
+        if not separator or not header.startswith('data:') or not header.endswith(';base64'):
+            raise forms.ValidationError('Nie udało się odczytać przyciętego zdjęcia.')
+
+        content_type = header[5:-7].lower()
+        extension = COMPANY_PHOTO_CROP_TYPES.get(content_type)
+        if extension is None:
+            raise forms.ValidationError('Wybierz plik obrazu.')
+
+        try:
+            content = base64.b64decode(encoded, validate=True)
+        except (binascii.Error, ValueError):
+            raise forms.ValidationError('Nie udało się odczytać przyciętego zdjęcia.')
+
+        if len(content) > COMPANY_PHOTO_MAX_SIZE:
+            raise forms.ValidationError('Zdjęcie może mieć maksymalnie 5 MB.')
+
+        return {
+            'content': content,
+            'extension': extension,
+        }
+
+    def clean_company_photo(self):
+        company_photo = self.cleaned_data.get('company_photo')
+
+        if not company_photo:
+            return company_photo
+
+        content_type = getattr(company_photo, 'content_type', '')
+        if not content_type:
+            return company_photo
+
+        if content_type and not content_type.startswith('image/'):
+            raise forms.ValidationError('Wybierz plik obrazu.')
+
+        if company_photo.size > COMPANY_PHOTO_MAX_SIZE:
+            raise forms.ValidationError('Zdjęcie może mieć maksymalnie 5 MB.')
+
+        return company_photo
+
+    def clean_company_photo_remove(self):
+        return (self.cleaned_data.get('company_photo_remove') or '').strip() == '1'
+
+    def save(self, commit=True):
+        company = super().save(commit=False)
+        photo_crop = self.cleaned_data.get('company_photo_crop')
+
+        if self.cleaned_data.get('company_photo_remove') and not photo_crop:
+            company.company_photo.delete(save=False)
+
+        if photo_crop:
+            filename = f'company_{company.pk or "new"}_{uuid.uuid4().hex}.{photo_crop["extension"]}'
+            company.company_photo.save(filename, ContentFile(photo_crop['content']), save=False)
+
+        if commit:
+            company.save()
+
+        return company
 
 
 class CompanyModalForm(CompanyForm):

@@ -125,6 +125,10 @@ def _contacts_navigation_context(user, active_status='all', active_presence='all
         'contact_status_rows': status_rows,
         'contact_status_choices': Contact.STATUS_CHOICES,
         'user_presence_status_rows': presence_rows,
+        'contact_modal_form': ContactModalForm(user=user),
+        'company_modal_form': CompanyModalForm(),
+        'contact_modal_open': False,
+        'company_modal_open': False,
     }
 
 
@@ -301,7 +305,7 @@ def contacts(request):
             messages.error(request, 'Nie udało się dodać kontaktu.')
 
         if action == 'create_company_modal':
-            company_modal_form = CompanyModalForm(request.POST)
+            company_modal_form = CompanyModalForm(request.POST, request.FILES)
             if company_modal_form.is_valid():
                 company = _save_new_company(company_modal_form, request.user)
                 messages.success(request, 'Firma utworzona.')
@@ -325,6 +329,7 @@ def contacts(request):
         contacts_qs = contacts_qs.filter(status=status)
 
     context = {
+        **_contacts_navigation_context(request.user, active_status=status),
         'contacts': contacts_qs,
         'query': query,
         'status': status,
@@ -332,7 +337,6 @@ def contacts(request):
         'company_modal_form': company_modal_form,
         'contact_modal_open': contact_modal_open,
         'company_modal_open': company_modal_open,
-        **_contacts_navigation_context(request.user, active_status=status),
     }
     return render(request, 'contacts/contacts.html', context)
 
@@ -357,7 +361,7 @@ def guest_contacts(request):
             messages.error(request, 'Nie udało się dodać kontaktu.')
 
         if action == 'create_company_modal':
-            company_modal_form = CompanyModalForm(request.POST)
+            company_modal_form = CompanyModalForm(request.POST, request.FILES)
             if company_modal_form.is_valid():
                 company = _save_new_company(company_modal_form, request.user)
                 messages.success(request, 'Firma utworzona.')
@@ -379,6 +383,7 @@ def guest_contacts(request):
         )
 
     context = {
+        **_contacts_navigation_context(request.user, active_status='guests'),
         'contacts': contacts_qs,
         'query': query,
         'status': 'guests',
@@ -391,27 +396,8 @@ def guest_contacts(request):
         'company_modal_form': company_modal_form,
         'contact_modal_open': contact_modal_open,
         'company_modal_open': company_modal_open,
-        **_contacts_navigation_context(request.user, active_status='guests'),
     }
     return render(request, 'contacts/contacts.html', context)
-
-
-@login_required
-def create_contact(request):
-    form = ContactForm(request.POST or None, user=request.user)
-    if request.method == 'POST':
-        if form.is_valid():
-            contact = _save_new_contact(form, request.user)
-            messages.success(request, 'Kontakt dodany.')
-            return redirect('contacts:view-contact', contact_id=contact.pk)
-        messages.error(request, 'Nie udało się dodać kontaktu.')
-
-    context = {
-        'form': form,
-        'is_create': True,
-        **_contacts_navigation_context(request.user),
-    }
-    return render(request, 'contacts/view_contact.html', context)
 
 
 def _contact_detail_queryset(user):
@@ -617,7 +603,7 @@ def companies(request):
             messages.error(request, 'Nie udało się dodać kontaktu.')
 
         if action == 'create_company_modal':
-            company_modal_form = CompanyModalForm(request.POST)
+            company_modal_form = CompanyModalForm(request.POST, request.FILES)
             if company_modal_form.is_valid():
                 company = _save_new_company(company_modal_form, request.user)
                 messages.success(request, 'Firma utworzona.')
@@ -635,33 +621,15 @@ def companies(request):
         )
 
     context = {
+        **_contacts_navigation_context(request.user, active_status='companies'),
         'query': query,
         'companies': companies_qs,
         'contact_modal_form': contact_modal_form,
         'company_modal_form': company_modal_form,
         'contact_modal_open': contact_modal_open,
         'company_modal_open': company_modal_open,
-        **_contacts_navigation_context(request.user, active_status='companies'),
     }
     return render(request, 'contacts/companies.html', context)
-
-
-@login_required
-def create_company(request):
-    form = CompanyForm(request.POST or None)
-    if request.method == 'POST':
-        if form.is_valid():
-            company = _save_new_company(form, request.user)
-            messages.success(request, 'Firma utworzona.')
-            return redirect('contacts:view-company', company_id=company.pk)
-        messages.error(request, 'Nie udało się utworzyć firmy.')
-
-    context = {
-        'form': form,
-        'is_create': True,
-        **_contacts_navigation_context(request.user, active_status='companies'),
-    }
-    return render(request, 'contacts/view_company.html', context)
 
 
 @login_required
@@ -699,7 +667,7 @@ def edit_company(request, company_id):
         messages.error(request, 'Nie masz uprawnień do edycji tej firmy.')
         return redirect('contacts:view-company', company_id=company.pk)
 
-    form = CompanyForm(request.POST or None, instance=company)
+    form = CompanyForm(request.POST or None, request.FILES or None, instance=company)
 
     if request.method == 'POST':
         if form.is_valid():

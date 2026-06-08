@@ -23,7 +23,7 @@
             document.documentElement.style.setProperty('--secondary-menu-width', width + 'px');
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260608-task-style-modals">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260609-modal-scrim">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -169,6 +169,8 @@
         </div>
     </main>
 
+    {% block page_modals %}{% endblock %}
+
     {% if messages %}
     <div class="notifications-container">
         {% for message in messages %}
@@ -196,7 +198,7 @@
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}"></script>
     <script src="{% static 'js/tasks.js' %}?v=20260608-contact-actions-menu"></script>
-    <script src="{% static 'js/profile.js' %}?v=20260608-profile-inline-status"></script>
+    <script src="{% static 'js/profile.js' %}?v=20260608-company-photo-picker-first"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
     <script src="{% static 'js/file-upload.js' %}?v=20260605-trash-icon"></script>
 </body>

@@ -407,65 +407,6 @@
                         </div>
                     </section>
 
-                    <section class="tasks-issue-side-section">
-                        <h2>Akcje</h2>
-                        <div class="profile-side-actions">
-                            {% if can_edit_contact %}
-                            <a href="{% url 'contacts:edit-contact' contact.pk %}" class="tasks-issue-side-button">Edytuj</a>
-                            {% endif %}
-                            {% if contact.email %}
-                            <a href="mailto:{{ contact.email }}" class="tasks-issue-side-button">Napisz email</a>
-                            {% endif %}
-                        </div>
-                    </section>
-
-                    {% if linked_user_contact %}
-                    <section class="tasks-issue-side-section">
-                        <div class="tasks-issue-field">
-                            <span>Obecność</span>
-                            <strong class="profile-side-status profile-presence-badge {{ linked_user_contact.target_user.presence_status_class }}">
-                                {% include 'accounts/includes/presence_status_icon.html' with status=linked_user_contact.target_user.presence_status %}
-                                {{ linked_user_contact.target_user.get_presence_status_display }}
-                            </strong>
-                        </div>
-                    </section>
-                    {% endif %}
-
-                    {% if contact.user == request.user %}
-                    <section class="tasks-issue-side-section contacts-share-section">
-                        <div class="tasks-issue-field">
-                            <span>Udostępnianie</span>
-                            <form method="post" action="{% url 'contacts:share-contact' contact.pk %}" class="contacts-share-form">
-                                {% csrf_token %}
-                                <div class="contacts-custom-select contacts-custom-select--share" data-contact-custom-select data-contact-custom-select-label="Użytkownik">
-                                    {{ share_form.shared_with }}
-                                </div>
-                                <div class="contacts-custom-select contacts-custom-select--share" data-contact-custom-select data-contact-custom-select-label="Uprawnienia">
-                                    {{ share_form.permission }}
-                                </div>
-                                {{ share_form.note }}
-                                <button type="submit" class="tasks-tag-topbar-button">Udostępnij</button>
-                            </form>
-                        </div>
-                        {% for share in contact_shares %}
-                        <div class="contacts-share-row">
-                            <span>{{ share.shared_with.get_full_name|default:share.shared_with.email }}</span>
-                            <small>{{ share.get_permission_display }}</small>
-                            <form method="post" action="{% url 'contacts:remove-share' share.pk %}">
-                                {% csrf_token %}
-                                <button type="submit" class="tasks-issue-icon-button" aria-label="Usuń udostępnienie" title="Usuń udostępnienie">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
-                                        <path d="M18 6 6 18"/>
-                                        <path d="m6 6 12 12"/>
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                        {% empty %}
-                        <p class="contacts-share-empty">Nie udostępniono nikomu.</p>
-                        {% endfor %}
-                    </section>
-                    {% endif %}
                     {% endwith %}
                     {% endif %}
                 </aside>
@@ -581,4 +522,8 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block page_modals %}
+    {% include 'contacts/includes/contact_create_modals.html' %}
 {% endblock %}

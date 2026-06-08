@@ -86,7 +86,7 @@
         </header>
 
         {% if is_create %}
-        <form id="company-detail-form" method="POST" class="tasks-issue-form contacts-detail-form">
+        <form id="company-detail-form" method="POST" class="tasks-issue-form contacts-detail-form" enctype="multipart/form-data">
             {% csrf_token %}
         {% endif %}
             <main class="tasks-issue-main contacts-issue-main {% if not is_create %}profile-issue-main{% endif %}">
@@ -108,8 +108,8 @@
                     </div>
                     {% endif %}
 
-                    <div class="contacts-identity">
-                        {% include 'contacts/includes/company_avatar.html' with company=company avatar_class='contacts-avatar contacts-avatar--large contacts-company-avatar' only %}
+                    <div class="contacts-identity contacts-company-create-identity" data-profile-photo-layout>
+                        {% include 'contacts/includes/company_photo_editor.html' with company=company form=form avatar_class='contacts-avatar contacts-avatar--large contacts-company-avatar' photo_button_label='Dodaj' only %}
                         <div class="contacts-name-grid contacts-name-grid--single">
                             <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa firmy</label>
                             {{ form.name }}
@@ -253,56 +253,6 @@
                         </div>
                     </section>
 
-                    <section class="tasks-issue-side-section">
-                        <h2>Akcje</h2>
-                        <div class="profile-side-actions">
-                            {% if can_edit_company %}
-                            <a href="{% url 'contacts:edit-company' company.pk %}" class="tasks-issue-side-button">Edytuj</a>
-                            {% endif %}
-                            {% if company.website %}
-                            <a href="{{ company.website }}" class="tasks-issue-side-button" target="_blank" rel="noopener">Otwórz stronę</a>
-                            {% endif %}
-                            {% if company.email %}
-                            <a href="mailto:{{ company.email }}" class="tasks-issue-side-button">Napisz email</a>
-                            {% endif %}
-                        </div>
-                    </section>
-
-                    {% if company.owner == request.user %}
-                    <section class="tasks-issue-side-section contacts-share-section">
-                        <div class="tasks-issue-field">
-                            <span>Udostępnianie</span>
-                            <form method="post" action="{% url 'contacts:share-company' company.pk %}" class="contacts-share-form">
-                                {% csrf_token %}
-                                <div class="contacts-custom-select contacts-custom-select--share" data-contact-custom-select data-contact-custom-select-label="Użytkownik">
-                                    {{ share_form.shared_with }}
-                                </div>
-                                <div class="contacts-custom-select contacts-custom-select--share" data-contact-custom-select data-contact-custom-select-label="Uprawnienia">
-                                    {{ share_form.permission }}
-                                </div>
-                                {{ share_form.note }}
-                                <button type="submit" class="tasks-tag-topbar-button">Udostępnij</button>
-                            </form>
-                        </div>
-                        {% for share in company_shares %}
-                        <div class="contacts-share-row">
-                            <span>{{ share.shared_with.get_full_name|default:share.shared_with.email }}</span>
-                            <small>{{ share.get_permission_display }}</small>
-                            <form method="post" action="{% url 'contacts:remove-share' share.pk %}">
-                                {% csrf_token %}
-                                <button type="submit" class="tasks-issue-icon-button" aria-label="Usuń udostępnienie" title="Usuń udostępnienie">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
-                                        <path d="M18 6 6 18"/>
-                                        <path d="m6 6 12 12"/>
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                        {% empty %}
-                        <p class="contacts-share-empty">Nie udostępniono nikomu.</p>
-                        {% endfor %}
-                    </section>
-                    {% endif %}
                     {% endif %}
                 </aside>
             </main>
@@ -318,7 +268,7 @@
              aria-labelledby="company-edit-title"
              aria-hidden="false">
             <div class="tasks-modal__dialog tasks-issue-modal__dialog contacts-create-modal__dialog contacts-edit-modal__dialog">
-                <form method="post" id="company-detail-form" class="tasks-modal__form tasks-issue-modal__form contacts-edit-form" novalidate>
+                <form method="post" id="company-detail-form" class="tasks-modal__form tasks-issue-modal__form contacts-edit-form profile-edit-form" enctype="multipart/form-data" novalidate>
                     {% csrf_token %}
 
                     <header class="tasks-modal__header tasks-issue-modal__header">
@@ -340,45 +290,49 @@
                         </a>
                     </header>
 
-                    <div class="tasks-modal__body tasks-issue-modal__body contacts-create-modal__body contacts-edit-modal__body contacts-company-edit-modal__body">
-                        {% if form.errors %}
-                        <div class="tasks-modal__errors">
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <p>{{ field.label }}: {{ error }}</p>
+                    <div class="tasks-modal__body tasks-issue-modal__body contacts-create-modal__body contacts-edit-modal__body contacts-company-edit-modal__body profile-edit-body" data-profile-photo-layout>
+                        {% include 'contacts/includes/company_photo_editor.html' with company=company form=form avatar_class='profile-page-avatar contacts-company-avatar' photo_button_label='Zmień' only %}
+
+                        <div class="profile-edit-fields contacts-company-edit-fields">
+                            {% if form.errors %}
+                            <div class="tasks-modal__errors">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <p>{{ field.label }}: {{ error }}</p>
+                                    {% endfor %}
                                 {% endfor %}
-                            {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <p>{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
+                                {% for error in form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
 
-                        <div class="contacts-company-modal-title">
-                            <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa firmy</label>
-                            {{ form.name }}
-                        </div>
+                            <div class="contacts-company-modal-title">
+                                <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa firmy</label>
+                                {{ form.name }}
+                            </div>
 
-                        <label class="u-sr-only" for="{{ form.notes.id_for_label }}">Notatki</label>
-                        {{ form.notes }}
+                            <label class="u-sr-only" for="{{ form.notes.id_for_label }}">Notatki</label>
+                            {{ form.notes }}
 
-                        <div class="tasks-issue-fields contacts-modal-fields contacts-edit-modal__fields contacts-company-edit-modal__fields">
-                            <label>
-                                <span>Strona</span>
-                                {{ form.website }}
-                            </label>
-                            <label>
-                                <span>Email</span>
-                                {{ form.email }}
-                            </label>
-                            <label>
-                                <span>Telefon</span>
-                                {{ form.phone }}
-                            </label>
-                            <label>
-                                <span>Adres</span>
-                                {{ form.address }}
-                            </label>
+                            <div class="tasks-issue-fields contacts-modal-fields contacts-edit-modal__fields contacts-company-edit-modal__fields">
+                                <label>
+                                    <span>Strona</span>
+                                    {{ form.website }}
+                                </label>
+                                <label>
+                                    <span>Email</span>
+                                    {{ form.email }}
+                                </label>
+                                <label>
+                                    <span>Telefon</span>
+                                    {{ form.phone }}
+                                </label>
+                                <label>
+                                    <span>Adres</span>
+                                    {{ form.address }}
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -393,4 +347,8 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block page_modals %}
+    {% include 'contacts/includes/contact_create_modals.html' %}
 {% endblock %}

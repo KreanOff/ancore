@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 
@@ -11,6 +12,11 @@ class Company(models.Model):
     phone = models.CharField(max_length=40, blank=True)
     address = models.CharField(max_length=240, blank=True)
     notes = models.TextField(blank=True)
+    company_photo = models.FileField(
+        upload_to='company_photos/',
+        blank=True,
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
+    )
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='companies')
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, through='CompanyMembership', related_name='company_memberships')
     created_at = models.DateTimeField(auto_now_add=True)

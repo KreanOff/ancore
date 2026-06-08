@@ -780,6 +780,265 @@
     min-width: 0;
 }
 
+.contacts-company-photo-editor {
+    align-self: flex-start;
+}
+
+.contacts-company-photo-preview-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.contacts-company-photo-preview-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(70, 129, 214, 0.28);
+}
+
+.contacts-photo-editor-open {
+    overflow: hidden;
+}
+
+.contacts-photo-editor-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4200;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(21, 24, 31, 0.42);
+}
+
+.contacts-photo-editor-overlay[hidden] {
+    display: none;
+}
+
+.contacts-photo-editor-dialog {
+    width: min(1120px, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 22px 80px rgba(20, 24, 31, 0.28);
+}
+
+.contacts-photo-editor-header,
+.contacts-photo-editor-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    background: #ffffff;
+}
+
+.contacts-photo-editor-header {
+    justify-content: space-between;
+    border-bottom: 1px solid #e5e8ed;
+}
+
+.contacts-photo-editor-header strong {
+    color: #242830;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.contacts-photo-editor-close {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #4c5565;
+    cursor: pointer;
+}
+
+.contacts-photo-editor-close:hover,
+.contacts-photo-editor-close:focus-visible {
+    border-color: #dfe3e8;
+    background: #f7f8fa;
+    outline: none;
+}
+
+.contacts-photo-editor-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.profile-photo-cropper.contacts-photo-editor-cropper {
+    width: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(360px, 1fr) auto;
+    gap: 0;
+    justify-items: stretch;
+}
+
+.profile-photo-crop-stage.contacts-photo-editor-stage {
+    width: 100%;
+    height: clamp(360px, calc(100vh - 190px), 660px);
+    min-height: 0;
+    aspect-ratio: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    background-color: #a3a3a3;
+    background-image:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.18) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.18) 75%);
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+    background-size: 20px 20px;
+}
+
+.profile-photo-crop-stage.contacts-photo-editor-stage::after {
+    display: none;
+}
+
+.contacts-photo-editor-stage .profile-photo-crop-canvas {
+    width: min(640px, calc(100vw - 6rem), calc(100vh - 230px));
+    height: min(640px, calc(100vw - 6rem), calc(100vh - 230px));
+    border: 2px solid #6aa2ff;
+    background: #eef1f4;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.7),
+        0 0 0 999px rgba(20, 24, 31, 0.34);
+}
+
+.contacts-photo-editor-empty {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #4c5565;
+    font-size: 0.9rem;
+    font-weight: 650;
+    pointer-events: none;
+}
+
+.contacts-photo-editor-empty[hidden] {
+    display: none;
+}
+
+.profile-photo-zoom-controls.contacts-photo-editor-zoom {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e5e8ed;
+    background: #ffffff;
+}
+
+.contacts-photo-editor-footer {
+    justify-content: flex-end;
+    border-top: 1px solid #e5e8ed;
+}
+
+.contacts-photo-editor-secondary,
+.contacts-photo-editor-primary {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    border-radius: 7px;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.contacts-photo-editor-secondary {
+    border: 1px solid #dfe3e8;
+    background: #ffffff;
+    color: #4c5565;
+}
+
+.contacts-photo-editor-secondary:hover,
+.contacts-photo-editor-secondary:focus-visible {
+    border-color: #cfd5dd;
+    background: #f7f8fa;
+    color: #242830;
+    outline: none;
+}
+
+.contacts-photo-editor-primary {
+    border: 1px solid #3f3b38;
+    background: #3f3b38;
+    color: #ffffff;
+}
+
+.contacts-photo-editor-primary:hover,
+.contacts-photo-editor-primary:focus-visible {
+    background: #2e2a27;
+    outline: none;
+}
+
+@media (max-width: 720px) {
+    .contacts-photo-editor-overlay {
+        padding: 0.5rem;
+    }
+
+    .contacts-photo-editor-dialog {
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 1rem);
+        border-radius: 10px;
+    }
+
+    .contacts-photo-editor-header,
+    .contacts-photo-editor-footer {
+        padding: 0.75rem;
+    }
+
+    .profile-photo-crop-stage.contacts-photo-editor-stage {
+        height: min(58vh, calc(100vw - 1rem));
+        min-height: 300px;
+    }
+
+    .contacts-photo-editor-stage .profile-photo-crop-canvas {
+        width: min(calc(100vw - 2rem), calc(100vh - 230px));
+        height: min(calc(100vw - 2rem), calc(100vh - 230px));
+    }
+
+    .contacts-photo-editor-footer {
+        flex-wrap: wrap;
+    }
+}
+
+.contacts-company-create-fields,
+.contacts-company-edit-fields {
+    min-width: 0;
+}
+
+.contacts-company-create-modal__body.has-profile-cropper {
+    display: grid;
+    grid-template-columns: minmax(228px, 248px) minmax(0, 1fr);
+    align-items: start;
+    gap: 1.2rem;
+}
+
+.contacts-company-create-modal__body.has-profile-cropper > .tasks-modal__errors {
+    grid-column: 1 / -1;
+}
+
+.contacts-company-create-modal__body.has-profile-cropper .contacts-company-photo-editor {
+    justify-self: start;
+}
+
 .contacts-create-modal__body .tasks-inline-input[name="first_name"],
 .contacts-create-modal__body .tasks-inline-input[name="middle_name"],
 .contacts-create-modal__body .tasks-inline-input[name="last_name"],
@@ -988,5 +1247,9 @@
 
     .contacts-identity {
         align-items: flex-start;
+    }
+
+    .contacts-company-create-modal__body.has-profile-cropper {
+        grid-template-columns: 1fr;
     }
 }

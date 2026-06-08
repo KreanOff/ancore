@@ -5,17 +5,10 @@
         <h1>Kontakty</h1>
     </div>
 
-    {% if contact_modal_form %}
     <button type="button" class="tasks-new-button contacts-new-button" aria-haspopup="dialog" aria-controls="contact-create-modal" data-open-contact>
         <span aria-hidden="true">+</span>
         Nowy kontakt
     </button>
-    {% else %}
-    <a href="{% url 'contacts:create' %}" class="tasks-new-button contacts-new-button">
-        <span aria-hidden="true">+</span>
-        Nowy kontakt
-    </a>
-    {% endif %}
     <nav class="tasks-rail-nav">
         <div class="tasks-rail-nav-group">
             <a href="{% url 'contacts:user-directory' %}" class="tasks-rail-link {% if active_contact_status == 'users' and active_user_presence == 'all' %}is-active{% endif %}">

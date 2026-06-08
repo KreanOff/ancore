@@ -111,6 +111,13 @@ class UserProfileForm(forms.ModelForm):
             'data-profile-photo-crop-input': True,
         }),
     )
+    profile_photo_remove = forms.CharField(
+        label='Usuń zdjęcie',
+        required=False,
+        widget=forms.HiddenInput(attrs={
+            'data-profile-photo-remove-input': True,
+        }),
+    )
     phone_number = forms.CharField(label='Numer telefonu', max_length=32, required=False, widget=forms.TextInput(attrs={
         **{'placeholder': '+48 123 456 789', 'autocomplete': 'tel'},
         **_profile_input_attrs,
@@ -194,6 +201,9 @@ class UserProfileForm(forms.ModelForm):
 
         return profile_photo
 
+    def clean_profile_photo_remove(self):
+        return (self.cleaned_data.get('profile_photo_remove') or '').strip() == '1'
+
     def clean_email(self):
         email = self.cleaned_data['email']
         exists = User.objects.exclude(pk=self.instance.pk).filter(email__iexact=email).exists()
@@ -218,6 +228,9 @@ class UserProfileForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         photo_crop = self.cleaned_data.get('profile_photo_crop')
+
+        if self.cleaned_data.get('profile_photo_remove') and not photo_crop:
+            user.profile_photo.delete(save=False)
 
         if photo_crop:
             filename = f'profile_{user.pk or "new"}_{uuid.uuid4().hex}.{photo_crop["extension"]}'

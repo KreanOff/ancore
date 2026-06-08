@@ -192,8 +192,22 @@
         const zoomInput = editor.querySelector('[data-profile-photo-zoom]');
         const zoomIn = editor.querySelector('[data-profile-photo-zoom-in]');
         const zoomOut = editor.querySelector('[data-profile-photo-zoom-out]');
+        const modal = editor.querySelector('[data-profile-photo-modal]');
+        const emptyState = editor.querySelector('[data-profile-photo-empty]');
+        const preview = editor.querySelector('[data-profile-photo-preview]');
+        const fallbackTemplate = editor.querySelector('[data-profile-photo-fallback]');
+        const removeInput = editor.querySelector('[data-profile-photo-remove-input]');
+        const openButtons = editor.querySelectorAll('[data-profile-photo-open]');
+        const closeButtons = editor.querySelectorAll('[data-profile-photo-close]');
+        const changeButton = editor.querySelector('[data-profile-photo-change]');
+        const removeButton = editor.querySelector('[data-profile-photo-remove]');
+        const saveButton = editor.querySelector('[data-profile-photo-save]');
         const form = editor.closest('form');
         const context = canvas?.getContext('2d');
+        const cropLayout = editor.closest('[data-profile-photo-layout]')
+            || editor.closest('.profile-edit-body');
+        const currentPhotoUrl = editor.dataset.profilePhotoUrl || '';
+        const hasModal = Boolean(modal);
 
         if (!fileInput || !cropInput || !cropper || !stage || !canvas || !zoomInput || !context || !form) {
             return;
@@ -214,12 +228,19 @@
             dragStartY: 0,
             startX: 0,
             startY: 0,
+            shouldExport: false,
+            removed: false,
         };
 
         function setCropperVisible(isVisible) {
-            cropper.hidden = !isVisible;
+            if (hasModal) {
+                cropper.hidden = false;
+                emptyState?.toggleAttribute('hidden', isVisible);
+            } else {
+                cropper.hidden = !isVisible;
+                cropLayout?.classList.toggle('has-profile-cropper', isVisible);
+            }
             editor.classList.toggle('is-cropping', isVisible);
-            editor.closest('.profile-edit-body')?.classList.toggle('has-profile-cropper', isVisible);
         }
 
         function constrainPosition() {
@@ -268,6 +289,52 @@
             drawPhoto();
         }
 
+        function markCropChanged() {
+            if (!state.image) return;
+            state.shouldExport = true;
+            state.removed = false;
+            if (removeInput) {
+                removeInput.value = '';
+            }
+        }
+
+        function setModalOpen(isOpen) {
+            if (!modal) return;
+
+            modal.hidden = !isOpen;
+            document.body.classList.toggle('contacts-photo-editor-open', isOpen);
+
+            if (isOpen) {
+                setCropperVisible(Boolean(state.image));
+                saveButton?.focus();
+            }
+        }
+
+        function requestPhotoFile() {
+            fileInput.value = '';
+            fileInput.click();
+        }
+
+        function openPhotoEditor() {
+            requestPhotoFile();
+        }
+
+        function closePhotoEditor() {
+            setModalOpen(false);
+        }
+
+        function updatePreview(photoUrl) {
+            if (!preview) return;
+
+            preview.classList.toggle('has-photo', Boolean(photoUrl));
+            if (photoUrl) {
+                preview.innerHTML = `<img src="${photoUrl}" alt="">`;
+                return;
+            }
+
+            preview.innerHTML = fallbackTemplate?.innerHTML || '';
+        }
+
         function setZoom(nextZoom, anchorX = canvas.width / 2, anchorY = canvas.height / 2) {
             if (!state.image) return;
 
@@ -286,37 +353,60 @@
             drawPhoto();
         }
 
+        function clearObjectUrl() {
+            if (!state.objectUrl) return;
+
+            URL.revokeObjectURL(state.objectUrl);
+            state.objectUrl = '';
+        }
+
+        function loadPhotoSource(src, nextObjectUrl, shouldExport) {
+            clearObjectUrl();
+
+            const image = new Image();
+
+            image.onload = () => {
+                state.image = image;
+                state.objectUrl = nextObjectUrl || '';
+                state.shouldExport = Boolean(shouldExport);
+                state.removed = false;
+                cropInput.value = '';
+                if (removeInput) {
+                    removeInput.value = '';
+                }
+                setCropperVisible(true);
+                centerPhoto();
+                if (hasModal && shouldExport) {
+                    setModalOpen(true);
+                }
+            };
+
+            image.onerror = () => {
+                state.image = null;
+                state.shouldExport = false;
+                state.removed = false;
+                cropInput.value = '';
+                setCropperVisible(false);
+                if (nextObjectUrl) {
+                    URL.revokeObjectURL(nextObjectUrl);
+                }
+            };
+
+            image.src = src;
+        }
+
         function loadPhoto(file) {
             if (!file || !file.type.startsWith('image/')) {
                 state.image = null;
+                state.shouldExport = false;
+                state.removed = false;
                 cropInput.value = '';
                 setCropperVisible(false);
                 return;
             }
 
-            if (state.objectUrl) {
-                URL.revokeObjectURL(state.objectUrl);
-            }
-
             const objectUrl = URL.createObjectURL(file);
-            const image = new Image();
-
-            image.onload = () => {
-                state.image = image;
-                state.objectUrl = objectUrl;
-                cropInput.value = '';
-                setCropperVisible(true);
-                centerPhoto();
-            };
-
-            image.onerror = () => {
-                state.image = null;
-                cropInput.value = '';
-                setCropperVisible(false);
-                URL.revokeObjectURL(objectUrl);
-            };
-
-            image.src = objectUrl;
+            loadPhotoSource(objectUrl, objectUrl, true);
         }
 
         function exportCrop() {
@@ -350,19 +440,101 @@
             }
         }
 
+        function changePhoto() {
+            requestPhotoFile();
+        }
+
+        function removePhoto() {
+            state.image = null;
+            state.shouldExport = false;
+            state.removed = true;
+            clearObjectUrl();
+            cropInput.value = '';
+            fileInput.value = '';
+            if (removeInput) {
+                removeInput.value = '1';
+            }
+            updatePreview('');
+            setCropperVisible(false);
+            setModalOpen(false);
+        }
+
+        function savePhoto() {
+            if (!state.image) {
+                requestPhotoFile();
+                return;
+            }
+
+            if (state.shouldExport) {
+                const cropData = exportCrop();
+                if (!cropData) {
+                    return;
+                }
+
+                cropInput.value = cropData;
+                fileInput.value = '';
+                if (removeInput) {
+                    removeInput.value = '';
+                }
+                updatePreview(cropData);
+                state.shouldExport = false;
+                state.removed = false;
+            }
+
+            setModalOpen(false);
+        }
+
         fileInput.addEventListener('change', () => {
             loadPhoto(fileInput.files?.[0]);
         });
 
+        openButtons.forEach(button => {
+            button.addEventListener('click', event => {
+                event.stopPropagation();
+                openPhotoEditor();
+            });
+        });
+
+        closeButtons.forEach(button => {
+            button.addEventListener('click', event => {
+                event.stopPropagation();
+                closePhotoEditor();
+            });
+        });
+
+        modal?.addEventListener('click', event => {
+            if (event.target === modal) {
+                closePhotoEditor();
+            }
+        });
+
+        changeButton?.addEventListener('click', event => {
+            event.stopPropagation();
+            changePhoto();
+        });
+
+        removeButton?.addEventListener('click', event => {
+            event.stopPropagation();
+            removePhoto();
+        });
+
+        saveButton?.addEventListener('click', event => {
+            event.stopPropagation();
+            savePhoto();
+        });
+
         zoomInput.addEventListener('input', () => {
+            markCropChanged();
             setZoom(zoomInput.value);
         });
 
         zoomIn?.addEventListener('click', () => {
+            markCropChanged();
             setZoom(state.zoom + 0.15);
         });
 
         zoomOut?.addEventListener('click', () => {
+            markCropChanged();
             setZoom(state.zoom - 0.15);
         });
 
@@ -387,6 +559,7 @@
 
             state.x = state.startX + (event.clientX - state.dragStartX) * moveRatio;
             state.y = state.startY + (event.clientY - state.dragStartY) * moveRatio;
+            markCropChanged();
             constrainPosition();
             drawPhoto();
         });
@@ -412,11 +585,12 @@
             const anchorY = (event.clientY - rect.top) * (canvas.height / rect.height);
             const direction = event.deltaY > 0 ? -1 : 1;
 
+            markCropChanged();
             setZoom(state.zoom + direction * 0.08, anchorX, anchorY);
         }, { passive: false });
 
         form.addEventListener('submit', () => {
-            if (!state.image) return;
+            if (hasModal || !state.image || !state.shouldExport) return;
 
             const cropData = exportCrop();
             if (!cropData) {
@@ -427,6 +601,18 @@
             cropInput.value = cropData;
             fileInput.value = '';
         });
+
+        if (currentPhotoUrl) {
+            loadPhotoSource(currentPhotoUrl, '', false);
+        }
+
+        editor.profilePhotoEditorApi = {
+            change: changePhoto,
+            close: closePhotoEditor,
+            open: openPhotoEditor,
+            remove: removePhoto,
+            save: savePhoto,
+        };
     }
 
     function initPhotoEditors() {
@@ -434,12 +620,39 @@
     }
 
     document.addEventListener('click', event => {
+        const photoAction = event.target.closest('[data-profile-photo-open], [data-profile-photo-close], [data-profile-photo-change], [data-profile-photo-remove], [data-profile-photo-save]');
         const editOpen = event.target.closest('[data-profile-edit-open]');
         const editClose = event.target.closest('[data-profile-edit-close]');
         const actionToggle = event.target.closest('[data-profile-actions-toggle]');
         const toggle = event.target.closest('[data-profile-status-toggle]');
         const option = event.target.closest('[data-profile-status-option]');
         const modal = editModal();
+
+        if (photoAction) {
+            const editor = photoAction.closest('[data-profile-photo-editor]');
+            if (editor) {
+                initPhotoEditor(editor);
+                const api = editor.profilePhotoEditorApi;
+
+                if (api) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (photoAction.matches('[data-profile-photo-open]')) {
+                        api.open();
+                    } else if (photoAction.matches('[data-profile-photo-close]')) {
+                        api.close();
+                    } else if (photoAction.matches('[data-profile-photo-change]')) {
+                        api.change();
+                    } else if (photoAction.matches('[data-profile-photo-remove]')) {
+                        api.remove();
+                    } else if (photoAction.matches('[data-profile-photo-save]')) {
+                        api.save();
+                    }
+                    return;
+                }
+            }
+        }
 
         if (editOpen) {
             closeProfileActionMenus(null);

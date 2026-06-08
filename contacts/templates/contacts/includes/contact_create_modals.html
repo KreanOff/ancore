@@ -1,18 +1,35 @@
 {% if contact_modal_form %}
 <div class="tasks-modal tasks-issue-modal contacts-create-modal {% if contact_modal_open %}is-open{% endif %}" id="contact-create-modal" role="dialog" aria-modal="true" aria-labelledby="contact-create-modal-title" aria-hidden="{% if contact_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog contacts-create-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="contact-create-form" data-ancore-login-url="{% url 'contacts:lookup-ancore-login' %}">
+        <form method="post" action="{% url 'contacts:contacts' %}" class="tasks-modal__form tasks-issue-modal__form" id="contact-create-form" data-ancore-login-url="{% url 'contacts:lookup-ancore-login' %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_contact_modal">
 
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
-                    <span class="tasks-project-chip contacts-modal-chip">
-                        <span class="contacts-modal-chip__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
-                        </span>
-                        Kontakty
-                    </span>
+                    <div class="tasks-chip-picker contacts-type-picker" data-contact-type-picker>
+                        <button type="button" class="tasks-project-chip tasks-picker-chip contacts-type-picker__chip" aria-haspopup="menu" aria-expanded="false" data-contact-type-picker-toggle>
+                            <span class="tasks-picker-chip__icon contacts-type-picker__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                            </span>
+                            <span data-contact-type-label>Kontakty</span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="tasks-chip-picker__menu contacts-type-picker__menu" role="menu" aria-label="Wybierz typ">
+                            <button type="button" role="menuitem" class="is-current" data-contact-type-option data-contact-type-target="contact">
+                                <span class="contacts-type-picker__menu-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                                </span>
+                                <span>Kontakty</span>
+                            </button>
+                            <button type="button" role="menuitem" data-contact-type-option data-contact-type-target="company">
+                                <span class="contacts-type-picker__menu-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7v18"/><path d="M14 8h3a2 2 0 0 1 2 2v11"/></svg>
+                                </span>
+                                <span>Firmy</span>
+                            </button>
+                        </div>
+                    </div>
                     <span class="tasks-project-modal__chevron">›</span>
                     <strong id="contact-create-modal-title">Nowy kontakt</strong>
                 </div>
@@ -100,18 +117,35 @@
 {% if company_modal_form %}
 <div class="tasks-modal tasks-issue-modal contacts-create-modal {% if company_modal_open %}is-open{% endif %}" id="company-create-modal" role="dialog" aria-modal="true" aria-labelledby="company-create-modal-title" aria-hidden="{% if company_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog contacts-create-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="company-create-form">
+        <form method="post" action="{% url 'contacts:companies' %}" class="tasks-modal__form tasks-issue-modal__form" id="company-create-form" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_company_modal">
 
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
-                    <span class="tasks-project-chip contacts-modal-chip">
-                        <span class="contacts-modal-chip__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7v18"/><path d="M14 8h3a2 2 0 0 1 2 2v11"/></svg>
-                        </span>
-                        Firmy
-                    </span>
+                    <div class="tasks-chip-picker contacts-type-picker" data-contact-type-picker>
+                        <button type="button" class="tasks-project-chip tasks-picker-chip contacts-type-picker__chip" aria-haspopup="menu" aria-expanded="false" data-contact-type-picker-toggle>
+                            <span class="tasks-picker-chip__icon contacts-type-picker__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7v18"/><path d="M14 8h3a2 2 0 0 1 2 2v11"/></svg>
+                            </span>
+                            <span data-contact-type-label>Firmy</span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="tasks-chip-picker__menu contacts-type-picker__menu" role="menu" aria-label="Wybierz typ">
+                            <button type="button" role="menuitem" data-contact-type-option data-contact-type-target="contact">
+                                <span class="contacts-type-picker__menu-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                                </span>
+                                <span>Kontakty</span>
+                            </button>
+                            <button type="button" role="menuitem" class="is-current" data-contact-type-option data-contact-type-target="company">
+                                <span class="contacts-type-picker__menu-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7v18"/><path d="M14 8h3a2 2 0 0 1 2 2v11"/></svg>
+                                </span>
+                                <span>Firmy</span>
+                            </button>
+                        </div>
+                    </div>
                     <span class="tasks-project-modal__chevron">›</span>
                     <strong id="company-create-modal-title">Nowa firma</strong>
                 </div>
@@ -123,7 +157,7 @@
                 </button>
             </header>
 
-            <div class="tasks-modal__body tasks-issue-modal__body contacts-create-modal__body">
+            <div class="tasks-modal__body tasks-issue-modal__body contacts-create-modal__body contacts-company-create-modal__body" data-profile-photo-layout>
                 {% if company_modal_form.errors %}
                 <div class="tasks-modal__errors">
                     {% for field in company_modal_form %}
@@ -137,29 +171,33 @@
                 </div>
                 {% endif %}
 
-                <label class="u-sr-only" for="{{ company_modal_form.name.id_for_label }}">Nazwa firmy</label>
-                {{ company_modal_form.name }}
+                {% include 'contacts/includes/company_photo_editor.html' with company=company form=company_modal_form avatar_class='contacts-avatar contacts-avatar--large contacts-company-avatar' photo_button_label='Dodaj' only %}
 
-                <label class="u-sr-only" for="{{ company_modal_form.notes.id_for_label }}">Notatki</label>
-                {{ company_modal_form.notes }}
+                <div class="contacts-company-create-fields">
+                    <label class="u-sr-only" for="{{ company_modal_form.name.id_for_label }}">Nazwa firmy</label>
+                    {{ company_modal_form.name }}
 
-                <div class="tasks-issue-fields contacts-modal-fields">
-                    <label>
-                        <span>Strona</span>
-                        {{ company_modal_form.website }}
-                    </label>
-                    <label>
-                        <span>Email</span>
-                        {{ company_modal_form.email }}
-                    </label>
-                    <label>
-                        <span>Telefon</span>
-                        {{ company_modal_form.phone }}
-                    </label>
-                    <label>
-                        <span>Adres</span>
-                        {{ company_modal_form.address }}
-                    </label>
+                    <label class="u-sr-only" for="{{ company_modal_form.notes.id_for_label }}">Notatki</label>
+                    {{ company_modal_form.notes }}
+
+                    <div class="tasks-issue-fields contacts-modal-fields">
+                        <label>
+                            <span>Strona</span>
+                            {{ company_modal_form.website }}
+                        </label>
+                        <label>
+                            <span>Email</span>
+                            {{ company_modal_form.email }}
+                        </label>
+                        <label>
+                            <span>Telefon</span>
+                            {{ company_modal_form.phone }}
+                        </label>
+                        <label>
+                            <span>Adres</span>
+                            {{ company_modal_form.address }}
+                        </label>
+                    </div>
                 </div>
             </div>
 

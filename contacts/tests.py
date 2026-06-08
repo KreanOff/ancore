@@ -1,6 +1,10 @@
+import base64
+import os
+import tempfile
+
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import Company, Contact, SharedItem, UserContact
@@ -176,7 +180,8 @@ class ContactCollaborationTests(TestCase):
         self.assertNotContains(response, 'profile-presence-badge presence-busy')
 
     def test_company_can_be_created_and_linked_to_contact(self):
-        response = self.client.post(reverse('contacts:create-company'), {
+        response = self.client.post(reverse('contacts:companies'), {
+            'action': 'create_company_modal',
             'name': 'Acme',
             'website': 'https://acme.example.com',
             'email': 'hello@acme.example.com',
@@ -188,7 +193,9 @@ class ContactCollaborationTests(TestCase):
         company = Company.objects.get(owner=self.owner, name='Acme')
         self.assertRedirects(response, reverse('contacts:view-company', args=[company.pk]))
 
-        response = self.client.post(reverse('contacts:create'), {
+        response = self.client.post(reverse('contacts:contacts'), {
+            'action': 'create_contact_modal',
+            'ancore_login': '',
             'first_name': 'Ewa',
             'middle_name': 'Maria',
             'last_name': 'Lis',
@@ -221,7 +228,19 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'value="create_company_modal"')
         self.assertContains(response, 'ID Ancore')
         self.assertContains(response, reverse('contacts:lookup-ancore-login'))
+        self.assertNotContains(response, 'href="/contacts/new/"')
+        self.assertNotContains(response, 'href="/contacts/companies/new/"')
         self.assertNotIn('status', response.context['contact_modal_form'].fields)
+
+    def test_old_create_contact_route_is_removed(self):
+        response = self.client.get('/contacts/new/')
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_old_create_company_route_is_removed(self):
+        response = self.client.get('/contacts/companies/new/')
+
+        self.assertEqual(response.status_code, 404)
 
     def test_company_avatar_uses_company_specific_background_color(self):
         company = Company.objects.create(owner=self.owner, name='Netology')
@@ -345,7 +364,8 @@ class ContactCollaborationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Kamil')
-        self.assertNotContains(response, 'Zapisz')
+        self.assertNotContains(response, 'id="contact-detail-form"')
+        self.assertNotContains(response, 'class="tasks-modal__submit">Zapisz</button>')
 
     def test_contact_detail_is_read_only_and_links_to_edit(self):
         contact = Contact.objects.create(
@@ -374,9 +394,15 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
+        self.assertNotContains(response, 'contacts-share-section')
+        self.assertNotContains(response, 'contacts-share-form')
+        self.assertNotContains(response, 'Udostępnianie')
+        self.assertNotContains(response, 'Nie udostępniono nikomu.')
+        self.assertNotContains(response, 'Obecność')
+        self.assertNotContains(response, 'class="tasks-issue-side-button">Edytuj</a>')
+        self.assertNotContains(response, 'class="tasks-issue-side-button">Napisz email</a>')
         self.assertNotContains(response, 'id="contact-detail-form"')
-        self.assertNotContains(response, 'name="first_name"')
-        self.assertNotContains(response, 'Zapisz')
+        self.assertNotContains(response, 'class="tasks-modal__submit">Zapisz</button>')
         self.assertNotContains(response, 'contacts-delete-button')
         self.assertNotContains(response, 'contactActionMenus')
 
@@ -481,6 +507,11 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'jan@netology.example.com')
         self.assertContains(response, 'contacts-status-active')
         self.assertNotContains(response, 'contacts-share-row--link')
+        self.assertNotContains(response, 'contacts-share-section')
+        self.assertNotContains(response, 'contacts-share-form')
+        self.assertNotContains(response, 'Udostępnianie')
+        self.assertNotContains(response, 'Nie udostępniono nikomu.')
+        self.assertNotContains(response, 'class="tasks-issue-side-button">Edytuj</a>')
         self.assertContains(response, reverse('contacts:edit-company', args=[company.pk]))
         self.assertContains(response, 'Edytuj')
         self.assertContains(response, 'data-contact-actions')
@@ -492,8 +523,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
         self.assertNotContains(response, 'id="company-detail-form"')
-        self.assertNotContains(response, 'name="name"')
-        self.assertNotContains(response, 'Zapisz')
+        self.assertNotContains(response, 'class="tasks-modal__submit">Zapisz</button>')
         self.assertNotContains(response, 'contacts-delete-button')
         self.assertNotContains(response, 'companyActionMenus')
 
@@ -528,12 +558,23 @@ class ContactCollaborationTests(TestCase):
         response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="company-detail-form"')
-        self.assertContains(response, 'style.css?v=20260608-task-style-modals')
+        self.assertContains(response, 'style.css?v=20260609-modal-scrim')
+        self.assertContains(response, 'profile.js?v=20260608-company-photo-picker-first')
         self.assertContains(response, 'contacts-company-modal-title')
         self.assertContains(response, 'contacts-edit-modal is-open')
         self.assertContains(response, 'contacts-edit-modal__dialog')
         self.assertContains(response, 'tasks-modal__form tasks-issue-modal__form contacts-edit-form')
         self.assertContains(response, 'contacts-edit-modal__body')
+        self.assertContains(response, 'enctype="multipart/form-data"')
+        self.assertContains(response, 'data-profile-photo-editor')
+        self.assertContains(response, 'data-profile-photo-cropper')
+        self.assertContains(response, 'data-profile-photo-canvas')
+        self.assertContains(response, 'data-profile-photo-zoom')
+        self.assertContains(response, 'data-profile-photo-modal')
+        self.assertContains(response, 'data-profile-photo-open')
+        self.assertContains(response, 'data-profile-photo-remove')
+        self.assertContains(response, 'data-profile-photo-change')
+        self.assertContains(response, 'data-profile-photo-save')
         self.assertContains(response, 'Zapisz')
 
         response = self.client.post(reverse('contacts:edit-company', args=[company.pk]), {
@@ -553,3 +594,54 @@ class ContactCollaborationTests(TestCase):
         self.assertEqual(company.phone, '+48 123 456 789')
         self.assertEqual(company.address, 'Porcelanowa 23')
         self.assertEqual(company.notes, 'Edycja w osobnym modalu.')
+
+    def test_company_edit_page_saves_cropped_company_photo(self):
+        company = Company.objects.create(
+            owner=self.owner,
+            name='Netology',
+            email='kontakt@netology.example.com',
+        )
+        image_content = base64.b64decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+        )
+        crop_data = f'data:image/png;base64,{base64.b64encode(image_content).decode()}'
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(reverse('contacts:edit-company', args=[company.pk]), {
+                'name': 'Netology',
+                'website': '',
+                'email': 'kontakt@netology.example.com',
+                'phone': '',
+                'address': '',
+                'notes': '',
+                'company_photo_crop': crop_data,
+            })
+
+            company.refresh_from_db()
+            self.assertRedirects(response, reverse('contacts:view-company', args=[company.pk]))
+            self.assertTrue(company.company_photo.name.startswith('company_photos/company_'))
+            self.assertTrue(os.path.exists(company.company_photo.path))
+            with open(company.company_photo.path, 'rb') as photo_file:
+                self.assertEqual(photo_file.read(), image_content)
+
+            response = self.client.get(reverse('contacts:view-company', args=[company.pk]))
+            self.assertContains(response, company.company_photo.url)
+            self.assertContains(response, 'has-photo')
+
+            response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
+            self.assertContains(response, f'data-profile-photo-url="{company.company_photo.url}"')
+            self.assertContains(response, 'data-profile-photo-cropper')
+
+            response = self.client.post(reverse('contacts:edit-company', args=[company.pk]), {
+                'name': 'Netology',
+                'website': '',
+                'email': 'kontakt@netology.example.com',
+                'phone': '',
+                'address': '',
+                'notes': '',
+                'company_photo_remove': '1',
+            })
+
+            company.refresh_from_db()
+            self.assertRedirects(response, reverse('contacts:view-company', args=[company.pk]))
+            self.assertFalse(company.company_photo)

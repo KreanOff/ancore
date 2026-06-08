@@ -1,0 +1,91 @@
+{% load company_avatar %}
+{% company_avatar company as photo_editor_avatar %}
+<div class="profile-photo-control contacts-company-photo-editor"
+     data-profile-photo-editor
+     {% if photo_editor_avatar.photo_url %}data-profile-photo-url="{{ photo_editor_avatar.photo_url }}"{% endif %}>
+    <button type="button"
+            class="contacts-company-photo-preview-button"
+            aria-label="Edytuj zdjęcie firmy"
+            title="Edytuj zdjęcie firmy"
+            data-profile-photo-open>
+        <span class="profile-avatar {{ avatar_class }} {{ photo_editor_avatar.color_class }} {% if photo_editor_avatar.photo_url %}has-photo{% endif %}"
+              style="{{ photo_editor_avatar.color_style }}"
+              aria-hidden="true"
+              data-profile-photo-preview>
+            {% if photo_editor_avatar.photo_url %}
+            <img src="{{ photo_editor_avatar.photo_url }}" alt="">
+            {% else %}
+            {% include 'contacts/includes/company_avatar_icon.html' %}
+            {% endif %}
+        </span>
+    </button>
+    <template data-profile-photo-fallback>
+        {% include 'contacts/includes/company_avatar_icon.html' %}
+    </template>
+    <button type="button" class="profile-photo-button" title="Zmień zdjęcie" data-profile-photo-open>{{ photo_button_label|default:"Zmień" }}</button>
+    {{ form.company_photo }}
+    {{ form.company_photo_crop }}
+    {{ form.company_photo_remove }}
+
+    <div class="contacts-photo-editor-overlay" role="dialog" aria-modal="true" aria-label="Edytuj zdjęcie firmy" hidden data-profile-photo-modal>
+        <div class="contacts-photo-editor-dialog">
+            <header class="contacts-photo-editor-header">
+                <strong>Edytuj zdjęcie firmy</strong>
+                <button type="button" class="contacts-photo-editor-close" aria-label="Zamknij edycję zdjęcia" title="Zamknij" data-profile-photo-close>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="profile-photo-cropper contacts-photo-editor-cropper" data-profile-photo-cropper>
+                <div class="profile-photo-crop-stage contacts-photo-editor-stage" data-profile-photo-crop-stage>
+                    <canvas class="profile-photo-crop-canvas"
+                            width="640"
+                            height="640"
+                            aria-label="Kadr zdjęcia firmy"
+                            data-profile-photo-canvas></canvas>
+                    <div class="contacts-photo-editor-empty" data-profile-photo-empty>
+                        <span>Wybierz zdjęcie firmy</span>
+                    </div>
+                </div>
+                <div class="profile-photo-zoom-controls contacts-photo-editor-zoom">
+                    <button type="button"
+                            class="profile-photo-zoom-button"
+                            aria-label="Pomniejsz zdjęcie"
+                            title="Pomniejsz zdjęcie"
+                            data-profile-photo-zoom-out>
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                            <path d="M5 10h10"/>
+                        </svg>
+                    </button>
+                    <input type="range"
+                           class="profile-photo-zoom-range"
+                           min="1"
+                           max="3"
+                           step="0.01"
+                           value="1"
+                           aria-label="Powiększenie zdjęcia"
+                           data-profile-photo-zoom>
+                    <button type="button"
+                            class="profile-photo-zoom-button"
+                            aria-label="Powiększ zdjęcie"
+                            title="Powiększ zdjęcie"
+                            data-profile-photo-zoom-in>
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                            <path d="M10 5v10"/>
+                            <path d="M5 10h10"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <footer class="contacts-photo-editor-footer">
+                <button type="button" class="contacts-photo-editor-secondary" data-profile-photo-remove>Usuń</button>
+                <button type="button" class="contacts-photo-editor-secondary" data-profile-photo-change>Zmień</button>
+                <button type="button" class="contacts-photo-editor-primary" data-profile-photo-save>Zapisz</button>
+            </footer>
+        </div>
+    </div>
+</div>
