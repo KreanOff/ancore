@@ -14,6 +14,7 @@ class ContactForm(forms.ModelForm):
         self.fields['company_record'].queryset = Company.objects.none()
         if user is not None:
             self.fields['company_record'].queryset = Company.objects.filter(owner=user)
+        self.fields['company_record'].empty_label = 'Brak powiązanej firmy'
 
     def _validate_required_identity(self, cleaned_data):
         first_name = (cleaned_data.get('first_name') or '').strip()
@@ -246,14 +247,15 @@ class ShareItemForm(forms.ModelForm):
     shared_with = forms.ModelChoiceField(
         queryset=get_user_model().objects.none(),
         label='Udostępnij użytkownikowi',
-        widget=forms.Select(attrs={'class': 'form-input'}),
+        empty_label='Wybierz użytkownika',
+        widget=forms.Select(attrs={'class': 'form-input contacts-custom-select__source'}),
     )
 
     class Meta:
         model = SharedItem
         fields = ['shared_with', 'permission', 'note']
         widgets = {
-            'permission': forms.Select(attrs={'class': 'form-input'}),
+            'permission': forms.Select(attrs={'class': 'form-input contacts-custom-select__source'}),
             'note': forms.TextInput(attrs={
                 'placeholder': 'Krótka wiadomość opcjonalnie',
                 'class': 'form-input',

@@ -288,7 +288,9 @@
                     <section class="tasks-issue-side-section">
                         <div class="tasks-issue-field">
                             <label for="{{ form.company_record.id_for_label }}">Powiązana firma</label>
-                            {{ form.company_record }}
+                            <div class="contacts-custom-select contacts-custom-select--side" data-contact-custom-select data-contact-custom-select-label="Powiązana firma">
+                                {{ form.company_record }}
+                            </div>
                         </div>
                         <div class="tasks-issue-field">
                             <label for="{{ form.email.id_for_label }}">Email</label>
@@ -435,8 +437,12 @@
                             <span>Udostępnianie</span>
                             <form method="post" action="{% url 'contacts:share-contact' contact.pk %}" class="contacts-share-form">
                                 {% csrf_token %}
-                                {{ share_form.shared_with }}
-                                {{ share_form.permission }}
+                                <div class="contacts-custom-select contacts-custom-select--share" data-contact-custom-select data-contact-custom-select-label="Użytkownik">
+                                    {{ share_form.shared_with }}
+                                </div>
+                                <div class="contacts-custom-select contacts-custom-select--share" data-contact-custom-select data-contact-custom-select-label="Uprawnienia">
+                                    {{ share_form.permission }}
+                                </div>
                                 {{ share_form.note }}
                                 <button type="submit" class="tasks-tag-topbar-button">Udostępnij</button>
                             </form>
@@ -536,7 +542,9 @@
                             </label>
                             <label>
                                 <span>Powiązana firma</span>
-                                {{ form.company_record }}
+                                <div class="contacts-custom-select" data-contact-custom-select data-contact-custom-select-label="Powiązana firma">
+                                    {{ form.company_record }}
+                                </div>
                             </label>
                             <label>
                                 <span>Stanowisko</span>
@@ -573,46 +581,4 @@
     </div>
 </div>
 
-<script>
-const contactActionMenus = document.querySelectorAll('[data-contact-actions]');
-
-function closeContactActionMenus(exceptMenu = null) {
-    contactActionMenus.forEach((menu) => {
-        if (menu === exceptMenu) return;
-        menu.classList.remove('is-open');
-        menu.querySelector('[data-contact-actions-toggle]')?.setAttribute('aria-expanded', 'false');
-    });
-}
-
-contactActionMenus.forEach((menu) => {
-    const toggle = menu.querySelector('[data-contact-actions-toggle]');
-    toggle?.addEventListener('click', (event) => {
-        event.stopPropagation();
-        const isOpen = !menu.classList.contains('is-open');
-        closeContactActionMenus(menu);
-        menu.classList.toggle('is-open', isOpen);
-        toggle.setAttribute('aria-expanded', String(isOpen));
-    });
-});
-
-document.addEventListener('click', (event) => {
-    if (!event.target.closest('[data-contact-actions]')) {
-        closeContactActionMenus();
-    }
-});
-
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-        closeContactActionMenus();
-    }
-});
-
-document.querySelectorAll('[data-confirm-delete]').forEach((form) => {
-    form.addEventListener('submit', (event) => {
-        if (!window.confirm(form.dataset.confirmDelete || 'Usunąć kontakt?')) {
-            event.preventDefault();
-        }
-    });
-});
-</script>
 {% endblock %}

@@ -48,6 +48,12 @@
     const eventDialogTitle = document.getElementById('event-dialog-title');
     const eventFormError = document.getElementById('event-form-error');
     const eventDeleteBtn = document.getElementById('event-delete-btn');
+    const eventColorSelect = document.querySelector('[data-calendar-color-select]');
+    const eventColorToggle = eventColorSelect?.querySelector('[data-calendar-color-toggle]');
+    const eventColorMenu = eventColorSelect?.querySelector('[data-calendar-color-menu]');
+    const eventColorLabel = eventColorSelect?.querySelector('[data-calendar-color-label]');
+    const eventColorDot = eventColorSelect?.querySelector('[data-calendar-color-dot]');
+    const eventColorOptions = Array.from(eventColorSelect?.querySelectorAll('[data-calendar-color-option]') || []);
 
     function apiUrl(key, id) {
         const pattern = urls[key];
@@ -591,6 +597,125 @@
         eventFormError.classList.add('u-hidden');
     }
 
+    function selectedEventColorOption() {
+        return eventColorOptions.find((option) => option.classList.contains('is-selected'))
+            || eventColorOptions[0];
+    }
+
+    function syncEventColorSelect(value = eventColorInput?.value || 'red', dispatchChange = false) {
+        if (!eventColorInput || !eventColorOptions.length) return;
+
+        const option = eventColorOptions.find((item) => item.dataset.value === value) || eventColorOptions[0];
+        const nextValue = option.dataset.value || '';
+        eventColorInput.value = nextValue;
+
+        if (eventColorLabel) {
+            eventColorLabel.textContent = option.dataset.label || option.textContent.trim();
+        }
+
+        if (eventColorDot) {
+            eventColorDot.className = `calendar-color-dot calendar-color-dot--${nextValue}`;
+        }
+
+        eventColorOptions.forEach((item) => {
+            const isSelected = item === option;
+            item.classList.toggle('is-selected', isSelected);
+            item.setAttribute('aria-selected', String(isSelected));
+            item.tabIndex = isSelected ? 0 : -1;
+        });
+
+        if (dispatchChange) {
+            eventColorInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    function closeEventColorSelect(restoreFocus = false) {
+        if (!eventColorSelect) return;
+
+        eventColorSelect.classList.remove('is-open');
+        eventColorToggle?.setAttribute('aria-expanded', 'false');
+        if (eventColorMenu) eventColorMenu.hidden = true;
+        if (restoreFocus) eventColorToggle?.focus({ preventScroll: true });
+    }
+
+    function openEventColorSelect(focusSelected = false) {
+        if (!eventColorSelect) return;
+
+        syncEventColorSelect();
+        eventColorSelect.classList.add('is-open');
+        eventColorToggle?.setAttribute('aria-expanded', 'true');
+        if (eventColorMenu) eventColorMenu.hidden = false;
+
+        if (focusSelected) {
+            selectedEventColorOption()?.focus({ preventScroll: true });
+        }
+    }
+
+    function selectEventColorOption(option) {
+        if (!option || option.disabled) return;
+
+        syncEventColorSelect(option.dataset.value || '', true);
+        closeEventColorSelect(true);
+    }
+
+    function focusEventColorOption(direction) {
+        if (!eventColorOptions.length) return;
+
+        if (!eventColorSelect?.classList.contains('is-open')) {
+            openEventColorSelect();
+        }
+
+        const focusedIndex = eventColorOptions.indexOf(document.activeElement);
+        const selectedIndex = eventColorOptions.indexOf(selectedEventColorOption());
+        const currentIndex = focusedIndex >= 0 ? focusedIndex : Math.max(0, selectedIndex);
+        const nextIndex = (currentIndex + direction + eventColorOptions.length) % eventColorOptions.length;
+        eventColorOptions[nextIndex]?.focus({ preventScroll: true });
+    }
+
+    function handleEventColorKeydown(e) {
+        if (!eventColorSelect?.contains(e.target)) return false;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            focusEventColorOption(1);
+            return true;
+        }
+
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            focusEventColorOption(-1);
+            return true;
+        }
+
+        if (e.key === 'Home') {
+            e.preventDefault();
+            openEventColorSelect();
+            eventColorOptions[0]?.focus({ preventScroll: true });
+            return true;
+        }
+
+        if (e.key === 'End') {
+            e.preventDefault();
+            openEventColorSelect();
+            eventColorOptions[eventColorOptions.length - 1]?.focus({ preventScroll: true });
+            return true;
+        }
+
+        if (e.key === 'Escape' && eventColorSelect.classList.contains('is-open')) {
+            e.preventDefault();
+            closeEventColorSelect(true);
+            return true;
+        }
+
+        if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-calendar-color-option]')) {
+            e.preventDefault();
+            selectEventColorOption(e.target);
+            return true;
+        }
+
+        return false;
+    }
+
     function openDialog(mode, presetDate, event) {
         clearFormError();
         eventForm.reset();
@@ -620,6 +745,7 @@
             eventColorInput.value = event.color;
         }
 
+        syncEventColorSelect(eventColorInput.value);
         dialogOverlay.classList.add('active');
         dialogOverlay.setAttribute('aria-hidden', 'false');
         eventTitleInput.focus();
@@ -722,17 +848,35 @@
     eventDeleteBtn?.addEventListener('click', deleteEvent);
     eventForm?.addEventListener('submit', saveEvent);
     eventAllDayInput?.addEventListener('change', applyAllDayTimes);
+    eventColorToggle?.addEventListener('click', () => {
+        if (eventColorSelect?.classList.contains('is-open')) {
+            closeEventColorSelect();
+        } else {
+            openEventColorSelect();
+        }
+    });
+    eventColorOptions.forEach((option) => {
+        option.addEventListener('click', () => selectEventColorOption(option));
+    });
+    eventColorInput?.addEventListener('change', () => syncEventColorSelect(eventColorInput.value));
 
     dialogOverlay?.addEventListener('click', (e) => {
         if (e.target === dialogOverlay) closeDialog();
     });
 
+    document.addEventListener('click', (e) => {
+        if (!eventColorSelect?.contains(e.target)) closeEventColorSelect();
+    });
+
     document.addEventListener('keydown', (e) => {
+        if (handleEventColorKeydown(e)) return;
+
         if (e.key === 'Escape' && dialogOverlay?.classList.contains('active')) {
             closeDialog();
         }
     });
 
+    syncEventColorSelect();
     normalizeAnchorForView(currentView);
     renderCurrentView();
     fetchEvents();

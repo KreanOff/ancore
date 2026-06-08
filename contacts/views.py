@@ -668,29 +668,55 @@ def create_company(request):
 def view_company(request, company_id):
     company = get_object_or_404(_visible_companies_queryset(request.user), pk=company_id)
     can_edit_company = _has_edit_access(request.user, company)
-    form = CompanyForm(request.POST or None, instance=company)
     share_form = ShareItemForm(user=request.user)
+    company_contacts = _contacts_queryset(request.user).filter(company_record=company)
 
     if request.method == 'POST':
-        if not can_edit_company:
-            messages.error(request, 'Nie masz uprawnień do edycji tej firmy.')
-            return redirect('contacts:view-company', company_id=company.pk)
+        messages.error(request, 'Edycja firmy jest dostępna w osobnym widoku.')
+        return redirect('contacts:view-company', company_id=company.pk)
+
+    context = {
+        'company': company,
+        'share_form': share_form,
+        'can_edit_company': can_edit_company,
+        'company_contacts': company_contacts,
+        'company_shares': SharedItem.objects.filter(
+            content_type=_content_type_for(Company),
+            object_id=company.pk,
+            shared_by=request.user,
+        ).select_related('shared_with'),
+        **_contacts_navigation_context(request.user, active_status='companies'),
+    }
+    return render(request, 'contacts/view_company.html', context)
+
+
+@login_required
+def edit_company(request, company_id):
+    company = get_object_or_404(_visible_companies_queryset(request.user), pk=company_id)
+    can_edit_company = _has_edit_access(request.user, company)
+
+    if not can_edit_company:
+        messages.error(request, 'Nie masz uprawnień do edycji tej firmy.')
+        return redirect('contacts:view-company', company_id=company.pk)
+
+    form = CompanyForm(request.POST or None, instance=company)
+
+    if request.method == 'POST':
         if form.is_valid():
             form.save()
             messages.success(request, 'Firma zaktualizowana.')
             return redirect('contacts:view-company', company_id=company.pk)
         messages.error(request, 'Nie udało się zaktualizować firmy.')
 
-    if not can_edit_company:
-        for field in form.fields.values():
-            field.widget.attrs['disabled'] = 'disabled'
+    company_contacts = _contacts_queryset(request.user).filter(company_record=company)
 
     context = {
         'company': company,
         'form': form,
-        'share_form': share_form,
+        'is_edit': True,
+        'share_form': ShareItemForm(user=request.user),
         'can_edit_company': can_edit_company,
-        'company_contacts': company.contacts.filter(user=request.user).order_by('first_name', 'middle_name', 'last_name'),
+        'company_contacts': company_contacts,
         'company_shares': SharedItem.objects.filter(
             content_type=_content_type_for(Company),
             object_id=company.pk,

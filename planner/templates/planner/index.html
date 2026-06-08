@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260607-accent-contrast">
-<script src="{% static 'js/calendar.js' %}?v=20260531-tasks-redesign" defer></script>
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260608-dropdown-close">
+<script src="{% static 'js/calendar.js' %}?v=20260608-custom-dropdown" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -198,14 +198,56 @@
                     </div>
                 </div>
                 <div class="calendar-dialog-field">
-                    <label class="form-label" for="event-color">Kolor</label>
-                    <select id="event-color" name="color" class="tasks-inline-input form-select">
-                        <option value="red">Czerwony</option>
-                        <option value="blue">Niebieski</option>
-                        <option value="green">Zielony</option>
-                        <option value="amber">Bursztynowy</option>
-                        <option value="slate">Szary</option>
-                    </select>
+                    <label class="form-label" id="event-color-label" for="event-color-button">Kolor</label>
+                    <div class="calendar-color-select" data-calendar-color-select>
+                        <select id="event-color" name="color" class="tasks-inline-input form-select" aria-hidden="true" tabindex="-1" data-calendar-color-source>
+                            <option value="red">Czerwony</option>
+                            <option value="blue">Niebieski</option>
+                            <option value="green">Zielony</option>
+                            <option value="amber">Bursztynowy</option>
+                            <option value="slate">Szary</option>
+                        </select>
+                        <button type="button"
+                                id="event-color-button"
+                                class="calendar-color-select__button"
+                                aria-haspopup="listbox"
+                                aria-expanded="false"
+                                aria-labelledby="event-color-label event-color-current"
+                                data-calendar-color-toggle>
+                            <span class="calendar-color-dot calendar-color-dot--red" aria-hidden="true" data-calendar-color-dot></span>
+                            <span id="event-color-current" data-calendar-color-label>Czerwony</span>
+                            <svg class="calendar-color-select__caret" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m5 7.5 5 5 5-5"/>
+                            </svg>
+                        </button>
+                        <div class="calendar-color-select__menu" role="listbox" aria-labelledby="event-color-label" hidden data-calendar-color-menu>
+                            <button type="button" class="calendar-color-select__option is-selected" role="option" aria-selected="true" data-calendar-color-option data-value="red" data-label="Czerwony">
+                                <span class="calendar-color-select__check" aria-hidden="true"></span>
+                                <span class="calendar-color-dot calendar-color-dot--red" aria-hidden="true"></span>
+                                <span>Czerwony</span>
+                            </button>
+                            <button type="button" class="calendar-color-select__option" role="option" aria-selected="false" data-calendar-color-option data-value="blue" data-label="Niebieski">
+                                <span class="calendar-color-select__check" aria-hidden="true"></span>
+                                <span class="calendar-color-dot calendar-color-dot--blue" aria-hidden="true"></span>
+                                <span>Niebieski</span>
+                            </button>
+                            <button type="button" class="calendar-color-select__option" role="option" aria-selected="false" data-calendar-color-option data-value="green" data-label="Zielony">
+                                <span class="calendar-color-select__check" aria-hidden="true"></span>
+                                <span class="calendar-color-dot calendar-color-dot--green" aria-hidden="true"></span>
+                                <span>Zielony</span>
+                            </button>
+                            <button type="button" class="calendar-color-select__option" role="option" aria-selected="false" data-calendar-color-option data-value="amber" data-label="Bursztynowy">
+                                <span class="calendar-color-select__check" aria-hidden="true"></span>
+                                <span class="calendar-color-dot calendar-color-dot--amber" aria-hidden="true"></span>
+                                <span>Bursztynowy</span>
+                            </button>
+                            <button type="button" class="calendar-color-select__option" role="option" aria-selected="false" data-calendar-color-option data-value="slate" data-label="Szary">
+                                <span class="calendar-color-select__check" aria-hidden="true"></span>
+                                <span class="calendar-color-dot calendar-color-dot--slate" aria-hidden="true"></span>
+                                <span>Szary</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="calendar-dialog-field">
                     <label class="form-label" for="event-description">Opis</label>

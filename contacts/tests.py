@@ -370,6 +370,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'M18 12h.01')
         self.assertContains(response, 'Opcje kontaktu')
         self.assertContains(response, 'Usuń')
+        self.assertContains(response, 'tasks.js?v=20260608-contact-actions-menu')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -377,6 +378,7 @@ class ContactCollaborationTests(TestCase):
         self.assertNotContains(response, 'name="first_name"')
         self.assertNotContains(response, 'Zapisz')
         self.assertNotContains(response, 'contacts-delete-button')
+        self.assertNotContains(response, 'contactActionMenus')
 
     def test_contact_detail_post_does_not_update_contact_fields(self):
         contact = Contact.objects.create(
@@ -444,3 +446,110 @@ class ContactCollaborationTests(TestCase):
         self.assertEqual(contact.display_name, 'Karol Adam Testowy')
         self.assertEqual(contact.email, 'karol@example.com')
         self.assertEqual(contact.role, 'Konsultant')
+
+    def test_company_detail_is_read_only_and_links_to_edit(self):
+        company = Company.objects.create(
+            owner=self.owner,
+            name='Netology',
+            website='https://netology.example.com',
+            email='kontakt@netology.example.com',
+            phone='+48 500 600 700',
+            address='Porcelanowa 23',
+            notes='Firma po demo.',
+        )
+        Contact.objects.create(
+            user=self.owner,
+            first_name='Jan',
+            last_name='Kowalski',
+            company='Netology',
+            company_record=company,
+            role='Doradca',
+            email='jan@netology.example.com',
+            status='active',
+        )
+
+        response = self.client.get(reverse('contacts:view-company', args=[company.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Netology')
+        self.assertContains(response, 'kontakt@netology.example.com')
+        self.assertContains(response, 'contacts-company-contact-list')
+        self.assertContains(response, 'class="contacts-row"')
+        self.assertContains(response, 'contacts-row-main')
+        self.assertContains(response, 'contacts-row-channel')
+        self.assertContains(response, 'Jan Kowalski')
+        self.assertContains(response, 'jan@netology.example.com')
+        self.assertContains(response, 'contacts-status-active')
+        self.assertNotContains(response, 'contacts-share-row--link')
+        self.assertContains(response, reverse('contacts:edit-company', args=[company.pk]))
+        self.assertContains(response, 'Edytuj')
+        self.assertContains(response, 'data-contact-actions')
+        self.assertContains(response, 'tasks-icon-button contacts-actions-menu__toggle')
+        self.assertContains(response, 'Opcje firmy')
+        self.assertContains(response, 'Usuń')
+        self.assertContains(response, 'tasks.js?v=20260608-contact-actions-menu')
+        self.assertContains(response, 'profile-summary')
+        self.assertContains(response, 'profile-display-name')
+        self.assertContains(response, 'profile-issue-sidebar')
+        self.assertNotContains(response, 'id="company-detail-form"')
+        self.assertNotContains(response, 'name="name"')
+        self.assertNotContains(response, 'Zapisz')
+        self.assertNotContains(response, 'contacts-delete-button')
+        self.assertNotContains(response, 'companyActionMenus')
+
+    def test_company_detail_post_does_not_update_company_fields(self):
+        company = Company.objects.create(
+            owner=self.owner,
+            name='Netology',
+            email='kontakt@netology.example.com',
+        )
+
+        response = self.client.post(reverse('contacts:view-company', args=[company.pk]), {
+            'name': 'Zmieniona firma',
+            'website': 'https://changed.example.com',
+            'email': 'changed@example.com',
+            'phone': '+48 111 222 333',
+            'address': 'Nowy adres',
+            'notes': 'Nie powinno się zapisać.',
+        })
+
+        company.refresh_from_db()
+        self.assertRedirects(response, reverse('contacts:view-company', args=[company.pk]))
+        self.assertEqual(company.name, 'Netology')
+        self.assertEqual(company.email, 'kontakt@netology.example.com')
+
+    def test_company_edit_page_updates_company_fields(self):
+        company = Company.objects.create(
+            owner=self.owner,
+            name='Netology',
+            email='kontakt@netology.example.com',
+        )
+
+        response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="company-detail-form"')
+        self.assertContains(response, 'style.css?v=20260608-task-style-modals')
+        self.assertContains(response, 'contacts-company-modal-title')
+        self.assertContains(response, 'contacts-edit-modal is-open')
+        self.assertContains(response, 'contacts-edit-modal__dialog')
+        self.assertContains(response, 'tasks-modal__form tasks-issue-modal__form contacts-edit-form')
+        self.assertContains(response, 'contacts-edit-modal__body')
+        self.assertContains(response, 'Zapisz')
+
+        response = self.client.post(reverse('contacts:edit-company', args=[company.pk]), {
+            'name': 'Ancore Labs',
+            'website': 'https://ancore.example.com',
+            'email': 'hello@ancore.example.com',
+            'phone': '+48 123 456 789',
+            'address': 'Porcelanowa 23',
+            'notes': 'Edycja w osobnym modalu.',
+        })
+
+        company.refresh_from_db()
+        self.assertRedirects(response, reverse('contacts:view-company', args=[company.pk]))
+        self.assertEqual(company.name, 'Ancore Labs')
+        self.assertEqual(company.website, 'https://ancore.example.com')
+        self.assertEqual(company.email, 'hello@ancore.example.com')
+        self.assertEqual(company.phone, '+48 123 456 789')
+        self.assertEqual(company.address, 'Porcelanowa 23')
+        self.assertEqual(company.notes, 'Edycja w osobnym modalu.')

@@ -13,6 +13,7 @@ urlpatterns = [
     path('companies/', views.companies, name='companies'),
     path('companies/new/', views.create_company, name='create-company'),
     path('companies/<int:company_id>/', views.view_company, name='view-company'),
+    path('companies/<int:company_id>/edit/', views.edit_company, name='edit-company'),
     path('companies/<int:company_id>/delete/', views.delete_company, name='delete-company'),
     path('guests/', views.guest_contacts, name='guests'),
     path('shared/', views.shared_items, name='shared'),

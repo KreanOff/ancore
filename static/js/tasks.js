@@ -1036,6 +1036,260 @@ function initTasksPage() {
         });
     }
 
+    function closeContactCustomSelects(exceptSelect = null, restoreFocus = false) {
+        document.querySelectorAll('[data-contact-custom-select].is-open').forEach(selectControl => {
+            if (selectControl === exceptSelect) return;
+            selectControl.classList.remove('is-open');
+            selectControl.querySelector('[data-contact-custom-select-toggle]')?.setAttribute('aria-expanded', 'false');
+            const menu = selectControl.querySelector('[data-contact-custom-select-menu]');
+            if (menu) menu.hidden = true;
+            if (restoreFocus) {
+                selectControl.querySelector('[data-contact-custom-select-toggle]')?.focus();
+            }
+        });
+    }
+
+    function getContactCustomSource(selectControl) {
+        return selectControl?.querySelector('select') || null;
+    }
+
+    function getContactOptionLabel(option) {
+        return (option?.textContent || option?.label || '').replace(/\s+/g, ' ').trim() || 'Wybierz';
+    }
+
+    function selectedContactCustomOption(selectControl) {
+        const source = getContactCustomSource(selectControl);
+        if (!source || !source.options.length) return null;
+        return source.options[Math.max(0, source.selectedIndex)] || source.options[0];
+    }
+
+    function renderContactCustomOptions(selectControl) {
+        const source = getContactCustomSource(selectControl);
+        const menu = selectControl?.querySelector('[data-contact-custom-select-menu]');
+        if (!source || !menu) return;
+
+        menu.replaceChildren();
+
+        Array.from(source.options).forEach((option, index) => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'contacts-custom-select__option';
+            item.setAttribute('role', 'option');
+            item.dataset.contactCustomSelectOption = '';
+            item.dataset.contactCustomSelectIndex = String(index);
+            if (option.disabled) item.disabled = true;
+
+            const check = document.createElement('span');
+            check.className = 'contacts-custom-select__check';
+            check.setAttribute('aria-hidden', 'true');
+
+            const label = document.createElement('span');
+            label.className = 'contacts-custom-select__option-label';
+            label.textContent = getContactOptionLabel(option);
+
+            item.append(check, label);
+            menu.appendChild(item);
+        });
+    }
+
+    function syncContactCustomSelect(selectControl) {
+        const source = getContactCustomSource(selectControl);
+        if (!source) return;
+
+        const button = selectControl.querySelector('[data-contact-custom-select-toggle]');
+        const label = selectControl.querySelector('[data-contact-custom-select-label]');
+        const options = Array.from(selectControl.querySelectorAll('[data-contact-custom-select-option]'));
+        const selectedOption = selectedContactCustomOption(selectControl);
+        const selectedIndex = selectedOption ? Array.from(source.options).indexOf(selectedOption) : -1;
+
+        if (button) {
+            button.disabled = source.disabled || !source.options.length;
+        }
+
+        if (label) {
+            label.textContent = selectedOption ? getContactOptionLabel(selectedOption) : 'Brak opcji';
+        }
+
+        options.forEach((optionButton, index) => {
+            const isSelected = index === selectedIndex;
+            optionButton.classList.toggle('is-selected', isSelected);
+            optionButton.setAttribute('aria-selected', String(isSelected));
+            optionButton.tabIndex = isSelected ? 0 : -1;
+        });
+    }
+
+    function openContactCustomSelect(selectControl, focusSelected = false) {
+        const source = getContactCustomSource(selectControl);
+        if (!selectControl || !source || source.disabled || !source.options.length) return;
+
+        closeContactCustomSelects(selectControl);
+        syncContactCustomSelect(selectControl);
+        selectControl.classList.add('is-open');
+        selectControl.querySelector('[data-contact-custom-select-toggle]')?.setAttribute('aria-expanded', 'true');
+        const menu = selectControl.querySelector('[data-contact-custom-select-menu]');
+        if (menu) menu.hidden = false;
+
+        if (focusSelected) {
+            const selected = selectControl.querySelector('[data-contact-custom-select-option].is-selected:not(:disabled)')
+                || selectControl.querySelector('[data-contact-custom-select-option]:not(:disabled)');
+            selected?.focus();
+        }
+    }
+
+    function selectContactCustomOption(selectControl, optionButton) {
+        const source = getContactCustomSource(selectControl);
+        if (!source || !optionButton || optionButton.disabled) return;
+
+        const index = Number(optionButton.dataset.contactCustomSelectIndex);
+        if (!Number.isInteger(index) || !source.options[index]) return;
+
+        source.selectedIndex = index;
+        source.dispatchEvent(new Event('change', { bubbles: true }));
+        syncContactCustomSelect(selectControl);
+        closeContactCustomSelects(null, true);
+    }
+
+    function focusContactCustomOption(selectControl, direction) {
+        const options = Array.from(selectControl.querySelectorAll('[data-contact-custom-select-option]:not(:disabled)'));
+        if (!options.length) return;
+
+        if (!selectControl.classList.contains('is-open')) {
+            openContactCustomSelect(selectControl);
+        }
+
+        const focusedIndex = options.indexOf(document.activeElement);
+        const selectedIndex = Math.max(0, options.findIndex(option => option.classList.contains('is-selected')));
+        const currentIndex = focusedIndex >= 0 ? focusedIndex : selectedIndex;
+        const nextIndex = (currentIndex + direction + options.length) % options.length;
+        options[nextIndex]?.focus();
+    }
+
+    function handleContactCustomSelectKeydown(event) {
+        const selectControl = event.target.closest('[data-contact-custom-select]');
+        if (!selectControl) return false;
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            focusContactCustomOption(selectControl, 1);
+            return true;
+        }
+
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            focusContactCustomOption(selectControl, -1);
+            return true;
+        }
+
+        if (event.key === 'Home') {
+            event.preventDefault();
+            openContactCustomSelect(selectControl);
+            selectControl.querySelector('[data-contact-custom-select-option]:not(:disabled)')?.focus();
+            return true;
+        }
+
+        if (event.key === 'End') {
+            event.preventDefault();
+            openContactCustomSelect(selectControl);
+            const options = Array.from(selectControl.querySelectorAll('[data-contact-custom-select-option]:not(:disabled)'));
+            options[options.length - 1]?.focus();
+            return true;
+        }
+
+        if (event.key === 'Escape' && selectControl.classList.contains('is-open')) {
+            event.preventDefault();
+            closeContactCustomSelects(null, true);
+            return true;
+        }
+
+        if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-contact-custom-select-option]')) {
+            event.preventDefault();
+            selectContactCustomOption(selectControl, event.target);
+            return true;
+        }
+
+        return false;
+    }
+
+    function initContactCustomSelects() {
+        document.querySelectorAll('[data-contact-custom-select]').forEach(selectControl => {
+            if (selectControl.dataset.contactCustomSelectInitialized === 'true') {
+                syncContactCustomSelect(selectControl);
+                return;
+            }
+
+            const source = getContactCustomSource(selectControl);
+            if (!source) return;
+
+            source.setAttribute('aria-hidden', 'true');
+            source.tabIndex = -1;
+
+            const labelText = selectControl.dataset.contactCustomSelectLabel || source.getAttribute('aria-label') || 'Wybierz';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'contacts-custom-select__button';
+            button.setAttribute('aria-haspopup', 'listbox');
+            button.setAttribute('aria-expanded', 'false');
+            button.setAttribute('aria-label', labelText);
+            button.dataset.contactCustomSelectToggle = '';
+
+            const label = document.createElement('span');
+            label.className = 'contacts-custom-select__button-label';
+            label.dataset.contactCustomSelectLabel = '';
+
+            const caret = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            caret.setAttribute('class', 'contacts-custom-select__caret');
+            caret.setAttribute('viewBox', '0 0 20 20');
+            caret.setAttribute('fill', 'none');
+            caret.setAttribute('stroke', 'currentColor');
+            caret.setAttribute('stroke-width', '1.8');
+            caret.setAttribute('stroke-linecap', 'round');
+            caret.setAttribute('stroke-linejoin', 'round');
+            caret.setAttribute('aria-hidden', 'true');
+            const caretPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            caretPath.setAttribute('d', 'm5 7.5 5 5 5-5');
+            caret.appendChild(caretPath);
+
+            const menu = document.createElement('div');
+            menu.className = 'contacts-custom-select__menu';
+            menu.setAttribute('role', 'listbox');
+            menu.setAttribute('aria-label', labelText);
+            menu.hidden = true;
+            menu.dataset.contactCustomSelectMenu = '';
+
+            button.append(label, caret);
+            selectControl.append(button, menu);
+            renderContactCustomOptions(selectControl);
+            syncContactCustomSelect(selectControl);
+
+            button.addEventListener('click', event => {
+                event.stopPropagation();
+                const isOpen = selectControl.classList.contains('is-open');
+                closeCreateMenu();
+                closeProjectActionMenus();
+                closeSectionActionMenu();
+                closeStatusFilterMenu();
+                closePriorityFilterMenu();
+                closeIssuePickers();
+                closeInlineSelectDropdowns();
+                closeContactCustomSelects(selectControl);
+                if (isOpen) {
+                    closeContactCustomSelects();
+                } else {
+                    openContactCustomSelect(selectControl);
+                }
+            });
+
+            menu.addEventListener('click', event => {
+                event.stopPropagation();
+                const optionButton = event.target.closest('[data-contact-custom-select-option]');
+                if (optionButton) selectContactCustomOption(selectControl, optionButton);
+            });
+
+            source.addEventListener('change', () => syncContactCustomSelect(selectControl));
+            selectControl.dataset.contactCustomSelectInitialized = 'true';
+        });
+    }
+
     function getPriorityFilterIconMarkup(priority) {
         if (!priority) return '';
         if (priority === 'urgent') {
@@ -1627,6 +1881,8 @@ function initTasksPage() {
         });
     });
 
+    initContactCustomSelects();
+
     if (sectionActionMenu) {
         const toggle = sectionActionMenu.querySelector('[data-section-menu-toggle]');
         const panel = sectionActionMenu.querySelector('.tasks-section-menu');
@@ -1913,6 +2169,7 @@ function initTasksPage() {
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
         if (!e.target.closest('[data-inline-select-dropdown]')) closeInlineSelectDropdowns();
+        if (!e.target.closest('[data-contact-custom-select]')) closeContactCustomSelects();
         if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
             closeEmojiPicker();
         }
@@ -2056,6 +2313,8 @@ function initTasksPage() {
     });
 
     document.addEventListener('keydown', function(e) {
+        if (handleContactCustomSelectKeydown(e)) return;
+
         if (e.key === 'Escape') {
             closeCreateMenu();
             closeProjectActionMenus();
@@ -2063,6 +2322,7 @@ function initTasksPage() {
             closeStatusFilterMenu();
             closePriorityFilterMenu();
             closeIssuePickers();
+            closeContactCustomSelects();
             closeEmojiPicker();
             const openModalEl = document.querySelector('.tasks-modal.is-open');
             if (openModalEl) closeModal(openModalEl);
@@ -3366,6 +3626,54 @@ if (!window.ancoreTaskSortHandlerInitialized) {
         const direction = button.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
         updateTaskSortButton(button, direction);
         sortCurrentTaskLists(direction);
+    });
+}
+
+if (!window.ancoreContactActionMenusInitialized) {
+    window.ancoreContactActionMenusInitialized = true;
+
+    function closeContactActionMenus(exceptMenu = null) {
+        document.querySelectorAll('[data-contact-actions]').forEach((menu) => {
+            if (menu === exceptMenu) return;
+            menu.classList.remove('is-open');
+            menu.querySelector('[data-contact-actions-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    document.addEventListener('click', function(event) {
+        const toggle = event.target.closest('[data-contact-actions-toggle]');
+        if (toggle) {
+            const menu = toggle.closest('[data-contact-actions]');
+            if (!menu) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const isOpen = !menu.classList.contains('is-open');
+            closeContactActionMenus(menu);
+            menu.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            return;
+        }
+
+        if (!event.target.closest('[data-contact-actions]')) {
+            closeContactActionMenus();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeContactActionMenus();
+        }
+    });
+
+    document.addEventListener('submit', function(event) {
+        const form = event.target.closest('[data-confirm-delete]');
+        if (!form) return;
+
+        if (!window.confirm(form.dataset.confirmDelete || 'Usunąć element?')) {
+            event.preventDefault();
+        }
     });
 }
 

@@ -12,13 +12,13 @@
 @import 'components/dialogs.css';
 @import 'components/modals.css';
 @import 'components/tables.css?v=20260604-status-new-blue';
-@import 'components/tasks.css?v=20260607-accent-contrast';
-@import 'components/contacts.css?v=20260607-company-avatar-colors';
+@import 'components/tasks.css?v=20260608-contacts-custom-dropdown';
+@import 'components/contacts.css?v=20260608-task-style-modals';
 @import 'components/notifications.css?v=20260607-accent-contrast';
 @import 'components/attachments.css?v=20260607-accent-contrast';
 @import 'components/file-upload.css?v=20260605-trash-icon';
 @import 'components/auth.css?v=20260603-icon-sizes';
-@import 'calendar.css?v=20260607-accent-contrast';
+@import 'calendar.css?v=20260608-dropdown-close';
 @import 'components/checkboxes.css?v=20260531-unified';
 @import 'theme/elestio.css?v=20260607-sidebar-readable';
 @import 'components/profile.css?v=20260607-accent-contrast';
