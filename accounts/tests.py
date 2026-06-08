@@ -19,6 +19,7 @@ class UserRegistrationFormTests(TestCase):
     def test_registration_generates_public_username_from_name(self):
         form = UserRegistrationForm(data={
             'first_name': 'Anna',
+            'middle_name': 'Maria',
             'last_name': 'Kowalska',
             'email': 'anna@example.com',
             'password1': 'testpass123',
@@ -29,6 +30,8 @@ class UserRegistrationFormTests(TestCase):
         user = form.save()
 
         self.assertEqual(user.username, '@anna.kowalska')
+        self.assertEqual(user.middle_name, 'Maria')
+        self.assertEqual(user.get_full_name(), 'Anna Maria Kowalska')
 
     def test_registration_generates_unique_public_username(self):
         get_user_model().objects.create_user(
@@ -58,6 +61,7 @@ class ProfileViewTests(TestCase):
             username='@anna.kowalska',
             email='anna@example.com',
             first_name='Anna',
+            middle_name='Maria',
             last_name='Kowalska',
             phone_number='+48 500 600 700',
             job_title='Product Manager',
@@ -77,7 +81,7 @@ class ProfileViewTests(TestCase):
         response = self.client.get(reverse('profile'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Anna Kowalska')
+        self.assertContains(response, 'Anna Maria Kowalska')
         self.assertContains(response, 'anna@example.com')
         self.assertContains(response, '@anna.kowalska')
         self.assertContains(response, '+48 500 600 700')
@@ -85,6 +89,19 @@ class ProfileViewTests(TestCase):
         self.assertContains(response, 'Zajmuje sie wdrozeniami i komunikacja z klientami.')
         self.assertContains(response, 'Aktywny')
         self.assertContains(response, 'icon-tabler-user-square')
+        content = response.content.decode()
+        self.assertNotIn('<h2>Sesja</h2>', content)
+        self.assertNotIn('<span>Konta</span>', content)
+        self.assertNotIn('<span>Aktywne</span>', content)
+        self.assertNotIn('<h2>Akcje</h2>', content)
+        self.assertNotIn('class="tasks-issue-icon-button" aria-label="Administracja"', content)
+        self.assertNotIn('class="tasks-issue-save profile-edit-open"', content)
+        self.assertIn('class="tasks-icon-button contacts-actions-menu__toggle"', content)
+        self.assertIn('aria-controls="profile-actions-menu"', content)
+        self.assertIn('data-profile-actions-toggle', content)
+        self.assertIn('class="contacts-actions-menu__item" role="menuitem" data-profile-edit-open', content)
+        self.assertIn(f'action="{reverse("update_presence_status")}"', content)
+        self.assertIn('data-profile-status-form', content)
 
     def test_account_avatar_uses_user_specific_background_color(self):
         other_user = get_user_model().objects.create_user(
@@ -107,6 +124,7 @@ class ProfileViewTests(TestCase):
 
         response = self.client.post(reverse('profile'), {
             'first_name': 'Jan',
+            'middle_name': 'Piotr',
             'last_name': 'Nowak',
             'email': 'jan@example.com',
             'username': '@jan.nowak',
@@ -119,13 +137,39 @@ class ProfileViewTests(TestCase):
         self.assertRedirects(response, reverse('profile'))
         self.user.refresh_from_db()
         self.assertEqual(self.user.first_name, 'Jan')
+        self.assertEqual(self.user.middle_name, 'Piotr')
         self.assertEqual(self.user.last_name, 'Nowak')
+        self.assertEqual(self.user.get_full_name(), 'Jan Piotr Nowak')
         self.assertEqual(self.user.email, 'jan@example.com')
         self.assertEqual(self.user.username, '@jan.nowak')
         self.assertEqual(self.user.phone_number, '+48 111 222 333')
         self.assertEqual(self.user.job_title, 'Koordynator')
         self.assertEqual(self.user.bio, 'Odpowiada za kontakt z zespolem.')
         self.assertEqual(self.user.presence_status, 'out_of_office')
+
+    def test_profile_status_inline_updates_presence_status(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('update_presence_status'), {
+            'presence_status': 'busy',
+        })
+
+        self.assertRedirects(response, reverse('profile'))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.presence_status, get_user_model().PresenceStatus.BUSY)
+
+    def test_profile_status_inline_rejects_invalid_status(self):
+        self.user.presence_status = get_user_model().PresenceStatus.OUT_OF_OFFICE
+        self.user.save(update_fields=['presence_status'])
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('update_presence_status'), {
+            'presence_status': 'unknown',
+        })
+
+        self.assertRedirects(response, reverse('profile'))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.presence_status, get_user_model().PresenceStatus.OUT_OF_OFFICE)
 
     def test_profile_saves_cropped_profile_photo(self):
         self.client.force_login(self.user)
@@ -137,6 +181,7 @@ class ProfileViewTests(TestCase):
         with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
             response = self.client.post(reverse('profile'), {
                 'first_name': 'Anna',
+                'middle_name': 'Maria',
                 'last_name': 'Kowalska',
                 'email': 'anna@example.com',
                 'username': '@anna.kowalska',

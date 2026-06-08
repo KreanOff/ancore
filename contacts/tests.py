@@ -21,6 +21,7 @@ class ContactCollaborationTests(TestCase):
             username='@marek.nowak',
             email='marek@example.com',
             first_name='Marek',
+            middle_name='Piotr',
             last_name='Nowak',
             password='test-pass-123',
         )
@@ -52,15 +53,26 @@ class ContactCollaborationTests(TestCase):
         self.assertTrue(UserContact.objects.filter(owner=self.owner, target_user=self.other_user).exists())
         contact = Contact.objects.get(user=self.owner, email='marek@example.com')
         self.assertEqual(contact.first_name, 'Marek')
+        self.assertEqual(contact.middle_name, 'Piotr')
+        self.assertEqual(contact.display_name, 'Marek Piotr Nowak')
         self.assertEqual(contact.status, 'active')
 
         response = self.client.get(reverse('contacts:contacts'))
         self.assertContains(response, '/media/profile_photos/marek.webp')
+        self.assertContains(response, 'Marek Piotr Nowak')
+
+    def test_user_directory_search_matches_middle_name(self):
+        response = self.client.get(reverse('contacts:user-directory'), {'q': 'Piotr'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Marek Piotr Nowak')
+        self.assertContains(response, '@marek.nowak')
 
     def test_guest_contacts_list_shows_contacts_without_ancore_login(self):
         guest = Contact.objects.create(
             user=self.owner,
             first_name='Ola',
+            middle_name='Maria',
             last_name='Gosc',
             email='ola.gosc@example.com',
         )
@@ -90,6 +102,12 @@ class ContactCollaborationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Goście')
         self.assertEqual(list(response.context['contacts']), [guest])
+
+        response = self.client.get(reverse('contacts:guests'), {'q': 'Maria'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context['contacts']), [guest])
+        self.assertContains(response, 'Ola Maria Gosc')
 
     def test_presence_navigation_counts_only_added_user_contacts(self):
         response = self.client.get(reverse('contacts:contacts'))
@@ -172,6 +190,7 @@ class ContactCollaborationTests(TestCase):
 
         response = self.client.post(reverse('contacts:create'), {
             'first_name': 'Ewa',
+            'middle_name': 'Maria',
             'last_name': 'Lis',
             'company': '',
             'company_record': company.pk,
@@ -187,6 +206,8 @@ class ContactCollaborationTests(TestCase):
         self.assertRedirects(response, reverse('contacts:view-contact', args=[contact.pk]))
         self.assertEqual(contact.company_record, company)
         self.assertEqual(contact.company, 'Acme')
+        self.assertEqual(contact.middle_name, 'Maria')
+        self.assertEqual(contact.display_name, 'Ewa Maria Lis')
 
     def test_contacts_page_exposes_modal_create_forms(self):
         response = self.client.get(reverse('contacts:contacts'))
@@ -226,6 +247,7 @@ class ContactCollaborationTests(TestCase):
         self.assertTrue(payload['found'])
         self.assertEqual(payload['user']['username'], '@marek.nowak')
         self.assertEqual(payload['user']['first_name'], 'Marek')
+        self.assertEqual(payload['user']['middle_name'], 'Piotr')
         self.assertEqual(payload['user']['last_name'], 'Nowak')
         self.assertEqual(payload['user']['email'], 'marek@example.com')
         self.assertEqual(payload['user']['phone'], '+48 111 222 333')
@@ -238,6 +260,7 @@ class ContactCollaborationTests(TestCase):
             'action': 'create_contact_modal',
             'ancore_login': '@marek.nowak',
             'first_name': '',
+            'middle_name': '',
             'last_name': '',
             'company': '',
             'company_record': '',
@@ -252,6 +275,7 @@ class ContactCollaborationTests(TestCase):
         contact = Contact.objects.get(user=self.owner, email='marek@example.com')
         self.assertRedirects(response, reverse('contacts:view-contact', args=[contact.pk]))
         self.assertEqual(contact.first_name, 'Marek')
+        self.assertEqual(contact.middle_name, 'Piotr')
         self.assertEqual(contact.last_name, 'Nowak')
         self.assertEqual(contact.phone, '+48 111 222 333')
         self.assertEqual(contact.role, 'Project Manager')
@@ -268,6 +292,7 @@ class ContactCollaborationTests(TestCase):
             'action': 'create_contact_modal',
             'ancore_login': '',
             'first_name': '',
+            'middle_name': '',
             'last_name': '',
             'company': '',
             'company_record': '',
@@ -326,6 +351,7 @@ class ContactCollaborationTests(TestCase):
         contact = Contact.objects.create(
             user=self.owner,
             first_name='Ewa',
+            middle_name='Maria',
             last_name='Lis',
             email='ewa@example.com',
             phone='+48 500 600 700',
@@ -335,7 +361,7 @@ class ContactCollaborationTests(TestCase):
         response = self.client.get(reverse('contacts:view-contact', args=[contact.pk]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Ewa Lis')
+        self.assertContains(response, 'Ewa Maria Lis')
         self.assertContains(response, 'ewa@example.com')
         self.assertContains(response, reverse('contacts:edit-contact', args=[contact.pk]))
         self.assertContains(response, 'Edytuj')
@@ -362,6 +388,7 @@ class ContactCollaborationTests(TestCase):
 
         response = self.client.post(reverse('contacts:view-contact', args=[contact.pk]), {
             'first_name': 'Zmieniony',
+            'middle_name': 'Adam',
             'last_name': 'Testowy',
             'company': '',
             'company_record': '',
@@ -382,6 +409,7 @@ class ContactCollaborationTests(TestCase):
         contact = Contact.objects.create(
             user=self.owner,
             first_name='Kamil',
+            middle_name='Pawel',
             last_name='Testowy',
             email='kamil@example.com',
         )
@@ -397,6 +425,7 @@ class ContactCollaborationTests(TestCase):
 
         response = self.client.post(reverse('contacts:edit-contact', args=[contact.pk]), {
             'first_name': 'Karol',
+            'middle_name': 'Adam',
             'last_name': 'Testowy',
             'company': 'Ancore',
             'company_record': '',
@@ -411,5 +440,7 @@ class ContactCollaborationTests(TestCase):
         contact.refresh_from_db()
         self.assertRedirects(response, reverse('contacts:view-contact', args=[contact.pk]))
         self.assertEqual(contact.first_name, 'Karol')
+        self.assertEqual(contact.middle_name, 'Adam')
+        self.assertEqual(contact.display_name, 'Karol Adam Testowy')
         self.assertEqual(contact.email, 'karol@example.com')
         self.assertEqual(contact.role, 'Konsultant')

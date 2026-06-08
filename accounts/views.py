@@ -128,6 +128,32 @@ def profile(request):
 
 
 @login_required
+@require_POST
+def update_presence_status(request):
+    user_model = get_user_model()
+    presence_status = request.POST.get('presence_status', '')
+    valid_presence_statuses = {
+        value
+        for value, _label in user_model.PresenceStatus.choices
+    }
+
+    if presence_status not in valid_presence_statuses:
+        messages.error(request, 'Nieprawidłowy status użytkownika.')
+        return redirect('profile')
+
+    if presence_status == user_model.PresenceStatus.ACTIVE:
+        mark_user_seen(request.user, force=True)
+    elif presence_status == user_model.PresenceStatus.INACTIVE:
+        mark_user_inactive(request.user, force=True)
+    else:
+        request.user.presence_status = presence_status
+        request.user.save(update_fields=['presence_status'])
+
+    messages.success(request, 'Status został zaktualizowany.')
+    return redirect('profile')
+
+
+@login_required
 def add_account(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)

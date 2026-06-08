@@ -275,7 +275,7 @@
 .contacts-name-grid {
     min-width: 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.75rem;
     flex: 1;
 }
@@ -455,11 +455,6 @@
     text-decoration: underline;
 }
 
-.contacts-profile-company-field {
-    margin-top: 1rem;
-    width: min(100%, 640px);
-}
-
 .contacts-profile-notes-field {
     margin-top: 0.85rem;
 }
@@ -609,11 +604,12 @@
 
 .contacts-modal-title-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.8rem;
 }
 
 .contacts-create-modal__body .tasks-inline-input[name="first_name"],
+.contacts-create-modal__body .tasks-inline-input[name="middle_name"],
 .contacts-create-modal__body .tasks-inline-input[name="last_name"],
 .contacts-create-modal__body .tasks-inline-input[name="name"] {
     height: 50px;
@@ -636,6 +632,7 @@
 }
 
 .contacts-edit-modal__body .form-input[name="first_name"],
+.contacts-edit-modal__body .form-input[name="middle_name"],
 .contacts-edit-modal__body .form-input[name="last_name"] {
     height: 50px;
     padding: 0;
@@ -737,6 +734,7 @@
 }
 
 .contacts-edit-modal__body .form-input[name="first_name"]:focus,
+.contacts-edit-modal__body .form-input[name="middle_name"]:focus,
 .contacts-edit-modal__body .form-input[name="last_name"]:focus {
     border: 0;
     box-shadow: none;

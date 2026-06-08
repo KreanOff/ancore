@@ -70,6 +70,7 @@ class Contact(models.Model):
     ]
 
     first_name = models.CharField(max_length=80, blank=True)
+    middle_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
     company = models.CharField(max_length=140, blank=True)
     company_record = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='contacts')
@@ -85,14 +86,18 @@ class Contact(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='contacts', db_column='owner_id')
 
     class Meta:
-        ordering = ['first_name', 'last_name', 'company']
+        ordering = ['first_name', 'middle_name', 'last_name', 'company']
 
     def __str__(self):
         return self.display_name
 
     @property
     def display_name(self):
-        name = f'{self.first_name} {self.last_name}'.strip()
+        name = ' '.join(
+            part.strip()
+            for part in [self.first_name, self.middle_name, self.last_name]
+            if part and part.strip()
+        )
         return name or self.company or f'Kontakt #{self.pk}'
 
     @property

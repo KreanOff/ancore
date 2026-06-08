@@ -364,7 +364,7 @@
 
 .profile-name-fields {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.6rem;
 }
 
@@ -492,6 +492,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.profile-status-button [data-profile-status-selected-label] {
+    color: var(--profile-presence-color, inherit);
 }
 
 .profile-status-button-icon,
@@ -814,6 +818,39 @@
 
 .profile-side-status {
     justify-content: flex-start;
+}
+
+.profile-status-side-field {
+    align-items: center;
+}
+
+.profile-side-status-form {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+}
+
+.profile-side-status-form.is-submitting {
+    opacity: 0.72;
+    pointer-events: none;
+}
+
+.profile-status-dropdown--side {
+    width: min(100%, 14rem);
+}
+
+.profile-status-dropdown--side .profile-status-button {
+    min-height: 32px;
+    padding-inline: 0 0.35rem;
+    border-color: transparent;
+    background: transparent;
+}
+
+.profile-status-dropdown--side .profile-status-button:hover,
+.profile-status-dropdown--side.is-open .profile-status-button,
+.profile-status-dropdown--side .profile-status-button:focus-visible {
+    border-color: #dfe3e9;
+    background: #f7f8fa;
 }
 
 .profile-issue-sidebar .tasks-issue-field {

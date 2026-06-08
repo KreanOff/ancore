@@ -40,6 +40,7 @@ class ContactForm(forms.ModelForm):
         model = Contact
         fields = [
             'first_name',
+            'middle_name',
             'last_name',
             'company',
             'company_record',
@@ -53,6 +54,10 @@ class ContactForm(forms.ModelForm):
         widgets = {
             'first_name': forms.TextInput(attrs={
                 'placeholder': 'Imię',
+                'class': 'form-input',
+            }),
+            'middle_name': forms.TextInput(attrs={
+                'placeholder': 'Drugie imię',
                 'class': 'form-input',
             }),
             'last_name': forms.TextInput(attrs={
@@ -96,6 +101,9 @@ class ContactForm(forms.ModelForm):
     def clean_first_name(self):
         return (self.cleaned_data.get('first_name') or '').strip()
 
+    def clean_middle_name(self):
+        return (self.cleaned_data.get('middle_name') or '').strip()
+
     def clean_last_name(self):
         return (self.cleaned_data.get('last_name') or '').strip()
 
@@ -121,6 +129,7 @@ class ContactModalForm(ContactForm):
         text_fields = [
             'ancore_login',
             'first_name',
+            'middle_name',
             'last_name',
             'company',
             'role',
@@ -137,6 +146,7 @@ class ContactModalForm(ContactForm):
             self.fields[name].widget.attrs['class'] = 'tasks-inline-select'
 
         self.fields['first_name'].widget.attrs['placeholder'] = 'Imię'
+        self.fields['middle_name'].widget.attrs['placeholder'] = 'Drugie imię'
         self.fields['last_name'].widget.attrs['placeholder'] = 'Nazwisko'
         self.fields['notes'].widget.attrs.update({
             'class': 'tasks-inline-input tasks-modal-textarea',
@@ -165,6 +175,7 @@ class ContactModalForm(ContactForm):
                 self.add_error('ancore_login', 'Nie znaleziono użytkownika z takim ID Ancore.')
             else:
                 cleaned_data['first_name'] = cleaned_data.get('first_name') or self.ancore_user.first_name
+                cleaned_data['middle_name'] = cleaned_data.get('middle_name') or self.ancore_user.middle_name
                 cleaned_data['last_name'] = cleaned_data.get('last_name') or self.ancore_user.last_name
                 cleaned_data['email'] = cleaned_data.get('email') or self.ancore_user.email
                 cleaned_data['phone'] = cleaned_data.get('phone') or self.ancore_user.phone_number
@@ -255,7 +266,7 @@ class ShareItemForm(forms.ModelForm):
         users = get_user_model().objects.filter(is_active=True)
         if user is not None:
             users = users.exclude(pk=user.pk)
-        self.fields['shared_with'].queryset = users.order_by('first_name', 'last_name', 'email')
+        self.fields['shared_with'].queryset = users.order_by('first_name', 'middle_name', 'last_name', 'email')
 
     def clean_note(self):
         return (self.cleaned_data.get('note') or '').strip()

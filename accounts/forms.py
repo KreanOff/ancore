@@ -30,6 +30,10 @@ class UserRegistrationForm(UserCreationForm):
         **{'placeholder': 'Imię', 'id': 'first-name', 'autocomplete': 'given-name'},
         **_input_attrs,
     }))
+    middle_name = forms.CharField(max_length=150, required=False, widget=forms.TextInput(attrs={
+        **{'placeholder': 'Drugie imię', 'id': 'middle-name', 'autocomplete': 'additional-name'},
+        **_input_attrs,
+    }))
     last_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
         **{'placeholder': 'Nazwisko', 'id': 'last-name', 'autocomplete': 'family-name'},
         **_input_attrs,
@@ -41,7 +45,7 @@ class UserRegistrationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('first_name', 'last_name', 'email')
+        fields = ('first_name', 'middle_name', 'last_name', 'email')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -59,6 +63,7 @@ class UserRegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.first_name = self.cleaned_data['first_name']
+        user.middle_name = self.cleaned_data.get('middle_name', '')
         user.last_name = self.cleaned_data['last_name']
         user.email = self.cleaned_data['email']
         user.username = unique_public_username(
@@ -75,6 +80,10 @@ class UserProfileForm(forms.ModelForm):
 
     first_name = forms.CharField(label='Imię', max_length=150, required=True, widget=forms.TextInput(attrs={
         **{'placeholder': 'Imię'},
+        **_input_attrs,
+    }))
+    middle_name = forms.CharField(label='Drugie imię', max_length=150, required=False, widget=forms.TextInput(attrs={
+        **{'placeholder': 'Drugie imię', 'autocomplete': 'additional-name'},
         **_input_attrs,
     }))
     last_name = forms.CharField(label='Nazwisko', max_length=150, required=True, widget=forms.TextInput(attrs={
@@ -129,6 +138,7 @@ class UserProfileForm(forms.ModelForm):
         fields = (
             'profile_photo',
             'first_name',
+            'middle_name',
             'last_name',
             'email',
             'username',

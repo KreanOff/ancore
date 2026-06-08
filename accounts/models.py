@@ -19,6 +19,7 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150)
+    middle_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150)
     profile_photo = models.FileField(
         upload_to='profile_photos/',
@@ -41,6 +42,13 @@ class User(AbstractUser):
     @property
     def presence_status_class(self):
         return f'presence-{self.presence_status}'
+
+    def get_full_name(self):
+        return ' '.join(
+            part.strip()
+            for part in [self.first_name, self.middle_name, self.last_name]
+            if part and part.strip()
+        )
 
     def __str__(self):
         return self.email

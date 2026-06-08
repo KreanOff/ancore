@@ -7,6 +7,7 @@
         const modal = editModal();
         if (!modal) return;
 
+        closeProfileActionMenus(null);
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('profile-edit-modal-open');
@@ -44,6 +45,35 @@
         });
     }
 
+    function closeProfileActionMenu(menu, restoreFocus = false) {
+        const toggle = menu.querySelector('[data-profile-actions-toggle]');
+
+        menu.classList.remove('is-open');
+        toggle?.setAttribute('aria-expanded', 'false');
+        if (restoreFocus) {
+            toggle?.focus();
+        }
+    }
+
+    function closeProfileActionMenus(exceptMenu) {
+        document.querySelectorAll('[data-profile-actions].is-open').forEach(menu => {
+            if (menu !== exceptMenu) {
+                closeProfileActionMenu(menu);
+            }
+        });
+    }
+
+    function toggleProfileActionMenu(toggle) {
+        const menu = toggle.closest('[data-profile-actions]');
+        if (!menu) return;
+
+        const isOpen = !menu.classList.contains('is-open');
+        closeOtherDropdowns(null);
+        closeProfileActionMenus(menu);
+        menu.classList.toggle('is-open', isOpen);
+        toggle.setAttribute('aria-expanded', String(isOpen));
+    }
+
     function openDropdown(dropdown) {
         const toggle = dropdown.querySelector('[data-profile-status-toggle]');
         const menu = dropdown.querySelector('[data-profile-status-menu]');
@@ -66,12 +96,20 @@
         const escapedValue = window.CSS?.escape ? CSS.escape(value) : String(value).replace(/"/g, '\\"');
         const option = dropdown.querySelector(`[data-profile-status-option][data-value="${escapedValue}"]`)
             || dropdown.querySelector('[data-profile-status-option]');
+        const toggle = dropdown.querySelector('[data-profile-status-toggle]');
         const selectedIcon = dropdown.querySelector('[data-profile-status-selected-icon]');
         const selectedLabel = dropdown.querySelector('[data-profile-status-selected-label]');
 
         if (!select || !option) return;
 
         select.value = option.dataset.value || '';
+        if (toggle) {
+            Array.from(toggle.classList)
+                .filter(className => className.startsWith('presence-'))
+                .forEach(className => toggle.classList.remove(className));
+            toggle.classList.add(`presence-${option.dataset.value || ''}`);
+        }
+
         dropdown.querySelectorAll('[data-profile-status-option]').forEach(item => {
             const isSelected = item === option;
             item.classList.toggle('is-selected', isSelected);
@@ -115,6 +153,22 @@
                 syncDropdown(dropdown, select.value, false);
             }
         });
+    }
+
+    function submitStatusForm(form) {
+        if (!form || form.dataset.profileStatusSubmitting === 'true') return;
+
+        form.dataset.profileStatusSubmitting = 'true';
+        form.classList.add('is-submitting');
+        form.querySelectorAll('button').forEach(button => {
+            button.disabled = true;
+        });
+
+        if (form.requestSubmit) {
+            form.requestSubmit();
+        } else {
+            form.submit();
+        }
     }
 
     function initEditModal() {
@@ -382,12 +436,20 @@
     document.addEventListener('click', event => {
         const editOpen = event.target.closest('[data-profile-edit-open]');
         const editClose = event.target.closest('[data-profile-edit-close]');
+        const actionToggle = event.target.closest('[data-profile-actions-toggle]');
         const toggle = event.target.closest('[data-profile-status-toggle]');
         const option = event.target.closest('[data-profile-status-option]');
         const modal = editModal();
 
         if (editOpen) {
+            closeProfileActionMenus(null);
             openEditModal();
+            return;
+        }
+
+        if (actionToggle) {
+            event.stopPropagation();
+            toggleProfileActionMenu(actionToggle);
             return;
         }
 
@@ -426,10 +488,20 @@
         if (!event.target.closest('[data-profile-status-dropdown]')) {
             closeOtherDropdowns(null);
         }
+
+        if (!event.target.closest('[data-profile-actions]')) {
+            closeProfileActionMenus(null);
+        }
     });
 
     document.addEventListener('keydown', event => {
         const dropdown = event.target.closest('[data-profile-status-dropdown]');
+        const actionMenu = event.target.closest('[data-profile-actions]');
+
+        if (actionMenu && event.key === 'Escape') {
+            closeProfileActionMenu(actionMenu, true);
+            return;
+        }
 
         if (dropdown && event.key === 'Escape') {
             closeDropdown(dropdown);
@@ -456,7 +528,10 @@
 
     document.addEventListener('change', event => {
         if (!event.target.matches('[data-profile-status-dropdown] select')) return;
-        syncDropdown(event.target.closest('[data-profile-status-dropdown]'), event.target.value, false);
+
+        const dropdown = event.target.closest('[data-profile-status-dropdown]');
+        syncDropdown(dropdown, event.target.value, false);
+        submitStatusForm(event.target.closest('[data-profile-status-form]'));
     });
 
     if (document.readyState === 'loading') {

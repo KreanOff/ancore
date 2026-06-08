@@ -261,11 +261,5 @@ body.secondary-menu-collapsed .secondary-menu-resizer {
     width: 33.6px;
     height: 33.6px;
     flex: 0 0 33.6px;
-    border-radius: 8.4px;
     font-size: 0.864rem;
-}
-
-.nav-link .sidebar-profile-avatar .profile-avatar-icon {
-    width: 70%;
-    height: 70%;
 }

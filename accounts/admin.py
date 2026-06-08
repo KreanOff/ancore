@@ -5,8 +5,12 @@ from .models import User
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
+    fieldsets = (
+        UserAdmin.fieldsets[0],
+        ('Personal info', {'fields': ('first_name', 'middle_name', 'last_name', 'email')}),
+        *UserAdmin.fieldsets[2:],
         ('Profil', {'fields': ('profile_photo', 'phone_number', 'job_title', 'bio', 'presence_status', 'last_seen_at')}),
     )
-    list_display = ('email', 'username', 'first_name', 'last_name', 'job_title', 'presence_status', 'last_seen_at', 'is_staff', 'is_active')
+    list_display = ('email', 'username', 'first_name', 'middle_name', 'last_name', 'job_title', 'presence_status', 'last_seen_at', 'is_staff', 'is_active')
     list_filter = UserAdmin.list_filter + ('presence_status',)
+    search_fields = ('username', 'first_name', 'middle_name', 'last_name', 'email')

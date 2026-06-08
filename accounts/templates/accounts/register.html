@@ -32,12 +32,19 @@
     </div>
     {% endif %}
 
-    <div class="form-row">
+    <div class="form-row form-row--three">
         <div class="form-group auth-field">
             <label class="form-label" for="{{ form.first_name.id_for_label }}">Imię</label>
             <div class="auth-input-shell">
                 <i class="bi bi-person" aria-hidden="true"></i>
                 {{ form.first_name }}
+            </div>
+        </div>
+        <div class="form-group auth-field">
+            <label class="form-label" for="{{ form.middle_name.id_for_label }}">Drugie imię</label>
+            <div class="auth-input-shell">
+                <i class="bi bi-person" aria-hidden="true"></i>
+                {{ form.middle_name }}
             </div>
         </div>
         <div class="form-group auth-field">

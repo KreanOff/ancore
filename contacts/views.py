@@ -55,7 +55,7 @@ def _contacts_queryset(user):
             queryset=UserContact.objects.filter(owner=user).select_related('target_user'),
             to_attr='current_user_links',
         )
-    ).order_by('first_name', 'last_name', 'company')
+    ).order_by('first_name', 'middle_name', 'last_name', 'company')
 
 
 def _ancore_contacts_queryset(user):
@@ -186,6 +186,7 @@ def _save_new_company(form, user):
 def _contact_snapshot(contact):
     return {
         'first_name': contact.first_name,
+        'middle_name': contact.middle_name,
         'last_name': contact.last_name,
         'company': contact.company,
         'role': contact.role,
@@ -201,6 +202,7 @@ def _contact_snapshot(contact):
 def _contact_change_activities(contact, before):
     labels = {
         'first_name': 'imię',
+        'middle_name': 'drugie imię',
         'last_name': 'nazwisko',
         'company': 'firma',
         'role': 'stanowisko',
@@ -267,6 +269,7 @@ def lookup_ancore_login(request):
         'user': {
             'username': user.username,
             'first_name': user.first_name,
+            'middle_name': user.middle_name,
             'last_name': user.last_name,
             'email': user.email,
             'phone': user.phone_number,
@@ -311,6 +314,7 @@ def contacts(request):
     if query:
         contacts_qs = contacts_qs.filter(
             Q(first_name__icontains=query)
+            | Q(middle_name__icontains=query)
             | Q(last_name__icontains=query)
             | Q(company__icontains=query)
             | Q(company_record__name__icontains=query)
@@ -366,6 +370,7 @@ def guest_contacts(request):
     if query:
         contacts_qs = contacts_qs.filter(
             Q(first_name__icontains=query)
+            | Q(middle_name__icontains=query)
             | Q(last_name__icontains=query)
             | Q(company__icontains=query)
             | Q(company_record__name__icontains=query)
@@ -524,6 +529,7 @@ def user_directory(request):
     if query:
         users = users.filter(
             Q(first_name__icontains=query)
+            | Q(middle_name__icontains=query)
             | Q(last_name__icontains=query)
             | Q(email__icontains=query)
             | Q(username__icontains=query)
@@ -541,7 +547,7 @@ def user_directory(request):
     context = {
         'query': query,
         'presence': presence,
-        'users': users.order_by('first_name', 'last_name', 'email')[:50],
+        'users': users.order_by('first_name', 'middle_name', 'last_name', 'email')[:50],
         'existing_user_contact_ids': existing_ids,
         **_contacts_navigation_context(request.user, active_status='users', active_presence=presence),
     }
@@ -561,6 +567,7 @@ def add_user_contact(request, user_id):
         email=target_user.email,
         defaults={
             'first_name': target_user.first_name,
+            'middle_name': target_user.middle_name,
             'last_name': target_user.last_name,
             'status': 'active',
             'source': 'Użytkownik aplikacji',
@@ -683,7 +690,7 @@ def view_company(request, company_id):
         'form': form,
         'share_form': share_form,
         'can_edit_company': can_edit_company,
-        'company_contacts': company.contacts.filter(user=request.user).order_by('first_name', 'last_name'),
+        'company_contacts': company.contacts.filter(user=request.user).order_by('first_name', 'middle_name', 'last_name'),
         'company_shares': SharedItem.objects.filter(
             content_type=_content_type_for(Company),
             object_id=company.pk,

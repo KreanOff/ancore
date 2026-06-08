@@ -392,6 +392,10 @@ body.auth-page {
     gap: 0.85rem;
 }
 
+.auth-card .form-row--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .auth-card .form-group {
     min-width: 0;
     margin-bottom: 1rem;

@@ -31,15 +31,32 @@
             </div>
 
             <div class="tasks-issue-actions">
-                <a href="/admin/" class="tasks-issue-icon-button" aria-label="Administracja" title="Administracja">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5z"/>
-                        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.08.08a2 2 0 1 1-3.84 0L10 20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.08-.08a2 2 0 1 1 0-3.84L4 10a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.08-.08a2 2 0 1 1 3.84 0L14 4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.1.35.3.69.6 1l.08.08a2 2 0 1 1 0 3.84L20 14c-.3.31-.5.65-.6 1z"/>
-                    </svg>
-                </a>
-                <button type="button" class="tasks-issue-save profile-edit-open" title="Edytuj profil" data-profile-edit-open>
-                    Edytuj
-                </button>
+                <div class="contacts-actions-menu" data-profile-actions>
+                    <button type="button"
+                            class="tasks-icon-button contacts-actions-menu__toggle"
+                            aria-label="Opcje profilu"
+                            title="Opcje profilu"
+                            aria-haspopup="menu"
+                            aria-expanded="false"
+                            aria-controls="profile-actions-menu"
+                            data-contact-actions-toggle
+                            data-profile-actions-toggle>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M12 12h.01"/>
+                            <path d="M18 12h.01"/>
+                            <path d="M6 12h.01"/>
+                        </svg>
+                    </button>
+                    <div class="contacts-actions-menu__panel" id="profile-actions-menu" role="menu" aria-label="Opcje profilu">
+                        <button type="button" class="contacts-actions-menu__item" role="menuitem" data-profile-edit-open>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                            </svg>
+                            Edytuj
+                        </button>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -51,10 +68,13 @@
                             {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='profile-page-avatar' only %}
                         </div>
                         <div class="profile-title-fields">
-                            <div class="tasks-issue-title-field profile-name-fields profile-display-name-fields" aria-label="Imię i nazwisko">
-                                {% if request.user.first_name or request.user.last_name %}
+                            <div class="tasks-issue-title-field profile-name-fields profile-display-name-fields" aria-label="Imię, drugie imię i nazwisko">
+                                {% if request.user.first_name or request.user.middle_name or request.user.last_name %}
                                     {% if request.user.first_name %}
                                     <strong class="profile-display-name">{{ request.user.first_name }}</strong>
+                                    {% endif %}
+                                    {% if request.user.middle_name %}
+                                    <strong class="profile-display-name">{{ request.user.middle_name }}</strong>
                                     {% endif %}
                                     {% if request.user.last_name %}
                                     <strong class="profile-display-name">{{ request.user.last_name }}</strong>
@@ -62,35 +82,6 @@
                                 {% else %}
                                     <strong class="profile-display-name">Nie podano</strong>
                                 {% endif %}
-                            </div>
-
-                            <div class="profile-readonly-field profile-email-field">
-                                <span class="profile-field-label">Email</span>
-                                <strong class="profile-display-value">{{ request.user.email }}</strong>
-                            </div>
-
-                            <div class="profile-readonly-field profile-handle-field">
-                                <span class="profile-field-label">ID Ancore</span>
-                                <strong class="profile-display-value">{{ request.user.username }}</strong>
-                            </div>
-
-                            <div class="profile-readonly-status">
-                                <span class="profile-field-label">Status</span>
-                                <strong class="profile-presence-badge {{ request.user.presence_status_class }}">
-                                    {% include 'accounts/includes/presence_status_icon.html' with status=request.user.presence_status %}
-                                    {{ request.user.get_presence_status_display }}
-                                </strong>
-                            </div>
-
-                            <div class="profile-contact-fields">
-                                <div class="profile-stacked-field">
-                                    <span class="profile-field-label">Numer telefonu</span>
-                                    <strong class="profile-display-value">{{ request.user.phone_number|default:"Nie podano" }}</strong>
-                                </div>
-                                <div class="profile-stacked-field">
-                                    <span class="profile-field-label">Stanowisko</span>
-                                    <strong class="profile-display-value">{{ request.user.job_title|default:"Nie podano" }}</strong>
-                                </div>
                             </div>
 
                             <div class="profile-stacked-field profile-bio-field">
@@ -167,12 +158,55 @@
 
             <aside class="tasks-issue-sidebar profile-issue-sidebar" aria-label="Szczegóły profilu">
                 <section class="tasks-issue-side-section">
-                    <div class="tasks-issue-field">
+                    <div class="tasks-issue-field profile-status-side-field">
                         <span>Status</span>
-                        <strong class="profile-side-status profile-presence-badge {{ request.user.presence_status_class }}">
-                            {% include 'accounts/includes/presence_status_icon.html' with status=request.user.presence_status %}
-                            {{ request.user.get_presence_status_display }}
-                        </strong>
+                        <form method="post"
+                              action="{% url 'update_presence_status' %}"
+                              class="profile-side-status-form"
+                              data-profile-status-form>
+                            {% csrf_token %}
+                            <div class="profile-status-dropdown profile-status-dropdown--side" data-profile-status-dropdown>
+                                <select name="presence_status" class="form-input profile-status-source" aria-label="Status użytkownika">
+                                    {% for option in presence_status_options %}
+                                    <option value="{{ option.value }}" {% if option.is_selected %}selected{% endif %}>{{ option.label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button"
+                                        class="profile-status-button profile-status-button--side"
+                                        aria-haspopup="listbox"
+                                        aria-expanded="false"
+                                        data-profile-status-toggle>
+                                    {% for option in presence_status_options %}
+                                        {% if option.is_selected %}
+                                        <span class="profile-status-button-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-selected-icon>
+                                            {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
+                                        </span>
+                                        <span data-profile-status-selected-label>{{ option.label }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <svg class="profile-status-caret" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m5 7.5 5 5 5-5"/>
+                                    </svg>
+                                </button>
+                                <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
+                                    {% for option in presence_status_options %}
+                                    <button type="button"
+                                            class="profile-status-option {% if option.is_selected %}is-selected{% endif %}"
+                                            role="option"
+                                            aria-selected="{% if option.is_selected %}true{% else %}false{% endif %}"
+                                            data-profile-status-option
+                                            data-value="{{ option.value }}"
+                                            data-label="{{ option.label }}">
+                                        <span class="profile-status-option-check" aria-hidden="true"></span>
+                                        <span class="profile-status-option-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-option-icon>
+                                            {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
+                                        </span>
+                                        <span>{{ option.label }}</span>
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <div class="tasks-issue-field">
                         <span>Dostęp</span>
@@ -193,13 +227,6 @@
                         <strong class="tasks-issue-muted">{{ request.user.last_login|date:"d.m.Y, H:i"|default:"Brak danych" }}</strong>
                     </div>
                     <div class="tasks-issue-field">
-                        <span>Użytkownik</span>
-                        <strong class="tasks-issue-person">
-                            {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='tasks-issue-mini-avatar' only %}
-                            {{ request.user.get_full_name|default:request.user.email }}
-                        </strong>
-                    </div>
-                    <div class="tasks-issue-field">
                         <span>Email</span>
                         <strong>{{ request.user.email }}</strong>
                     </div>
@@ -214,30 +241,6 @@
                     <div class="tasks-issue-field">
                         <span>Stanowisko</span>
                         <strong class="tasks-issue-muted">{{ request.user.job_title|default:"Nie podano" }}</strong>
-                    </div>
-                    <div class="tasks-issue-field profile-side-bio">
-                        <span>Bio</span>
-                        <strong class="tasks-issue-muted">{{ request.user.bio|default:"Nie podano"|linebreaksbr }}</strong>
-                    </div>
-                </section>
-
-                <section class="tasks-issue-side-section">
-                    <h2>Sesja</h2>
-                    <div class="tasks-issue-field">
-                        <span>Konta</span>
-                        <strong>{{ switch_accounts|length }}</strong>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>Aktywne</span>
-                        <strong>{{ request.user.username }}</strong>
-                    </div>
-                </section>
-
-                <section class="tasks-issue-side-section">
-                    <h2>Akcje</h2>
-                    <div class="profile-side-actions">
-                        <a href="{% url 'add_account' %}" class="tasks-issue-side-button">Dodaj konto</a>
-                        <a href="/admin/" class="tasks-issue-side-button">Panel admina</a>
                     </div>
                 </section>
             </aside>
@@ -333,6 +336,10 @@
                                 <div class="profile-inline-field">
                                     <label class="profile-field-label" for="{{ form.first_name.id_for_label }}">Imię</label>
                                     {{ form.first_name }}
+                                </div>
+                                <div class="profile-inline-field">
+                                    <label class="profile-field-label" for="{{ form.middle_name.id_for_label }}">Drugie imię</label>
+                                    {{ form.middle_name }}
                                 </div>
                                 <div class="profile-inline-field">
                                     <label class="profile-field-label" for="{{ form.last_name.id_for_label }}">Nazwisko</label>

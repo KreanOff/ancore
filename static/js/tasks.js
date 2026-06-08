@@ -946,6 +946,7 @@ function initTasksPage() {
     function fillContactFromAncoreUser(user) {
         if (!user) return;
         setContactFieldValue('first_name', user.first_name);
+        setContactFieldValue('middle_name', user.middle_name);
         setContactFieldValue('last_name', user.last_name);
         setContactFieldValue('email', user.email);
         setContactFieldValue('phone', user.phone);
