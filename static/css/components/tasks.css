@@ -300,6 +300,10 @@
     color: var(--accent-on-peach);
 }
 
+.tasks-rail-nav .tasks-rail-link {
+    padding-left: 0.95rem;
+}
+
 .tasks-rail-icon,
 .tasks-rail-dot {
     width: 16px;
@@ -2408,6 +2412,10 @@ body.modal-open::before {
 .tasks-project-tree {
     --tasks-tree-icon-size: 16px;
     --tasks-tree-icon-font-size: 1.15rem;
+    --tasks-tree-branch-color: #d9dde5;
+    --tasks-tree-branch-active: var(--accent-peach);
+    --tasks-tree-branch-left: 0.85rem;
+    --tasks-tree-branch-indent: 2.4rem;
     gap: 0.55rem;
     padding-top: 0.75rem;
 }
@@ -2420,21 +2428,25 @@ body.modal-open::before {
 
 .tasks-project-tree .tasks-rail-section-title {
     min-height: 32px;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 56px;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 0.125rem 0 0.625rem;
-    border-radius: 5px;
+    padding: 0;
+    border-radius: 6px;
     background: #3f3b38;
     color: var(--accent-on-peach);
 }
 
 .tasks-project-tree-toggle {
+    width: 100%;
+    min-height: 32px;
     min-width: 0;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
+    padding: 0 0.625rem;
     border: 0;
+    border-radius: 6px 0 0 6px;
     background: transparent;
     color: inherit;
     font: inherit;
@@ -2466,11 +2478,27 @@ body.modal-open::before {
 }
 
 .tasks-project-tree .tasks-rail-add-button {
+    width: 100%;
+    height: auto;
+    min-height: 32px;
+    border-left: 1px solid rgba(255, 255, 255, 0.26);
+    border-radius: 0 6px 6px 0;
+    color: inherit;
+}
+
+.tasks-project-tree .tasks-rail-add-button:hover,
+.tasks-project-tree .tasks-rail-add-button:focus-visible {
+    background: transparent;
     color: inherit;
 }
 
 .tasks-project-tree .tasks-rail-add-button span {
     transform: none;
+}
+
+.tasks-project-tree .tasks-project-create-button {
+    width: 100%;
+    border-radius: 6px;
 }
 
 .tasks-project-tree.is-collapsed .tasks-project-tree-toggle svg {
@@ -2482,22 +2510,28 @@ body.modal-open::before {
 }
 
 .tasks-project-node {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.2rem;
 }
 
 .tasks-project-title-row {
     position: relative;
     display: grid;
-    grid-template-columns: 26px minmax(0, 1fr) 30px;
+    grid-template-columns: minmax(0, 1fr) 30px;
     align-items: center;
     gap: 0.25rem;
 }
 
 .tasks-project-collapse-toggle {
-    width: 26px;
-    height: 30px;
+    position: relative;
+    z-index: 1;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    width: 34px;
+    height: 34px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2510,8 +2544,8 @@ body.modal-open::before {
 
 .tasks-project-collapse-toggle:hover,
 .tasks-project-collapse-toggle:focus-visible {
-    background: #edf1f7;
-    color: #3f3b38;
+    background: transparent;
+    color: var(--text-strong);
     outline: none;
 }
 
@@ -2536,14 +2570,16 @@ body.modal-open::before {
 }
 
 .tasks-project-title {
+    grid-column: 1;
+    grid-row: 1;
     min-height: 34px;
     display: grid;
     grid-template-columns: var(--tasks-tree-icon-size) minmax(0, 1fr);
     align-items: center;
     gap: 0.625rem;
-    padding: 0 0.45rem;
+    padding: 0 0.45rem 0 2.25rem;
     border-radius: 6px;
-    color: #667085;
+    color: var(--text-strong);
     font-size: 0.82rem;
     font-weight: 750;
     text-decoration: none;
@@ -2558,6 +2594,12 @@ body.modal-open::before {
 .tasks-project-title:hover,
 .tasks-project-actions.is-open .tasks-project-more {
     background: var(--accent-peach);
+    color: var(--accent-on-peach);
+}
+
+.tasks-project-node.is-current .tasks-project-collapse-toggle,
+.tasks-project-title-row:has(.tasks-project-title:hover) .tasks-project-collapse-toggle,
+.tasks-project-title-row:has(.tasks-project-title:focus-visible) .tasks-project-collapse-toggle {
     color: var(--accent-on-peach);
 }
 
@@ -2594,6 +2636,8 @@ body.modal-open::before {
 
 .tasks-project-actions {
     position: relative;
+    grid-column: 2;
+    grid-row: 1;
 }
 
 .tasks-project-more {
@@ -2645,10 +2689,23 @@ body.modal-open::before {
 }
 
 .tasks-section-links {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
-    padding-left: 3.75rem;
+    gap: 0.15rem;
+    margin-left: 0.25rem;
+    padding-left: var(--tasks-tree-branch-indent);
+}
+
+.tasks-section-links::before {
+    content: "";
+    position: absolute;
+    left: var(--tasks-tree-branch-left);
+    top: -0.35rem;
+    bottom: 1rem;
+    width: 1px;
+    border-radius: 1px;
+    background: var(--tasks-tree-branch-color);
 }
 
 .tasks-project-node.is-collapsed .tasks-section-links {
@@ -2656,8 +2713,41 @@ body.modal-open::before {
 }
 
 .tasks-section-links .tasks-rail-link {
-    color: #2f333b;
+    position: relative;
+    color: var(--text-strong);
+    font-weight: 600;
     text-decoration: none;
+}
+
+.tasks-section-links .tasks-rail-link::before {
+    content: "";
+    position: absolute;
+    left: calc((var(--tasks-tree-branch-indent) - var(--tasks-tree-branch-left)) * -1);
+    top: 50%;
+    width: calc(var(--tasks-tree-branch-indent) - var(--tasks-tree-branch-left) - 0.45rem);
+    height: 1px;
+    border-radius: 1px;
+    background: var(--tasks-tree-branch-color);
+}
+
+.tasks-section-links .tasks-rail-link.is-active::before {
+    background: var(--tasks-tree-branch-active);
+}
+
+.tasks-section-links .tasks-empty-rail-note {
+    position: relative;
+    padding-left: 0.625rem;
+}
+
+.tasks-section-links .tasks-empty-rail-note::before {
+    content: "";
+    position: absolute;
+    left: calc((var(--tasks-tree-branch-indent) - var(--tasks-tree-branch-left)) * -1);
+    top: 50%;
+    width: calc(var(--tasks-tree-branch-indent) - var(--tasks-tree-branch-left) - 0.45rem);
+    height: 1px;
+    border-radius: 1px;
+    background: var(--tasks-tree-branch-color);
 }
 
 .tasks-rail-group-create {
@@ -5948,6 +6038,10 @@ body.is-resizing-tasks-sidebar {
     grid-template-columns: 1fr 42px;
 }
 
+.tasks-project-tree .tasks-rail-section-title {
+    grid-template-columns: minmax(0, 1fr) 42px;
+}
+
 .tasks-create-menu .tasks-new-button-toggle svg {
     width: 18px;
     height: 18px;
@@ -6296,7 +6390,7 @@ body.is-resizing-tasks-sidebar {
 }
 
 .tasks-section-links {
-    padding-left: 3.35rem;
+    padding-left: var(--tasks-tree-branch-indent);
 }
 
 .tasks-rail-group-create {
@@ -6530,7 +6624,7 @@ body.is-resizing-tasks-sidebar {
 
 .tasks-section-links {
     gap: 0.45rem;
-    padding-left: 3.35rem;
+    padding-left: var(--tasks-tree-branch-indent);
     padding-right: 0.35rem;
 }
 

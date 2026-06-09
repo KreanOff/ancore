@@ -1442,11 +1442,12 @@ function initTasksPage() {
 
     function setProjectCollapsed(projectNode, isCollapsed) {
         const toggle = projectNode.querySelector('[data-project-collapse-toggle]');
-        const projectName = projectNode.querySelector('.tasks-project-title span:not(.tasks-project-badge)')?.textContent?.trim() || 'przestrzeń roboczą';
+        const projectKindAcc = taskAppSegment === 'kanban' ? 'przestrzeń roboczą' : 'projekt';
+        const projectName = projectNode.querySelector('.tasks-project-title span:not(.tasks-project-badge)')?.textContent?.trim() || 'bez nazwy';
 
         projectNode.classList.toggle('is-collapsed', isCollapsed);
         toggle?.setAttribute('aria-expanded', String(!isCollapsed));
-        toggle?.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} przestrzeń roboczą ${projectName}`);
+        toggle?.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} ${projectKindAcc} ${projectName}`);
     }
 
     function clearProjectTreeInitialState() {

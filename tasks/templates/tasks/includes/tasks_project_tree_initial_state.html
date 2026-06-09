@@ -4,14 +4,6 @@
         var styles = [];
 
         try {
-            if (localStorage.getItem('collapsedTaskProjectTree') === 'true') {
-                html.classList.add('tasks-project-tree-initially-collapsed');
-                styles.push(
-                    '.tasks-project-tree-initially-collapsed .tasks-project-tree-content{display:none}',
-                    '.tasks-project-tree-initially-collapsed .tasks-project-tree-toggle svg{transform:rotate(-90deg)}'
-                );
-            }
-
             JSON.parse(localStorage.getItem('collapsedTaskRailNavGroups') || '[]').forEach(function (groupKey) {
                 var safeKey = String(groupKey).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 styles.push(
