@@ -18,13 +18,11 @@
 
         <div class="tasks-create-menu" data-create-menu>
             <button type="button" class="tasks-new-button tasks-new-button-main" id="open-issue-modal" title="Nowe zadanie" aria-haspopup="dialog" aria-controls="issue-modal" {% if not can_create_issue %}disabled{% endif %}>
-                <span aria-hidden="true">+</span>
+                <span aria-hidden="true"><i data-lucide="plus"></i></span>
                 Nowe zadanie
             </button>
             <button type="button" class="tasks-new-button tasks-new-button-toggle" id="open-create-menu" aria-label="Otwórz menu tworzenia" aria-haspopup="menu" aria-expanded="false">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6"/>
-                </svg>
+                <i data-lucide="chevron-down" aria-hidden="true"></i>
             </button>
             <div class="tasks-create-menu__panel" id="create-menu-panel" role="menu" aria-labelledby="open-create-menu">
                 <button type="button" role="menuitem" data-open-project>Utwórz projekt</button>
@@ -37,29 +35,27 @@
         <nav class="tasks-rail-nav">
             <div class="tasks-rail-nav-group {% if active_view == 'my_tasks' or active_view == 'all_groups' or active_view == 'projects' or active_view == 'project' or active_view == 'section' or active_view == 'all_tasks' %}is-current{% endif %}" data-rail-nav-group="mine">
                 <button type="button" class="tasks-rail-nav-group-toggle" aria-expanded="true" aria-controls="tasks-rail-nav-mine" data-rail-nav-group-toggle>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m6 9 6 6 6-6"/>
-                    </svg>
+                    <i data-lucide="chevron-down" aria-hidden="true"></i>
                     <span>Moje</span>
                 </button>
                 <div class="tasks-rail-nav-group-content" id="tasks-rail-nav-mine" data-rail-nav-group-content>
                     <a href="{% url 'tasks:tasks' %}?view=my-tasks" class="tasks-rail-link {% if active_view == 'my_tasks' %}is-active{% endif %}">
                         <span class="tasks-rail-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M13 5h8"/><path d="M13 9h5"/><path d="M13 15h8"/><path d="M13 19h5"/><path d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"/><path d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"/></svg>
+                            <i data-lucide="list-todo" aria-hidden="true"></i>
                         </span>
                         Moje zadania
                         <span class="tasks-rail-count">{{ total_task_count }}</span>
                     </a>
                     <a href="{% url 'tasks:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
                         <span class="tasks-rail-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2"/></svg>
+                            <i data-lucide="folder" aria-hidden="true"></i>
                         </span>
                         Moje grupy
                         <span class="tasks-rail-count">{{ total_group_count }}</span>
                     </a>
                     <a href="{% url 'tasks:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
                         <span class="tasks-rail-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M9 3h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2"/><path d="M17 16v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2"/></svg>
+                            <i data-lucide="folders" aria-hidden="true"></i>
                         </span>
                         Moje projekty
                         <span class="tasks-rail-count">{{ projects|length }}</span>
@@ -68,29 +64,27 @@
             </div>
             <div class="tasks-rail-nav-group {% if active_view == 'shared_tasks' or active_view == 'shared_groups' or active_view == 'shared_projects' %}is-current{% endif %}" data-rail-nav-group="shared">
                 <button type="button" class="tasks-rail-nav-group-toggle" aria-expanded="true" aria-controls="tasks-rail-nav-shared" data-rail-nav-group-toggle>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m6 9 6 6 6-6"/>
-                    </svg>
+                    <i data-lucide="chevron-down" aria-hidden="true"></i>
                     <span>Udostępnione</span>
                 </button>
                 <div class="tasks-rail-nav-group-content" id="tasks-rail-nav-shared" data-rail-nav-group-content>
                     <a href="{% url 'tasks:tasks' %}?view=shared-tasks" class="tasks-rail-link {% if active_view == 'shared_tasks' %}is-active{% endif %}">
                         <span class="tasks-rail-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M13 5h8"/><path d="M13 9h5"/><path d="M13 15h8"/><path d="M13 19h5"/><path d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"/><path d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"/></svg>
+                            <i data-lucide="list-todo" aria-hidden="true"></i>
                         </span>
                         Udostępnione zadania
                         <span class="tasks-rail-count">{{ shared_task_count|default:0 }}</span>
                     </a>
                     <a href="{% url 'tasks:tasks' %}?view=shared-groups" class="tasks-rail-link {% if active_view == 'shared_groups' %}is-active{% endif %}">
                         <span class="tasks-rail-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2"/></svg>
+                            <i data-lucide="folder" aria-hidden="true"></i>
                         </span>
                         Udostępnione grupy
                         <span class="tasks-rail-count">{{ shared_group_count|default:0 }}</span>
                     </a>
                     <a href="{% url 'tasks:tasks' %}?view=shared-projects" class="tasks-rail-link {% if active_view == 'shared_projects' %}is-active{% endif %}">
                         <span class="tasks-rail-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M9 3h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2"/><path d="M17 16v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2"/></svg>
+                            <i data-lucide="folders" aria-hidden="true"></i>
                         </span>
                         Udostępnione projekty
                         <span class="tasks-rail-count">{{ shared_project_count|default:0 }}</span>
@@ -99,15 +93,13 @@
             </div>
             <div class="tasks-rail-nav-group {% if active_view == 'tags' %}is-current{% endif %}" data-rail-nav-group="tags">
                 <button type="button" class="tasks-rail-nav-group-toggle" aria-expanded="true" aria-controls="tasks-rail-nav-tags" data-rail-nav-group-toggle>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m6 9 6 6 6-6"/>
-                    </svg>
+                    <i data-lucide="chevron-down" aria-hidden="true"></i>
                     <span>Etykiety</span>
                 </button>
                 <div class="tasks-rail-nav-group-content" id="tasks-rail-nav-tags" data-rail-nav-group-content>
                     <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
                         <span class="tasks-rail-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/></svg>
+                            <i data-lucide="tag" aria-hidden="true"></i>
                         </span>
                         Tagi
                         <span class="tasks-rail-count">{{ total_tag_count }}</span>
@@ -119,13 +111,11 @@
         <div class="tasks-rail-section tasks-project-tree" data-project-tree>
             <div class="tasks-rail-section-title">
                 <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń Moje projekty" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m6 9 6 6 6-6"/>
-                    </svg>
+                    <i data-lucide="chevron-down" aria-hidden="true"></i>
                     <span>Moje projekty</span>
                 </button>
                 <button type="button" class="tasks-rail-add-button" aria-label="Dodaj projekt" title="Dodaj projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
-                    <span aria-hidden="true">+</span>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
                 </button>
             </div>
 
@@ -134,37 +124,27 @@
             <div class="tasks-project-node {% if active_project.id == project.id %}is-current{% endif %}" data-project-node data-project-id="{{ project.id }}">
                 <div class="tasks-project-title-row">
                     <button type="button" class="tasks-project-collapse-toggle" aria-label="Zwiń projekt {{ project.name }}" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="m6 9 6 6 6-6"/>
-                        </svg>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                     </button>
                     <a href="{% url 'tasks:tasks' %}?project={{ project.id }}" class="tasks-project-title {% if not project.icon %}tasks-project-title--no-icon{% endif %}">
                         {% if project.icon %}
                         <span class="tasks-project-badge" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">
-                            {{ project.icon }}
+                            <i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
                         </span>
                         {% endif %}
                         <span>{{ project.name }}</span>
                     </a>
                     <div class="tasks-project-actions" data-project-actions>
                         <button type="button" class="tasks-project-more" aria-label="Opcje projektu {{ project.name }}" title="Opcje projektu" aria-haspopup="menu" aria-expanded="false" data-project-menu-toggle>
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M12 12h.01"/><path d="M18 12h.01"/><path d="M6 12h.01"/>
-                            </svg>
+                            <i data-lucide="ellipsis" aria-hidden="true"></i>
                         </button>
                         <div class="tasks-project-menu" role="menu">
                             <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M12 20h9"/>
-                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                                </svg>
+                                <i data-lucide="pencil" aria-hidden="true"></i>
                                 Edytuj projekt
                             </button>
                             <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-section-create data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M12 5v14"/>
-                                    <path d="M5 12h14"/>
-                                </svg>
+                                <i data-lucide="plus" aria-hidden="true"></i>
                                 Dodaj grupę
                             </button>
                             <form method="post" class="tasks-project-delete-form" data-delete-project-form data-project-name="{{ project.name|escape }}">
@@ -185,7 +165,7 @@
                        class="tasks-rail-link {% if active_section.id == section.id %}is-active{% endif %}">
                         <span class="tasks-rail-icon" aria-hidden="true">
                             {% if section.icon %}
-                            {{ section.icon }}
+                            <i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
                             {% endif %}
                         </span>
                         {{ section.title }}
@@ -209,21 +189,17 @@
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
                 <button type="button" class="tasks-icon-button is-active" aria-label="Widok listy" title="Widok listy">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-                        <path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/>
-                    </svg>
+                    <i data-lucide="list" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M8 4v16" data-sort-arrow-line/><path d="M5 7l3-3 3 3" data-sort-arrow-head/><path d="M16 4h4"/><path d="M14 10h6"/><path d="M12 16h8"/>
-                    </svg>
+                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true"></i>
                 </button>
                 <span class="tasks-topbar-title">
                     {% if active_project %}
                     <span class="tasks-topbar-title-item">
                         {% if active_project.icon %}
                         <span class="tasks-topbar-title-icon" aria-hidden="true" style="--project-icon-fg: {{ active_project.icon_color.foreground }};">
-                            {{ active_project.icon }}
+                            <i data-lucide="{{ active_project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
                         </span>
                         {% endif %}
                         <span>{{ active_project.name }}</span>
@@ -233,7 +209,7 @@
                     <span class="tasks-topbar-title-item">
                         {% if active_section.icon %}
                         <span class="tasks-topbar-title-icon" aria-hidden="true">
-                            {{ active_section.icon }}
+                            <i data-lucide="{{ active_section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
                         </span>
                         {% endif %}
                         <span>{{ active_section.title }}</span>
@@ -262,17 +238,12 @@
             </div>
             <div class="tasks-section-actions" data-section-actions>
                 <button type="button" class="tasks-icon-button" aria-label="Więcej opcji" title="Więcej opcji" aria-haspopup="menu" aria-expanded="false" data-section-menu-toggle>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-                        <path d="M12 12h.01"/><path d="M18 12h.01"/><path d="M6 12h.01"/>
-                    </svg>
+                    <i data-lucide="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
                 </button>
                 <div class="tasks-section-menu" role="menu">
                     {% if active_section or active_view == 'all_tasks' or active_view == 'my_tasks' %}
                     <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-task-menu-btn" disabled>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 20h9"/>
-                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                        </svg>
+                        <i data-lucide="pencil" aria-hidden="true"></i>
                         Edytuj zadanie
                     </button>
                     <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-task-menu-btn" disabled>
@@ -282,10 +253,7 @@
                     {% endif %}
                     {% if active_project and not active_section or active_view == 'all_groups' %}
                     <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-section-menu-btn" disabled>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 20h9"/>
-                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                        </svg>
+                        <i data-lucide="pencil" aria-hidden="true"></i>
                         Edytuj grupę
                     </button>
                     <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-section-menu-btn" disabled>
@@ -295,10 +263,7 @@
                     {% endif %}
                     {% if active_view == 'projects' %}
                     <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-project-menu-btn" disabled>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 20h9"/>
-                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                        </svg>
+                        <i data-lucide="pencil" aria-hidden="true"></i>
                         Edytuj projekt
                     </button>
                     <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-project-menu-btn" disabled>
@@ -308,10 +273,7 @@
                     {% endif %}
                     {% if active_view == 'tags' %}
                     <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-tag-menu-btn" disabled>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 20h9"/>
-                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                        </svg>
+                        <i data-lucide="pencil" aria-hidden="true"></i>
                         Edytuj tag
                     </button>
                     <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-tag-menu-btn" disabled>
@@ -327,9 +289,7 @@
             <div class="tasks-filterbar-left">
                 <div class="tasks-filter-dropdown" data-status-filter-menu>
                     <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-status-filter-toggle>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M22 3H2l8 9v7l4 2v-9l8-9z"/>
-                        </svg>
+                        <i data-lucide="filter" aria-hidden="true"></i>
                         <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-status-filter-icon></span>
                         <span data-status-filter-label>Stan</span>
                     </button>
@@ -356,12 +316,7 @@
                 </div>
                 <div class="tasks-filter-dropdown" data-priority-filter-menu>
                     <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-priority-filter-toggle>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M4 19h16"/>
-                            <path d="M7 16V9"/>
-                            <path d="M12 16V5"/>
-                            <path d="M17 16v-4"/>
-                        </svg>
+                        <i data-lucide="chart-no-axes-column-increasing" aria-hidden="true"></i>
                         <span class="tasks-filter-priority-icon" aria-hidden="true" data-priority-filter-icon></span>
                         <span data-priority-filter-label>Priorytet</span>
                     </button>
@@ -404,11 +359,7 @@
             </div>
             <div class="tasks-filterbar-center tasks-search-actions">
                 <label class="tasks-search-field" for="filter-search">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
-                        <path d="M21 21l-6 -6" />
-                    </svg>
+                    <i data-lucide="search" aria-hidden="true"></i>
                     <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
                 </label>
                 <button type="button" class="tasks-tag-topbar-button" data-filter-search-submit>Szukaj</button>
@@ -416,22 +367,22 @@
             <div class="tasks-filterbar-right">
                 {% if active_view == 'projects' %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj projekt" aria-label="Dodaj projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
-                    <span aria-hidden="true">+</span>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj projekt</span>
                 </button>
                 {% elif active_project and not active_section %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}">
-                    <span aria-hidden="true">+</span>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj grupę</span>
                 </button>
                 {% elif active_section %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj zadanie" aria-label="Dodaj zadanie" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue {% if not can_create_issue %}disabled{% endif %}>
-                    <span aria-hidden="true">+</span>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj zadanie</span>
                 </button>
                 {% elif active_view == 'tags' %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj tag" aria-label="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag>
-                    <span aria-hidden="true">+</span>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj tag</span>
                 </button>
                 {% endif %}
@@ -443,7 +394,7 @@
             <section class="tasks-issue-group" data-section-status="">
                 <header class="tasks-issue-group-header">
                     <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
-                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                     </button>
                     <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     <span class="status-indicator status-label-plain">Grupy</span>
@@ -458,7 +409,7 @@
                     <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
                     <span class="tasks-row-title tasks-section-row-title">
                         {% if section.icon %}
-                        <span class="tasks-section-row-icon" aria-hidden="true">{{ section.icon }}</span>
+                        <span class="tasks-section-row-icon" aria-hidden="true"><i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i></span>
                         {% endif %}
                         <span>{{ section.title }}</span>
                     </span>
@@ -482,7 +433,7 @@
                 <section class="tasks-issue-group tasks-status-block" id="section-{{ section.id }}-{{ status_group.status }}" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
                     <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
                         <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
-                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                            <i data-lucide="chevron-down" aria-hidden="true"></i>
                         </button>
                         <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
                         <span class="tasks-rail-count">{{ status_group.count }}</span>
@@ -518,7 +469,7 @@
             <section class="tasks-issue-group tasks-status-block" id="all-tasks-{{ status_group.status }}" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
                 <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
                     <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
-                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                     </button>
                     <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
                     <span class="tasks-rail-count">{{ status_group.count }}</span>
@@ -543,7 +494,7 @@
             <section class="tasks-issue-group" data-section-status="">
                 <header class="tasks-issue-group-header">
                     <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
-                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                     </button>
                     <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     <span class="status-indicator status-label-plain">Grupy</span>
@@ -558,7 +509,7 @@
                     <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
                     <span class="tasks-row-title tasks-section-row-title">
                         {% if section.icon %}
-                        <span class="tasks-section-row-icon" aria-hidden="true">{{ section.icon }}</span>
+                        <span class="tasks-section-row-icon" aria-hidden="true"><i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i></span>
                         {% endif %}
                         <span>{{ section.title }}</span>
                     </span>
@@ -579,7 +530,7 @@
             <section class="tasks-issue-group" data-section-status="">
                 <header class="tasks-issue-group-header">
                     <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Tagi" aria-expanded="true">
-                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                     </button>
                     <span class="status-indicator status-label-plain">Tagi</span>
                     <button type="button" class="tasks-rail-add-button tasks-tag-create-button" aria-label="Dodaj tag" title="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag></button>
@@ -623,7 +574,7 @@
             <section class="tasks-issue-group" data-section-status="">
                 <header class="tasks-issue-group-header">
                     <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Projekty" aria-expanded="true">
-                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                     </button>
                     <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie projekty" title="Zaznacz wszystkie projekty" data-select-all-checkbox data-select-all-target="projects">
                     <span class="status-indicator status-label-plain">Projekty</span>
@@ -638,7 +589,7 @@
                     <span class="status-indicator status-label-plain" aria-label="Projekt"></span>
                     <span class="tasks-row-title tasks-project-row-title">
                         {% if project.icon %}
-                        <span class="tasks-project-row-icon" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon }}</span>
+                        <span class="tasks-project-row-icon" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};"><i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i></span>
                         {% endif %}
                         <span>{{ project.name }}</span>
                     </span>
@@ -667,10 +618,7 @@
             <header class="tasks-modal__header">
                 <h2 id="tag-modal-title">{% if tag_edit_mode %}Edytuj tag{% else %}Nowy tag{% endif %}</h2>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
-                    </svg>
+                    <i data-lucide="x" aria-hidden="true"></i>
                 </button>
             </header>
 
@@ -711,10 +659,7 @@
             <header class="tasks-modal__header">
                 <h2 id="project-modal-title">Nowy projekt</h2>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
-                    </svg>
+                    <i data-lucide="x" aria-hidden="true"></i>
                 </button>
             </header>
 
@@ -760,10 +705,7 @@
             <header class="tasks-modal__header">
                 <h2 id="project-rename-modal-title">Edytuj projekt</h2>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
-                    </svg>
+                    <i data-lucide="x" aria-hidden="true"></i>
                 </button>
             </header>
 
@@ -809,10 +751,7 @@
             <header class="tasks-modal__header">
                 <h2 id="section-create-modal-title">Nowa grupa</h2>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
-                    </svg>
+                    <i data-lucide="x" aria-hidden="true"></i>
                 </button>
             </header>
 
@@ -855,10 +794,7 @@
             <header class="tasks-modal__header">
                 <h2 id="section-rename-modal-title">Edytuj grupę</h2>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
-                    </svg>
+                    <i data-lucide="x" aria-hidden="true"></i>
                 </button>
             </header>
 
@@ -902,19 +838,19 @@
                 <div class="tasks-issue-modal__crumbs">
                     <div class="tasks-chip-picker" data-issue-project-picker>
                         <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle {% if active_project %}style="--project-icon-fg: {{ active_project.icon_color.foreground }};"{% endif %}>
-                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_project and active_project.icon %}{{ active_project.icon }}{% endif %}</span>
+                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_project and active_project.icon %}<i data-lucide="{{ active_project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
                             <span data-picker-label>{% if active_project %}{{ active_project.name }}{% else %}Wybierz projekt{% endif %}</span>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                            <i data-lucide="chevron-down" aria-hidden="true"></i>
                         </button>
                         <div class="tasks-chip-picker__menu" role="menu">
                             <div class="tasks-chip-picker__search">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                                <i data-lucide="search" aria-hidden="true"></i>
                                 <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
                                 <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
                             </div>
                             {% for project in projects %}
                             <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
-                                <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon|default:'' }}</span>
+                                <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{% if project.icon %}<i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
                                 {{ project.name }}
                             </button>
                             {% endfor %}
@@ -923,20 +859,20 @@
                     <span class="tasks-project-modal__chevron">›</span>
                     <div class="tasks-chip-picker" data-issue-section-picker>
                         <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
-                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_section and active_section.icon %}{{ active_section.icon }}{% endif %}</span>
+                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_section and active_section.icon %}<i data-lucide="{{ active_section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
                             <span data-picker-label>{% if active_section %}{{ active_section.title }}{% else %}Wybierz grupę{% endif %}</span>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                            <i data-lucide="chevron-down" aria-hidden="true"></i>
                         </button>
                         <div class="tasks-chip-picker__menu" role="menu">
                             <div class="tasks-chip-picker__search">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                                <i data-lucide="search" aria-hidden="true"></i>
                                 <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
                                 <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
                             </div>
                             {% for project in projects %}
                                 {% for section in project.sections.all %}
                                 <button type="button" role="menuitem" data-section-option data-section-id="{{ section.id }}" data-section-project-id="{{ project.id }}" data-section-title="{{ section.title|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
-                                    <span aria-hidden="true">{{ section.icon|default:'' }}</span>
+                                    <span aria-hidden="true">{% if section.icon %}<i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
                                     {{ section.title }}
                                 </button>
                                 {% endfor %}
@@ -947,10 +883,7 @@
                     <strong id="issue-modal-title">Nowe zadanie</strong>
                 </div>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
-                    </svg>
+                    <i data-lucide="x" aria-hidden="true"></i>
                 </button>
             </header>
 
@@ -1039,10 +972,7 @@
                             {{ task_modal_form.tags }}
                             <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown data-inline-select-multiple>
                                 <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
-                                        <path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/>
-                                    </svg>
+                                    <i data-lucide="tag" aria-hidden="true"></i>
                                     <span data-inline-select-label>Tagi</span>
                                 </button>
                                 <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi">

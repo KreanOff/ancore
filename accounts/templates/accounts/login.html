@@ -10,7 +10,7 @@
 {% block auth_subtitle %}Podaj dane konta Ancore.{% endblock %}
 {% block auth_header_action %}
 <a href="{% url 'register' %}" class="auth-switch-link">
-    <i class="bi bi-person-plus" aria-hidden="true"></i>
+    <i data-lucide="user-plus" aria-hidden="true"></i>
     <span>Utwórz konto</span>
 </a>
 {% endblock %}
@@ -28,20 +28,20 @@
     <div class="form-group auth-field">
         <label class="form-label" for="email">Adres email</label>
         <div class="auth-input-shell">
-            <i class="bi bi-envelope" aria-hidden="true"></i>
+            <i data-lucide="mail" aria-hidden="true"></i>
             <input type="email" name="username" id="email" class="form-input" autocomplete="username" placeholder="email@firma.pl" required autofocus>
         </div>
     </div>
     <div class="form-group auth-field">
         <label class="form-label" for="password">Hasło</label>
         <div class="auth-input-shell">
-            <i class="bi bi-lock" aria-hidden="true"></i>
+            <i data-lucide="lock" aria-hidden="true"></i>
             <input type="password" name="password" id="password" class="form-input" autocomplete="current-password" placeholder="Wpisz hasło" required>
         </div>
     </div>
     <button type="submit" class="auth-submit">
         <span>Zaloguj się</span>
-        <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+        <i data-lucide="arrow-right" aria-hidden="true"></i>
     </button>
 </form>
 

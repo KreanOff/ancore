@@ -18,14 +18,7 @@
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
                 <span class="tasks-topbar-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 21h18"/>
-                        <path d="M5 21V5a2 2 0 0 1 2-2h7v18"/>
-                        <path d="M14 8h3a2 2 0 0 1 2 2v11"/>
-                        <path d="M8 7h2"/>
-                        <path d="M8 11h2"/>
-                        <path d="M8 15h2"/>
-                    </svg>
+                    <i data-lucide="building-2" aria-hidden="true"></i>
                     <span>Firmy</span>
                 </span>
             </div>
@@ -37,11 +30,7 @@
         <form class="tasks-filterbar contacts-filterbar contacts-search-filterbar" method="get">
             <div class="tasks-filterbar-left">
                 <label class="tasks-search-field">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
-                        <path d="M21 21l-6 -6" />
-                    </svg>
+                    <i data-lucide="search" aria-hidden="true"></i>
                     <input type="search" name="q" value="{{ query }}" placeholder="Szukaj firmy">
                 </label>
                 <button type="submit" class="tasks-tag-topbar-button">Szukaj</button>
@@ -68,7 +57,7 @@
             {% else %}
             <section class="tasks-empty-state contacts-empty-state">
                 <div class="tasks-empty-state__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7v18"/><path d="M14 8h3a2 2 0 0 1 2 2v11"/></svg>
+                    <i data-lucide="building-2" aria-hidden="true"></i>
                 </div>
                 <h2>Brak firm</h2>
                 <p>Utwórz firmę i podpinaj do niej kontakty oraz udostępnienia.</p>

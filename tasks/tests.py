@@ -32,7 +32,7 @@ class TaskProjectCreationTests(TestCase):
             'section_title': 'Plan wdrożenia',
             'description': 'Opis projektu',
             'code': 'PT',
-            'icon': '☆',
+            'icon': 'star',
         })
 
         project = TaskProject.objects.get(user=self.user, name='Projekt testowy')
@@ -137,7 +137,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotEqual(first.icon_color, second.icon_color)
 
     def test_projects_list_only_renders_added_icons_next_to_name(self):
-        TaskProject.objects.create(user=self.user, name='Projekt z ikoną', code='PZI', icon='☆')
+        TaskProject.objects.create(user=self.user, name='Projekt z ikoną', code='PZI', icon='star')
         TaskProject.objects.create(user=self.user, name='Projekt bez ikony', code='PBI', icon='')
 
         response = self.client.get(reverse('tasks:tasks'))
@@ -725,7 +725,7 @@ class TaskProjectCreationTests(TestCase):
             'name': 'Nowa nazwa',
             'description': 'Nowy opis',
             'code': 'new',
-            'icon': '🚀',
+            'icon': 'rocket',
         })
 
         project.refresh_from_db()
@@ -737,7 +737,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(project.code, old_code)
 
     def test_edit_project_ignores_icon_field(self):
-        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ', icon='🚀')
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ', icon='rocket')
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'edit_project',
@@ -751,7 +751,7 @@ class TaskProjectCreationTests(TestCase):
         project.refresh_from_db()
 
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
-        self.assertEqual(project.icon, '🚀')
+        self.assertEqual(project.icon, 'rocket')
 
     def test_edit_project_ignores_posted_code(self):
         TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
@@ -780,7 +780,7 @@ class TaskProjectCreationTests(TestCase):
             'project_id': project.id,
             'title': 'Frontend',
             'description': 'Prace nad widokami',
-            'icon': '☆',
+            'icon': 'star',
         })
 
         section = TaskSection.objects.get(project=project, title='Frontend')

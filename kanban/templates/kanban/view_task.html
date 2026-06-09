@@ -25,16 +25,13 @@
                    aria-label="{% if task.parent %}Wróć do karty{% else %}Wróć do poprzedniej strony{% endif %}"
                    title="{% if task.parent %}Wróć do karty{% else %}Wróć do poprzedniej strony{% endif %}"
                    {% if not task.parent %}data-history-back{% endif %}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M19 12H5"/>
-                        <path d="m12 19-7-7 7-7"/>
-                    </svg>
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
                 <span class="tasks-issue-crumb">
                     {% if task.section and task.section.project.icon %}
                     <span class="tasks-issue-crumb-icon" aria-hidden="true" style="--project-icon-fg: {{ task.section.project.icon_color.foreground }};">
-                        {{ task.section.project.icon }}
+                        <i data-lucide="{{ task.section.project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
                     </span>
                     {% endif %}
                     <span>{% if task.section %}{{ task.section.project.name }}{% else %}Bez przestrzeni roboczej{% endif %}</span>
@@ -43,7 +40,7 @@
                 <span class="tasks-issue-crumb">
                     {% if task.section and task.section.icon %}
                     <span class="tasks-issue-crumb-icon" aria-hidden="true">
-                        {{ task.section.icon }}
+                        <i data-lucide="{{ task.section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i>
                     </span>
                     {% endif %}
                     <span>{% if task.section %}{{ task.section.title }}{% else %}Bez kategorii{% endif %}</span>
@@ -62,11 +59,7 @@
 
             <div class="tasks-issue-actions">
                 <button type="button" class="tasks-issue-icon-button" aria-label="Więcej" title="Więcej">
-                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <circle cx="5" cy="12" r="1.6"/>
-                        <circle cx="12" cy="12" r="1.6"/>
-                        <circle cx="19" cy="12" r="1.6"/>
-                    </svg>
+                    <i data-lucide="ellipsis" aria-hidden="true"></i>
                 </button>
                 <button type="submit" form="task-detail-form" class="tasks-issue-save" title="Zapisz zmiany">
                     Zapisz
@@ -112,10 +105,7 @@
                     {% if can_add_attachments %}
                     <div class="tasks-issue-tool-row" aria-label="Narzędzia karty">
                         <label class="tasks-issue-tool tasks-issue-tool--labelled" for="file-input" title="Dodaj załącznik">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"/>
-                            </svg>
+                            <i data-lucide="paperclip" aria-hidden="true"></i>
                             <span>Dodaj załącznik</span>
                         </label>
                     </div>
@@ -157,7 +147,7 @@
                             <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
                                 <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
                                     <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
-                                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
+                                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                                     </button>
                                     <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
                                     <span class="tasks-rail-count">{{ status_group.count }}</span>
@@ -178,20 +168,14 @@
                     <section class="tasks-issue-activity">
                         <div class="tasks-issue-activity-head">
                             <h2>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/>
-                                    <path d="M8 9h8"/>
-                                    <path d="M8 13h5"/>
-                                </svg>
+                                <i data-lucide="messages-square" aria-hidden="true"></i>
                                 Aktywność
                             </h2>
                             <div class="tasks-issue-activity-filters">
                                 <div class="tasks-filter-dropdown tasks-issue-activity-dropdown" data-activity-dropdown>
                                     <button type="button" class="tasks-issue-activity-chip" aria-haspopup="menu" aria-expanded="false" data-activity-toggle>
                                         <span data-activity-label>Wszystko w jednym</span>
-                                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="m5 7.5 5 5 5-5"/>
-                                        </svg>
+                                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-activity-menu" role="menu" aria-label="Filtr aktywności">
                                         <button type="button" class="is-active" role="menuitemradio" aria-checked="true" data-activity-filter="all">Wszystko w jednym</button>
@@ -206,10 +190,7 @@
                             <textarea class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz wiadomość do karty..." form="activity-comment-form"></textarea>
                             <div class="tasks-issue-comment-tools">
                                 <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="m22 2-7 20-4-9-9-4Z"/>
-                                        <path d="M22 2 11 13"/>
-                                    </svg>
+                                    <i data-lucide="send" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -329,10 +310,7 @@
                                 {{ form.tags }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.tags.id_for_label }}" data-task-detail-multiple>
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
-                                            <path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/>
-                                        </svg>
+                                        <i data-lucide="tag" aria-hidden="true"></i>
                                         <span data-task-detail-label>Tagi</span>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi">
@@ -403,10 +381,7 @@
                                     <div class="tasks-issue-time-entry">
                                         <span>{{ task.time_spent_label }}</span>
                                         <button type="submit" name="action" value="clear_time_spent" title="Usuń czas pracy" aria-label="Usuń czas pracy" formnovalidate>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <path d="M18 6 6 18"/>
-                                                <path d="m6 6 12 12"/>
-                                            </svg>
+                                            <i data-lucide="x" aria-hidden="true"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -429,7 +404,9 @@
                                         {% for project in form.project.field.queryset %}
                                         <button type="button" role="menuitem" data-task-detail-value="{{ project.id }}" data-task-detail-default-section="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
                                             {% if project.icon %}
-                                            <span class="tasks-issue-mini-avatar" aria-hidden="true" data-task-detail-option-icon style="--project-icon-fg: {{ project.icon_color.foreground }};">{{ project.icon }}</span>
+                                            <span class="tasks-issue-mini-avatar" aria-hidden="true" data-task-detail-option-icon style="--project-icon-fg: {{ project.icon_color.foreground }};">
+                                                <i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
+                                            </span>
                                             {% endif %}
                                             <span>{{ project.name }}</span>
                                         </button>
@@ -451,7 +428,9 @@
                                         {% for section in form.section.field.queryset %}
                                         <button type="button" role="menuitem" data-task-detail-value="{{ section.id }}" data-task-detail-project-id="{{ section.project_id }}">
                                             {% if section.icon %}
-                                            <span aria-hidden="true" data-task-detail-option-icon>{{ section.icon }}</span>
+                                            <span aria-hidden="true" data-task-detail-option-icon>
+                                                <i data-lucide="{{ section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i>
+                                            </span>
                                             {% endif %}
                                             <span>{{ section.title }}</span>
                                         </button>
@@ -513,10 +492,7 @@
                     <strong id="issue-modal-title">Nowa podkarta</strong>
                 </div>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M18 6 6 18"/>
-                        <path d="m6 6 12 12"/>
-                    </svg>
+                    <i data-lucide="x" aria-hidden="true"></i>
                 </button>
             </header>
 
@@ -783,6 +759,7 @@ function syncTaskDetailDropdown(dropdown) {
         const activeButton = !isMultiple ? dropdown.querySelector(`[data-task-detail-value="${currentValue}"]`) : null;
         const optionIcon = activeButton?.querySelector('[data-task-detail-option-icon]');
         if (optionIcon) detailIcon.appendChild(optionIcon.cloneNode(true));
+        window.AncoreIcons?.render(detailIcon);
     }
 
     if (selectedTags && isMultiple) {
@@ -875,7 +852,8 @@ function deleteAttachment(attachmentId) {
                 el.classList.add('marked-for-deletion');
                 const btn = el.querySelector('.tasks-delete-attach-btn');
                 if (btn) {
-                    btn.innerHTML = '<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>';
+                    btn.innerHTML = '<i data-lucide="rotate-ccw" aria-hidden="true"></i>';
+                    window.AncoreIcons?.render(btn);
                     btn.title = 'Cofnij usunięcie';
                     btn.onclick = (e) => { e.stopPropagation(); undoDeleteAttachment(attachmentId); };
                 }
@@ -895,6 +873,7 @@ function undoDeleteAttachment(attachmentId) {
         const btn = el.querySelector('.tasks-delete-attach-btn');
         if (btn) {
             btn.innerHTML = ATTACHMENT_TRASH_ICON_HTML;
+            window.AncoreIcons?.render(btn);
             btn.title = 'Usuń załącznik';
             btn.onclick = () => deleteAttachment(attachmentId);
         }

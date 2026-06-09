@@ -88,7 +88,7 @@ class ProfileViewTests(TestCase):
         self.assertContains(response, 'Product Manager')
         self.assertContains(response, 'Zajmuje sie wdrozeniami i komunikacja z klientami.')
         self.assertContains(response, 'Aktywny')
-        self.assertContains(response, 'icon-tabler-user-square')
+        self.assertContains(response, 'data-lucide="square-user-round"')
         content = response.content.decode()
         self.assertNotIn('<h2>Sesja</h2>', content)
         self.assertNotIn('<span>Konta</span>', content)

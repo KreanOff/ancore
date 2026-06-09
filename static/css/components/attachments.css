@@ -12,10 +12,18 @@
 }
 
 .attachment-icon i,
+.attachment-icon svg,
 .tasks-file-icon i,
+.tasks-file-icon svg,
 .file-icon i,
+.file-icon svg,
 .attach-icon i,
-.file-icon-mini i {
+.attach-icon svg,
+.file-icon-mini i,
+.file-icon-mini svg {
+    width: 1em;
+    height: 1em;
+    display: block;
     line-height: 1;
 }
 
@@ -95,7 +103,10 @@
     font-size: 0.75rem;
 }
 
-.attachment-indicator i {
+.attachment-indicator i,
+.attachment-indicator svg {
+    width: 0.75rem;
+    height: 0.75rem;
     font-size: 0.75rem;
     line-height: 1;
 }
@@ -112,6 +123,9 @@
     line-height: 1;
 }
 
-.attachment-delete-btn i {
+.attachment-delete-btn i,
+.attachment-delete-btn svg {
+    width: 0.8125rem;
+    height: 0.8125rem;
     font-size: 0.8125rem;
 }

@@ -456,7 +456,9 @@ body.auth-page,
 }
 
 .auth-input-shell > i,
+.auth-input-shell > svg,
 .auth-input-shell:focus-within > i,
+.auth-input-shell:focus-within > svg,
 .auth-footer a {
     color: var(--accent-brown);
 }

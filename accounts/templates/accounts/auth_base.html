@@ -64,7 +64,7 @@
         <section class="auth-panel" aria-labelledby="auth-form-title">
             <div class="auth-panel-top">
                 <a href="{% url 'home' %}" class="auth-back-link">
-                    <i class="bi bi-arrow-left-short" aria-hidden="true"></i>
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
                     <span>Panel</span>
                 </a>
                 <div class="auth-panel-action">
@@ -91,6 +91,8 @@
     </div>
     {% endif %}
 
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
+    <script src="{% static 'js/lucide-icons.js' %}?v=20260609-lucide-icons"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
 </body>
 </html>

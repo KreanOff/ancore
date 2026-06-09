@@ -6,14 +6,14 @@
     </div>
 
     <button type="button" class="tasks-new-button contacts-new-button" aria-haspopup="dialog" aria-controls="contact-create-modal" data-open-contact>
-        <span aria-hidden="true">+</span>
+        <span aria-hidden="true"><i data-lucide="plus"></i></span>
         Nowy kontakt
     </button>
     <nav class="tasks-rail-nav">
         <div class="tasks-rail-nav-group">
             <a href="{% url 'contacts:user-directory' %}" class="tasks-rail-link {% if active_contact_status == 'users' and active_user_presence == 'all' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                    <i data-lucide="search" aria-hidden="true"></i>
                 </span>
                 Szukaj osób
             </a>
@@ -21,21 +21,21 @@
         <div class="tasks-rail-nav-group">
             <a href="{% url 'contacts:contacts' %}" class="tasks-rail-link {% if active_contact_status == 'all' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg>
+                    <i data-lucide="users" aria-hidden="true"></i>
                 </span>
                 Kontakty
                 <span class="tasks-rail-count">{{ total_contact_count }}</span>
             </a>
             <a href="{% url 'contacts:companies' %}" class="tasks-rail-link {% if active_contact_status == 'companies' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21h18"/><path d="M5 21v-12l5 4v-4l5 4h4"/><path d="M19 21v-8l-1.436 -9.574a.5 .5 0 0 0 -.495 -.426h-1.145a.5 .5 0 0 0 -.494 .418l-1.43 8.582"/><path d="M9 17h1"/><path d="M14 17h1"/></svg>
+                    <i data-lucide="building-2" aria-hidden="true"></i>
                 </span>
                 Firmy
                 <span class="tasks-rail-count">{{ total_company_count }}</span>
             </a>
             <a href="{% url 'contacts:guests' %}" class="tasks-rail-link {% if active_contact_status == 'guests' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-exclamation"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4c.348 0 .686 .045 1.008 .128" /><path d="M19 16v3" /><path d="M19 22v.01" /></svg>
+                    <i data-lucide="user-round-alert" aria-hidden="true"></i>
                 </span>
                 Goście
                 <span class="tasks-rail-count">{{ total_guest_contact_count }}</span>

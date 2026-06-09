@@ -460,13 +460,9 @@
     }
 
     function closeIcon() {
-        return [
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"',
-            ' stroke-linecap="round" aria-hidden="true">',
-            '<path d="M6 6l12 12"/>',
-            '<path d="M18 6L6 18"/>',
-            '</svg>',
-        ].join('');
+        return window.AncoreIcons
+            ? window.AncoreIcons.html('x')
+            : '<i data-lucide="x" aria-hidden="true"></i>';
     }
 
     function render() {
@@ -512,6 +508,7 @@
         });
 
         tabsEl.replaceChildren(fragment);
+        window.AncoreIcons?.render(tabsEl);
         const activeTab = tabsEl.querySelector('.topbar-tab.is-active');
         if (activeTab) {
             activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });

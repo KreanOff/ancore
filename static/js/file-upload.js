@@ -109,6 +109,7 @@ class FileUploadManager {
             const fileItem = this.createFileItem(file, index);
             this.fileList.appendChild(fileItem);
         });
+        AttachmentIcons.render(this.fileList);
     }
 
     createFileItem(file, index) {

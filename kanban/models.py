@@ -31,7 +31,7 @@ class KanbanProject(models.Model):
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
-    icon = models.CharField(max_length=8, blank=True, default='')
+    icon = models.CharField(max_length=64, blank=True, default='')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_projects')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -96,7 +96,7 @@ class KanbanSection(models.Model):
     title = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
-    icon = models.CharField(max_length=8, blank=True, default='')
+    icon = models.CharField(max_length=64, blank=True, default='')
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 

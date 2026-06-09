@@ -717,101 +717,80 @@ function initTasksPage() {
     const projectIconSets = [
         {
             label: 'Najczęstsze',
-            icon: '⭐',
-            items: ['🚀', '⭐', '✅', '⚙️', '💡', '📌', '📋', '📁', '🔧', '🧩', '🎯', '📈', '🔒', '🛠️', '🧪', '🖥️', '📱', '🌐', '☁️', '✨', '🏆', '🎉', '📍', '🔑', '🧰', '🧱', '🪄', '💎', '🧲', '🗓️', '📎', '🔔', '💬', '📣', '🧠', '🧭', '🏁', '🛡️', '🧿', '📌', '📍', '📎', '📔', '📙', '📚', '🗂️', '🗃️', '🧾', '📊', '📉', '📆', '⏰', '⏳', '🔍', '🔎', '🔗', '🔖', '🏷️', '📦', '📫', '📨', '📥', '📤', '📝', '✏️', '🖊️', '🖋️', '🔐', '🔓']
+            icon: 'star',
+            items: ['rocket', 'star', 'circle-check', 'settings', 'lightbulb', 'pin', 'clipboard-list', 'folder', 'wrench', 'puzzle', 'target', 'chart-no-axes-combined', 'lock', 'flask-conical', 'monitor', 'smartphone', 'globe', 'cloud', 'sparkles', 'trophy', 'party-popper', 'map-pin', 'key-round', 'briefcase-business', 'calendar-days', 'paperclip', 'bell', 'message-square', 'megaphone', 'brain', 'compass', 'flag', 'shield', 'tag', 'package']
         },
         {
             label: 'Praca',
-            icon: '💼',
-            items: ['💼', '📊', '📎', '📝', '📅', '⏱️', '🏷️', '📦', '🗂️', '🧾', '✉️', '🔍', '✅', '❗', '📣', '🤝', '👥', '🧠', '🧭', '📔', '📕', '📗', '📘', '📙', '📚', '📓', '📒', '🗃️', '🗄️', '🗒️', '🧑‍💼', '📇', '🗳️', '📤', '📥', '🪪', '🧳', '🏢', '🏦', '📞', '☎️', '📠', '📧', '📨', '📬', '📭', '📮', '🗞️', '📰', '💬', '💭', '🕘', '🕙', '🗓️', '📈', '📉', '💹', '🧮', '💳', '💵', '💶', '💷', '🧾', '⚖️', '📜', '🖋️', '🖇️', '📌']
+            icon: 'briefcase-business',
+            items: ['briefcase-business', 'building-2', 'files', 'file-text', 'calendar', 'clock', 'tag', 'package', 'folder-open', 'receipt', 'mail', 'search', 'circle-check', 'triangle-alert', 'megaphone', 'handshake', 'users', 'brain', 'compass', 'notebook', 'contact', 'archive', 'send', 'inbox', 'id-card', 'landmark', 'phone', 'newspaper', 'message-square', 'chart-column', 'calculator', 'credit-card', 'scale', 'scroll-text', 'pen-line', 'paperclip']
         },
         {
             label: 'Technologia',
-            icon: '💻',
-            items: ['💻', '🖥️', '⌨️', '🖱️', '📱', '📲', '🕹️', '💾', '💿', '📀', '🧮', '🔌', '🔋', '🪫', '📡', '🛰️', '🤖', '🧬', '🔬', '⚗️', '🧪', '🧫', '🧲', '⚙️', '🛠️', '🔧', '🔩', '⛓️', '🧰', '🪛', '🧑‍💻', '🖨️', '📟', '📠', '🗜️', '🧯', '🛜', '💽', '💡', '🔐', '🔒', '🔓', '🔑', '🗝️', '📶', '📳', '📴', '🔊', '🔉', '🔈', '🎛️', '🎚️', '📺', '📷', '📹', '🎥', '🔍', '🧭', '🧱', '🧩', '🪄', '🧬', '🩻', '💫', '✨', '⚡', '🔥', '🌐', '☁️']
+            icon: 'laptop',
+            items: ['laptop', 'monitor', 'keyboard', 'mouse', 'smartphone', 'gamepad-2', 'database', 'disc', 'calculator', 'plug', 'battery', 'satellite-dish', 'bot', 'dna', 'microscope', 'flask-conical', 'magnet', 'cog', 'hammer', 'wrench', 'briefcase-business', 'printer', 'server', 'shield', 'wifi', 'lightbulb', 'lock', 'key-round', 'volume-2', 'camera', 'video', 'terminal', 'code', 'cpu', 'zap', 'cloud']
         },
         {
             label: 'Kreatywne',
-            icon: '🎨',
-            items: ['🎨', '🖌️', '🖍️', '✏️', '✒️', '🖊️', '🖋️', '📐', '📏', '✂️', '🧵', '🪡', '🎭', '🎬', '🎧', '🎤', '🎹', '🥁', '🎸', '🎻', '🎲', '🧩', '🪄', '📷', '📸', '🎥', '📹', '🖼️', '🌈', '💫', '🪩', '🎼', '🎵', '🎶', '🎙️', '🎚️', '🎛️', '🪅', '🪆', '🧶', '🖋️', '🖊️', '📝', '📜', '📄', '📃', '📑', '🗒️', '🖇️', '📌', '📍', '🔖', '✨', '🌟', '⭐', '🔥', '💥', '💡', '🎞️', '📽️', '🎟️', '🎫', '🎪', '🕹️', '🎯', '🎳', '🧸', '🪀', '🪁']
+            icon: 'palette',
+            items: ['palette', 'paintbrush', 'brush', 'pencil', 'pen-tool', 'pen-line', 'ruler', 'scissors', 'theater', 'clapperboard', 'headphones', 'mic', 'music', 'piano', 'puzzle', 'wand-sparkles', 'camera', 'image', 'rainbow', 'sparkles', 'star', 'flame', 'lightbulb', 'film', 'ticket', 'shapes', 'sticker', 'notepad-text', 'bookmark', 'paperclip']
         },
         {
             label: 'Status',
-            icon: '⚡',
-            items: ['⚡', '🔥', '⭐', '🔔', '🟢', '🟡', '🔴', '🔵', '🟣', '🟠', '⬆️', '⬇️', '➡️', '🔁', '⏳', '🚧', '🧯', '🛡️', '🏁', '🎉', '💥', '💢', '💤', '💯', '🔜', '🔝', '🆕', '🆒', '🆗', '📛', '🚨', '✅', '☑️', '❌', '❗', '❓', '♻️', '🔄', '⛔', '💬', '⭕', '🚫', '❎', '✔️', '➕', '➖', '➗', '✳️', '✴️', '🔆', '🔅', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚪', '⚫', '🟤', '🔺', '🔻', '🔸', '🔹', '🔶', '🔷', '💠', '🔰']
+            icon: 'zap',
+            items: ['zap', 'flame', 'star', 'bell', 'circle', 'arrow-up', 'arrow-down', 'arrow-right', 'refresh-cw', 'hourglass', 'construction', 'shield', 'flag', 'party-popper', 'sparkles', 'circle-check', 'square-check', 'check', 'circle-x', 'triangle-alert', 'message-square', 'ban', 'plus', 'minus', 'asterisk', 'badge-alert', 'octagon-x', 'siren', 'flag-triangle-right']
         },
         {
             label: 'Zespół',
-            icon: '🙂',
-            items: ['🙂', '😀', '😎', '🤓', '🧐', '🤩', '🥳', '🙌', '👏', '👍', '💪', '🙏', '👋', '🤝', '👥', '🧑', '👩', '👨', '🧑‍💻', '👩‍💻', '👨‍💻', '🧑‍🎨', '👩‍🔧', '👨‍🔧', '🧑‍🚀', '👩‍🏫', '👨‍🏫', '🧑‍💼', '👩‍💼', '👨‍💼', '😁', '😄', '😃', '😊', '😉', '😌', '😍', '😇', '😋', '😜', '🤠', '😺', '👌', '✌️', '🤞', '🤟', '🤘', '👊', '✊', '🫶', '🤲', '💁', '🙋', '🙆', '🙅', '🧑‍🏫', '🧑‍🔧', '🧑‍🔬', '🧑‍🚒', '🧑‍✈️', '🧑‍⚕️', '🧑‍⚖️', '🧑‍🌾']
+            icon: 'users',
+            items: ['users', 'user', 'user-round', 'user-plus', 'user-check', 'user-cog', 'smile', 'handshake', 'thumbs-up', 'hand', 'heart', 'briefcase-business', 'graduation-cap', 'paintbrush', 'wrench', 'rocket', 'stethoscope', 'scale', 'badge-check', 'message-circle', 'messages-square', 'crown']
         },
         {
             label: 'Plan',
-            icon: '🗓️',
-            items: ['🗓️', '📅', '📆', '⏰', '⏱️', '⏲️', '⌛', '⏳', '🕒', '📍', '🧭', '🗺️', '🧱', '🏗️', '🛤️', '🚦', '🧾', '📋', '📝', '✍️', '📌', '📎', '🔖', '🏷️', '🎯', '🏁', '🧮', '📊', '📈', '📉', '🕐', '🕑', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛', '📖', '📚', '🗒️', '🗂️', '🗃️', '📦', '🚧', '🔁', '🔄', '➡️', '⬅️', '⬆️', '⬇️', '🔜', '🔝', '✅', '☑️', '⚠️', '🚩']
+            icon: 'calendar-days',
+            items: ['calendar-days', 'calendar', 'calendar-check', 'alarm-clock', 'timer', 'hourglass', 'clock', 'map-pin', 'compass', 'map', 'construction', 'traffic-cone', 'clipboard-list', 'notebook', 'pin', 'paperclip', 'bookmark', 'tag', 'target', 'flag', 'calculator', 'chart-column', 'chart-no-axes-combined', 'repeat', 'check', 'circle-check', 'triangle-alert']
         },
         {
             label: 'Biznes',
-            icon: '💰',
-            items: ['💰', '💵', '💶', '💷', '💳', '🧾', '🏦', '🏢', '🏬', '🏭', '🏗️', '🚚', '📦', '📫', '📮', '📤', '📥', '📨', '📧', '📞', '☎️', '📠', '🪪', '🧳', '🛒', '🧺', '🤝', '📊', '📈', '📉', '💸', '💎', '⚖️', '🧮', '📝', '🗂️', '📋', '📌', '🔐', '🔑', '📇', '🗃️', '🗄️', '🏷️', '📣', '📰', '🗞️', '📢', '🎯', '🏁', '🧭', '🚀', '⭐', '🏆', '✅', '📅', '⏱️', '🌐', '☁️', '🔗']
+            icon: 'wallet',
+            items: ['wallet', 'banknote', 'credit-card', 'receipt', 'landmark', 'building-2', 'store', 'factory', 'construction', 'truck', 'package', 'mail', 'phone', 'id-card', 'briefcase-business', 'shopping-cart', 'handshake', 'chart-column', 'chart-no-axes-combined', 'gem', 'scale', 'calculator', 'file-text', 'folder-open', 'clipboard-list', 'lock', 'key-round', 'megaphone', 'target', 'trophy']
         },
         {
             label: 'Miejsca',
-            icon: '🌍',
-            items: ['🌍', '🌎', '🌏', '🗺️', '🏙️', '🌆', '🌃', '🏢', '🏫', '🏛️', '🏥', '🏦', '🏭', '🏗️', '⛲', '🌉', '🚉', '✈️', '🚀', '🛸', '🚗', '🚕', '🚲', '🛴', '🚢', '⚓', '🏝️', '🏕️', '🏖️', '🏜️', '🏞️', '⛰️', '🏔️', '🌋', '🗻', '🏟️', '🏰', '🗼', '🗽', '⛪', '🕌', '🛕', '🕍', '⛩️', '🕋', '⛲', '⛺', '🚏', '🚦', '🛤️', '🛣️', '🚇', '🚆', '🚊', '🚍', '🚐', '🛵']
+            icon: 'globe',
+            items: ['globe', 'map', 'building-2', 'school', 'landmark', 'hospital', 'factory', 'construction', 'train', 'plane', 'rocket', 'car', 'bike', 'ship', 'anchor', 'tent', 'mountain', 'map-pin', 'route', 'signpost', 'navigation', 'warehouse']
         },
         {
             label: 'Natura',
-            icon: '🌿',
-            items: ['🌿', '🌱', '🌳', '🌲', '🍀', '🌵', '🌾', '🌻', '🌼', '🌸', '🌺', '🍄', '🌞', '🌙', '⭐', '🌟', '☁️', '⛅', '🌧️', '⛈️', '❄️', '💧', '🌊', '🔥', '💎', '🪨', '⛰️', '🏔️', '🌋', '🏕️', '🌷', '🪷', '💐', '🌹', '🥀', '🪻', '🌴', '🪵', '🍁', '🍂', '🍃', '🪹', '🪺', '🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘', '🌈', '☀️', '🌤️', '🌦️', '🌩️', '🌨️', '🌬️', '🫧', '💦', '🧊']
+            icon: 'leaf',
+            items: ['leaf', 'sprout', 'tree-pine', 'flower', 'sun', 'moon', 'cloud', 'cloud-rain', 'snowflake', 'droplet', 'waves', 'flame', 'gem', 'mountain', 'rainbow', 'wind', 'cloud-sun', 'cloud-lightning']
         },
         {
             label: 'Jedzenie',
-            icon: '🍕',
-            items: ['🍕', '🍔', '🌭', '🥪', '🌮', '🌯', '🥗', '🍱', '🍜', '🍝', '🍣', '🍩', '🍪', '🍰', '🧁', '🍫', '🍿', '☕', '🍵', '🥤', '🧃', '🍎', '🍋', '🍓', '🍇', '🍉', '🥑', '🥕', '🌽', '🧀', '🥐', '🥨', '🥞', '🧇', '🥯', '🍞', '🥘', '🥫', '🍯', '🫖', '🍏', '🍐', '🍊', '🍌', '🍍', '🥭', '🍑', '🍒', '🫐', '🥝', '🍅', '🫒', '🥥', '🥦', '🥬', '🥒', '🌶️', '🫑', '🥔', '🍠', '🥜', '🫘', '🍄', '🥚', '🧈', '🥖', '🥩', '🍗', '🍖', '🍤', '🍚']
+            icon: 'pizza',
+            items: ['pizza', 'sandwich', 'salad', 'soup', 'utensils', 'coffee', 'cup-soda', 'apple', 'carrot', 'cake', 'cookie', 'ice-cream-bowl', 'shopping-basket', 'package']
         },
         {
             label: 'Edukacja',
-            icon: '🎓',
-            items: ['🎓', '📚', '📖', '📕', '📗', '📘', '📙', '📓', '📒', '📝', '✏️', '🖊️', '🧮', '📐', '📏', '🔬', '🧪', '🧬', '🧫', '🌍', '🗺️', '🧠', '💡', '🏫', '👩‍🏫', '👨‍🏫', '🧑‍🏫', '🎒', '🔖', '🏅', '📔', '📒', '📄', '📃', '📑', '📊', '📈', '📉', '🗒️', '🗂️', '🖍️', '🖌️', '🖋️', '🔎', '🔍', '🧭', '⚗️', '🔭', '🪐', '🌐', '💬', '🗣️', '🎯', '🏆', '⭐', '✅', '☑️', '🧩', '🪄', '⏱️']
+            icon: 'graduation-cap',
+            items: ['graduation-cap', 'book-open', 'book', 'notebook', 'pencil', 'pen-line', 'calculator', 'ruler', 'microscope', 'flask-conical', 'dna', 'globe', 'map', 'brain', 'lightbulb', 'school', 'bookmark', 'medal', 'file-text', 'chart-column', 'search', 'compass', 'telescope', 'target', 'trophy', 'puzzle', 'timer']
         },
         {
             label: 'Sport',
-            icon: '🏅',
-            items: ['🏅', '🏆', '🥇', '🥈', '🥉', '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🥏', '🎱', '🏓', '🏸', '🥊', '🥋', '⛳', '🏹', '🎣', '⛸️', '🎿', '🏂', '🏋️', '🚴', '🏃', '🏊', '🧗', '🤸', '🏌️', '🤾', '⛹️', '🤼', '🤽', '🚣', '🏄', '🛶', '🥌', '🛷', '🛼', '🛹', '🎽', '🥅', '🥎', '🏏', '🏑', '🥍', '🪃', '🎯', '🏟️', '🎟️', '📣', '🔥', '⚡', '💪', '👏', '🙌', '🏁', '🚩']
+            icon: 'medal',
+            items: ['medal', 'trophy', 'dumbbell', 'bike', 'goal', 'flag', 'target', 'flame', 'zap', 'hand', 'timer', 'chart-column', 'mountain', 'waves', 'snowflake', 'ticket', 'megaphone', 'star']
         },
         {
             label: 'Zdrowie',
-            icon: '💚',
-            items: ['💚', '❤️', '🩺', '💊', '🩹', '🩻', '🧬', '🧪', '🔬', '🧫', '🏥', '🚑', '🧘', '🥗', '🍎', '🥑', '💧', '🌿', '🌞', '🛌', '⏰', '🧠', '💪', '🫶', '😌', '🙂', '🌱', '🍵', '🫧', '✨', '🫀', '🫁', '🦷', '🦴', '👁️', '👂', '👃', '🧴', '🧼', '🪥', '🛁', '🚿', '🧊', '🥦', '🥬', '🥕', '🍋', '🍓', '🫐', '🥤', '🧃', '☀️', '🌈', '🌙', '⭐', '✅', '📋', '📅', '⏱️', '🔔']
+            icon: 'heart-pulse',
+            items: ['heart-pulse', 'heart', 'stethoscope', 'pill', 'dna', 'microscope', 'hospital', 'ambulance', 'salad', 'apple', 'droplet', 'leaf', 'sun', 'bed', 'brain', 'dumbbell', 'alarm-clock', 'clipboard-list', 'sparkles', 'smile']
         },
         {
             label: 'Symbole',
-            icon: '🔣',
-            items: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '☮️', '☯️', '♻️', '✅', '☑️', '✔️', '❌', '❎', '➕', '➖', '➗', '✳️', '🔆', '🔅', '🔱', '⚜️', '🔰', '⭕', '❇️', '✴️', '💠', '🔶', '🔷', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '⬛', '⬜', '◼️', '◻️', '◾', '◽', '▪️', '▫️', '🔺', '🔻', '🔸', '🔹', '🔘', '🔳', '🔲', '➰', '➿', '〽️', '⚠️', '🚫']
+            icon: 'shapes',
+            items: ['heart', 'recycle', 'circle-check', 'square-check', 'check', 'x', 'plus', 'minus', 'asterisk', 'circle', 'square', 'triangle', 'diamond', 'badge-alert', 'octagon-x', 'ban', 'shield', 'sparkles', 'star']
         }
     ];
-    const projectIconSetExtras = {
-        'Najczęstsze': ['📁', '📂', '🗂️', '🗄️', '🗃️', '📇', '🧾', '🧮', '📜', '📄', '📃', '📑', '📒', '🗒️', '🖇️', '🧷', '🪧', '📡', '📶', '🛜', '🔋', '🔌', '💾', '💽', '🖨️', '🧑‍💻', '🧑‍🎨', '🧑‍💼', '🧑‍🔧', '🧑‍🏫', '🧑‍🔬', '💪', '🙌', '👏', '🤝', '🫶', '🚩', '⚠️', '🚨', '⛔', '⭕', '🔰', '💠', '🔶', '🔷', '🟢', '🟡', '🔴', '🟣'],
-        'Praca': ['📁', '📂', '🗂️', '🗄️', '📑', '📄', '📃', '🧷', '🖊️', '✒️', '🖌️', '🔖', '🔗', '📍', '📆', '🕒', '⏳', '⌛', '🔔', '🚩', '⚠️', '🚨', '⛔', '☑️', '✔️', '❌', '🔄', '♻️', '🔎', '🔒', '🔓', '🗝️', '🏛️', '🏭', '🏗️', '🚛', '🚢', '✈️', '📦', '🧰', '🛠️', '⚙️', '💡', '🎯', '💯', '🏆', '🥇', '⭐'],
-        'Technologia': ['🧑‍🔬', '🧑‍🚀', '🧑‍🔧', '🧑‍🏭', '📁', '📂', '🗂️', '🗄️', '📊', '📈', '📉', '🧾', '📋', '🖇️', '🧷', '📎', '🔖', '🏷️', '🧱', '🧰', '🪚', '🪜', '🧯', '🛡️', '🧿', '🚨', '⚠️', '✅', '☑️', '❌', '⭕', '♻️', '🔄', '🔁', '🔀', '🔂', '🔃', '⬆️', '⬇️', '➡️', '⬅️', '↗️', '↘️', '↪️', '↩️', '⏫', '⏬'],
-        'Kreatywne': ['🖼️', '🪞', '🧿', '🎇', '🎆', '🌠', '🌌', '🌃', '🌆', '🌅', '🌄', '☀️', '🌙', '🌕', '🌻', '🌸', '🌺', '🌼', '🪷', '💐', '💎', '🔮', '🕯️', '🎁', '🎀', '🎊', '🎉', '🪄', '🧵', '🪡', '🧶', '🧷', '🖇️', '📎', '📚', '📖', '📕', '📗', '📘', '📙', '🧠', '💭', '💬', '🗯️', '💥', '💫', '🫧'],
-        'Status': ['🟩', '🟨', '🟥', '🟦', '🟪', '🟧', '🟫', '⬛', '⬜', '◼️', '◻️', '◾', '◽', '▪️', '▫️', '🔳', '🔲', '🔘', '🔵', '🔴', '🟢', '🟡', '🟣', '🟠', '⚫', '⚪', '🟤', '🚩', '🏳️', '🏁', '📍', '📌', '🔔', '📣', '📢', '💡', '💥', '✨', '🌟', '⭐', '💯', '🔝', '🆙', '🆗', '🆕', '🆓', '🆘', '🛑'],
-        'Zespół': ['😆', '🤣', '😂', '🥰', '😘', '😗', '😙', '😚', '🤗', '🤭', '🤫', '🤔', '🫡', '🤨', '😐', '😑', '😶', '🫥', '😶‍🌫️', '🙄', '😬', '😮‍💨', '🤥', '😴', '😪', '😮', '😲', '🥱', '😤', '😮‍💨', '👋', '🤚', '🖐️', '✋', '🖖', '🫱', '🫲', '🫳', '🫴', '👈', '👉', '👆', '👇', '☝️', '🫵', '🧑‍🍳', '🧑‍🎤', '🧑‍🚒'],
-        'Plan': ['📌', '📍', '🧷', '🖇️', '📎', '🔖', '🏷️', '📁', '📂', '🗄️', '🗃️', '📇', '📜', '📄', '📃', '📑', '📔', '📕', '📗', '📘', '📙', '📓', '📒', '🧾', '🧮', '🔍', '🔎', '🔔', '📣', '📢', '🚨', '⛔', '⭕', '❌', '✔️', '➕', '➖', '✳️', '🔆', '🔅', '🟢', '🟡', '🔴', '🔵', '🟣', '🟠', '💯', '🎉'],
-        'Biznes': ['📁', '📂', '📑', '📄', '📃', '📜', '📔', '📕', '📗', '📘', '📙', '📓', '🗒️', '🧷', '🖇️', '📎', '🔖', '🔗', '🗝️', '🔒', '🔓', '🏛️', '🏫', '🏟️', '🏪', '🏬', '🏢', '🏭', '🏗️', '🚛', '🚚', '🚢', '✈️', '🚀', '📦', '🛒', '🧺', '💡', '⚙️', '🛠️', '🧰', '📡', '📶', '🛜', '🎖️', '🏅', '🥇'],
-        'Miejsca': ['🏯', '🏚️', '🏙️', '🌁', '🌄', '🌅', '🌇', '🌉', '🎠', '🛝', '🎡', '🎢', '⛱️', '🏨', '🏩', '🏪', '🏬', '🏤', '🏣', '🏦', '🏫', '🏢', '🏭', '🏗️', '🚲', '🛴', '🛵', '🏍️', '🚙', '🚎', '🚒', '🚑', '🚓', '🚕', '🚗', '🚚', '🚛', '🚜', '🚁', '🛩️', '🛫', '🛬', '🚤', '⛵', '🛳️', '🚢', '🧭', '📍'],
-        'Natura': ['🌰', '🫚', '🪸', '🪨', '🪵', '🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🫐', '🥝', '🍅', '🫒', '🥥', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🧄', '🧅', '🥔', '🍠', '🫘', '🥜', '🌍', '🌎', '🌏', '🪐', '☄️', '💫', '⚡', '🔥', '🧊', '💧'],
-        'Jedzenie': ['🍛', '🍲', '🫕', '🥣', '🥡', '🥟', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🍮', '🍭', '🍬', '🍯', '🍼', '🥛', '🫗', '🍶', '🍾', '🍷', '🍸', '🍹', '🍺', '🍻', '🥂', '🥃', '🧉', '🧋', '🧊', '🥄', '🍴', '🍽️', '🥢', '🧂', '🔪', '🏺', '🛒', '🧺', '📦', '🎂', '🍥', '🍘', '🍙', '🍞'],
-        'Edukacja': ['🏫', '🏛️', '🧑‍🎓', '🧑‍🏫', '🧑‍🔬', '🧑‍💻', '🧑‍🎨', '🧑‍⚖️', '🧑‍🚀', '🧑‍🔧', '🧑‍⚕️', '🧑‍💼', '📌', '📍', '📎', '🧷', '🖇️', '🔖', '🏷️', '📁', '📂', '🗄️', '🗃️', '📇', '🧾', '📜', '📰', '🗞️', '💡', '🔦', '🕯️', '🔮', '🪄', '🧿', '🎓', '🏅', '🥇', '🎖️', '🎯', '🧩', '🧱', '⚙️', '🛠️', '🔧', '📡', '🌐', '☁️', '🛜'],
-        'Sport': ['🥅', '🏟️', '🎖️', '🎗️', '🎫', '🎟️', '🎪', '🎯', '🎲', '🎳', '🕹️', '🪀', '🪁', '🥁', '📣', '📢', '🔔', '🚩', '🏁', '✅', '☑️', '⭐', '🌟', '💫', '✨', '💥', '💯', '🔥', '⚡', '💪', '🦾', '🧘', '⏱️', '⏲️', '⌛', '⏳', '📊', '📈', '🏔️', '⛰️', '🏕️', '🏖️', '🌊', '☀️', '❄️', '🧊', '🎿', '🛷'],
-        'Zdrowie': ['🧑‍⚕️', '👩‍⚕️', '👨‍⚕️', '🧑‍🔬', '👩‍🔬', '👨‍🔬', '🧘‍♀️', '🧘‍♂️', '🏃', '🚶', '🏋️', '🤸', '🤽', '🏊', '🚴', '🛌', '🧎', '🧍', '🍵', '🫖', '🥛', '🍼', '🧂', '🥣', '🥗', '🍯', '🍊', '🍌', '🍇', '🍉', '🥝', '🍅', '🫒', '🥥', '🥒', '🌽', '🫘', '🥜', '💚', '💙', '🤍', '💛', '🩵', '✨', '🌟', '💫', '🔆', '🔅'],
-        'Dom': ['🏚️', '🏗️', '🧱', '🪵', '🪨', '🪜', '🪚', '🔨', '⛏️', '⚒️', '🛠️', '🗜️', '⛓️', '🧲', '🔌', '🔋', '🪫', '📦', '🧺', '🛒', '🛍️', '🎁', '🪑', '🛋️', '🛏️', '🚪', '🧯', '🔒', '🔓', '🗝️', '🕯️', '💡', '🔦', '📺', '📻', '🎛️', '🎚️', '🎵', '🎶', '📚', '📖', '🧸', '🧶', '🪡', '🌷', '🌼', '🌸', '🌱'],
-        'Symbole': ['🟩', '🟨', '🟥', '🟦', '🟪', '🟧', '🟫', '🔶', '🔷', '🔸', '🔹', '💠', '🔘', '🔳', '🔲', '🔺', '🔻', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '🟤', '⚫', '⚪', '❔', '❕', '❓', '❗', '‼️', '⁉️', '〰️', '➰', '➿', '🔱', '⚜️', '🔰', '♻️', '✅', '☑️', '✔️', '✖️', '❌', '⭕', '🚫', '⛔', '🛑']
-    };
-    projectIconSets.forEach(set => {
-        set.items = [...new Set([...set.items, ...(projectIconSetExtras[set.label] || [])])];
-    });
     const projectIconSetKeywords = {
         'Najczęstsze': ['popularne', 'ulubione', 'gwiazda', 'start', 'zadanie', 'projekt'],
         'Praca': ['firma', 'biuro', 'biznes', 'dokument', 'mail', 'spotkanie', 'zespół', 'zespol'],
@@ -830,54 +809,50 @@ function initTasksPage() {
         'Symbole': ['znak', 'serce', 'kolor', 'checkbox', 'plus', 'minus', 'okrąg', 'okrag']
     };
     const projectIconKeywords = {
-        '🚀': ['rakieta', 'start', 'launch'],
-        '⭐': ['gwiazda', 'ulubione', 'star'],
-        '✅': ['check', 'gotowe', 'zrobione', 'ok'],
-        '⚙️': ['ustawienia', 'trybik', 'settings'],
-        '💡': ['pomysł', 'pomysl', 'idea'],
-        '📌': ['pinezka', 'przypięte', 'przypiete'],
-        '📋': ['lista', 'clipboard'],
-        '📁': ['folder', 'projekt'],
-        '🔧': ['klucz', 'naprawa', 'narzędzie', 'narzedzie'],
-        '🧩': ['puzzle', 'część', 'czesc'],
-        '🎯': ['cel', 'target'],
-        '📈': ['wzrost', 'wykres'],
-        '🔒': ['blokada', 'zamknięte', 'zamkniete'],
-        '🖥️': ['monitor', 'komputer'],
-        '📱': ['telefon', 'mobile'],
-        '🌐': ['internet', 'web', 'sieć', 'siec'],
-        '☁️': ['chmura', 'cloud'],
-        '💼': ['praca', 'teczka', 'biuro'],
-        '💻': ['laptop', 'komputer', 'kod'],
-        '🎨': ['sztuka', 'design', 'kolor'],
-        '🙂': ['uśmiech', 'usmiech', 'osoba'],
-        '🗓️': ['kalendarz', 'plan', 'termin'],
-        '💰': ['pieniądze', 'pieniadze', 'finanse'],
-        '🌍': ['świat', 'swiat', 'ziemia'],
-        '🌿': ['natura', 'liść', 'lisc'],
-        '🍕': ['pizza', 'jedzenie'],
-        '🎓': ['edukacja', 'nauka'],
-        '🏅': ['medal', 'sport'],
-        '💚': ['zdrowie', 'serce'],
-        '🔣': ['symbole', 'znaki'],
-        '📅': ['data', 'kalendarz'],
-        '⏰': ['alarm', 'czas'],
-        '🔍': ['szukaj', 'lupa'],
-        '📦': ['paczka', 'box'],
-        '📝': ['notatka', 'pisanie'],
-        '🏢': ['firma', 'budynek'],
-        '📞': ['telefon', 'kontakt'],
-        '🤝': ['współpraca', 'wspolpraca'],
-        '👥': ['zespół', 'zespol', 'ludzie'],
-        '🎬': ['film', 'video'],
-        '🎧': ['audio', 'muzyka'],
-        '📷': ['aparat', 'foto'],
-        '🔥': ['ogień', 'ogien', 'pilne'],
-        '🔔': ['dzwonek', 'powiadomienie'],
-        '❌': ['anuluj', 'błąd', 'blad'],
-        '⚠️': ['uwaga', 'ostrzeżenie', 'ostrzezenie'],
-        '🏠': ['dom', 'home'],
-        '❤️': ['serce', 'miłość', 'milosc']
+        rocket: ['rakieta', 'start', 'launch'],
+        star: ['gwiazda', 'ulubione', 'star'],
+        'circle-check': ['check', 'gotowe', 'zrobione', 'ok'],
+        settings: ['ustawienia', 'trybik', 'settings'],
+        lightbulb: ['pomysl', 'idea'],
+        pin: ['pinezka', 'przypiete'],
+        'clipboard-list': ['lista', 'clipboard'],
+        folder: ['folder', 'projekt'],
+        wrench: ['klucz', 'naprawa', 'narzedzie'],
+        puzzle: ['puzzle', 'czesc'],
+        target: ['cel', 'target'],
+        'chart-no-axes-combined': ['wzrost', 'wykres'],
+        lock: ['blokada', 'zamkniete'],
+        monitor: ['monitor', 'komputer'],
+        smartphone: ['telefon', 'mobile'],
+        globe: ['internet', 'web', 'siec', 'swiat'],
+        cloud: ['chmura', 'cloud'],
+        'briefcase-business': ['praca', 'teczka', 'biuro'],
+        laptop: ['laptop', 'komputer', 'kod'],
+        palette: ['sztuka', 'design', 'kolor'],
+        users: ['zespol', 'ludzie', 'team'],
+        'calendar-days': ['kalendarz', 'plan', 'termin'],
+        wallet: ['pieniadze', 'finanse'],
+        leaf: ['natura', 'lisc', 'roslina'],
+        pizza: ['pizza', 'jedzenie'],
+        'graduation-cap': ['edukacja', 'nauka'],
+        medal: ['medal', 'sport'],
+        'heart-pulse': ['zdrowie', 'serce'],
+        shapes: ['symbole', 'znaki'],
+        calendar: ['data', 'kalendarz'],
+        'alarm-clock': ['alarm', 'czas'],
+        search: ['szukaj', 'lupa'],
+        package: ['paczka', 'box'],
+        'file-text': ['notatka', 'pisanie', 'dokument'],
+        'building-2': ['firma', 'budynek'],
+        phone: ['telefon', 'kontakt'],
+        handshake: ['wspolpraca'],
+        camera: ['aparat', 'foto'],
+        flame: ['ogien', 'pilne'],
+        bell: ['dzwonek', 'powiadomienie'],
+        'circle-x': ['anuluj', 'blad'],
+        'triangle-alert': ['uwaga', 'ostrzezenie'],
+        house: ['dom', 'home'],
+        heart: ['serce', 'milosc']
     };
     const normalizedProjectIconSearch = projectIconSets.map(set => ({
         label: set.label,
@@ -1499,52 +1474,56 @@ function initTasksPage() {
         }
     }
 
+    function getLucideProjectIcon(icon, fallback = 'folder') {
+        if (!icon) return fallback;
+        return window.AncoreIcons ? window.AncoreIcons.safeName(icon, fallback) : icon;
+    }
+
+    function createProjectIconElement(icon, fallback = 'folder', className = '') {
+        const iconName = getLucideProjectIcon(icon, fallback);
+        if (window.AncoreIcons) {
+            return window.AncoreIcons.create(iconName, { fallback, className });
+        }
+        const element = document.createElement('i');
+        element.setAttribute('data-lucide', iconName);
+        element.setAttribute('data-lucide-fallback', fallback);
+        element.setAttribute('aria-hidden', 'true');
+        if (className) element.className = className;
+        return element;
+    }
+
     function createSectionDefaultIconSvg() {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'tasks-section-default-icon');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('aria-hidden', 'true');
-
-        ['M21 5.5 10 16.5 4.5 11', 'M20 12v6.5A2.5 2.5 0 0 1 17.5 21h-12A2.5 2.5 0 0 1 3 18.5v-12A2.5 2.5 0 0 1 5.5 4H15'].forEach(d => {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', d);
-            svg.appendChild(path);
-        });
-
-        return svg;
+        return createProjectIconElement('circle-check', 'circle-check', 'tasks-section-default-icon');
     }
 
     function createEmptyIconSvg() {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'tasks-empty-icon');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('aria-hidden', 'true');
+        return createProjectIconElement('circle-dashed', 'circle-dashed', 'tasks-empty-icon');
+    }
 
-        ['M5 5l14 14', 'M19 5 5 19'].forEach(d => {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', d);
-            svg.appendChild(path);
-        });
-
-        return svg;
+    function renderLucideIcons(root) {
+        window.AncoreIcons?.render(root || document);
     }
 
     function renderProjectIcon(display, icon) {
         if (!display) return;
-        display.textContent = '';
+        display.replaceChildren();
         if (!icon) {
             display.appendChild(createEmptyIconSvg());
+            renderLucideIcons(display);
             return;
         }
-        if (icon === 'check' || icon === '✅') {
+        if (icon === 'check' || icon === 'circle-check') {
             display.appendChild(createSectionDefaultIconSvg());
+            renderLucideIcons(display);
             return;
         }
-        display.textContent = icon;
+        display.appendChild(createProjectIconElement(icon));
+        renderLucideIcons(display);
     }
 
     function setIconValue(input, picker, icon) {
-        const normalizedIcon = (icon || '').trim();
+        const trimmedIcon = (icon || '').trim();
+        const normalizedIcon = trimmedIcon ? getLucideProjectIcon(trimmedIcon) : '';
         if (input) input.value = normalizedIcon;
         const display = picker ? picker.querySelector('[data-selected-project-icon]') : null;
         renderProjectIcon(display, normalizedIcon);
@@ -1557,7 +1536,11 @@ function initTasksPage() {
         const toggle = picker.querySelector('[data-picker-toggle]');
 
         if (labelEl) labelEl.textContent = label || '';
-        if (iconEl) iconEl.textContent = icon || '';
+        if (iconEl) {
+            iconEl.replaceChildren();
+            if (icon) iconEl.appendChild(createProjectIconElement(icon));
+            renderLucideIcons(iconEl);
+        }
         if (toggle && color) toggle.style.setProperty('--project-icon-fg', color);
     }
 
@@ -1671,7 +1654,7 @@ function initTasksPage() {
         projectIconSets.forEach((set, index) => {
             const tab = document.createElement('button');
             tab.type = 'button';
-            tab.textContent = set.icon;
+            tab.appendChild(createProjectIconElement(set.icon, 'icons'));
             tab.title = set.label;
             tab.setAttribute('aria-label', set.label);
             tab.addEventListener('click', () => {
@@ -1684,7 +1667,9 @@ function initTasksPage() {
 
         const searchWrap = document.createElement('div');
         searchWrap.className = 'tasks-emoji-picker__search';
-        searchWrap.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>';
+        searchWrap.innerHTML = window.AncoreIcons
+            ? window.AncoreIcons.html('search')
+            : '<i data-lucide="search" aria-hidden="true"></i>';
 
         emojiPickerSearch = document.createElement('input');
         emojiPickerSearch.type = 'search';
@@ -1713,6 +1698,7 @@ function initTasksPage() {
         emojiPicker.appendChild(searchWrap);
         emojiPicker.appendChild(emojiPickerBody);
         document.body.appendChild(emojiPicker);
+        renderLucideIcons(emojiPicker);
         renderEmojiPicker();
         return emojiPicker;
     }
@@ -1726,8 +1712,8 @@ function initTasksPage() {
         emojiPickerBody.innerHTML = '';
         const searchResults = query
             ? normalizedProjectIconSearch.flatMap(set => set.items)
-                .filter(item => item.icon.includes(query) || item.keywords.includes(query))
-                .map(item => item.icon)
+                .filter(item => getLucideProjectIcon(item.icon).includes(query) || item.keywords.includes(query))
+                .map(item => getLucideProjectIcon(item.icon))
             : [];
         const sets = query
             ? [{ label: 'Wyniki', items: [...new Set(searchResults)] }]
@@ -1743,13 +1729,15 @@ function initTasksPage() {
 
             const items = set.items.length ? set.items : (query ? [query] : []);
             items.forEach(icon => {
+                const iconName = getLucideProjectIcon(icon, 'circle');
                 const option = document.createElement('button');
                 option.type = 'button';
                 option.className = 'tasks-emoji-option';
-                option.textContent = icon;
-                option.setAttribute('aria-label', `Wybierz ikonę ${icon}`);
+                option.appendChild(createProjectIconElement(iconName, 'circle'));
+                option.setAttribute('aria-label', `Wybierz ikonę ${iconName}`);
+                option.title = iconName;
                 option.addEventListener('click', () => {
-                    setIconValue(activeIconInput, activeIconPicker, icon);
+                    setIconValue(activeIconInput, activeIconPicker, iconName);
                     closeEmojiPicker();
                     activeIconInput?.focus();
                 });
@@ -1760,6 +1748,7 @@ function initTasksPage() {
             group.appendChild(list);
             emojiPickerBody.appendChild(group);
         });
+        renderLucideIcons(emojiPickerBody);
     }
 
     function openEmojiPicker(picker, input) {
@@ -2685,18 +2674,19 @@ function initTasksPage() {
                     if (anyOpen) {
                         statusToggleBtn.className = 'btn btn-secondary tasks-toolbar-btn';
                         statusToggleBtn.innerHTML = `
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            ${window.AncoreIcons ? window.AncoreIcons.html('circle-check') : '<i data-lucide="circle-check" aria-hidden="true"></i>'}
                             ${taskCopy.closeOne}
                         `;
                         statusToggleBtn.dataset.targetStatus = 'closed';
                     } else {
                         statusToggleBtn.className = 'btn btn-secondary tasks-toolbar-btn';
                         statusToggleBtn.innerHTML = `
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                            ${window.AncoreIcons ? window.AncoreIcons.html('rotate-ccw') : '<i data-lucide="rotate-ccw" aria-hidden="true"></i>'}
                             Otwórz ponownie
                         `;
                         statusToggleBtn.dataset.targetStatus = 'reopened';
                     }
+                    renderLucideIcons(statusToggleBtn);
                 }
             } else {
                 selectionActions.style.visibility = 'hidden';

@@ -44,10 +44,7 @@
               aria-label="Tagi: {{ task.tags.count }}">
             <span class="tasks-kanban-card__label u-sr-only">Tagi</span>
             <span class="tasks-kanban-card__tag-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
-                    <path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/>
-                </svg>
+                <i data-lucide="tag" aria-hidden="true"></i>
             </span>
             <span class="tasks-kanban-card__count">{{ task.tags.count }}</span>
         </span>
@@ -56,10 +53,7 @@
               aria-label="Załączniki: {{ task.attachments.count }}">
             <span class="tasks-kanban-card__label u-sr-only">Załączniki</span>
             <span class="tasks-kanban-card__attachment-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                    <path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"/>
-                </svg>
+                <i data-lucide="paperclip" aria-hidden="true"></i>
             </span>
             <span class="tasks-kanban-card__count">{{ task.attachments.count }}</span>
         </span>

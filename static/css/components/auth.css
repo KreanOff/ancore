@@ -312,7 +312,9 @@ body.auth-page {
 }
 
 .auth-back-link i,
-.auth-switch-link i {
+.auth-back-link svg,
+.auth-switch-link i,
+.auth-switch-link svg {
     width: 1rem;
     height: 1rem;
     display: inline-flex;
@@ -323,7 +325,8 @@ body.auth-page {
     line-height: 1;
 }
 
-.auth-back-link i {
+.auth-back-link i,
+.auth-back-link svg {
     width: 1.2rem;
     height: 1.2rem;
     font-size: 1.2rem;
@@ -418,7 +421,8 @@ body.auth-page {
     position: relative;
 }
 
-.auth-input-shell > i {
+.auth-input-shell > i,
+.auth-input-shell > svg {
     position: absolute;
     top: 50%;
     left: 0.9rem;
@@ -453,7 +457,8 @@ body.auth-page {
     box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.12);
 }
 
-.auth-input-shell:focus-within > i {
+.auth-input-shell:focus-within > i,
+.auth-input-shell:focus-within > svg {
     color: #75533e;
 }
 

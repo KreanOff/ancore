@@ -19,12 +19,7 @@
             <div class="tasks-issue-breadcrumb">
                 <span class="tasks-issue-crumb tasks-issue-crumb--current">
                     <span class="tasks-issue-crumb-icon profile-crumb-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <path d="M9 10a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/>
-                            <path d="M6 21v-1a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v1"/>
-                            <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14"/>
-                        </svg>
+                        <i data-lucide="square-user-round" aria-hidden="true"></i>
                     </span>
                     <span id="profile-title">Profil użytkownika</span>
                 </span>
@@ -41,18 +36,11 @@
                             aria-controls="profile-actions-menu"
                             data-contact-actions-toggle
                             data-profile-actions-toggle>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-                            <path d="M12 12h.01"/>
-                            <path d="M18 12h.01"/>
-                            <path d="M6 12h.01"/>
-                        </svg>
+                        <i data-lucide="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
                     </button>
                     <div class="contacts-actions-menu__panel" id="profile-actions-menu" role="menu" aria-label="Opcje profilu">
                         <button type="button" class="contacts-actions-menu__item" role="menuitem" data-profile-edit-open>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                            </svg>
+                            <i data-lucide="pencil" aria-hidden="true"></i>
                             Edytuj
                         </button>
                     </div>
@@ -96,20 +84,12 @@
                 <section class="tasks-issue-activity profile-accounts-activity" id="accounts" aria-label="Konta w sesji">
                     <div class="tasks-issue-activity-head">
                         <h2>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M17 21a5 5 0 0 0-10 0"/>
-                                <circle cx="12" cy="8" r="4"/>
-                                <path d="M21 21a4 4 0 0 0-3-3.87"/>
-                                <path d="M3 21a4 4 0 0 1 3-3.87"/>
-                            </svg>
+                            <i data-lucide="users" aria-hidden="true"></i>
                             Konta w sesji
                         </h2>
                         <a href="{% url 'add_account' %}" class="tasks-issue-activity-chip profile-add-chip">
                             <span>Dodaj konto</span>
-                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M10 4v12"/>
-                                <path d="M4 10h12"/>
-                            </svg>
+                            <i data-lucide="plus" aria-hidden="true"></i>
                         </a>
                     </div>
 
@@ -184,9 +164,7 @@
                                         <span data-profile-status-selected-label>{{ option.label }}</span>
                                         {% endif %}
                                     {% endfor %}
-                                    <svg class="profile-status-caret" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="m5 7.5 5 5 5-5"/>
-                                    </svg>
+                                    <i class="profile-status-caret" data-lucide="chevron-down" aria-hidden="true"></i>
                                 </button>
                                 <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
                                     {% for option in presence_status_options %}
@@ -259,10 +237,7 @@
                         <p>{{ request.user.get_full_name|default:request.user.email }}</p>
                     </div>
                     <button type="button" class="profile-edit-close" aria-label="Zamknij edycję profilu" title="Zamknij" data-profile-edit-close>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M18 6 6 18"/>
-                            <path d="m6 6 12 12"/>
-                        </svg>
+                        <i data-lucide="x" aria-hidden="true"></i>
                     </button>
                 </header>
 
@@ -318,10 +293,7 @@
                                     <header class="contacts-photo-editor-header">
                                         <strong>Edytuj zdjęcie użytkownika</strong>
                                         <button type="button" class="contacts-photo-editor-close" aria-label="Zamknij edycję zdjęcia" title="Zamknij" data-profile-photo-close>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
-                                                <path d="M18 6 6 18"/>
-                                                <path d="m6 6 12 12"/>
-                                            </svg>
+                                            <i data-lucide="x" aria-hidden="true"></i>
                                         </button>
                                     </header>
 
@@ -342,9 +314,7 @@
                                                     aria-label="Pomniejsz zdjęcie"
                                                     title="Pomniejsz zdjęcie"
                                                     data-profile-photo-zoom-out>
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                                                    <path d="M5 12h14"/>
-                                                </svg>
+                                                <i data-lucide="minus" aria-hidden="true"></i>
                                             </button>
                                             <input type="range"
                                                    class="profile-photo-zoom-range"
@@ -359,10 +329,7 @@
                                                     aria-label="Powiększ zdjęcie"
                                                     title="Powiększ zdjęcie"
                                                     data-profile-photo-zoom-in>
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                                                    <path d="M12 5v14"/>
-                                                    <path d="M5 12h14"/>
-                                                </svg>
+                                                <i data-lucide="plus" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -419,9 +386,7 @@
                                             <span data-profile-status-selected-label>{{ option.label }}</span>
                                             {% endif %}
                                         {% endfor %}
-                                        <svg class="profile-status-caret" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="m5 7.5 5 5 5-5"/>
-                                        </svg>
+                                        <i class="profile-status-caret" data-lucide="chevron-down" aria-hidden="true"></i>
                                     </button>
                                     <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
                                         {% for option in presence_status_options %}

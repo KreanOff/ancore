@@ -387,7 +387,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'Edytuj')
         self.assertContains(response, 'data-contact-actions')
         self.assertContains(response, 'tasks-icon-button contacts-actions-menu__toggle')
-        self.assertContains(response, 'M18 12h.01')
+        self.assertContains(response, 'data-lucide="ellipsis"')
         self.assertContains(response, 'Opcje kontaktu')
         self.assertContains(response, 'Usuń')
         self.assertContains(response, 'tasks.js?v=20260608-contact-actions-menu')

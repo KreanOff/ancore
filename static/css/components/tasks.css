@@ -72,6 +72,12 @@
     line-height: 1;
 }
 
+.tasks-new-button span svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+}
+
 .tasks-create-menu {
     position: relative;
     display: grid;
@@ -1407,7 +1413,12 @@
 
 .tasks-project-chip i,
 .tasks-icon-picker i,
-.tasks-project-badge i {
+.tasks-project-badge i,
+.tasks-project-chip svg,
+.tasks-icon-picker svg,
+.tasks-project-badge svg {
+    width: 1em;
+    height: 1em;
     display: block;
     line-height: 1;
 }
@@ -2002,6 +2013,13 @@ body.modal-open::before {
     cursor: pointer;
 }
 
+.tasks-emoji-picker__tabs button svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+    margin: 0 auto;
+}
+
 .tasks-emoji-picker__tabs button:hover {
     color: #2f3440;
 }
@@ -2127,6 +2145,12 @@ body.modal-open::before {
     font-size: 1.35rem;
     line-height: 1;
     cursor: pointer;
+}
+
+.tasks-emoji-option svg {
+    width: 19px;
+    height: 19px;
+    display: block;
 }
 
 .tasks-emoji-option:hover,
@@ -5913,6 +5937,11 @@ body.is-resizing-tasks-sidebar {
 
 .tasks-new-button span {
     font-size: 1.05rem;
+}
+
+.tasks-new-button span svg {
+    width: 1em;
+    height: 1em;
 }
 
 .tasks-create-menu {

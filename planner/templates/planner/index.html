@@ -19,7 +19,7 @@
         </div>
 
         <button type="button" class="tasks-new-button calendar-new-button" id="cal-add-event" title="Nowe wydarzenie" aria-haspopup="dialog" aria-controls="event-dialog-overlay">
-            <span aria-hidden="true">+</span>
+            <span aria-hidden="true"><i data-lucide="plus"></i></span>
             Nowe wydarzenie
         </button>
 
@@ -27,25 +27,25 @@
             <div class="tasks-rail-nav-group calendar-view-switch" role="tablist" aria-label="Widok kalendarza">
                 <button type="button" class="tasks-rail-link calendar-view-btn" data-view="day" role="tab">
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 15h8"/></svg>
+                        <i data-lucide="calendar-day" data-lucide-fallback="calendar" aria-hidden="true"></i>
                     </span>
                     Dzień
                 </button>
                 <button type="button" class="tasks-rail-link calendar-view-btn" data-view="week" role="tab">
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>
+                        <i data-lucide="calendar-range" aria-hidden="true"></i>
                     </span>
                     Tydzień
                 </button>
                 <button type="button" class="tasks-rail-link calendar-view-btn is-active" data-view="month" role="tab" aria-selected="true">
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M7 14h.01"/><path d="M12 14h.01"/><path d="M17 14h.01"/><path d="M7 18h.01"/><path d="M12 18h.01"/><path d="M17 18h.01"/></svg>
+                        <i data-lucide="calendar-days" aria-hidden="true"></i>
                     </span>
                     Miesiąc
                 </button>
                 <button type="button" class="tasks-rail-link calendar-view-btn" data-view="year" role="tab">
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M7 11h2"/><path d="M11 11h2"/><path d="M15 11h2"/><path d="M7 15h2"/><path d="M11 15h2"/><path d="M15 15h2"/></svg>
+                        <i data-lucide="calendar-fold" data-lucide-fallback="calendar-days" aria-hidden="true"></i>
                     </span>
                     Rok
                 </button>
@@ -71,25 +71,19 @@
         <header class="tasks-topbar calendar-topbar">
             <div class="tasks-titlebar-left">
                 <button type="button" class="tasks-icon-button" id="cal-prev" aria-label="Poprzedni okres" title="Poprzedni okres">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="m15 18-6-6 6-6"/>
-                    </svg>
+                    <i data-lucide="chevron-left" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="tasks-icon-button" id="cal-today" aria-label="Dziś" title="Dziś">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M12 14v4"/><path d="M10 16h4"/>
-                    </svg>
+                    <i data-lucide="calendar-check" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="tasks-icon-button" id="cal-next" aria-label="Następny okres" title="Następny okres">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="m9 18 6-6-6-6"/>
-                    </svg>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
                 </button>
                 <span class="tasks-topbar-title calendar-period-label" id="cal-period-label"></span>
             </div>
             <div class="tasks-section-actions">
                 <button type="button" class="tasks-tag-topbar-button" data-calendar-add title="Dodaj wydarzenie" aria-label="Dodaj wydarzenie" aria-haspopup="dialog" aria-controls="event-dialog-overlay">
-                    <span aria-hidden="true">+</span>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj wydarzenie</span>
                 </button>
             </div>
@@ -109,7 +103,7 @@
             </div>
             <div class="tasks-filterbar-right">
                 <button type="button" class="tasks-tag-topbar-button" data-calendar-add title="Nowe wydarzenie" aria-label="Nowe wydarzenie" aria-haspopup="dialog" aria-controls="event-dialog-overlay">
-                    <span aria-hidden="true">+</span>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Nowe wydarzenie</span>
                 </button>
             </div>
@@ -168,9 +162,7 @@
                         Usuń
                     </button>
                     <button type="button" class="tasks-modal__close cancel-event-btn" title="Zamknij (Esc)" aria-label="Zamknij">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 6 6 18"/><path d="M6 6l12 12"/>
-                        </svg>
+                        <i data-lucide="x" aria-hidden="true"></i>
                     </button>
                 </div>
             </header>
@@ -216,9 +208,7 @@
                                 data-calendar-color-toggle>
                             <span class="calendar-color-dot calendar-color-dot--red" aria-hidden="true" data-calendar-color-dot></span>
                             <span id="event-color-current" data-calendar-color-label>Czerwony</span>
-                            <svg class="calendar-color-select__caret" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="m5 7.5 5 5 5-5"/>
-                            </svg>
+                            <i class="calendar-color-select__caret" data-lucide="chevron-down" aria-hidden="true"></i>
                         </button>
                         <div class="calendar-color-select__menu" role="listbox" aria-labelledby="event-color-label" hidden data-calendar-color-menu>
                             <button type="button" class="calendar-color-select__option is-selected" role="option" aria-selected="true" data-calendar-color-option data-value="red" data-label="Czerwony">

@@ -62,17 +62,11 @@
         </span>
     </span>
     <span class="tasks-row-tags" title="Tagi: {{ task.tags.count }}" aria-label="Tagi: {{ task.tags.count }}">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
-            <path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3"/>
-        </svg>
+        <i data-lucide="tag" aria-hidden="true"></i>
         {{ task.tags.count }}
     </span>
     <span class="tasks-row-attachments" title="Załączniki: {{ task.attachments.count }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-            <path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"/>
-        </svg>
+        <i data-lucide="paperclip" aria-hidden="true"></i>
         {{ task.attachments.count }}
     </span>
     <span class="tasks-row-date">{{ task.created_at|date:"d M" }}</span>
