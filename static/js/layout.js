@@ -1,5 +1,8 @@
 (function () {
     const MQ_TABLET = window.matchMedia('(max-width: 1024px)');
+    const SECONDARY_MENU_MIN_WIDTH = 230;
+    const SECONDARY_MENU_MAX_WIDTH = 500;
+    const SECONDARY_MENU_CONTENT_MIN_WIDTH = 240;
 
     const sidebar = document.querySelector('.sidebar');
     const toggle = document.getElementById('sidebar-toggle');
@@ -56,8 +59,15 @@
     }
 
     function getSecondaryMenuBounds() {
-        const min = 180;
-        const max = Math.max(min, window.innerWidth - getSidebarWidth() - 240);
+        const min = SECONDARY_MENU_MIN_WIDTH;
+        const availableWidth = window.innerWidth - getSidebarWidth();
+        const max = Math.min(
+            SECONDARY_MENU_MAX_WIDTH,
+            Math.max(
+                min,
+                isOverlayMode() ? availableWidth : availableWidth - SECONDARY_MENU_CONTENT_MIN_WIDTH
+            )
+        );
 
         return { min, max };
     }

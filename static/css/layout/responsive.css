@@ -27,13 +27,17 @@ body.sidebar-open .sidebar-backdrop {
 
 /* Tablet — zachowaj stały pasek boczny */
 @media (max-width: 1024px) {
+    :root {
+        --secondary-menu-max-width: min(var(--secondary-menu-resize-max-width), max(var(--secondary-menu-min-width), calc(100vw - var(--sidebar-width))));
+    }
+
     .sidebar {
         transform: translateX(0);
     }
 
     .secondary-menu {
         left: var(--sidebar-width);
-        width: min(var(--secondary-menu-width), calc(100vw - var(--sidebar-width)));
+        width: var(--secondary-menu-constrained-width);
         z-index: 95;
         box-shadow: 12px 0 30px rgba(15, 23, 42, 0.12);
         transform: translateX(0);
@@ -45,7 +49,8 @@ body.sidebar-open .sidebar-backdrop {
     }
 
     body.secondary-menu-collapsed .secondary-menu {
-        width: min(var(--secondary-menu-width), calc(100vw - var(--sidebar-width)));
+        width: var(--secondary-menu-constrained-width);
+        max-width: var(--secondary-menu-max-width);
         transform: translateX(-100%);
         box-shadow: none;
         pointer-events: none;

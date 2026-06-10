@@ -31,8 +31,13 @@
     --toolbar-height: 52px;
     --topbar-height: 34px;
     --sidebar-width: 56px;
+    --secondary-menu-min-width: 230px;
+    --secondary-menu-resize-max-width: 500px;
+    --secondary-menu-content-min-width: 240px;
+    --secondary-menu-max-width: min(var(--secondary-menu-resize-max-width), max(var(--secondary-menu-min-width), calc(100vw - var(--sidebar-width) - var(--secondary-menu-content-min-width))));
     --secondary-menu-width: 252px;
-    --app-sidebar-total-width: calc(var(--sidebar-width) + var(--secondary-menu-width));
+    --secondary-menu-constrained-width: clamp(var(--secondary-menu-min-width), var(--secondary-menu-width), var(--secondary-menu-max-width));
+    --app-sidebar-total-width: calc(var(--sidebar-width) + var(--secondary-menu-constrained-width));
     --page-max-width: 1200px;
     --bp-sm: 480px;
     --bp-md: 768px;

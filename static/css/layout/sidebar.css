@@ -15,7 +15,9 @@
     top: var(--topbar-height);
     left: var(--sidebar-width);
     bottom: 0;
-    width: var(--secondary-menu-width);
+    width: var(--secondary-menu-constrained-width);
+    min-width: var(--secondary-menu-min-width);
+    max-width: var(--secondary-menu-max-width);
     z-index: 95;
     display: flex;
     background: #f5f5f5;
@@ -124,6 +126,8 @@ body.secondary-menu-collapsed {
 
 body.secondary-menu-collapsed .secondary-menu {
     width: 0;
+    min-width: 0;
+    max-width: 0;
     border-right-width: 0;
     border-right-color: transparent;
 }

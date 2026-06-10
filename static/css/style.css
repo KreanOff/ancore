@@ -1,9 +1,9 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260610-dropdown-highlight-gray';
+@import 'base/variables.css?v=20260610-secondary-menu-max-500';
 @import 'base/reset.css';
-@import 'layout/sidebar.css?v=20260608-profile-avatar-match';
+@import 'layout/sidebar.css?v=20260610-secondary-menu-bounds';
 @import 'layout/main.css?v=20260610-remove-topbar-tabs';
-@import 'layout/responsive.css?v=20260610-remove-topbar-tabs';
+@import 'layout/responsive.css?v=20260610-secondary-menu-bounds';
 @import 'components/cards.css?v=20260607-accent-contrast';
 @import 'components/buttons.css';
 @import 'components/toolbar.css';

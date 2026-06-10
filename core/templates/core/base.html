@@ -17,13 +17,10 @@
                 return;
             }
 
-            var min = 180;
-            var max = Math.max(min, window.innerWidth - 56 - 240);
-            var width = Math.min(max, Math.max(min, savedWidth));
-            document.documentElement.style.setProperty('--secondary-menu-width', width + 'px');
+            document.documentElement.style.setProperty('--secondary-menu-width', savedWidth + 'px');
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260610-dropdown-highlight-gray">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260610-secondary-menu-max-500">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -130,7 +127,7 @@
     {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/lucide-icons.js' %}?v=20260609-lucide-icons"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260530-secondary-menu-resize"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260610-secondary-menu-max-500"></script>
     <script src="{% static 'js/topbar.js' %}"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
