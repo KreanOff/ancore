@@ -24,19 +24,7 @@
               title="Priorytet: {{ task.get_priority_display }}"
               aria-label="Priorytet: {{ task.get_priority_display }}">
             <span class="tasks-kanban-card__label u-sr-only">Priorytet</span>
-            <span class="tasks-priority-icon" aria-hidden="true">
-                {% if task.priority == 'urgent' %}
-                    <span class="tasks-priority-urgent-mark">!</span>
-                {% elif task.priority == 'none' %}
-                    <span class="tasks-priority-no-mark"></span>
-                {% else %}
-                    <span class="tasks-priority-bars">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </span>
-                {% endif %}
-            </span>
+            {% include 'core/includes/priority_icon.html' with priority=task.priority only %}
             <span>{{ task.get_priority_display }}</span>
         </span>
         <span class="tasks-kanban-card__pill tasks-kanban-card__pill--tags"

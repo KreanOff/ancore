@@ -255,7 +255,10 @@ function initTasksPage() {
                 const remove = document.createElement('button');
                 remove.type = 'button';
                 remove.className = 'tasks-kanban-wallpaper-swatch__remove';
-                remove.textContent = '×';
+                remove.innerHTML = window.AncoreIcons
+                    ? window.AncoreIcons.html('x')
+                    : '<i data-lucide="x" aria-hidden="true"></i>';
+                renderLucideIcons(remove);
                 remove.setAttribute('aria-label', 'Usuń tapetę');
                 remove.addEventListener('click', event => {
                     event.stopPropagation();
@@ -1267,13 +1270,18 @@ function initTasksPage() {
 
     function getPriorityFilterIconMarkup(priority) {
         if (!priority) return '';
-        if (priority === 'urgent') {
-            return '<span class="tasks-row-priority priority-urgent"><span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span></span>';
-        }
-        if (priority === 'none') {
-            return '<span class="tasks-row-priority priority-none"><span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span></span>';
-        }
-        return `<span class="tasks-row-priority priority-${priority}"><span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span></span>`;
+        const icons = {
+            urgent: 'circle-alert',
+            high: 'arrow-up',
+            medium: 'equal',
+            low: 'arrow-down',
+            none: 'circle',
+        };
+        const icon = icons[priority] || 'circle';
+        const iconMarkup = window.AncoreIcons
+            ? window.AncoreIcons.html(icon, { fallback: 'circle' })
+            : `<i data-lucide="${icon}" data-lucide-fallback="circle" aria-hidden="true"></i>`;
+        return `<span class="tasks-row-priority priority-${priority}"><span class="tasks-priority-icon">${iconMarkup}</span></span>`;
     }
 
     function getFilterButtonText(button) {

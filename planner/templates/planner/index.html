@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260608-dropdown-close">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260610-dropdown-highlight-gray">
 <script src="{% static 'js/calendar.js' %}?v=20260608-custom-dropdown" defer></script>
 {% endblock %}
 
@@ -55,11 +55,11 @@
         <div class="tasks-rail-section calendar-legend">
             <div class="tasks-rail-section-title">Kolory</div>
             <div class="calendar-legend-list" aria-label="Legenda kolorów wydarzeń">
-                <span><i class="calendar-color-dot calendar-color-dot--red"></i>Czerwony</span>
-                <span><i class="calendar-color-dot calendar-color-dot--blue"></i>Niebieski</span>
-                <span><i class="calendar-color-dot calendar-color-dot--green"></i>Zielony</span>
-                <span><i class="calendar-color-dot calendar-color-dot--amber"></i>Bursztynowy</span>
-                <span><i class="calendar-color-dot calendar-color-dot--slate"></i>Szary</span>
+                <span><span class="calendar-color-dot calendar-color-dot--red"></span>Czerwony</span>
+                <span><span class="calendar-color-dot calendar-color-dot--blue"></span>Niebieski</span>
+                <span><span class="calendar-color-dot calendar-color-dot--green"></span>Zielony</span>
+                <span><span class="calendar-color-dot calendar-color-dot--amber"></span>Bursztynowy</span>
+                <span><span class="calendar-color-dot calendar-color-dot--slate"></span>Szary</span>
             </div>
         </div>
     </aside>

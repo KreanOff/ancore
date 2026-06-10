@@ -23,7 +23,7 @@
             document.documentElement.style.setProperty('--secondary-menu-width', width + 'px');
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260610-project-collapse-system">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260610-dropdown-highlight-gray">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -35,12 +35,6 @@
         })();
     </script>
     <header class="app-topbar" aria-label="Pasek aplikacji">
-        <div class="app-topbar-left">
-            <div class="topbar-tabs" id="topbar-tabs" role="tablist" aria-label="Karty aplikacji"></div>
-            <button type="button" class="topbar-icon-button topbar-new-tab-button" id="topbar-new-tab" data-new-tab-url="{% url 'home' %}" aria-label="Otwórz nową kartę" title="Otwórz nową kartę">
-                <i data-lucide="plus" aria-hidden="true"></i>
-            </button>
-        </div>
         <div class="app-topbar-right">
             <button type="button" class="topbar-icon-button" aria-label="Szukaj" title="Szukaj">
                 <i data-lucide="search" aria-hidden="true"></i>
@@ -139,7 +133,6 @@
     <script src="{% static 'js/layout.js' %}?v=20260530-secondary-menu-resize"></script>
     <script src="{% static 'js/topbar.js' %}"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
-    <script src="{% static 'js/topbar-tabs.js' %}"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}"></script>
     <script src="{% static 'js/tasks.js' %}?v=20260610-project-collapse-system"></script>

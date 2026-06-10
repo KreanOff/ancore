@@ -139,7 +139,9 @@
                 <div class="dashboard-task-list" role="list">
                     {% for task in recent_tasks %}
                     <a href="{% url 'tasks:view-task' task.task_id %}" class="dashboard-task-item" role="listitem">
-                        <span class="dashboard-priority-dot dashboard-priority-dot--{{ task.priority }}" title="Priorytet: {{ task.get_priority_display }}" aria-label="Priorytet: {{ task.get_priority_display }}"></span>
+                        <span class="tasks-row-priority priority-{{ task.priority }}" title="Priorytet: {{ task.get_priority_display }}" aria-label="Priorytet: {{ task.get_priority_display }}">
+                            {% include 'core/includes/priority_icon.html' with priority=task.priority only %}
+                        </span>
                         <span class="dashboard-task-main">
                             <strong>{{ task.title }}</strong>
                             <small>#{{ task.task_id }}{% if task.section %} · {{ task.section.title }}{% endif %}</small>

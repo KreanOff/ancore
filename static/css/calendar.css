@@ -815,13 +815,14 @@
 
 .calendar-color-select__option:hover,
 .calendar-color-select__option:focus-visible {
-    background: #f3f5f7;
+    background: var(--dropdown-menu-highlight-bg);
+    color: var(--dropdown-menu-highlight-color);
     outline: none;
 }
 
 .calendar-color-select__option.is-selected {
-    background: #3f3b38;
-    color: var(--accent-on-peach);
+    background: var(--dropdown-menu-highlight-bg);
+    color: var(--dropdown-menu-highlight-color);
 }
 
 .calendar-color-select__check {

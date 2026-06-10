@@ -284,19 +284,9 @@
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet">
                                         {% for value, label in form.priority.field.choices %}
                                         <button type="button" role="menuitem" data-task-detail-value="{{ value }}">
-                                            {% if value == 'urgent' %}
-                                            <span class="tasks-row-priority priority-urgent" aria-hidden="true">
-                                                <span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span>
-                                            </span>
-                                            {% elif value == 'none' %}
-                                            <span class="tasks-row-priority priority-none" aria-hidden="true">
-                                                <span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span>
-                                            </span>
-                                            {% else %}
                                             <span class="tasks-row-priority priority-{{ value }}" aria-hidden="true">
-                                                <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                                                {% include 'core/includes/priority_icon.html' with priority=value only %}
                                             </span>
-                                            {% endif %}
                                             <span>{{ label }}</span>
                                         </button>
                                         {% endfor %}
@@ -638,11 +628,11 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
 });
 
 const taskDetailPriorityIcons = {
-    urgent: '<span class="tasks-row-priority priority-urgent"><span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span></span>',
-    none: '<span class="tasks-row-priority priority-none"><span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span></span>',
-    low: '<span class="tasks-row-priority priority-low"><span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span></span>',
-    medium: '<span class="tasks-row-priority priority-medium"><span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span></span>',
-    high: '<span class="tasks-row-priority priority-high"><span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span></span>',
+    urgent: '<span class="tasks-row-priority priority-urgent"><span class="tasks-priority-icon"><i data-lucide="circle-alert" data-lucide-fallback="triangle-alert" aria-hidden="true"></i></span></span>',
+    none: '<span class="tasks-row-priority priority-none"><span class="tasks-priority-icon"><i data-lucide="circle" aria-hidden="true"></i></span></span>',
+    low: '<span class="tasks-row-priority priority-low"><span class="tasks-priority-icon"><i data-lucide="arrow-down" data-lucide-fallback="chevron-down" aria-hidden="true"></i></span></span>',
+    medium: '<span class="tasks-row-priority priority-medium"><span class="tasks-priority-icon"><i data-lucide="equal" data-lucide-fallback="minus" aria-hidden="true"></i></span></span>',
+    high: '<span class="tasks-row-priority priority-high"><span class="tasks-priority-icon"><i data-lucide="arrow-up" data-lucide-fallback="chevron-up" aria-hidden="true"></i></span></span>',
 };
 
 function getTaskDetailButtonText(button) {
@@ -776,6 +766,7 @@ function syncTaskDetailDropdown(dropdown) {
 
     if (priorityIcon) {
         priorityIcon.innerHTML = taskDetailPriorityIcons[currentValue] || '';
+        window.AncoreIcons?.render(priorityIcon);
     }
 }
 

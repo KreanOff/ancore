@@ -321,31 +321,31 @@
                         </button>
                         <button type="button" role="menuitem" data-priority-filter="none">
                             <span class="tasks-row-priority priority-none" aria-hidden="true">
-                                <span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span>
+                                {% include 'core/includes/priority_icon.html' with priority='none' only %}
                             </span>
                             <span>Brak</span>
                         </button>
                         <button type="button" role="menuitem" data-priority-filter="low">
                             <span class="tasks-row-priority priority-low" aria-hidden="true">
-                                <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                                {% include 'core/includes/priority_icon.html' with priority='low' only %}
                             </span>
                             <span>Niski</span>
                         </button>
                         <button type="button" role="menuitem" data-priority-filter="medium">
                             <span class="tasks-row-priority priority-medium" aria-hidden="true">
-                                <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                                {% include 'core/includes/priority_icon.html' with priority='medium' only %}
                             </span>
                             <span>Średni</span>
                         </button>
                         <button type="button" role="menuitem" data-priority-filter="high">
                             <span class="tasks-row-priority priority-high" aria-hidden="true">
-                                <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                                {% include 'core/includes/priority_icon.html' with priority='high' only %}
                             </span>
                             <span>Wysoki</span>
                         </button>
                         <button type="button" role="menuitem" data-priority-filter="urgent">
                             <span class="tasks-row-priority priority-urgent" aria-hidden="true">
-                                <span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span>
+                                {% include 'core/includes/priority_icon.html' with priority='urgent' only %}
                             </span>
                             <span>Pilny</span>
                         </button>
@@ -937,19 +937,9 @@
                                 <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet">
                                     {% for value, label in task_modal_form.priority.field.choices %}
                                     <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
-                                        {% if value == 'urgent' %}
-                                        <span class="tasks-row-priority priority-urgent" aria-hidden="true">
-                                            <span class="tasks-priority-icon"><span class="tasks-priority-urgent-mark">!</span></span>
-                                        </span>
-                                        {% elif value == 'none' %}
-                                        <span class="tasks-row-priority priority-none" aria-hidden="true">
-                                            <span class="tasks-priority-icon"><span class="tasks-priority-no-mark"></span></span>
-                                        </span>
-                                        {% else %}
                                         <span class="tasks-row-priority priority-{{ value }}" aria-hidden="true">
-                                            <span class="tasks-priority-icon"><span class="tasks-priority-bars"><span></span><span></span><span></span></span></span>
+                                            {% include 'core/includes/priority_icon.html' with priority=value only %}
                                         </span>
-                                        {% endif %}
                                         <span>{{ label }}</span>
                                     </button>
                                     {% endfor %}

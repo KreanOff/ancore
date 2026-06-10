@@ -84,20 +84,9 @@ body.sidebar-open .sidebar-backdrop {
 /* Telefon */
 @media (max-width: 768px) {
     .app-topbar {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr);
         gap: 0.5rem;
         padding: 0 0.75rem;
-    }
-
-    .topbar-tabs {
-        max-width: 42vw;
-    }
-
-    .topbar-tab {
-        flex-basis: 112px;
-        width: 112px;
-        min-width: 88px;
-        max-width: 132px;
     }
 
     .app-topbar-right {

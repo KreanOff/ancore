@@ -595,34 +595,6 @@ a.settings-option:hover,
     background: #fbf6f3;
 }
 
-.dashboard-priority-dot {
-    width: 10px;
-    height: 10px;
-    justify-self: center;
-    border-radius: 999px;
-    background: #aeb5bf;
-}
-
-.dashboard-priority-dot--none {
-    background: #c7ccd3;
-}
-
-.dashboard-priority-dot--low {
-    background: var(--dashboard-green);
-}
-
-.dashboard-priority-dot--medium {
-    background: var(--dashboard-blue);
-}
-
-.dashboard-priority-dot--high {
-    background: var(--dashboard-amber);
-}
-
-.dashboard-priority-dot--urgent {
-    background: var(--dashboard-red);
-}
-
 .dashboard-task-main {
     min-width: 0;
     display: flex;

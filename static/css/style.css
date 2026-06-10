@@ -1,9 +1,9 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260609-modal-scrim';
+@import 'base/variables.css?v=20260610-dropdown-highlight-gray';
 @import 'base/reset.css';
 @import 'layout/sidebar.css?v=20260608-profile-avatar-match';
-@import 'layout/main.css?v=20260607-accent-contrast';
-@import 'layout/responsive.css?v=20260530-secondary-menu-resize';
+@import 'layout/main.css?v=20260610-remove-topbar-tabs';
+@import 'layout/responsive.css?v=20260610-remove-topbar-tabs';
 @import 'components/cards.css?v=20260607-accent-contrast';
 @import 'components/buttons.css';
 @import 'components/toolbar.css';
@@ -12,13 +12,13 @@
 @import 'components/dialogs.css';
 @import 'components/modals.css';
 @import 'components/tables.css?v=20260604-status-new-blue';
-@import 'components/tasks.css?v=20260610-project-collapse-system';
-@import 'components/contacts.css?v=20260608-company-photo-editor-layout';
+@import 'components/tasks.css?v=20260610-dropdown-highlight-gray';
+@import 'components/contacts.css?v=20260610-dropdown-highlight-gray';
 @import 'components/notifications.css?v=20260607-accent-contrast';
 @import 'components/attachments.css?v=20260607-accent-contrast';
 @import 'components/file-upload.css?v=20260605-trash-icon';
 @import 'components/auth.css?v=20260603-icon-sizes';
-@import 'calendar.css?v=20260608-dropdown-close';
+@import 'calendar.css?v=20260610-dropdown-highlight-gray';
 @import 'components/checkboxes.css?v=20260531-unified';
-@import 'theme/elestio.css?v=20260607-sidebar-readable';
+@import 'theme/elestio.css?v=20260610-dropdown-highlight-gray';
 @import 'components/profile.css?v=20260608-profile-photo-editor-modal';

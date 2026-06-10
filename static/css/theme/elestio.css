@@ -82,24 +82,6 @@ body {
     color: var(--text-strong);
 }
 
-.topbar-tab {
-    background: #efedea;
-    border-color: var(--chrome-border);
-    color: var(--text-muted);
-}
-
-.topbar-tab:hover {
-    background: var(--surface-selected);
-    color: var(--text-strong);
-}
-
-.topbar-tab.is-active {
-    background: var(--accent-peach);
-    border-color: var(--accent-peach-border);
-    color: var(--accent-on-peach);
-    box-shadow: 0 1px 3px rgba(117, 83, 62, 0.18);
-}
-
 .topbar-clock,
 .tasks-rail-count,
 .tasks-rail-section-title,
@@ -184,8 +166,6 @@ body {
 .tasks-icon-button:hover,
 .tasks-icon-button.is-active,
 .tasks-section-actions.is-open [data-section-menu-toggle],
-.tasks-create-menu__panel button:hover,
-.tasks-create-menu__panel button:focus,
 .calendar-day.is-today,
 .calendar-day.is-selected,
 .calendar-list-item--blue,
@@ -193,6 +173,13 @@ body {
     background: var(--accent-peach);
     border-color: var(--accent-peach-border);
     color: var(--accent-on-peach);
+}
+
+.tasks-create-menu__panel button:hover,
+.tasks-create-menu__panel button:focus {
+    background: var(--dropdown-menu-highlight-bg);
+    border-color: transparent;
+    color: var(--dropdown-menu-highlight-color);
 }
 
 .tasks-search-field:focus-within,
