@@ -1,7 +1,7 @@
 /* Main Style Entry Point */
 @import 'base/variables.css?v=20260610-secondary-menu-max-500';
 @import 'base/reset.css';
-@import 'layout/sidebar.css?v=20260610-secondary-menu-bounds';
+@import 'layout/sidebar.css?v=20260611-secondary-toggle-soft-gray';
 @import 'layout/main.css?v=20260610-remove-topbar-tabs';
 @import 'layout/responsive.css?v=20260610-secondary-menu-bounds';
 @import 'components/cards.css?v=20260607-accent-contrast';
@@ -12,7 +12,7 @@
 @import 'components/dialogs.css';
 @import 'components/modals.css';
 @import 'components/tables.css?v=20260604-status-new-blue';
-@import 'components/tasks.css?v=20260610-dropdown-highlight-gray';
+@import 'components/tasks.css?v=20260611-resizer-inside-sidebar';
 @import 'components/contacts.css?v=20260610-dropdown-highlight-gray';
 @import 'components/notifications.css?v=20260607-accent-contrast';
 @import 'components/attachments.css?v=20260607-accent-contrast';

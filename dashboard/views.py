@@ -1,13 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.urls import reverse
-from django.utils import timezone
 
 from accounts.avatar import account_avatar
 from accounts.views import _switch_account_context
 from kanban.models import KanbanActivity
-from planner.models import CalendarEvent
-from tasks.models import Task, TaskActivity
+from tasks.models import TaskActivity
 
 
 DASHBOARD_NOTIFICATION_LIMIT = 12
@@ -161,35 +159,9 @@ def settings(request):
 
 @login_required
 def home(request):
-    now = timezone.now()
-
-    user_tasks = Task.objects.filter(user=request.user)
-    open_tasks = user_tasks.exclude(status='closed')
-    recent_tasks = open_tasks.order_by('-created_at')[:5]
-    upcoming_events = CalendarEvent.objects.filter(
-        user=request.user,
-        end__gte=now,
-    ).order_by('start')[:5]
-
-    status_rows = [
-        {
-            'value': value,
-            'label': label,
-            'count': user_tasks.filter(status=value).count(),
-        }
-        for value, label in Task.STATUS_CHOICES
-    ]
     dashboard_notifications = _dashboard_notifications(request.user)
 
     context = {
-        'total_tasks': user_tasks.count(),
-        'open_tasks_count': open_tasks.count(),
-        'completed_tasks_count': user_tasks.filter(status='closed').count(),
-        'high_priority_count': open_tasks.filter(priority__in=['high', 'urgent']).count(),
-        'events_count': upcoming_events.count(),
-        'recent_tasks': recent_tasks,
-        'upcoming_events': upcoming_events,
-        'status_rows': status_rows,
         'dashboard_notifications': dashboard_notifications,
         'dashboard_notification_count': len(dashboard_notifications),
     }

@@ -62,10 +62,11 @@ body.secondary-menu-toggling .secondary-menu-panel {
 .secondary-menu-resizer::after {
     content: "";
     position: absolute;
-    top: 0;
-    right: 3px;
-    bottom: 0;
-    width: 1px;
+    top: 15px;
+    bottom: 15px;
+    right: 2px;
+    width: 4px;
+    border-radius: 999px;
     background: transparent;
     transition: background-color 0.075s ease;
 }
@@ -118,6 +119,12 @@ body.secondary-menu-resizing .main-content {
     top: 50%;
     transform: translate(-50%, -50%);
     transform-origin: center;
+}
+
+body.secondary-menu-collapsed .secondary-menu-toggle {
+    color: var(--text-strong);
+    background-color: var(--surface-selected);
+    border-color: transparent;
 }
 
 body.secondary-menu-collapsed {

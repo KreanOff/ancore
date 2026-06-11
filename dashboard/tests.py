@@ -59,8 +59,12 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('home'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Centrum pracy')
-        self.assertContains(response, reverse('tasks:tasks'))
+        self.assertContains(response, 'Powiadomienia')
+        self.assertContains(response, 'Brak nowych powiadomień.')
+        self.assertNotContains(response, 'Centrum pracy')
+        self.assertNotContains(response, 'Ostatnie aktywne zadania')
+        self.assertNotContains(response, 'Przekrój zadań')
+        self.assertNotContains(response, 'Najbliższe terminy')
 
     def test_home_rail_lists_task_and_kanban_notifications(self):
         user = get_user_model().objects.create_user(
