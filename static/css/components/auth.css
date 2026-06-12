@@ -1,7 +1,7 @@
 /* Auth pages (login / register) */
 
 body.auth-page {
-    min-height: 100dvh;
+    min-height: var(--app-dynamic-viewport-height);
     margin: 0;
     overflow: hidden;
     background: #f4f6f8;
@@ -31,7 +31,7 @@ body.auth-page {
 }
 
 .auth-shell {
-    min-height: 100dvh;
+    min-height: var(--app-dynamic-viewport-height);
     display: grid;
     grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
 }
@@ -248,12 +248,12 @@ body.auth-page {
 }
 
 .auth-dot--blue {
-    background: #3f3b38;
+    background: var(--accent-peach);
 }
 
 .auth-panel {
     min-width: 0;
-    min-height: 100dvh;
+    min-height: var(--app-dynamic-viewport-height);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -453,13 +453,13 @@ body.auth-page {
 
 .auth-card .form-input:focus {
     outline: none;
-    border-color: #75533e;
-    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.12);
+    border-color: var(--accent-peach);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
 }
 
 .auth-input-shell:focus-within > i,
 .auth-input-shell:focus-within > svg {
-    color: #75533e;
+    color: var(--accent-peach);
 }
 
 .auth-card .form-input::placeholder {
@@ -477,7 +477,7 @@ body.auth-page {
     padding: 0 0.95rem;
     border: 0;
     border-radius: 7px;
-    background: #75533e;
+    background: var(--accent-peach);
     color: #ffffff;
     font: inherit;
     font-size: 0.95rem;
@@ -488,8 +488,8 @@ body.auth-page {
 }
 
 .auth-submit:hover {
-    background: #684933;
-    box-shadow: 0 10px 24px rgba(117, 83, 62, 0.24);
+    background: var(--accent-peach-hover);
+    box-shadow: 0 10px 24px rgba(92, 95, 193, 0.24);
     transform: translateY(-1px);
 }
 
@@ -555,7 +555,7 @@ body.auth-page {
     .auth-shell {
         display: flex;
         flex-direction: column;
-        min-height: 100dvh;
+        min-height: var(--app-dynamic-viewport-height);
     }
 
     .auth-panel {

@@ -4,7 +4,7 @@
 }
 
 .contacts-status-lead {
-    --tasks-status-color: #3f3b38;
+    --tasks-status-color: var(--accent-peach);
     color: var(--tasks-status-color);
 }
 
@@ -65,7 +65,7 @@
     justify-content: center;
     flex: 0 0 auto;
     border-radius: 50%;
-    background: #3f3b38;
+    background: var(--accent-peach);
     color: var(--accent-on-peach);
     font-weight: 750;
 }
@@ -131,8 +131,8 @@
 }
 
 .contacts-row:hover {
-    border-color: #3f3b38;
-    background: #3f3b38;
+    border-color: var(--accent-peach);
+    background: var(--accent-peach);
 }
 
 .contacts-row > .status-indicator,
@@ -238,7 +238,7 @@
     justify-content: center;
     margin-bottom: 1rem;
     border-radius: 50%;
-    background: #3f3b38;
+    background: var(--accent-peach);
     color: var(--accent-on-peach);
 }
 
@@ -330,8 +330,8 @@
 }
 
 .contacts-actions-menu.is-open .contacts-actions-menu__toggle {
-    background: #3f3b38;
-    border-color: #3f3b38;
+    background: var(--accent-peach);
+    border-color: var(--accent-peach);
     color: var(--accent-on-peach);
 }
 
@@ -497,7 +497,7 @@
 
 .contacts-new-button--secondary {
     margin-top: 0.5rem;
-    background: #3f3b38;
+    background: var(--accent-peach);
     color: var(--accent-on-peach);
 }
 
@@ -562,8 +562,8 @@
 }
 
 .contacts-share-row--link:hover {
-    border-color: #3f3b38;
-    background: #3f3b38;
+    border-color: var(--accent-peach);
+    background: var(--accent-peach);
 }
 
 .contacts-company-links {
@@ -650,8 +650,8 @@
 
 .contacts-custom-select__button:focus-visible {
     outline: none;
-    border-color: #3f3b38;
-    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.14);
+    border-color: var(--accent-peach);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
 }
 
 .contacts-custom-select__button:disabled {
@@ -821,8 +821,8 @@
 }
 
 .contacts-photo-editor-dialog {
-    width: min(1120px, calc(100vw - 2rem));
-    max-height: calc(100vh - 2rem);
+    width: min(1120px, calc(var(--app-viewport-width) - 2rem));
+    max-height: calc(var(--app-viewport-height) - 2rem);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -888,7 +888,7 @@
 
 .profile-photo-crop-stage.contacts-photo-editor-stage {
     width: 100%;
-    height: clamp(360px, calc(100vh - 190px), 660px);
+    height: clamp(360px, calc(var(--app-viewport-height) - 190px), 660px);
     min-height: 0;
     aspect-ratio: auto;
     display: flex;
@@ -911,8 +911,8 @@
 }
 
 .contacts-photo-editor-stage .profile-photo-crop-canvas {
-    width: min(640px, calc(100vw - 6rem), calc(100vh - 230px));
-    height: min(640px, calc(100vw - 6rem), calc(100vh - 230px));
+    width: min(640px, calc(var(--app-viewport-width) - 6rem), calc(var(--app-viewport-height) - 230px));
+    height: min(640px, calc(var(--app-viewport-width) - 6rem), calc(var(--app-viewport-height) - 230px));
     border: 2px solid #6aa2ff;
     background: #eef1f4;
     box-shadow:
@@ -978,8 +978,8 @@
 }
 
 .contacts-photo-editor-primary {
-    border: 1px solid #3f3b38;
-    background: #3f3b38;
+    border: 1px solid var(--accent-peach);
+    background: var(--accent-peach);
     color: #ffffff;
 }
 
@@ -995,8 +995,8 @@
     }
 
     .contacts-photo-editor-dialog {
-        width: calc(100vw - 1rem);
-        max-height: calc(100vh - 1rem);
+        width: calc(var(--app-viewport-width) - 1rem);
+        max-height: calc(var(--app-viewport-height) - 1rem);
         border-radius: 10px;
     }
 
@@ -1006,13 +1006,13 @@
     }
 
     .profile-photo-crop-stage.contacts-photo-editor-stage {
-        height: min(58vh, calc(100vw - 1rem));
+        height: min(58vh, calc(var(--app-viewport-width) - 1rem));
         min-height: 300px;
     }
 
     .contacts-photo-editor-stage .profile-photo-crop-canvas {
-        width: min(calc(100vw - 2rem), calc(100vh - 230px));
-        height: min(calc(100vw - 2rem), calc(100vh - 230px));
+        width: min(calc(var(--app-viewport-width) - 2rem), calc(var(--app-viewport-height) - 230px));
+        height: min(calc(var(--app-viewport-width) - 2rem), calc(var(--app-viewport-height) - 230px));
     }
 
     .contacts-photo-editor-footer {
@@ -1180,8 +1180,8 @@
 .contacts-modal-fields .tasks-inline-input:focus,
 .contacts-modal-fields .tasks-inline-select:focus,
 .contacts-edit-modal__body .form-input:focus {
-    border-color: #3f3b38;
-    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.14);
+    border-color: var(--accent-peach);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
     outline: none;
 }
 

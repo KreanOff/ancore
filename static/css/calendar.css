@@ -55,7 +55,7 @@
 }
 
 .calendar-color-dot--red { color: #e04f63; }
-.calendar-color-dot--blue { color: #3f3b38; }
+.calendar-color-dot--blue { color: var(--accent-peach); }
 .calendar-color-dot--green { color: #43a36a; }
 .calendar-color-dot--amber { color: #d79a35; }
 .calendar-color-dot--slate { color: #7b8493; }
@@ -100,8 +100,8 @@
 
 .calendar-mini-nav__button:hover,
 .calendar-mini-nav__button.is-active {
-    background: #3f3b38;
-    color: #2f3440;
+    background: var(--accent-peach);
+    color: var(--accent-on-peach);
 }
 
 .calendar-filter-summary {
@@ -205,7 +205,8 @@
 }
 
 .calendar-day:hover {
-    background: #3f3b38;
+    background: var(--accent-peach);
+    color: var(--accent-on-peach);
 }
 
 .calendar-day--other {
@@ -217,14 +218,15 @@
 }
 
 .calendar-day--today {
-    background: #3f3b38;
-    box-shadow: inset 0 0 0 1px #3f3b38;
+    background: var(--accent-peach);
+    color: var(--accent-on-peach);
+    box-shadow: inset 0 0 0 1px var(--accent-peach);
 }
 
 .calendar-day--today .calendar-day-number,
 .calendar-week-day-head--today .calendar-week-day-num,
 .calendar-year-day--today {
-    background: #3f3b38;
+    background: var(--accent-peach);
     color: var(--accent-on-peach);
 }
 
@@ -327,11 +329,13 @@
 }
 
 .calendar-week-col:hover {
-    background: #3f3b38;
+    background: var(--accent-peach);
+    color: var(--accent-on-peach);
 }
 
 .calendar-week-col--today {
-    background: #3f3b38;
+    background: var(--accent-peach);
+    color: var(--accent-on-peach);
 }
 
 .calendar-view--day {
@@ -383,7 +387,8 @@
 }
 
 .calendar-day-slot-body:hover {
-    background: #3f3b38;
+    background: var(--accent-peach);
+    color: var(--accent-on-peach);
 }
 
 .calendar-day-empty-slot {
@@ -424,7 +429,7 @@
 }
 
 .calendar-year-month-title:hover {
-    color: #3f3b38;
+    color: var(--accent-peach);
 }
 
 .calendar-year-weekdays,
@@ -471,7 +476,7 @@
 }
 
 .calendar-year-day--has-events:not(.calendar-year-day--today) {
-    background: #3f3b38;
+    background: var(--accent-peach);
     color: var(--accent-on-peach);
 }
 
@@ -530,11 +535,12 @@
 }
 
 .calendar-list-item:hover {
-    background: #3f3b38;
+    background: var(--accent-peach);
+    color: var(--accent-on-peach);
 }
 
 .calendar-list-item--red { border-left-color: #e04f63; }
-.calendar-list-item--blue { border-left-color: #3f3b38; }
+.calendar-list-item--blue { border-left-color: var(--accent-peach); }
 .calendar-list-item--green { border-left-color: #43a36a; }
 .calendar-list-item--amber { border-left-color: #d79a35; }
 .calendar-list-item--slate { border-left-color: #7b8493; }
@@ -606,8 +612,8 @@
 }
 
 .calendar-event--blue {
-    border-left-color: #3f3b38;
-    background: #3f3b38;
+    border-left-color: var(--accent-peach);
+    background: var(--accent-peach);
     color: var(--accent-on-peach);
 }
 
@@ -645,7 +651,7 @@
 }
 
 .calendar-dialog-form {
-    max-height: calc(100vh - 3.5rem);
+    max-height: calc(var(--app-viewport-height) - 3.5rem);
 }
 
 .calendar-dialog-header {
@@ -750,7 +756,7 @@
 .calendar-color-select__button:focus-visible {
     outline: none;
     border-color: var(--accent-peach-border);
-    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.12);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
 }
 
 .calendar-color-select__button [data-calendar-color-label] {

@@ -39,8 +39,8 @@
 }
 
 .notification.info {
-    background: #3f3b38;
-    border-color: #3f3b38;
+    background: var(--accent-peach);
+    border-color: var(--accent-peach);
     color: var(--accent-on-peach);
 }
 
@@ -83,7 +83,7 @@ body:has(.tasks-page) .notification.warning,
 
 body:has(.tasks-page) .notification.info,
 .tasks-ui .notification.info {
-    border-left: 3px solid #3f3b38;
+    border-left: 3px solid var(--accent-peach);
 }
 
 @keyframes slideDown {

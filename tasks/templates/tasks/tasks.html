@@ -109,10 +109,16 @@
         </nav>
 
         <div class="tasks-rail-section tasks-project-tree" data-project-tree>
-            <button type="button" class="tasks-new-button tasks-project-create-button" aria-label="Nowy projekt" title="Nowy projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
-                <span aria-hidden="true"><i data-lucide="plus"></i></span>
-                Nowy projekt
-            </button>
+            <div class="tasks-rail-section-title tasks-project-tree-heading">
+                <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń sekcję Projekty" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle data-project-tree-label="Projekty">
+                    <i data-lucide="chevron-down" aria-hidden="true"></i>
+                    <span class="tasks-project-tree-label">Projekty</span>
+                    <span class="tasks-project-tree-count">{{ projects|length }}</span>
+                </button>
+                <button type="button" class="tasks-rail-add-button" aria-label="Nowy projekt" title="Nowy projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
+                </button>
+            </div>
 
             <div class="tasks-project-tree-content" id="tasks-project-tree-content" data-project-tree-content>
             {% for project in projects %}

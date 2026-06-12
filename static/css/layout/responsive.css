@@ -28,7 +28,7 @@ body.sidebar-open .sidebar-backdrop {
 /* Tablet — zachowaj stały pasek boczny */
 @media (max-width: 1024px) {
     :root {
-        --secondary-menu-max-width: min(var(--secondary-menu-resize-max-width), max(var(--secondary-menu-min-width), calc(100vw - var(--sidebar-width))));
+        --secondary-menu-max-width: min(var(--secondary-menu-resize-max-width), max(var(--secondary-menu-min-width), calc(var(--app-viewport-width) - var(--sidebar-width))));
     }
 
     .sidebar {
@@ -135,7 +135,7 @@ body.sidebar-open .sidebar-backdrop {
     }
 
     .sidebar {
-        width: min(100vw, var(--sidebar-width));
+        width: min(var(--app-viewport-width), var(--sidebar-width));
     }
 
     .nav-link {
@@ -166,8 +166,8 @@ body.sidebar-open .sidebar-backdrop {
     .page-container.full-width:has(.app-page),
     .page-container.full-width:has(.tasks-page),
     .page-container.full-width:has(.calendar-page) {
-        min-height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
-        height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
+        min-height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
+        height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
     }
 }
 

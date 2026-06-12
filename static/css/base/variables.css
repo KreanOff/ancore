@@ -1,18 +1,23 @@
 :root {
+    --app-scale: 0.8;
+    --app-viewport-width: calc(100vw / var(--app-scale));
+    --app-viewport-height: calc(100vh / var(--app-scale));
+    --app-dynamic-viewport-height: var(--app-viewport-height);
     --bg-main: #ffffff;
     --chrome-bg: #f7f6f4;
     --chrome-bg-soft: #faf9f7;
     --chrome-border: #e9e6e2;
-    --sidebar-bg: var(--chrome-bg);
+    --secondary-menu-bg: #f3f3f8;
+    --sidebar-bg: var(--secondary-menu-bg);
     --sidebar-text: #625d57;
-    --sidebar-active: #4f4b47;
-    --accent-peach: #3f3b38;
-    --accent-peach-hover: #2f2b28;
-    --accent-peach-border: #3f3b38;
+    --sidebar-active: #5c5fc1;
+    --accent-peach: #5c5fc1;
+    --accent-peach-hover: #4f52ad;
+    --accent-peach-border: #5c5fc1;
     --accent-on-peach: #ffffff;
     --accent-on-peach-hover: #ffffff;
-    --accent-brown: #75533e;
-    --accent-brown-hover: #684933;
+    --accent-brown: var(--accent-peach);
+    --accent-brown-hover: var(--accent-peach-hover);
     --accent-blue: var(--accent-peach);
     --accent-red: var(--accent-brown);
     --accent-red-hover: var(--accent-brown-hover);
@@ -26,6 +31,7 @@
     --panel-bg: #f7f6f4;
     --surface-hover: #f2efeb;
     --surface-selected: #e9e7e4;
+    --nav-selected-bg: #ececf8;
     --radius-max: 8px;
     --radius: var(--radius-max);
     --toolbar-height: 52px;
@@ -34,7 +40,7 @@
     --secondary-menu-min-width: 230px;
     --secondary-menu-resize-max-width: 500px;
     --secondary-menu-content-min-width: 240px;
-    --secondary-menu-max-width: min(var(--secondary-menu-resize-max-width), max(var(--secondary-menu-min-width), calc(100vw - var(--sidebar-width) - var(--secondary-menu-content-min-width))));
+    --secondary-menu-max-width: min(var(--secondary-menu-resize-max-width), max(var(--secondary-menu-min-width), calc(var(--app-viewport-width) - var(--sidebar-width) - var(--secondary-menu-content-min-width))));
     --secondary-menu-width: 252px;
     --secondary-menu-constrained-width: clamp(var(--secondary-menu-min-width), var(--secondary-menu-width), var(--secondary-menu-max-width));
     --app-sidebar-total-width: calc(var(--sidebar-width) + var(--secondary-menu-constrained-width));
@@ -50,7 +56,7 @@
     --checkbox-border-color: #cfcac4;
     --checkbox-hover-border-color: #a99f97;
     --checkbox-checked-color: var(--accent-brown);
-    --checkbox-focus-ring: 0 0 0 3px rgba(117, 83, 62, 0.18);
+    --checkbox-focus-ring: 0 0 0 3px rgba(92, 95, 193, 0.18);
     --lucide-check-white: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
     --lucide-minus-white: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
     --lucide-chevron-down-gray: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
@@ -81,12 +87,12 @@
     --shadow-sm: 0 1px 2px rgba(63, 59, 56, 0.08);
     --shadow-md: 0 8px 18px rgba(63, 59, 56, 0.08);
     --shadow-lg: 0 18px 40px rgba(63, 59, 56, 0.12);
-    --focus-ring: 0 0 0 3px rgba(117, 83, 62, 0.1);
+    --focus-ring: 0 0 0 3px rgba(92, 95, 193, 0.1);
 
     /* Semantic aliases (legacy file-upload.css) */
     --primary-color: var(--accent-red);
     --primary-color-dark: var(--accent-red-hover);
-    --primary-color-light: #fff6f1;
+    --primary-color-light: #f0f0fb;
     --error-color: var(--accent-red);
     --error-color-light: #fff6f1;
     --background-secondary: #faf9f7;

@@ -5,7 +5,9 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - var(--topbar-height));
+    height: var(--app-viewport-height);
+    min-height: 0;
+    overflow: auto;
     padding-top: var(--topbar-height);
     background: var(--panel-bg);
     transition: margin-left 0.1s ease;
@@ -32,6 +34,8 @@
 }
 
 .app-topbar-right {
+    align-self: stretch;
+    background: var(--secondary-menu-bg);
     justify-content: flex-end;
     gap: 0.65rem;
     min-width: 0;

@@ -1,6 +1,6 @@
 .sidebar {
     width: var(--sidebar-width);
-    background: #f5f5f5;
+    background: var(--sidebar-bg);
     color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
@@ -20,7 +20,7 @@
     max-width: var(--secondary-menu-max-width);
     z-index: 95;
     display: flex;
-    background: #f5f5f5;
+    background: var(--secondary-menu-bg);
     border-right: 0;
     transition: none;
 }
@@ -29,7 +29,7 @@
     width: 100%;
     min-height: 0;
     display: flex;
-    background: #f5f5f5;
+    background: var(--secondary-menu-bg);
     border: 0;
     overflow: hidden;
     transition: none;
@@ -37,7 +37,7 @@
 
 .secondary-menu-panel > .tasks-tracker-rail,
 .secondary-menu-panel > .dashboard-rail {
-    background: #f5f5f5;
+    background: var(--secondary-menu-bg);
 }
 
 body.secondary-menu-toggling .secondary-menu {
@@ -266,6 +266,12 @@ body.secondary-menu-collapsed .secondary-menu-resizer {
     color: var(--sidebar-active);
     background-color: #f0f3f6;
     border-color: #dde2e9;
+}
+
+.nav-link.active .nav-icon,
+.nav-link:active .nav-icon {
+    color: var(--sidebar-active);
+    stroke: currentColor;
 }
 
 .nav-link .sidebar-profile-avatar {

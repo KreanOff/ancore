@@ -20,6 +20,16 @@
         return MQ_TABLET.matches;
     }
 
+    function getAppScale() {
+        const value = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'));
+
+        return Number.isFinite(value) && value > 0 ? value : 1;
+    }
+
+    function viewportToAppPixels(value, scale = getAppScale()) {
+        return value / scale;
+    }
+
     function setOpen(open) {
         const on = open && isOverlayMode();
         document.body.classList.toggle('sidebar-open', on);
@@ -37,13 +47,13 @@
     function setSecondaryMenuCollapsed(collapsed) {
         document.body.classList.toggle('secondary-menu-collapsed', collapsed);
 
-        if (!secondaryMenuToggle) {
-            return;
-        }
+        secondaryMenu?.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
 
-        secondaryMenuToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        secondaryMenuToggle.setAttribute('aria-label', collapsed ? 'Rozwiń drugie menu' : 'Zwiń drugie menu');
-        secondaryMenuToggle.setAttribute('title', collapsed ? 'Rozwiń drugie menu' : 'Zwiń drugie menu');
+        if (secondaryMenuToggle) {
+            secondaryMenuToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            secondaryMenuToggle.setAttribute('aria-label', collapsed ? 'Rozwiń drugie menu' : 'Zwiń drugie menu');
+            secondaryMenuToggle.setAttribute('title', collapsed ? 'Rozwiń drugie menu' : 'Zwiń drugie menu');
+        }
     }
 
     function getSecondaryMenuWidth() {
@@ -51,16 +61,20 @@
             return 0;
         }
 
-        return secondaryMenu.getBoundingClientRect().width;
+        return secondaryMenu.offsetWidth || viewportToAppPixels(secondaryMenu.getBoundingClientRect().width);
     }
 
     function getSidebarWidth() {
-        return sidebar.getBoundingClientRect().width;
+        return sidebar.offsetWidth || viewportToAppPixels(sidebar.getBoundingClientRect().width);
+    }
+
+    function getAppViewportWidth() {
+        return viewportToAppPixels(window.innerWidth);
     }
 
     function getSecondaryMenuBounds() {
         const min = SECONDARY_MENU_MIN_WIDTH;
-        const availableWidth = window.innerWidth - getSidebarWidth();
+        const availableWidth = getAppViewportWidth() - getSidebarWidth();
         const max = Math.min(
             SECONDARY_MENU_MAX_WIDTH,
             Math.max(
@@ -101,8 +115,7 @@
 
     if (secondaryMenu && secondaryMenuToggle) {
         const savedSecondaryMenuState = localStorage.getItem('secondaryMenuCollapsed');
-        const forceSecondaryMenuOpen = Boolean(secondaryMenu.querySelector('.tasks-tracker-rail'));
-        setSecondaryMenuCollapsed(forceSecondaryMenuOpen ? false : savedSecondaryMenuState === 'true');
+        setSecondaryMenuCollapsed(savedSecondaryMenuState === 'true');
 
         secondaryMenuToggle.addEventListener('click', function () {
             const collapsed = !document.body.classList.contains('secondary-menu-collapsed');
@@ -134,6 +147,7 @@
                 pointerId: e.pointerId,
                 startX: e.clientX,
                 startWidth: getSecondaryMenuWidth(),
+                scale: getAppScale(),
             };
             document.body.classList.add('secondary-menu-resizing');
         });
@@ -143,7 +157,8 @@
                 return;
             }
 
-            setSecondaryMenuWidth(secondaryMenuResizeState.startWidth + e.clientX - secondaryMenuResizeState.startX, false);
+            const deltaX = viewportToAppPixels(e.clientX - secondaryMenuResizeState.startX, secondaryMenuResizeState.scale);
+            setSecondaryMenuWidth(secondaryMenuResizeState.startWidth + deltaX, false);
         });
 
         function finishSecondaryMenuResize(e) {

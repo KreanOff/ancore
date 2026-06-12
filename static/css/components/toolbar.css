@@ -3,8 +3,8 @@
 .page-container.full-width:has(.app-page),
 .page-container.full-width:has(.tasks-page),
 .page-container.full-width:has(.calendar-page) {
-    min-height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
-    height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
+    min-height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
+    height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
     overflow: hidden;
     background: var(--bg-main);
 }
@@ -174,8 +174,8 @@
 .error-banner,
 .tasks-error-banner {
     background: #fff5f7;
-    border: 1px solid rgba(117, 83, 62, 0.25);
-    color: #684933;
+    border: 1px solid rgba(92, 95, 193, 0.25);
+    color: var(--accent-peach-hover);
     padding: 1rem 1.25rem;
     font-size: var(--font-size-base);
 }

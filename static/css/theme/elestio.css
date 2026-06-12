@@ -6,13 +6,20 @@ body {
 }
 
 .app-topbar,
+.tasks-tracker-rail {
+    background: var(--chrome-bg);
+}
+
 .sidebar,
+.app-topbar-right {
+    background: var(--secondary-menu-bg);
+}
+
 .secondary-menu,
 .secondary-menu-panel,
 .secondary-menu-panel > .tasks-tracker-rail,
-.secondary-menu-panel > .dashboard-rail,
-.tasks-tracker-rail {
-    background: var(--chrome-bg);
+.secondary-menu-panel > .dashboard-rail {
+    background: var(--secondary-menu-bg);
 }
 
 .app-topbar {
@@ -77,7 +84,7 @@ body {
 .tasks-rail-nav-group-toggle:focus-visible,
 .tasks-rail-add-button:hover,
 .tasks-rail-add-button:focus-visible {
-    background: var(--surface-selected);
+    background: var(--nav-selected-bg);
     border-color: transparent;
     color: var(--text-strong);
 }
@@ -140,7 +147,7 @@ body {
 .calendar-nav-button.is-active:hover {
     background: var(--accent-peach-hover);
     color: var(--accent-on-peach-hover);
-    box-shadow: 0 4px 12px rgba(117, 83, 62, 0.16);
+    box-shadow: 0 4px 12px rgba(92, 95, 193, 0.22);
 }
 
 .tasks-icon-button,
@@ -188,7 +195,7 @@ body {
 .tasks-filter-select:focus,
 .form-select:focus {
     border-color: var(--accent-peach-border);
-    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.12);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
 }
 
 .form-input::placeholder,
@@ -345,8 +352,8 @@ body.auth-page,
 .auth-visual::before {
     opacity: 0.55;
     background-image:
-        linear-gradient(rgba(117, 83, 62, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(117, 83, 62, 0.06) 1px, transparent 1px);
+        linear-gradient(rgba(92, 95, 193, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(92, 95, 193, 0.06) 1px, transparent 1px);
 }
 
 .auth-brand,
@@ -439,7 +446,7 @@ body.auth-page,
 
 .auth-card .form-input:focus {
     border-color: var(--accent-peach-border);
-    box-shadow: 0 0 0 3px rgba(117, 83, 62, 0.14);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
 }
 
 .auth-input-shell > i,
@@ -459,7 +466,7 @@ body.auth-page,
 .auth-submit:hover {
     background: var(--accent-peach-hover);
     color: var(--accent-on-peach-hover);
-    box-shadow: 0 10px 24px rgba(117, 83, 62, 0.16);
+    box-shadow: 0 10px 24px rgba(92, 95, 193, 0.16);
 }
 
 .auth-submit:focus-visible {
@@ -480,8 +487,6 @@ body.auth-page,
     color: var(--accent-brown);
 }
 
-.tasks-project-tree-toggle:hover,
-.tasks-project-tree-toggle:focus-visible,
 .tasks-project-more:hover,
 .tasks-project-more:focus {
     color: var(--accent-on-peach);

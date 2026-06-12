@@ -1443,9 +1443,13 @@ function initTasksPage() {
     function setProjectTreeCollapsed(isCollapsed) {
         if (!projectTree || !projectTreeToggle) return;
 
+        const treeLabel = projectTreeToggle.dataset.projectTreeLabel
+            || projectTreeToggle.querySelector('.tasks-project-tree-label, span')?.textContent?.trim()
+            || 'projekty';
+
         projectTree.classList.toggle('is-collapsed', isCollapsed);
         projectTreeToggle.setAttribute('aria-expanded', String(!isCollapsed));
-        projectTreeToggle.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} Moje przestrzenie robocze`);
+        projectTreeToggle.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} sekcję ${treeLabel}`);
     }
 
     function setProjectCollapsed(projectNode, isCollapsed) {

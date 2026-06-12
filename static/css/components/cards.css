@@ -6,8 +6,8 @@
 }
 
 .page-container.full-width:has(.dashboard-page) {
-    min-height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
-    height: calc(100dvh - var(--topbar-height) - (var(--page-container-gap) * 2));
+    min-height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
+    height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
     border-radius: 8px;
 }
 
