@@ -9,7 +9,7 @@
     min-height: 0;
     overflow: auto;
     padding-top: var(--topbar-height);
-    background: var(--panel-bg);
+    background: #FBFBFC;
     transition: margin-left 0.1s ease;
 }
 

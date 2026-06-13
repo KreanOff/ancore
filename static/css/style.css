@@ -1,8 +1,8 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260612-nav-selected-bg';
+@import 'base/variables.css?v=20260613-secondary-menu-bg-fbfbfc-corners';
 @import 'base/reset.css?v=20260612-app-shell-scroll-fix';
-@import 'layout/sidebar.css?v=20260612-sidebar-active-icon';
-@import 'layout/main.css?v=20260612-app-shell-scroll-fix';
+@import 'layout/sidebar.css?v=20260613-secondary-menu-bg-fbfbfc-corners';
+@import 'layout/main.css?v=20260613-secondary-menu-bg-fbfbfc-corners';
 @import 'layout/responsive.css?v=20260612-app-scale-80-viewport';
 @import 'components/cards.css?v=20260612-app-scale-80-viewport';
 @import 'components/buttons.css';
@@ -20,5 +20,24 @@
 @import 'components/auth.css?v=20260612-main-reference-blue';
 @import 'calendar.css?v=20260612-main-reference-blue';
 @import 'components/checkboxes.css?v=20260531-unified';
-@import 'theme/elestio.css?v=20260612-nav-selected-bg';
+@import 'theme/elestio.css?v=20260613-status-header-bg-colors';
 @import 'components/profile.css?v=20260612-main-reference-blue';
+
+.secondary-menu,
+.secondary-menu .secondary-menu-panel,
+.secondary-menu .tasks-tracker-rail,
+.secondary-menu .dashboard-rail,
+.secondary-menu .calendar-rail,
+.secondary-menu .contacts-rail,
+.secondary-menu .profile-rail {
+    background: #FBFBFC;
+}
+
+.secondary-menu .tasks-rail-nav,
+.secondary-menu .tasks-rail-section {
+    background: transparent;
+}
+
+.main-content {
+    background: #FBFBFC;
+}

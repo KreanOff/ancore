@@ -256,7 +256,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '0 zadań')
         self.assertContains(response, 'data-select-all-target="sections"')
 
-    def test_all_groups_link_shows_group_count(self):
+    def test_flat_navigation_shows_project_and_tag_counts(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         TaskSection.objects.create(project=project, title='Frontend')
         TaskSection.objects.create(project=project, title='Backend')
@@ -264,8 +264,10 @@ class TaskProjectCreationTests(TestCase):
 
         response = self.client.get(reverse('tasks:tasks'))
 
-        self.assertContains(response, 'Moje grupy')
-        self.assertContains(response, '<span class="tasks-rail-count">2</span>', html=True)
+        self.assertContains(response, 'Wszystkie projekty')
+        self.assertContains(response, 'Tagi')
+        self.assertContains(response, '<span class="tasks-rail-count">1</span>', html=True, count=3)
+        self.assertNotContains(response, 'Moje grupy')
 
     def test_tags_view_lists_tags(self):
         frontend = TaskTag.objects.create(user=self.user, name='Frontend', description='Prace po stronie UI')
@@ -696,23 +698,26 @@ class TaskProjectCreationTests(TestCase):
             f'<a href="{reverse("tasks:tasks")}?view=my-tasks" class="tasks-rail-link is-active">',
         )
 
-    def test_shared_navigation_links_are_available(self):
+    def test_secondary_navigation_is_flat_and_limited(self):
         response = self.client.get(reverse('tasks:tasks'))
 
-        self.assertContains(response, 'Udostępnione zadania')
-        self.assertContains(response, 'Udostępnione grupy')
-        self.assertContains(response, 'Udostępnione projekty')
-        self.assertContains(response, 'data-rail-nav-group="mine"')
-        self.assertContains(response, 'data-rail-nav-group="shared"')
-        self.assertContains(response, 'data-rail-nav-group="tags"')
-        self.assertContains(response, 'data-rail-nav-group-toggle', count=3)
+        self.assertContains(response, 'Moje zadania')
+        self.assertContains(response, 'Wszystkie zadania')
+        self.assertContains(response, 'Wszystkie projekty')
+        self.assertContains(response, 'Tagi')
+        self.assertContains(response, 'tasks-rail-nav-separator')
+        self.assertNotContains(response, 'Moje grupy')
+        self.assertNotContains(response, 'Udostępnione zadania')
+        self.assertNotContains(response, 'Udostępnione grupy')
+        self.assertNotContains(response, 'Udostępnione projekty')
+        self.assertNotContains(response, 'data-rail-nav-group')
+        self.assertNotContains(response, 'data-rail-nav-group-toggle')
 
-        shared_response = self.client.get(f"{reverse('tasks:tasks')}?view=shared-tasks")
+        all_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
 
-        self.assertContains(shared_response, 'Nie ma jeszcze udostępnionych zadań.')
         self.assertContains(
-            shared_response,
-            f'<a href="{reverse("tasks:tasks")}?view=shared-tasks" class="tasks-rail-link is-active">',
+            all_tasks_response,
+            f'<a href="{reverse("tasks:tasks")}?view=all-tasks" class="tasks-rail-link is-active">',
         )
 
     def test_edit_project_updates_details_without_changing_code_or_icon(self):

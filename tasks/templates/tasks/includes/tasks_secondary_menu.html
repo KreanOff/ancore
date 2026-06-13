@@ -19,79 +19,35 @@
     </div>
 
     <nav class="tasks-rail-nav">
-        <div class="tasks-rail-nav-group {% if active_view == 'my_tasks' or active_view == 'all_groups' or active_view == 'projects' or active_view == 'project' or active_view == 'section' or active_view == 'all_tasks' %}is-current{% endif %}" data-rail-nav-group="mine">
-            <button type="button" class="tasks-rail-nav-group-toggle" aria-expanded="true" aria-controls="tasks-rail-nav-mine" data-rail-nav-group-toggle>
-                <i data-lucide="chevron-down" aria-hidden="true"></i>
-                <span>Moje</span>
-            </button>
-            <div class="tasks-rail-nav-group-content" id="tasks-rail-nav-mine" data-rail-nav-group-content>
-                <a href="{% url 'tasks:tasks' %}?view=my-tasks" class="tasks-rail-link {% if active_view == 'my_tasks' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="list-todo" aria-hidden="true"></i>
-                    </span>
-                    Moje zadania
-                    <span class="tasks-rail-count">{{ total_task_count }}</span>
-                </a>
-                <a href="{% url 'tasks:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="folder" aria-hidden="true"></i>
-                    </span>
-                    Moje grupy
-                    <span class="tasks-rail-count">{{ total_group_count }}</span>
-                </a>
-                <a href="{% url 'tasks:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="folders" aria-hidden="true"></i>
-                    </span>
-                    Moje projekty
-                    <span class="tasks-rail-count">{{ projects|length }}</span>
-                </a>
-            </div>
-        </div>
-        <div class="tasks-rail-nav-group {% if active_view == 'shared_tasks' or active_view == 'shared_groups' or active_view == 'shared_projects' %}is-current{% endif %}" data-rail-nav-group="shared">
-            <button type="button" class="tasks-rail-nav-group-toggle" aria-expanded="true" aria-controls="tasks-rail-nav-shared" data-rail-nav-group-toggle>
-                <i data-lucide="chevron-down" aria-hidden="true"></i>
-                <span>Udostępnione</span>
-            </button>
-            <div class="tasks-rail-nav-group-content" id="tasks-rail-nav-shared" data-rail-nav-group-content>
-                <a href="{% url 'tasks:tasks' %}?view=shared-tasks" class="tasks-rail-link {% if active_view == 'shared_tasks' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="list-todo" aria-hidden="true"></i>
-                    </span>
-                    Udostępnione zadania
-                    <span class="tasks-rail-count">{{ shared_task_count|default:0 }}</span>
-                </a>
-                <a href="{% url 'tasks:tasks' %}?view=shared-groups" class="tasks-rail-link {% if active_view == 'shared_groups' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="folder" aria-hidden="true"></i>
-                    </span>
-                    Udostępnione grupy
-                    <span class="tasks-rail-count">{{ shared_group_count|default:0 }}</span>
-                </a>
-                <a href="{% url 'tasks:tasks' %}?view=shared-projects" class="tasks-rail-link {% if active_view == 'shared_projects' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="folders" aria-hidden="true"></i>
-                    </span>
-                    Udostępnione projekty
-                    <span class="tasks-rail-count">{{ shared_project_count|default:0 }}</span>
-                </a>
-            </div>
-        </div>
-        <div class="tasks-rail-nav-group {% if active_view == 'tags' %}is-current{% endif %}" data-rail-nav-group="tags">
-            <button type="button" class="tasks-rail-nav-group-toggle" aria-expanded="true" aria-controls="tasks-rail-nav-tags" data-rail-nav-group-toggle>
-                <i data-lucide="chevron-down" aria-hidden="true"></i>
-                <span>Etykiety</span>
-            </button>
-            <div class="tasks-rail-nav-group-content" id="tasks-rail-nav-tags" data-rail-nav-group-content>
-                <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="tag" aria-hidden="true"></i>
-                    </span>
-                    Tagi
-                    <span class="tasks-rail-count">{{ total_tag_count }}</span>
-                </a>
-            </div>
-        </div>
+        <a href="{% url 'tasks:tasks' %}?view=my-tasks" class="tasks-rail-link {% if active_view == 'my_tasks' %}is-active{% endif %}">
+            <span class="tasks-rail-icon" aria-hidden="true">
+                <i data-lucide="list-todo" aria-hidden="true"></i>
+            </span>
+            Moje zadania
+            <span class="tasks-rail-count">{{ total_task_count }}</span>
+        </a>
+        <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
+            <span class="tasks-rail-icon" aria-hidden="true">
+                <i data-lucide="list-checks" aria-hidden="true"></i>
+            </span>
+            Wszystkie zadania
+            <span class="tasks-rail-count">{{ total_task_count }}</span>
+        </a>
+        <div class="tasks-rail-nav-separator" role="separator" aria-hidden="true"></div>
+        <a href="{% url 'tasks:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
+            <span class="tasks-rail-icon" aria-hidden="true">
+                <i data-lucide="folders" aria-hidden="true"></i>
+            </span>
+            Wszystkie projekty
+            <span class="tasks-rail-count">{{ projects|length }}</span>
+        </a>
+        <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
+            <span class="tasks-rail-icon" aria-hidden="true">
+                <i data-lucide="tag" aria-hidden="true"></i>
+            </span>
+            Tagi
+            <span class="tasks-rail-count">{{ total_tag_count }}</span>
+        </a>
     </nav>
 
     <div class="tasks-rail-section tasks-project-tree" data-project-tree>

@@ -304,6 +304,12 @@
     padding-left: 0.95rem;
 }
 
+.tasks-rail-nav-separator {
+    height: 1px;
+    margin: 0.375rem 0.5rem;
+    background: #e6e8ec;
+}
+
 .tasks-rail-icon,
 .tasks-rail-dot {
     width: 16px;

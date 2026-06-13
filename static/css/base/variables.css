@@ -1,5 +1,5 @@
 :root {
-    --app-scale: 0.8;
+    --app-scale: 0.9;
     --app-viewport-width: calc(100vw / var(--app-scale));
     --app-viewport-height: calc(100vh / var(--app-scale));
     --app-dynamic-viewport-height: var(--app-viewport-height);
@@ -7,7 +7,7 @@
     --chrome-bg: #f7f6f4;
     --chrome-bg-soft: #faf9f7;
     --chrome-border: #e9e6e2;
-    --secondary-menu-bg: #f3f3f8;
+    --secondary-menu-bg: #FBFBFC;
     --sidebar-bg: var(--secondary-menu-bg);
     --sidebar-text: #625d57;
     --sidebar-active: #5c5fc1;

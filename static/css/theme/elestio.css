@@ -19,7 +19,7 @@ body {
 .secondary-menu-panel,
 .secondary-menu-panel > .tasks-tracker-rail,
 .secondary-menu-panel > .dashboard-rail {
-    background: var(--secondary-menu-bg);
+    background: #FBFBFC;
 }
 
 .app-topbar {
@@ -27,7 +27,7 @@ body {
 }
 
 .main-content {
-    background: var(--panel-bg);
+    background: #FBFBFC;
 }
 
 .page-container,
@@ -57,6 +57,10 @@ body {
 .calendar-sidebar-header,
 .calendar-main-header {
     border-color: var(--border-color);
+}
+
+.tasks-rail-nav-separator {
+    background: var(--border-color);
 }
 
 .topbar-icon-button,
@@ -499,25 +503,25 @@ body.auth-page,
 
 .tasks-status-block,
 .tasks-status-subgroup {
-    border-color: var(--chrome-border);
-    background: var(--chrome-bg-soft);
+    border-color: rgb(206, 207, 213);
+    background: rgb(246, 246, 247);
 }
 
 .tasks-issue-group:not(.tasks-status-block) {
-    border-color: var(--chrome-border);
-    background: #fffdfb;
+    border-color: rgb(206, 207, 213);
+    background: rgb(246, 246, 247);
 }
 
 .tasks-issue-group-header:not(.tasks-status-block-header),
 .tasks-group-row td {
-    border-color: var(--chrome-border);
-    background: var(--sidebar-bg);
-    color: var(--text-strong);
+    border-color: rgb(206, 207, 213);
+    background: rgb(211, 214, 220);
+    color: rgb(84, 95, 109);
 }
 
 .tasks-issue-group-header:not(.tasks-status-block-header) .tasks-group-caret,
 .tasks-issue-group-header:not(.tasks-status-block-header) .tasks-rail-count {
-    color: var(--text-main);
+    color: inherit;
 }
 
 .tasks-issue-group-header:not(.tasks-status-block-header) .tasks-group-caret:hover {
@@ -527,28 +531,28 @@ body.auth-page,
 .tasks-issue-group:not(.tasks-status-block) > .tasks-issue-list,
 .tasks-issue-group:not(.tasks-status-block) > .tasks-section-list,
 .tasks-issue-list.tasks-project-list {
-    background: #fffdfb;
+    background: rgb(246, 246, 247);
 }
 
 .tasks-issue-row {
-    border-top-color: var(--chrome-border);
-    background: #fffdfb;
-    color: var(--text-main);
+    border-top-color: rgb(232, 232, 232);
+    background: rgb(246, 246, 247);
+    color: rgb(18, 18, 18);
 }
 
 .tasks-table .task-row:hover td,
 .tasks-project-row:hover,
 .tasks-section-row:hover {
-    background: #fbf6f3;
-    border-color: var(--accent-peach-border);
+    background: rgb(240, 240, 242);
+    border-color: rgb(232, 232, 232);
 }
 
 .tasks-project-row,
 .tasks-section-row:not(.tasks-section-card),
 .tasks-all-groups-row {
-    border-top-color: var(--border-color);
-    background: #fffdfb;
-    color: var(--text-main);
+    border-top-color: rgb(232, 232, 232);
+    background: rgb(246, 246, 247);
+    color: rgb(18, 18, 18);
 }
 
 .tasks-issue-group:not(.tasks-status-block) .tasks-project-row,
@@ -556,26 +560,30 @@ body.auth-page,
 .tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row,
 .tasks-issue-group:not(.tasks-status-block) .tasks-empty-state,
 .tasks-issue-group:not(.tasks-status-block) .tasks-empty-section {
-    background: #fffdfb;
+    background: rgb(246, 246, 247);
+}
+
+.tasks-issue-group:not(.tasks-status-block) .tasks-project-list > .tasks-project-row {
+    background: rgb(246, 246, 247);
 }
 
 .tasks-table .task-row:hover td,
 .tasks-project-row:hover,
 .tasks-section-row:hover,
 .tasks-all-groups-row:hover {
-    background: var(--surface-hover);
-    border-color: var(--chrome-border);
+    background: rgb(240, 240, 242);
+    border-color: rgb(232, 232, 232);
 }
 
 .tasks-issue-row:hover {
-    background: #f0f2f6;
-    border-color: #d6d9df;
+    background: rgb(240, 240, 242);
+    border-color: rgb(232, 232, 232);
 }
 
 .tasks-project-row:focus-visible,
 .tasks-section-row:focus-visible {
-    background: var(--surface-hover);
-    outline: 2px solid var(--chrome-border);
+    background: rgb(240, 240, 242);
+    outline: 2px solid rgb(206, 207, 213);
     outline-offset: -2px;
 }
 
@@ -605,7 +613,7 @@ body.auth-page,
 
 .tasks-row-title,
 .task-title {
-    color: var(--text-strong);
+    color: rgb(18, 18, 18);
 }
 
 .tasks-row-id,
@@ -614,46 +622,65 @@ body.auth-page,
 .task-desc,
 .tasks-project-row-description,
 .tasks-section-row-description {
-    color: var(--text-muted);
+    color: rgb(123, 123, 123);
 }
 
-.tasks-issue-group-header.tasks-status-block-header--new,
-.tasks-status-subgroup-header.tasks-status-subgroup-header--new {
+.tasks-issue-group-header.tasks-status-block-header {
+    border-color: rgb(206, 207, 213);
+}
+
+.tasks-issue-group-header.tasks-status-block-header--new {
     background: #dbeafe;
     border-color: #bfdbfe;
     color: #1d4ed8;
 }
 
-.tasks-issue-group-header.tasks-status-block-header--in_progress,
-.tasks-status-subgroup-header.tasks-status-subgroup-header--in_progress {
+.tasks-issue-group-header.tasks-status-block-header--in_progress {
     background: #f8ead9;
     border-color: #e8d0b1;
     color: #875b2a;
 }
 
-.tasks-issue-group-header.tasks-status-block-header--resolved,
-.tasks-status-subgroup-header.tasks-status-subgroup-header--resolved {
+.tasks-issue-group-header.tasks-status-block-header--resolved {
     background: #e8eee4;
     border-color: #d2ddcc;
     color: #596f4c;
 }
 
-.tasks-issue-group-header.tasks-status-block-header--closed,
-.tasks-status-subgroup-header.tasks-status-subgroup-header--closed {
+.tasks-issue-group-header.tasks-status-block-header--closed {
     background: var(--surface-selected);
     border-color: var(--chrome-border);
     color: #66615c;
 }
 
-.tasks-issue-group-header.tasks-status-block-header--reopened,
-.tasks-status-subgroup-header.tasks-status-subgroup-header--reopened {
+.tasks-issue-group-header.tasks-status-block-header--reopened {
     background: #f2e4e1;
     border-color: #dfc9c2;
     color: #7f5750;
+}
+
+.tasks-status-block-header .status-indicator {
+    --tasks-status-color: currentColor;
+    color: inherit;
 }
 
 .tasks-tag-dot,
 .dot-blue,
 .calendar-color-dot--blue {
     color: var(--accent-brown);
+}
+
+.secondary-menu,
+.secondary-menu .secondary-menu-panel,
+.secondary-menu .tasks-tracker-rail,
+.secondary-menu .dashboard-rail,
+.secondary-menu .calendar-rail,
+.secondary-menu .contacts-rail,
+.secondary-menu .profile-rail {
+    background: #FBFBFC;
+}
+
+.secondary-menu .tasks-rail-nav,
+.secondary-menu .tasks-rail-section {
+    background: transparent;
 }

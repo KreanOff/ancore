@@ -20,7 +20,7 @@
     max-width: var(--secondary-menu-max-width);
     z-index: 95;
     display: flex;
-    background: var(--secondary-menu-bg);
+    background: #FBFBFC;
     border-right: 0;
     transition: none;
 }
@@ -29,7 +29,7 @@
     width: 100%;
     min-height: 0;
     display: flex;
-    background: var(--secondary-menu-bg);
+    background: #FBFBFC;
     border: 0;
     overflow: hidden;
     transition: none;
@@ -37,7 +37,7 @@
 
 .secondary-menu-panel > .tasks-tracker-rail,
 .secondary-menu-panel > .dashboard-rail {
-    background: var(--secondary-menu-bg);
+    background: #FBFBFC;
 }
 
 body.secondary-menu-toggling .secondary-menu {
