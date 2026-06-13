@@ -28,6 +28,9 @@ function initTasksPage() {
     const priorityFilterToggle = document.querySelector('[data-priority-filter-toggle]');
     const priorityFilterLabel = document.querySelector('[data-priority-filter-label]');
     const priorityFilterIcon = document.querySelector('[data-priority-filter-icon]');
+    const directoryMembersMenus = document.querySelectorAll('[data-directory-members-menu]');
+    const directoryMembersSearchInputs = document.querySelectorAll('[data-directory-members-search]');
+    const directoryShareButtons = document.querySelectorAll('[data-directory-share-open]');
     const groupRows = document.querySelectorAll('.tasks-group-row');
     const issueGroups = document.querySelectorAll('.tasks-issue-group');
     const statusSubgroups = document.querySelectorAll('.tasks-status-subgroup');
@@ -76,6 +79,7 @@ function initTasksPage() {
     const sectionCreateModal = document.getElementById('section-create-modal');
     const sectionRenameModal = document.getElementById('section-rename-modal');
     const issueModal = document.getElementById('issue-modal');
+    const directoryShareModal = document.getElementById('directory-share-modal');
     const contactCreateModal = document.getElementById('contact-create-modal');
     const companyCreateModal = document.getElementById('company-create-modal');
     const projectForm = document.getElementById('project-create-form');
@@ -84,6 +88,7 @@ function initTasksPage() {
     const sectionCreateForm = document.getElementById('section-create-form');
     const sectionRenameForm = document.getElementById('section-rename-form');
     const issueForm = document.getElementById('issue-create-form');
+    const directoryShareForm = document.getElementById('directory-share-form');
     const contactCreateForm = document.getElementById('contact-create-form');
     const companyCreateForm = document.getElementById('company-create-form');
     const projectNameInput = projectForm ? projectForm.querySelector('[name="name"]') : null;
@@ -688,6 +693,17 @@ function initTasksPage() {
     const issueSectionOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-section-option]')) : [];
     const issuePickerSearchInputs = issueForm ? Array.from(issueForm.querySelectorAll('[data-picker-search]')) : [];
     const issuePickerSearchButtons = issueForm ? Array.from(issueForm.querySelectorAll('[data-picker-search-submit]')) : [];
+    const directoryShareActionInput = directoryShareForm ? directoryShareForm.querySelector('[name="action"]') : null;
+    const directoryShareProjectInput = directoryShareForm ? directoryShareForm.querySelector('[name="project_id"]') : null;
+    const directoryShareSectionInput = directoryShareForm ? directoryShareForm.querySelector('[name="section_id"]') : null;
+    const directoryShareMemberInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_query"]') : null;
+    const directoryShareFirstNameInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_first_name"]') : null;
+    const directoryShareLastNameInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_last_name"]') : null;
+    const directorySharePersonInputs = [directoryShareFirstNameInput, directoryShareLastNameInput, directoryShareMemberInput].filter(Boolean);
+    const directoryShareContext = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-context]') : null;
+    const directoryShareResults = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-results]') : null;
+    const directoryShareResultOptions = directoryShareForm ? Array.from(directoryShareForm.querySelectorAll('[data-directory-share-result]')) : [];
+    const directoryShareResultsEmpty = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-results-empty]') : null;
     const contactAncoreLoginInput = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-input]') : null;
     const contactAncoreLoginStatus = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-status]') : null;
     const contactAncoreLoginUrl = contactCreateForm ? (contactCreateForm.dataset.ancoreLoginUrl || '') : '';
@@ -699,6 +715,7 @@ function initTasksPage() {
     const sectionCreateSubmitBtn = document.getElementById('section-create-submit');
     const sectionRenameSubmitBtn = document.getElementById('section-rename-submit');
     const issueSubmitBtn = document.getElementById('issue-create-submit');
+    const directoryShareSubmitBtn = document.getElementById('directory-share-submit');
     const projectIconInput = projectForm ? projectForm.querySelector('[name="icon"]') : null;
     const projectIconPickers = document.querySelectorAll('[data-project-icon-picker]');
     const projectIconGroups = [
@@ -894,6 +911,47 @@ function initTasksPage() {
         issueSubmitBtn.disabled = issueTitleInput.value.trim().length === 0;
     }
 
+    function updateDirectoryShareSubmitState() {
+        if (!directoryShareSubmitBtn) return;
+        directoryShareSubmitBtn.disabled = !directorySharePersonInputs.some(input => input.value.trim().length > 0);
+    }
+
+    function directoryShareSearchTerms() {
+        return directorySharePersonInputs
+            .map(input => normalizePickerSearch(input.value))
+            .filter(Boolean);
+    }
+
+    function syncDirectoryShareResults() {
+        if (!directoryShareResults) return;
+        const terms = directoryShareSearchTerms();
+        const selectedValue = directoryShareMemberInput?.value.trim() || '';
+
+        if (!terms.length) {
+            directoryShareResults.hidden = true;
+            directoryShareResultOptions.forEach(option => {
+                option.hidden = false;
+                option.classList.remove('is-active');
+            });
+            if (directoryShareResultsEmpty) directoryShareResultsEmpty.hidden = true;
+            return;
+        }
+
+        let visibleCount = 0;
+        directoryShareResultOptions.forEach(option => {
+            const text = normalizePickerSearch(option.dataset.shareSearch || option.textContent);
+            const isVisible = terms.every(term => text.includes(term));
+            option.hidden = !isVisible;
+            option.classList.toggle('is-active', selectedValue && option.dataset.shareValue === selectedValue);
+            if (isVisible) visibleCount += 1;
+        });
+
+        directoryShareResults.hidden = false;
+        if (directoryShareResultsEmpty) {
+            directoryShareResultsEmpty.hidden = visibleCount > 0;
+        }
+    }
+
     function updateProjectRenameSubmitState() {
         if (!projectRenameSubmitBtn || !projectRenameNameInput) return;
         projectRenameSubmitBtn.disabled = projectRenameNameInput.value.trim().length === 0;
@@ -1006,6 +1064,34 @@ function initTasksPage() {
         if (!priorityFilterMenu || !priorityFilterToggle) return;
         priorityFilterMenu.classList.remove('is-open');
         priorityFilterToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function closeDirectoryMembersMenus(exceptMenu = null) {
+        directoryMembersMenus.forEach(menu => {
+            if (menu === exceptMenu) return;
+            menu.classList.remove('is-open');
+            menu.querySelector('[data-directory-members-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function filterDirectoryMembers(menu) {
+        if (!menu) return;
+        const input = menu.querySelector('[data-directory-members-search]');
+        const rows = Array.from(menu.querySelectorAll('[data-directory-member-row]'));
+        const empty = menu.querySelector('[data-directory-members-no-results]');
+        const query = normalizePickerSearch(input?.value || '');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const text = normalizePickerSearch(row.dataset.directoryMemberSearch || row.textContent);
+            const isVisible = !query || text.includes(query);
+            row.hidden = !isVisible;
+            if (isVisible) visibleCount += 1;
+        });
+
+        if (empty) {
+            empty.hidden = !query || visibleCount > 0;
+        }
     }
 
     function closeInlineSelectDropdowns(exceptDropdown = null) {
@@ -1801,6 +1887,7 @@ function initTasksPage() {
             closeSectionActionMenu();
             closeStatusFilterMenu();
             closePriorityFilterMenu();
+            closeDirectoryMembersMenus();
         });
     }
 
@@ -1812,6 +1899,7 @@ function initTasksPage() {
             closeProjectActionMenus();
             closeSectionActionMenu();
             closePriorityFilterMenu();
+            closeDirectoryMembersMenus();
             statusFilterMenu.classList.toggle('is-open', isOpen);
             statusFilterToggle.setAttribute('aria-expanded', String(isOpen));
         });
@@ -1829,6 +1917,7 @@ function initTasksPage() {
             closeProjectActionMenus();
             closeSectionActionMenu();
             closeStatusFilterMenu();
+            closeDirectoryMembersMenus();
             priorityFilterMenu.classList.toggle('is-open', isOpen);
             priorityFilterToggle.setAttribute('aria-expanded', String(isOpen));
         });
@@ -1837,6 +1926,65 @@ function initTasksPage() {
             e.stopPropagation();
         });
     }
+
+    function openDirectoryShareModal(button) {
+        if (!directoryShareModal || !directoryShareForm) return;
+        const action = button.dataset.shareAction || '';
+        const projectId = button.dataset.shareProjectId || '';
+        const sectionId = button.dataset.shareSectionId || '';
+        const objectType = button.dataset.shareObjectType || '';
+        const objectName = button.dataset.shareObjectName || '';
+
+        if (directoryShareActionInput) directoryShareActionInput.value = action;
+        if (directoryShareProjectInput) directoryShareProjectInput.value = projectId;
+        if (directoryShareSectionInput) directoryShareSectionInput.value = sectionId;
+        directorySharePersonInputs.forEach(input => { input.value = ''; });
+        syncDirectoryShareResults();
+        if (directoryShareContext) {
+            directoryShareContext.textContent = [objectType, objectName].filter(Boolean).join(': ');
+        }
+
+        closeDirectoryMembersMenus();
+        openModal(directoryShareModal, directoryShareFirstNameInput || directoryShareMemberInput, updateDirectoryShareSubmitState);
+    }
+
+    directoryShareButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openDirectoryShareModal(this);
+        });
+    });
+
+    directoryMembersMenus.forEach(menu => {
+        const toggle = menu.querySelector('[data-directory-members-toggle]');
+
+        toggle?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !menu.classList.contains('is-open');
+            const searchInput = menu.querySelector('[data-directory-members-search]');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeStatusFilterMenu();
+            closePriorityFilterMenu();
+            closeInlineSelectDropdowns();
+            closeDirectoryMembersMenus(menu);
+            if (searchInput) searchInput.value = '';
+            filterDirectoryMembers(menu);
+            menu.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+        });
+
+        menu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+
+    directoryMembersSearchInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            filterDirectoryMembers(this.closest('[data-directory-members-menu]'));
+        });
+    });
 
     document.querySelectorAll('[data-inline-select-dropdown]').forEach(dropdown => {
         const select = getInlineSelect(dropdown);
@@ -2169,6 +2317,7 @@ function initTasksPage() {
         if (createMenu && !createMenu.contains(e.target)) closeCreateMenu();
         if (!e.target.closest('[data-status-filter-menu]')) closeStatusFilterMenu();
         if (!e.target.closest('[data-priority-filter-menu]')) closePriorityFilterMenu();
+        if (!e.target.closest('[data-directory-members-menu]')) closeDirectoryMembersMenus();
         if (!e.target.closest('[data-section-actions]')) closeSectionActionMenu();
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
@@ -2189,6 +2338,28 @@ function initTasksPage() {
         tagNameInput.addEventListener('input', updateTagSubmitState);
         updateTagSubmitState();
     }
+
+    if (directorySharePersonInputs.length) {
+        directorySharePersonInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                updateDirectoryShareSubmitState();
+                syncDirectoryShareResults();
+            });
+        });
+        updateDirectoryShareSubmitState();
+        syncDirectoryShareResults();
+    }
+
+    directoryShareResultOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            if (directoryShareFirstNameInput) directoryShareFirstNameInput.value = this.dataset.shareFirstName || '';
+            if (directoryShareLastNameInput) directoryShareLastNameInput.value = this.dataset.shareLastName || '';
+            if (directoryShareMemberInput) directoryShareMemberInput.value = this.dataset.shareValue || '';
+            updateDirectoryShareSubmitState();
+            syncDirectoryShareResults();
+            directoryShareMemberInput?.focus();
+        });
+    });
 
     if (projectForm) {
         const codeInput = projectForm.querySelector('[name="code"]');

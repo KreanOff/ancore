@@ -337,34 +337,31 @@
                 {% endif %}
             </div>
         </div>
-
         {% if active_project and not active_section %}
-        <div class="tasks-table-wrap tasks-board">
-            <section class="tasks-issue-group" data-section-status="">
-                <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
-                        <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
-                    <span class="status-indicator status-label-plain">Grupy</span>
-                    <span class="tasks-rail-count">{{ active_project.sections.all|length }}</span>
-                </header>
-                <div class="tasks-issue-list tasks-section-list" aria-label="Lista grup projektu">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board">
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header" role="row">
+                    <span class="tasks-directory-header-select">
+                        <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
+                    </span>
+                    <span class="tasks-directory-header-name"></span>
+                    <span>CZŁONKOWIE</span>
+                    <span>DOMYŚLNY ODPOWIEDZIALNY ZA ZADANIA</span>
+                    <span class="tasks-directory-header-date"></span>
+                </div>
+                <div class="tasks-issue-list tasks-section-list tasks-directory-list" aria-label="Lista grup projektu">
                 {% for section in active_project.sections.all %}
-                <article class="tasks-issue-row tasks-section-row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
+                <article class="tasks-issue-row tasks-section-row tasks-directory-row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
-                    <span class="tasks-row-spacer" aria-hidden="true"></span>
-                    <span class="tasks-row-id">{{ active_project.code }}</span>
-                    <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
-                    <span class="tasks-row-title tasks-section-row-title">
-                        {% if section.icon %}
-                        <span class="tasks-section-row-icon" aria-hidden="true"><i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i></span>
-                        {% endif %}
+                    <span class="tasks-directory-name tasks-row-title tasks-section-row-title">
                         <span>{{ section.title }}</span>
                     </span>
-                    <span class="tasks-section-row-description">{{ section.description|default:"Brak opisu" }}</span>
-                    <span class="tasks-row-time">{{ section.tasks.count }} zadań</span>
-                    <span class="tasks-row-date">{{ section.created_at|date:"d M" }}</span>
+                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token only %}
+                    <span class="tasks-directory-assignee">
+                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
+                        <span>Pracownik</span>
+                    </span>
+                    <span class="tasks-row-date">{{ section.created_at|date:"j M"|lower }}</span>
                 </article>
                 {% empty %}
                 <div class="tasks-empty-state">
@@ -439,32 +436,30 @@
             {% endif %}
         </div>
         {% elif active_view == 'all_groups' %}
-        <div class="tasks-table-wrap tasks-board">
-            <section class="tasks-issue-group" data-section-status="">
-                <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Grupy" aria-expanded="true">
-                        <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
-                    <span class="status-indicator status-label-plain">Grupy</span>
-                    <span class="tasks-rail-count">{{ total_group_count }}</span>
-                </header>
-                <div class="tasks-issue-list tasks-section-list" aria-label="Lista grup">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board">
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header" role="row">
+                    <span class="tasks-directory-header-select">
+                        <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
+                    </span>
+                    <span class="tasks-directory-header-name"></span>
+                    <span>CZŁONKOWIE</span>
+                    <span>DOMYŚLNY ODPOWIEDZIALNY ZA ZADANIA</span>
+                    <span class="tasks-directory-header-date"></span>
+                </div>
+                <div class="tasks-issue-list tasks-section-list tasks-directory-list" aria-label="Lista grup">
                 {% for section in all_sections %}
-                <article class="tasks-issue-row tasks-section-row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
+                <article class="tasks-issue-row tasks-section-row tasks-directory-row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
-                    <span class="tasks-row-spacer" aria-hidden="true"></span>
-                    <span class="tasks-row-id">{{ section.project.code }}</span>
-                    <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
-                    <span class="tasks-row-title tasks-section-row-title">
-                        {% if section.icon %}
-                        <span class="tasks-section-row-icon" aria-hidden="true"><i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i></span>
-                        {% endif %}
+                    <span class="tasks-directory-name tasks-row-title tasks-section-row-title">
                         <span>{{ section.title }}</span>
                     </span>
-                    <span class="tasks-section-row-description">{{ section.description|default:section.project.name }}</span>
-                    <span class="tasks-row-time">{{ section.tasks.count }} zadań</span>
-                    <span class="tasks-row-date">{{ section.created_at|date:"d M" }}</span>
+                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token only %}
+                    <span class="tasks-directory-assignee">
+                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
+                        <span>Pracownik</span>
+                    </span>
+                    <span class="tasks-row-date">{{ section.created_at|date:"j M"|lower }}</span>
                 </article>
                 {% empty %}
                 <div class="tasks-empty-state">
@@ -519,32 +514,30 @@
             {% endif %}
         </div>
         {% elif projects %}
-        <div class="tasks-table-wrap tasks-board">
-            <section class="tasks-issue-group" data-section-status="">
-                <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Projekty" aria-expanded="true">
-                        <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox" aria-label="Zaznacz wszystkie projekty" title="Zaznacz wszystkie projekty" data-select-all-checkbox data-select-all-target="projects">
-                    <span class="status-indicator status-label-plain">Projekty</span>
-                    <span class="tasks-rail-count">{{ projects|length }}</span>
-                </header>
-                <div class="tasks-issue-list tasks-project-list" aria-label="Lista projektów">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board">
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header" role="row">
+                    <span class="tasks-directory-header-select">
+                        <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie projekty" title="Zaznacz wszystkie projekty" data-select-all-checkbox data-select-all-target="projects">
+                    </span>
+                    <span class="tasks-directory-header-name"></span>
+                    <span>CZŁONKOWIE</span>
+                    <span>DOMYŚLNY ODPOWIEDZIALNY ZA ZADANIA</span>
+                    <span class="tasks-directory-header-date"></span>
+                </div>
+                <div class="tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista projektów">
                 {% for project in projects %}
-                <article class="tasks-issue-row tasks-project-row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}">
+                <article class="tasks-issue-row tasks-project-row tasks-directory-row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}">
                     <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz projekt {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}">
-                    <span class="tasks-row-spacer" aria-hidden="true"></span>
-                    <span class="tasks-row-id">{{ project.code }}</span>
-                    <span class="status-indicator status-label-plain" aria-label="Projekt"></span>
-                    <span class="tasks-row-title tasks-project-row-title">
-                        {% if project.icon %}
-                        <span class="tasks-project-row-icon" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};"><i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i></span>
-                        {% endif %}
+                    <span class="tasks-directory-name tasks-row-title tasks-project-row-title">
                         <span>{{ project.name }}</span>
                     </span>
-                    <span class="tasks-project-row-description">{{ project.description|default:"Brak opisu" }}</span>
-                    <span class="tasks-row-time">{{ project.total_tasks }} zadań</span>
-                    <span class="tasks-row-date">{{ project.created_at|date:"d M" }}</span>
+                    {% include 'tasks/includes/directory_members.html' with item=project item_kind='project' tasks_return_path=tasks_return_path csrf_token=csrf_token only %}
+                    <span class="tasks-directory-assignee">
+                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
+                        <span>Pracownik</span>
+                    </span>
+                    <span class="tasks-row-date">{{ project.created_at|date:"j M"|lower }}</span>
                 </article>
                 {% endfor %}
                 </div>
@@ -600,19 +593,21 @@
     </div>
 </div>
 
-<div class="tasks-modal tasks-project-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
-    <div class="tasks-modal__dialog tasks-project-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-project-modal__form" id="project-create-form">
+<div class="tasks-modal tasks-project-modal tasks-project-create-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-create-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form" id="project-create-form">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_project">
-            <header class="tasks-modal__header">
-                <h2 id="project-modal-title">Nowy projekt</h2>
+            <header class="tasks-modal__header tasks-project-create-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <strong id="project-modal-title">Nowy projekt</strong>
+                </div>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
                     <i data-lucide="x" aria-hidden="true"></i>
                 </button>
             </header>
 
-            <div class="tasks-modal__body tasks-project-modal__body">
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-create-modal__body">
                 {% if project_form.errors %}
                 <div class="tasks-modal__errors">
                     {% for field in project_form %}
@@ -626,20 +621,79 @@
                 </div>
                 {% endif %}
 
-                <div class="tasks-settings-grid">
-                    <label for="{{ project_form.name.id_for_label }}">Nazwa projektu</label>
-                    {{ project_form.name }}
+                <label class="u-sr-only" for="{{ project_form.name.id_for_label }}">Nazwa projektu</label>
+                {{ project_form.name }}
+                <label class="u-sr-only" for="{{ project_form.description.id_for_label }}">Opis</label>
+                {{ project_form.description }}
 
-                    <label for="{{ project_form.section_title.id_for_label }}">Nazwa grupy</label>
-                    {{ project_form.section_title }}
-
-                    <label for="{{ project_form.description.id_for_label }}">Opis</label>
-                    {{ project_form.description }}
+                <div class="tasks-project-create-fields">
+                    <label>
+                        <span>Pierwsza grupa</span>
+                        {{ project_form.section_title }}
+                    </label>
                 </div>
             </div>
 
-            <footer class="tasks-modal__footer">
-                <button type="submit" class="tasks-modal__submit" id="project-create-submit">Utwórz</button>
+            <footer class="tasks-modal__footer tasks-project-create-modal__footer">
+                <button type="submit" class="tasks-modal__submit" id="project-create-submit">Utwórz projekt</button>
+            </footer>
+        </form>
+    </div>
+</div>
+
+<div class="tasks-modal tasks-directory-share-modal" id="directory-share-modal" role="dialog" aria-modal="true" aria-labelledby="directory-share-modal-title" aria-hidden="true">
+    <div class="tasks-modal__dialog tasks-directory-share-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-directory-share-modal__form" id="directory-share-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="">
+            <input type="hidden" name="project_id" value="">
+            <input type="hidden" name="section_id" value="">
+            <input type="hidden" name="next" value="{{ tasks_return_path }}">
+            <header class="tasks-modal__header tasks-directory-share-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <span class="tasks-directory-share-context" data-directory-share-context></span>
+                    <span class="tasks-project-modal__chevron">›</span>
+                    <strong id="directory-share-modal-title">Dodaj osobę</strong>
+                </div>
+                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                    <i data-lucide="x" aria-hidden="true"></i>
+                </button>
+            </header>
+
+            <div class="tasks-modal__body tasks-directory-share-modal__body">
+                <div class="tasks-directory-share-person-fields" data-directory-share-fields>
+                    <label class="tasks-directory-share-person-field" for="directory-share-first-name">
+                        <span class="u-sr-only">Imię</span>
+                        <input type="text" id="directory-share-first-name" name="member_first_name" placeholder="Imię" autocomplete="given-name" data-directory-share-name-input>
+                    </label>
+                    <label class="tasks-directory-share-person-field" for="directory-share-last-name">
+                        <span class="u-sr-only">Nazwisko</span>
+                        <input type="text" id="directory-share-last-name" name="member_last_name" placeholder="Nazwisko" autocomplete="family-name" data-directory-share-name-input>
+                    </label>
+                    <label class="tasks-directory-share-person-field tasks-directory-share-person-field--ancore" for="directory-share-member-query">
+                        <span class="u-sr-only">ID Ancore</span>
+                        <input type="text" id="directory-share-member-query" name="member_query" placeholder="ID Ancore" autocomplete="off" data-directory-share-input>
+                    </label>
+                    <div class="tasks-directory-share-results" role="listbox" aria-label="Użytkownicy do dodania" data-directory-share-results hidden>
+                        {% for option in share_user_options %}
+                        <button type="button" class="tasks-directory-share-result" role="option" data-directory-share-result data-share-value="{{ option.value|escape }}" data-share-first-name="{{ option.first_name|escape }}" data-share-last-name="{{ option.last_name|escape }}" data-share-search="{{ option.label|escape }} {{ option.username|escape }}">
+                            {% include 'accounts/includes/user_avatar.html' with avatar=option.avatar avatar_class='tasks-directory-share-result-avatar' only %}
+                            <span class="tasks-directory-share-result-text">
+                                <strong>{{ option.label }}</strong>
+                                <small>{{ option.username }}</small>
+                            </span>
+                        </button>
+                        {% endfor %}
+                        <div class="tasks-directory-share-results-empty" data-directory-share-results-empty hidden>Brak wyników.</div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="tasks-modal__footer tasks-directory-share-modal__footer">
+                <button type="submit" class="tasks-modal__submit" id="directory-share-submit">
+                    <i data-lucide="plus" aria-hidden="true"></i>
+                    <span>Dodaj</span>
+                </button>
             </footer>
         </form>
     </div>

@@ -1,5 +1,9 @@
+from collections import defaultdict
+
+from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, Value, When
 from django.http import JsonResponse
@@ -7,6 +11,9 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 import json
+from accounts.avatar import account_avatar
+from accounts.models import normalize_public_username
+from contacts.models import SharedItem, UserContact
 from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
@@ -41,6 +48,221 @@ def _sections_for_projects(projects):
     return [section for project in projects for section in project.sections.all()]
 
 
+def _user_display_name(user):
+    return user.get_full_name() or user.email or user.username
+
+
+def _shared_users_by_object(content_type, object_ids):
+    shared_users = defaultdict(list)
+    if not object_ids:
+        return shared_users
+
+    shares = SharedItem.objects.filter(
+        content_type=content_type,
+        object_id__in=object_ids,
+    ).select_related('shared_with').order_by('created_at', 'id')
+
+    for share in shares:
+        shared_users[share.object_id].append(share.shared_with)
+    return shared_users
+
+
+def _directory_member_payload(entries):
+    members = []
+    seen_user_ids = set()
+    for entry in entries:
+        if isinstance(entry, dict):
+            user = entry.get('user')
+            role = entry.get('role', 'Członek')
+        else:
+            user = entry
+            role = 'Członek'
+        if not user or user.pk in seen_user_ids:
+            continue
+        seen_user_ids.add(user.pk)
+        members.append({
+            'avatar': account_avatar(user),
+            'label': _user_display_name(user),
+            'role': role,
+        })
+
+    if not members:
+        return {
+            'members': [],
+            'visible_members': [],
+            'label': '',
+            'title': '',
+        }
+
+    label = members[0]['label']
+
+    return {
+        'members': members,
+        'visible_members': members[:3],
+        'label': label,
+        'title': ', '.join(member['label'] for member in members),
+    }
+
+
+def _assign_directory_members(item, users):
+    payload = _directory_member_payload(users)
+    item.directory_members = payload['members']
+    item.directory_visible_members = payload['visible_members']
+    item.directory_member_label = payload['label']
+    item.directory_member_title = payload['title']
+
+
+def _decorate_directory_members(projects):
+    if not projects:
+        return
+
+    sections = _sections_for_projects(projects)
+    content_types = ContentType.objects.get_for_models(TaskProject, TaskSection)
+    project_shares = _shared_users_by_object(content_types[TaskProject], [project.id for project in projects])
+    section_shares = _shared_users_by_object(content_types[TaskSection], [section.id for section in sections])
+
+    for project in projects:
+        shared_users = project_shares.get(project.id, [])
+        _assign_directory_members(
+            project,
+            [
+                {'user': project.user, 'role': 'Właściciel'},
+                *({'user': user, 'role': 'Udostępniono'} for user in shared_users),
+            ],
+        )
+
+        for section in project.sections.all():
+            _assign_directory_members(
+                section,
+                [
+                    {'user': project.user, 'role': 'Właściciel projektu'},
+                    *({'user': user, 'role': 'Udostępniono w projekcie'} for user in shared_users),
+                    *({'user': user, 'role': 'Udostępniono w grupie'} for user in section_shares.get(section.id, [])),
+                ],
+            )
+
+
+def _contact_matches_query(user, query):
+    query_normalized = query.casefold()
+    direct_matches = get_user_model().objects.filter(
+        is_active=True,
+        added_by_users__owner=user,
+    ).exclude(pk=user.pk).filter(
+        Q(first_name__icontains=query)
+        | Q(middle_name__icontains=query)
+        | Q(last_name__icontains=query)
+        | Q(email__icontains=query)
+        | Q(username__icontains=query)
+    )
+    contacts = list(direct_matches.distinct())
+
+    for user_contact in UserContact.objects.filter(owner=user).select_related('target_user'):
+        target = user_contact.target_user
+        haystack = [
+            _user_display_name(target),
+            target.get_full_name(),
+            target.email,
+            target.username,
+        ]
+        if any(query_normalized in (value or '').casefold() for value in haystack):
+            contacts.append(target)
+
+    unique_contacts = []
+    seen_user_ids = set()
+    for contact in contacts:
+        if contact.pk in seen_user_ids:
+            continue
+        seen_user_ids.add(contact.pk)
+        unique_contacts.append(contact)
+    return unique_contacts
+
+
+def _share_user_options(user):
+    options = []
+    user_contacts = UserContact.objects.filter(owner=user).select_related('target_user')[:100]
+    for user_contact in user_contacts:
+        target = user_contact.target_user
+        label = _user_display_name(target)
+        options.append({
+            'value': target.username,
+            'label': label,
+            'first_name': target.first_name,
+            'last_name': target.last_name,
+            'username': target.username,
+            'avatar': account_avatar(target),
+        })
+    return options
+
+
+def _tasks_next_url(request):
+    fallback = reverse('tasks:tasks')
+    next_url = (request.POST.get('next') or '').strip()
+    if next_url == fallback or next_url.startswith(f'{fallback}?') or next_url.startswith('/tasks/'):
+        return next_url
+    return fallback
+
+
+def _resolve_share_target(user, query):
+    query = (query or '').strip()
+    if not query:
+        return None, 'Wpisz kontakt albo ID Ancore.'
+
+    user_model = get_user_model()
+    candidates = user_model.objects.filter(is_active=True).exclude(pk=user.pk)
+    exact_filters = Q(email__iexact=query) | Q(username__iexact=query)
+
+    if '@' not in query or query.startswith('@'):
+        exact_filters |= Q(username__iexact=normalize_public_username(query))
+
+    exact_user = candidates.filter(exact_filters).first()
+    if exact_user:
+        return exact_user, ''
+
+    contact_matches = _contact_matches_query(user, query)
+    match_count = len(contact_matches)
+    if match_count == 1:
+        return contact_matches[0], ''
+    if match_count > 1:
+        return None, 'Znaleziono kilka kontaktów. Wybierz osobę z listy albo wpisz dokładne ID Ancore.'
+    return None, 'Nie znaleziono aktywnego użytkownika o takim kontakcie lub ID Ancore.'
+
+
+def _share_query_from_request(request):
+    ancore_id = (request.POST.get('member_query') or '').strip()
+    if ancore_id:
+        return ancore_id
+    return ' '.join(
+        value for value in [
+            (request.POST.get('member_first_name') or '').strip(),
+            (request.POST.get('member_last_name') or '').strip(),
+        ]
+        if value
+    )
+
+
+def _share_task_directory_object(request, obj):
+    target_user, error = _resolve_share_target(request.user, _share_query_from_request(request))
+    if error:
+        messages.error(request, error)
+        return
+
+    if target_user == getattr(obj, 'user', None) or target_user == getattr(getattr(obj, 'project', None), 'user', None):
+        messages.info(request, 'Ta osoba jest już właścicielem.')
+        return
+
+    share, created = SharedItem.objects.update_or_create(
+        content_type=ContentType.objects.get_for_model(obj.__class__),
+        object_id=obj.pk,
+        shared_by=request.user,
+        shared_with=target_user,
+        defaults={'permission': 'view'},
+    )
+    if created:
+        messages.success(request, f'Dodano: {_user_display_name(target_user)}.')
+    else:
+        messages.info(request, f'{_user_display_name(target_user)} już jest na liście.')
+
+
 def _posted_ids(request, plural_name, singular_name):
     ids = request.POST.getlist(plural_name)
     if not ids:
@@ -57,10 +279,10 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
         )
     ).order_by('is_closed_sort', 'task_id')
 
-    projects = list(TaskProject.objects.filter(user=user).annotate(
+    projects = list(TaskProject.objects.filter(user=user).select_related('user').annotate(
         total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=user, sections__tasks__parent__isnull=True))
     ).prefetch_related(
-        Prefetch('sections', queryset=TaskSection.objects.prefetch_related(
+        Prefetch('sections', queryset=TaskSection.objects.select_related('project', 'project__user').prefetch_related(
             Prefetch('tasks', queryset=tasks_qs)
         ))
     ))
@@ -76,6 +298,8 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
 
     if active_view is None:
         active_view = 'section' if active_section else 'projects'
+
+    _decorate_directory_members(projects)
 
     if active_section:
         can_create_issue = True
@@ -311,6 +535,11 @@ def _tasks_page(request, active_section=None):
             active_project_for_form = project
             messages.error(request, 'Nie udało się zaktualizować projektu.')
 
+        if action == 'share_project':
+            project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
+            _share_task_directory_object(request, project)
+            return redirect(_tasks_next_url(request))
+
         if action == 'create_section':
             project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
             section_form = TaskSectionForm(request.POST)
@@ -377,6 +606,11 @@ def _tasks_page(request, active_section=None):
             active_project_for_form = section.project
             messages.error(request, 'Nie udało się zaktualizować grupy.')
 
+        if action == 'share_section':
+            section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
+            _share_task_directory_object(request, section)
+            return redirect(_tasks_next_url(request))
+
         if action == 'delete_section':
             section_ids = _posted_ids(request, 'section_ids', 'section_id')
             sections_to_delete = TaskSection.objects.filter(id__in=section_ids, project__user=request.user)
@@ -437,10 +671,10 @@ def _tasks_page(request, active_section=None):
         )
     ).order_by('is_closed_sort', 'task_id')
 
-    projects = list(TaskProject.objects.filter(user=request.user).annotate(
+    projects = list(TaskProject.objects.filter(user=request.user).select_related('user').annotate(
         total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=request.user, sections__tasks__parent__isnull=True))
     ).prefetch_related(
-        Prefetch('sections', queryset=TaskSection.objects.prefetch_related(
+        Prefetch('sections', queryset=TaskSection.objects.select_related('project', 'project__user').prefetch_related(
             Prefetch('tasks', queryset=tasks_qs)
         ))
     ))
@@ -457,6 +691,8 @@ def _tasks_page(request, active_section=None):
     active_project_id = request.GET.get('project') if not active_section else str(active_section.project_id)
     if active_project_id and not active_project:
         active_project = next((project for project in projects if str(project.id) == active_project_id), None)
+
+    _decorate_directory_members(projects)
 
     orphan_tasks = tasks_qs.filter(section__isnull=True)
     orphan_status_groups = _decorate_status_groups(projects, orphan_tasks)
@@ -509,6 +745,8 @@ def _tasks_page(request, active_section=None):
         'shared_task_count': 0,
         'shared_group_count': 0,
         'shared_project_count': 0,
+        'share_user_options': _share_user_options(request.user),
+        'tasks_return_path': request.get_full_path(),
         'project_form': project_form,
         'project_rename_form': project_rename_form,
         'project_rename_project_id': project_rename_project_id,
