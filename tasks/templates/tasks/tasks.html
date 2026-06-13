@@ -38,14 +38,12 @@
                     <i data-lucide="list-todo" aria-hidden="true"></i>
                 </span>
                 Moje zadania
-                <span class="tasks-rail-count">{{ total_task_count }}</span>
             </a>
             <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <i data-lucide="list-checks" aria-hidden="true"></i>
                 </span>
                 Wszystkie zadania
-                <span class="tasks-rail-count">{{ total_task_count }}</span>
             </a>
             <div class="tasks-rail-nav-separator" role="separator" aria-hidden="true"></div>
             <a href="{% url 'tasks:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
@@ -53,23 +51,20 @@
                     <i data-lucide="folders" aria-hidden="true"></i>
                 </span>
                 Wszystkie projekty
-                <span class="tasks-rail-count">{{ projects|length }}</span>
             </a>
             <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <i data-lucide="tag" aria-hidden="true"></i>
                 </span>
                 Tagi
-                <span class="tasks-rail-count">{{ total_tag_count }}</span>
             </a>
         </nav>
 
         <div class="tasks-rail-section tasks-project-tree" data-project-tree>
             <div class="tasks-rail-section-title tasks-project-tree-heading">
-                <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń sekcję Projekty" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle data-project-tree-label="Projekty">
+                <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń sekcję Twoje projekty" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle data-project-tree-label="Twoje projekty">
                     <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    <span class="tasks-project-tree-label">Projekty</span>
-                    <span class="tasks-project-tree-count">{{ projects|length }}</span>
+                    <span class="tasks-project-tree-label">Twoje projekty</span>
                 </button>
                 <button type="button" class="tasks-rail-add-button" aria-label="Nowy projekt" title="Nowy projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
@@ -80,17 +75,14 @@
             {% for project in projects %}
             <div class="tasks-project-node {% if active_project.id == project.id %}is-current{% endif %}" data-project-node data-project-id="{{ project.id }}">
                 <div class="tasks-project-title-row">
-                    <button type="button" class="tasks-project-collapse-toggle" aria-label="Zwiń projekt {{ project.name }}" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
-                        <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <a href="{% url 'tasks:tasks' %}?project={{ project.id }}" class="tasks-project-title {% if not project.icon %}tasks-project-title--no-icon{% endif %}">
+                    <button type="button" class="tasks-project-title {% if not project.icon %}tasks-project-title--no-icon{% endif %}" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
                         {% if project.icon %}
                         <span class="tasks-project-badge" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">
                             <i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
                         </span>
                         {% endif %}
                         <span>{{ project.name }}</span>
-                    </a>
+                    </button>
                     <div class="tasks-project-actions" data-project-actions>
                         <button type="button" class="tasks-project-more" aria-label="Opcje projektu {{ project.name }}" title="Opcje projektu" aria-haspopup="menu" aria-expanded="false" data-project-menu-toggle>
                             <i data-lucide="ellipsis" aria-hidden="true"></i>

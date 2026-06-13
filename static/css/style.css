@@ -1,10 +1,10 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260613-secondary-menu-bg-fbfbfc-corners';
-@import 'base/reset.css?v=20260612-app-shell-scroll-fix';
+@import 'base/variables.css?v=20260613-ui-fonts-100';
+@import 'base/reset.css?v=20260613-ui-fonts-100';
 @import 'layout/sidebar.css?v=20260613-secondary-menu-bg-fbfbfc-corners';
 @import 'layout/main.css?v=20260613-secondary-menu-bg-fbfbfc-corners';
-@import 'layout/responsive.css?v=20260612-app-scale-80-viewport';
-@import 'components/cards.css?v=20260612-app-scale-80-viewport';
+@import 'layout/responsive.css?v=20260613-ui-fonts-100';
+@import 'components/cards.css?v=20260613-ui-fonts-100';
 @import 'components/buttons.css';
 @import 'components/toolbar.css?v=20260612-main-reference-blue';
 @import 'components/alerts.css';
@@ -12,7 +12,7 @@
 @import 'components/dialogs.css';
 @import 'components/modals.css';
 @import 'components/tables.css?v=20260604-status-new-blue';
-@import 'components/tasks.css?v=20260612-main-reference-blue';
+@import 'components/tasks.css?v=20260613-tasks-nav-no-counts';
 @import 'components/contacts.css?v=20260612-main-reference-blue';
 @import 'components/notifications.css?v=20260612-main-reference-blue';
 @import 'components/attachments.css?v=20260612-main-reference-blue';
@@ -20,7 +20,7 @@
 @import 'components/auth.css?v=20260612-main-reference-blue';
 @import 'calendar.css?v=20260612-main-reference-blue';
 @import 'components/checkboxes.css?v=20260531-unified';
-@import 'theme/elestio.css?v=20260613-status-header-bg-colors';
+@import 'theme/elestio.css?v=20260613-tasks-nav-no-counts';
 @import 'components/profile.css?v=20260612-main-reference-blue';
 
 .secondary-menu,

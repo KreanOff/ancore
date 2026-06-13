@@ -2468,7 +2468,7 @@ body.modal-open::before {
 
 .tasks-project-tree-toggle:hover,
 .tasks-project-tree-toggle:focus-visible {
-    background: #f3f4f6;
+    background: transparent;
     color: #343941;
     outline: none;
 }
@@ -2509,27 +2509,16 @@ body.modal-open::before {
 }
 
 .tasks-project-tree-label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.55rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 6px;
+    background: var(--nav-selected-bg);
     overflow: hidden;
     text-overflow: ellipsis;
     text-transform: uppercase;
     white-space: nowrap;
-}
-
-.tasks-project-tree-count {
-    min-width: 1.25rem;
-    height: 1.25rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: auto;
-    padding: 0 0.35rem;
-    border-radius: 999px;
-    background: #eef0f5;
-    color: #687182;
-    font-size: 0.68rem;
-    font-weight: 750;
-    line-height: 1;
-    text-transform: none;
 }
 
 .tasks-project-tree.is-collapsed .tasks-project-tree-toggle svg {
@@ -2555,66 +2544,28 @@ body.modal-open::before {
     gap: 0.2rem;
 }
 
-.tasks-project-collapse-toggle {
-    position: relative;
-    z-index: 1;
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: start;
-    width: 32px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: #8a92a1;
-    cursor: pointer;
-}
-
-.tasks-project-collapse-toggle:hover,
-.tasks-project-collapse-toggle:focus-visible {
-    background: transparent;
-    color: var(--text-strong);
-    outline: none;
-}
-
-.tasks-project-collapse-toggle svg {
-    display: block;
-    width: 16px;
-    height: 16px;
-    flex: 0 0 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    transform-origin: center;
-    transform: rotate(0deg);
-    backface-visibility: hidden;
-    transition: transform 0.08s ease;
-}
-
-.tasks-project-node.is-collapsed .tasks-project-collapse-toggle svg {
-    transform: rotate(-90deg);
-}
-
 .tasks-project-title {
     grid-column: 1;
     grid-row: 1;
+    width: 100%;
     min-height: 32px;
     display: grid;
     grid-template-columns: var(--tasks-tree-icon-size) minmax(0, 1fr);
     align-items: center;
     gap: 0.55rem;
-    padding: 0 0.45rem 0 2.05rem;
+    border: 0;
     border-radius: 6px;
+    background: transparent;
     color: var(--text-strong);
+    cursor: pointer;
+    font: inherit;
     font-size: 0.8rem;
     font-weight: 750;
+    padding: 0 0.45rem 0 0.6rem;
+    text-align: left;
     text-decoration: none;
     text-transform: uppercase;
+    appearance: none;
 }
 
 .tasks-project-title--no-icon {
@@ -2623,24 +2574,43 @@ body.modal-open::before {
 
 .tasks-project-node.is-current .tasks-project-title,
 .tasks-project-title:hover,
+.tasks-project-title:focus-visible {
+    background: transparent;
+    color: var(--text-strong);
+    outline: none;
+}
+
+.tasks-project-node.is-current .tasks-project-title > span:not(.tasks-project-badge),
+.tasks-project-title:hover > span:not(.tasks-project-badge),
+.tasks-project-title:focus-visible > span:not(.tasks-project-badge) {
+    background: var(--nav-selected-bg);
+}
+
 .tasks-project-actions.is-open .tasks-project-more {
     background: var(--accent-peach);
     color: var(--accent-on-peach);
-}
-
-.tasks-project-node.is-current .tasks-project-collapse-toggle,
-.tasks-project-title-row:has(.tasks-project-title:hover) .tasks-project-collapse-toggle,
-.tasks-project-title-row:has(.tasks-project-title:focus-visible) .tasks-project-collapse-toggle {
-    color: var(--accent-on-peach);
+    outline: none;
 }
 
 .tasks-project-title span:nth-child(2) {
+    width: fit-content;
+    max-width: 100%;
+    justify-self: start;
+    padding: 0.2rem 0.45rem;
+    margin-left: -0.45rem;
+    border-radius: 6px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .tasks-project-title--no-icon span:first-child {
+    width: fit-content;
+    max-width: 100%;
+    justify-self: start;
+    padding: 0.2rem 0.45rem;
+    margin-left: -0.45rem;
+    border-radius: 6px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -6109,6 +6079,17 @@ body.is-resizing-tasks-sidebar {
 .tasks-rail-icon svg {
     width: 14px;
     height: 14px;
+}
+
+.tasks-rail-nav .tasks-rail-icon {
+    width: 16.17px;
+    height: 16.17px;
+    flex-basis: 16.17px;
+}
+
+.tasks-rail-nav .tasks-rail-icon svg {
+    width: 16.17px;
+    height: 16.17px;
 }
 
 .tasks-topbar {

@@ -20,16 +20,6 @@
         return MQ_TABLET.matches;
     }
 
-    function getAppScale() {
-        const value = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'));
-
-        return Number.isFinite(value) && value > 0 ? value : 1;
-    }
-
-    function viewportToAppPixels(value, scale = getAppScale()) {
-        return value / scale;
-    }
-
     function setOpen(open) {
         const on = open && isOverlayMode();
         document.body.classList.toggle('sidebar-open', on);
@@ -61,15 +51,15 @@
             return 0;
         }
 
-        return secondaryMenu.offsetWidth || viewportToAppPixels(secondaryMenu.getBoundingClientRect().width);
+        return secondaryMenu.offsetWidth || secondaryMenu.getBoundingClientRect().width;
     }
 
     function getSidebarWidth() {
-        return sidebar.offsetWidth || viewportToAppPixels(sidebar.getBoundingClientRect().width);
+        return sidebar.offsetWidth || sidebar.getBoundingClientRect().width;
     }
 
     function getAppViewportWidth() {
-        return viewportToAppPixels(window.innerWidth);
+        return window.innerWidth;
     }
 
     function getSecondaryMenuBounds() {
@@ -147,7 +137,6 @@
                 pointerId: e.pointerId,
                 startX: e.clientX,
                 startWidth: getSecondaryMenuWidth(),
-                scale: getAppScale(),
             };
             document.body.classList.add('secondary-menu-resizing');
         });
@@ -157,7 +146,7 @@
                 return;
             }
 
-            const deltaX = viewportToAppPixels(e.clientX - secondaryMenuResizeState.startX, secondaryMenuResizeState.scale);
+            const deltaX = e.clientX - secondaryMenuResizeState.startX;
             setSecondaryMenuWidth(secondaryMenuResizeState.startWidth + deltaX, false);
         });
 

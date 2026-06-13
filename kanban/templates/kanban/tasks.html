@@ -62,7 +62,7 @@
             <div class="tasks-rail-section-title">
                 <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń Moje przestrzenie robocze" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle>
                     <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    <span>Moje przestrzenie</span>
+                    <span class="tasks-project-tree-label">Moje przestrzenie</span>
                 </button>
                 <button type="button" class="tasks-rail-add-button" aria-label="Dodaj przestrzeń roboczą" title="Dodaj przestrzeń roboczą" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
@@ -73,17 +73,14 @@
             {% for project in projects %}
             <div class="tasks-project-node {% if active_project.id == project.id %}is-current{% endif %}" data-project-node data-project-id="{{ project.id }}">
                 <div class="tasks-project-title-row">
-                    <button type="button" class="tasks-project-collapse-toggle" aria-label="Zwiń przestrzeń roboczą {{ project.name }}" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
-                        <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <a href="{% url 'kanban:tasks' %}?project={{ project.id }}" class="tasks-project-title {% if not project.icon %}tasks-project-title--no-icon{% endif %}">
+                    <button type="button" class="tasks-project-title {% if not project.icon %}tasks-project-title--no-icon{% endif %}" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
                         {% if project.icon %}
                         <span class="tasks-project-badge" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">
                             <i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
                         </span>
                         {% endif %}
                         <span>{{ project.name }}</span>
-                    </a>
+                    </button>
                     <div class="tasks-project-actions" data-project-actions>
                         <button type="button" class="tasks-project-more" aria-label="Opcje przestrzeni roboczej {{ project.name }}" title="Opcje przestrzeni roboczej" aria-haspopup="menu" aria-expanded="false" data-project-menu-toggle>
                             <i data-lucide="ellipsis" aria-hidden="true"></i>

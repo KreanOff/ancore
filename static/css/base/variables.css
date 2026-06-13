@@ -1,7 +1,6 @@
 :root {
-    --app-scale: 0.9;
-    --app-viewport-width: calc(100vw / var(--app-scale));
-    --app-viewport-height: calc(100vh / var(--app-scale));
+    --app-viewport-width: 100vw;
+    --app-viewport-height: 100vh;
     --app-dynamic-viewport-height: var(--app-viewport-height);
     --bg-main: #ffffff;
     --chrome-bg: #f7f6f4;

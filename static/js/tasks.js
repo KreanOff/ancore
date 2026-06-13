@@ -127,6 +127,8 @@ function initTasksPage() {
         };
     const taskReturnStorageKey = `${taskAppSegment}:lastTaskReturn`;
     const taskReturnRestoreKey = `${taskAppSegment}:restoreTaskReturn`;
+    const projectTreeStorageKey = taskAppSegment === 'kanban' ? 'collapsedKanbanProjectTree' : 'collapsedTaskProjectTree';
+    const collapsedProjectsStorageKey = taskAppSegment === 'kanban' ? 'collapsedKanbanProjects' : 'collapsedTaskProjects';
 
     initKanbanColumnCreateForms();
     initKanbanColumnReorder();
@@ -1383,25 +1385,9 @@ function initTasksPage() {
         filterPickerSearch(input);
     }
 
-    function getCollapsedProjects() {
-        try {
-            return new Set(JSON.parse(localStorage.getItem('collapsedTaskProjects') || '[]'));
-        } catch (error) {
-            return new Set();
-        }
-    }
-
-    function saveCollapsedProjects(collapsedProjects) {
-        try {
-            localStorage.setItem('collapsedTaskProjects', JSON.stringify([...collapsedProjects]));
-        } catch (error) {
-            // Ignore storage failures; the in-page collapse state still works.
-        }
-    }
-
     function getProjectTreeCollapsed() {
         try {
-            return localStorage.getItem('collapsedTaskProjectTree') === 'true';
+            return localStorage.getItem(projectTreeStorageKey) === 'true';
         } catch (error) {
             return false;
         }
@@ -1409,7 +1395,23 @@ function initTasksPage() {
 
     function saveProjectTreeCollapsed(isCollapsed) {
         try {
-            localStorage.setItem('collapsedTaskProjectTree', String(isCollapsed));
+            localStorage.setItem(projectTreeStorageKey, String(isCollapsed));
+        } catch (error) {
+            // Ignore storage failures; the in-page collapse state still works.
+        }
+    }
+
+    function getCollapsedProjects() {
+        try {
+            return new Set(JSON.parse(localStorage.getItem(collapsedProjectsStorageKey) || '[]'));
+        } catch (error) {
+            return new Set();
+        }
+    }
+
+    function saveCollapsedProjects(collapsedProjects) {
+        try {
+            localStorage.setItem(collapsedProjectsStorageKey, JSON.stringify([...collapsedProjects]));
         } catch (error) {
             // Ignore storage failures; the in-page collapse state still works.
         }
@@ -1940,34 +1942,6 @@ function initTasksPage() {
         });
     }
 
-    if (railNavGroups.length) {
-        const collapsedRailNavGroups = getCollapsedRailNavGroups();
-
-        railNavGroups.forEach(group => {
-            const groupKey = group.dataset.railNavGroup || '';
-            const toggle = group.querySelector('[data-rail-nav-group-toggle]');
-            const shouldCollapse = collapsedRailNavGroups.has(groupKey) && !group.classList.contains('is-current');
-
-            setRailNavGroupCollapsed(group, shouldCollapse);
-
-            toggle?.addEventListener('click', function(e) {
-                e.preventDefault();
-
-                const isCollapsed = !group.classList.contains('is-collapsed');
-                setRailNavGroupCollapsed(group, isCollapsed);
-
-                if (groupKey) {
-                    if (isCollapsed) {
-                        collapsedRailNavGroups.add(groupKey);
-                    } else {
-                        collapsedRailNavGroups.delete(groupKey);
-                    }
-                    saveCollapsedRailNavGroups(collapsedRailNavGroups);
-                }
-            });
-        });
-    }
-
     if (projectNodes.length) {
         const collapsedProjects = getCollapsedProjects();
 
@@ -1992,6 +1966,34 @@ function initTasksPage() {
                         collapsedProjects.delete(projectId);
                     }
                     saveCollapsedProjects(collapsedProjects);
+                }
+            });
+        });
+    }
+
+    if (railNavGroups.length) {
+        const collapsedRailNavGroups = getCollapsedRailNavGroups();
+
+        railNavGroups.forEach(group => {
+            const groupKey = group.dataset.railNavGroup || '';
+            const toggle = group.querySelector('[data-rail-nav-group-toggle]');
+            const shouldCollapse = collapsedRailNavGroups.has(groupKey) && !group.classList.contains('is-current');
+
+            setRailNavGroupCollapsed(group, shouldCollapse);
+
+            toggle?.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const isCollapsed = !group.classList.contains('is-collapsed');
+                setRailNavGroupCollapsed(group, isCollapsed);
+
+                if (groupKey) {
+                    if (isCollapsed) {
+                        collapsedRailNavGroups.add(groupKey);
+                    } else {
+                        collapsedRailNavGroups.delete(groupKey);
+                    }
+                    saveCollapsedRailNavGroups(collapsedRailNavGroups);
                 }
             });
         });

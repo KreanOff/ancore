@@ -15,8 +15,7 @@
             JSON.parse(localStorage.getItem('collapsedKanbanProjects') || '[]').forEach(function (projectId) {
                 var safeId = String(projectId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 styles.push(
-                    '.tasks-project-node:not(.is-current)[data-project-id="' + safeId + '"] .tasks-section-links{display:none}',
-                    '.tasks-project-node:not(.is-current)[data-project-id="' + safeId + '"] .tasks-project-collapse-toggle svg{transform:rotate(-90deg)}'
+                    '.tasks-project-node:not(.is-current)[data-project-id="' + safeId + '"] .tasks-section-links{display:none}'
                 );
             });
         } catch (error) {
