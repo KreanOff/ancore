@@ -2,6 +2,7 @@ function initTasksPage() {
     const taskRows = document.querySelectorAll('.task-row');
     const projectRows = document.querySelectorAll('.tasks-project-row');
     const sectionRows = document.querySelectorAll('.tasks-section-row');
+    const contactsDirectoryRows = document.querySelectorAll('.contacts-directory-row');
     const deleteBtn = document.getElementById('delete-selected-btn');
     const editSelectedTaskMenuBtn = document.getElementById('edit-selected-task-menu-btn');
     const editSelectedSectionMenuBtn = document.getElementById('edit-selected-section-menu-btn');
@@ -49,6 +50,8 @@ function initTasksPage() {
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
     const projectCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-project-id]');
     const tagCheckboxes = document.querySelectorAll('.tasks-all-groups-row .tasks-row-checkbox[data-tag-id]');
+    const contactCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-contact-id]');
+    const companyCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-company-id]');
     const sectionCopyRoot = document.querySelector('[data-section-empty-label], [data-section-delete-title]');
     const sectionCopy = {
         emptyLabel: sectionCopyRoot?.dataset.sectionEmptyLabel || 'Wybierz grupę',
@@ -704,6 +707,9 @@ function initTasksPage() {
     const directoryShareResults = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-results]') : null;
     const directoryShareResultOptions = directoryShareForm ? Array.from(directoryShareForm.querySelectorAll('[data-directory-share-result]')) : [];
     const directoryShareResultsEmpty = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-results-empty]') : null;
+    const directoryShareContactOptions = directoryShareForm ? Array.from(directoryShareForm.querySelectorAll('[data-directory-share-contact]')) : [];
+    const directorySharePickOptions = directoryShareForm ? Array.from(directoryShareForm.querySelectorAll('[data-directory-share-pick]')) : [];
+    const directoryShareContactsEmpty = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-contacts-empty]') : null;
     const contactAncoreLoginInput = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-input]') : null;
     const contactAncoreLoginStatus = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-status]') : null;
     const contactAncoreLoginUrl = contactCreateForm ? (contactCreateForm.dataset.ancoreLoginUrl || '') : '';
@@ -923,33 +929,29 @@ function initTasksPage() {
     }
 
     function syncDirectoryShareResults() {
-        if (!directoryShareResults) return;
         const terms = directoryShareSearchTerms();
         const selectedValue = directoryShareMemberInput?.value.trim() || '';
+        if (directoryShareResults) directoryShareResults.hidden = false;
+        let visibleContactsCount = 0;
 
-        if (!terms.length) {
-            directoryShareResults.hidden = true;
-            directoryShareResultOptions.forEach(option => {
-                option.hidden = false;
-                option.classList.remove('is-active');
-            });
-            if (directoryShareResultsEmpty) directoryShareResultsEmpty.hidden = true;
-            return;
-        }
-
-        let visibleCount = 0;
-        directoryShareResultOptions.forEach(option => {
+        directoryShareContactOptions.forEach(option => {
             const text = normalizePickerSearch(option.dataset.shareSearch || option.textContent);
-            const isVisible = terms.every(term => text.includes(term));
+            const isVisible = !terms.length || terms.every(term => text.includes(term));
             option.hidden = !isVisible;
             option.classList.toggle('is-active', selectedValue && option.dataset.shareValue === selectedValue);
-            if (isVisible) visibleCount += 1;
+            if (isVisible) visibleContactsCount += 1;
         });
 
-        directoryShareResults.hidden = false;
-        if (directoryShareResultsEmpty) {
-            directoryShareResultsEmpty.hidden = visibleCount > 0;
-        }
+        const hasContacts = directoryShareContactOptions.length > 0;
+        const emptyMessage = terms.length && hasContacts
+            ? 'Brak kontaktów dla tego wyszukiwania.'
+            : 'Brak użytkowników w kontaktach.';
+
+        [directoryShareContactsEmpty, directoryShareResultsEmpty].forEach(empty => {
+            if (!empty) return;
+            empty.textContent = emptyMessage;
+            empty.hidden = hasContacts && visibleContactsCount > 0;
+        });
     }
 
     function updateProjectRenameSubmitState() {
@@ -1071,6 +1073,9 @@ function initTasksPage() {
             if (menu === exceptMenu) return;
             menu.classList.remove('is-open');
             menu.querySelector('[data-directory-members-toggle]')?.setAttribute('aria-expanded', 'false');
+            menu.querySelectorAll('[data-directory-member-actions][open]').forEach(details => {
+                details.removeAttribute('open');
+            });
         });
     }
 
@@ -1980,6 +1985,16 @@ function initTasksPage() {
         });
     });
 
+    document.querySelectorAll('[data-directory-member-actions]').forEach(details => {
+        details.addEventListener('toggle', function() {
+            if (!this.open) return;
+            const popover = this.closest('[data-directory-members-popover]');
+            popover?.querySelectorAll('[data-directory-member-actions][open]').forEach(otherDetails => {
+                if (otherDetails !== this) otherDetails.removeAttribute('open');
+            });
+        });
+    });
+
     directoryMembersSearchInputs.forEach(input => {
         input.addEventListener('input', function() {
             filterDirectoryMembers(this.closest('[data-directory-members-menu]'));
@@ -2350,7 +2365,7 @@ function initTasksPage() {
         syncDirectoryShareResults();
     }
 
-    directoryShareResultOptions.forEach(option => {
+    directorySharePickOptions.forEach(option => {
         option.addEventListener('click', function() {
             if (directoryShareFirstNameInput) directoryShareFirstNameInput.value = this.dataset.shareFirstName || '';
             if (directoryShareLastNameInput) directoryShareLastNameInput.value = this.dataset.shareLastName || '';
@@ -2555,7 +2570,7 @@ function initTasksPage() {
         });
     });
 
-    [...projectRows, ...sectionRows].forEach(row => {
+    [...projectRows, ...sectionRows, ...contactsDirectoryRows].forEach(row => {
         row.addEventListener('click', function(e) {
             if (shouldIgnoreRowClick(e, this)) return;
             const viewUrl = this.getAttribute('data-view-url');
@@ -2745,7 +2760,7 @@ function initTasksPage() {
     }
 
     function checkboxRow(checkbox) {
-        return checkbox.closest('.task-row, .tasks-project-row, .tasks-section-row, .tasks-all-groups-row');
+        return checkbox.closest('.task-row, .tasks-project-row, .tasks-section-row, .tasks-all-groups-row, .contacts-directory-row');
     }
 
     function getSelectAllTargetCheckboxes(visibleOnly = false) {
@@ -2756,6 +2771,10 @@ function initTasksPage() {
             targetCheckboxes = Array.from(projectCheckboxes);
         } else if (target === 'sections') {
             targetCheckboxes = Array.from(sectionCheckboxes);
+        } else if (target === 'contacts') {
+            targetCheckboxes = Array.from(contactCheckboxes);
+        } else if (target === 'companies') {
+            targetCheckboxes = Array.from(companyCheckboxes);
         } else {
             targetCheckboxes = Array.from(checkboxes).filter(cb => cb.id !== 'select-all-checkbox');
         }
@@ -2905,6 +2924,14 @@ function initTasksPage() {
             cb.closest('.tasks-all-groups-row')?.classList.toggle('checked', cb.checked);
         });
 
+        contactCheckboxes.forEach(cb => {
+            cb.closest('.contacts-directory-row')?.classList.toggle('checked', cb.checked);
+        });
+
+        companyCheckboxes.forEach(cb => {
+            cb.closest('.contacts-directory-row')?.classList.toggle('checked', cb.checked);
+        });
+
         // Update select all state
         if (selectAllCheckbox) {
             const targetCheckboxes = getSelectAllTargetCheckboxes(true);
@@ -2953,6 +2980,20 @@ function initTasksPage() {
                     if (other !== this) other.checked = false;
                 });
             }
+            updateSelection();
+        });
+    });
+
+    contactCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            updateSelection();
+        });
+    });
+
+    companyCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
             updateSelection();
         });
     });
@@ -3304,6 +3345,10 @@ function initTasksPage() {
         return document.querySelectorAll('.tasks-section-row');
     }
 
+    function currentContactRows() {
+        return document.querySelectorAll('.contacts-directory-row');
+    }
+
     function normalizeFilterText(value) {
         return (value || '')
             .toString()
@@ -3344,7 +3389,7 @@ function initTasksPage() {
         });
 
         document.querySelectorAll('.tasks-status-subgroup').forEach(group => {
-            const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row')).filter(row => row.style.display !== 'none');
+            const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row, .contacts-directory-row')).filter(row => row.style.display !== 'none');
             group.style.display = visibleRows.length ? '' : 'none';
         });
 
@@ -3352,7 +3397,7 @@ function initTasksPage() {
         const searchVal = normalizeFilterText(activeSearch ? activeSearch.value : '');
 
         document.querySelectorAll('.tasks-issue-group').forEach(group => {
-            const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row')).filter(row => row.style.display !== 'none');
+            const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row, .contacts-directory-row')).filter(row => row.style.display !== 'none');
             const hasEmptyState = group.querySelector('.tasks-empty-section, .tasks-empty-state') !== null;
             const groupMatchesSearch = rowMatchesSearch(group, searchVal);
             group.style.display = (visibleRows.length || (hasEmptyState && groupMatchesSearch)) ? '' : 'none';
@@ -3431,6 +3476,11 @@ function initTasksPage() {
         });
 
         currentSectionRows().forEach(row => {
+            const matchesSearch = rowMatchesSearch(row, searchVal);
+            row.style.display = matchesSearch ? '' : 'none';
+        });
+
+        currentContactRows().forEach(row => {
             const matchesSearch = rowMatchesSearch(row, searchVal);
             row.style.display = matchesSearch ? '' : 'none';
         });

@@ -37,23 +37,55 @@
             </div>
         </form>
 
-        <div class="tasks-table-wrap contacts-list-wrap">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board">
             {% if companies %}
-            <div class="contacts-list" role="list">
-                {% for company in companies %}
-                <a href="{% url 'contacts:view-company' company.pk %}" class="contacts-row" role="listitem">
-                    {% include 'contacts/includes/company_avatar.html' with company=company avatar_class='contacts-avatar contacts-company-avatar' only %}
-                    <span class="contacts-row-main">
-                        <strong>{{ company.name }}</strong>
-                        <small>{% if company.website %}{{ company.website }}{% else %}Brak strony{% endif %}</small>
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header contacts-directory-header" role="row">
+                    <span class="tasks-directory-header-select">
+                        <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie firmy" title="Zaznacz wszystkie firmy" data-select-all-checkbox data-select-all-target="companies">
                     </span>
-                    <span class="contacts-row-channel">
+                    <span>FIRMA</span>
+                    <span>STRONA</span>
+                    <span>DANE KONTAKTOWE</span>
+                    <span>KONTAKTY</span>
+                    <span class="tasks-directory-header-date">DATA</span>
+                </div>
+                <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="Lista firm">
+                {% for company in companies %}
+                <article class="tasks-issue-row tasks-directory-row contacts-directory-row contacts-company-directory-row"
+                         role="link"
+                         tabindex="0"
+                         data-company-id="{{ company.pk }}"
+                         data-search-primary="{{ company.name|default:''|striptags }} {{ company.website|default:'' }} {{ company.email|default:'' }}"
+                         data-search-index="{{ company.name|default:''|striptags }} {{ company.website|default:'' }} {{ company.email|default:'' }} {{ company.phone|default:'' }} {{ company.address|default:''|striptags }} {{ company.contact_count }} kontaktów {{ company.created_at|date:'d.m.Y H:i' }}"
+                         data-view-url="{% url 'contacts:view-company' company.pk %}">
+                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz firmę {{ company.name }}" data-company-id="{{ company.pk }}">
+                    <span class="tasks-directory-name contacts-directory-contact">
+                        {% include 'contacts/includes/company_avatar.html' with company=company avatar_class='tasks-directory-avatar contacts-directory-avatar contacts-company-avatar' only %}
+                        <span class="contacts-directory-name-text">
+                            <strong>{{ company.name }}</strong>
+                            <small>{% if company.address %}{{ company.address }}{% else %}Firma{% endif %}</small>
+                        </span>
+                    </span>
+                    <span class="contacts-directory-company">
+                        {% if company.website %}{{ company.website }}{% else %}Brak strony{% endif %}
+                    </span>
+                    <span class="contacts-directory-channel">
+                        {% if company.email %}
+                        <i data-lucide="mail" aria-hidden="true"></i>
+                        {% elif company.phone %}
+                        <i data-lucide="phone" aria-hidden="true"></i>
+                        {% else %}
+                        <i data-lucide="circle-slash" aria-hidden="true"></i>
+                        {% endif %}
                         {% if company.email %}{{ company.email }}{% elif company.phone %}{{ company.phone }}{% else %}Brak danych kontaktowych{% endif %}
                     </span>
                     <span class="status-indicator contacts-status-customer">{{ company.contact_count }} kontaktów</span>
-                </a>
+                    <span class="tasks-row-date" title="Data utworzenia">{{ company.created_at|date:"d.m.Y" }}</span>
+                </article>
                 {% endfor %}
-            </div>
+                </div>
+            </section>
             {% else %}
             <section class="tasks-empty-state contacts-empty-state">
                 <div class="tasks-empty-state__icon" aria-hidden="true">

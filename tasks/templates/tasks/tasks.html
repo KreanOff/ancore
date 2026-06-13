@@ -347,7 +347,7 @@
                     <span class="tasks-directory-header-name"></span>
                     <span>CZŁONKOWIE</span>
                     <span>DOMYŚLNY ODPOWIEDZIALNY ZA ZADANIA</span>
-                    <span class="tasks-directory-header-date"></span>
+                    <span class="tasks-directory-header-date">DATA</span>
                 </div>
                 <div class="tasks-issue-list tasks-section-list tasks-directory-list" aria-label="Lista grup projektu">
                 {% for section in active_project.sections.all %}
@@ -361,7 +361,7 @@
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
                     </span>
-                    <span class="tasks-row-date">{{ section.created_at|date:"j M"|lower }}</span>
+                    <span class="tasks-row-date" title="Data utworzenia">{{ section.created_at|date:"d.m.Y" }}</span>
                 </article>
                 {% empty %}
                 <div class="tasks-empty-state">
@@ -445,7 +445,7 @@
                     <span class="tasks-directory-header-name"></span>
                     <span>CZŁONKOWIE</span>
                     <span>DOMYŚLNY ODPOWIEDZIALNY ZA ZADANIA</span>
-                    <span class="tasks-directory-header-date"></span>
+                    <span class="tasks-directory-header-date">DATA</span>
                 </div>
                 <div class="tasks-issue-list tasks-section-list tasks-directory-list" aria-label="Lista grup">
                 {% for section in all_sections %}
@@ -459,7 +459,7 @@
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
                     </span>
-                    <span class="tasks-row-date">{{ section.created_at|date:"j M"|lower }}</span>
+                    <span class="tasks-row-date" title="Data utworzenia">{{ section.created_at|date:"d.m.Y" }}</span>
                 </article>
                 {% empty %}
                 <div class="tasks-empty-state">
@@ -492,7 +492,7 @@
                     </span>
                     <span class="tasks-section-row-description">{{ tag.description|default:"Brak opisu" }}</span>
                     <span class="tasks-row-time">{{ tag.total_tasks }} zadań</span>
-                    <span class="tasks-row-date">{{ tag.created_at|date:"d M" }}</span>
+                    <span class="tasks-row-date" title="Data utworzenia">{{ tag.created_at|date:"d.m.Y" }}</span>
                 </div>
                 {% empty %}
                 <div class="tasks-empty-state">
@@ -523,7 +523,7 @@
                     <span class="tasks-directory-header-name"></span>
                     <span>CZŁONKOWIE</span>
                     <span>DOMYŚLNY ODPOWIEDZIALNY ZA ZADANIA</span>
-                    <span class="tasks-directory-header-date"></span>
+                    <span class="tasks-directory-header-date">DATA</span>
                 </div>
                 <div class="tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista projektów">
                 {% for project in projects %}
@@ -537,7 +537,7 @@
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
                     </span>
-                    <span class="tasks-row-date">{{ project.created_at|date:"j M"|lower }}</span>
+                    <span class="tasks-row-date" title="Data utworzenia">{{ project.created_at|date:"d.m.Y" }}</span>
                 </article>
                 {% endfor %}
                 </div>
@@ -661,30 +661,53 @@
             </header>
 
             <div class="tasks-modal__body tasks-directory-share-modal__body">
-                <div class="tasks-directory-share-person-fields" data-directory-share-fields>
-                    <label class="tasks-directory-share-person-field" for="directory-share-first-name">
-                        <span class="u-sr-only">Imię</span>
-                        <input type="text" id="directory-share-first-name" name="member_first_name" placeholder="Imię" autocomplete="given-name" data-directory-share-name-input>
-                    </label>
-                    <label class="tasks-directory-share-person-field" for="directory-share-last-name">
-                        <span class="u-sr-only">Nazwisko</span>
-                        <input type="text" id="directory-share-last-name" name="member_last_name" placeholder="Nazwisko" autocomplete="family-name" data-directory-share-name-input>
-                    </label>
-                    <label class="tasks-directory-share-person-field tasks-directory-share-person-field--ancore" for="directory-share-member-query">
-                        <span class="u-sr-only">ID Ancore</span>
-                        <input type="text" id="directory-share-member-query" name="member_query" placeholder="ID Ancore" autocomplete="off" data-directory-share-input>
-                    </label>
-                    <div class="tasks-directory-share-results" role="listbox" aria-label="Użytkownicy do dodania" data-directory-share-results hidden>
-                        {% for option in share_user_options %}
-                        <button type="button" class="tasks-directory-share-result" role="option" data-directory-share-result data-share-value="{{ option.value|escape }}" data-share-first-name="{{ option.first_name|escape }}" data-share-last-name="{{ option.last_name|escape }}" data-share-search="{{ option.label|escape }} {{ option.username|escape }}">
-                            {% include 'accounts/includes/user_avatar.html' with avatar=option.avatar avatar_class='tasks-directory-share-result-avatar' only %}
-                            <span class="tasks-directory-share-result-text">
-                                <strong>{{ option.label }}</strong>
-                                <small>{{ option.username }}</small>
-                            </span>
-                        </button>
-                        {% endfor %}
-                        <div class="tasks-directory-share-results-empty" data-directory-share-results-empty hidden>Brak wyników.</div>
+                <div class="tasks-directory-share-layout">
+                    <div class="tasks-directory-share-compose">
+                        <div class="tasks-directory-share-person-fields" data-directory-share-fields>
+                            <label class="tasks-directory-share-person-field" for="directory-share-first-name">
+                                <span class="u-sr-only">Imię</span>
+                                <input type="text" id="directory-share-first-name" name="member_first_name" placeholder="Imię" autocomplete="given-name" data-directory-share-name-input>
+                            </label>
+                            <label class="tasks-directory-share-person-field" for="directory-share-last-name">
+                                <span class="u-sr-only">Nazwisko</span>
+                                <input type="text" id="directory-share-last-name" name="member_last_name" placeholder="Nazwisko" autocomplete="family-name" data-directory-share-name-input>
+                            </label>
+                            <label class="tasks-directory-share-person-field tasks-directory-share-person-field--ancore" for="directory-share-member-query">
+                                <span class="tasks-directory-share-field-label">ID Ancore</span>
+                                <input type="text" id="directory-share-member-query" name="member_query" placeholder="@login.ancore" autocomplete="off" data-directory-share-input>
+                            </label>
+                        </div>
+
+                        <section class="tasks-directory-share-results tasks-directory-share-contacts" aria-label="Użytkownicy z kontaktów" data-directory-share-results>
+                            <div class="tasks-directory-share-list-heading">
+                                <span>Kontakty</span>
+                                <small>{{ share_user_options|length }}</small>
+                            </div>
+                            <div class="tasks-directory-share-table">
+                                <div class="tasks-directory-header tasks-directory-share-table-header">
+                                    <span>OSOBA</span>
+                                    <span>ID ANCORE</span>
+                                </div>
+                                <div class="tasks-issue-list tasks-directory-list tasks-directory-share-contact-list" role="listbox" aria-label="Użytkownicy do dodania" data-directory-share-contact-list>
+                                    {% for option in share_user_options %}
+                                    <button type="button" class="tasks-directory-share-contact tasks-directory-share-result tasks-directory-row" role="option" data-directory-share-contact data-directory-share-result data-directory-share-pick data-share-value="{{ option.value|escape }}" data-share-first-name="{{ option.first_name|escape }}" data-share-last-name="{{ option.last_name|escape }}" data-share-search="{{ option.first_name|escape }} {{ option.last_name|escape }} {{ option.middle_name|escape }} {{ option.ancore_label|escape }}">
+                                        <span class="tasks-directory-share-person-cell">
+                                            {% include 'accounts/includes/user_avatar.html' with avatar=option.avatar avatar_class='tasks-directory-share-contact-avatar' only %}
+                                            <span class="tasks-directory-share-person-name">
+                                                {% if option.first_name %}<span class="tasks-directory-share-first-name">{{ option.first_name }}</span>{% endif %}
+                                                {% if option.middle_name %}<span class="tasks-directory-share-middle-name">{{ option.middle_name }}</span>{% endif %}
+                                                {% if option.last_name %}<span class="tasks-directory-share-last-name">{{ option.last_name }}</span>{% endif %}
+                                            </span>
+                                        </span>
+                                        <span class="tasks-directory-share-username">
+                                            <span>{{ option.ancore_label }}</span>
+                                        </span>
+                                    </button>
+                                    {% endfor %}
+                                    <div class="tasks-directory-share-contacts-empty tasks-directory-share-results-empty" data-directory-share-contacts-empty data-directory-share-results-empty {% if share_user_options %}hidden{% endif %}>Brak użytkowników w kontaktach.</div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>

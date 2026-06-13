@@ -193,6 +193,115 @@
     font-size: 0.8rem;
 }
 
+.contacts-directory-board {
+    padding: 0 0 1.25rem;
+}
+
+.contacts-directory-header,
+.contacts-directory-list .contacts-directory-row {
+    --tasks-directory-grid: 18px minmax(240px, 1.08fr) minmax(160px, 0.72fr) minmax(220px, 0.9fr) minmax(150px, 0.62fr) 96px;
+    grid-template-columns: var(--tasks-directory-grid);
+}
+
+.contacts-directory-header > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contacts-directory-row {
+    text-decoration: none;
+}
+
+.contacts-directory-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.contacts-directory-avatar.profile-avatar {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border-radius: 5px;
+    font-size: 0.62rem;
+}
+
+.contacts-directory-name-text {
+    min-width: 0;
+    display: grid;
+    gap: 0.05rem;
+}
+
+.contacts-directory-name-text strong,
+.contacts-directory-name-text small,
+.contacts-directory-company,
+.contacts-directory-channel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contacts-directory-name-text strong {
+    color: #3f424a;
+    font-size: 0.875rem;
+    font-weight: 650;
+}
+
+.contacts-directory-name-text small,
+.contacts-directory-company,
+.contacts-directory-channel {
+    color: #6f737b;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.contacts-directory-channel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.contacts-directory-channel svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+    color: #73777f;
+    stroke-width: 2;
+}
+
+.contacts-directory-row > .status-indicator,
+.contacts-directory-row > .contacts-user-presence {
+    --tasks-status-icon-size: 9px;
+    min-width: 0;
+    justify-self: start;
+    max-width: 100%;
+    gap: 0.45rem;
+    color: #6f737b;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.contacts-directory-row > .status-indicator {
+    color: var(--tasks-status-color);
+}
+
+.contacts-directory-row > .status-indicator::before {
+    width: var(--tasks-status-icon-size);
+    height: var(--tasks-status-icon-size);
+    flex-basis: var(--tasks-status-icon-size);
+}
+
+.contacts-directory-row > .contacts-user-presence .profile-presence-icon {
+    width: 16px;
+    height: 16px;
+    flex-basis: 16px;
+}
+
 .contacts-filterbar {
     grid-template-columns: minmax(240px, auto) minmax(0, 1fr) auto;
 }
@@ -279,7 +388,7 @@
 .contacts-name-grid {
     min-width: 0;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
     flex: 1;
 }
@@ -585,6 +694,23 @@
     width: auto;
 }
 
+.contacts-type-picker__chip {
+    min-width: 0;
+    color: #343941;
+}
+
+.contacts-type-picker__chip .contacts-type-picker__icon {
+    display: none;
+}
+
+.contacts-type-picker__chip [data-contact-type-label] {
+    min-width: 0;
+    overflow: hidden;
+    color: inherit;
+    font-size: 0.92rem;
+    text-overflow: ellipsis;
+}
+
 .contacts-modal-chip__icon,
 .contacts-modal-chip__icon svg {
     width: 18px;
@@ -772,8 +898,26 @@
 
 .contacts-modal-title-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.8rem;
+}
+
+.contacts-name-grid [name="first_name"],
+.contacts-modal-title-grid [name="first_name"] {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.contacts-name-grid [name="middle_name"],
+.contacts-modal-title-grid [name="middle_name"] {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.contacts-name-grid [name="last_name"],
+.contacts-modal-title-grid [name="last_name"] {
+    grid-column: 2;
+    grid-row: 1;
 }
 
 .contacts-company-modal-title {
@@ -1225,6 +1369,22 @@
 }
 
 @media (max-width: 900px) {
+    .contacts-directory-header,
+    .contacts-directory-list .contacts-directory-row {
+        --tasks-directory-grid: 18px minmax(0, 1fr) minmax(190px, 0.82fr) minmax(130px, 0.58fr) 96px;
+        grid-template-columns: var(--tasks-directory-grid);
+    }
+
+    .contacts-directory-header > :nth-child(3),
+    .contacts-directory-list .contacts-directory-company {
+        display: none;
+    }
+
+    .contacts-directory-header > :nth-child(4),
+    .contacts-directory-list .contacts-directory-channel {
+        display: inline-flex;
+    }
+
     .contacts-row {
         grid-template-columns: auto minmax(0, 1fr) auto;
     }
@@ -1239,11 +1399,57 @@
     }
 }
 
+@media (max-width: 640px) {
+    .contacts-directory-header {
+        display: none;
+    }
+
+    .contacts-directory-list .contacts-directory-row {
+        min-height: 88px;
+        grid-template-columns: 18px minmax(0, 1fr) 86px;
+        grid-template-areas:
+            "check contact date"
+            ". channel channel"
+            ". status status";
+        row-gap: 0.2rem;
+        padding: 0.65rem 0.85rem;
+    }
+
+    .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox {
+        grid-area: check;
+    }
+
+    .contacts-directory-contact {
+        grid-area: contact;
+    }
+
+    .contacts-directory-channel {
+        grid-area: channel;
+        font-size: 0.8rem;
+    }
+
+    .contacts-directory-row > .status-indicator,
+    .contacts-directory-row > .contacts-user-presence {
+        grid-area: status;
+        font-size: 0.8rem;
+    }
+
+    .contacts-directory-list .contacts-directory-row > .tasks-row-date {
+        grid-area: date;
+    }
+}
+
 @media (max-width: 768px) {
     .contacts-name-grid,
     .contacts-primary-fields,
     .contacts-modal-title-grid {
         grid-template-columns: 1fr;
+    }
+
+    .contacts-name-grid [name],
+    .contacts-modal-title-grid [name] {
+        grid-column: auto;
+        grid-row: auto;
     }
 
     .contacts-identity {

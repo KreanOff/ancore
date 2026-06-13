@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone as datetime_timezone
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
 
-from contacts.models import SharedItem, UserContact
+from contacts.models import Contact, SharedItem, UserContact
 from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
@@ -154,8 +154,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotEqual(first.icon_color, second.icon_color)
 
     def test_projects_list_does_not_render_icons_next_to_names(self):
-        TaskProject.objects.create(user=self.user, name='Projekt z ikoną', code='PZI', icon='star')
+        project = TaskProject.objects.create(user=self.user, name='Projekt z ikoną', code='PZI', icon='star')
         TaskProject.objects.create(user=self.user, name='Projekt bez ikony', code='PBI', icon='')
+        TaskProject.objects.filter(pk=project.pk).update(
+            created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
+        )
 
         response = self.client.get(reverse('tasks:tasks'))
 
@@ -163,6 +166,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'tasks-project-row-icon--fallback')
         self.assertContains(response, '<span>Projekt z ikoną</span>', html=True)
         self.assertContains(response, '<span>Projekt bez ikony</span>', html=True)
+        self.assertContains(response, 'DATA')
+        self.assertContains(response, '07.06.2026')
+        self.assertNotContains(response, '7 cze')
         self.assertContains(
             response,
             '<span class="tasks-directory-member-label">Task User</span>',
@@ -208,12 +214,18 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'name="member_query"')
         self.assertContains(response, 'data-directory-share-results')
         self.assertContains(response, 'data-directory-share-results-empty')
+        self.assertContains(response, 'data-directory-share-contacts')
+        self.assertContains(response, 'data-directory-share-contacts-empty')
         self.assertContains(response, f'data-share-project-id="{project.id}"')
         self.assertNotContains(response, '<datalist id="tasks-share-contact-options">')
         self.assertNotContains(response, 'data-directory-share-picker')
         self.assertNotContains(response, 'tasks-directory-member-input')
         self.assertContains(response, 'Właściciel')
         self.assertContains(response, 'Udostępniono')
+        self.assertContains(response, 'data-directory-member-actions', count=1)
+        self.assertContains(response, 'name="action" value="unshare_project"')
+        self.assertContains(response, f'name="member_id" value="{shared_user.id}"')
+        self.assertContains(response, 'Przestań udostępniać')
 
     def test_share_project_adds_user_from_contacts(self):
         shared_user = get_user_model().objects.create_user(
@@ -237,6 +249,27 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertTrue(self._shared_task_object_exists(project, shared_user))
 
+    def test_unshare_project_removes_shared_user(self):
+        shared_user = get_user_model().objects.create_user(
+            username='shared-remove',
+            email='shared-remove@example.com',
+            first_name='Shared',
+            last_name='Remove',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt udostępniony', code='UNP')
+        self._share_task_object(project, shared_user)
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'unshare_project',
+            'project_id': project.id,
+            'member_id': shared_user.id,
+            'next': reverse('tasks:tasks'),
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(self._shared_task_object_exists(project, shared_user))
+
     def test_share_modal_lists_contacts_for_selection(self):
         shared_user = get_user_model().objects.create_user(
             username='jan.kowalski',
@@ -250,9 +283,83 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertContains(response, 'data-directory-share-result')
+        self.assertContains(response, 'data-directory-share-contact')
+        self.assertContains(response, 'data-directory-share-pick')
+        self.assertContains(response, 'tasks-directory-share-person-cell')
         self.assertContains(response, 'data-share-first-name="Jan"')
         self.assertContains(response, 'data-share-last-name="Kowalski"')
         self.assertContains(response, 'data-share-value="jan.kowalski"')
+        self.assertContains(response, 'Kontakty')
+        self.assertContains(response, '<span class="tasks-directory-share-first-name">Jan</span>', html=True)
+        self.assertContains(response, '<span class="tasks-directory-share-last-name">Kowalski</span>', html=True)
+        self.assertNotContains(response, '<span class="tasks-directory-share-middle-name">-</span>', html=True)
+        self.assertContains(response, '<span class="tasks-directory-share-username"><span>jan.kowalski</span></span>', html=True)
+        self.assertNotContains(response, 'Użytkownik aplikacji')
+
+    def test_share_modal_groups_contact_identity(self):
+        linked_user = get_user_model().objects.create_user(
+            username='@jan.kowalski',
+            email='jan@example.com',
+            middle_name='Piotr',
+            password='test-pass-123',
+        )
+        contact = Contact.objects.create(
+            user=self.user,
+            first_name='Jan',
+            middle_name='Adam',
+            last_name='Kowalski',
+            company='Netology',
+            email='jan.contact@example.com',
+        )
+        UserContact.objects.create(owner=self.user, target_user=linked_user, linked_contact=contact)
+
+        response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
+
+        self.assertContains(response, '<span class="tasks-directory-share-first-name">Jan</span>', html=True)
+        self.assertContains(response, '<span class="tasks-directory-share-last-name">Kowalski</span>', html=True)
+        self.assertContains(response, '<span class="tasks-directory-share-middle-name">Adam</span>', html=True)
+        self.assertContains(response, '<span class="tasks-directory-share-username"><span>@jan.kowalski</span></span>', html=True)
+        self.assertContains(response, 'data-share-first-name="Jan"')
+        self.assertContains(response, 'data-share-last-name="Kowalski"')
+        row_start = html.index('data-share-value="@jan.kowalski"')
+        person_position = html.index('tasks-directory-share-person-cell', row_start)
+        avatar_position = html.index('tasks-directory-share-contact-avatar', row_start)
+        first_name_position = html.index('<span class="tasks-directory-share-first-name">Jan</span>', row_start)
+        last_name_position = html.index('<span class="tasks-directory-share-last-name">Kowalski</span>', row_start)
+        middle_name_position = html.index('<span class="tasks-directory-share-middle-name">Adam</span>', row_start)
+        ancore_position = html.index('tasks-directory-share-username', row_start)
+        ancore_value_position = html.index('<span>@jan.kowalski</span>', row_start)
+        self.assertLess(person_position, avatar_position)
+        self.assertLess(avatar_position, first_name_position)
+        self.assertLess(first_name_position, middle_name_position)
+        self.assertLess(middle_name_position, last_name_position)
+        self.assertLess(last_name_position, ancore_position)
+        self.assertLess(ancore_position, ancore_value_position)
+
+    def test_share_modal_uses_user_name_when_linked_contact_has_only_company(self):
+        linked_user = get_user_model().objects.create_user(
+            username='@jan.kowalski',
+            email='jan@example.com',
+            first_name='Jan',
+            middle_name='Piotr',
+            last_name='Kowalski',
+            password='test-pass-123',
+        )
+        contact = Contact.objects.create(
+            user=self.user,
+            company='Netology',
+            email='jan.contact@example.com',
+        )
+        UserContact.objects.create(owner=self.user, target_user=linked_user, linked_contact=contact)
+
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertContains(response, '<span class="tasks-directory-share-first-name">Jan</span>', html=True)
+        self.assertContains(response, '<span class="tasks-directory-share-last-name">Kowalski</span>', html=True)
+        self.assertContains(response, '<span class="tasks-directory-share-middle-name">Piotr</span>', html=True)
+        self.assertContains(response, '<span class="tasks-directory-share-username"><span>@jan.kowalski</span></span>', html=True)
+        self.assertNotContains(response, '<span class="tasks-directory-share-first-name">Netology</span>', html=True)
 
     def test_share_project_adds_user_by_ancore_id(self):
         shared_user = get_user_model().objects.create_user(
@@ -296,6 +403,28 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertTrue(self._shared_task_object_exists(section, shared_user))
+
+    def test_unshare_section_removes_shared_user(self):
+        shared_user = get_user_model().objects.create_user(
+            username='shared-section-remove',
+            email='shared-section-remove@example.com',
+            first_name='Shared',
+            last_name='Section Remove',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='USR')
+        section = TaskSection.objects.create(project=project, title='Grupa')
+        self._share_task_object(section, shared_user)
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'unshare_section',
+            'section_id': section.id,
+            'member_id': shared_user.id,
+            'next': reverse('tasks:tasks'),
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(self._shared_task_object_exists(section, shared_user))
 
     def test_project_and_group_icon_pickers_are_not_rendered(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -429,6 +558,9 @@ class TaskProjectCreationTests(TestCase):
         frontend = TaskSection.objects.create(project=first_project, title='Frontend', description='Prace po stronie UI')
         TaskSection.objects.create(project=second_project, title='Backend')
         Task.objects.create(user=self.user, section=frontend, title='Zadanie frontendowe')
+        TaskSection.objects.filter(pk=frontend.pk).update(
+            created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
+        )
 
         response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
 
@@ -436,6 +568,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-directory-header')
         self.assertContains(response, 'CZŁONKOWIE')
         self.assertContains(response, 'DOMYŚLNY ODPOWIEDZIALNY ZA ZADANIA')
+        self.assertContains(response, 'DATA')
         self.assertContains(response, 'Frontend')
         self.assertContains(response, 'Prace po stronie UI')
         self.assertContains(response, 'Backend')
@@ -451,6 +584,8 @@ class TaskProjectCreationTests(TestCase):
             count=2,
         )
         self.assertContains(response, 'data-select-all-target="sections"')
+        self.assertContains(response, '07.06.2026')
+        self.assertNotContains(response, '7 cze')
         self.assertNotContains(response, 'tasks-section-row-icon')
         self.assertNotContains(response, 'MEMBERS')
         self.assertNotContains(response, 'DEFAULT ASSIGNEE FOR ISSUES')
@@ -473,6 +608,9 @@ class TaskProjectCreationTests(TestCase):
     def test_tags_view_lists_tags(self):
         frontend = TaskTag.objects.create(user=self.user, name='Frontend', description='Prace po stronie UI')
         backend = TaskTag.objects.create(user=self.user, name='Backend')
+        TaskTag.objects.filter(pk=frontend.pk).update(
+            created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
+        )
         project = TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
         section = TaskSection.objects.create(project=project, title='Grupa')
         task = Task.objects.create(user=self.user, section=section, title='Zadanie frontendowe')
@@ -489,6 +627,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, backend.code)
         self.assertContains(response, '1 zadań')
         self.assertContains(response, '0 zadań')
+        self.assertContains(response, '07.06.2026')
+        self.assertNotContains(response, '7 cze')
 
     def test_tags_link_is_rendered(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')

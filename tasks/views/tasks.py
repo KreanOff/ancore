@@ -84,6 +84,12 @@ def _directory_member_payload(entries):
             'avatar': account_avatar(user),
             'label': _user_display_name(user),
             'role': role,
+            'user_id': user.pk,
+            'can_remove': entry.get('can_remove', False) if isinstance(entry, dict) else False,
+            'remove_action': entry.get('remove_action', '') if isinstance(entry, dict) else '',
+            'remove_project_id': entry.get('remove_project_id', '') if isinstance(entry, dict) else '',
+            'remove_section_id': entry.get('remove_section_id', '') if isinstance(entry, dict) else '',
+            'remove_label': entry.get('remove_label', 'Przestań udostępniać') if isinstance(entry, dict) else 'Przestań udostępniać',
         })
 
     if not members:
@@ -127,7 +133,16 @@ def _decorate_directory_members(projects):
             project,
             [
                 {'user': project.user, 'role': 'Właściciel'},
-                *({'user': user, 'role': 'Udostępniono'} for user in shared_users),
+                *(
+                    {
+                        'user': user,
+                        'role': 'Udostępniono',
+                        'can_remove': True,
+                        'remove_action': 'unshare_project',
+                        'remove_project_id': project.id,
+                    }
+                    for user in shared_users
+                ),
             ],
         )
 
@@ -136,8 +151,26 @@ def _decorate_directory_members(projects):
                 section,
                 [
                     {'user': project.user, 'role': 'Właściciel projektu'},
-                    *({'user': user, 'role': 'Udostępniono w projekcie'} for user in shared_users),
-                    *({'user': user, 'role': 'Udostępniono w grupie'} for user in section_shares.get(section.id, [])),
+                    *(
+                        {
+                            'user': user,
+                            'role': 'Udostępniono w projekcie',
+                            'can_remove': True,
+                            'remove_action': 'unshare_project',
+                            'remove_project_id': project.id,
+                        }
+                        for user in shared_users
+                    ),
+                    *(
+                        {
+                            'user': user,
+                            'role': 'Udostępniono w grupie',
+                            'can_remove': True,
+                            'remove_action': 'unshare_section',
+                            'remove_section_id': section.id,
+                        }
+                        for user in section_shares.get(section.id, [])
+                    ),
                 ],
             )
 
@@ -179,16 +212,33 @@ def _contact_matches_query(user, query):
 
 def _share_user_options(user):
     options = []
-    user_contacts = UserContact.objects.filter(owner=user).select_related('target_user')[:100]
+    user_contacts = UserContact.objects.filter(owner=user).select_related(
+        'target_user',
+        'linked_contact',
+        'linked_contact__company_record',
+    )[:100]
     for user_contact in user_contacts:
         target = user_contact.target_user
-        label = _user_display_name(target)
+        linked_contact = user_contact.linked_contact
+        linked_contact_name = ''
+        if linked_contact:
+            linked_contact_name = ' '.join(
+                part.strip()
+                for part in [linked_contact.first_name, linked_contact.middle_name, linked_contact.last_name]
+                if part and part.strip()
+            )
+        label = linked_contact_name or target.get_full_name() or target.email or target.username
+        first_name = (linked_contact.first_name if linked_contact and linked_contact.first_name else target.first_name)
+        middle_name = (linked_contact.middle_name if linked_contact and linked_contact.middle_name else target.middle_name)
+        last_name = (linked_contact.last_name if linked_contact and linked_contact.last_name else target.last_name)
         options.append({
             'value': target.username,
             'label': label,
-            'first_name': target.first_name,
-            'last_name': target.last_name,
-            'username': target.username,
+            'first_name': first_name,
+            'middle_name': middle_name,
+            'last_name': last_name,
+            'ancore_label': target.username,
+            'added_at': user_contact.created_at,
             'avatar': account_avatar(target),
         })
     return options
@@ -261,6 +311,25 @@ def _share_task_directory_object(request, obj):
         messages.success(request, f'Dodano: {_user_display_name(target_user)}.')
     else:
         messages.info(request, f'{_user_display_name(target_user)} już jest na liście.')
+
+
+def _unshare_task_directory_object(request, obj):
+    target_user = get_user_model().objects.filter(pk=request.POST.get('member_id')).first()
+    if not target_user:
+        messages.error(request, 'Nie znaleziono użytkownika.')
+        return
+
+    deleted_count, _ = SharedItem.objects.filter(
+        content_type=ContentType.objects.get_for_model(obj.__class__),
+        object_id=obj.pk,
+        shared_by=request.user,
+        shared_with=target_user,
+    ).delete()
+
+    if deleted_count:
+        messages.success(request, f'Przestano udostępniać: {_user_display_name(target_user)}.')
+    else:
+        messages.info(request, 'Ta osoba nie ma już dostępu z tego miejsca.')
 
 
 def _posted_ids(request, plural_name, singular_name):
@@ -540,6 +609,11 @@ def _tasks_page(request, active_section=None):
             _share_task_directory_object(request, project)
             return redirect(_tasks_next_url(request))
 
+        if action == 'unshare_project':
+            project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
+            _unshare_task_directory_object(request, project)
+            return redirect(_tasks_next_url(request))
+
         if action == 'create_section':
             project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
             section_form = TaskSectionForm(request.POST)
@@ -609,6 +683,11 @@ def _tasks_page(request, active_section=None):
         if action == 'share_section':
             section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
             _share_task_directory_object(request, section)
+            return redirect(_tasks_next_url(request))
+
+        if action == 'unshare_section':
+            section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
+            _unshare_task_directory_object(request, section)
             return redirect(_tasks_next_url(request))
 
         if action == 'delete_section':

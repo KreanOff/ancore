@@ -43,35 +43,64 @@
             </div>
         </form>
 
-        <div class="tasks-table-wrap contacts-list-wrap">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board">
             {% if contacts %}
-            <div class="contacts-list" role="list">
-                {% for item in contacts %}
-                <a href="{% url 'contacts:view-contact' item.pk %}" class="contacts-row" role="listitem">
-                    {% with linked_user_contact=item.current_user_links.0 %}
-                        {% if linked_user_contact %}
-                            {% user_avatar linked_user_contact.target_user as contact_user_avatar %}
-                            {% include 'accounts/includes/user_avatar.html' with avatar=contact_user_avatar avatar_class='contacts-avatar contacts-person-avatar' only %}
-                        {% else %}
-                            <span class="profile-avatar profile-avatar--blue contacts-avatar contacts-person-avatar" aria-hidden="true">
-                                {% include 'accounts/includes/user_avatar_icon.html' %}
-                            </span>
-                        {% endif %}
-                    {% endwith %}
-                    <span class="contacts-row-main">
-                        <strong>{{ item.display_name }}</strong>
-                        <small>
-                            {% if item.company %}{{ item.company }}{% else %}Brak firmy{% endif %}
-                            {% if item.role %} · {{ item.role }}{% endif %}
-                        </small>
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header contacts-directory-header" role="row">
+                    <span class="tasks-directory-header-select">
+                        <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie kontakty" title="Zaznacz wszystkie kontakty" data-select-all-checkbox data-select-all-target="contacts">
                     </span>
-                    <span class="contacts-row-channel">
+                    <span>KONTAKT</span>
+                    <span>FIRMA / ROLA</span>
+                    <span>DANE KONTAKTOWE</span>
+                    <span>STATUS</span>
+                    <span class="tasks-directory-header-date">DATA</span>
+                </div>
+                <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="{{ contacts_page_label|default:'Lista kontaktów' }}">
+                {% for item in contacts %}
+                <article class="tasks-issue-row tasks-directory-row contacts-directory-row"
+                         role="link"
+                         tabindex="0"
+                         data-contact-id="{{ item.pk }}"
+                         data-search-primary="{{ item.display_name|default:''|striptags }} {{ item.company|default:''|striptags }} {{ item.company_record.name|default:''|striptags }}"
+                         data-search-index="{{ item.display_name|default:''|striptags }} {{ item.company|default:''|striptags }} {{ item.company_record.name|default:''|striptags }} {{ item.role|default:''|striptags }} {{ item.email|default:'' }} {{ item.phone|default:'' }} {{ item.get_status_display }} {{ item.created_at|date:'d.m.Y H:i' }}"
+                         data-view-url="{% url 'contacts:view-contact' item.pk %}">
+                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz kontakt {{ item.display_name }}" data-contact-id="{{ item.pk }}">
+                    <span class="tasks-directory-name contacts-directory-contact">
+                        {% with linked_user_contact=item.current_user_links.0 %}
+                            {% if linked_user_contact %}
+                                {% user_avatar linked_user_contact.target_user as contact_user_avatar %}
+                                {% include 'accounts/includes/user_avatar.html' with avatar=contact_user_avatar avatar_class='tasks-directory-avatar contacts-directory-avatar contacts-person-avatar' only %}
+                            {% else %}
+                                <span class="profile-avatar profile-avatar--blue tasks-directory-avatar contacts-directory-avatar contacts-person-avatar" aria-hidden="true">
+                                    {% include 'accounts/includes/user_avatar_icon.html' %}
+                                </span>
+                            {% endif %}
+                        {% endwith %}
+                        <span class="contacts-directory-name-text">
+                            <strong>{{ item.display_name }}</strong>
+                            <small>{% if item.role %}{{ item.role }}{% elif item.source %}{{ item.source }}{% else %}Kontakt{% endif %}</small>
+                        </span>
+                    </span>
+                    <span class="contacts-directory-company">
+                        {% if item.company_record %}{{ item.company_record.name }}{% elif item.company %}{{ item.company }}{% else %}Brak firmy{% endif %}
+                    </span>
+                    <span class="contacts-directory-channel">
+                        {% if item.email %}
+                        <i data-lucide="mail" aria-hidden="true"></i>
+                        {% elif item.phone %}
+                        <i data-lucide="phone" aria-hidden="true"></i>
+                        {% else %}
+                        <i data-lucide="circle-slash" aria-hidden="true"></i>
+                        {% endif %}
                         {% if item.email %}{{ item.email }}{% elif item.phone %}{{ item.phone }}{% else %}Brak danych kontaktowych{% endif %}
                     </span>
                     {% include 'contacts/includes/contact_status_badge.html' with contact=item only %}
-                </a>
+                    <span class="tasks-row-date" title="Data utworzenia">{{ item.created_at|date:"d.m.Y" }}</span>
+                </article>
                 {% endfor %}
-            </div>
+                </div>
+            </section>
             {% else %}
             <section class="tasks-empty-state contacts-empty-state">
                 <div class="tasks-empty-state__icon" aria-hidden="true">

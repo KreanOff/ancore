@@ -26,6 +26,27 @@
                     <strong>{{ member.label }}</strong>
                     <small>{{ member.role }}</small>
                 </span>
+                {% if member.can_remove %}
+                <details class="tasks-directory-member-actions" data-directory-member-actions>
+                    <summary class="tasks-directory-member-more" aria-label="Opcje użytkownika {{ member.label }}" title="Opcje użytkownika">
+                        <i data-lucide="ellipsis" aria-hidden="true"></i>
+                    </summary>
+                    <div class="tasks-directory-member-menu" role="menu">
+                        <form method="post" class="tasks-directory-member-remove-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="{{ member.remove_action }}">
+                            <input type="hidden" name="project_id" value="{{ member.remove_project_id }}">
+                            <input type="hidden" name="section_id" value="{{ member.remove_section_id }}">
+                            <input type="hidden" name="member_id" value="{{ member.user_id }}">
+                            <input type="hidden" name="next" value="{{ tasks_return_path }}">
+                            <button type="submit" class="tasks-directory-member-menu-button" role="menuitem">
+                                <i data-lucide="user-minus" aria-hidden="true"></i>
+                                <span>{{ member.remove_label }}</span>
+                            </button>
+                        </form>
+                    </div>
+                </details>
+                {% endif %}
             </div>
             {% empty %}
             <div class="tasks-directory-member-empty">Brak członków.</div>

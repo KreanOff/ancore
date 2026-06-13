@@ -1,6 +1,7 @@
 import base64
 import os
 import tempfile
+from datetime import datetime, timezone as datetime_timezone
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -60,10 +61,20 @@ class ContactCollaborationTests(TestCase):
         self.assertEqual(contact.middle_name, 'Piotr')
         self.assertEqual(contact.display_name, 'Marek Piotr Nowak')
         self.assertEqual(contact.status, 'active')
+        Contact.objects.filter(pk=contact.pk).update(
+            created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
+        )
 
         response = self.client.get(reverse('contacts:contacts'))
         self.assertContains(response, '/media/profile_photos/marek.webp')
         self.assertContains(response, 'Marek Piotr Nowak')
+        self.assertContains(response, 'contacts-directory-board')
+        self.assertContains(response, 'contacts-directory-row')
+        self.assertContains(response, 'data-select-all-target="contacts"')
+        self.assertContains(response, 'DANE KONTAKTOWE')
+        self.assertContains(response, '07.06.2026')
+        self.assertNotContains(response, '7 cze')
+        self.assertNotContains(response, 'class="contacts-row"')
 
     def test_user_directory_search_matches_middle_name(self):
         response = self.client.get(reverse('contacts:user-directory'), {'q': 'Piotr'})
@@ -252,11 +263,21 @@ class ContactCollaborationTests(TestCase):
         self.assertEqual(avatar['background_color'], company_avatar(company)['background_color'])
         self.assertNotEqual(avatar['background_color'], other_avatar['background_color'])
         self.assertIn('--profile-avatar-bg:', avatar['color_style'])
+        Company.objects.filter(pk=company.pk).update(
+            created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
+        )
 
         response = self.client.get(reverse('contacts:companies'))
 
         self.assertContains(response, avatar['color_style'])
         self.assertContains(response, other_avatar['color_style'])
+        self.assertContains(response, 'contacts-directory-board')
+        self.assertContains(response, 'contacts-company-directory-row')
+        self.assertContains(response, 'data-select-all-target="companies"')
+        self.assertContains(response, 'DANE KONTAKTOWE')
+        self.assertContains(response, '07.06.2026')
+        self.assertNotContains(response, '7 cze')
+        self.assertNotContains(response, 'class="contacts-row"')
 
     def test_ancore_login_lookup_returns_user_payload(self):
         response = self.client.get(reverse('contacts:lookup-ancore-login'), {'login': 'marek.nowak'})
@@ -390,7 +411,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'data-lucide="ellipsis"')
         self.assertContains(response, 'Opcje kontaktu')
         self.assertContains(response, 'Usuń')
-        self.assertContains(response, 'tasks.js?v=20260613-directory-custom-picker')
+        self.assertContains(response, 'tasks.js?v=20260614-members-popover-fix')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -518,7 +539,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'tasks-icon-button contacts-actions-menu__toggle')
         self.assertContains(response, 'Opcje firmy')
         self.assertContains(response, 'Usuń')
-        self.assertContains(response, 'tasks.js?v=20260613-directory-custom-picker')
+        self.assertContains(response, 'tasks.js?v=20260614-members-popover-fix')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -558,7 +579,7 @@ class ContactCollaborationTests(TestCase):
         response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="company-detail-form"')
-        self.assertContains(response, 'style.css?v=20260613-directory-custom-picker')
+        self.assertContains(response, 'style.css?v=20260614-share-user-photo-middle-name')
         self.assertContains(response, 'profile.js?v=20260608-company-photo-picker-first')
         self.assertContains(response, 'contacts-company-modal-title')
         self.assertContains(response, 'contacts-edit-modal is-open')
