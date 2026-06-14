@@ -98,11 +98,11 @@
                 {% for section in project.sections.all %}
                 <a href="{% url 'tasks:task_group' section.id %}"
                    class="tasks-rail-link {% if active_section.id == section.id %}is-active{% endif %}">
+                    {% if section.icon %}
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        {% if section.icon %}
                         <i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                        {% endif %}
                     </span>
+                    {% endif %}
                     {{ section.title }}
                 </a>
                 {% empty %}

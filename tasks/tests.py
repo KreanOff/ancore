@@ -576,7 +576,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, first_project.code)
         self.assertContains(response, second_project.code)
         self.assertContains(response, 'Pracownik', count=2)
-        self.assertContains(response, '<div class="tasks-directory-members-menu" data-directory-members-menu>', count=2)
+        self.assertContains(
+            response,
+            '<div class="tasks-directory-members-menu tasks-directory-sheet__cell" data-column="members" data-directory-members-menu>',
+            count=2,
+        )
         self.assertContains(
             response,
             '<span class="tasks-directory-member-label">Task User</span>',

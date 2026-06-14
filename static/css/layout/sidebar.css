@@ -121,17 +121,18 @@ body.secondary-menu-resizing .main-content {
     transform-origin: center;
 }
 
-body.secondary-menu-collapsed .secondary-menu-toggle {
+:is(html, body).secondary-menu-collapsed .secondary-menu-toggle {
     color: var(--text-strong);
     background-color: var(--surface-selected);
     border-color: transparent;
 }
 
+html.secondary-menu-collapsed,
 body.secondary-menu-collapsed {
     --app-sidebar-total-width: var(--sidebar-width);
 }
 
-body.secondary-menu-collapsed .secondary-menu {
+:is(html, body).secondary-menu-collapsed .secondary-menu {
     width: 0;
     min-width: 0;
     max-width: 0;
@@ -139,12 +140,12 @@ body.secondary-menu-collapsed .secondary-menu {
     border-right-color: transparent;
 }
 
-body.secondary-menu-collapsed .secondary-menu-panel {
+:is(html, body).secondary-menu-collapsed .secondary-menu-panel {
     opacity: 0;
     pointer-events: none;
 }
 
-body.secondary-menu-collapsed .secondary-menu-resizer {
+:is(html, body).secondary-menu-collapsed .secondary-menu-resizer {
     display: none;
 }
 

@@ -13,6 +13,12 @@
     transition: margin-left 0.1s ease;
 }
 
+html.app-shell-booting .main-content,
+html.app-shell-booting .secondary-menu,
+html.app-shell-booting .secondary-menu-panel {
+    transition: none !important;
+}
+
 .app-topbar {
     position: fixed;
     inset: 0 0 auto 0;

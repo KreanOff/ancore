@@ -141,6 +141,7 @@ function initTasksPage() {
     initKanbanColumnCreateForms();
     initKanbanColumnReorder();
     initKanbanWallpapers();
+    initDirectoryColumnResize();
 
     function initKanbanWallpapers() {
         const panel = document.querySelector('[data-kanban-wallpaper-panel]');
@@ -3720,6 +3721,315 @@ function initTasksPage() {
         function storeSidebarWidth(nextWidth) {
             try {
                 window.localStorage.setItem(storageKey, String(clampSidebarWidth(nextWidth)));
+            } catch (error) {
+                // localStorage may be unavailable in private or restricted contexts.
+            }
+        }
+    }
+
+    function initDirectoryColumnResize() {
+        const boards = document.querySelectorAll('.tasks-directory-board.tasks-directory-sheet');
+        if (!boards.length) return;
+
+        const storageKey = `${taskAppSegment}:directoryColumnWidths`;
+        const columnMinimums = {
+            select: 18,
+            project: 180,
+            section: 180,
+            members: 160,
+            default_assignee: 220,
+            created_at: 104,
+            spacer: 80
+        };
+        const fixedColumns = new Set(['created_at']);
+        const fixedColumnWidths = {
+            created_at: 'var(--tasks-directory-date-width)'
+        };
+        let activeResize = null;
+
+        boards.forEach(board => {
+            const header = board.querySelector('.tasks-directory-header');
+            if (!header || header.dataset.directoryResizeReady === 'true') return;
+
+            header.dataset.directoryResizeReady = 'true';
+            applyStoredDirectoryWidths(board);
+
+            const cells = getDirectoryHeaderCells(header);
+            cells.forEach((cell, index) => {
+                const column = cell.dataset.column || '';
+                const nextCell = getNextDirectoryResizeCell(cells, index);
+                if (column === 'select' || isFixedDirectoryColumn(column) || !nextCell) return;
+
+                const handle = document.createElement('button');
+                const label = getDirectoryColumnLabel(cell);
+                handle.type = 'button';
+                handle.className = 'tasks-directory-column-resizer';
+                handle.dataset.directoryColumnResizer = column;
+                handle.setAttribute('aria-label', `Zmień szerokość kolumny ${label}`);
+                handle.setAttribute('title', 'Przeciągnij, aby zmienić szerokość kolumny');
+
+                handle.addEventListener('pointerdown', event => {
+                    if (event.button !== undefined && event.button !== 0) return;
+
+                    const state = createDirectoryResizeState(board, header, cells, cell, nextCell, handle, event.clientX);
+                    if (!state) return;
+
+                    event.preventDefault();
+                    activeResize = state;
+                    handle.setPointerCapture(event.pointerId);
+                    handle.classList.add('is-active');
+                    board.classList.add('is-resizing-columns');
+                    document.body.classList.add('is-resizing-directory-columns');
+                });
+
+                handle.addEventListener('pointermove', event => {
+                    if (!activeResize || activeResize.handle !== handle) return;
+                    updateDirectoryResize(activeResize, event.clientX - activeResize.startX);
+                });
+
+                handle.addEventListener('pointerup', finishDirectoryResize);
+                handle.addEventListener('pointercancel', finishDirectoryResize);
+
+                handle.addEventListener('keydown', event => {
+                    const step = event.shiftKey ? 48 : 24;
+                    let delta = 0;
+
+                    if (event.key === 'ArrowLeft') {
+                        delta = -step;
+                    } else if (event.key === 'ArrowRight') {
+                        delta = step;
+                    } else {
+                        return;
+                    }
+
+                    const state = createDirectoryResizeState(board, header, cells, cell, nextCell, handle, 0);
+                    if (!state) return;
+
+                    event.preventDefault();
+                    updateDirectoryResize(state, delta);
+                    storeDirectoryWidths(state);
+                });
+
+                handle.addEventListener('click', event => {
+                    event.preventDefault();
+                });
+
+                cell.appendChild(handle);
+            });
+        });
+
+        function createDirectoryResizeState(board, header, cells, cell, nextCell, handle, startX) {
+            if (!isDirectoryHeaderVisible(header)) return null;
+
+            const columnIndex = cells.indexOf(cell);
+            const nextColumnIndex = cells.indexOf(nextCell);
+            const widths = fitDirectoryTrackWidths(header, cells, getDirectoryTrackWidths(header, cells));
+
+            if (columnIndex < 0 || nextColumnIndex < 0 || !widths[columnIndex] || !widths[nextColumnIndex]) {
+                return null;
+            }
+
+            setDirectoryGrid(board, cells, widths);
+
+            return {
+                board,
+                header,
+                cells,
+                handle,
+                startX,
+                widths,
+                columnIndex,
+                nextColumnIndex,
+                startColumnWidth: widths[columnIndex],
+                startNextColumnWidth: widths[nextColumnIndex],
+                columnMinWidth: getDirectoryColumnMinWidth(cell.dataset.column),
+                nextColumnMinWidth: getDirectoryColumnMinWidth(nextCell.dataset.column)
+            };
+        }
+
+        function updateDirectoryResize(state, delta) {
+            const minDelta = state.columnMinWidth - state.startColumnWidth;
+            const maxDelta = state.startNextColumnWidth - state.nextColumnMinWidth;
+            const clampedDelta = Math.min(Math.max(delta, minDelta), maxDelta);
+            const nextWidths = state.widths.slice();
+
+            nextWidths[state.columnIndex] = Math.round(state.startColumnWidth + clampedDelta);
+            nextWidths[state.nextColumnIndex] = Math.round(state.startNextColumnWidth - clampedDelta);
+            state.widths = nextWidths;
+            setDirectoryGrid(state.board, state.cells, nextWidths);
+        }
+
+        function finishDirectoryResize(event) {
+            if (!activeResize) return;
+
+            const state = activeResize;
+            activeResize = null;
+            state.handle.classList.remove('is-active');
+            state.board.classList.remove('is-resizing-columns');
+            document.body.classList.remove('is-resizing-directory-columns');
+            storeDirectoryWidths(state);
+
+            if (event.pointerId !== undefined && state.handle.hasPointerCapture(event.pointerId)) {
+                state.handle.releasePointerCapture(event.pointerId);
+            }
+        }
+
+        function applyStoredDirectoryWidths(board) {
+            const storedWidths = readStoredDirectoryWidths();
+            if (!Object.keys(storedWidths).length) return;
+
+            const header = board.querySelector('.tasks-directory-header');
+            if (!header) return;
+            if (!isDirectoryHeaderVisible(header)) return;
+
+            const cells = getDirectoryHeaderCells(header);
+            const widths = getDirectoryTrackWidths(header, cells);
+            let hasStoredColumn = false;
+
+            cells.forEach((cell, index) => {
+                if (isFixedDirectoryColumn(cell.dataset.column)) return;
+
+                const storageColumn = getDirectoryStorageColumn(cell.dataset.column);
+                const storedWidth = storedWidths[storageColumn];
+
+                if (!storedWidth) return;
+
+                widths[index] = Math.max(getDirectoryColumnMinWidth(cell.dataset.column), Math.round(storedWidth));
+                hasStoredColumn = true;
+            });
+
+            if (hasStoredColumn) {
+                setDirectoryGrid(board, cells, fitDirectoryTrackWidths(header, cells, widths));
+            }
+        }
+
+        function getDirectoryHeaderCells(header) {
+            return Array.from(header.querySelectorAll('[data-column]'));
+        }
+
+        function getNextDirectoryResizeCell(cells, index) {
+            return cells.slice(index + 1).find(cell => {
+                const column = cell.dataset.column || '';
+                return column !== 'select' && !isFixedDirectoryColumn(column);
+            }) || null;
+        }
+
+        function getDirectoryTrackWidths(header, cells) {
+            const tracks = window.getComputedStyle(header).gridTemplateColumns
+                .split(/\s+/)
+                .map(value => Number.parseFloat(value))
+                .filter(Number.isFinite);
+
+            if (tracks.length >= cells.length) {
+                return tracks.slice(0, cells.length).map(width => Math.round(width));
+            }
+
+            return cells.map(cell => Math.round(cell.getBoundingClientRect().width));
+        }
+
+        function fitDirectoryTrackWidths(header, cells, widths) {
+            const availableWidth = getDirectoryAvailableTrackWidth(header, cells);
+            const totalWidth = widths.reduce((total, width) => total + width, 0);
+
+            if (!availableWidth || totalWidth <= availableWidth) {
+                return widths;
+            }
+
+            const nextWidths = widths.slice();
+            let overflow = totalWidth - availableWidth;
+            let shrinkable = getDirectoryShrinkableColumns(cells, nextWidths);
+
+            while (overflow > 0 && shrinkable.length) {
+                const totalRoom = shrinkable.reduce((total, item) => total + item.room, 0);
+                if (totalRoom <= 0) break;
+
+                shrinkable.forEach(item => {
+                    if (overflow <= 0) return;
+
+                    const shrink = Math.min(item.room, overflow, Math.max(1, Math.round((item.room / totalRoom) * overflow)));
+                    nextWidths[item.index] -= shrink;
+                    overflow -= shrink;
+                });
+
+                shrinkable = getDirectoryShrinkableColumns(cells, nextWidths);
+            }
+
+            return nextWidths.map(width => Math.max(1, Math.round(width)));
+        }
+
+        function getDirectoryAvailableTrackWidth(header, cells) {
+            const styles = window.getComputedStyle(header);
+            const headerWidth = header.getBoundingClientRect().width;
+            const padding = Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
+            const columnGap = Number.parseFloat(styles.columnGap) || 0;
+
+            return Math.max(0, headerWidth - padding - (columnGap * Math.max(0, cells.length - 1)));
+        }
+
+        function getDirectoryShrinkableColumns(cells, widths) {
+            return cells
+                .map((cell, index) => ({
+                    index,
+                    room: widths[index] - getDirectoryColumnMinWidth(cell.dataset.column)
+                }))
+                .filter(item => item.room > 0 && !isFixedDirectoryColumn(cells[item.index].dataset.column));
+        }
+
+        function isDirectoryHeaderVisible(header) {
+            return header.getClientRects().length > 0;
+        }
+
+        function setDirectoryGrid(board, cells, widths) {
+            const tracks = widths.map((width, index) => {
+                const column = cells[index]?.dataset.column || '';
+                return fixedColumnWidths[column] || `${Math.round(width)}px`;
+            });
+
+            board.style.setProperty('--tasks-directory-grid', tracks.join(' '));
+        }
+
+        function getDirectoryColumnMinWidth(column) {
+            return columnMinimums[column] || 140;
+        }
+
+        function getDirectoryStorageColumn(column) {
+            if (column === 'project' || column === 'section') {
+                return 'name';
+            }
+
+            return column || '';
+        }
+
+        function isFixedDirectoryColumn(column) {
+            return fixedColumns.has(column);
+        }
+
+        function getDirectoryColumnLabel(cell) {
+            return (cell.textContent || 'kolumny').replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+
+        function readStoredDirectoryWidths() {
+            try {
+                const value = JSON.parse(window.localStorage.getItem(storageKey) || '{}');
+                return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function storeDirectoryWidths(state) {
+            const widths = state.widths;
+            const nextStoredWidths = {};
+
+            state.cells.forEach((cell, index) => {
+                const column = cell.dataset.column;
+                if (!column || column === 'select' || isFixedDirectoryColumn(column)) return;
+
+                nextStoredWidths[getDirectoryStorageColumn(column)] = Math.round(widths[index]);
+            });
+
+            try {
+                window.localStorage.setItem(storageKey, JSON.stringify(nextStoredWidths));
             } catch (error) {
                 // localStorage may be unavailable in private or restricted contexts.
             }

@@ -35,6 +35,7 @@
     }
 
     function setSecondaryMenuCollapsed(collapsed) {
+        document.documentElement.classList.toggle('secondary-menu-collapsed', collapsed);
         document.body.classList.toggle('secondary-menu-collapsed', collapsed);
 
         secondaryMenu?.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
@@ -224,4 +225,16 @@
     }
 
     onBreakpointChange();
+
+    function finishShellBoot() {
+        document.documentElement.classList.remove('app-shell-booting');
+    }
+
+    if (typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(finishShellBoot);
+        });
+    } else {
+        window.setTimeout(finishShellBoot, 0);
+    }
 })();

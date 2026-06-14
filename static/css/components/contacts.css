@@ -210,6 +210,49 @@
     white-space: nowrap;
 }
 
+.contacts-directory-sheet {
+    --tasks-directory-checkbox-offset: 0;
+    --contacts-directory-column-separator: #d6dae1;
+}
+
+.contacts-directory-sheet__cell {
+    min-width: 0;
+}
+
+.contacts-directory-sheet .contacts-directory-header,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row {
+    padding-left: 0.75rem;
+}
+
+.contacts-directory-sheet .tasks-directory-header-select,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox {
+    justify-self: center;
+}
+
+.contacts-directory-sheet .tasks-directory-select-all,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox {
+    opacity: 1;
+}
+
+.contacts-directory-sheet .contacts-directory-header > * + *,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > * + * {
+    min-height: 100%;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    border-left: 1px solid var(--contacts-directory-column-separator);
+    padding-left: 0.75rem;
+}
+
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .contacts-directory-sheet__cell {
+    justify-self: stretch;
+}
+
+.contacts-directory-sheet .contacts-directory-list .tasks-row-date {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .contacts-directory-row {
     text-decoration: none;
 }
@@ -1413,6 +1456,13 @@
             ". status status";
         row-gap: 0.2rem;
         padding: 0.65rem 0.85rem;
+    }
+
+    .contacts-directory-sheet .contacts-directory-list .contacts-directory-row > * + * {
+        min-height: 0;
+        align-self: auto;
+        border-left: 0;
+        padding-left: 0;
     }
 
     .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox {

@@ -12,21 +12,26 @@
     {% include 'core/includes/bootstrap.html' %}
     <script>
         (function () {
+            var root = document.documentElement;
+            root.classList.add('app-shell-booting');
+
             var savedWidth = Number(localStorage.getItem('secondaryMenuWidth'));
-            if (!Number.isFinite(savedWidth) || savedWidth <= 0) {
-                return;
+            if (Number.isFinite(savedWidth) && savedWidth > 0) {
+                root.style.setProperty('--secondary-menu-width', savedWidth + 'px');
             }
 
-            document.documentElement.style.setProperty('--secondary-menu-width', savedWidth + 'px');
+            if (localStorage.getItem('secondaryMenuCollapsed') === 'true') {
+                root.classList.add('secondary-menu-collapsed');
+            }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260614-share-user-photo-middle-name">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260614-directory-column-resize">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     <script>
         (function () {
-            if (localStorage.getItem('secondaryMenuCollapsed') === 'true') {
+            if (document.documentElement.classList.contains('secondary-menu-collapsed')) {
                 document.body.classList.add('secondary-menu-collapsed');
             }
         })();
@@ -127,12 +132,12 @@
     {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/lucide-icons.js' %}?v=20260609-lucide-icons"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260613-ui-fonts-100"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260614-shell-boot-no-jitter"></script>
     <script src="{% static 'js/topbar.js' %}"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260614-members-popover-fix"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260614-directory-date-fixed"></script>
     <script src="{% static 'js/profile.js' %}?v=20260608-company-photo-picker-first"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
     <script src="{% static 'js/file-upload.js' %}?v=20260605-trash-icon"></script>

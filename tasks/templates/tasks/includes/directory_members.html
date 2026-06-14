@@ -1,4 +1,4 @@
-<div class="tasks-directory-members-menu" data-directory-members-menu>
+<div class="tasks-directory-members-menu{% if cell_class %} {{ cell_class }}{% endif %}"{% if data_column %} data-column="{{ data_column }}"{% endif %} data-directory-members-menu>
     <button type="button" class="tasks-directory-members" title="{{ item.directory_member_title }}" aria-label="Pokaż członków" aria-haspopup="dialog" aria-expanded="false" aria-controls="tasks-directory-members-{{ item_kind }}-{{ item.id }}" data-directory-members-toggle>
         <span class="tasks-directory-avatar-stack">
             {% for member in item.directory_visible_members %}

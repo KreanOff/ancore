@@ -37,40 +37,40 @@
             </div>
         </form>
 
-        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet">
             {% if companies %}
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
-                <div class="tasks-directory-header contacts-directory-header" role="row">
-                    <span class="tasks-directory-header-select">
+                <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
+                    <span class="tasks-directory-header-select contacts-directory-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie firmy" title="Zaznacz wszystkie firmy" data-select-all-checkbox data-select-all-target="companies">
                     </span>
-                    <span>FIRMA</span>
-                    <span>STRONA</span>
-                    <span>DANE KONTAKTOWE</span>
-                    <span>KONTAKTY</span>
-                    <span class="tasks-directory-header-date">DATA</span>
+                    <span class="contacts-directory-sheet__cell" data-column="company">FIRMA</span>
+                    <span class="contacts-directory-sheet__cell" data-column="website">STRONA</span>
+                    <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE</span>
+                    <span class="contacts-directory-sheet__cell" data-column="contact_count">KONTAKTY</span>
+                    <span class="tasks-directory-header-date contacts-directory-sheet__cell" data-column="created_at">DATA</span>
                 </div>
                 <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="Lista firm">
                 {% for company in companies %}
-                <article class="tasks-issue-row tasks-directory-row contacts-directory-row contacts-company-directory-row"
+                <article class="tasks-issue-row tasks-directory-row contacts-directory-row contacts-company-directory-row contacts-directory-sheet__row"
                          role="link"
                          tabindex="0"
                          data-company-id="{{ company.pk }}"
                          data-search-primary="{{ company.name|default:''|striptags }} {{ company.website|default:'' }} {{ company.email|default:'' }}"
                          data-search-index="{{ company.name|default:''|striptags }} {{ company.website|default:'' }} {{ company.email|default:'' }} {{ company.phone|default:'' }} {{ company.address|default:''|striptags }} {{ company.contact_count }} kontaktów {{ company.created_at|date:'d.m.Y H:i' }}"
                          data-view-url="{% url 'contacts:view-company' company.pk %}">
-                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz firmę {{ company.name }}" data-company-id="{{ company.pk }}">
-                    <span class="tasks-directory-name contacts-directory-contact">
+                    <input type="checkbox" class="tasks-row-checkbox contacts-directory-sheet__cell" data-column="select" aria-label="Zaznacz firmę {{ company.name }}" data-company-id="{{ company.pk }}">
+                    <span class="tasks-directory-name contacts-directory-contact contacts-directory-sheet__cell" data-column="company">
                         {% include 'contacts/includes/company_avatar.html' with company=company avatar_class='tasks-directory-avatar contacts-directory-avatar contacts-company-avatar' only %}
                         <span class="contacts-directory-name-text">
                             <strong>{{ company.name }}</strong>
                             <small>{% if company.address %}{{ company.address }}{% else %}Firma{% endif %}</small>
                         </span>
                     </span>
-                    <span class="contacts-directory-company">
+                    <span class="contacts-directory-company contacts-directory-sheet__cell" data-column="website">
                         {% if company.website %}{{ company.website }}{% else %}Brak strony{% endif %}
                     </span>
-                    <span class="contacts-directory-channel">
+                    <span class="contacts-directory-channel contacts-directory-sheet__cell" data-column="channel">
                         {% if company.email %}
                         <i data-lucide="mail" aria-hidden="true"></i>
                         {% elif company.phone %}
@@ -80,8 +80,8 @@
                         {% endif %}
                         {% if company.email %}{{ company.email }}{% elif company.phone %}{{ company.phone }}{% else %}Brak danych kontaktowych{% endif %}
                     </span>
-                    <span class="status-indicator contacts-status-customer">{{ company.contact_count }} kontaktów</span>
-                    <span class="tasks-row-date" title="Data utworzenia">{{ company.created_at|date:"d.m.Y" }}</span>
+                    <span class="status-indicator contacts-status-customer contacts-directory-sheet__cell" data-column="contact_count">{{ company.contact_count }} kontaktów</span>
+                    <span class="tasks-row-date contacts-directory-sheet__cell" data-column="created_at" title="Data utworzenia">{{ company.created_at|date:"d.m.Y" }}</span>
                 </article>
                 {% endfor %}
                 </div>
