@@ -1,6 +1,21 @@
-(function () {
+function initCalendarPage() {
     const configEl = document.getElementById('calendar-config');
-    if (!configEl) return;
+    if (!configEl) {
+        window.ancoreCalendarPageListenersController?.abort();
+        window.ancoreCalendarPageListenersController = null;
+        return;
+    }
+
+    if (configEl.dataset.calendarInitialized === 'true') return;
+    configEl.dataset.calendarInitialized = 'true';
+
+    if (window.ancoreCalendarPageListenersController) {
+        window.ancoreCalendarPageListenersController.abort();
+    }
+
+    const pageListenersController = typeof AbortController === 'function' ? new AbortController() : null;
+    window.ancoreCalendarPageListenersController = pageListenersController;
+    const pageListenerOptions = pageListenersController ? { signal: pageListenersController.signal } : false;
 
     const config = JSON.parse(configEl.textContent);
     const csrfToken = config.csrfToken;
@@ -827,46 +842,46 @@
         });
     }
 
-    document.getElementById('cal-prev')?.addEventListener('click', () => navigate(-1));
-    document.getElementById('cal-next')?.addEventListener('click', () => navigate(1));
-    document.getElementById('cal-today')?.addEventListener('click', goToToday);
-    document.getElementById('cal-add-event')?.addEventListener('click', () => openDialog('create', null, null));
+    document.getElementById('cal-prev')?.addEventListener('click', () => navigate(-1), pageListenerOptions);
+    document.getElementById('cal-next')?.addEventListener('click', () => navigate(1), pageListenerOptions);
+    document.getElementById('cal-today')?.addEventListener('click', goToToday, pageListenerOptions);
+    document.getElementById('cal-add-event')?.addEventListener('click', () => openDialog('create', null, null), pageListenerOptions);
     document.querySelectorAll('[data-calendar-add]').forEach((btn) => {
-        btn.addEventListener('click', () => openDialog('create', null, null));
+        btn.addEventListener('click', () => openDialog('create', null, null), pageListenerOptions);
     });
 
     document.querySelectorAll('.calendar-view-btn').forEach((btn) => {
-        btn.addEventListener('click', () => setView(btn.dataset.view));
+        btn.addEventListener('click', () => setView(btn.dataset.view), pageListenerOptions);
     });
     document.querySelectorAll('.calendar-mini-nav__button').forEach((btn) => {
-        btn.addEventListener('click', () => setView(btn.dataset.view));
+        btn.addEventListener('click', () => setView(btn.dataset.view), pageListenerOptions);
     });
 
     document.querySelectorAll('.cancel-event-btn').forEach((btn) => {
-        btn.addEventListener('click', closeDialog);
+        btn.addEventListener('click', closeDialog, pageListenerOptions);
     });
-    eventDeleteBtn?.addEventListener('click', deleteEvent);
-    eventForm?.addEventListener('submit', saveEvent);
-    eventAllDayInput?.addEventListener('change', applyAllDayTimes);
+    eventDeleteBtn?.addEventListener('click', deleteEvent, pageListenerOptions);
+    eventForm?.addEventListener('submit', saveEvent, pageListenerOptions);
+    eventAllDayInput?.addEventListener('change', applyAllDayTimes, pageListenerOptions);
     eventColorToggle?.addEventListener('click', () => {
         if (eventColorSelect?.classList.contains('is-open')) {
             closeEventColorSelect();
         } else {
             openEventColorSelect();
         }
-    });
+    }, pageListenerOptions);
     eventColorOptions.forEach((option) => {
-        option.addEventListener('click', () => selectEventColorOption(option));
+        option.addEventListener('click', () => selectEventColorOption(option), pageListenerOptions);
     });
-    eventColorInput?.addEventListener('change', () => syncEventColorSelect(eventColorInput.value));
+    eventColorInput?.addEventListener('change', () => syncEventColorSelect(eventColorInput.value), pageListenerOptions);
 
     dialogOverlay?.addEventListener('click', (e) => {
         if (e.target === dialogOverlay) closeDialog();
-    });
+    }, pageListenerOptions);
 
     document.addEventListener('click', (e) => {
         if (!eventColorSelect?.contains(e.target)) closeEventColorSelect();
-    });
+    }, pageListenerOptions);
 
     document.addEventListener('keydown', (e) => {
         if (handleEventColorKeydown(e)) return;
@@ -874,10 +889,18 @@
         if (e.key === 'Escape' && dialogOverlay?.classList.contains('active')) {
             closeDialog();
         }
-    });
+    }, pageListenerOptions);
 
     syncEventColorSelect();
     normalizeAnchorForView(currentView);
     renderCurrentView();
     fetchEvents();
-})();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCalendarPage);
+} else {
+    initCalendarPage();
+}
+
+document.addEventListener('ancore:content-loaded', initCalendarPage);

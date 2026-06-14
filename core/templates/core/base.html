@@ -132,17 +132,21 @@
         </div>
     </main>
 
-    {% block page_modals %}{% endblock %}
-
-    {% if messages %}
-    <div class="notifications-container">
-        {% for message in messages %}
-        <div class="notification {{ message.tags }}">
-            {{ message }}
-        </div>
-        {% endfor %}
+    <div id="app-page-modals">
+        {% block page_modals %}{% endblock %}
     </div>
-    {% endif %}
+
+    <div id="app-notifications">
+        {% if messages %}
+        <div class="notifications-container">
+            {% for message in messages %}
+            <div class="notification {{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
 
     {% if request.user.is_authenticated %}
     <script>
@@ -156,14 +160,14 @@
     {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/lucide-icons.js' %}?v=20260609-lucide-icons"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260614-page-loading-overlay"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260614-app-wide-navigation-v2"></script>
     <script src="{% static 'js/topbar.js' %}"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260614-directory-date-fixed"></script>
-    <script src="{% static 'js/profile.js' %}?v=20260608-company-photo-picker-first"></script>
-    <script src="{% static 'js/notifications.js' %}"></script>
-    <script src="{% static 'js/file-upload.js' %}?v=20260605-trash-icon"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260614-app-wide-navigation"></script>
+    <script src="{% static 'js/profile.js' %}?v=20260614-app-wide-navigation"></script>
+    <script src="{% static 'js/notifications.js' %}?v=20260614-app-wide-navigation"></script>
+    <script src="{% static 'js/file-upload.js' %}?v=20260614-app-wide-navigation"></script>
 </body>
 </html>

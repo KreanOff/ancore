@@ -1,14 +1,20 @@
 // Notifications System
-document.addEventListener('DOMContentLoaded', function() {
+function initNotifications() {
     const notifications = document.querySelectorAll('.notification');
     
     notifications.forEach((notification, index) => {
+        if (notification.dataset.notificationInitialized === 'true') return;
+        notification.dataset.notificationInitialized = 'true';
+
         // Auto-hide notification after 5 seconds
         setTimeout(() => {
             hideNotification(notification);
         }, 5000 + (index * 500)); // Stagger multiple notifications
     });
-});
+}
+
+document.addEventListener('DOMContentLoaded', initNotifications);
+document.addEventListener('ancore:content-loaded', initNotifications);
 
 function hideNotification(notification) {
     notification.classList.add('hiding');

@@ -1,4 +1,12 @@
 function initTasksPage() {
+    if (window.ancoreTasksPageListenersController) {
+        window.ancoreTasksPageListenersController.abort();
+    }
+
+    const pageListenersController = typeof AbortController === 'function' ? new AbortController() : null;
+    window.ancoreTasksPageListenersController = pageListenersController;
+    const pageListenerOptions = pageListenersController ? { signal: pageListenersController.signal } : false;
+
     const taskRows = document.querySelectorAll('.task-row');
     const projectRows = document.querySelectorAll('.tasks-project-row');
     const sectionRows = document.querySelectorAll('.tasks-section-row');
@@ -142,6 +150,15 @@ function initTasksPage() {
     initKanbanColumnReorder();
     initKanbanWallpapers();
     initDirectoryColumnResize();
+
+    function navigateWithinApp(viewUrl) {
+        if (window.AncoreApp?.canNavigatePartially?.(viewUrl)) {
+            window.AncoreApp.navigate(viewUrl);
+            return;
+        }
+
+        window.location.href = viewUrl;
+    }
 
     function initKanbanWallpapers() {
         const panel = document.querySelector('[data-kanban-wallpaper-panel]');
@@ -2342,7 +2359,7 @@ function initTasksPage() {
         if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
             closeEmojiPicker();
         }
-    });
+    }, pageListenerOptions);
 
     if (projectNameInput) {
         projectNameInput.addEventListener('input', function() {
@@ -2518,7 +2535,7 @@ function initTasksPage() {
             const openModalEl = document.querySelector('.tasks-modal.is-open');
             if (openModalEl) closeModal(openModalEl);
         }
-    });
+    }, pageListenerOptions);
 
     document.querySelectorAll('.tasks-toggle input').forEach(input => {
         input.addEventListener('change', function() {
@@ -2556,7 +2573,7 @@ function initTasksPage() {
             const viewUrl = this.getAttribute('data-view-url');
             if (viewUrl) {
                 rememberTaskReturnPoint(viewUrl);
-                window.location.href = viewUrl;
+                navigateWithinApp(viewUrl);
             }
         });
 
@@ -2567,7 +2584,7 @@ function initTasksPage() {
             if (!viewUrl) return;
             e.preventDefault();
             rememberTaskReturnPoint(viewUrl);
-            window.location.href = viewUrl;
+            navigateWithinApp(viewUrl);
         });
     });
 
@@ -2575,7 +2592,7 @@ function initTasksPage() {
         row.addEventListener('click', function(e) {
             if (shouldIgnoreRowClick(e, this)) return;
             const viewUrl = this.getAttribute('data-view-url');
-            if (viewUrl) window.location.href = viewUrl;
+            if (viewUrl) navigateWithinApp(viewUrl);
         });
 
         row.addEventListener('keydown', function(e) {
@@ -2584,7 +2601,7 @@ function initTasksPage() {
             const viewUrl = this.getAttribute('data-view-url');
             if (!viewUrl) return;
             e.preventDefault();
-            window.location.href = viewUrl;
+            navigateWithinApp(viewUrl);
         });
     });
 
@@ -3672,7 +3689,7 @@ function initTasksPage() {
             if (!width) return;
             setSidebarWidth(width);
             storeSidebarWidth(width);
-        });
+        }, pageListenerOptions);
 
         function updateFromPointer(clientX) {
             const rect = issueDetailMain.getBoundingClientRect();

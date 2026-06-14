@@ -281,7 +281,14 @@ class FileUploadManager {
     }
 }
 
-// Initialize the file upload manager when the DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+function initFileUploadManager() {
+    const fileInput = document.getElementById('file-input');
+    if (!fileInput || fileInput.dataset.fileUploadInitialized === 'true') return;
+
+    fileInput.dataset.fileUploadInitialized = 'true';
     new FileUploadManager();
-});
+}
+
+// Initialize the file upload manager when the DOM is ready
+document.addEventListener('DOMContentLoaded', initFileUploadManager);
+document.addEventListener('ancore:content-loaded', initFileUploadManager);

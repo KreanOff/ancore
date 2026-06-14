@@ -747,15 +747,17 @@
         submitStatusForm(event.target.closest('[data-profile-status-form]'));
     });
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            initDropdowns();
-            initEditModal();
-            initPhotoEditors();
-        });
-    } else {
+    function initProfilePage() {
         initDropdowns();
         initEditModal();
         initPhotoEditors();
     }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initProfilePage);
+    } else {
+        initProfilePage();
+    }
+
+    document.addEventListener('ancore:content-loaded', initProfilePage);
 })();

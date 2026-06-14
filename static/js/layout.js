@@ -15,6 +15,305 @@
     let secondaryMenuResizeState = null;
     let pageLoadingTimer = null;
     let pageLoadingFallbackTimer = null;
+    let partialNavigationController = null;
+
+    function getUrl(href) {
+        try {
+            return new URL(href, window.location.href);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function isPartialNavigationPath(pathname) {
+        const appShellPaths = [
+            /^\/$/,
+            /^\/settings\/?$/,
+            /^\/accounts\/profile\/?$/,
+            /^\/tasks\/?$/,
+            /^\/tasks\/groups\/\d+\/?$/,
+            /^\/kanban\/?$/,
+            /^\/kanban\/groups\/\d+\/?$/,
+            /^\/contacts\/?$/,
+            /^\/contacts\/users\/?$/,
+            /^\/contacts\/companies\/?$/,
+            /^\/contacts\/companies\/\d+\/?$/,
+            /^\/contacts\/companies\/\d+\/edit\/?$/,
+            /^\/contacts\/guests\/?$/,
+            /^\/contacts\/shared\/?$/,
+            /^\/contacts\/view-contact\/\d+\/?$/,
+            /^\/contacts\/view-contact\/\d+\/edit\/?$/,
+            /^\/calendar\/?$/,
+        ];
+
+        if (
+            pathname.startsWith('/admin/')
+            || pathname.startsWith('/static/')
+            || pathname.startsWith('/media/')
+            || pathname.startsWith('/accounts/login/')
+            || pathname.startsWith('/accounts/logout/')
+            || pathname.startsWith('/accounts/register/')
+            || pathname.startsWith('/accounts/profile/add-account/')
+            || pathname.startsWith('/accounts/profile/status/')
+            || pathname.startsWith('/accounts/profile/switch-account/')
+            || pathname.startsWith('/accounts/profile/remove-account/')
+            || pathname.startsWith('/accounts/presence/')
+            || pathname.startsWith('/calendar/events/')
+            || pathname.includes('/lookup/')
+            || pathname.includes('/delete')
+            || pathname.includes('/update/')
+            || pathname.includes('/bulk-update-status/')
+            || pathname.includes('/reorder-columns/')
+            || pathname.includes('/share/')
+        ) {
+            return false;
+        }
+
+        return appShellPaths.some(pattern => pattern.test(pathname));
+    }
+
+    function canUsePartialNavigation(href) {
+        const url = getUrl(href);
+        if (!url || url.origin !== window.location.origin) {
+            return false;
+        }
+
+        return isPartialNavigationPath(url.pathname);
+    }
+
+    function syncSidebarState(nextDocument) {
+        const currentLinks = document.querySelectorAll('.sidebar .nav-link');
+        const nextLinks = nextDocument.querySelectorAll('.sidebar .nav-link');
+
+        currentLinks.forEach(function (link, index) {
+            const nextLink = nextLinks[index];
+            if (!nextLink) return;
+
+            link.className = nextLink.className;
+            if (nextLink.hasAttribute('aria-current')) {
+                link.setAttribute('aria-current', nextLink.getAttribute('aria-current'));
+            } else {
+                link.removeAttribute('aria-current');
+            }
+        });
+    }
+
+    function assetUrl(url) {
+        try {
+            return new URL(url, window.location.href).href;
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function copyAttributes(from, to) {
+        Array.from(from.attributes).forEach(attribute => {
+            to.setAttribute(attribute.name, attribute.value);
+        });
+    }
+
+    function hasLoadedAsset(selector, property, value) {
+        return Array.from(document.querySelectorAll(selector)).some(element => element[property] === value);
+    }
+
+    function loadMissingStyles(nextDocument) {
+        nextDocument.querySelectorAll('link[rel~="stylesheet"][href]').forEach(link => {
+            const href = assetUrl(link.getAttribute('href'));
+            if (!href || hasLoadedAsset('link[rel~="stylesheet"][href]', 'href', href)) {
+                return;
+            }
+
+            const clone = link.cloneNode(false);
+            clone.href = href;
+            document.head.appendChild(clone);
+        });
+    }
+
+    function loadMissingExternalScripts(nextDocument) {
+        const loadingScripts = [];
+
+        nextDocument.querySelectorAll('script[src]').forEach(script => {
+            const src = assetUrl(script.getAttribute('src'));
+            if (!src || hasLoadedAsset('script[src]', 'src', src)) {
+                return;
+            }
+
+            const clone = document.createElement('script');
+            copyAttributes(script, clone);
+            clone.src = src;
+            clone.async = false;
+            loadingScripts.push(new Promise(resolve => {
+                clone.addEventListener('load', resolve, { once: true });
+                clone.addEventListener('error', resolve, { once: true });
+            }));
+            document.body.appendChild(clone);
+        });
+
+        return Promise.all(loadingScripts);
+    }
+
+    function runInlineScripts(scope) {
+        if (!scope) return;
+
+        scope.querySelectorAll('script').forEach(script => {
+            const replacement = document.createElement('script');
+            copyAttributes(script, replacement);
+            if (script.src) {
+                replacement.src = script.src;
+            } else {
+                replacement.textContent = script.textContent;
+            }
+            script.replaceWith(replacement);
+        });
+    }
+
+    function updateTasksUiBodyClass() {
+        document.body.classList.toggle('tasks-ui', Boolean(document.querySelector('.tasks-page')));
+    }
+
+    function clearTransientPageState() {
+        document.body.classList.remove(
+            'modal-open',
+            'profile-edit-modal-open',
+            'contacts-photo-editor-open',
+            'is-resizing-tasks-sidebar',
+            'is-resizing-directory-columns'
+        );
+    }
+
+    function scrollAfterNavigation(url) {
+        if (url.hash) {
+            const targetId = decodeURIComponent(url.hash.slice(1));
+            const target = targetId ? document.getElementById(targetId) : null;
+            if (target) {
+                target.scrollIntoView({ block: 'start' });
+                return;
+            }
+        }
+
+        window.scrollTo({ top: 0, left: 0 });
+        document.querySelector('.main-content')?.scrollTo({ top: 0, left: 0 });
+    }
+
+    function replaceAppRegion(selector, nextDocument) {
+        const currentElement = document.querySelector(selector);
+        const nextElement = nextDocument.querySelector(selector);
+
+        if (!currentElement || !nextElement) {
+            return false;
+        }
+
+        currentElement.replaceWith(nextElement.cloneNode(true));
+        return true;
+    }
+
+    async function finishPartialNavigation(nextDocument, url, options) {
+        const hasRequiredRegions = document.querySelector('#secondary-menu .secondary-menu-panel')
+            && document.querySelector('.main-content .page-container')
+            && document.querySelector('#app-page-modals')
+            && document.querySelector('#app-notifications')
+            && nextDocument.querySelector('#secondary-menu .secondary-menu-panel')
+            && nextDocument.querySelector('.main-content .page-container')
+            && nextDocument.querySelector('#app-page-modals')
+            && nextDocument.querySelector('#app-notifications');
+
+        if (!hasRequiredRegions) {
+            window.location.href = url.href;
+            return;
+        }
+
+        loadMissingStyles(nextDocument);
+
+        const nextTitle = nextDocument.querySelector('title');
+        if (nextTitle) {
+            document.title = nextTitle.textContent;
+        }
+
+        clearTransientPageState();
+        syncSidebarState(nextDocument);
+
+        const secondaryMenuUpdated = replaceAppRegion('#secondary-menu .secondary-menu-panel', nextDocument);
+        const pageUpdated = replaceAppRegion('.main-content .page-container', nextDocument);
+        const modalsUpdated = replaceAppRegion('#app-page-modals', nextDocument);
+        const notificationsUpdated = replaceAppRegion('#app-notifications', nextDocument);
+
+        if (!secondaryMenuUpdated || !pageUpdated || !modalsUpdated || !notificationsUpdated) {
+            window.location.href = url.href;
+            return;
+        }
+
+        runInlineScripts(document.querySelector('.main-content .page-container'));
+        runInlineScripts(document.querySelector('#app-page-modals'));
+        await loadMissingExternalScripts(nextDocument);
+
+        if (options?.updateHistory !== false) {
+            const historyMethod = options?.replace ? 'replaceState' : 'pushState';
+            window.history[historyMethod]({ ancorePartialNavigation: true }, '', url.href);
+        }
+
+        updateTasksUiBodyClass();
+        scrollAfterNavigation(url);
+        window.AncoreIcons?.render(document);
+        document.dispatchEvent(new CustomEvent('ancore:content-loaded', { detail: { url: url.href } }));
+    }
+
+    async function navigatePartially(href, options) {
+        const url = getUrl(href);
+        if (!url || !canUsePartialNavigation(url.href)) {
+            return false;
+        }
+
+        if (partialNavigationController) {
+            partialNavigationController.abort();
+        }
+
+        const navigationController = typeof AbortController === 'function' ? new AbortController() : null;
+        partialNavigationController = navigationController;
+        document.body.classList.add('app-partial-navigation');
+
+        try {
+            const requestOptions = {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html',
+                },
+                credentials: 'same-origin',
+            };
+
+            if (navigationController) {
+                requestOptions.signal = navigationController.signal;
+            }
+
+            const response = await fetch(url.href, requestOptions);
+
+            if (!response.ok) {
+                window.location.href = url.href;
+                return true;
+            }
+
+            const html = await response.text();
+            const nextDocument = new DOMParser().parseFromString(html, 'text/html');
+            const responseUrl = getUrl(response.url) || url;
+
+            await finishPartialNavigation(nextDocument, responseUrl, options);
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                window.location.href = url.href;
+            }
+        } finally {
+            if (!navigationController || partialNavigationController === navigationController) {
+                partialNavigationController = null;
+                document.body.classList.remove('app-partial-navigation');
+            }
+        }
+
+        return true;
+    }
+
+    window.AncoreApp = Object.assign(window.AncoreApp || {}, {
+        canNavigatePartially: canUsePartialNavigation,
+        navigate: navigatePartially,
+    });
 
     function setPageLoading(loading) {
         root.classList.toggle('app-page-loading', loading);
@@ -107,11 +406,31 @@
             return;
         }
 
+        const target = e.target instanceof Element ? e.target : e.target?.parentElement;
+        const link = target?.closest('a[href]');
+        if (link && canUsePartialNavigation(link.href)) {
+            e.preventDefault();
+            navigatePartially(link.href);
+            return;
+        }
+
         window.setTimeout(function () {
             if (!e.defaultPrevented) {
                 requestPageLoading();
             }
         }, 0);
+    });
+
+    if (canUsePartialNavigation(window.location.href)) {
+        window.history.replaceState({ ancorePartialNavigation: true }, '', window.location.href);
+    }
+
+    window.addEventListener('popstate', function () {
+        if (!canUsePartialNavigation(window.location.href)) {
+            return;
+        }
+
+        navigatePartially(window.location.href, { replace: true, updateHistory: false });
     });
 
     document.addEventListener('submit', function (e) {
