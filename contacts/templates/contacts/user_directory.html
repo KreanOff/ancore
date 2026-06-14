@@ -38,32 +38,52 @@
             </div>
         </form>
 
-        <div class="tasks-table-wrap contacts-list-wrap">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-user-directory-sheet">
             {% if users %}
-            <div class="contacts-list" role="list">
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
+                    <span class="tasks-directory-header-select contacts-directory-sheet__cell" data-column="select"></span>
+                    <span class="contacts-directory-sheet__cell" data-column="person">OSOBA</span>
+                    <span class="contacts-directory-sheet__cell" data-column="ancore_id">ID ANCORE / EMAIL</span>
+                    <span class="contacts-directory-sheet__cell" data-column="presence">STATUS</span>
+                    <span class="contacts-directory-sheet__cell" data-column="action">AKCJA</span>
+                </div>
+                <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="Lista osób">
                 {% for user_item in users %}
-                <div class="contacts-row contacts-row--static" role="listitem">
-                    {% user_avatar user_item as user_item_avatar %}
-                    {% include 'accounts/includes/user_avatar.html' with avatar=user_item_avatar avatar_class='contacts-avatar' only %}
-                    <span class="contacts-row-main">
-                        <strong>{{ user_item.get_full_name|default:user_item.email }}</strong>
-                        <small>{{ user_item.username }} · {{ user_item.email }}</small>
+                <article class="tasks-issue-row tasks-directory-row contacts-directory-row contacts-user-directory-row contacts-directory-sheet__row"
+                         data-user-id="{{ user_item.pk }}"
+                         data-search-primary="{{ user_item.get_full_name|default:user_item.email }} {{ user_item.username }}"
+                         data-search-index="{{ user_item.get_full_name|default:user_item.email }} {{ user_item.username }} {{ user_item.email }} {{ user_item.get_presence_status_display }}">
+                    <input type="checkbox" class="tasks-row-checkbox contacts-directory-sheet__cell" data-column="select" aria-label="Zaznacz osobę {{ user_item.get_full_name|default:user_item.email }}" data-user-id="{{ user_item.pk }}">
+                    <span class="tasks-directory-name contacts-directory-contact contacts-directory-sheet__cell" data-column="person">
+                        {% user_avatar user_item as user_item_avatar %}
+                        {% include 'accounts/includes/user_avatar.html' with avatar=user_item_avatar avatar_class='tasks-directory-avatar contacts-directory-avatar contacts-person-avatar' only %}
+                        <span class="contacts-directory-name-text">
+                            <strong>{{ user_item.get_full_name|default:user_item.email }}</strong>
+                            <small>{{ user_item.job_title|default:"Użytkownik aplikacji" }}</small>
+                        </span>
                     </span>
-                    <span class="contacts-row-channel profile-presence-badge {{ user_item.presence_status_class }}">
+                    <span class="contacts-directory-company contacts-directory-sheet__cell" data-column="ancore_id">
+                        {{ user_item.username }} · {{ user_item.email }}
+                    </span>
+                    <span class="contacts-user-presence profile-presence-badge {{ user_item.presence_status_class }} contacts-directory-sheet__cell" data-column="presence">
                         {% include 'accounts/includes/presence_status_icon.html' with status=user_item.presence_status %}
                         {{ user_item.get_presence_status_display }}
                     </span>
+                    <span class="contacts-directory-action contacts-directory-sheet__cell" data-column="action">
                     {% if user_item.pk in existing_user_contact_ids %}
-                    <span class="status-indicator contacts-status-active">W kontaktach</span>
+                        <span class="status-indicator contacts-status-active">W kontaktach</span>
                     {% else %}
-                    <form method="post" action="{% url 'contacts:add-user-contact' user_item.pk %}">
-                        {% csrf_token %}
-                        <button type="submit" class="tasks-tag-topbar-button">Dodaj</button>
-                    </form>
+                        <form method="post" action="{% url 'contacts:add-user-contact' user_item.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="tasks-tag-topbar-button">Dodaj</button>
+                        </form>
                     {% endif %}
-                </div>
+                    </span>
+                </article>
                 {% endfor %}
-            </div>
+                </div>
+            </section>
             {% else %}
             <section class="tasks-empty-state contacts-empty-state">
                 <div class="tasks-empty-state__icon" aria-hidden="true">

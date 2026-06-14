@@ -6831,6 +6831,12 @@ body.is-resizing-directory-columns {
     overflow: visible;
 }
 
+.tasks-directory-board.tasks-directory-sheet,
+.tasks-directory-board.contacts-directory-sheet {
+    overflow: auto;
+    scrollbar-gutter: stable;
+}
+
 .tasks-directory-board .tasks-directory-group {
     overflow: visible;
     border: 0;
@@ -6850,6 +6856,14 @@ body.is-resizing-directory-columns {
     align-items: center;
     column-gap: 0.75rem;
     padding: 0 1rem 0 1.75rem;
+}
+
+.tasks-directory-board.tasks-directory-sheet .tasks-directory-header,
+.tasks-directory-board.tasks-directory-sheet .tasks-directory-list .tasks-directory-row,
+.tasks-directory-board.contacts-directory-sheet .tasks-directory-header,
+.tasks-directory-board.contacts-directory-sheet .tasks-directory-list .tasks-directory-row {
+    width: max-content;
+    min-width: 100%;
 }
 
 .tasks-directory-sheet__cell,
@@ -6891,6 +6905,18 @@ body.is-resizing-directory-columns {
     align-items: center;
     border-left: 1px solid var(--tasks-directory-column-separator);
     padding-left: 0.75rem;
+}
+
+.tasks-directory-sheet .tasks-directory-header > [data-column="section"],
+.tasks-directory-sheet .tasks-directory-header > [data-column="project"],
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > [data-column="section"],
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > [data-column="project"] {
+    border-left: 0;
+}
+
+.tasks-project-sheet .tasks-directory-header > [data-column="project"],
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="project"] {
+    border-left: 0;
 }
 
 .tasks-directory-header {

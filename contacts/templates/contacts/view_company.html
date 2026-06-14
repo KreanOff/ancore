@@ -139,34 +139,54 @@
                         <div class="tasks-issue-activity-head">
                             <h2>Kontakty w firmie</h2>
                         </div>
-                        <div class="contacts-list contacts-company-contact-list" role="list">
+                        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-company-contacts-sheet">
+                            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                                <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
+                                    <span class="tasks-directory-header-select contacts-directory-sheet__cell" data-column="select"></span>
+                                    <span class="contacts-directory-sheet__cell" data-column="contact">KONTAKT</span>
+                                    <span class="contacts-directory-sheet__cell" data-column="role">ROLA</span>
+                                    <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE</span>
+                                    <span class="contacts-directory-sheet__cell" data-column="status">STATUS</span>
+                                </div>
+                                <div class="tasks-issue-list tasks-directory-list contacts-directory-list contacts-company-contact-list" aria-label="Kontakty w firmie">
                             {% for contact in company_contacts %}
-                            <a href="{% url 'contacts:view-contact' contact.pk %}" class="contacts-row" role="listitem">
-                                {% with linked_user_contact=contact.current_user_links.0 %}
-                                    {% if linked_user_contact %}
-                                        {% user_avatar linked_user_contact.target_user as contact_user_avatar %}
-                                        {% include 'accounts/includes/user_avatar.html' with avatar=contact_user_avatar avatar_class='contacts-avatar contacts-person-avatar' only %}
-                                    {% else %}
-                                        <span class="profile-avatar profile-avatar--blue contacts-avatar contacts-person-avatar" aria-hidden="true">
-                                            {% include 'accounts/includes/user_avatar_icon.html' %}
-                                        </span>
-                                    {% endif %}
-                                {% endwith %}
-                                <span class="contacts-row-main">
-                                    <strong>{{ contact.display_name }}</strong>
-                                    <small>
-                                        {% if contact.company %}{{ contact.company }}{% else %}Brak firmy{% endif %}
-                                        {% if contact.role %} · {{ contact.role }}{% endif %}
-                                    </small>
+                            <article class="tasks-issue-row tasks-directory-row contacts-directory-row contacts-directory-sheet__row"
+                                     role="link"
+                                     tabindex="0"
+                                     data-contact-id="{{ contact.pk }}"
+                                     data-search-primary="{{ contact.display_name|default:''|striptags }} {{ contact.company|default:''|striptags }}"
+                                     data-search-index="{{ contact.display_name|default:''|striptags }} {{ contact.company|default:''|striptags }} {{ contact.role|default:''|striptags }} {{ contact.email|default:'' }} {{ contact.phone|default:'' }} {{ contact.get_status_display }}"
+                                     data-view-url="{% url 'contacts:view-contact' contact.pk %}">
+                                <input type="checkbox" class="tasks-row-checkbox contacts-directory-sheet__cell" data-column="select" aria-label="Zaznacz kontakt {{ contact.display_name }}" data-contact-id="{{ contact.pk }}">
+                                <span class="tasks-directory-name contacts-directory-contact contacts-directory-sheet__cell" data-column="contact">
+                                    {% with linked_user_contact=contact.current_user_links.0 %}
+                                        {% if linked_user_contact %}
+                                            {% user_avatar linked_user_contact.target_user as contact_user_avatar %}
+                                            {% include 'accounts/includes/user_avatar.html' with avatar=contact_user_avatar avatar_class='tasks-directory-avatar contacts-directory-avatar contacts-person-avatar' only %}
+                                        {% else %}
+                                            <span class="profile-avatar profile-avatar--blue tasks-directory-avatar contacts-directory-avatar contacts-person-avatar" aria-hidden="true">
+                                                {% include 'accounts/includes/user_avatar_icon.html' %}
+                                            </span>
+                                        {% endif %}
+                                    {% endwith %}
+                                    <span class="contacts-directory-name-text">
+                                        <strong>{{ contact.display_name }}</strong>
+                                        <small>{% if contact.company %}{{ contact.company }}{% else %}Brak firmy{% endif %}</small>
+                                    </span>
                                 </span>
-                                <span class="contacts-row-channel">
+                                <span class="contacts-directory-company contacts-directory-sheet__cell" data-column="role">
+                                    {{ contact.role|default:"Brak roli" }}
+                                </span>
+                                <span class="contacts-directory-channel contacts-directory-sheet__cell" data-column="channel">
                                     {% if contact.email %}{{ contact.email }}{% elif contact.phone %}{{ contact.phone }}{% else %}Brak danych kontaktowych{% endif %}
                                 </span>
-                                {% include 'contacts/includes/contact_status_badge.html' with contact=contact only %}
-                            </a>
+                                {% include 'contacts/includes/contact_status_badge.html' with contact=contact cell_class='contacts-directory-sheet__cell' data_column='status' only %}
+                            </article>
                             {% empty %}
-                            <p class="tasks-issue-empty-feed">Brak kontaktów powiązanych z firmą.</p>
+                            <div class="tasks-empty-section contacts-directory-empty">Brak kontaktów powiązanych z firmą.</div>
                             {% endfor %}
+                                </div>
+                            </section>
                         </div>
                     </section>
                     {% endif %}

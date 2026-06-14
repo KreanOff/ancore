@@ -3745,23 +3745,38 @@ function initTasksPage() {
     }
 
     function initDirectoryColumnResize() {
-        const boards = document.querySelectorAll('.tasks-directory-board.tasks-directory-sheet');
+        const boards = document.querySelectorAll('.tasks-directory-board.tasks-directory-sheet, .tasks-directory-board.contacts-directory-sheet');
         if (!boards.length) return;
 
-        const storageKey = `${taskAppSegment}:directoryColumnWidths`;
         const columnMinimums = {
             select: 18,
             project: 180,
             section: 180,
+            contact: 180,
+            company: 180,
+            person: 170,
+            item: 180,
             members: 160,
             default_assignee: 220,
+            company_role: 150,
+            website: 140,
+            channel: 160,
+            status: 112,
+            contact_count: 112,
+            role: 120,
+            shared_by: 150,
+            note: 160,
+            permission: 112,
+            ancore_id: 170,
+            presence: 120,
+            action: 96,
             created_at: 104,
             spacer: 80
         };
         const fixedColumns = new Set(['created_at']);
-        const fixedColumnWidths = {
-            created_at: 'var(--tasks-directory-date-width)'
-        };
+        const resizeMediaQuery = typeof window.matchMedia === 'function'
+            ? window.matchMedia('(min-width: 901px)')
+            : { matches: true };
         let activeResize = null;
 
         boards.forEach(board => {
@@ -3769,13 +3784,11 @@ function initTasksPage() {
             if (!header || header.dataset.directoryResizeReady === 'true') return;
 
             header.dataset.directoryResizeReady = 'true';
-            applyStoredDirectoryWidths(board);
 
             const cells = getDirectoryHeaderCells(header);
             cells.forEach((cell, index) => {
                 const column = cell.dataset.column || '';
-                const nextCell = getNextDirectoryResizeCell(cells, index);
-                if (column === 'select' || isFixedDirectoryColumn(column) || !nextCell) return;
+                if (!isResizableDirectoryColumn(column)) return;
 
                 const handle = document.createElement('button');
                 const label = getDirectoryColumnLabel(cell);
@@ -3788,7 +3801,7 @@ function initTasksPage() {
                 handle.addEventListener('pointerdown', event => {
                     if (event.button !== undefined && event.button !== 0) return;
 
-                    const state = createDirectoryResizeState(board, header, cells, cell, nextCell, handle, event.clientX);
+                    const state = createDirectoryResizeState(board, header, cells, cell, handle, event.clientX);
                     if (!state) return;
 
                     event.preventDefault();
@@ -3819,7 +3832,7 @@ function initTasksPage() {
                         return;
                     }
 
-                    const state = createDirectoryResizeState(board, header, cells, cell, nextCell, handle, 0);
+                    const state = createDirectoryResizeState(board, header, cells, cell, handle, 0);
                     if (!state) return;
 
                     event.preventDefault();
@@ -3833,16 +3846,27 @@ function initTasksPage() {
 
                 cell.appendChild(handle);
             });
+
+            syncDirectoryResizeGrid(board);
         });
 
-        function createDirectoryResizeState(board, header, cells, cell, nextCell, handle, startX) {
-            if (!isDirectoryHeaderVisible(header)) return null;
+        const syncAllDirectoryResizeGrids = () => {
+            boards.forEach(syncDirectoryResizeGrid);
+        };
+
+        if (typeof resizeMediaQuery.addEventListener === 'function') {
+            resizeMediaQuery.addEventListener('change', syncAllDirectoryResizeGrids, pageListenerOptions);
+        } else if (typeof resizeMediaQuery.addListener === 'function') {
+            resizeMediaQuery.addListener(syncAllDirectoryResizeGrids);
+        }
+
+        function createDirectoryResizeState(board, header, cells, cell, handle, startX) {
+            if (!isDirectoryResizeEnabled(header)) return null;
 
             const columnIndex = cells.indexOf(cell);
-            const nextColumnIndex = cells.indexOf(nextCell);
-            const widths = fitDirectoryTrackWidths(header, cells, getDirectoryTrackWidths(header, cells));
+            const widths = getDirectoryTrackWidths(header, cells);
 
-            if (columnIndex < 0 || nextColumnIndex < 0 || !widths[columnIndex] || !widths[nextColumnIndex]) {
+            if (columnIndex < 0 || !widths[columnIndex]) {
                 return null;
             }
 
@@ -3856,22 +3880,17 @@ function initTasksPage() {
                 startX,
                 widths,
                 columnIndex,
-                nextColumnIndex,
                 startColumnWidth: widths[columnIndex],
-                startNextColumnWidth: widths[nextColumnIndex],
-                columnMinWidth: getDirectoryColumnMinWidth(cell.dataset.column),
-                nextColumnMinWidth: getDirectoryColumnMinWidth(nextCell.dataset.column)
+                columnMinWidth: getDirectoryColumnMinWidth(cell.dataset.column)
             };
         }
 
         function updateDirectoryResize(state, delta) {
             const minDelta = state.columnMinWidth - state.startColumnWidth;
-            const maxDelta = state.startNextColumnWidth - state.nextColumnMinWidth;
-            const clampedDelta = Math.min(Math.max(delta, minDelta), maxDelta);
+            const clampedDelta = Math.max(delta, minDelta);
             const nextWidths = state.widths.slice();
 
             nextWidths[state.columnIndex] = Math.round(state.startColumnWidth + clampedDelta);
-            nextWidths[state.nextColumnIndex] = Math.round(state.startNextColumnWidth - clampedDelta);
             state.widths = nextWidths;
             setDirectoryGrid(state.board, state.cells, nextWidths);
         }
@@ -3892,19 +3911,19 @@ function initTasksPage() {
         }
 
         function applyStoredDirectoryWidths(board) {
-            const storedWidths = readStoredDirectoryWidths();
-            if (!Object.keys(storedWidths).length) return;
-
             const header = board.querySelector('.tasks-directory-header');
             if (!header) return;
-            if (!isDirectoryHeaderVisible(header)) return;
+            if (!isDirectoryResizeEnabled(header)) return;
 
             const cells = getDirectoryHeaderCells(header);
+            const storedWidths = readStoredDirectoryWidths(cells);
+            if (!Object.keys(storedWidths).length) return;
+
             const widths = getDirectoryTrackWidths(header, cells);
             let hasStoredColumn = false;
 
             cells.forEach((cell, index) => {
-                if (isFixedDirectoryColumn(cell.dataset.column)) return;
+                if (!isResizableDirectoryColumn(cell.dataset.column)) return;
 
                 const storageColumn = getDirectoryStorageColumn(cell.dataset.column);
                 const storedWidth = storedWidths[storageColumn];
@@ -3916,19 +3935,12 @@ function initTasksPage() {
             });
 
             if (hasStoredColumn) {
-                setDirectoryGrid(board, cells, fitDirectoryTrackWidths(header, cells, widths));
+                setDirectoryGrid(board, cells, widths);
             }
         }
 
         function getDirectoryHeaderCells(header) {
             return Array.from(header.querySelectorAll('[data-column]'));
-        }
-
-        function getNextDirectoryResizeCell(cells, index) {
-            return cells.slice(index + 1).find(cell => {
-                const column = cell.dataset.column || '';
-                return column !== 'select' && !isFixedDirectoryColumn(column);
-            }) || null;
         }
 
         function getDirectoryTrackWidths(header, cells) {
@@ -3944,63 +3956,27 @@ function initTasksPage() {
             return cells.map(cell => Math.round(cell.getBoundingClientRect().width));
         }
 
-        function fitDirectoryTrackWidths(header, cells, widths) {
-            const availableWidth = getDirectoryAvailableTrackWidth(header, cells);
-            const totalWidth = widths.reduce((total, width) => total + width, 0);
+        function syncDirectoryResizeGrid(board) {
+            const header = board.querySelector('.tasks-directory-header');
 
-            if (!availableWidth || totalWidth <= availableWidth) {
-                return widths;
+            if (!header || !isDirectoryResizeEnabled(header)) {
+                board.style.removeProperty('--tasks-directory-grid');
+                return;
             }
 
-            const nextWidths = widths.slice();
-            let overflow = totalWidth - availableWidth;
-            let shrinkable = getDirectoryShrinkableColumns(cells, nextWidths);
-
-            while (overflow > 0 && shrinkable.length) {
-                const totalRoom = shrinkable.reduce((total, item) => total + item.room, 0);
-                if (totalRoom <= 0) break;
-
-                shrinkable.forEach(item => {
-                    if (overflow <= 0) return;
-
-                    const shrink = Math.min(item.room, overflow, Math.max(1, Math.round((item.room / totalRoom) * overflow)));
-                    nextWidths[item.index] -= shrink;
-                    overflow -= shrink;
-                });
-
-                shrinkable = getDirectoryShrinkableColumns(cells, nextWidths);
-            }
-
-            return nextWidths.map(width => Math.max(1, Math.round(width)));
-        }
-
-        function getDirectoryAvailableTrackWidth(header, cells) {
-            const styles = window.getComputedStyle(header);
-            const headerWidth = header.getBoundingClientRect().width;
-            const padding = Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
-            const columnGap = Number.parseFloat(styles.columnGap) || 0;
-
-            return Math.max(0, headerWidth - padding - (columnGap * Math.max(0, cells.length - 1)));
-        }
-
-        function getDirectoryShrinkableColumns(cells, widths) {
-            return cells
-                .map((cell, index) => ({
-                    index,
-                    room: widths[index] - getDirectoryColumnMinWidth(cell.dataset.column)
-                }))
-                .filter(item => item.room > 0 && !isFixedDirectoryColumn(cells[item.index].dataset.column));
+            applyStoredDirectoryWidths(board);
         }
 
         function isDirectoryHeaderVisible(header) {
             return header.getClientRects().length > 0;
         }
 
+        function isDirectoryResizeEnabled(header) {
+            return resizeMediaQuery.matches && isDirectoryHeaderVisible(header);
+        }
+
         function setDirectoryGrid(board, cells, widths) {
-            const tracks = widths.map((width, index) => {
-                const column = cells[index]?.dataset.column || '';
-                return fixedColumnWidths[column] || `${Math.round(width)}px`;
-            });
+            const tracks = widths.map(width => `${Math.round(width)}px`);
 
             board.style.setProperty('--tasks-directory-grid', tracks.join(' '));
         }
@@ -4017,15 +3993,53 @@ function initTasksPage() {
             return column || '';
         }
 
+        function getDirectoryStorageSegment() {
+            const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
+
+            if (pathSegment === 'contacts') return 'contacts';
+            if (pathSegment === 'kanban') return 'kanban';
+            return taskAppSegment;
+        }
+
+        function getDirectoryStorageKey(cells) {
+            const schema = cells
+                .map(cell => getDirectoryStorageColumn(cell.dataset.column))
+                .filter(Boolean)
+                .join('-') || 'default';
+
+            return `${getDirectoryStorageSegment()}:directoryColumnWidths:${schema}`;
+        }
+
         function isFixedDirectoryColumn(column) {
             return fixedColumns.has(column);
+        }
+
+        function isResizableDirectoryColumn(column) {
+            return column && column !== 'select' && column !== 'spacer' && !isFixedDirectoryColumn(column);
         }
 
         function getDirectoryColumnLabel(cell) {
             return (cell.textContent || 'kolumny').replace(/\s+/g, ' ').trim().toLowerCase();
         }
 
-        function readStoredDirectoryWidths() {
+        function readStoredDirectoryWidths(cells) {
+            const storageKey = getDirectoryStorageKey(cells);
+            const legacyStorageKey = `${taskAppSegment}:directoryColumnWidths`;
+            const keys = [storageKey];
+
+            if (getDirectoryStorageSegment() === taskAppSegment && storageKey !== legacyStorageKey) {
+                keys.push(legacyStorageKey);
+            }
+
+            for (const key of keys) {
+                const storedWidths = readStoredDirectoryWidthsByKey(key);
+                if (Object.keys(storedWidths).length) return storedWidths;
+            }
+
+            return {};
+        }
+
+        function readStoredDirectoryWidthsByKey(storageKey) {
             try {
                 const value = JSON.parse(window.localStorage.getItem(storageKey) || '{}');
                 return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -4040,13 +4054,13 @@ function initTasksPage() {
 
             state.cells.forEach((cell, index) => {
                 const column = cell.dataset.column;
-                if (!column || column === 'select' || isFixedDirectoryColumn(column)) return;
+                if (!isResizableDirectoryColumn(column)) return;
 
                 nextStoredWidths[getDirectoryStorageColumn(column)] = Math.round(widths[index]);
             });
 
             try {
-                window.localStorage.setItem(storageKey, JSON.stringify(nextStoredWidths));
+                window.localStorage.setItem(getDirectoryStorageKey(state.cells), JSON.stringify(nextStoredWidths));
             } catch (error) {
                 // localStorage may be unavailable in private or restricted contexts.
             }

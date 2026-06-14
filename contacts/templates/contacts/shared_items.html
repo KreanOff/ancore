@@ -24,29 +24,50 @@
             </div>
         </header>
 
-        <div class="tasks-table-wrap contacts-list-wrap">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-shared-directory-sheet">
             {% if shares %}
-            <div class="contacts-list" role="list">
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
+                    <span class="tasks-directory-header-select contacts-directory-sheet__cell" data-column="select"></span>
+                    <span class="contacts-directory-sheet__cell" data-column="item">ELEMENT</span>
+                    <span class="contacts-directory-sheet__cell" data-column="shared_by">UDOSTĘPNIŁ</span>
+                    <span class="contacts-directory-sheet__cell" data-column="note">WIADOMOŚĆ</span>
+                    <span class="contacts-directory-sheet__cell" data-column="permission">UPRAWNIENIA</span>
+                </div>
+                <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="Lista udostępnionych elementów">
                 {% for share in shares %}
                     {% if share.content_object %}
-                    <a href="{% if share.content_type.model == 'contact' %}{% url 'contacts:view-contact' share.object_id %}{% elif share.content_type.model == 'company' %}{% url 'contacts:view-company' share.object_id %}{% else %}#{% endif %}" class="contacts-row" role="listitem">
+                    <article class="tasks-issue-row tasks-directory-row contacts-directory-row contacts-shared-directory-row contacts-directory-sheet__row"
+                             role="link"
+                             tabindex="0"
+                             data-share-id="{{ share.pk }}"
+                             data-search-primary="{{ share.content_object|default:''|striptags }}"
+                             data-search-index="{{ share.content_object|default:''|striptags }} {{ share.shared_by.get_full_name|default:share.shared_by.email }} {{ share.note|default:''|striptags }} {{ share.get_permission_display }}"
+                             data-view-url="{% if share.content_type.model == 'contact' %}{% url 'contacts:view-contact' share.object_id %}{% elif share.content_type.model == 'company' %}{% url 'contacts:view-company' share.object_id %}{% endif %}">
+                        <input type="checkbox" class="tasks-row-checkbox contacts-directory-sheet__cell" data-column="select" aria-label="Zaznacz udostępnienie {{ share.content_object }}" data-share-id="{{ share.pk }}">
+                        <span class="tasks-directory-name contacts-directory-contact contacts-directory-sheet__cell" data-column="item">
                         {% if share.content_type.model == 'company' %}
-                        {% include 'contacts/includes/company_avatar.html' with company=share.content_object avatar_class='contacts-avatar contacts-company-avatar' only %}
+                            {% include 'contacts/includes/company_avatar.html' with company=share.content_object avatar_class='tasks-directory-avatar contacts-directory-avatar contacts-company-avatar' only %}
                         {% else %}
-                        <span class="profile-avatar profile-avatar--blue contacts-avatar contacts-person-avatar" aria-hidden="true">
-                            {% include 'accounts/includes/user_avatar_icon.html' %}
-                        </span>
+                            <span class="profile-avatar profile-avatar--blue tasks-directory-avatar contacts-directory-avatar contacts-person-avatar" aria-hidden="true">
+                                {% include 'accounts/includes/user_avatar_icon.html' %}
+                            </span>
                         {% endif %}
-                        <span class="contacts-row-main">
+                            <span class="contacts-directory-name-text">
                             <strong>{{ share.content_object }}</strong>
-                            <small>Od: {{ share.shared_by.get_full_name|default:share.shared_by.email }}</small>
+                                <small>{% if share.content_type.model == 'company' %}Firma{% else %}Kontakt{% endif %}</small>
+                            </span>
                         </span>
-                        <span class="contacts-row-channel">{{ share.note|default:"Bez wiadomości" }}</span>
-                        <span class="status-indicator contacts-status-partner">{{ share.get_permission_display }}</span>
-                    </a>
+                        <span class="contacts-directory-company contacts-directory-sheet__cell" data-column="shared_by">
+                            {{ share.shared_by.get_full_name|default:share.shared_by.email }}
+                        </span>
+                        <span class="contacts-directory-channel contacts-directory-sheet__cell" data-column="note">{{ share.note|default:"Bez wiadomości" }}</span>
+                        <span class="status-indicator contacts-status-partner contacts-directory-sheet__cell" data-column="permission">{{ share.get_permission_display }}</span>
+                    </article>
                     {% endif %}
                 {% endfor %}
-            </div>
+                </div>
+            </section>
             {% else %}
             <section class="tasks-empty-state contacts-empty-state">
                 <div class="tasks-empty-state__icon" aria-hidden="true">

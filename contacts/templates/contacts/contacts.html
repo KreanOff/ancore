@@ -55,6 +55,7 @@
                     <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE</span>
                     <span class="contacts-directory-sheet__cell" data-column="status">STATUS</span>
                     <span class="tasks-directory-header-date contacts-directory-sheet__cell" data-column="created_at">DATA</span>
+                    <span class="contacts-directory-spacer-cell contacts-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="{{ contacts_page_label|default:'Lista kontaktów' }}">
                 {% for item in contacts %}
@@ -97,6 +98,7 @@
                     </span>
                     {% include 'contacts/includes/contact_status_badge.html' with contact=item cell_class='contacts-directory-sheet__cell' data_column='status' only %}
                     <span class="tasks-row-date contacts-directory-sheet__cell" data-column="created_at" title="Data utworzenia">{{ item.created_at|date:"d.m.Y" }}</span>
+                    <span class="contacts-directory-spacer-cell contacts-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% endfor %}
                 </div>

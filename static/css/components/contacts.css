@@ -194,20 +194,37 @@
 }
 
 .contacts-directory-board {
+    --tasks-directory-grid: 18px minmax(240px, 1.08fr) minmax(160px, 0.72fr) minmax(220px, 0.9fr) minmax(150px, 0.62fr) var(--tasks-directory-date-width) minmax(160px, 1fr);
     padding: 0 0 1.25rem;
 }
 
 .contacts-directory-header,
 .contacts-directory-list .contacts-directory-row {
-    --tasks-directory-grid: 18px minmax(240px, 1.08fr) minmax(160px, 0.72fr) minmax(220px, 0.9fr) minmax(150px, 0.62fr) 96px;
     grid-template-columns: var(--tasks-directory-grid);
 }
 
+.contacts-user-directory-sheet {
+    --tasks-directory-grid: 18px minmax(170px, 1.08fr) minmax(180px, 0.86fr) minmax(128px, 0.58fr) 96px;
+}
+
+.contacts-shared-directory-sheet {
+    --tasks-directory-grid: 18px minmax(190px, 1.04fr) minmax(170px, 0.72fr) minmax(180px, 0.86fr) 124px;
+}
+
+.contacts-company-contacts-sheet {
+    --tasks-directory-grid: 18px minmax(180px, 1fr) minmax(120px, 0.58fr) minmax(170px, 0.82fr) minmax(126px, 0.56fr);
+}
+
 .contacts-directory-header > span {
+    position: relative;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.contacts-directory-spacer-cell {
+    min-width: 0;
 }
 
 .contacts-directory-sheet {
@@ -244,13 +261,25 @@
     padding-left: 0.75rem;
 }
 
+.contacts-directory-sheet .contacts-directory-header > [data-column="contact"],
+.contacts-directory-sheet .contacts-directory-header > [data-column="company"],
+.contacts-directory-sheet .contacts-directory-header > [data-column="person"],
+.contacts-directory-sheet .contacts-directory-header > [data-column="item"],
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="contact"],
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="company"],
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="person"],
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="item"] {
+    border-left: 0;
+}
+
 .contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .contacts-directory-sheet__cell {
     justify-self: stretch;
 }
 
 .contacts-directory-sheet .contacts-directory-list .tasks-row-date {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .contacts-directory-row {
@@ -343,6 +372,45 @@
     width: 16px;
     height: 16px;
     flex-basis: 16px;
+}
+
+.contacts-directory-action {
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+
+.contacts-directory-action form {
+    margin: 0;
+}
+
+.contacts-directory-action .tasks-tag-topbar-button {
+    min-height: 32px;
+    padding: 0 0.8rem;
+}
+
+.contacts-directory-action .status-indicator {
+    --tasks-status-icon-size: 9px;
+    gap: 0.45rem;
+    color: var(--tasks-status-color);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.contacts-directory-action .status-indicator::before {
+    width: var(--tasks-status-icon-size);
+    height: var(--tasks-status-icon-size);
+    flex-basis: var(--tasks-status-icon-size);
+}
+
+.contacts-company-contacts-sheet {
+    padding: 0;
+}
+
+.contacts-directory-empty {
+    border-bottom: 1px solid #e7e8eb;
+    background: #f7f7f8;
 }
 
 .contacts-filterbar {
@@ -1412,10 +1480,8 @@
 }
 
 @media (max-width: 900px) {
-    .contacts-directory-header,
-    .contacts-directory-list .contacts-directory-row {
-        --tasks-directory-grid: 18px minmax(0, 1fr) minmax(190px, 0.82fr) minmax(130px, 0.58fr) 96px;
-        grid-template-columns: var(--tasks-directory-grid);
+    .contacts-directory-board {
+        --tasks-directory-grid: 18px minmax(0, 1fr) minmax(190px, 0.82fr) minmax(130px, 0.58fr) 96px minmax(80px, 1fr);
     }
 
     .contacts-directory-header > :nth-child(3),
@@ -1426,6 +1492,18 @@
     .contacts-directory-header > :nth-child(4),
     .contacts-directory-list .contacts-directory-channel {
         display: inline-flex;
+    }
+
+    .contacts-user-directory-sheet {
+        --tasks-directory-grid: 18px minmax(0, 1fr) minmax(150px, 0.58fr) 112px;
+    }
+
+    .contacts-shared-directory-sheet {
+        --tasks-directory-grid: 18px minmax(0, 1fr) minmax(190px, 0.72fr) 132px;
+    }
+
+    .contacts-company-contacts-sheet {
+        --tasks-directory-grid: 18px minmax(0, 1fr) minmax(190px, 0.74fr) minmax(130px, 0.58fr);
     }
 
     .contacts-row {
@@ -1486,6 +1564,62 @@
 
     .contacts-directory-list .contacts-directory-row > .tasks-row-date {
         grid-area: date;
+    }
+
+    .contacts-directory-spacer-cell {
+        display: none;
+    }
+
+    .contacts-user-directory-sheet .contacts-directory-list .contacts-directory-row {
+        min-height: 76px;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        grid-template-areas:
+            "check person action"
+            ". presence presence";
+    }
+
+    .contacts-user-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="person"] {
+        grid-area: person;
+    }
+
+    .contacts-user-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="presence"] {
+        grid-area: presence;
+    }
+
+    .contacts-user-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="action"] {
+        grid-area: action;
+    }
+
+    .contacts-shared-directory-sheet .contacts-directory-list .contacts-directory-row {
+        min-height: 76px;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        grid-template-areas:
+            "check item permission"
+            ". note note";
+    }
+
+    .contacts-shared-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="item"] {
+        grid-area: item;
+    }
+
+    .contacts-shared-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="note"] {
+        grid-area: note;
+    }
+
+    .contacts-shared-directory-sheet .contacts-directory-list .contacts-directory-row > [data-column="permission"] {
+        grid-area: permission;
+    }
+
+    .contacts-company-contacts-sheet .contacts-directory-list .contacts-directory-row {
+        min-height: 76px;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        grid-template-areas:
+            "check contact status"
+            ". channel channel";
+    }
+
+    .contacts-company-contacts-sheet .contacts-directory-list .contacts-directory-row > [data-column="status"] {
+        grid-area: status;
     }
 }
 

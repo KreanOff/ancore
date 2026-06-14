@@ -49,6 +49,7 @@
                     <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE</span>
                     <span class="contacts-directory-sheet__cell" data-column="contact_count">KONTAKTY</span>
                     <span class="tasks-directory-header-date contacts-directory-sheet__cell" data-column="created_at">DATA</span>
+                    <span class="contacts-directory-spacer-cell contacts-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="Lista firm">
                 {% for company in companies %}
@@ -82,6 +83,7 @@
                     </span>
                     <span class="status-indicator contacts-status-customer contacts-directory-sheet__cell" data-column="contact_count">{{ company.contact_count }} kontaktów</span>
                     <span class="tasks-row-date contacts-directory-sheet__cell" data-column="created_at" title="Data utworzenia">{{ company.created_at|date:"d.m.Y" }}</span>
+                    <span class="contacts-directory-spacer-cell contacts-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% endfor %}
                 </div>
