@@ -2,7 +2,7 @@
 @import 'base/variables.css?v=20260613-ui-fonts-100';
 @import 'base/reset.css?v=20260613-ui-fonts-100';
 @import 'layout/sidebar.css?v=20260614-shell-boot-no-jitter';
-@import 'layout/main.css?v=20260614-shell-boot-no-jitter';
+@import 'layout/main.css?v=20260614-page-loading-opaque';
 @import 'layout/responsive.css?v=20260614-shell-boot-no-jitter';
 @import 'components/cards.css?v=20260613-ui-fonts-100';
 @import 'components/buttons.css';

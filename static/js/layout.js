@@ -10,7 +10,137 @@
     const secondaryMenu = document.getElementById('secondary-menu');
     const secondaryMenuToggle = document.getElementById('secondary-menu-toggle');
     const secondaryMenuResizer = document.getElementById('secondary-menu-resizer');
+    const loadingOverlay = document.getElementById('app-loading-overlay');
+    const root = document.documentElement;
     let secondaryMenuResizeState = null;
+    let pageLoadingTimer = null;
+    let pageLoadingFallbackTimer = null;
+
+    function setPageLoading(loading) {
+        root.classList.toggle('app-page-loading', loading);
+        document.body.classList.toggle('app-page-loading', loading);
+
+        if (loadingOverlay) {
+            loadingOverlay.setAttribute('aria-hidden', loading ? 'false' : 'true');
+        }
+    }
+
+    function showPageLoading(options) {
+        window.clearTimeout(pageLoadingTimer);
+        window.clearTimeout(pageLoadingFallbackTimer);
+        setPageLoading(true);
+
+        if (options?.autoHide) {
+            pageLoadingFallbackTimer = window.setTimeout(hidePageLoading, 12000);
+        }
+    }
+
+    function requestPageLoading() {
+        window.clearTimeout(pageLoadingTimer);
+        pageLoadingTimer = window.setTimeout(function () {
+            showPageLoading({ autoHide: true });
+        }, 90);
+    }
+
+    function hidePageLoading() {
+        window.clearTimeout(pageLoadingTimer);
+        window.clearTimeout(pageLoadingFallbackTimer);
+        setPageLoading(false);
+    }
+
+    function shouldIgnoreNavigationClick(e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+            return true;
+        }
+
+        const target = e.target instanceof Element ? e.target : e.target?.parentElement;
+        const link = target?.closest('a[href]');
+        if (!link || link.hasAttribute('download')) {
+            return true;
+        }
+
+        const targetWindow = link.getAttribute('target');
+        if (targetWindow && targetWindow !== '_self') {
+            return true;
+        }
+
+        const href = (link.getAttribute('href') || '').trim();
+        if (!href || href.startsWith('#') || /^(javascript|mailto|tel):/i.test(href)) {
+            return true;
+        }
+
+        try {
+            const url = new URL(link.href, window.location.href);
+            const isSameDocument = url.origin === window.location.origin
+                && url.pathname === window.location.pathname
+                && url.search === window.location.search;
+
+            return url.origin !== window.location.origin || (isSameDocument && Boolean(url.hash));
+        } catch (error) {
+            return true;
+        }
+    }
+
+    function shouldIgnoreFormSubmit(e) {
+        if (e.defaultPrevented) {
+            return true;
+        }
+
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return true;
+        }
+
+        const submitter = e.submitter;
+        const targetWindow = submitter?.getAttribute('formtarget') || form.getAttribute('target');
+        const method = (submitter?.getAttribute('formmethod') || form.getAttribute('method') || '').toLowerCase();
+
+        return method === 'dialog' || (targetWindow && targetWindow !== '_self');
+    }
+
+    if (root.classList.contains('app-page-loading')) {
+        setPageLoading(true);
+    }
+
+    document.addEventListener('click', function (e) {
+        if (shouldIgnoreNavigationClick(e)) {
+            return;
+        }
+
+        window.setTimeout(function () {
+            if (!e.defaultPrevented) {
+                requestPageLoading();
+            }
+        }, 0);
+    });
+
+    document.addEventListener('submit', function (e) {
+        if (shouldIgnoreFormSubmit(e)) {
+            return;
+        }
+
+        window.setTimeout(function () {
+            if (!e.defaultPrevented) {
+                requestPageLoading();
+            }
+        }, 0);
+    });
+
+    window.addEventListener('beforeunload', showPageLoading);
+    window.addEventListener('pagehide', function (e) {
+        if (!e.persisted) {
+            showPageLoading();
+        }
+    });
+    window.addEventListener('pageshow', hidePageLoading);
+    window.addEventListener('load', function () {
+        window.setTimeout(hidePageLoading, 180);
+    });
+    window.addEventListener('focus', function () {
+        if (document.visibilityState === 'visible') {
+            window.setTimeout(hidePageLoading, 120);
+        }
+    });
 
     if (!sidebar) {
         return;

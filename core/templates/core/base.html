@@ -15,6 +15,20 @@
             var root = document.documentElement;
             root.classList.add('app-shell-booting');
 
+            var navigationEntries = [];
+            if (window.performance && typeof window.performance.getEntriesByType === 'function') {
+                navigationEntries = window.performance.getEntriesByType('navigation');
+            }
+
+            var navigationType = navigationEntries.length ? navigationEntries[0].type : '';
+            if (!navigationType && window.performance && window.performance.navigation) {
+                navigationType = window.performance.navigation.type === 1 ? 'reload' : '';
+            }
+
+            if (navigationType === 'reload') {
+                root.classList.add('app-page-loading');
+            }
+
             var savedWidth = Number(localStorage.getItem('secondaryMenuWidth'));
             if (Number.isFinite(savedWidth) && savedWidth > 0) {
                 root.style.setProperty('--secondary-menu-width', savedWidth + 'px');
@@ -25,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260614-directory-column-resize">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260614-page-loading-opaque">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -34,8 +48,18 @@
             if (document.documentElement.classList.contains('secondary-menu-collapsed')) {
                 document.body.classList.add('secondary-menu-collapsed');
             }
+
+            if (document.documentElement.classList.contains('app-page-loading')) {
+                document.body.classList.add('app-page-loading');
+            }
         })();
     </script>
+    <div class="app-loading-overlay" id="app-loading-overlay" role="status" aria-live="polite" aria-hidden="true">
+        <div class="app-loading-dialog">
+            <span class="app-loading-spinner" aria-hidden="true"></span>
+            <span class="app-loading-text">Ładowanie...</span>
+        </div>
+    </div>
     <header class="app-topbar" aria-label="Pasek aplikacji">
         <div class="app-topbar-right">
             <button type="button" class="topbar-icon-button" aria-label="Szukaj" title="Szukaj">
@@ -132,7 +156,7 @@
     {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/lucide-icons.js' %}?v=20260609-lucide-icons"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260614-shell-boot-no-jitter"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260614-page-loading-overlay"></script>
     <script src="{% static 'js/topbar.js' %}"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
