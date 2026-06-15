@@ -110,7 +110,7 @@
 .confirm-modal__title {
     margin: 0 0 0.5rem;
     color: var(--sidebar-bg);
-    font-size: 1.125rem;
+    font-size: var(--font-size-base);
     font-weight: 700;
 }
 
@@ -118,7 +118,7 @@
     margin: 0;
     color: var(--text-muted);
     line-height: 1.5;
-    font-size: 0.9375rem;
+    font-size: var(--font-size-sm);
 }
 
 .confirm-modal__footer {

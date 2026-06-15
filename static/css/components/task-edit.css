@@ -33,7 +33,7 @@
 
 .info-panel-header h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-main);
 }
@@ -52,7 +52,7 @@
 }
 
 .info-label {
-    font-size: 0.75rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -63,7 +63,7 @@
 }
 
 .info-value {
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
     color: var(--text-main);
     font-weight: 500;
     line-height: 1.5;

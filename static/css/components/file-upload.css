@@ -67,7 +67,7 @@
 
 .file-size,
 .file-item-size {
-    font-size: 0.75rem;
+    font-size: var(--font-size-sm);
     color: var(--text-muted);
 }
 
@@ -155,7 +155,7 @@
 }
 
 .attachment-size {
-    font-size: 0.8rem;
+    font-size: var(--font-size-sm);
     color: var(--text-muted);
 }
 
@@ -172,7 +172,7 @@
     background-color: var(--background-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
-    font-size: 0.75rem;
+    font-size: var(--font-size-sm);
     color: var(--text-muted);
     margin-left: 0.5rem;
 }
@@ -210,7 +210,7 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    font-size: 0.7rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--text-muted);
     background-color: var(--background-secondary);

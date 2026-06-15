@@ -73,13 +73,13 @@
 .contacts-mini-avatar {
     width: 18px;
     height: 18px;
-    font-size: 0.6rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-avatar {
     width: 42px;
     height: 42px;
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-company-avatar-icon {
@@ -92,7 +92,7 @@
 .contacts-avatar--large {
     width: 72px;
     height: 72px;
-    font-size: 1.35rem;
+    font-size: var(--font-size-lg);
 }
 
 .contacts-avatar--large .contacts-company-avatar-icon {
@@ -141,7 +141,7 @@
     justify-self: end;
     max-width: 100%;
     gap: 0.45rem;
-    font-size: 0.82rem;
+    font-size: var(--font-size-sm);
     font-weight: 650;
     line-height: 1.2;
     white-space: nowrap;
@@ -184,13 +184,13 @@
 
 .contacts-row-main strong {
     color: #242830;
-    font-size: 0.92rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-row-main small,
 .contacts-row-channel {
     color: #6c7484;
-    font-size: 0.8rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-directory-board {
@@ -297,7 +297,7 @@
     height: 24px;
     flex: 0 0 24px;
     border-radius: 5px;
-    font-size: 0.62rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-directory-name-text {
@@ -318,7 +318,7 @@
 
 .contacts-directory-name-text strong {
     color: #3f424a;
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
     font-weight: 650;
 }
 
@@ -326,7 +326,7 @@
 .contacts-directory-company,
 .contacts-directory-channel {
     color: #6f737b;
-    font-size: 0.8125rem;
+    font-size: var(--font-size-sm);
     font-weight: 500;
 }
 
@@ -352,7 +352,7 @@
     max-width: 100%;
     gap: 0.45rem;
     color: #6f737b;
-    font-size: 0.8125rem;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     line-height: 1.2;
     white-space: nowrap;
@@ -392,7 +392,7 @@
     --tasks-status-icon-size: 9px;
     gap: 0.45rem;
     color: var(--tasks-status-color);
-    font-size: 0.8125rem;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     line-height: 1.2;
     white-space: nowrap;
@@ -432,7 +432,7 @@
     align-items: center;
     gap: 0.45rem;
     color: #4c5565;
-    font-size: 0.84rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
 }
 
@@ -477,13 +477,13 @@
 .contacts-empty-state h2 {
     margin: 0 0 0.5rem;
     color: #242830;
-    font-size: 1.1rem;
+    font-size: var(--font-size-base);
 }
 
 .contacts-empty-state p {
     margin: 0;
     color: #6c7484;
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-issue-main {
@@ -512,7 +512,7 @@
     background: transparent;
     color: #20242b;
     box-shadow: none;
-    font-size: clamp(1.5rem, 2vw, 2rem);
+    font-size: var(--font-size-lg);
     font-weight: 650;
     line-height: 1.2;
 }
@@ -530,7 +530,7 @@
     padding: 0 0.6rem;
     border-radius: 6px;
     color: #5f6673;
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
     font-weight: 650;
 }
 
@@ -636,7 +636,7 @@
 
 .contacts-primary-fields span {
     color: #6f7786;
-    font-size: 0.74rem;
+    font-size: var(--font-size-sm);
     font-weight: 750;
     text-transform: uppercase;
 }
@@ -644,7 +644,7 @@
 .contacts-note-panel textarea.form-input {
     min-height: 180px;
     border-radius: 6px;
-    font-size: 0.92rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-field-value {
@@ -697,14 +697,14 @@
     background: #f7f8fa;
     box-sizing: border-box;
     color: #687083;
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-issue-sidebar .form-input {
     min-height: 34px;
     padding: 0.45rem 0.55rem;
     border-radius: 5px;
-    font-size: 0.84rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-delete-form {
@@ -771,7 +771,7 @@
 .contacts-share-row small,
 .contacts-share-empty {
     color: #6c7484;
-    font-size: 0.78rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-share-row--link {
@@ -818,7 +818,7 @@
     min-width: 0;
     overflow: hidden;
     color: inherit;
-    font-size: 0.92rem;
+    font-size: var(--font-size-sm);
     text-overflow: ellipsis;
 }
 
@@ -872,7 +872,7 @@
     background: #ffffff;
     color: #242830;
     font: inherit;
-    font-size: 0.84rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     line-height: 1;
     text-align: left;
@@ -1004,7 +1004,7 @@
 .contacts-custom-select--side .contacts-custom-select__button,
 .contacts-share-form .contacts-custom-select__button {
     min-height: 34px;
-    font-size: 0.84rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-modal-title-grid {
@@ -1102,7 +1102,7 @@
 
 .contacts-photo-editor-header strong {
     color: #242830;
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
     font-weight: 700;
 }
 
@@ -1184,7 +1184,7 @@
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.92);
     color: #4c5565;
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
     font-weight: 650;
     pointer-events: none;
 }
@@ -1213,7 +1213,7 @@
     padding: 0 1rem;
     border-radius: 7px;
     font: inherit;
-    font-size: 0.88rem;
+    font-size: var(--font-size-sm);
     font-weight: 650;
     cursor: pointer;
 }
@@ -1305,7 +1305,7 @@
     border-radius: 0;
     background: transparent;
     color: #23272f;
-    font-size: 1.55rem;
+    font-size: var(--font-size-lg);
     font-weight: 500;
     outline: none;
 }
@@ -1341,7 +1341,7 @@
     background: transparent;
     color: #23272f;
     box-shadow: none;
-    font-size: 1.55rem;
+    font-size: var(--font-size-lg);
     font-weight: 500;
     outline: none;
 }
@@ -1360,7 +1360,7 @@
     box-shadow: none;
     resize: vertical;
     line-height: 1.45;
-    font-size: 0.95rem;
+    font-size: var(--font-size-sm);
     font-weight: 500;
 }
 
@@ -1385,7 +1385,7 @@
     border-radius: 6px;
     background: #ffffff;
     color: #242830;
-    font-size: 0.84rem;
+    font-size: var(--font-size-sm);
 }
 
 .contacts-modal-fields .contacts-custom-select {
@@ -1401,7 +1401,7 @@
     background-color: #ffffff;
     color: #242830;
     box-shadow: none;
-    font-size: 0.84rem;
+    font-size: var(--font-size-sm);
     font-weight: 500;
 }
 
@@ -1416,7 +1416,7 @@
 .contacts-ancore-login-status {
     min-height: 1rem;
     color: #6c7484;
-    font-size: 0.76rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
 }
 
@@ -1465,7 +1465,7 @@
     border-radius: 7px;
     background: #ffffff;
     color: #4c5565;
-    font-size: 0.88rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     line-height: 1;
     text-decoration: none;
@@ -1553,13 +1553,13 @@
 
     .contacts-directory-channel {
         grid-area: channel;
-        font-size: 0.8rem;
+        font-size: var(--font-size-sm);
     }
 
     .contacts-directory-row > .status-indicator,
     .contacts-directory-row > .contacts-user-presence {
         grid-area: status;
-        font-size: 0.8rem;
+        font-size: var(--font-size-sm);
     }
 
     .contacts-directory-list .contacts-directory-row > .tasks-row-date {

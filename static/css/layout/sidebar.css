@@ -279,5 +279,5 @@ body.secondary-menu-collapsed {
     width: 33.6px;
     height: 33.6px;
     flex: 0 0 33.6px;
-    font-size: 0.864rem;
+    font-size: var(--font-size-sm);
 }

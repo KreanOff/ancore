@@ -111,7 +111,7 @@ body.sidebar-open .sidebar-backdrop {
     }
 
     .page-title {
-        font-size: 1.375rem;
+        font-size: var(--font-size-lg);
     }
 
     .modal-header {
@@ -131,7 +131,7 @@ body.sidebar-open .sidebar-backdrop {
     }
 
     .topbar-clock {
-        font-size: 0.8125rem;
+        font-size: var(--font-size-sm);
     }
 
     .sidebar {
@@ -218,7 +218,7 @@ body.sidebar-open .sidebar-backdrop {
 @media (max-width: 480px) {
     .tasks-selection-badge,
     .selection-badge {
-        font-size: 0.75rem;
+        font-size: var(--font-size-sm);
         padding: 0 0.625rem;
     }
 

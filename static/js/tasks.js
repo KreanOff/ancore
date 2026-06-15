@@ -52,7 +52,6 @@ function initTasksPage() {
     const descriptionInput = document.querySelector('.tasks-issue-description-field textarea[name="description"]');
     const descriptionEditor = enhanceDescriptionEditor(descriptionInput);
     const issueDetailMain = document.querySelector('.tasks-issue-main');
-    const issueSidebarResizer = document.querySelector('[data-issue-sidebar-resizer]');
     const selectAllCheckbox = document.querySelector('[data-select-all-checkbox], #select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
@@ -3599,7 +3598,6 @@ function initTasksPage() {
         });
     }
 
-    initIssueSidebarResize();
     applyFilters();
 
     // Helper functions
@@ -3632,116 +3630,6 @@ function initTasksPage() {
 
         syncDescriptionInput(editor);
         return editor;
-    }
-
-    function initIssueSidebarResize() {
-        if (!issueDetailMain || !issueSidebarResizer) return;
-
-        const storageKey = 'tasks.issueSidebarWidth';
-        const minWidth = 280;
-        let width = readStoredSidebarWidth();
-
-        if (width) {
-            setSidebarWidth(width);
-        }
-
-        issueSidebarResizer.addEventListener('pointerdown', function(event) {
-            if (event.button !== undefined && event.button !== 0) return;
-
-            event.preventDefault();
-            issueSidebarResizer.setPointerCapture(event.pointerId);
-            issueDetailMain.classList.add('is-resizing-sidebar');
-            document.body.classList.add('is-resizing-tasks-sidebar');
-            updateFromPointer(event.clientX);
-        });
-
-        issueSidebarResizer.addEventListener('pointermove', function(event) {
-            if (!issueDetailMain.classList.contains('is-resizing-sidebar')) return;
-            updateFromPointer(event.clientX);
-        });
-
-        issueSidebarResizer.addEventListener('pointerup', finishResize);
-        issueSidebarResizer.addEventListener('pointercancel', finishResize);
-
-        issueSidebarResizer.addEventListener('keydown', function(event) {
-            const step = event.shiftKey ? 48 : 24;
-            const currentWidth = width || getCurrentSidebarWidth();
-            let nextWidth = currentWidth;
-
-            if (event.key === 'ArrowLeft') {
-                nextWidth = currentWidth + step;
-            } else if (event.key === 'ArrowRight') {
-                nextWidth = currentWidth - step;
-            } else if (event.key === 'Home') {
-                nextWidth = minWidth;
-            } else if (event.key === 'End') {
-                nextWidth = getSidebarMaxWidth();
-            } else {
-                return;
-            }
-
-            event.preventDefault();
-            setSidebarWidth(nextWidth);
-            storeSidebarWidth(width);
-        });
-
-        window.addEventListener('resize', function() {
-            if (!width) return;
-            setSidebarWidth(width);
-            storeSidebarWidth(width);
-        }, pageListenerOptions);
-
-        function updateFromPointer(clientX) {
-            const rect = issueDetailMain.getBoundingClientRect();
-            setSidebarWidth(rect.right - clientX);
-        }
-
-        function finishResize(event) {
-            if (!issueDetailMain.classList.contains('is-resizing-sidebar')) return;
-
-            issueDetailMain.classList.remove('is-resizing-sidebar');
-            document.body.classList.remove('is-resizing-tasks-sidebar');
-            storeSidebarWidth(width);
-
-            if (event.pointerId !== undefined && issueSidebarResizer.hasPointerCapture(event.pointerId)) {
-                issueSidebarResizer.releasePointerCapture(event.pointerId);
-            }
-        }
-
-        function setSidebarWidth(nextWidth) {
-            width = clampSidebarWidth(nextWidth);
-            issueDetailMain.style.setProperty('--tasks-issue-sidebar-width', `${width}px`);
-        }
-
-        function getCurrentSidebarWidth() {
-            const sidebar = issueDetailMain.querySelector('.tasks-issue-sidebar');
-            return sidebar ? sidebar.getBoundingClientRect().width : minWidth;
-        }
-
-        function clampSidebarWidth(nextWidth) {
-            return Math.round(Math.min(Math.max(Number(nextWidth) || minWidth, minWidth), getSidebarMaxWidth()));
-        }
-
-        function getSidebarMaxWidth() {
-            const mainWidth = issueDetailMain.getBoundingClientRect().width || window.innerWidth;
-            return Math.max(minWidth, Math.min(640, mainWidth * 0.55));
-        }
-
-        function readStoredSidebarWidth() {
-            try {
-                return Number(window.localStorage.getItem(storageKey)) || null;
-            } catch (error) {
-                return null;
-            }
-        }
-
-        function storeSidebarWidth(nextWidth) {
-            try {
-                window.localStorage.setItem(storageKey, String(clampSidebarWidth(nextWidth)));
-            } catch (error) {
-                // localStorage may be unavailable in private or restricted contexts.
-            }
-        }
     }
 
     function initDirectoryColumnResize() {

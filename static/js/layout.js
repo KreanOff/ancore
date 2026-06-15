@@ -176,7 +176,6 @@
             'modal-open',
             'profile-edit-modal-open',
             'contacts-photo-editor-open',
-            'is-resizing-tasks-sidebar',
             'is-resizing-directory-columns'
         );
     }

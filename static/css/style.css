@@ -1,27 +1,386 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260613-ui-fonts-100';
-@import 'base/reset.css?v=20260613-ui-fonts-100';
-@import 'layout/sidebar.css?v=20260614-shell-boot-no-jitter';
-@import 'layout/main.css?v=20260614-page-loading-opaque';
-@import 'layout/responsive.css?v=20260614-shell-boot-no-jitter';
-@import 'components/cards.css?v=20260613-ui-fonts-100';
-@import 'components/buttons.css';
-@import 'components/toolbar.css?v=20260612-main-reference-blue';
-@import 'components/alerts.css';
-@import 'components/forms.css?v=20260612-main-reference-blue';
-@import 'components/dialogs.css';
-@import 'components/modals.css';
-@import 'components/tables.css?v=20260604-status-new-blue';
-@import 'components/tasks.css?v=20260614-directory-column-resize';
-@import 'components/contacts.css?v=20260613-contacts-directory-table';
-@import 'components/notifications.css?v=20260612-main-reference-blue';
-@import 'components/attachments.css?v=20260612-main-reference-blue';
-@import 'components/file-upload.css?v=20260605-trash-icon';
-@import 'components/auth.css?v=20260612-main-reference-blue';
-@import 'calendar.css?v=20260612-main-reference-blue';
-@import 'components/checkboxes.css?v=20260531-unified';
-@import 'theme/elestio.css?v=20260613-tasks-nav-no-counts';
-@import 'components/profile.css?v=20260612-main-reference-blue';
+@import 'base/variables.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'base/reset.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'layout/sidebar.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'layout/main.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'layout/responsive.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/cards.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/buttons.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/toolbar.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/alerts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/forms.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/dialogs.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/modals.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/tables.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/tasks.css?v=20260616-task-field-content-axis';
+@import 'components/contacts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/notifications.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/attachments.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/file-upload.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/auth.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'calendar.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/checkboxes.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'theme/elestio.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/profile.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+
+/* App-wide text palette: #40444C and #FFFFFF. */
+body :where(
+    div,
+    section,
+    article,
+    main,
+    aside,
+    header,
+    footer,
+    nav,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    a,
+    button,
+    label,
+    legend,
+    small,
+    strong,
+    em,
+    time,
+    input,
+    select,
+    textarea,
+    option,
+    summary,
+    th,
+    td,
+    li,
+    dt,
+    dd
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path):not([class*="avatar"])
+) {
+    color: var(--app-text-color, var(--text-primary)) !important;
+}
+
+body :where(
+    [class*="muted"],
+    [class*="meta"],
+    [class*="hint"],
+    [class*="help"],
+    [class*="empty"],
+    [class*="placeholder"],
+    [class*="description"],
+    [class*="subtitle"],
+    [class*="caption"],
+    [class*="note"],
+    [class*="date"],
+    [class*="time"],
+    [class*="count"],
+    [class*="crumb"],
+    [class*="badge"],
+    [class*="pill"],
+    [class*="status"],
+    [class*="priority"],
+    [class*="danger"],
+    [class*="error"],
+    [class*="warning"],
+    [class*="success"],
+    [class*="overdue"],
+    [class*="late"],
+    [class*="due"],
+    [disabled],
+    [aria-disabled="true"],
+    small,
+    time,
+    figcaption,
+    caption
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path):not([class*="avatar"])
+),
+body :where(
+    [class*="muted"],
+    [class*="meta"],
+    [class*="hint"],
+    [class*="help"],
+    [class*="empty"],
+    [class*="placeholder"],
+    [class*="description"],
+    [class*="subtitle"],
+    [class*="caption"],
+    [class*="note"],
+    [class*="date"],
+    [class*="time"],
+    [class*="count"],
+    [class*="crumb"],
+    [class*="badge"],
+    [class*="pill"],
+    [class*="status"],
+    [class*="priority"],
+    [class*="danger"],
+    [class*="error"],
+    [class*="warning"],
+    [class*="success"],
+    [class*="overdue"],
+    [class*="late"],
+    [class*="due"],
+    [disabled],
+    [aria-disabled="true"]
+):where(
+    :not([aria-hidden="true"]):not([class*="avatar"])
+) :where(
+    div,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    a,
+    button,
+    label,
+    legend,
+    small,
+    strong,
+    em,
+    time,
+    input,
+    select,
+    textarea,
+    option,
+    summary,
+    th,
+    td,
+    li,
+    dt,
+    dd
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path):not([class*="avatar"])
+) {
+    --app-text-color: var(--text-primary);
+    color: var(--app-text-color) !important;
+}
+
+body :where(
+    .btn-primary,
+    .btn-danger,
+    .btn-success,
+    .auth-submit,
+    .dashboard-action--primary,
+    .tasks-new-button,
+    .contacts-new-button--secondary,
+    .tasks-tag-topbar-button,
+    .tasks-project-modal__submit,
+    .tasks-modal__submit,
+    .tasks-inline-submit,
+    .tasks-issue-save,
+    .tasks-issue-send,
+    .tasks-icon-button.is-active,
+    .tasks-section-actions.is-open [data-section-menu-toggle],
+    .calendar-nav-button.is-active,
+    .calendar-mini-nav__button.is-active,
+    .calendar-day.is-selected,
+    .calendar-day.is-today,
+    .calendar-day--today,
+    .calendar-day:hover,
+    .calendar-week-day-head--today,
+    .calendar-week-day-head:hover,
+    .calendar-week-col--today,
+    .calendar-week-col:hover,
+    .calendar-day-slot-body:hover,
+    .calendar-year-day--today,
+    .calendar-year-day:not(:disabled):hover,
+    .calendar-list-item--blue,
+    .calendar-event--blue,
+    .calendar-color-select__option.is-selected,
+    .contacts-row:hover,
+    .contacts-avatar,
+    .contacts-mini-avatar,
+    .contacts-photo-editor-primary,
+    .contacts-empty-state .tasks-empty-state__icon,
+    .dashboard-rail-badge,
+    .notification.info,
+    .profile-action-primary,
+    .profile-avatar--blue
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+),
+body :where(
+    .btn-primary,
+    .btn-danger,
+    .btn-success,
+    .auth-submit,
+    .dashboard-action--primary,
+    .tasks-new-button,
+    .contacts-new-button--secondary,
+    .tasks-tag-topbar-button,
+    .tasks-project-modal__submit,
+    .tasks-modal__submit,
+    .tasks-inline-submit,
+    .tasks-issue-save,
+    .tasks-issue-send,
+    .tasks-icon-button.is-active,
+    .tasks-section-actions.is-open [data-section-menu-toggle],
+    .calendar-nav-button.is-active,
+    .calendar-mini-nav__button.is-active,
+    .calendar-day.is-selected,
+    .calendar-day.is-today,
+    .calendar-day--today,
+    .calendar-day:hover,
+    .calendar-week-day-head--today,
+    .calendar-week-day-head:hover,
+    .calendar-week-col--today,
+    .calendar-week-col:hover,
+    .calendar-day-slot-body:hover,
+    .calendar-year-day--today,
+    .calendar-year-day:not(:disabled):hover,
+    .calendar-list-item--blue,
+    .calendar-event--blue,
+    .calendar-color-select__option.is-selected,
+    .contacts-row:hover,
+    .contacts-avatar,
+    .contacts-mini-avatar,
+    .contacts-photo-editor-primary,
+    .contacts-empty-state .tasks-empty-state__icon,
+    .dashboard-rail-badge,
+    .notification.info,
+    .profile-action-primary,
+    .profile-avatar--blue
+) :where(
+    div,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    a,
+    button,
+    label,
+    legend,
+    small,
+    strong,
+    em,
+    time,
+    input,
+    select,
+    textarea,
+    option,
+    summary,
+    th,
+    td,
+    li,
+    dt,
+    dd
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+) {
+    --app-text-color: var(--text-inverse);
+    color: var(--app-text-color) !important;
+}
+
+body :where(input, textarea)::placeholder {
+    color: var(--text-primary) !important;
+    opacity: 1;
+}
+
+body .nav-link--danger,
+body .contacts-actions-menu__item--danger {
+    --app-text-color: var(--text-primary);
+    color: var(--app-text-color) !important;
+}
+
+/* App-wide text weight: no bold text. */
+body :where(
+    div,
+    section,
+    article,
+    main,
+    aside,
+    header,
+    footer,
+    nav,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    a,
+    button,
+    label,
+    legend,
+    small,
+    strong,
+    b,
+    em,
+    time,
+    input,
+    select,
+    textarea,
+    option,
+    summary,
+    th,
+    td,
+    li,
+    dt,
+    dd,
+    figcaption,
+    caption
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path):not([class*="avatar"])
+) {
+    font-weight: 400 !important;
+}
+
+.tasks-tracker-rail .tasks-rail-header h1 {
+    font-weight: 600 !important;
+}
+
+.tasks-topbar,
+.tasks-topbar :where(
+    a,
+    button,
+    span,
+    label,
+    input,
+    select,
+    textarea,
+    .tasks-topbar-title,
+    .tasks-topbar-title-item,
+    .tasks-topbar-title-item > span,
+    .tasks-topbar-title-separator
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+) {
+    font-weight: 600 !important;
+}
+
+.tasks-tracker-rail :where(
+    .tasks-rail-link,
+    .tasks-project-tree-toggle,
+    .tasks-project-tree-label,
+    .tasks-project-title,
+    .tasks-project-title > span,
+    .tasks-empty-rail-note
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+) {
+    font-size: 13px !important;
+    text-transform: none !important;
+}
+
+body :where(input, textarea)::placeholder {
+    font-weight: 400 !important;
+}
 
 .secondary-menu,
 .secondary-menu .secondary-menu-panel,

@@ -15,7 +15,7 @@
 .data-table th {
     background-color: #f8fafc;
     padding: 1rem 1.5rem;
-    font-size: 0.75rem;
+    font-size: var(--font-size-sm);
     font-weight: 700;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -34,7 +34,7 @@
 
 .data-table td {
     padding: 1rem 1.5rem;
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
     color: var(--text-main);
     border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
@@ -57,7 +57,7 @@
     display: inline-flex;
     align-items: center;
     padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     text-transform: uppercase;
 }
@@ -116,7 +116,7 @@
 .status-indicator {
     display: inline-flex;
     align-items: center;
-    font-size: 0.8125rem;
+    font-size: var(--font-size-sm);
     font-weight: 500;
     color: var(--text-main);
 }
@@ -183,17 +183,17 @@
 @media (max-width: 768px) {
     .data-table th {
         padding: 0.75rem 0.875rem;
-        font-size: 0.6875rem;
+        font-size: var(--font-size-sm);
     }
 
     .data-table td {
         padding: 0.75rem 0.875rem;
-        font-size: 0.8125rem;
+        font-size: var(--font-size-sm);
     }
 
     .badge {
         padding: 0.2rem 0.5rem;
-        font-size: 0.6875rem;
+        font-size: var(--font-size-sm);
     }
 }
 
