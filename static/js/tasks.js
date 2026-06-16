@@ -4006,6 +4006,11 @@ function initTasksPage() {
     }
 
     function showMessage(message, type) {
+        if (window.showNotification) {
+            window.showNotification(message, type);
+            return;
+        }
+
         let container = document.querySelector('.notifications-container');
         if (!container) {
             container = document.createElement('div');

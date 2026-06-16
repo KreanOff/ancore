@@ -1,0 +1,41 @@
+{% load account_avatar %}
+
+<article class="tasks-issue-feed-item {% if item.kind == 'comment' %}tasks-issue-feed-item--comment{% endif %}" data-activity-kind="{% if item.kind == 'comment' %}comment{% else %}history{% endif %}">
+    {% user_avatar item.actor as actor_avatar %}
+    {% include 'accounts/includes/user_avatar.html' with avatar=actor_avatar avatar_class='tasks-issue-avatar' only %}
+    <div class="tasks-issue-feed-body">
+        {% if item.kind == 'comment' %}
+        <p>
+            <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
+            <time>{{ item.created_at|date:"d.m, H:i" }}</time>
+        </p>
+        <div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>
+        {% else %}
+        <p>
+            <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
+            {{ item.message }}
+            <time>{{ item.created_at|date:"d.m, H:i" }}</time>
+        </p>
+        {% if item.metadata.changes %}
+        {% for change in item.metadata.changes %}
+        <p class="tasks-issue-feed-note tasks-issue-change-line">
+            {{ change.field|capfirst }}:
+            {% if change.from_label %}<strong>{{ change.from_label }}</strong> → {% endif %}<strong>{{ change.to_label }}</strong>
+        </p>
+        {% endfor %}
+        {% elif item.metadata.from_label or item.metadata.to_label %}
+        <p class="tasks-issue-feed-note tasks-issue-change-line">
+            {% if item.metadata.from_label %}<strong>{{ item.metadata.from_label }}</strong> → {% endif %}<strong>{{ item.metadata.to_label }}</strong>
+        </p>
+        {% elif item.metadata.fields %}
+        <p class="tasks-issue-feed-note">Zmienione pola: <strong>{{ item.metadata.fields|join:", " }}</strong></p>
+        {% elif item.action == 'created' and item.metadata.title %}
+        <p class="tasks-issue-feed-note tasks-issue-change-line">Tytuł: <strong>{{ item.metadata.title }}</strong></p>
+        {% elif item.metadata.count %}
+        <p class="tasks-issue-feed-note">Liczba: <strong>{{ item.metadata.count }}</strong></p>
+        {% elif item.metadata.subtask_title %}
+        <p class="tasks-issue-feed-note"><strong>{{ item.metadata.subtask_title }}</strong></p>
+        {% endif %}
+        {% endif %}
+    </div>
+</article>

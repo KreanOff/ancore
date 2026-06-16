@@ -233,6 +233,17 @@ class FileUploadManager {
         // Always use fallback approach for better cross-browser compatibility
         // and to avoid issues with read-only input.files in some browsers
         this.createFallbackFileInputs();
+        this.dispatchUploadUpdated();
+    }
+
+    dispatchUploadUpdated() {
+        document.dispatchEvent(new CustomEvent('ancore:file-upload-updated', {
+            detail: {
+                form: this.fileInput.form,
+                input: this.fileInput,
+                fileCount: this.files.length,
+            },
+        }));
     }
 
     createFallbackFileInputs() {

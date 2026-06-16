@@ -970,6 +970,82 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(activity.metadata['changes'][1]['to_label'], 'Wysoki')
         self.assertEqual(activity.metadata['changes'][4]['to_label'], '15.06.2026 09:45')
 
+    def test_task_detail_uses_autosave_without_manual_save_button(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
+
+        self.assertContains(response, 'data-task-autosave-status')
+        self.assertNotContains(response, 'class="tasks-issue-save"')
+        self.assertNotContains(response, 'tasks-issue-autosave-section')
+
+    def test_detail_autosave_returns_json_and_records_activity(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.post(
+            reverse('tasks:view-task', args=[task.task_id]),
+            {
+                'autosave': '1',
+                'title': 'Zadanie po autosave',
+                'parent': '',
+                'section': section.id,
+                'description': 'Opis zapisany automatycznie',
+                'priority': 'high',
+                'status': 'in_progress',
+                'due_at': '',
+                'time_spent_hours': '',
+                'time_spent_minutes': '',
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        task.refresh_from_db()
+        activity = TaskActivity.objects.filter(task=task).exclude(action='created').get()
+
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload['status'], 'success')
+        self.assertEqual(payload['task']['title'], 'Zadanie po autosave')
+        self.assertIn('data-activity-kind="history"', payload['activity_html'])
+        self.assertIn('zaktualizował zadanie', payload['activity_html'])
+        self.assertEqual(task.title, 'Zadanie po autosave')
+        self.assertEqual(task.priority, 'high')
+        self.assertEqual(activity.action, 'updated')
+
+    def test_detail_autosave_returns_validation_errors_as_json(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.post(
+            reverse('tasks:view-task', args=[task.task_id]),
+            {
+                'autosave': '1',
+                'title': '',
+                'parent': '',
+                'section': section.id,
+                'description': '',
+                'priority': 'high',
+                'status': 'in_progress',
+                'due_at': '',
+                'time_spent_hours': '',
+                'time_spent_minutes': '',
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        task.refresh_from_db()
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['status'], 'error')
+        self.assertIn('Tytuł', response.json()['message'])
+        self.assertEqual(task.title, 'Zadanie')
+
     def test_detail_shows_saved_time_spent_with_delete_action(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Backend')

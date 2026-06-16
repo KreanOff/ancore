@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, Value, When
 from django.http import JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
@@ -495,6 +496,42 @@ def _task_change_activities(task, before):
             },
         }]
     return []
+
+
+def _is_ajax_request(request):
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('autosave') == '1'
+
+
+def _form_error_messages(form):
+    messages_list = []
+    for field_name, errors in form.errors.items():
+        field = form.fields.get(field_name)
+        label = field.label if field else 'Formularz'
+        for error in errors:
+            messages_list.append(f'{label}: {error}')
+    return messages_list
+
+
+def _task_detail_payload(task):
+    return {
+        'title': task.title,
+        'status': task.status,
+        'status_label': task.get_status_display(),
+        'priority': task.priority,
+        'priority_label': task.get_priority_display(),
+        'due_urgency': task.due_urgency,
+        'completion_date': task._activity_datetime(task.completion_date) if task.completion_date else '',
+        'time_spent_label': task.time_spent_label,
+        'has_time_spent': task.has_time_spent,
+    }
+
+
+def _task_activity_html(activities):
+    ordered_activities = sorted(activities, key=lambda activity: activity.id or 0, reverse=True)
+    return ''.join(
+        render_to_string('tasks/includes/task_activity_item.html', {'item': activity})
+        for activity in ordered_activities
+    )
 
 
 @login_required
@@ -989,6 +1026,7 @@ def _task_detail_response(request, task_id):
     task_modal_open = False
 
     if request.method == 'POST':
+        is_ajax = _is_ajax_request(request)
         action = request.POST.get('action')
         if action == 'create_subtask_modal':
             task_modal_form = SubTaskModalForm(request.POST)
@@ -1034,17 +1072,36 @@ def _task_detail_response(request, task_id):
                 task.time_spent_minutes = None
                 task.save(update_fields=['time_spent_hours', 'time_spent_minutes'])
 
-                for change in _task_change_activities(task, before):
-                    _record_task_activity(
-                        task,
-                        request.user,
-                        change['action'],
-                        change['message'],
-                        metadata=change['metadata'],
+                change_activities = _task_change_activities(task, before)
+                recorded_activities = []
+                for change in change_activities:
+                    recorded_activities.append(
+                        _record_task_activity(
+                            task,
+                            request.user,
+                            change['action'],
+                            change['message'],
+                            metadata=change['metadata'],
+                        )
                     )
-                messages.success(request, 'Czas pracy usunięty.')
+                message = 'Czas pracy usunięty.'
+                if is_ajax:
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': message,
+                        'task': _task_detail_payload(task),
+                        'activity_html': _task_activity_html(recorded_activities),
+                    })
+                messages.success(request, message)
             else:
-                messages.info(request, 'Brak czasu pracy do usunięcia.')
+                message = 'Brak czasu pracy do usunięcia.'
+                if is_ajax:
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': message,
+                        'task': _task_detail_payload(task),
+                    })
+                messages.info(request, message)
             detail_route = 'tasks:view-subtask' if task.parent_id else 'tasks:view-task'
             return redirect(detail_route, task_id=task.task_id)
         else:
@@ -1053,6 +1110,7 @@ def _task_detail_response(request, task_id):
             form = TaskForm(request.POST, request.FILES, instance=task, user=request.user)
             if form.is_valid():
                 form.save()
+                recorded_activities = []
 
                 # Handle staged attachment deletions
                 deleted_attachments = request.POST.get('deleted_attachments', '')
@@ -1070,35 +1128,65 @@ def _task_detail_response(request, task_id):
                         file=file
                     )
 
-                for change in _task_change_activities(task, before):
-                    _record_task_activity(
-                        task,
-                        request.user,
-                        change['action'],
-                        change['message'],
-                        metadata=change['metadata'],
+                change_activities = _task_change_activities(task, before)
+                for change in change_activities:
+                    recorded_activities.append(
+                        _record_task_activity(
+                            task,
+                            request.user,
+                            change['action'],
+                            change['message'],
+                            metadata=change['metadata'],
+                        )
                     )
                 if files:
-                    _record_task_activity(
-                        task,
-                        request.user,
-                        'attachments_added',
-                        'dodał załączniki',
-                        metadata={'count': len(files)},
+                    recorded_activities.append(
+                        _record_task_activity(
+                            task,
+                            request.user,
+                            'attachments_added',
+                            'dodał załączniki',
+                            metadata={'count': len(files)},
+                        )
                     )
                 if deleted_count:
-                    _record_task_activity(
-                        task,
-                        request.user,
-                        'attachments_deleted',
-                        'usunął załączniki',
-                        metadata={'count': deleted_count},
+                    recorded_activities.append(
+                        _record_task_activity(
+                            task,
+                            request.user,
+                            'attachments_deleted',
+                            'usunął załączniki',
+                            metadata={'count': deleted_count},
+                        )
                     )
+
+                if is_ajax:
+                    task.refresh_from_db()
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Zapisano automatycznie.',
+                        'task': _task_detail_payload(task),
+                        'changed_fields': [
+                            field
+                            for change in change_activities
+                            for field in change.get('metadata', {}).get('fields', [])
+                        ],
+                        'attachments_added': len(files),
+                        'attachments_deleted': deleted_count,
+                        'activity_html': _task_activity_html(recorded_activities),
+                    })
 
                 messages.success(request, 'Zadanie zaktualizowane pomyślnie.')
                 detail_route = 'tasks:view-subtask' if task.parent_id else 'tasks:view-task'
                 return redirect(detail_route, task_id=task.task_id)
             else:
+                if is_ajax:
+                    error_messages = _form_error_messages(form)
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': error_messages[0] if error_messages else 'Nie udało się zapisać zmian.',
+                        'errors': error_messages,
+                    }, status=400)
                 for field, errors in form.errors.items():
                     for error in errors:
                         messages.error(request, f"{field}: {error}")

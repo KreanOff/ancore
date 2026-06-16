@@ -70,6 +70,8 @@ class TaskForm(forms.ModelForm):
         self.fields['section'].required = True
         self.fields['section'].label = 'Grupa projektu'
         self.fields['parent'].required = bool(getattr(self.instance, 'parent_id', None))
+        self.fields['title'].label = 'Tytuł'
+        self.fields['description'].label = 'Opis'
         self.fields['tags'].required = False
         self.fields['tags'].label = 'Tagi'
         self.fields['due_at'].label = 'Termin wykonania'

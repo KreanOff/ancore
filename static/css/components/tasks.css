@@ -5055,6 +5055,48 @@ body.modal-open::before {
     color: var(--accent-on-peach);
 }
 
+.tasks-issue-autosave {
+    min-width: 132px;
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    padding: 0 0.15rem;
+    color: #6d7481;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tasks-issue-autosave-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    flex: 0 0 0.55rem;
+    border-radius: 50%;
+    background: #6f9d4d;
+    box-shadow: 0 0 0 3px rgba(111, 157, 77, 0.14);
+}
+
+.tasks-issue-autosave[data-state="dirty"] .tasks-issue-autosave-dot {
+    background: #c18a34;
+    box-shadow: 0 0 0 3px rgba(193, 138, 52, 0.14);
+}
+
+.tasks-issue-autosave[data-state="saving"] .tasks-issue-autosave-dot {
+    background: #4f7fc9;
+    box-shadow: 0 0 0 3px rgba(79, 127, 201, 0.14);
+}
+
+.tasks-issue-autosave[data-state="error"] {
+    color: #b42318;
+}
+
+.tasks-issue-autosave[data-state="error"] .tasks-issue-autosave-dot {
+    background: #c94f45;
+    box-shadow: 0 0 0 3px rgba(201, 79, 69, 0.14);
+}
+
 .tasks-issue-main {
     flex: 1;
     min-height: 0;

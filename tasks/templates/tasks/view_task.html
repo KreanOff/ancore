@@ -52,18 +52,16 @@
                 </a>
                 <span class="tasks-issue-chevron" aria-hidden="true">›</span>
                 {% endif %}
-                <span class="tasks-issue-crumb tasks-issue-crumb--current">
+                <span class="tasks-issue-crumb tasks-issue-crumb--current" data-task-title-current>
                     <span>{{ task.title }}</span>
                 </span>
             </div>
 
             <div class="tasks-issue-actions">
-                <button type="button" class="tasks-issue-icon-button" aria-label="Więcej" title="Więcej">
-                    <i data-lucide="ellipsis" aria-hidden="true"></i>
-                </button>
-                <button type="submit" form="task-detail-form" class="tasks-issue-save" title="Zapisz zmiany">
-                    Zapisz
-                </button>
+                <span class="tasks-issue-autosave" data-task-autosave-status data-state="saved" role="status" aria-live="polite">
+                    <span class="tasks-issue-autosave-dot" aria-hidden="true"></span>
+                    <span data-task-autosave-text>Zapisano</span>
+                </span>
             </div>
         </header>
 
@@ -214,47 +212,9 @@
 
                         <div class="tasks-issue-feed" data-activity-feed>
                             {% for item in activity_items %}
-                            <article class="tasks-issue-feed-item {% if item.kind == 'comment' %}tasks-issue-feed-item--comment{% endif %}" data-activity-kind="{% if item.kind == 'comment' %}comment{% else %}history{% endif %}">
-                                {% user_avatar item.actor as actor_avatar %}
-                                {% include 'accounts/includes/user_avatar.html' with avatar=actor_avatar avatar_class='tasks-issue-avatar' only %}
-                                <div class="tasks-issue-feed-body">
-                                    {% if item.kind == 'comment' %}
-                                    <p>
-                                        <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
-                                        <time>{{ item.created_at|date:"d.m, H:i" }}</time>
-                                    </p>
-                                    <div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>
-                                    {% else %}
-                                    <p>
-                                        <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
-                                        {{ item.message }}
-                                        <time>{{ item.created_at|date:"d.m, H:i" }}</time>
-                                    </p>
-                                    {% if item.metadata.changes %}
-                                    {% for change in item.metadata.changes %}
-                                    <p class="tasks-issue-feed-note tasks-issue-change-line">
-                                        {{ change.field|capfirst }}:
-                                        {% if change.from_label %}<strong>{{ change.from_label }}</strong> → {% endif %}<strong>{{ change.to_label }}</strong>
-                                    </p>
-                                    {% endfor %}
-                                    {% elif item.metadata.from_label or item.metadata.to_label %}
-                                    <p class="tasks-issue-feed-note tasks-issue-change-line">
-                                        {% if item.metadata.from_label %}<strong>{{ item.metadata.from_label }}</strong> → {% endif %}<strong>{{ item.metadata.to_label }}</strong>
-                                    </p>
-                                    {% elif item.metadata.fields %}
-                                    <p class="tasks-issue-feed-note">Zmienione pola: <strong>{{ item.metadata.fields|join:", " }}</strong></p>
-                                    {% elif item.action == 'created' and item.metadata.title %}
-                                    <p class="tasks-issue-feed-note tasks-issue-change-line">Tytuł: <strong>{{ item.metadata.title }}</strong></p>
-                                    {% elif item.metadata.count %}
-                                    <p class="tasks-issue-feed-note">Liczba: <strong>{{ item.metadata.count }}</strong></p>
-                                    {% elif item.metadata.subtask_title %}
-                                    <p class="tasks-issue-feed-note"><strong>{{ item.metadata.subtask_title }}</strong></p>
-                                    {% endif %}
-                                    {% endif %}
-                                </div>
-                            </article>
+                            {% include 'tasks/includes/task_activity_item.html' with item=item only %}
                             {% empty %}
-                            <p class="tasks-issue-empty-feed">Brak aktywności w zadaniu.</p>
+                            <p class="tasks-issue-empty-feed" data-activity-empty-initial>Brak aktywności w zadaniu.</p>
                             {% endfor %}
                             <p class="tasks-issue-empty-feed" data-activity-empty-filter hidden>Brak wpisów dla wybranego filtra.</p>
                         </div>
@@ -369,7 +329,7 @@
                             <span class="tasks-issue-field-label">
                                 <span>Zamknięto</span>
                             </span>
-                            <strong class="tasks-issue-muted">
+                            <strong class="tasks-issue-muted" data-task-completion-date>
                                 {% if task.completion_date %}
                                 {{ task.completion_date|date:"d.m.Y, H:i" }}
                                 {% else %}
@@ -410,7 +370,7 @@
                                 <div class="tasks-issue-time-entries" aria-label="Dodany czas pracy">
                                     <div class="tasks-issue-time-entry">
                                         <span>{{ task.time_spent_label }}</span>
-                                        <button type="submit" name="action" value="clear_time_spent" title="Usuń czas pracy" aria-label="Usuń czas pracy" formnovalidate>
+                                        <button type="submit" name="action" value="clear_time_spent" title="Usuń czas pracy" aria-label="Usuń czas pracy" formnovalidate data-task-clear-time>
                                             <i data-lucide="x" aria-hidden="true"></i>
                                         </button>
                                     </div>
@@ -503,7 +463,7 @@
                             <span>Historia statusu:</span>
                         </h2>
                         <div class="tasks-issue-history-row">
-                            <span class="status-{{ task.status }}">{{ task.get_status_display }}</span>
+                            <span class="status-{{ task.status }}" data-task-current-status-history>{{ task.get_status_display }}</span>
                             <strong>{{ task.created_at|timesince }}</strong>
                         </div>
                         {% if task.status != 'new' %}
@@ -588,8 +548,6 @@
 </div>
 
 <script>
-const ATTACHMENT_TRASH_ICON_HTML = `{% include 'core/includes/trash_icon.html' %}`;
-
 document.querySelectorAll('[data-history-back]').forEach((link) => {
     link.addEventListener('click', (event) => {
         const storedReturnPoint = sessionStorage.getItem('tasks:lastTaskReturn');
@@ -624,7 +582,6 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
     const toggle = dropdown ? dropdown.querySelector('[data-activity-toggle]') : null;
     const label = dropdown ? dropdown.querySelector('[data-activity-label]') : null;
     const filterButtons = dropdown ? dropdown.querySelectorAll('[data-activity-filter]') : [];
-    const feedItems = feed.querySelectorAll('[data-activity-kind]');
     const emptyFilterMessage = feed.querySelector('[data-activity-empty-filter]');
 
     function closeActivityDropdown() {
@@ -635,6 +592,8 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
 
     function applyActivityFilter(filter) {
         let visibleCount = 0;
+        const feedItems = feed.querySelectorAll('[data-activity-kind]');
+        feed.dataset.activityFilter = filter;
 
         feedItems.forEach((item) => {
             const isVisible = filter === 'all' || item.dataset.activityKind === filter;
@@ -657,6 +616,10 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
         }
     }
 
+    feed.addEventListener('ancore:activity-items-added', () => {
+        applyActivityFilter(feed.dataset.activityFilter || 'all');
+    });
+
     toggle?.addEventListener('click', (event) => {
         event.stopPropagation();
         const isOpen = !dropdown.classList.contains('is-open');
@@ -678,6 +641,24 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
     document.addEventListener('click', closeActivityDropdown);
     applyActivityFilter('all');
 });
+
+function prependTaskDetailActivityItems(html) {
+    const feed = document.querySelector('[data-activity-feed]');
+    if (!feed || !html) return;
+
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    const items = Array.from(template.content.children).filter((item) => item.matches?.('[data-activity-kind]'));
+    if (!items.length) return;
+
+    feed.querySelector('[data-activity-empty-initial]')?.remove();
+    const referenceNode = feed.querySelector('[data-activity-kind]') || feed.querySelector('[data-activity-empty-filter]');
+    items.forEach((item) => {
+        feed.insertBefore(item, referenceNode);
+    });
+    window.AncoreIcons?.render(feed);
+    feed.dispatchEvent(new CustomEvent('ancore:activity-items-added'));
+}
 
 function getTaskDetailDueState(value) {
     if (!value) return 'none';
@@ -904,10 +885,240 @@ syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdow
 
 document.addEventListener('click', () => closeTaskDetailDropdowns());
 
+const taskDetailForm = document.getElementById('task-detail-form');
+const taskAutosaveStatus = document.querySelector('[data-task-autosave-status]');
+const taskAutosaveText = document.querySelector('[data-task-autosave-text]');
+const taskAutosaveSidebar = document.querySelector('[data-task-autosave-sidebar]');
+const taskAutosaveTime = document.querySelector('[data-task-autosave-time]');
+let taskAutosaveTimer = null;
+let taskAutosaveIsSaving = false;
+let taskAutosaveNeedsRun = false;
+let taskAutosaveShouldReload = false;
+let taskAutosaveIsReloading = false;
+let taskAutosaveSavedSnapshot = '';
+
+function isTaskDetailEmptyFile(value) {
+    return value instanceof File && !value.name && value.size === 0;
+}
+
+function getTaskDetailFormData() {
+    const formData = new FormData();
+    if (!taskDetailForm) return formData;
+
+    Array.from(new FormData(taskDetailForm).entries()).forEach(([name, value]) => {
+        if (isTaskDetailEmptyFile(value)) return;
+        formData.append(name, value);
+    });
+    return formData;
+}
+
+function getTaskDetailSnapshot() {
+    if (!taskDetailForm) return '';
+
+    return JSON.stringify(Array.from(getTaskDetailFormData().entries()).map(([name, value]) => {
+        if (name === 'csrfmiddlewaretoken') return null;
+        if (value instanceof File) return [name, value.name, value.size, value.lastModified];
+        return [name, value];
+    }).filter(Boolean));
+}
+
+function setTaskAutosaveState(state, text) {
+    const label = text || {
+        dirty: 'Niezapisane zmiany',
+        saving: 'Zapisywanie...',
+        saved: 'Zapisano',
+        error: 'Nie zapisano',
+    }[state] || 'Zapisano';
+
+    if (taskAutosaveStatus) taskAutosaveStatus.dataset.state = state;
+    if (taskAutosaveText) taskAutosaveText.textContent = label;
+    if (taskAutosaveSidebar) taskAutosaveSidebar.textContent = label;
+}
+
+function setTaskAutosaveSavedTime(date = new Date()) {
+    if (!taskAutosaveTime) return;
+    taskAutosaveTime.textContent = date.toLocaleTimeString('pl-PL', {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+
+function updateTaskDetailLiveValues(payload) {
+    if (!payload?.task) return;
+
+    const currentTitle = document.querySelector('[data-task-title-current] span');
+    const titleInput = taskDetailForm?.querySelector('[name="title"]');
+    if (currentTitle && titleInput) currentTitle.textContent = titleInput.value.trim() || payload.task.title || 'Bez tytułu';
+
+    const completionDate = document.querySelector('[data-task-completion-date]');
+    if (completionDate) {
+        completionDate.textContent = payload.task.completion_date || 'Nie zamknięto';
+        completionDate.classList.toggle('tasks-issue-muted', !payload.task.completion_date);
+    }
+
+    const currentStatusHistory = document.querySelector('[data-task-current-status-history]');
+    if (currentStatusHistory) {
+        currentStatusHistory.className = `status-${payload.task.status}`;
+        currentStatusHistory.textContent = payload.task.status_label;
+    }
+
+    if (!payload.task.has_time_spent) {
+        document.querySelector('.tasks-issue-time-entries')?.remove();
+    }
+}
+
+function clearTaskDetailTimeSpent() {
+    taskDetailForm?.querySelectorAll('[name="time_spent_hours"], [name="time_spent_minutes"]').forEach((input) => {
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+}
+
+async function saveTaskDetailNow() {
+    if (!taskDetailForm || taskAutosaveIsReloading) return;
+
+    clearTimeout(taskAutosaveTimer);
+    taskAutosaveTimer = null;
+
+    if (taskAutosaveIsSaving) {
+        taskAutosaveNeedsRun = true;
+        return;
+    }
+
+    const requestSnapshot = getTaskDetailSnapshot();
+    const shouldReloadAfterSave = taskAutosaveShouldReload;
+    if (requestSnapshot === taskAutosaveSavedSnapshot && !shouldReloadAfterSave) {
+        setTaskAutosaveState('saved');
+        return;
+    }
+
+    taskAutosaveIsSaving = true;
+    taskAutosaveShouldReload = false;
+    setTaskAutosaveState('saving');
+
+    const formData = getTaskDetailFormData();
+    formData.set('autosave', '1');
+
+    try {
+        const response = await fetch(taskDetailForm.action || window.location.href, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+        const payload = await response.json();
+
+        if (!response.ok || payload.status !== 'success') {
+            throw new Error(payload.message || 'Nie udało się zapisać zmian.');
+        }
+
+        updateTaskDetailLiveValues(payload);
+        prependTaskDetailActivityItems(payload.activity_html);
+
+        if (shouldReloadAfterSave && (payload.attachments_added || payload.attachments_deleted)) {
+            taskAutosaveIsReloading = true;
+            setTaskAutosaveState('saved');
+            window.showNotification?.('Zapisano załączniki.', 'success', { dedupeKey: 'task-autosave-attachments' });
+            window.location.reload();
+            return;
+        }
+
+        taskAutosaveSavedSnapshot = requestSnapshot;
+        setTaskAutosaveSavedTime();
+
+        if (getTaskDetailSnapshot() !== requestSnapshot) {
+            taskAutosaveNeedsRun = true;
+            setTaskAutosaveState('dirty');
+        } else {
+            setTaskAutosaveState('saved');
+        }
+    } catch (error) {
+        const message = error.message || 'Nie udało się zapisać zmian.';
+        setTaskAutosaveState('error', message);
+        window.showNotification?.(message, 'error', { dedupeKey: 'task-autosave-error' });
+    } finally {
+        taskAutosaveIsSaving = false;
+        if (taskAutosaveNeedsRun && !taskAutosaveIsReloading) {
+            taskAutosaveNeedsRun = false;
+            saveTaskDetailNow();
+        }
+    }
+}
+
+function queueTaskDetailAutosave(options = {}) {
+    if (!taskDetailForm || taskAutosaveIsReloading) return;
+
+    taskAutosaveShouldReload = taskAutosaveShouldReload || Boolean(options.reloadOnSuccess);
+    setTaskAutosaveState('dirty');
+    clearTimeout(taskAutosaveTimer);
+
+    if (options.immediate) {
+        saveTaskDetailNow();
+        return;
+    }
+
+    taskAutosaveTimer = setTimeout(saveTaskDetailNow, options.delay || 900);
+}
+
+if (taskDetailForm) {
+    taskAutosaveSavedSnapshot = getTaskDetailSnapshot();
+    setTaskAutosaveSavedTime();
+
+    taskDetailForm.addEventListener('input', (event) => {
+        if (event.target.matches('[type="file"]')) return;
+        if (event.target.matches('[name="title"]')) {
+            const currentTitle = document.querySelector('[data-task-title-current] span');
+            if (currentTitle) currentTitle.textContent = event.target.value.trim() || 'Bez tytułu';
+        }
+        queueTaskDetailAutosave();
+    });
+
+    taskDetailForm.addEventListener('change', (event) => {
+        if (event.target.matches('[type="file"]')) return;
+        queueTaskDetailAutosave({ delay: 450 });
+    });
+
+    taskDetailForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (event.submitter?.matches('[data-task-clear-time]')) {
+            clearTaskDetailTimeSpent();
+        }
+        queueTaskDetailAutosave({ immediate: true });
+    });
+
+    taskDetailForm.addEventListener('focusout', () => {
+        if (getTaskDetailSnapshot() !== taskAutosaveSavedSnapshot) {
+            queueTaskDetailAutosave({ immediate: true });
+        }
+    });
+
+    document.addEventListener('ancore:file-upload-updated', (event) => {
+        if (event.detail?.form !== taskDetailForm) return;
+        queueTaskDetailAutosave({
+            delay: 250,
+            reloadOnSuccess: Number(event.detail.fileCount || 0) > 0,
+        });
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && getTaskDetailSnapshot() !== taskAutosaveSavedSnapshot) {
+            saveTaskDetailNow();
+        }
+    });
+
+    window.addEventListener('beforeunload', (event) => {
+        if (taskAutosaveIsReloading || getTaskDetailSnapshot() === taskAutosaveSavedSnapshot) return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
+}
+
 function deleteAttachment(attachmentId) {
     window.showConfirmModal({
         title: 'Potwierdź usunięcie',
-        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana po kliknięciu „Zapisz”.',
+        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana automatycznie.',
         confirmText: 'Usuń',
         cancelText: 'Anuluj',
         confirmClass: 'btn-danger',
@@ -923,32 +1134,17 @@ function deleteAttachment(attachmentId) {
                 el.classList.add('marked-for-deletion');
                 const btn = el.querySelector('.tasks-delete-attach-btn');
                 if (btn) {
-                    btn.innerHTML = '<i data-lucide="rotate-ccw" aria-hidden="true"></i>';
+                    btn.disabled = true;
+                    btn.innerHTML = '<i data-lucide="loader-circle" aria-hidden="true"></i>';
                     window.AncoreIcons?.render(btn);
-                    btn.title = 'Cofnij usunięcie';
-                    btn.onclick = (e) => { e.stopPropagation(); undoDeleteAttachment(attachmentId); };
+                    btn.title = 'Usuwanie załącznika';
+                    btn.setAttribute('aria-label', 'Usuwanie załącznika');
+                    btn.onclick = null;
                 }
             }
+            queueTaskDetailAutosave({ immediate: true, reloadOnSuccess: true });
         }
     });
-}
-
-function undoDeleteAttachment(attachmentId) {
-    const deletedInput = document.getElementById('deleted-attachments');
-    let deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
-    deletedIds = deletedIds.filter(id => id !== attachmentId.toString());
-    deletedInput.value = deletedIds.join(',');
-    const el = document.getElementById(`attachment-${attachmentId}`);
-    if (el) {
-        el.classList.remove('marked-for-deletion');
-        const btn = el.querySelector('.tasks-delete-attach-btn');
-        if (btn) {
-            btn.innerHTML = ATTACHMENT_TRASH_ICON_HTML;
-            window.AncoreIcons?.render(btn);
-            btn.title = 'Usuń załącznik';
-            btn.onclick = () => deleteAttachment(attachmentId);
-        }
-    }
 }
 
 function updateTaskStatus(isCompleted) {
