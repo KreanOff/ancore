@@ -84,3 +84,37 @@
     background-image: var(--checkbox-check-icon);
     box-shadow: none;
 }
+
+.tasks-directory-sheet .tasks-directory-select-all,
+.contacts-directory-sheet .tasks-directory-select-all,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox {
+    opacity: 0;
+}
+
+.tasks-directory-sheet .tasks-directory-header:hover .tasks-directory-select-all,
+.tasks-directory-sheet .tasks-directory-header:focus-within .tasks-directory-select-all,
+.tasks-directory-sheet .tasks-directory-select-all:hover,
+.tasks-directory-sheet .tasks-directory-select-all:focus-visible,
+.tasks-directory-sheet .tasks-directory-select-all:checked,
+.tasks-directory-sheet .tasks-directory-select-all:indeterminate,
+.contacts-directory-sheet .contacts-directory-header:hover .tasks-directory-select-all,
+.contacts-directory-sheet .contacts-directory-header:focus-within .tasks-directory-select-all,
+.contacts-directory-sheet .tasks-directory-select-all:hover,
+.contacts-directory-sheet .tasks-directory-select-all:focus-visible,
+.contacts-directory-sheet .tasks-directory-select-all:checked,
+.contacts-directory-sheet .tasks-directory-select-all:indeterminate,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row:hover > .tasks-row-checkbox,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row:focus-within > .tasks-row-checkbox,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox:hover,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox:focus-visible,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox:checked,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox:indeterminate,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row:hover > .tasks-row-checkbox,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row:focus-within > .tasks-row-checkbox,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox:hover,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox:focus-visible,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox:checked,
+.contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox:indeterminate {
+    opacity: 1;
+}

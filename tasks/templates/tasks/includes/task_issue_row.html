@@ -7,7 +7,7 @@
          data-due-at="{{ task.due_at|date:'c' }}"
          data-search-primary="{{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {{ task.due_at|date:'d.m.Y H:i' }} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
          data-search-index="{{ task.task_id }} {% if not compact %}{{ project_code }}-{{ task.task_id }} {% endif %}{{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.get_status_display }} {{ task.get_priority_display }} {{ task.due_at|date:'d.m.Y H:i' }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {{ task.section.project.code|default:project_code }} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
-         data-view-url="{% if compact %}{% url 'tasks:view-subtask' task.task_id %}{% else %}{% url 'tasks:view-task' task.task_id %}{% endif %}">
+         data-view-url="{% if task.shared_view_url %}{{ task.shared_view_url }}{% elif compact %}{% url 'tasks:view-subtask' task.task_id %}{% else %}{% url 'tasks:view-task' task.task_id %}{% endif %}">
     {% if compact %}
     <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
     <span class="tasks-row-priority priority-{{ task.priority }}"

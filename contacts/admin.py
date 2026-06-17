@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Company, CompanyMembership, Contact, ContactActivity, SharedItem, UserContact
+from .models import Company, CompanyMembership, Contact, ContactActivity, SharedItem, SharedItemLink, UserContact
 
 
 class CompanyMembershipInline(admin.TabularInline):
@@ -50,4 +50,17 @@ class SharedItemAdmin(admin.ModelAdmin):
         'shared_with__middle_name',
         'shared_with__last_name',
         'note',
+    )
+
+
+@admin.register(SharedItemLink)
+class SharedItemLinkAdmin(admin.ModelAdmin):
+    list_display = ('content_object', 'created_by', 'permission', 'is_active', 'created_at', 'deactivated_at')
+    list_filter = ('permission', 'is_active', 'created_at')
+    search_fields = (
+        'created_by__email',
+        'created_by__first_name',
+        'created_by__middle_name',
+        'created_by__last_name',
+        'token',
     )

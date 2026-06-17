@@ -1,5 +1,5 @@
 <div class="tasks-directory-members-menu{% if cell_class %} {{ cell_class }}{% endif %}"{% if data_column %} data-column="{{ data_column }}"{% endif %} data-directory-members-menu>
-    <button type="button" class="tasks-directory-members" title="{{ item.directory_member_title }}" aria-label="Pokaż członków" aria-haspopup="dialog" aria-expanded="false" aria-controls="tasks-directory-members-{{ item_kind }}-{{ item.id }}" data-directory-members-toggle>
+    <button type="button" class="tasks-directory-members" title="{{ item.directory_member_title }}" aria-label="Członkowie" aria-haspopup="dialog" aria-expanded="false" aria-controls="{% if item.can_share %}directory-share-modal{% else %}tasks-directory-members-{{ item_kind }}-{{ item.id }}{% endif %}" data-directory-members-toggle {% if item.can_share %}data-directory-share-open data-share-members-template="tasks-directory-share-members-{{ item_kind }}-{{ item.id }}" data-share-object-kind="{{ item_kind }}" data-share-object-id="{{ item.id }}" data-share-link-url="{{ item.share_link_url|default:'' }}" {% if item_kind == 'project' %}data-share-action="share_project" data-share-project-id="{{ item.id }}" data-share-object-type="Projekt" data-share-object-name="{{ item.name|escape }}"{% elif item_kind == 'task' %}data-share-action="share_task" data-share-task-id="{{ item.id }}" data-share-object-type="Zadanie" data-share-object-name="{{ item.title|escape }}"{% else %}data-share-action="share_section" data-share-section-id="{{ item.id }}" data-share-object-type="Grupa" data-share-object-name="{{ item.title|escape }}"{% endif %}{% endif %}>
         <span class="tasks-directory-avatar-stack">
             {% for member in item.directory_visible_members %}
             {% include 'accounts/includes/user_avatar.html' with avatar=member.avatar avatar_class='tasks-directory-avatar' only %}
@@ -13,10 +13,12 @@
                 <i data-lucide="search" aria-hidden="true"></i>
                 <input type="text" placeholder="Szukaj" aria-label="Szukaj członków" autocomplete="off" data-directory-members-search>
             </label>
-            <button type="button" class="tasks-directory-member-submit" data-directory-share-open {% if item_kind == 'project' %}data-share-action="share_project" data-share-project-id="{{ item.id }}" data-share-object-type="Projekt" data-share-object-name="{{ item.name|escape }}"{% else %}data-share-action="share_section" data-share-section-id="{{ item.id }}" data-share-object-type="Grupa" data-share-object-name="{{ item.title|escape }}"{% endif %}>
+            {% if item.can_share %}
+            <button type="button" class="tasks-directory-member-submit" data-directory-share-open data-share-members-template="tasks-directory-share-members-{{ item_kind }}-{{ item.id }}" data-share-object-kind="{{ item_kind }}" data-share-object-id="{{ item.id }}" data-share-link-url="{{ item.share_link_url|default:'' }}" {% if item_kind == 'project' %}data-share-action="share_project" data-share-project-id="{{ item.id }}" data-share-object-type="Projekt" data-share-object-name="{{ item.name|escape }}"{% elif item_kind == 'task' %}data-share-action="share_task" data-share-task-id="{{ item.id }}" data-share-object-type="Zadanie" data-share-object-name="{{ item.title|escape }}"{% else %}data-share-action="share_section" data-share-section-id="{{ item.id }}" data-share-object-type="Grupa" data-share-object-name="{{ item.title|escape }}"{% endif %}>
                 <i data-lucide="plus" aria-hidden="true"></i>
                 <span>Dodaj</span>
             </button>
+            {% endif %}
         </div>
         <div class="tasks-directory-members-list">
             {% for member in item.directory_members %}
@@ -37,6 +39,7 @@
                             <input type="hidden" name="action" value="{{ member.remove_action }}">
                             <input type="hidden" name="project_id" value="{{ member.remove_project_id }}">
                             <input type="hidden" name="section_id" value="{{ member.remove_section_id }}">
+                            <input type="hidden" name="task_id" value="{{ member.remove_task_id }}">
                             <input type="hidden" name="member_id" value="{{ member.user_id }}">
                             <input type="hidden" name="next" value="{{ tasks_return_path }}">
                             <button type="submit" class="tasks-directory-member-menu-button" role="menuitem">
@@ -54,4 +57,27 @@
             <div class="tasks-directory-member-empty" data-directory-members-no-results hidden>Brak wyników.</div>
         </div>
     </div>
+    <template id="tasks-directory-share-members-{{ item_kind }}-{{ item.id }}">
+        {% for member in item.directory_members %}
+        {% if member.can_remove %}
+        <div class="tasks-directory-share-shared-row" data-directory-share-shared-row>
+            <span class="tasks-directory-share-check-cell">
+                <input type="checkbox" class="tasks-row-checkbox tasks-directory-share-check" aria-label="Zaznacz udostępnienie użytkownika {{ member.label }}">
+            </span>
+            <span class="tasks-directory-share-shared-person">
+                {% include 'accounts/includes/user_avatar.html' with avatar=member.avatar avatar_class='tasks-directory-share-shared-avatar' only %}
+                <span class="tasks-directory-share-shared-person-text">
+                    <strong>{{ member.label }}</strong>
+                    <small>{{ member.role }}</small>
+                </span>
+                <button type="button" class="tasks-directory-share-remove" aria-label="Usuń udostępnienie użytkownika {{ member.label }}" title="Usuń udostępnienie" data-directory-share-remove data-share-action="{{ member.remove_action }}" data-share-project-id="{{ member.remove_project_id }}" data-share-section-id="{{ member.remove_section_id }}" data-share-task-id="{{ member.remove_task_id }}" data-share-member-id="{{ member.user_id }}">
+                    <i data-lucide="user-minus" aria-hidden="true"></i>
+                </button>
+            </span>
+            <span class="tasks-directory-share-shared-username">{{ member.username }}</span>
+            <span class="tasks-directory-share-email"><span>{{ member.email|default:"-" }}</span></span>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </template>
 </div>

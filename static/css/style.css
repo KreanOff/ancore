@@ -12,14 +12,14 @@
 @import 'components/dialogs.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/modals.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/tables.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/tasks.css?v=20260616-task-autosave';
+@import 'components/tasks.css?v=20260617-directory-columns-250-reset';
 @import 'components/contacts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/notifications.css?v=20260616-task-autosave';
 @import 'components/attachments.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/file-upload.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/auth.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'calendar.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/checkboxes.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/checkboxes.css?v=20260616-directory-checkbox-hover';
 @import 'theme/elestio.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/profile.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 

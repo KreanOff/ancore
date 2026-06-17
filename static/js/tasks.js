@@ -39,7 +39,7 @@ function initTasksPage() {
     const priorityFilterIcon = document.querySelector('[data-priority-filter-icon]');
     const directoryMembersMenus = document.querySelectorAll('[data-directory-members-menu]');
     const directoryMembersSearchInputs = document.querySelectorAll('[data-directory-members-search]');
-    const directoryShareButtons = document.querySelectorAll('[data-directory-share-open]');
+    const directoryShareButtons = document.querySelectorAll('[data-directory-share-open]:not([data-directory-members-toggle])');
     const groupRows = document.querySelectorAll('.tasks-group-row');
     const issueGroups = document.querySelectorAll('.tasks-issue-group');
     const statusSubgroups = document.querySelectorAll('.tasks-status-subgroup');
@@ -56,7 +56,7 @@ function initTasksPage() {
     const checkboxes = document.querySelectorAll('.task-checkbox');
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
     const projectCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-project-id]');
-    const tagCheckboxes = document.querySelectorAll('.tasks-all-groups-row .tasks-row-checkbox[data-tag-id]');
+    const tagCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-tag-id]');
     const contactCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-contact-id]');
     const companyCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-company-id]');
     const sectionCopyRoot = document.querySelector('[data-section-empty-label], [data-section-delete-title]');
@@ -716,10 +716,12 @@ function initTasksPage() {
     const directoryShareActionInput = directoryShareForm ? directoryShareForm.querySelector('[name="action"]') : null;
     const directoryShareProjectInput = directoryShareForm ? directoryShareForm.querySelector('[name="project_id"]') : null;
     const directoryShareSectionInput = directoryShareForm ? directoryShareForm.querySelector('[name="section_id"]') : null;
+    const directoryShareTaskInput = directoryShareForm ? directoryShareForm.querySelector('[name="task_id"]') : null;
+    const directoryShareMemberIdInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_id"]') : null;
+    const directoryShareObjectTypeInput = directoryShareForm ? directoryShareForm.querySelector('[name="share_object_type"]') : null;
+    const directoryShareObjectIdInput = directoryShareForm ? directoryShareForm.querySelector('[name="share_object_id"]') : null;
     const directoryShareMemberInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_query"]') : null;
-    const directoryShareFirstNameInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_first_name"]') : null;
-    const directoryShareLastNameInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_last_name"]') : null;
-    const directorySharePersonInputs = [directoryShareFirstNameInput, directoryShareLastNameInput, directoryShareMemberInput].filter(Boolean);
+    const directorySharePersonInputs = [directoryShareMemberInput].filter(Boolean);
     const directoryShareContext = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-context]') : null;
     const directoryShareResults = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-results]') : null;
     const directoryShareResultOptions = directoryShareForm ? Array.from(directoryShareForm.querySelectorAll('[data-directory-share-result]')) : [];
@@ -727,6 +729,14 @@ function initTasksPage() {
     const directoryShareContactOptions = directoryShareForm ? Array.from(directoryShareForm.querySelectorAll('[data-directory-share-contact]')) : [];
     const directorySharePickOptions = directoryShareForm ? Array.from(directoryShareForm.querySelectorAll('[data-directory-share-pick]')) : [];
     const directoryShareContactsEmpty = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-contacts-empty]') : null;
+    const directoryShareSharedList = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-shared-list]') : null;
+    const directoryShareSharedEmpty = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-shared-empty]') : null;
+    const directoryShareSharedCount = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-shared-count]') : null;
+    const directoryShareLinkInput = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-link-input]') : null;
+    const directoryShareLinkCreateBtn = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-link-create]') : null;
+    const directoryShareLinkCreateLabel = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-link-create-label]') : null;
+    const directoryShareLinkCopyBtn = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-link-copy]') : null;
+    const directoryShareLinkRevokeBtn = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-link-revoke]') : null;
     const contactAncoreLoginInput = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-input]') : null;
     const contactAncoreLoginStatus = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-status]') : null;
     const contactAncoreLoginUrl = contactCreateForm ? (contactCreateForm.dataset.ancoreLoginUrl || '') : '';
@@ -939,23 +949,62 @@ function initTasksPage() {
         directoryShareSubmitBtn.disabled = !directorySharePersonInputs.some(input => input.value.trim().length > 0);
     }
 
+    function updateDirectoryShareLinkState(linkUrl = '') {
+        const hasLink = Boolean(linkUrl);
+        if (directoryShareLinkInput) directoryShareLinkInput.value = linkUrl;
+        if (directoryShareLinkCreateLabel) directoryShareLinkCreateLabel.textContent = hasLink ? 'Odśwież link' : 'Utwórz link';
+        if (directoryShareLinkCopyBtn) directoryShareLinkCopyBtn.disabled = !hasLink;
+        if (directoryShareLinkRevokeBtn) directoryShareLinkRevokeBtn.disabled = !hasLink;
+    }
+
+    function directoryShareObjectPayload() {
+        const objectType = directoryShareObjectTypeInput?.value || '';
+        const objectId = directoryShareObjectIdInput?.value || '';
+        if (!objectType || !objectId) return null;
+
+        const payload = new FormData();
+        payload.append('object_type', objectType);
+        payload.append('object_id', objectId);
+        return payload;
+    }
+
+    function setDirectoryShareLinkButtonsLoading(isLoading) {
+        [directoryShareLinkCreateBtn, directoryShareLinkCopyBtn, directoryShareLinkRevokeBtn].forEach(button => {
+            if (!button) return;
+            if (isLoading) {
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
+            } else {
+                button.removeAttribute('aria-busy');
+            }
+        });
+        if (!isLoading) updateDirectoryShareLinkState(directoryShareLinkInput?.value || '');
+    }
+
     function directoryShareSearchTerms() {
         return directorySharePersonInputs
             .map(input => normalizePickerSearch(input.value))
             .filter(Boolean);
     }
 
+    function setDirectoryShareContactsOpen(isOpen) {
+        if (directoryShareResults) directoryShareResults.hidden = !isOpen;
+    }
+
     function syncDirectoryShareResults() {
         const terms = directoryShareSearchTerms();
         const selectedValue = directoryShareMemberInput?.value.trim() || '';
-        if (directoryShareResults) directoryShareResults.hidden = false;
         let visibleContactsCount = 0;
 
         directoryShareContactOptions.forEach(option => {
             const text = normalizePickerSearch(option.dataset.shareSearch || option.textContent);
             const isVisible = !terms.length || terms.every(term => text.includes(term));
+            const isSelected = Boolean(selectedValue && option.dataset.shareValue === selectedValue);
             option.hidden = !isVisible;
-            option.classList.toggle('is-active', selectedValue && option.dataset.shareValue === selectedValue);
+            option.classList.toggle('is-active', isSelected);
+            option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+            const checkbox = option.querySelector('[data-directory-share-check]');
+            if (checkbox) checkbox.checked = isSelected;
             if (isVisible) visibleContactsCount += 1;
         });
 
@@ -969,6 +1018,116 @@ function initTasksPage() {
             empty.textContent = emptyMessage;
             empty.hidden = hasContacts && visibleContactsCount > 0;
         });
+    }
+
+    function renderDirectoryShareMembers(templateId) {
+        if (!directoryShareSharedList) return;
+        directoryShareSharedList.replaceChildren();
+
+        const template = templateId ? document.getElementById(templateId) : null;
+        if (template) {
+            directoryShareSharedList.append(template.content.cloneNode(true));
+        }
+
+        const rows = Array.from(directoryShareSharedList.querySelectorAll('[data-directory-share-shared-row]'));
+        if (directoryShareSharedEmpty) directoryShareSharedEmpty.hidden = rows.length > 0;
+        if (directoryShareSharedCount) directoryShareSharedCount.textContent = String(rows.length);
+
+        rows.forEach(row => {
+            row.querySelector('[data-directory-share-remove]')?.addEventListener('click', function() {
+                if (directoryShareActionInput) directoryShareActionInput.value = this.dataset.shareAction || '';
+                if (directoryShareProjectInput) directoryShareProjectInput.value = this.dataset.shareProjectId || '';
+                if (directoryShareSectionInput) directoryShareSectionInput.value = this.dataset.shareSectionId || '';
+                if (directoryShareTaskInput) directoryShareTaskInput.value = this.dataset.shareTaskId || '';
+                if (directoryShareMemberIdInput) directoryShareMemberIdInput.value = this.dataset.shareMemberId || '';
+                directorySharePersonInputs.forEach(input => { input.value = ''; });
+                directoryShareForm.requestSubmit ? directoryShareForm.requestSubmit() : directoryShareForm.submit();
+            });
+        });
+
+        if (window.AncoreIcons?.render) {
+            window.AncoreIcons.render(directoryShareSharedList);
+        } else if (window.lucide?.createIcons) {
+            window.lucide.createIcons();
+        }
+    }
+
+    function syncDirectoryShareTriggerLink(linkUrl) {
+        const objectType = directoryShareObjectTypeInput?.value || '';
+        const objectId = directoryShareObjectIdInput?.value || '';
+        if (!objectType || !objectId) return;
+
+        const escapeSelectorValue = window.CSS?.escape || (value => String(value).replace(/"/g, '\\"'));
+        document.querySelectorAll(`[data-share-object-kind="${escapeSelectorValue(objectType)}"][data-share-object-id="${escapeSelectorValue(objectId)}"]`).forEach(button => {
+            button.dataset.shareLinkUrl = linkUrl || '';
+        });
+    }
+
+    async function postDirectoryShareLink(endpoint) {
+        const payload = directoryShareObjectPayload();
+        if (!endpoint || !payload) throw new Error('Nie wybrano elementu do udostępnienia.');
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': window.getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: payload
+        });
+        const data = await response.json();
+        if (!response.ok || data.status !== 'success') {
+            throw new Error(data.message || 'Nie udało się zaktualizować linku.');
+        }
+        return data;
+    }
+
+    async function createDirectoryShareLink() {
+        if (!directoryShareForm) return;
+        setDirectoryShareLinkButtonsLoading(true);
+        try {
+            const data = await postDirectoryShareLink(directoryShareForm.dataset.shareLinkCreateUrl || '');
+            updateDirectoryShareLinkState(data.url || '');
+            syncDirectoryShareTriggerLink(data.url || '');
+            showMessage('Link udostępniania jest gotowy.', 'success');
+        } catch (error) {
+            showMessage(error.message || 'Nie udało się utworzyć linku.', 'error');
+        } finally {
+            setDirectoryShareLinkButtonsLoading(false);
+        }
+    }
+
+    async function revokeDirectoryShareLink() {
+        if (!directoryShareForm) return;
+        setDirectoryShareLinkButtonsLoading(true);
+        try {
+            await postDirectoryShareLink(directoryShareForm.dataset.shareLinkRevokeUrl || '');
+            updateDirectoryShareLinkState('');
+            syncDirectoryShareTriggerLink('');
+            showMessage('Link udostępniania został wyłączony.', 'success');
+        } catch (error) {
+            showMessage(error.message || 'Nie udało się wyłączyć linku.', 'error');
+        } finally {
+            setDirectoryShareLinkButtonsLoading(false);
+        }
+    }
+
+    async function copyDirectoryShareLink() {
+        const linkUrl = directoryShareLinkInput?.value || '';
+        if (!linkUrl) return;
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(linkUrl);
+            } else {
+                directoryShareLinkInput.focus();
+                directoryShareLinkInput.select();
+                document.execCommand('copy');
+            }
+            showMessage('Link skopiowany.', 'success');
+        } catch (error) {
+            showMessage('Nie udało się skopiować linku.', 'error');
+        }
     }
 
     function updateProjectRenameSubmitState() {
@@ -1954,20 +2113,37 @@ function initTasksPage() {
         const action = button.dataset.shareAction || '';
         const projectId = button.dataset.shareProjectId || '';
         const sectionId = button.dataset.shareSectionId || '';
+        const taskId = button.dataset.shareTaskId || '';
+        const objectKind = button.dataset.shareObjectKind || '';
+        const objectId = button.dataset.shareObjectId || '';
+        const linkUrl = button.dataset.shareLinkUrl || '';
         const objectType = button.dataset.shareObjectType || '';
         const objectName = button.dataset.shareObjectName || '';
 
         if (directoryShareActionInput) directoryShareActionInput.value = action;
         if (directoryShareProjectInput) directoryShareProjectInput.value = projectId;
         if (directoryShareSectionInput) directoryShareSectionInput.value = sectionId;
+        if (directoryShareTaskInput) directoryShareTaskInput.value = taskId;
+        if (directoryShareObjectTypeInput) directoryShareObjectTypeInput.value = objectKind;
+        if (directoryShareObjectIdInput) directoryShareObjectIdInput.value = objectId;
+        if (directoryShareMemberIdInput) directoryShareMemberIdInput.value = '';
         directorySharePersonInputs.forEach(input => { input.value = ''; });
+        updateDirectoryShareLinkState(linkUrl);
         syncDirectoryShareResults();
+        setDirectoryShareContactsOpen(false);
+        renderDirectoryShareMembers(button.dataset.shareMembersTemplate || '');
         if (directoryShareContext) {
             directoryShareContext.textContent = [objectType, objectName].filter(Boolean).join(': ');
         }
 
+        closeCreateMenu();
+        closeProjectActionMenus();
+        closeSectionActionMenu();
+        closeStatusFilterMenu();
+        closePriorityFilterMenu();
+        closeInlineSelectDropdowns();
         closeDirectoryMembersMenus();
-        openModal(directoryShareModal, directoryShareFirstNameInput || directoryShareMemberInput, updateDirectoryShareSubmitState);
+        openModal(directoryShareModal, directoryShareMemberInput, updateDirectoryShareSubmitState);
     }
 
     directoryShareButtons.forEach(button => {
@@ -1982,6 +2158,10 @@ function initTasksPage() {
 
         toggle?.addEventListener('click', function(e) {
             e.stopPropagation();
+            if (toggle.hasAttribute('data-directory-share-open')) {
+                openDirectoryShareModal(toggle);
+                return;
+            }
             const isOpen = !menu.classList.contains('is-open');
             const searchInput = menu.querySelector('[data-directory-members-search]');
             closeCreateMenu();
@@ -2376,6 +2556,9 @@ function initTasksPage() {
             input.addEventListener('input', function() {
                 updateDirectoryShareSubmitState();
                 syncDirectoryShareResults();
+                if (this.value.trim()) {
+                    setDirectoryShareContactsOpen(true);
+                }
             });
         });
         updateDirectoryShareSubmitState();
@@ -2384,14 +2567,21 @@ function initTasksPage() {
 
     directorySharePickOptions.forEach(option => {
         option.addEventListener('click', function() {
-            if (directoryShareFirstNameInput) directoryShareFirstNameInput.value = this.dataset.shareFirstName || '';
-            if (directoryShareLastNameInput) directoryShareLastNameInput.value = this.dataset.shareLastName || '';
             if (directoryShareMemberInput) directoryShareMemberInput.value = this.dataset.shareValue || '';
             updateDirectoryShareSubmitState();
             syncDirectoryShareResults();
             directoryShareMemberInput?.focus();
         });
+        option.addEventListener('keydown', function(event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            this.click();
+        });
     });
+
+    directoryShareLinkCreateBtn?.addEventListener('click', createDirectoryShareLink);
+    directoryShareLinkCopyBtn?.addEventListener('click', copyDirectoryShareLink);
+    directoryShareLinkRevokeBtn?.addEventListener('click', revokeDirectoryShareLink);
 
     if (projectForm) {
         const codeInput = projectForm.querySelector('[name="code"]');
@@ -2768,8 +2958,13 @@ function initTasksPage() {
         return selected.length === 1 ? selected[0] : null;
     }
 
+    function getSelectedTagCheckboxes() {
+        return Array.from(tagCheckboxes).filter(cb => cb.checked);
+    }
+
     function getSelectedTagCheckbox() {
-        return Array.from(tagCheckboxes).find(cb => cb.checked) || null;
+        const selected = getSelectedTagCheckboxes();
+        return selected.length === 1 ? selected[0] : null;
     }
 
     function rowIsShown(row) {
@@ -2788,6 +2983,8 @@ function initTasksPage() {
             targetCheckboxes = Array.from(projectCheckboxes);
         } else if (target === 'sections') {
             targetCheckboxes = Array.from(sectionCheckboxes);
+        } else if (target === 'tags') {
+            targetCheckboxes = Array.from(tagCheckboxes);
         } else if (target === 'contacts') {
             targetCheckboxes = Array.from(contactCheckboxes);
         } else if (target === 'companies') {
@@ -2854,16 +3051,18 @@ function initTasksPage() {
             projectDataset
         );
 
-        const selectedTagCheckbox = getSelectedTagCheckbox();
+        const selectedTagCheckboxes = getSelectedTagCheckboxes();
+        const selectedTagCheckbox = selectedTagCheckboxes.length === 1 ? selectedTagCheckboxes[0] : null;
         const tagDataset = {
             tagId: selectedTagCheckbox?.dataset.tagId || '',
             tagName: selectedTagCheckbox?.dataset.tagName || '',
-            tagDescription: selectedTagCheckbox?.dataset.tagDescription || ''
+            tagDescription: selectedTagCheckbox?.dataset.tagDescription || '',
+            tagCount: String(selectedTagCheckboxes.length)
         };
-        setMenuButtonState(editSelectedTagMenuBtn, Boolean(selectedTagCheckbox), tagDataset);
+        setMenuButtonState(editSelectedTagMenuBtn, selectedTagCheckboxes.length === 1, tagDataset);
         setMenuButtonState(
             deleteSelectedTagMenuBtn,
-            Boolean(selectedTagCheckbox),
+            selectedTagCheckboxes.length > 0,
             tagDataset
         );
     }
@@ -2938,7 +3137,7 @@ function initTasksPage() {
         });
 
         tagCheckboxes.forEach(cb => {
-            cb.closest('.tasks-all-groups-row')?.classList.toggle('checked', cb.checked);
+            cb.closest('.tasks-all-groups-row, .tasks-tag-sheet__row')?.classList.toggle('checked', cb.checked);
         });
 
         contactCheckboxes.forEach(cb => {
@@ -2992,11 +3191,6 @@ function initTasksPage() {
     tagCheckboxes.forEach(cb => {
         cb.addEventListener('change', function(e) {
             e.stopPropagation();
-            if (this.checked) {
-                tagCheckboxes.forEach(other => {
-                    if (other !== this) other.checked = false;
-                });
-            }
             updateSelection();
         });
     });
@@ -3060,8 +3254,12 @@ function initTasksPage() {
         postPageAction('delete_project', { project_ids: ids });
     }
 
-    function postDeleteTag(tagId) {
-        postPageAction('delete_tag', { tag_id: tagId });
+    function postDeleteTag(tagIds) {
+        const ids = Array.isArray(tagIds) ? tagIds : [tagIds];
+        postPageAction('delete_tag', {
+            tag_id: ids[0] || '',
+            tag_ids: ids
+        });
     }
 
     function editSelectedTask() {
@@ -3158,19 +3356,23 @@ function initTasksPage() {
     }
 
     function deleteSelectedTag() {
-        const selectedTagCheckbox = getSelectedTagCheckbox();
-        const tagId = selectedTagCheckbox?.dataset.tagId || '';
-        const tagName = escapeHtml(selectedTagCheckbox?.dataset.tagName || 'ten tag');
-        if (!tagId) return;
+        const selectedTagCheckboxes = getSelectedTagCheckboxes();
+        const tagIds = selectedTagCheckboxes.map(cb => cb.dataset.tagId).filter(Boolean);
+        if (!tagIds.length) return;
+
+        const isBulk = tagIds.length > 1;
+        const tagName = escapeHtml(selectedTagCheckboxes[0]?.dataset.tagName || 'ten tag');
 
         closeSectionActionMenu();
         window.showConfirmModal({
-            title: 'Usuń tag',
-            message: `Czy na pewno chcesz usunąć tag „${tagName}”? ${taskCopy.tagDetachNote}`,
-            confirmText: 'Usuń tag',
+            title: isBulk ? 'Usuń tagi' : 'Usuń tag',
+            message: isBulk
+                ? `Czy na pewno chcesz usunąć zaznaczone tagi (${tagIds.length})? Zostaną odpięte od ${taskCopy.itemPluralGen}.`
+                : `Czy na pewno chcesz usunąć tag „${tagName}”? ${taskCopy.tagDetachNote}`,
+            confirmText: isBulk ? 'Usuń tagi' : 'Usuń tag',
             cancelText: 'Anuluj',
             confirmClass: 'btn-danger',
-            onConfirm: () => postDeleteTag(tagId)
+            onConfirm: () => postDeleteTag(tagIds)
         });
     }
 
@@ -3634,38 +3836,30 @@ function initTasksPage() {
 
     function initDirectoryColumnResize() {
         const boards = document.querySelectorAll('.tasks-directory-board.tasks-directory-sheet, .tasks-directory-board.contacts-directory-sheet');
+        const resetButtons = document.querySelectorAll('[data-directory-table-reset]');
         if (!boards.length) return;
 
+        const defaultDirectoryColumnWidth = 250;
+        const defaultDirectoryColumnMinWidth = 50;
         const columnMinimums = {
-            select: 18,
-            project: 180,
-            section: 180,
-            contact: 180,
-            company: 180,
-            person: 170,
-            item: 180,
-            members: 160,
-            default_assignee: 220,
-            company_role: 150,
-            website: 140,
-            channel: 160,
-            status: 112,
-            contact_count: 112,
-            role: 120,
-            shared_by: 150,
-            note: 160,
-            permission: 112,
-            ancore_id: 170,
-            presence: 120,
-            action: 96,
-            created_at: 104,
-            spacer: 80
+            select: 18
         };
-        const fixedColumns = new Set(['created_at']);
+        const fixedColumns = new Set();
         const resizeMediaQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(min-width: 901px)')
             : { matches: true };
         let activeResize = null;
+        const taskDirectoryBoards = Array.from(boards).filter(isUniformDirectoryBoard);
+
+        resetButtons.forEach(button => {
+            button.hidden = !taskDirectoryBoards.length;
+            if (!taskDirectoryBoards.length) return;
+
+            button.addEventListener('click', () => {
+                taskDirectoryBoards.forEach(resetDirectoryBoard);
+                showMessage('Zresetowano ustawienia tabeli', 'success');
+            }, pageListenerOptions);
+        });
 
         boards.forEach(board => {
             const header = board.querySelector('.tasks-directory-header');
@@ -3805,9 +3999,16 @@ function initTasksPage() {
 
             const cells = getDirectoryHeaderCells(header);
             const storedWidths = readStoredDirectoryWidths(cells);
-            if (!Object.keys(storedWidths).length) return;
+            if (!Object.keys(storedWidths).length) {
+                if (isUniformDirectoryBoard(board)) {
+                    setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
+                }
+                return;
+            }
 
-            const widths = getDirectoryTrackWidths(header, cells);
+            const widths = isUniformDirectoryBoard(board)
+                ? getDefaultDirectoryTrackWidths(cells)
+                : getDirectoryTrackWidths(header, cells);
             let hasStoredColumn = false;
 
             cells.forEach((cell, index) => {
@@ -3855,6 +4056,15 @@ function initTasksPage() {
             applyStoredDirectoryWidths(board);
         }
 
+        function resetDirectoryBoard(board) {
+            const header = board.querySelector('.tasks-directory-header');
+            if (!header || !isDirectoryResizeEnabled(header)) return;
+
+            const cells = getDirectoryHeaderCells(header);
+            removeStoredDirectoryWidths(cells);
+            setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
+        }
+
         function isDirectoryHeaderVisible(header) {
             return header.getClientRects().length > 0;
         }
@@ -3869,15 +4079,18 @@ function initTasksPage() {
             board.style.setProperty('--tasks-directory-grid', tracks.join(' '));
         }
 
+        function getDefaultDirectoryTrackWidths(cells) {
+            return cells.map(cell => {
+                const column = cell.dataset.column || '';
+                return column === 'select' ? getDirectoryColumnMinWidth(column) : defaultDirectoryColumnWidth;
+            });
+        }
+
         function getDirectoryColumnMinWidth(column) {
-            return columnMinimums[column] || 140;
+            return columnMinimums[column] || defaultDirectoryColumnMinWidth;
         }
 
         function getDirectoryStorageColumn(column) {
-            if (column === 'project' || column === 'section') {
-                return 'name';
-            }
-
             return column || '';
         }
 
@@ -3895,7 +4108,7 @@ function initTasksPage() {
                 .filter(Boolean)
                 .join('-') || 'default';
 
-            return `${getDirectoryStorageSegment()}:directoryColumnWidths:${schema}`;
+            return `${getDirectoryStorageSegment()}:directoryColumnWidths:v2:${schema}`;
         }
 
         function isFixedDirectoryColumn(column) {
@@ -3903,7 +4116,11 @@ function initTasksPage() {
         }
 
         function isResizableDirectoryColumn(column) {
-            return column && column !== 'select' && column !== 'spacer' && !isFixedDirectoryColumn(column);
+            return column && column !== 'select' && !isFixedDirectoryColumn(column);
+        }
+
+        function isUniformDirectoryBoard(board) {
+            return board.classList.contains('tasks-directory-sheet') && !board.classList.contains('contacts-directory-sheet');
         }
 
         function getDirectoryColumnLabel(cell) {
@@ -3912,19 +4129,7 @@ function initTasksPage() {
 
         function readStoredDirectoryWidths(cells) {
             const storageKey = getDirectoryStorageKey(cells);
-            const legacyStorageKey = `${taskAppSegment}:directoryColumnWidths`;
-            const keys = [storageKey];
-
-            if (getDirectoryStorageSegment() === taskAppSegment && storageKey !== legacyStorageKey) {
-                keys.push(legacyStorageKey);
-            }
-
-            for (const key of keys) {
-                const storedWidths = readStoredDirectoryWidthsByKey(key);
-                if (Object.keys(storedWidths).length) return storedWidths;
-            }
-
-            return {};
+            return readStoredDirectoryWidthsByKey(storageKey);
         }
 
         function readStoredDirectoryWidthsByKey(storageKey) {
@@ -3949,6 +4154,25 @@ function initTasksPage() {
 
             try {
                 window.localStorage.setItem(getDirectoryStorageKey(state.cells), JSON.stringify(nextStoredWidths));
+            } catch (error) {
+                // localStorage may be unavailable in private or restricted contexts.
+            }
+        }
+
+        function removeStoredDirectoryWidths(cells) {
+            const schema = cells
+                .map(cell => getDirectoryStorageColumn(cell.dataset.column))
+                .filter(Boolean)
+                .join('-') || 'default';
+            const segment = getDirectoryStorageSegment();
+            const keys = new Set([
+                getDirectoryStorageKey(cells),
+                `${segment}:directoryColumnWidths:${schema}`,
+                `${taskAppSegment}:directoryColumnWidths`
+            ]);
+
+            try {
+                keys.forEach(key => window.localStorage.removeItem(key));
             } catch (error) {
                 // localStorage may be unavailable in private or restricted contexts.
             }

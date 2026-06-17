@@ -1,8 +1,12 @@
+import secrets
+
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 
 
 class Company(models.Model):
@@ -184,3 +188,42 @@ class SharedItem(models.Model):
 
     def __str__(self):
         return f'{self.content_object} -> {self.shared_with}'
+
+
+class SharedItemLink(models.Model):
+    PERMISSION_CHOICES = SharedItem.PERMISSION_CHOICES
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveBigIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shared_item_links')
+    token = models.CharField(max_length=64, unique=True, blank=True)
+    permission = models.CharField(max_length=20, choices=PERMISSION_CHOICES, default='view')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    deactivated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['content_type', 'object_id', 'created_by'],
+                condition=Q(is_active=True),
+                name='unique_active_shared_item_link',
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = secrets.token_hex(16)
+        super().save(*args, **kwargs)
+
+    def deactivate(self):
+        if not self.is_active:
+            return
+        self.is_active = False
+        self.deactivated_at = timezone.now()
+        self.save(update_fields=['is_active', 'deactivated_at'])
+
+    def __str__(self):
+        return f'{self.content_object} link'

@@ -132,6 +132,13 @@ def _sections_for_projects(projects):
     return [section for project in projects for section in project.sections.all()]
 
 
+def _posted_ids(request, plural_name, singular_name):
+    ids = request.POST.getlist(plural_name)
+    if not ids:
+        ids = [request.POST.get(singular_name)]
+    return [item for item in ids if item]
+
+
 def _section_accent(section):
     if not section:
         return 'blue'
@@ -457,9 +464,16 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się zaktualizować tagu.')
 
         if action == 'delete_tag':
-            tag = get_object_or_404(KanbanTag, id=request.POST.get('tag_id'), user=request.user)
-            tag.delete()
-            messages.success(request, 'Tag usunięty.')
+            tag_ids = _posted_ids(request, 'tag_ids', 'tag_id')
+            tags_to_delete = KanbanTag.objects.filter(id__in=tag_ids, user=request.user)
+            if not tags_to_delete.exists():
+                get_object_or_404(KanbanTag, id=request.POST.get('tag_id'), user=request.user)
+            tag_count = tags_to_delete.count()
+            tags_to_delete.delete()
+            if tag_count == 1:
+                messages.success(request, 'Tag usunięty.')
+            else:
+                messages.success(request, f'Usunięto tagi ({tag_count}).')
             return redirect(f"{reverse('kanban:tasks')}?view=tags")
 
         if action == 'create_board_column':

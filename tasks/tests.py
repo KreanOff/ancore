@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
 
-from contacts.models import Contact, SharedItem, UserContact
+from contacts.models import Contact, SharedItem, SharedItemLink, UserContact
 from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
@@ -154,7 +154,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotEqual(first.icon_color, second.icon_color)
 
     def test_projects_list_does_not_render_icons_next_to_names(self):
-        project = TaskProject.objects.create(user=self.user, name='Projekt z ikoną', code='PZI', icon='star')
+        project = TaskProject.objects.create(user=self.user, name='Projekt z ikoną', description='Opis projektu', code='PZI', icon='star')
         TaskProject.objects.create(user=self.user, name='Projekt bez ikony', code='PBI', icon='')
         TaskProject.objects.filter(pk=project.pk).update(
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
@@ -166,6 +166,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'tasks-project-row-icon--fallback')
         self.assertContains(response, '<span>Projekt z ikoną</span>', html=True)
         self.assertContains(response, '<span>Projekt bez ikony</span>', html=True)
+        self.assertContains(response, 'KOD PROJEKTU')
+        self.assertContains(response, 'OPIS')
+        self.assertContains(response, project.code)
+        self.assertContains(response, 'Opis projektu')
+        self.assertContains(response, 'Brak opisu')
         self.assertContains(response, 'DATA')
         self.assertContains(response, '07.06.2026')
         self.assertNotContains(response, '7 cze')
@@ -209,14 +214,32 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'id="directory-share-modal"')
         self.assertContains(response, 'data-directory-share-open')
         self.assertContains(response, 'data-directory-share-fields')
-        self.assertContains(response, 'name="member_first_name"')
-        self.assertContains(response, 'name="member_last_name"')
         self.assertContains(response, 'name="member_query"')
+        self.assertContains(response, 'Wpisz ID Ancore')
+        self.assertContains(response, 'placeholder="@jan.kowalski"')
+        self.assertContains(response, 'data-share-link-create-url')
+        self.assertContains(response, 'data-directory-share-link-input')
+        self.assertContains(response, 'data-directory-share-link-create')
+        self.assertContains(response, 'data-directory-share-link-copy')
+        self.assertContains(response, 'data-directory-share-link-revoke')
+        self.assertNotContains(response, 'data-directory-share-contacts-toggle')
         self.assertContains(response, 'data-directory-share-results')
         self.assertContains(response, 'data-directory-share-results-empty')
         self.assertContains(response, 'data-directory-share-contacts')
         self.assertContains(response, 'data-directory-share-contacts-empty')
+        self.assertContains(response, 'data-directory-share-shared-list')
+        self.assertContains(response, 'data-directory-share-shared-empty')
+        self.assertContains(response, 'data-directory-share-shared-count')
         self.assertContains(response, f'data-share-project-id="{project.id}"')
+        self.assertContains(response, f'data-share-members-template="tasks-directory-share-members-project-{project.id}"')
+        self.assertContains(response, f'id="tasks-directory-share-members-project-{project.id}"')
+        self.assertContains(response, 'data-directory-share-remove')
+        self.assertContains(response, f'data-share-member-id="{shared_user.id}"')
+        self.assertContains(response, 'shared-user')
+        self.assertContains(response, 'tasks-directory-share-check')
+        self.assertContains(response, '<span class="tasks-directory-share-email"><span>shared@example.com</span></span>', html=True)
+        self.assertNotContains(response, 'name="member_first_name"')
+        self.assertNotContains(response, 'name="member_last_name"')
         self.assertNotContains(response, '<datalist id="tasks-share-contact-options">')
         self.assertNotContains(response, 'data-directory-share-picker')
         self.assertNotContains(response, 'tasks-directory-member-input')
@@ -241,8 +264,7 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'share_project',
             'project_id': project.id,
-            'member_first_name': 'Shared',
-            'member_last_name': 'Contact',
+            'member_query': 'shared-contact',
             'next': reverse('tasks:tasks'),
         })
 
@@ -285,11 +307,15 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-directory-share-result')
         self.assertContains(response, 'data-directory-share-contact')
         self.assertContains(response, 'data-directory-share-pick')
+        self.assertContains(response, 'data-directory-share-check')
         self.assertContains(response, 'tasks-directory-share-person-cell')
-        self.assertContains(response, 'data-share-first-name="Jan"')
-        self.assertContains(response, 'data-share-last-name="Kowalski"')
         self.assertContains(response, 'data-share-value="jan.kowalski"')
-        self.assertContains(response, 'Kontakty')
+        self.assertContains(response, 'EMAIL')
+        self.assertContains(response, 'jan@example.com')
+        self.assertContains(response, '<span class="tasks-directory-share-email"><span>jan@example.com</span></span>', html=True)
+        self.assertNotContains(response, '<small class="tasks-directory-share-person-email">jan@example.com</small>', html=True)
+        self.assertContains(response, 'id="directory-share-contacts-panel"')
+        self.assertNotContains(response, 'data-directory-share-contacts-toggle')
         self.assertContains(response, '<span class="tasks-directory-share-first-name">Jan</span>', html=True)
         self.assertContains(response, '<span class="tasks-directory-share-last-name">Kowalski</span>', html=True)
         self.assertNotContains(response, '<span class="tasks-directory-share-middle-name">-</span>', html=True)
@@ -320,22 +346,24 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '<span class="tasks-directory-share-last-name">Kowalski</span>', html=True)
         self.assertContains(response, '<span class="tasks-directory-share-middle-name">Adam</span>', html=True)
         self.assertContains(response, '<span class="tasks-directory-share-username"><span>@jan.kowalski</span></span>', html=True)
-        self.assertContains(response, 'data-share-first-name="Jan"')
-        self.assertContains(response, 'data-share-last-name="Kowalski"')
         row_start = html.index('data-share-value="@jan.kowalski"')
         person_position = html.index('tasks-directory-share-person-cell', row_start)
+        check_position = html.index('data-directory-share-check', row_start)
         avatar_position = html.index('tasks-directory-share-contact-avatar', row_start)
         first_name_position = html.index('<span class="tasks-directory-share-first-name">Jan</span>', row_start)
         last_name_position = html.index('<span class="tasks-directory-share-last-name">Kowalski</span>', row_start)
         middle_name_position = html.index('<span class="tasks-directory-share-middle-name">Adam</span>', row_start)
         ancore_position = html.index('tasks-directory-share-username', row_start)
         ancore_value_position = html.index('<span>@jan.kowalski</span>', row_start)
+        email_position = html.index('<span class="tasks-directory-share-email">', row_start)
+        self.assertLess(check_position, person_position)
         self.assertLess(person_position, avatar_position)
         self.assertLess(avatar_position, first_name_position)
-        self.assertLess(first_name_position, middle_name_position)
-        self.assertLess(middle_name_position, last_name_position)
-        self.assertLess(last_name_position, ancore_position)
+        self.assertLess(first_name_position, last_name_position)
+        self.assertLess(last_name_position, middle_name_position)
+        self.assertLess(middle_name_position, ancore_position)
         self.assertLess(ancore_position, ancore_value_position)
+        self.assertLess(ancore_value_position, email_position)
 
     def test_share_modal_uses_user_name_when_linked_contact_has_only_company(self):
         linked_user = get_user_model().objects.create_user(
@@ -381,6 +409,73 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertTrue(self._shared_task_object_exists(project, shared_user))
 
+    def test_share_project_does_not_add_user_by_email(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@email.user',
+            email='email-user@example.com',
+            first_name='Email',
+            last_name='User',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt po emailu', code='PEM')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'share_project',
+            'project_id': project.id,
+            'member_query': 'email-user@example.com',
+            'next': reverse('tasks:tasks'),
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(self._shared_task_object_exists(project, shared_user))
+
+    def test_share_project_does_not_add_user_by_full_name(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@name.user',
+            email='name-user@example.com',
+            first_name='Natalia',
+            last_name='Zielinska',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt po nazwisku', code='PNZ')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'share_project',
+            'project_id': project.id,
+            'member_query': 'Natalia Zielinska',
+            'next': reverse('tasks:tasks'),
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(self._shared_task_object_exists(project, shared_user))
+
+    def test_share_project_does_not_add_user_by_linked_contact_identity(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@linked.user',
+            email='linked-user@example.com',
+            first_name='Account',
+            last_name='Name',
+            password='test-pass-123',
+        )
+        contact = Contact.objects.create(
+            user=self.user,
+            first_name='Alicja',
+            last_name='Nowak',
+            email='alicja.nowak@example.com',
+        )
+        UserContact.objects.create(owner=self.user, target_user=shared_user, linked_contact=contact)
+        project = TaskProject.objects.create(user=self.user, name='Projekt po kontakcie', code='PCK')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'share_project',
+            'project_id': project.id,
+            'member_query': 'Alicja Nowak',
+            'next': reverse('tasks:tasks'),
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(self._shared_task_object_exists(project, shared_user))
+
     def test_share_section_adds_user_from_contacts(self):
         shared_user = get_user_model().objects.create_user(
             username='shared-section-contact',
@@ -396,8 +491,7 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'share_section',
             'section_id': section.id,
-            'member_first_name': 'Shared',
-            'member_last_name': 'Section',
+            'member_query': 'shared-section-contact',
             'next': reverse('tasks:tasks'),
         })
 
@@ -425,6 +519,214 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertFalse(self._shared_task_object_exists(section, shared_user))
+
+    def test_share_task_adds_user_by_ancore_id(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@task.user',
+            email='task-user-shared@example.com',
+            first_name='Task',
+            last_name='Shared',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='TSK')
+        section = TaskSection.objects.create(project=project, title='Grupa')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie udostępniane')
+
+        response = self.client.post(reverse('tasks:view-task', args=[task.task_id]), {
+            'action': 'share_task',
+            'task_id': task.id,
+            'member_query': '@task.user',
+            'next': reverse('tasks:view-task', args=[task.task_id]),
+        })
+
+        self.assertRedirects(response, reverse('tasks:view-task', args=[task.task_id]))
+        self.assertTrue(self._shared_task_object_exists(task, shared_user))
+
+    def test_task_detail_renders_share_controls_for_owner(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='TDT')
+        section = TaskSection.objects.create(project=project, title='Grupa')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie z udostępnianiem')
+
+        response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
+
+        self.assertContains(response, 'Udostępnione')
+        self.assertContains(response, 'data-share-action="share_task"')
+        self.assertContains(response, f'data-share-task-id="{task.id}"')
+        self.assertContains(response, 'data-share-object-kind="task"')
+        self.assertContains(response, 'data-directory-share-link-input')
+
+    def test_create_share_link_returns_project_link(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt linkowany', code='LNK')
+
+        response = self.client.post(reverse('tasks:create-share-link'), {
+            'object_type': 'project',
+            'object_id': project.id,
+        })
+
+        payload = response.json()
+        link = SharedItemLink.objects.get(
+            content_type=ContentType.objects.get_for_model(TaskProject),
+            object_id=project.id,
+            created_by=self.user,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload['status'], 'success')
+        self.assertIn(reverse('tasks:accept-share-link', args=[link.token]), payload['url'])
+        self.assertRegex(link.token, r'^[0-9a-f]{32}$')
+        self.assertTrue(link.is_active)
+
+    def test_missing_share_link_redirects_without_debug_404(self):
+        response = self.client.get(reverse('tasks:accept-share-link', args=['nieistniejacy-token']))
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertEqual(messages, ['Ten link udostępniania nie istnieje albo został przepisany niepoprawnie.'])
+
+    def test_revoked_share_link_redirects_without_granting_access(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@revoked.link',
+            email='revoked-link@example.com',
+            first_name='Revoked',
+            last_name='Link',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt z wyłączonym linkiem', code='RLK')
+        link = SharedItemLink.objects.create(
+            content_type=ContentType.objects.get_for_model(TaskProject),
+            object_id=project.id,
+            created_by=self.user,
+            is_active=False,
+        )
+
+        self.client.force_login(shared_user)
+        response = self.client.get(reverse('tasks:accept-share-link', args=[link.token]))
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertEqual(messages, ['Ten link udostępniania został wyłączony.'])
+        self.assertFalse(self._shared_task_object_exists(project, shared_user))
+
+    def test_accept_project_share_link_grants_access(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@link.user',
+            email='link-user@example.com',
+            first_name='Link',
+            last_name='User',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt z linku', code='LKP')
+        link = SharedItemLink.objects.create(
+            content_type=ContentType.objects.get_for_model(TaskProject),
+            object_id=project.id,
+            created_by=self.user,
+        )
+
+        self.client.force_login(shared_user)
+        response = self.client.get(reverse('tasks:accept-share-link', args=[link.token]))
+
+        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=shared-projects")
+        self.assertTrue(self._shared_task_object_exists(project, shared_user))
+
+    def test_shared_project_appears_in_default_projects_for_recipient(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@default.shared',
+            email='default-shared@example.com',
+            first_name='Default',
+            last_name='Shared',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt widoczny normalnie', code='PVN')
+        section = TaskSection.objects.create(project=project, title='Grupa widoczna normalnie')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie widoczne normalnie')
+        self._share_task_object(project, shared_user)
+
+        self.client.force_login(shared_user)
+        response = self.client.get(reverse('tasks:tasks'))
+        section_response = self.client.get(reverse('tasks:task_group', args=[section.id]))
+
+        self.assertContains(response, 'Projekt widoczny normalnie')
+        self.assertContains(response, 'Grupa widoczna normalnie')
+        self.assertContains(response, f'?project={project.id}')
+        self.assertNotContains(response, f'data-share-project-id="{project.id}"')
+        self.assertContains(section_response, 'Zadanie widoczne normalnie')
+        self.assertContains(section_response, reverse('tasks:view-shared-task', args=[task.id]))
+
+    def test_accept_section_share_link_grants_group_access(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@section.link',
+            email='section-link@example.com',
+            first_name='Section',
+            last_name='Link',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='SLK')
+        section = TaskSection.objects.create(project=project, title='Grupa z linku')
+        Task.objects.create(user=self.user, section=section, title='Zadanie w grupie')
+        link = SharedItemLink.objects.create(
+            content_type=ContentType.objects.get_for_model(TaskSection),
+            object_id=section.id,
+            created_by=self.user,
+        )
+
+        self.client.force_login(shared_user)
+        response = self.client.get(reverse('tasks:accept-share-link', args=[link.token]))
+        group_response = self.client.get(reverse('tasks:task_group', args=[section.id]))
+
+        self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
+        self.assertTrue(self._shared_task_object_exists(section, shared_user))
+        self.assertContains(group_response, 'Zadanie w grupie')
+
+    def test_accept_task_share_link_uses_stable_shared_task_route(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@task.link',
+            email='task-link@example.com',
+            first_name='Task',
+            last_name='Link',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='TLK')
+        section = TaskSection.objects.create(project=project, title='Grupa')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie z linku')
+        link = SharedItemLink.objects.create(
+            content_type=ContentType.objects.get_for_model(Task),
+            object_id=task.id,
+            created_by=self.user,
+        )
+
+        self.client.force_login(shared_user)
+        response = self.client.get(reverse('tasks:accept-share-link', args=[link.token]))
+        detail_response = self.client.get(reverse('tasks:view-shared-task', args=[task.id]))
+
+        self.assertRedirects(response, reverse('tasks:view-shared-task', args=[task.id]))
+        self.assertTrue(self._shared_task_object_exists(task, shared_user))
+        self.assertContains(detail_response, 'Zadanie z linku')
+        self.assertNotContains(detail_response, 'data-share-action="share_task"')
+
+    def test_shared_views_list_received_items(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@shared.views',
+            email='shared-views@example.com',
+            first_name='Shared',
+            last_name='Views',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt udostępniony w widoku', code='SVP')
+        section = TaskSection.objects.create(project=project, title='Grupa udostępniona w widoku')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie udostępnione w widoku')
+        self._share_task_object(project, shared_user)
+        self._share_task_object(section, shared_user)
+        self._share_task_object(task, shared_user)
+
+        self.client.force_login(shared_user)
+        projects_response = self.client.get(f"{reverse('tasks:tasks')}?view=shared-projects")
+        groups_response = self.client.get(f"{reverse('tasks:tasks')}?view=shared-groups")
+        tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=shared-tasks")
+
+        self.assertContains(projects_response, 'Projekt udostępniony w widoku')
+        self.assertContains(groups_response, 'Grupa udostępniona w widoku')
+        self.assertContains(tasks_response, 'Zadanie udostępnione w widoku')
+        self.assertContains(tasks_response, reverse('tasks:view-shared-task', args=[task.id]))
 
     def test_project_and_group_icon_pickers_are_not_rendered(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -566,8 +868,8 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertContains(response, 'Moje grupy')
         self.assertContains(response, 'tasks-directory-header')
-        self.assertContains(response, 'CZŁONKOWIE')
-        self.assertContains(response, 'DOMYŚLNY ODPOWIEDZIALNY ZA ZADANIA')
+        self.assertContains(response, 'UDOSTĘPNIONE')
+        self.assertContains(response, 'ODPOWIEDZIALNY ZA ZADANIA')
         self.assertContains(response, 'DATA')
         self.assertContains(response, 'Frontend')
         self.assertContains(response, 'Prace po stronie UI')
@@ -623,6 +925,10 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
 
         self.assertContains(response, 'Tagi')
+        self.assertContains(response, 'KOD TAGU')
+        self.assertContains(response, 'NAZWA TAGU')
+        self.assertContains(response, 'data-column="tag_code"', count=3)
+        self.assertContains(response, 'data-column="tag_name"', count=3)
         self.assertContains(response, 'Frontend')
         self.assertContains(response, 'Prace po stronie UI')
         self.assertContains(response, 'Brak opisu')
@@ -1126,11 +1432,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Wszystkie zadania')
         self.assertContains(response, 'Wszystkie projekty')
         self.assertContains(response, 'Tagi')
+        self.assertContains(response, 'Udostępnione zadania')
+        self.assertContains(response, 'Udostępnione grupy')
+        self.assertContains(response, 'Udostępnione projekty')
         self.assertContains(response, 'tasks-rail-nav-separator')
         self.assertNotContains(response, 'Moje grupy')
-        self.assertNotContains(response, 'Udostępnione zadania')
-        self.assertNotContains(response, 'Udostępnione grupy')
-        self.assertNotContains(response, 'Udostępnione projekty')
         self.assertNotContains(response, 'data-rail-nav-group')
         self.assertNotContains(response, 'data-rail-nav-group-toggle')
 
