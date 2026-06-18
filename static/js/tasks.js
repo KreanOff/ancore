@@ -6,6 +6,7 @@ function initTasksPage() {
     const pageListenersController = typeof AbortController === 'function' ? new AbortController() : null;
     window.ancoreTasksPageListenersController = pageListenersController;
     const pageListenerOptions = pageListenersController ? { signal: pageListenersController.signal } : false;
+    const pageCaptureListenerOptions = pageListenersController ? { signal: pageListenersController.signal, capture: true } : true;
 
     const taskRows = document.querySelectorAll('.task-row');
     const projectRows = document.querySelectorAll('.tasks-project-row');
@@ -721,6 +722,7 @@ function initTasksPage() {
     const directoryShareObjectTypeInput = directoryShareForm ? directoryShareForm.querySelector('[name="share_object_type"]') : null;
     const directoryShareObjectIdInput = directoryShareForm ? directoryShareForm.querySelector('[name="share_object_id"]') : null;
     const directoryShareMemberInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_query"]') : null;
+    const directorySharePermissionInput = directoryShareForm ? directoryShareForm.querySelector('[name="permission"]') : null;
     const directorySharePersonInputs = [directoryShareMemberInput].filter(Boolean);
     const directoryShareContext = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-context]') : null;
     const directoryShareResults = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-results]') : null;
@@ -965,6 +967,7 @@ function initTasksPage() {
         const payload = new FormData();
         payload.append('object_type', objectType);
         payload.append('object_id', objectId);
+        payload.append('permission', directorySharePermissionInput?.value || 'view');
         return payload;
     }
 
@@ -1032,6 +1035,7 @@ function initTasksPage() {
         const rows = Array.from(directoryShareSharedList.querySelectorAll('[data-directory-share-shared-row]'));
         if (directoryShareSharedEmpty) directoryShareSharedEmpty.hidden = rows.length > 0;
         if (directoryShareSharedCount) directoryShareSharedCount.textContent = String(rows.length);
+        initDirectorySharePermissionPickers(directoryShareSharedList);
 
         rows.forEach(row => {
             row.querySelector('[data-directory-share-remove]')?.addEventListener('click', function() {
@@ -1052,7 +1056,7 @@ function initTasksPage() {
         }
     }
 
-    function syncDirectoryShareTriggerLink(linkUrl) {
+    function syncDirectoryShareTriggerLink(linkUrl, permission = '') {
         const objectType = directoryShareObjectTypeInput?.value || '';
         const objectId = directoryShareObjectIdInput?.value || '';
         if (!objectType || !objectId) return;
@@ -1060,6 +1064,7 @@ function initTasksPage() {
         const escapeSelectorValue = window.CSS?.escape || (value => String(value).replace(/"/g, '\\"'));
         document.querySelectorAll(`[data-share-object-kind="${escapeSelectorValue(objectType)}"][data-share-object-id="${escapeSelectorValue(objectId)}"]`).forEach(button => {
             button.dataset.shareLinkUrl = linkUrl || '';
+            if (permission) button.dataset.shareLinkPermission = permission;
         });
     }
 
@@ -1088,7 +1093,7 @@ function initTasksPage() {
         try {
             const data = await postDirectoryShareLink(directoryShareForm.dataset.shareLinkCreateUrl || '');
             updateDirectoryShareLinkState(data.url || '');
-            syncDirectoryShareTriggerLink(data.url || '');
+            syncDirectoryShareTriggerLink(data.url || '', data.permission || directorySharePermissionInput?.value || 'view');
             showMessage('Link udostępniania jest gotowy.', 'success');
         } catch (error) {
             showMessage(error.message || 'Nie udało się utworzyć linku.', 'error');
@@ -1103,7 +1108,7 @@ function initTasksPage() {
         try {
             await postDirectoryShareLink(directoryShareForm.dataset.shareLinkRevokeUrl || '');
             updateDirectoryShareLinkState('');
-            syncDirectoryShareTriggerLink('');
+            syncDirectoryShareTriggerLink('', directorySharePermissionInput?.value || 'view');
             showMessage('Link udostępniania został wyłączony.', 'success');
         } catch (error) {
             showMessage(error.message || 'Nie udało się wyłączyć linku.', 'error');
@@ -1280,6 +1285,232 @@ function initTasksPage() {
             if (dropdown === exceptDropdown) return;
             dropdown.classList.remove('is-open');
             dropdown.querySelector('[data-inline-select-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    const DIRECTORY_SHARE_PERMISSION_META = {
+        view: { label: 'Może wyświetlać', icon: 'eye' },
+        edit: { label: 'Może wyświetlać i edytować', icon: 'pen-line' }
+    };
+
+    function normalizeDirectorySharePermission(value) {
+        return value === 'edit' ? 'edit' : 'view';
+    }
+
+    function renderDirectorySharePermissionIcon(picker, iconName) {
+        const currentIcon = picker.querySelector('[data-directory-share-permission-current-icon]');
+        if (!currentIcon || currentIcon.getAttribute('data-lucide') === iconName) return;
+
+        const icon = document.createElement('i');
+        icon.setAttribute('data-lucide', iconName);
+        icon.setAttribute('aria-hidden', 'true');
+        icon.setAttribute('data-directory-share-permission-current-icon', '');
+        currentIcon.replaceWith(icon);
+
+        if (window.AncoreIcons?.render) {
+            window.AncoreIcons.render(picker);
+        } else if (window.lucide?.createIcons) {
+            window.lucide.createIcons();
+        }
+    }
+
+    function updateDirectorySharePermissionPicker(picker, value) {
+        if (!picker) return;
+        const permission = normalizeDirectorySharePermission(value || picker.dataset.permissionValue);
+        const meta = DIRECTORY_SHARE_PERMISSION_META[permission];
+        picker.dataset.permissionValue = permission;
+        picker.classList.toggle('is-view', permission === 'view');
+        picker.classList.toggle('is-edit', permission === 'edit');
+
+        const hiddenInput = picker.querySelector('[data-directory-share-permission-hidden]');
+        if (hiddenInput) hiddenInput.value = permission;
+
+        const currentLabel = picker.querySelector('[data-directory-share-permission-current-label]');
+        if (currentLabel) currentLabel.textContent = meta.label;
+        renderDirectorySharePermissionIcon(picker, meta.icon);
+
+        picker.querySelectorAll('[data-directory-share-permission-option]').forEach(option => {
+            const isActive = normalizeDirectorySharePermission(option.dataset.permissionValue) === permission;
+            option.classList.toggle('is-active', isActive);
+            option.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+    }
+
+    function syncDirectorySharePermissionPickers(root = document) {
+        const scope = root && root.querySelectorAll ? root : document;
+        scope.querySelectorAll('[data-directory-share-permission-picker]').forEach(picker => {
+            const hiddenInput = picker.querySelector('[data-directory-share-permission-hidden]');
+            updateDirectorySharePermissionPicker(picker, hiddenInput?.value || picker.dataset.permissionValue);
+        });
+    }
+
+    function resetDirectorySharePermissionMenuPosition(menu) {
+        if (!menu) return;
+        menu.classList.remove('is-floating');
+        ['position', 'top', 'right', 'bottom', 'left', 'width', 'minWidth', 'maxWidth', 'zIndex'].forEach(property => {
+            menu.style[property] = '';
+        });
+    }
+
+    function positionDirectorySharePermissionMenu(picker) {
+        const menu = picker?.querySelector('[data-directory-share-permission-menu]');
+        const toggle = picker?.querySelector('[data-directory-share-permission-toggle]');
+        if (!menu || !toggle || menu.hidden) return;
+
+        const toggleRect = toggle.getBoundingClientRect();
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const viewportGap = 8;
+        const menuGap = 6;
+        const desiredWidth = picker.classList.contains('tasks-directory-share-permission-picker--row') ? 260 : Math.max(toggleRect.width, 240);
+        const menuWidth = Math.max(160, Math.min(desiredWidth, viewportWidth - (viewportGap * 2)));
+
+        menu.classList.add('is-floating');
+        menu.style.position = 'fixed';
+        menu.style.width = `${menuWidth}px`;
+        menu.style.minWidth = '0';
+        menu.style.maxWidth = `${menuWidth}px`;
+        menu.style.right = 'auto';
+        menu.style.bottom = 'auto';
+        menu.style.zIndex = '2400';
+
+        const menuHeight = menu.offsetHeight;
+        let left = toggleRect.right - menuWidth;
+        left = Math.max(viewportGap, Math.min(left, viewportWidth - menuWidth - viewportGap));
+
+        let top = toggleRect.bottom + menuGap;
+        if (top + menuHeight > viewportHeight - viewportGap) {
+            top = toggleRect.top - menuHeight - menuGap;
+        }
+        top = Math.max(viewportGap, Math.min(top, viewportHeight - menuHeight - viewportGap));
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+    }
+
+    function repositionOpenDirectorySharePermissionMenus() {
+        document.querySelectorAll('[data-directory-share-permission-picker].is-open').forEach(positionDirectorySharePermissionMenu);
+    }
+
+    function closeDirectorySharePermissionPickers(exceptPicker = null, restoreFocus = false) {
+        document.querySelectorAll('[data-directory-share-permission-picker].is-open').forEach(picker => {
+            if (picker === exceptPicker) return;
+            picker.classList.remove('is-open');
+            picker.querySelector('[data-directory-share-permission-toggle]')?.setAttribute('aria-expanded', 'false');
+            const menu = picker.querySelector('[data-directory-share-permission-menu]');
+            if (menu) {
+                menu.hidden = true;
+                resetDirectorySharePermissionMenuPosition(menu);
+            }
+            if (restoreFocus) picker.querySelector('[data-directory-share-permission-toggle]')?.focus();
+        });
+    }
+
+    function openDirectorySharePermissionPicker(picker, focusSelected = false) {
+        if (!picker) return;
+        closeCreateMenu();
+        closeProjectActionMenus();
+        closeSectionActionMenu();
+        closeStatusFilterMenu();
+        closePriorityFilterMenu();
+        closeIssuePickers();
+        closeInlineSelectDropdowns();
+        closeDirectorySharePermissionPickers(picker);
+
+        picker.classList.add('is-open');
+        picker.querySelector('[data-directory-share-permission-toggle]')?.setAttribute('aria-expanded', 'true');
+        const menu = picker.querySelector('[data-directory-share-permission-menu]');
+        if (menu) {
+            menu.hidden = false;
+            positionDirectorySharePermissionMenu(picker);
+        }
+        if (focusSelected) {
+            (picker.querySelector('[data-directory-share-permission-option].is-active') || picker.querySelector('[data-directory-share-permission-option]'))?.focus();
+        }
+    }
+
+    function submitDirectorySharePermissionOption(option, permission) {
+        if (!directoryShareForm || !option.hasAttribute('data-directory-share-permission-submit')) return;
+        if (directoryShareActionInput) directoryShareActionInput.value = option.dataset.shareAction || '';
+        if (directoryShareProjectInput) directoryShareProjectInput.value = option.dataset.shareProjectId || '';
+        if (directoryShareSectionInput) directoryShareSectionInput.value = option.dataset.shareSectionId || '';
+        if (directoryShareTaskInput) directoryShareTaskInput.value = option.dataset.shareTaskId || '';
+        if (directoryShareMemberIdInput) directoryShareMemberIdInput.value = option.dataset.shareMemberId || '';
+        if (directorySharePermissionInput) directorySharePermissionInput.value = permission;
+        directorySharePersonInputs.forEach(input => { input.value = ''; });
+        directoryShareForm.requestSubmit ? directoryShareForm.requestSubmit() : directoryShareForm.submit();
+    }
+
+    function selectDirectorySharePermissionOption(option) {
+        const picker = option?.closest('[data-directory-share-permission-picker]');
+        if (!picker) return;
+        const permission = normalizeDirectorySharePermission(option.dataset.permissionValue);
+        updateDirectorySharePermissionPicker(picker, permission);
+        closeDirectorySharePermissionPickers();
+        submitDirectorySharePermissionOption(option, permission);
+    }
+
+    function focusDirectorySharePermissionOption(option, direction) {
+        const picker = option.closest('[data-directory-share-permission-picker]');
+        const options = Array.from(picker.querySelectorAll('[data-directory-share-permission-option]'));
+        if (!options.length) return;
+        const currentIndex = Math.max(0, options.indexOf(option));
+        const nextIndex = (currentIndex + direction + options.length) % options.length;
+        options[nextIndex].focus();
+    }
+
+    function initDirectorySharePermissionPickers(root = document) {
+        const scope = root && root.querySelectorAll ? root : document;
+        scope.querySelectorAll('[data-directory-share-permission-picker]').forEach(picker => {
+            if (picker.dataset.permissionPickerReady === 'true') {
+                updateDirectorySharePermissionPicker(picker, picker.dataset.permissionValue);
+                return;
+            }
+            picker.dataset.permissionPickerReady = 'true';
+
+            updateDirectorySharePermissionPicker(picker, picker.dataset.permissionValue);
+            picker.addEventListener('click', event => event.stopPropagation());
+
+            const toggle = picker.querySelector('[data-directory-share-permission-toggle]');
+            toggle?.addEventListener('click', () => {
+                const shouldOpen = !picker.classList.contains('is-open');
+                if (shouldOpen) {
+                    openDirectorySharePermissionPicker(picker);
+                } else {
+                    closeDirectorySharePermissionPickers();
+                }
+            });
+
+            toggle?.addEventListener('keydown', event => {
+                if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openDirectorySharePermissionPicker(picker, true);
+                } else if (event.key === 'Escape') {
+                    closeDirectorySharePermissionPickers();
+                }
+            });
+
+            picker.querySelector('[data-directory-share-permission-hidden]')?.addEventListener('change', event => {
+                updateDirectorySharePermissionPicker(picker, event.target.value);
+            });
+
+            picker.querySelectorAll('[data-directory-share-permission-option]').forEach(option => {
+                option.addEventListener('click', () => selectDirectorySharePermissionOption(option));
+                option.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        selectDirectorySharePermissionOption(option);
+                    } else if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        focusDirectorySharePermissionOption(option, 1);
+                    } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        focusDirectorySharePermissionOption(option, -1);
+                    } else if (event.key === 'Escape') {
+                        closeDirectorySharePermissionPickers(null, true);
+                    }
+                });
+            });
         });
     }
 
@@ -2117,6 +2348,7 @@ function initTasksPage() {
         const objectKind = button.dataset.shareObjectKind || '';
         const objectId = button.dataset.shareObjectId || '';
         const linkUrl = button.dataset.shareLinkUrl || '';
+        const linkPermission = button.dataset.shareLinkPermission || 'view';
         const objectType = button.dataset.shareObjectType || '';
         const objectName = button.dataset.shareObjectName || '';
 
@@ -2127,6 +2359,8 @@ function initTasksPage() {
         if (directoryShareObjectTypeInput) directoryShareObjectTypeInput.value = objectKind;
         if (directoryShareObjectIdInput) directoryShareObjectIdInput.value = objectId;
         if (directoryShareMemberIdInput) directoryShareMemberIdInput.value = '';
+        if (directorySharePermissionInput) directorySharePermissionInput.value = linkPermission === 'edit' ? 'edit' : 'view';
+        syncDirectorySharePermissionPickers(directoryShareForm);
         directorySharePersonInputs.forEach(input => { input.value = ''; });
         updateDirectoryShareLinkState(linkUrl);
         syncDirectoryShareResults();
@@ -2246,6 +2480,7 @@ function initTasksPage() {
     });
 
     initContactCustomSelects();
+    initDirectorySharePermissionPickers(directoryShareForm || document);
 
     if (sectionActionMenu) {
         const toggle = sectionActionMenu.querySelector('[data-section-menu-toggle]');
@@ -2525,6 +2760,9 @@ function initTasksPage() {
         });
     });
 
+    window.addEventListener('resize', repositionOpenDirectorySharePermissionMenus, pageListenerOptions);
+    document.addEventListener('scroll', repositionOpenDirectorySharePermissionMenus, pageCaptureListenerOptions);
+
     document.addEventListener('click', function(e) {
         if (createMenu && !createMenu.contains(e.target)) closeCreateMenu();
         if (!e.target.closest('[data-status-filter-menu]')) closeStatusFilterMenu();
@@ -2534,6 +2772,7 @@ function initTasksPage() {
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
         if (!e.target.closest('[data-inline-select-dropdown]')) closeInlineSelectDropdowns();
+        if (!e.target.closest('[data-directory-share-permission-picker]')) closeDirectorySharePermissionPickers();
         if (!e.target.closest('[data-contact-custom-select]')) closeContactCustomSelects();
         if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
             closeEmojiPicker();

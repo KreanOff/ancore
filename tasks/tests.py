@@ -27,12 +27,13 @@ class TaskProjectCreationTests(TestCase):
         )
         self.client.force_login(self.user)
 
-    def _share_task_object(self, obj, shared_with):
+    def _share_task_object(self, obj, shared_with, permission='view'):
         return SharedItem.objects.create(
             content_type=ContentType.objects.get_for_model(obj.__class__),
             object_id=obj.pk,
             shared_by=self.user,
             shared_with=shared_with,
+            permission=permission,
         )
 
     def _shared_task_object_exists(self, obj, shared_with):
@@ -215,6 +216,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-directory-share-open')
         self.assertContains(response, 'data-directory-share-fields')
         self.assertContains(response, 'name="member_query"')
+        self.assertContains(response, 'name="permission"')
+        self.assertContains(response, 'data-directory-share-permission-picker')
+        self.assertContains(response, 'data-directory-share-permission-option')
+        self.assertNotContains(response, '<select id="directory-share-permission"')
         self.assertContains(response, 'Wpisz ID Ancore')
         self.assertContains(response, 'placeholder="@jan.kowalski"')
         self.assertContains(response, 'data-share-link-create-url')
@@ -237,7 +242,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, f'data-share-member-id="{shared_user.id}"')
         self.assertContains(response, 'shared-user')
         self.assertContains(response, 'tasks-directory-share-check')
-        self.assertContains(response, '<span class="tasks-directory-share-email"><span>shared@example.com</span></span>', html=True)
+        self.assertContains(response, 'tasks-directory-share-shared-details')
+        self.assertContains(response, '<span class="tasks-directory-share-email"><i data-lucide="mail" aria-hidden="true"></i><span>shared@example.com</span></span>', html=True)
+        self.assertContains(response, 'data-directory-share-permission-submit')
+        self.assertContains(response, 'data-share-action="update_project_share_permission"')
+        self.assertContains(response, 'tasks-directory-share-permission-badge')
         self.assertNotContains(response, 'name="member_first_name"')
         self.assertNotContains(response, 'name="member_last_name"')
         self.assertNotContains(response, '<datalist id="tasks-share-contact-options">')
@@ -291,6 +300,29 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertFalse(self._shared_task_object_exists(project, shared_user))
+
+    def test_update_project_share_permission_changes_existing_user_access(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@permission.user',
+            email='permission-user@example.com',
+            first_name='Permission',
+            last_name='User',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt z dostępem')
+        share = self._share_task_object(project, shared_user, permission='view')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'update_project_share_permission',
+            'project_id': project.id,
+            'member_id': shared_user.id,
+            'permission': 'edit',
+            'next': reverse('tasks:tasks'),
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        share.refresh_from_db()
+        self.assertEqual(share.permission, 'edit')
 
     def test_share_modal_lists_contacts_for_selection(self):
         shared_user = get_user_model().objects.create_user(

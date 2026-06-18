@@ -124,9 +124,11 @@
                                         <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
                                     </span>
                                 </a>
+                                {% if can_add_attachments %}
                                 <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">
                                     {% include 'core/includes/trash_icon.html' %}
                                 </button>
+                                {% endif %}
                             </div>
                             {% endfor %}
                         </div>
@@ -147,12 +149,16 @@
                                 <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-subtasks-sort>
                                     <i data-lucide="arrow-down-wide-narrow" aria-hidden="true"></i>
                                 </button>
+                                {% if can_manage_task %}
                                 <button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-subtasks-delete>
                                     {% include 'core/includes/trash_icon.html' %}
                                 </button>
+                                {% endif %}
+                                {% if can_edit_task %}
                                 <button type="button" class="tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-open-issue aria-haspopup="dialog" aria-controls="issue-modal">
                                     <i data-lucide="plus" aria-hidden="true"></i>
                                 </button>
+                                {% endif %}
                             </div>
                         </div>
                         {% if task.subtasks.exists %}
@@ -378,9 +384,11 @@
                                 <div class="tasks-issue-time-entries" aria-label="Dodany czas pracy">
                                     <div class="tasks-issue-time-entry">
                                         <span>{{ task.time_spent_label }}</span>
+                                        {% if can_edit_task %}
                                         <button type="submit" name="action" value="clear_time_spent" title="Usuń czas pracy" aria-label="Usuń czas pracy" formnovalidate data-task-clear-time>
                                             <i data-lucide="x" aria-hidden="true"></i>
                                         </button>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 {% endif %}
@@ -849,6 +857,7 @@ document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
     syncTaskDetailDropdown(dropdown);
 
     toggle?.addEventListener('click', (event) => {
+        if (select?.disabled) return;
         event.stopPropagation();
         const isOpen = !dropdown.classList.contains('is-open');
         closeTaskDetailDropdowns(dropdown);
@@ -863,6 +872,7 @@ document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
     dropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
         button.addEventListener('click', () => {
             if (!select) return;
+            if (select.disabled) return;
 
             if (isMultiple) {
                 const option = Array.from(select.options).find((item) => item.value === button.dataset.taskDetailValue);
@@ -1172,7 +1182,7 @@ function updateTaskStatus(isCompleted) {
                     'X-CSRFToken': window.getCookie('csrftoken'),
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ is_completed: isCompleted })
+                body: JSON.stringify({ is_completed: isCompleted, task_pk: {{ task.id }} })
             })
             .then(r => r.json())
             .then(data => {

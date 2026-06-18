@@ -1984,13 +1984,24 @@ body.modal-open::before {
     justify-content: flex-end;
 }
 
+.tasks-directory-share-modal {
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 0;
+}
+
 .tasks-directory-share-modal__dialog {
-    width: min(820px, 100%);
+    width: min(720px, 100vw);
+    height: var(--app-viewport-height);
+    max-height: var(--app-viewport-height);
     overflow: hidden;
+    border-radius: 18px 0 0 18px;
 }
 
 .tasks-directory-share-modal__form {
-    min-height: 430px;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
 }
 
 .tasks-directory-share-modal__header {
@@ -2051,7 +2062,7 @@ body.modal-open::before {
 
 .tasks-directory-share-person-fields {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(210px, 0.42fr);
     gap: 0.75rem;
     max-width: none;
 }
@@ -2082,7 +2093,8 @@ body.modal-open::before {
     font-weight: 650;
 }
 
-.tasks-directory-share-person-field input {
+.tasks-directory-share-person-field input,
+.tasks-directory-share-person-field select {
     width: 100%;
     min-width: 0;
     height: 40px;
@@ -2106,7 +2118,8 @@ body.modal-open::before {
     color: #b8bac0;
 }
 
-.tasks-directory-share-person-field input:focus {
+.tasks-directory-share-person-field input:focus,
+.tasks-directory-share-person-field select:focus {
     border-color: var(--accent-peach);
     box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
 }
@@ -2236,8 +2249,17 @@ body.modal-open::before {
     box-shadow: 0 1px 1px rgba(31, 35, 40, 0.03);
 }
 
+.tasks-directory-share-shared-panel {
+    overflow: visible;
+    border: 1px solid #e1e5eb;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 1px rgba(31, 35, 40, 0.03);
+}
+
 .tasks-directory-share-table .tasks-directory-header,
 .tasks-directory-share-table .tasks-directory-list .tasks-directory-row {
+    display: grid;
     grid-template-columns: var(--tasks-directory-grid);
     column-gap: 0;
     padding: 0;
@@ -2256,8 +2278,7 @@ body.modal-open::before {
 }
 
 .tasks-directory-share-table .tasks-directory-header > * + *,
-.tasks-directory-share-table .tasks-directory-list .tasks-directory-row > * + *,
-.tasks-directory-share-shared-row > * + * {
+.tasks-directory-share-table .tasks-directory-list .tasks-directory-row > * + * {
     min-height: 100%;
     align-self: stretch;
     display: flex;
@@ -2282,30 +2303,33 @@ body.modal-open::before {
 
 .tasks-directory-share-shared {
     min-width: 0;
-    margin-top: auto;
-}
-
-.tasks-directory-share-shared-table .tasks-directory-header,
-.tasks-directory-share-shared-row {
-    grid-template-columns: var(--tasks-directory-grid);
-    column-gap: 0;
+    margin-top: 0;
+    display: grid;
+    gap: 0.45rem;
 }
 
 .tasks-directory-share-shared-list {
     display: grid;
-    max-height: calc(var(--tasks-directory-share-row-height) * 3);
-    overflow: auto;
+    max-height: calc(62px * 3);
+    overflow: visible;
 }
 
 .tasks-directory-share-shared-row {
     position: relative;
     min-width: 0;
-    min-height: var(--tasks-directory-share-row-height);
+    min-height: 62px;
     display: grid;
+    grid-template-columns: 34px minmax(128px, 0.95fr) minmax(136px, 1fr) minmax(150px, 0.72fr) 30px;
     align-items: center;
-    padding: 0;
+    gap: 0.5rem;
+    padding: 0.55rem 0.5rem 0.55rem 0;
     border-bottom: 1px solid #edf0f4;
     background: #ffffff;
+    transition: background-color 0.1s ease;
+}
+
+.tasks-directory-share-shared-row:has(.tasks-directory-share-permission-picker.is-open) {
+    z-index: 30;
 }
 
 .tasks-directory-share-shared-row:last-child {
@@ -2320,6 +2344,11 @@ body.modal-open::before {
     font-size: 12px;
     font-weight: 750;
     line-height: 1;
+}
+
+.tasks-directory-share-table .tasks-directory-header > *,
+.tasks-directory-share-shared-row > * {
+    min-width: 0;
 }
 
 .tasks-directory-share-result,
@@ -2348,7 +2377,9 @@ body.modal-open::before {
 
 .tasks-directory-share-table .tasks-directory-list .tasks-directory-row:hover,
 .tasks-directory-share-table .tasks-directory-list .tasks-directory-row:focus-visible,
-.tasks-directory-share-table .tasks-directory-list .tasks-directory-row.is-active {
+.tasks-directory-share-table .tasks-directory-list .tasks-directory-row.is-active,
+.tasks-directory-share-shared-row:hover,
+.tasks-directory-share-shared-row:focus-within {
     background: #f7f8fb;
     outline: none;
 }
@@ -2375,13 +2406,22 @@ body.modal-open::before {
     font-size: var(--font-size-sm);
 }
 
+.tasks-directory-share-shared-avatar.profile-avatar {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    border-radius: 7px;
+}
+
 .tasks-directory-share-username,
 .tasks-directory-share-first-name,
 .tasks-directory-share-last-name,
 .tasks-directory-share-middle-name,
 .tasks-directory-share-email,
 .tasks-directory-share-person-email,
+.tasks-directory-share-permission,
 .tasks-directory-share-shared-username,
+.tasks-directory-share-permission-badge span,
 .tasks-directory-share-shared-person strong,
 .tasks-directory-share-shared-person small {
     min-width: 0;
@@ -2420,6 +2460,12 @@ body.modal-open::before {
     overflow: visible;
 }
 
+.tasks-directory-share-shared-details {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+}
+
 .tasks-directory-share-shared-person-text {
     min-width: 0;
     flex: 1 1 auto;
@@ -2434,7 +2480,9 @@ body.modal-open::before {
 .tasks-directory-share-middle-name,
 .tasks-directory-share-email,
 .tasks-directory-share-person-email,
+.tasks-directory-share-permission,
 .tasks-directory-share-shared-username,
+.tasks-directory-share-permission-badge span,
 .tasks-directory-share-shared-person strong,
 .tasks-directory-share-shared-person small {
     color: #3f424a;
@@ -2461,18 +2509,259 @@ body.modal-open::before {
     font-weight: 500;
 }
 
-.tasks-directory-share-shared-username {
-    display: block;
+.tasks-directory-share-shared-username,
+.tasks-directory-share-email {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.tasks-directory-share-shared-username svg,
+.tasks-directory-share-email svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    color: #858b96;
+    stroke-width: 2.2;
+}
+
+.tasks-directory-share-permission {
+    min-width: 0;
+    justify-self: stretch;
+}
+
+.tasks-directory-share-permission-picker {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+.tasks-directory-share-permission-picker.is-open {
+    z-index: 20;
+}
+
+.tasks-directory-share-permission-toggle {
+    min-width: 0;
+    border: 1px solid #dfe3e8;
+    background: #ffffff;
+    color: #242830;
+    font: inherit;
+    cursor: pointer;
+}
+
+.tasks-directory-share-permission-toggle svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    stroke-width: 2.25;
+}
+
+.tasks-directory-share-permission-toggle:focus-visible {
+    border-color: var(--accent-peach);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+    outline: 0;
+}
+
+.tasks-directory-share-permission-picker--field .tasks-directory-share-permission-toggle {
+    width: 100%;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0 0.7rem;
+    border-radius: 7px;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.tasks-directory-share-permission-picker--field .tasks-directory-share-permission-toggle [data-directory-share-permission-current-label] {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-directory-share-permission-badge,
+.tasks-directory-share-permission-control {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.62rem;
+    border: 1px solid #e1e5eb;
+    border-radius: 999px;
+    background: #f7f8fb;
+    color: #4f5663;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.tasks-directory-share-permission-control {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    border: 1px solid #e1e5eb;
+}
+
+.tasks-directory-share-permission-badge svg,
+.tasks-directory-share-permission-control svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    stroke-width: 2.25;
+}
+
+.tasks-directory-share-permission-control [data-directory-share-permission-current-label] {
+    min-width: 0;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-directory-share-permission-chevron {
+    margin-left: 0.2rem;
+}
+
+.tasks-directory-share-permission-menu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    z-index: 50;
+    width: max-content;
+    min-width: 100%;
+    max-width: min(21rem, calc(100vw - 2rem));
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.35rem;
+    border: 1px solid #d8dde6;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 16px 36px rgba(26, 31, 44, 0.18);
+}
+
+.tasks-directory-share-permission-picker--row .tasks-directory-share-permission-menu {
+    top: auto;
+    bottom: calc(100% + 0.35rem);
+    right: 0;
+    width: max-content;
+    min-width: max(100%, 13rem);
+    max-width: min(18rem, calc(100vw - 2rem));
+}
+
+.tasks-directory-share-permission-picker--field .tasks-directory-share-permission-menu {
+    left: 0;
+    right: auto;
+}
+
+.tasks-directory-share-permission-menu[hidden] {
+    display: none;
+}
+
+.tasks-directory-share-permission-option {
+    width: 100%;
+    min-height: 34px;
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.35rem 0.5rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #3f424a;
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tasks-directory-share-permission-option:hover,
+.tasks-directory-share-permission-option:focus-visible,
+.tasks-directory-share-permission-option.is-active {
+    background: #f1f4fb;
+    color: #3f5f9c;
+    outline: 0;
+}
+
+.tasks-directory-share-permission-option span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-directory-share-permission-option svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+    stroke-width: 2.25;
+}
+
+.tasks-directory-share-permission-check {
+    opacity: 0;
+}
+
+.tasks-directory-share-permission-option.is-active .tasks-directory-share-permission-check {
+    opacity: 1;
+}
+
+.tasks-directory-share-permission--owner .tasks-directory-share-permission-badge,
+.tasks-directory-share-permission--owner .tasks-directory-share-permission-control {
+    border-color: #ddd2fb;
+    background: #f6f2ff;
+    color: #6650a4;
+}
+
+.tasks-directory-share-permission--edit .tasks-directory-share-permission-badge,
+.tasks-directory-share-permission--edit .tasks-directory-share-permission-control {
+    border-color: #d5e7de;
+    background: #f1f8f4;
+    color: #2f744e;
+}
+
+.tasks-directory-share-permission--view .tasks-directory-share-permission-badge,
+.tasks-directory-share-permission--view .tasks-directory-share-permission-control {
+    border-color: #dce3f4;
+    background: #f3f6fc;
+    color: #4d628b;
+}
+
+.tasks-directory-share-permission-badge span {
+    min-width: 0;
+    display: inline-block;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-directory-share-username > span,
+.tasks-directory-share-shared-username > span,
+.tasks-directory-share-email > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-directory-share-row-action {
+    display: inline-flex;
+    justify-content: flex-end;
 }
 
 .tasks-directory-share-remove {
     width: 32px;
     height: 32px;
-    position: absolute;
-    top: 50%;
-    right: 0.7rem;
-    z-index: 2;
-    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2482,10 +2771,6 @@ body.modal-open::before {
     color: #5f6673;
     cursor: pointer;
     transition: background-color 0.1s ease, color 0.1s ease;
-}
-
-.tasks-directory-share-shared-row > .tasks-directory-share-email {
-    padding-right: 3rem;
 }
 
 .tasks-directory-share-remove:hover,
@@ -2518,6 +2803,7 @@ body.modal-open::before {
 .tasks-directory-share-table > .tasks-directory-share-results-empty:last-child,
 .tasks-directory-share-table > .tasks-directory-share-contacts-empty:last-child,
 .tasks-directory-share-table > .tasks-directory-share-shared-empty:last-child,
+.tasks-directory-share-shared-panel > .tasks-directory-share-shared-empty:last-child,
 .tasks-directory-share-contact-list > .tasks-directory-share-results-empty:last-child,
 .tasks-directory-share-contact-list > .tasks-directory-share-contacts-empty:last-child {
     border-bottom: 0;
@@ -2556,9 +2842,12 @@ body.modal-open::before {
         gap: 1.35rem;
     }
 
-    .tasks-directory-share-contacts .tasks-directory-share-table,
-    .tasks-directory-share-shared-table {
+    .tasks-directory-share-contacts .tasks-directory-share-table {
         --tasks-directory-grid: 38px minmax(190px, 1fr) minmax(132px, 0.5fr) minmax(164px, 0.7fr);
+    }
+
+    .tasks-directory-share-shared-row {
+        grid-template-columns: 34px minmax(128px, 0.95fr) minmax(136px, 1fr) minmax(150px, 0.72fr) 30px;
     }
 
     .tasks-directory-share-contact-list {
@@ -2566,7 +2855,7 @@ body.modal-open::before {
     }
 
     .tasks-directory-share-shared-list {
-        max-height: calc(var(--tasks-directory-share-row-height) * 3);
+        max-height: calc(62px * 3);
     }
 
     .tasks-directory-share-link-control {
@@ -2585,7 +2874,7 @@ body.modal-open::before {
 
 @media (max-width: 560px) {
     .tasks-directory-share-modal__dialog {
-        width: min(100%, calc(100vw - 2rem));
+        width: 100vw;
     }
 
     .tasks-directory-share-modal__header {
@@ -2600,22 +2889,50 @@ body.modal-open::before {
         grid-template-columns: 1fr;
     }
 
-    .tasks-directory-share-person-field input {
+    .tasks-directory-share-person-field input,
+    .tasks-directory-share-person-field select {
         font-size: var(--font-size-sm);
     }
 
-    .tasks-directory-share-contacts .tasks-directory-share-table,
-    .tasks-directory-share-shared-table {
+    .tasks-directory-share-contacts .tasks-directory-share-table {
         --tasks-directory-grid: 38px minmax(0, 1fr) minmax(116px, 0.7fr);
+    }
+
+    .tasks-directory-share-shared-row {
+        grid-template-columns: 38px minmax(0, 1fr) 36px;
+        gap: 0.3rem 0.65rem;
+        padding: 0.65rem 0.65rem 0.65rem 0;
+    }
+
+    .tasks-directory-share-shared-row > .tasks-directory-share-check-cell {
+        grid-column: 1;
+        grid-row: 1 / span 3;
+        align-self: center;
+    }
+
+    .tasks-directory-share-shared-person {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .tasks-directory-share-shared-details {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .tasks-directory-share-permission {
+        grid-column: 2;
+        grid-row: 3;
+    }
+
+    .tasks-directory-share-row-action {
+        grid-column: 3;
+        grid-row: 1 / span 3;
+        align-self: center;
     }
 
     .tasks-directory-share-contacts .tasks-directory-share-table .tasks-directory-header > :nth-child(4),
     .tasks-directory-share-email {
-        display: none;
-    }
-
-    .tasks-directory-share-shared-table .tasks-directory-header > :nth-child(4),
-    .tasks-directory-share-shared-row > .tasks-directory-share-email {
         display: none;
     }
 }
