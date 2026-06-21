@@ -32,6 +32,7 @@
                                 <label class="tasks-directory-share-person-field tasks-directory-share-person-field--ancore" for="directory-share-member-query">
                                     <span class="tasks-directory-share-field-label">Wpisz ID Ancore</span>
                                     <input type="search" id="directory-share-member-query" name="member_query" placeholder="@jan.kowalski" autocomplete="off" aria-label="Wpisz ID Ancore użytkownika" data-directory-share-input>
+                                    <input type="hidden" name="member_queries" value="" data-directory-share-selected-input>
                                 </label>
                                 <div class="tasks-directory-share-person-field tasks-directory-share-person-field--permission">
                                     <span class="tasks-directory-share-field-label" id="directory-share-permission-label">Poziom dostępu</span>
@@ -39,18 +40,18 @@
                                     <div class="tasks-directory-share-permission-picker tasks-directory-share-permission-picker--field is-view" data-directory-share-permission-picker data-permission-value="view">
                                         <button type="button" class="tasks-directory-share-permission-toggle" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="directory-share-permission-label" data-directory-share-permission-toggle>
                                             <i data-lucide="eye" aria-hidden="true" data-directory-share-permission-current-icon></i>
-                                            <span data-directory-share-permission-current-label>Może wyświetlać</span>
+                                            <span data-directory-share-permission-current-label>Może przeglądać</span>
                                             <i data-lucide="chevron-down" aria-hidden="true" class="tasks-directory-share-permission-chevron"></i>
                                         </button>
                                         <div class="tasks-directory-share-permission-menu" role="listbox" aria-label="Poziom dostępu" data-directory-share-permission-menu hidden>
                                             <button type="button" class="tasks-directory-share-permission-option is-active" role="option" aria-selected="true" data-directory-share-permission-option data-permission-value="view">
                                                 <i data-lucide="eye" aria-hidden="true"></i>
-                                                <span>Może wyświetlać</span>
+                                                <span>Może przeglądać</span>
                                                 <i data-lucide="check" aria-hidden="true" class="tasks-directory-share-permission-check"></i>
                                             </button>
                                             <button type="button" class="tasks-directory-share-permission-option" role="option" aria-selected="false" data-directory-share-permission-option data-permission-value="edit">
                                                 <i data-lucide="pen-line" aria-hidden="true"></i>
-                                                <span>Może wyświetlać i edytować</span>
+                                                <span>Może przeglądać i edytować</span>
                                                 <i data-lucide="check" aria-hidden="true" class="tasks-directory-share-permission-check"></i>
                                             </button>
                                         </div>
@@ -59,40 +60,39 @@
                             </div>
                         </div>
 
-                        <section class="tasks-directory-share-results tasks-directory-share-contacts" id="directory-share-contacts-panel" aria-label="Użytkownicy z kontaktów" data-directory-share-results hidden>
-                            <div class="tasks-directory-share-table">
-                                <div class="tasks-directory-header tasks-directory-share-table-header">
-                                    <span class="tasks-directory-share-check-cell" aria-hidden="true"></span>
-                                    <span>OSOBA</span>
-                                    <span>ID ANCORE</span>
-                                    <span>EMAIL</span>
-                                </div>
-                                <div class="tasks-issue-list tasks-directory-list tasks-directory-share-contact-list" role="listbox" aria-label="Użytkownicy do dodania" data-directory-share-contact-list>
+                        <section class="tasks-directory-share-results tasks-directory-share-contacts" id="directory-share-contacts-panel" aria-label="Użytkownicy Ancore" data-directory-share-results hidden>
+                            <div class="tasks-directory-share-shared-panel tasks-directory-share-contacts-panel">
+                                <div class="tasks-issue-list tasks-directory-share-contact-list" role="listbox" aria-label="Użytkownicy do dodania" data-directory-share-contact-list>
                                     {% for option in share_user_options %}
-                                    <div class="tasks-directory-share-contact tasks-directory-share-result tasks-directory-row" role="option" tabindex="0" aria-selected="false" data-directory-share-contact data-directory-share-result data-directory-share-pick data-share-value="{{ option.value|escape }}" data-share-search="{{ option.search_label|escape }}">
+                                    <div class="tasks-directory-share-contact tasks-directory-share-result tasks-directory-share-shared-row tasks-directory-share-contact-row" role="option" tabindex="0" aria-selected="false" data-directory-share-contact data-directory-share-result data-directory-share-pick data-share-value="{{ option.value|escape }}" data-share-search="{{ option.search_label|escape }}">
                                         <span class="tasks-directory-share-check-cell">
                                             <input type="checkbox" class="tasks-row-checkbox tasks-directory-share-check" aria-label="Wybierz {{ option.label }}" data-directory-share-check>
                                         </span>
-                                        <span class="tasks-directory-share-person-cell">
-                                            {% include 'accounts/includes/user_avatar.html' with avatar=option.avatar avatar_class='tasks-directory-share-contact-avatar' only %}
-                                            <span class="tasks-directory-share-person-meta">
-                                                <span class="tasks-directory-share-person-name">
+                                        <span class="tasks-directory-share-shared-person tasks-directory-share-person-cell">
+                                            {% include 'accounts/includes/user_avatar.html' with avatar=option.avatar avatar_class='tasks-directory-share-contact-avatar tasks-directory-share-shared-avatar' only %}
+                                            <span class="tasks-directory-share-shared-person-text tasks-directory-share-person-meta">
+                                                <strong class="tasks-directory-share-person-name">
                                                     {% if option.first_name %}<span class="tasks-directory-share-first-name">{{ option.first_name }}</span>{% endif %}
                                                     {% if option.last_name %}<span class="tasks-directory-share-last-name">{{ option.last_name }}</span>{% endif %}
                                                     {% if option.middle_name %}<span class="tasks-directory-share-middle-name">{{ option.middle_name }}</span>{% endif %}
-                                                </span>
+                                                </strong>
+                                                <small>{{ option.source_label }}</small>
                                             </span>
                                         </span>
-                                        <span class="tasks-directory-share-username">
-                                            <span>{{ option.ancore_label }}</span>
-                                        </span>
-                                        <span class="tasks-directory-share-email">
-                                            <span>{{ option.email|default:"-" }}</span>
+                                        <span class="tasks-directory-share-shared-details">
+                                            <span class="tasks-directory-share-shared-username tasks-directory-share-username">
+                                                <i data-lucide="at-sign" aria-hidden="true"></i>
+                                                <span>{{ option.ancore_label }}</span>
+                                            </span>
+                                            <span class="tasks-directory-share-email">
+                                                <i data-lucide="mail" aria-hidden="true"></i>
+                                                <span>{{ option.email|default:"-" }}</span>
+                                            </span>
                                         </span>
                                     </div>
                                     {% endfor %}
-                                    <div class="tasks-directory-share-contacts-empty tasks-directory-share-results-empty" data-directory-share-contacts-empty data-directory-share-results-empty {% if share_user_options %}hidden{% endif %}>Brak użytkowników w kontaktach.</div>
                                 </div>
+                                <div class="tasks-directory-share-contacts-empty tasks-directory-share-results-empty" data-directory-share-contacts-empty data-directory-share-results-empty {% if share_user_options %}hidden{% endif %}>Brak użytkowników.</div>
                             </div>
                         </section>
 
@@ -132,7 +132,7 @@
             <footer class="tasks-modal__footer tasks-directory-share-modal__footer">
                 <button type="submit" class="tasks-modal__submit" id="directory-share-submit">
                     <i data-lucide="plus" aria-hidden="true"></i>
-                    <span>Dodaj po ID Ancore</span>
+                    <span>Udostępnij</span>
                 </button>
             </footer>
         </form>

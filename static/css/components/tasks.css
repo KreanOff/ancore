@@ -2250,7 +2250,7 @@ body.modal-open::before {
 }
 
 .tasks-directory-share-shared-panel {
-    overflow: visible;
+    overflow: hidden;
     border: 1px solid #e1e5eb;
     border-radius: 8px;
     background: #ffffff;
@@ -2297,8 +2297,21 @@ body.modal-open::before {
     margin: 0;
 }
 
+.tasks-directory-share-shared-list .tasks-directory-share-shared-row .tasks-directory-share-check {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s ease;
+}
+
+.tasks-directory-share-shared-list .tasks-directory-share-shared-row:hover .tasks-directory-share-check,
+.tasks-directory-share-shared-list .tasks-directory-share-shared-row:focus-within .tasks-directory-share-check,
+.tasks-directory-share-shared-list .tasks-directory-share-shared-row .tasks-directory-share-check:checked {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .tasks-directory-share-contact-list {
-    max-height: calc(var(--tasks-directory-share-row-height) * 4);
+    max-height: calc(62px * 3);
 }
 
 .tasks-directory-share-shared {
@@ -2311,7 +2324,8 @@ body.modal-open::before {
 .tasks-directory-share-shared-list {
     display: grid;
     max-height: calc(62px * 3);
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .tasks-directory-share-shared-row {
@@ -2334,6 +2348,10 @@ body.modal-open::before {
 
 .tasks-directory-share-shared-row:last-child {
     border-bottom: 0;
+}
+
+.tasks-directory-share-contact-row {
+    grid-template-columns: 34px minmax(128px, 0.95fr) minmax(220px, 1.72fr);
 }
 
 .tasks-directory-share-table .tasks-directory-header {
@@ -2713,27 +2731,6 @@ body.modal-open::before {
     opacity: 1;
 }
 
-.tasks-directory-share-permission--owner .tasks-directory-share-permission-badge,
-.tasks-directory-share-permission--owner .tasks-directory-share-permission-control {
-    border-color: #ddd2fb;
-    background: #f6f2ff;
-    color: #6650a4;
-}
-
-.tasks-directory-share-permission--edit .tasks-directory-share-permission-badge,
-.tasks-directory-share-permission--edit .tasks-directory-share-permission-control {
-    border-color: #d5e7de;
-    background: #f1f8f4;
-    color: #2f744e;
-}
-
-.tasks-directory-share-permission--view .tasks-directory-share-permission-badge,
-.tasks-directory-share-permission--view .tasks-directory-share-permission-control {
-    border-color: #dce3f4;
-    background: #f3f6fc;
-    color: #4d628b;
-}
-
 .tasks-directory-share-permission-badge span {
     min-width: 0;
     display: inline-block;
@@ -2803,6 +2800,7 @@ body.modal-open::before {
 .tasks-directory-share-table > .tasks-directory-share-results-empty:last-child,
 .tasks-directory-share-table > .tasks-directory-share-contacts-empty:last-child,
 .tasks-directory-share-table > .tasks-directory-share-shared-empty:last-child,
+.tasks-directory-share-shared-panel > .tasks-directory-share-contacts-empty:last-child,
 .tasks-directory-share-shared-panel > .tasks-directory-share-shared-empty:last-child,
 .tasks-directory-share-contact-list > .tasks-directory-share-results-empty:last-child,
 .tasks-directory-share-contact-list > .tasks-directory-share-contacts-empty:last-child {
@@ -2851,7 +2849,7 @@ body.modal-open::before {
     }
 
     .tasks-directory-share-contact-list {
-        max-height: calc(var(--tasks-directory-share-row-height) * 4);
+        max-height: calc(62px * 3);
     }
 
     .tasks-directory-share-shared-list {
@@ -5095,12 +5093,64 @@ body.modal-open::before {
     gap: 0.12rem;
 }
 
+.tasks-row-title-main {
+    min-width: 0;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+}
+
 .tasks-row-title-text,
 .tasks-row-description {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.tasks-row-title-main .tasks-row-title-text {
+    flex: 0 1 auto;
+}
+
+.tasks-shared-access-badge {
+    --app-text-color: #6f737b;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    max-width: 24px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--app-text-color);
+    line-height: 1;
+}
+
+.tasks-shared-access-badge--edit {
+    --app-text-color: #6f737b;
+}
+
+.tasks-shared-access-badge--outgoing {
+    --app-text-color: #6f737b;
+}
+
+.tasks-shared-access-badge svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    stroke-width: 2.35;
+}
+
+.tasks-shared-access-badge--compact {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    max-width: 22px;
 }
 
 .tasks-row-description {
@@ -5792,6 +5842,17 @@ body.modal-open::before {
 .tasks-issue-description-field .tasks-description-editor:empty::before {
     content: attr(data-placeholder);
     color: #a1a6ae;
+}
+
+.tasks-issue-form--readonly .form-input:disabled,
+.tasks-issue-form--readonly .tasks-description-editor[aria-readonly="true"],
+.tasks-issue-form--readonly .tasks-issue-dropdown-button:disabled {
+    cursor: default;
+    opacity: 0.72;
+}
+
+.tasks-issue-form--readonly .tasks-description-editor[aria-readonly="true"] {
+    user-select: text;
 }
 
 .tasks-description-editor p {
@@ -6567,6 +6628,12 @@ body.is-resizing-directory-columns {
 .tasks-issue-dropdown.is-open .tasks-issue-dropdown-button {
     background: #f1f3f6;
     color: #2f3440;
+}
+
+.tasks-issue-dropdown-button:disabled,
+.tasks-issue-dropdown-button:disabled:hover {
+    background: #f7f8fb;
+    color: #6d7481;
 }
 
 .tasks-issue-dropdown-button [data-task-detail-label] {

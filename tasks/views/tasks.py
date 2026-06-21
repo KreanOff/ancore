@@ -21,9 +21,27 @@ from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSectio
 from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
 
-def _status_groups_for_tasks(tasks):
-    tasks_by_status = {status: [] for status, _label in Task.STATUS_CHOICES}
+def _mark_task_row_access(tasks, user):
+    if not user or not getattr(user, 'is_authenticated', False):
+        return tasks
+
     for task in tasks:
+        if not task:
+            continue
+        task.can_manage = task.user_id == user.id
+        task.can_edit = _user_can_edit_task(user, task)
+        if task.user_id != user.id and _user_can_access_task(user, task):
+            task.shared_view_url = reverse('tasks:view-shared-task', args=[task.id])
+        elif not getattr(task, 'shared_view_url', ''):
+            task.shared_view_url = ''
+    return tasks
+
+
+def _status_groups_for_tasks(tasks, user=None):
+    task_list = list(tasks)
+    _mark_task_row_access(task_list, user)
+    tasks_by_status = {status: [] for status, _label in Task.STATUS_CHOICES}
+    for task in task_list:
         tasks_by_status.setdefault(task.status, []).append(task)
     return [
         {
@@ -36,15 +54,15 @@ def _status_groups_for_tasks(tasks):
     ]
 
 
-def _decorate_status_groups(projects, orphan_tasks):
+def _decorate_status_groups(projects, orphan_tasks, user=None):
     for project in projects:
         project_tasks = []
         for section in project.sections.all():
             section_tasks = list(section.tasks.all())
-            section.status_groups = _status_groups_for_tasks(section_tasks)
+            section.status_groups = _status_groups_for_tasks(section_tasks, user)
             project_tasks.extend(section_tasks)
-        project.status_groups = _status_groups_for_tasks(project_tasks)
-    return _status_groups_for_tasks(list(orphan_tasks))
+        project.status_groups = _status_groups_for_tasks(project_tasks, user)
+    return _status_groups_for_tasks(orphan_tasks, user)
 
 
 def _sections_for_projects(projects):
@@ -57,8 +75,8 @@ def _user_display_name(user):
 
 SHARE_PERMISSION_LABELS = {
     'owner': 'Właściciel',
-    'view': 'Może wyświetlać',
-    'edit': 'Może wyświetlać i edytować',
+    'view': 'Może przeglądać',
+    'edit': 'Może przeglądać i edytować',
 }
 SHARE_PERMISSION_RANK = {
     'view': 1,
@@ -88,6 +106,97 @@ def _best_share_permission(permissions):
 
 def _share_permission_from_request(request):
     return _normalize_share_permission((request.POST.get('permission') or '').strip())
+
+
+def _received_share_permission(user, obj):
+    if not user or not getattr(user, 'is_authenticated', False):
+        return ''
+    if isinstance(obj, TaskProject):
+        return _user_project_permission(user, obj)
+    if isinstance(obj, TaskSection):
+        return _user_section_permission(user, obj)
+    if isinstance(obj, Task):
+        return _user_task_permission(user, obj)
+    return ''
+
+
+def _direct_outgoing_share_exists(user, model, object_id):
+    if not user or not getattr(user, 'is_authenticated', False) or not object_id:
+        return False
+    return SharedItem.objects.filter(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=object_id,
+        shared_by=user,
+    ).exists()
+
+
+def _outgoing_share_exists(user, obj):
+    if not user or not getattr(user, 'is_authenticated', False):
+        return False
+    if isinstance(obj, TaskProject):
+        if obj.user_id != user.id:
+            return False
+        return _direct_outgoing_share_exists(user, TaskProject, obj.id)
+    if isinstance(obj, TaskSection):
+        if obj.project.user_id != user.id:
+            return False
+        return (
+            _direct_outgoing_share_exists(user, TaskSection, obj.id)
+            or _direct_outgoing_share_exists(user, TaskProject, obj.project_id)
+        )
+    if isinstance(obj, Task):
+        if obj.user_id != user.id:
+            return False
+        return (
+            _direct_outgoing_share_exists(user, Task, obj.id)
+            or (obj.parent_id and _direct_outgoing_share_exists(user, Task, obj.parent_id))
+            or (
+                obj.section_id
+                and (
+                    _direct_outgoing_share_exists(user, TaskSection, obj.section_id)
+                    or _direct_outgoing_share_exists(user, TaskProject, obj.section.project_id)
+                )
+            )
+        )
+    return False
+
+
+def _clear_share_access_badge(item):
+    item.has_shared_access_badge = False
+    item.is_shared_with_current_user = False
+    item.shared_access_kind = ''
+    item.shared_access_permission = ''
+    item.shared_access_icon = ''
+    item.shared_access_title = ''
+
+
+def _mark_share_access_badge(item, user):
+    permission = _received_share_permission(user, item)
+    if permission in SHARE_PERMISSION_RANK:
+        item.has_shared_access_badge = True
+        item.is_shared_with_current_user = True
+        item.shared_access_kind = 'incoming'
+        item.shared_access_permission = permission
+        item.shared_access_icon = 'share-2'
+        item.shared_access_title = f'Udostępnione dla Ciebie: {_share_permission_label(permission)}'
+        return item
+    if _outgoing_share_exists(user, item):
+        item.has_shared_access_badge = True
+        item.is_shared_with_current_user = False
+        item.shared_access_kind = 'outgoing'
+        item.shared_access_permission = 'outgoing'
+        item.shared_access_icon = 'send'
+        item.shared_access_title = 'Udostępnione przez Ciebie'
+        return item
+    _clear_share_access_badge(item)
+    return item
+
+
+def _mark_share_access_badges(items, user):
+    for item in items:
+        if item:
+            _mark_share_access_badge(item, user)
+    return items
 
 
 def _task_shared_ids(user, model):
@@ -312,13 +421,17 @@ def _shared_sections_queryset(user):
 
 def _mark_project_permissions(projects, user):
     for project in projects:
+        _mark_share_access_badge(project, user)
         project.can_manage = project.user_id == user.id
         project.can_share = project.can_manage
         project.can_edit = _user_project_permission(user, project) in ('owner', 'edit')
         for section in project.sections.all():
+            _mark_share_access_badge(section, user)
             section.can_manage = project.can_manage
             section.can_share = project.can_manage
             section.can_edit = _user_section_permission(user, section) in ('owner', 'edit')
+            for task in section.tasks.all():
+                _mark_share_access_badge(task, user)
     return projects
 
 
@@ -411,15 +524,18 @@ def _directory_member_payload(entries):
             'members': [],
             'visible_members': [],
             'label': '',
+            'shared_count': 0,
             'title': '',
         }
 
-    label = members[0]['label']
+    shared_count = sum(1 for member in members if member['permission'] in SHARE_PERMISSION_RANK)
+    label = f'Udostępnione {shared_count}' if shared_count else members[0]['label']
 
     return {
         'members': members,
         'visible_members': members[:3],
         'label': label,
+        'shared_count': shared_count,
         'title': ', '.join(member['label'] for member in members),
     }
 
@@ -429,6 +545,7 @@ def _assign_directory_members(item, users):
     item.directory_members = payload['members']
     item.directory_visible_members = payload['visible_members']
     item.directory_member_label = payload['label']
+    item.directory_shared_count = payload['shared_count']
     item.directory_member_title = payload['title']
 
 
@@ -639,17 +756,40 @@ def _user_name_matches_query(user, query):
 
 def _share_user_options(user):
     options = []
-    user_contacts = UserContact.objects.filter(
+    user_contacts = list(UserContact.objects.filter(
         owner=user,
         target_user__is_active=True,
     ).exclude(target_user_id=user.pk).select_related(
         'target_user',
         'linked_contact',
         'linked_contact__company_record',
-    )[:100]
-    for user_contact in user_contacts:
-        target = user_contact.target_user
-        linked_contact = user_contact.linked_contact
+    ))
+    user_contacts_by_target = {
+        user_contact.target_user_id: user_contact
+        for user_contact in user_contacts
+    }
+    users = list(
+        get_user_model().objects.filter(is_active=True)
+        .exclude(pk=user.pk)
+        .order_by('first_name', 'middle_name', 'last_name', 'email', 'username')
+    )
+    user_options = []
+    seen_user_ids = set()
+    for contact in user_contacts:
+        if contact.target_user_id in seen_user_ids:
+            continue
+        seen_user_ids.add(contact.target_user_id)
+        user_options.append(contact.target_user)
+    for target in users:
+        if target.pk in seen_user_ids:
+            continue
+        seen_user_ids.add(target.pk)
+        user_options.append(target)
+
+    for target in user_options:
+        user_contact = user_contacts_by_target.get(target.pk)
+        linked_contact = user_contact.linked_contact if user_contact else None
+        source_label = 'Kontakt' if user_contact else 'Użytkownik aplikacji'
         linked_contact_name = ''
         if linked_contact:
             linked_contact_name = ' '.join(
@@ -671,6 +811,7 @@ def _share_user_options(user):
                 target.get_full_name(),
                 target.email,
                 target.username,
+                source_label,
                 linked_contact.email if linked_contact else '',
                 linked_contact.company if linked_contact else '',
             ]
@@ -685,7 +826,8 @@ def _share_user_options(user):
             'email': target.email,
             'ancore_label': target.username,
             'search_label': search_label,
-            'added_at': user_contact.created_at,
+            'source_label': source_label,
+            'added_at': user_contact.created_at if user_contact else None,
             'avatar': account_avatar(target),
         })
     return options
@@ -728,41 +870,73 @@ def _share_query_from_request(request):
     )
 
 
-def _share_task_directory_object(request, obj):
-    target_user, error = _resolve_share_target(request.user, _share_query_from_request(request))
-    if error:
-        messages.error(request, error)
-        return
+def _split_share_queries(value):
+    return [
+        query.strip()
+        for query in (value or '').replace(',', '\n').replace(':', '\n').splitlines()
+        if query.strip() and query.strip() != '@'
+    ]
 
-    if target_user == _task_share_owner(obj):
-        messages.info(request, 'Ta osoba jest już właścicielem.')
+
+def _share_queries_from_request(request):
+    queries = []
+    for value in request.POST.getlist('member_queries'):
+        queries.extend(_split_share_queries(value))
+    queries.extend(_split_share_queries(_share_query_from_request(request)))
+
+    unique_queries = []
+    seen_queries = set()
+    for query in queries:
+        query_key = query.casefold()
+        if query_key in seen_queries:
+            continue
+        seen_queries.add(query_key)
+        unique_queries.append(query)
+    return unique_queries
+
+
+def _share_task_directory_object(request, obj):
+    queries = _share_queries_from_request(request)
+    if not queries:
+        messages.error(request, 'Wpisz ID Ancore.')
         return
 
     permission = _share_permission_from_request(request)
     content_type = ContentType.objects.get_for_model(obj.__class__)
-    share = SharedItem.objects.filter(
-        content_type=content_type,
-        object_id=obj.pk,
-        shared_by=request.user,
-        shared_with=target_user,
-    ).first()
-    if share:
-        if share.permission != permission:
-            share.permission = permission
-            share.save(update_fields=['permission'])
-            messages.success(request, f'Zmieniono poziom dostępu: {_user_display_name(target_user)}.')
-        else:
-            messages.info(request, f'{_user_display_name(target_user)} już jest na liście.')
-        return
 
-    SharedItem.objects.create(
-        content_type=content_type,
-        object_id=obj.pk,
-        shared_by=request.user,
-        shared_with=target_user,
-        permission=permission,
-    )
-    messages.success(request, f'Dodano: {_user_display_name(target_user)}.')
+    for query in queries:
+        target_user, error = _resolve_share_target(request.user, query)
+        if error:
+            messages.error(request, error)
+            continue
+
+        if target_user == _task_share_owner(obj):
+            messages.info(request, 'Ta osoba jest już właścicielem.')
+            continue
+
+        share = SharedItem.objects.filter(
+            content_type=content_type,
+            object_id=obj.pk,
+            shared_by=request.user,
+            shared_with=target_user,
+        ).first()
+        if share:
+            if share.permission != permission:
+                share.permission = permission
+                share.save(update_fields=['permission'])
+                messages.success(request, f'Zmieniono poziom dostępu: {_user_display_name(target_user)}.')
+            else:
+                messages.info(request, f'{_user_display_name(target_user)} już jest na liście.')
+            continue
+
+        SharedItem.objects.create(
+            content_type=content_type,
+            object_id=obj.pk,
+            shared_by=request.user,
+            shared_with=target_user,
+            permission=permission,
+        )
+        messages.success(request, f'Dodano: {_user_display_name(target_user)}.')
 
 
 def _unshare_task_directory_object(request, obj):
@@ -784,11 +958,16 @@ def _unshare_task_directory_object(request, obj):
         messages.info(request, 'Ta osoba nie ma już dostępu z tego miejsca.')
 
 
-def _update_share_task_directory_permission(request, obj):
+def _update_share_task_directory_permission(request, obj, add_message=True):
+    def add_flash(kind, message):
+        if add_message:
+            getattr(messages, kind)(request, message)
+
     target_user = get_user_model().objects.filter(pk=request.POST.get('member_id')).first()
     if not target_user:
-        messages.error(request, 'Nie znaleziono użytkownika.')
-        return
+        message = 'Nie znaleziono użytkownika.'
+        add_flash('error', message)
+        return {'status': 'error', 'message': message, 'http_status': 404}
 
     permission = _share_permission_from_request(request)
     share = SharedItem.objects.filter(
@@ -799,16 +978,37 @@ def _update_share_task_directory_permission(request, obj):
     ).first()
 
     if not share:
-        messages.info(request, 'Ta osoba nie ma dostępu z tego miejsca.')
-        return
+        message = 'Ta osoba nie ma dostępu z tego miejsca.'
+        add_flash('info', message)
+        return {'status': 'error', 'message': message, 'http_status': 404}
 
     if share.permission == permission:
-        messages.info(request, f'{_user_display_name(target_user)} już ma ten poziom dostępu.')
-        return
+        message = f'{_user_display_name(target_user)} już ma ten poziom dostępu.'
+        add_flash('info', message)
+        return {
+            'status': 'success',
+            'changed': False,
+            'message': message,
+            'permission': permission,
+            'permission_label': _share_permission_label(permission),
+        }
 
     share.permission = permission
     share.save(update_fields=['permission'])
-    messages.success(request, f'Zmieniono poziom dostępu: {_user_display_name(target_user)}.')
+    message = f'Zmieniono poziom dostępu: {_user_display_name(target_user)}.'
+    add_flash('success', message)
+    return {
+        'status': 'success',
+        'changed': True,
+        'message': message,
+        'permission': permission,
+        'permission_label': _share_permission_label(permission),
+    }
+
+
+def _share_permission_result_response(result):
+    payload = {key: value for key, value in result.items() if key != 'http_status'}
+    return JsonResponse(payload, status=result.get('http_status', 200))
 
 
 def _posted_ids(request, plural_name, singular_name):
@@ -1084,6 +1284,7 @@ def _tasks_page(request, active_section=None):
 
     if request.method == 'POST':
         action = request.POST.get('action')
+        is_ajax = _is_ajax_request(request)
 
         if action == 'create_project':
             project_form = TaskProjectForm(request.POST, user=request.user)
@@ -1148,7 +1349,9 @@ def _tasks_page(request, active_section=None):
 
         if action == 'update_project_share_permission':
             project = get_object_or_404(TaskProject, id=request.POST.get('project_id'), user=request.user)
-            _update_share_task_directory_permission(request, project)
+            result = _update_share_task_directory_permission(request, project, add_message=not is_ajax)
+            if is_ajax:
+                return _share_permission_result_response(result)
             return redirect(_tasks_next_url(request))
 
         if action == 'create_section':
@@ -1236,7 +1439,9 @@ def _tasks_page(request, active_section=None):
 
         if action == 'update_section_share_permission':
             section = get_object_or_404(TaskSection, id=request.POST.get('section_id'), project__user=request.user)
-            _update_share_task_directory_permission(request, section)
+            result = _update_share_task_directory_permission(request, section, add_message=not is_ajax)
+            if is_ajax:
+                return _share_permission_result_response(result)
             return redirect(_tasks_next_url(request))
 
         if action == 'delete_section':
@@ -1327,8 +1532,8 @@ def _tasks_page(request, active_section=None):
     _decorate_directory_members(projects, current_user=request.user)
 
     orphan_tasks = tasks_qs.filter(section__isnull=True)
-    orphan_status_groups = _decorate_status_groups(projects, orphan_tasks)
-    all_status_groups = _status_groups_for_tasks(list(tasks_qs))
+    orphan_status_groups = _decorate_status_groups(projects, orphan_tasks, request.user)
+    all_status_groups = _status_groups_for_tasks(tasks_qs, request.user)
     all_sections = _sections_for_projects(projects)
     shared_projects = list(
         TaskProject.objects.filter(id__in=_task_shared_ids(request.user, TaskProject))
@@ -1336,11 +1541,13 @@ def _tasks_page(request, active_section=None):
         .select_related('user')
         .order_by('name')
     )
+    _mark_share_access_badges(shared_projects, request.user)
     shared_sections = list(
         _shared_sections_queryset(request.user)
         .select_related('project', 'project__user')
         .order_by('project__name', 'order', 'created_at')
     )
+    _mark_share_access_badges(shared_sections, request.user)
     shared_tasks_qs = _shared_tasks_queryset(request.user).filter(parent__isnull=True).select_related(
         'section',
         'section__project',
@@ -1354,8 +1561,9 @@ def _tasks_page(request, active_section=None):
     ).order_by('is_closed_sort', 'created_at', 'id')
     shared_tasks = list(shared_tasks_qs)
     for shared_task in shared_tasks:
+        _mark_share_access_badge(shared_task, request.user)
         shared_task.shared_view_url = reverse('tasks:view-shared-task', args=[shared_task.id])
-    shared_status_groups = _status_groups_for_tasks(shared_tasks)
+    shared_status_groups = _status_groups_for_tasks(shared_tasks, request.user)
     if active_section and active_section.project.user_id != request.user.id:
         active_section_tasks = list(
             Task.objects.filter(
@@ -1371,8 +1579,9 @@ def _tasks_page(request, active_section=None):
             ).order_by('is_closed_sort', 'task_id')
         )
         for shared_task in active_section_tasks:
+            _mark_share_access_badge(shared_task, request.user)
             shared_task.shared_view_url = reverse('tasks:view-shared-task', args=[shared_task.id])
-        active_section.status_groups = _status_groups_for_tasks(active_section_tasks)
+        active_section.status_groups = _status_groups_for_tasks(active_section_tasks, request.user)
     _decorate_share_links(request, [*projects, *all_sections])
     tags = TaskTag.objects.filter(user=request.user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=request.user, tasks__parent__isnull=True)))
     if active_section:
@@ -1688,7 +1897,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
 
     can_manage_task = task.user_id == request.user.id
     can_edit_task = _user_can_edit_task(request.user, task)
-    subtask_status_groups = _status_groups_for_tasks(list(task.subtasks.all()))
+    subtask_status_groups = _status_groups_for_tasks(task.subtasks.all(), request.user)
     can_add_attachments = can_edit_task and not task.parent_id
     form = TaskForm(instance=task, user=task.user)
     task_modal_form = SubTaskModalForm()
@@ -1715,7 +1924,9 @@ def _task_detail_response(request, task_id=None, task_pk=None):
             if not can_manage_task:
                 raise PermissionDenied
             task_to_update = get_object_or_404(Task, id=request.POST.get('task_id'), user=request.user)
-            _update_share_task_directory_permission(request, task_to_update)
+            result = _update_share_task_directory_permission(request, task_to_update, add_message=not is_ajax)
+            if is_ajax:
+                return _share_permission_result_response(result)
             return redirect(_tasks_next_url(request))
         if action == 'create_subtask_modal':
             if not can_edit_task:

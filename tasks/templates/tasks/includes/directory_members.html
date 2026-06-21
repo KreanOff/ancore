@@ -1,5 +1,36 @@
 <div class="tasks-directory-members-menu{% if cell_class %} {{ cell_class }}{% endif %}"{% if data_column %} data-column="{{ data_column }}"{% endif %} data-directory-members-menu>
-    <button type="button" class="tasks-directory-members" title="{{ item.directory_member_title }}" aria-label="Członkowie" aria-haspopup="dialog" aria-expanded="false" aria-controls="{% if item.can_share %}directory-share-modal{% else %}tasks-directory-members-{{ item_kind }}-{{ item.id }}{% endif %}" data-directory-members-toggle {% if item.can_share %}data-directory-share-open data-share-members-template="tasks-directory-share-members-{{ item_kind }}-{{ item.id }}" data-share-object-kind="{{ item_kind }}" data-share-object-id="{{ item.id }}" data-share-link-url="{{ item.share_link_url|default:'' }}" data-share-link-permission="{{ item.share_link_permission|default:'view' }}" {% if item_kind == 'project' %}data-share-action="share_project" data-share-project-id="{{ item.id }}" data-share-object-type="Projekt" data-share-object-name="{{ item.name|escape }}"{% elif item_kind == 'task' %}data-share-action="share_task" data-share-task-id="{{ item.id }}" data-share-object-type="Zadanie" data-share-object-name="{{ item.title|escape }}"{% else %}data-share-action="share_section" data-share-section-id="{{ item.id }}" data-share-object-type="Grupa" data-share-object-name="{{ item.title|escape }}"{% endif %}{% endif %}>
+    <button
+        type="button"
+        class="tasks-directory-members"
+        title="{{ item.directory_member_title }}"
+        aria-label="Członkowie"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="{% if item.can_share or item.directory_shared_count %}directory-share-modal{% else %}tasks-directory-members-{{ item_kind }}-{{ item.id }}{% endif %}"
+        data-directory-members-toggle
+        {% if item.can_share or item.directory_shared_count %}
+        data-directory-share-open
+        data-share-can-manage="{% if item.can_share %}true{% else %}false{% endif %}"
+        data-share-members-template="tasks-directory-share-members-{{ item_kind }}-{{ item.id }}"
+        data-share-object-kind="{{ item_kind }}"
+        data-share-object-id="{{ item.id }}"
+        data-share-link-url="{{ item.share_link_url|default:'' }}"
+        data-share-link-permission="{{ item.share_link_permission|default:'view' }}"
+        {% if item_kind == 'project' %}
+        data-share-object-type="Projekt"
+        data-share-object-name="{{ item.name|escape }}"
+        {% if item.can_share %}data-share-action="share_project" data-share-project-id="{{ item.id }}"{% endif %}
+        {% elif item_kind == 'task' %}
+        data-share-object-type="Zadanie"
+        data-share-object-name="{{ item.title|escape }}"
+        {% if item.can_share %}data-share-action="share_task" data-share-task-id="{{ item.id }}"{% endif %}
+        {% else %}
+        data-share-object-type="Grupa"
+        data-share-object-name="{{ item.title|escape }}"
+        {% if item.can_share %}data-share-action="share_section" data-share-section-id="{{ item.id }}"{% endif %}
+        {% endif %}
+        {% endif %}>
+        {% include 'tasks/includes/shared_access_badge.html' with item=item compact=True only %}
         <span class="tasks-directory-avatar-stack">
             {% for member in item.directory_visible_members %}
             {% include 'accounts/includes/user_avatar.html' with avatar=member.avatar avatar_class='tasks-directory-avatar' only %}
@@ -97,12 +128,12 @@
                     <span class="tasks-directory-share-permission-menu" role="listbox" aria-label="Poziom dostępu użytkownika {{ member.label }}" data-directory-share-permission-menu hidden>
                         <button type="button" class="tasks-directory-share-permission-option{% if member.permission == 'view' %} is-active{% endif %}" role="option" aria-selected="{% if member.permission == 'view' %}true{% else %}false{% endif %}" data-directory-share-permission-option data-directory-share-permission-submit data-permission-value="view" data-share-action="{{ member.permission_action }}" data-share-project-id="{{ member.remove_project_id }}" data-share-section-id="{{ member.remove_section_id }}" data-share-task-id="{{ member.remove_task_id }}" data-share-member-id="{{ member.user_id }}">
                             <i data-lucide="eye" aria-hidden="true"></i>
-                            <span>Może wyświetlać</span>
+                            <span>Może przeglądać</span>
                             <i data-lucide="check" aria-hidden="true" class="tasks-directory-share-permission-check"></i>
                         </button>
                         <button type="button" class="tasks-directory-share-permission-option{% if member.permission == 'edit' %} is-active{% endif %}" role="option" aria-selected="{% if member.permission == 'edit' %}true{% else %}false{% endif %}" data-directory-share-permission-option data-directory-share-permission-submit data-permission-value="edit" data-share-action="{{ member.permission_action }}" data-share-project-id="{{ member.remove_project_id }}" data-share-section-id="{{ member.remove_section_id }}" data-share-task-id="{{ member.remove_task_id }}" data-share-member-id="{{ member.user_id }}">
                             <i data-lucide="pen-line" aria-hidden="true"></i>
-                            <span>Może wyświetlać i edytować</span>
+                            <span>Może przeglądać i edytować</span>
                             <i data-lucide="check" aria-hidden="true" class="tasks-directory-share-permission-check"></i>
                         </button>
                     </span>

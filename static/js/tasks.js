@@ -722,6 +722,7 @@ function initTasksPage() {
     const directoryShareObjectTypeInput = directoryShareForm ? directoryShareForm.querySelector('[name="share_object_type"]') : null;
     const directoryShareObjectIdInput = directoryShareForm ? directoryShareForm.querySelector('[name="share_object_id"]') : null;
     const directoryShareMemberInput = directoryShareForm ? directoryShareForm.querySelector('[name="member_query"]') : null;
+    const directoryShareSelectedInput = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-selected-input]') : null;
     const directorySharePermissionInput = directoryShareForm ? directoryShareForm.querySelector('[name="permission"]') : null;
     const directorySharePersonInputs = [directoryShareMemberInput].filter(Boolean);
     const directoryShareContext = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-context]') : null;
@@ -739,6 +740,8 @@ function initTasksPage() {
     const directoryShareLinkCreateLabel = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-link-create-label]') : null;
     const directoryShareLinkCopyBtn = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-link-copy]') : null;
     const directoryShareLinkRevokeBtn = directoryShareForm ? directoryShareForm.querySelector('[data-directory-share-link-revoke]') : null;
+    const directorySharePermissionFieldControls = directoryShareForm ? Array.from(directoryShareForm.querySelectorAll('.tasks-directory-share-permission-picker--field [data-directory-share-permission-toggle], .tasks-directory-share-permission-picker--field [data-directory-share-permission-option]')) : [];
+    let directoryShareSearchValue = '';
     const contactAncoreLoginInput = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-input]') : null;
     const contactAncoreLoginStatus = contactCreateForm ? contactCreateForm.querySelector('[data-ancore-login-status]') : null;
     const contactAncoreLoginUrl = contactCreateForm ? (contactCreateForm.dataset.ancoreLoginUrl || '') : '';
@@ -946,17 +949,45 @@ function initTasksPage() {
         issueSubmitBtn.disabled = issueTitleInput.value.trim().length === 0;
     }
 
+    function directoryShareCanManage() {
+        return directoryShareForm?.dataset.shareCanManage !== 'false';
+    }
+
+    function setDirectoryShareManageState(canManage) {
+        if (!directoryShareForm) return;
+        directoryShareForm.dataset.shareCanManage = canManage ? 'true' : 'false';
+        directoryShareForm.classList.toggle('is-readonly', !canManage);
+        directorySharePersonInputs.forEach(input => {
+            input.disabled = !canManage;
+        });
+        if (directoryShareSelectedInput) directoryShareSelectedInput.disabled = !canManage;
+        if (directorySharePermissionInput) directorySharePermissionInput.disabled = !canManage;
+        directorySharePermissionFieldControls.forEach(control => {
+            control.disabled = !canManage;
+        });
+        updateDirectoryShareSubmitState();
+    }
+
     function updateDirectoryShareSubmitState() {
         if (!directoryShareSubmitBtn) return;
-        directoryShareSubmitBtn.disabled = !directorySharePersonInputs.some(input => input.value.trim().length > 0);
+        if (!directoryShareCanManage()) {
+            directoryShareSubmitBtn.disabled = true;
+            return;
+        }
+        const hasTypedQuery = directorySharePersonInputs.some(input => {
+            const value = input.value.trim();
+            return value.length > 0 && value !== '@';
+        });
+        directoryShareSubmitBtn.disabled = !hasTypedQuery && directoryShareSelectedValues().length === 0;
     }
 
     function updateDirectoryShareLinkState(linkUrl = '') {
         const hasLink = Boolean(linkUrl);
         if (directoryShareLinkInput) directoryShareLinkInput.value = linkUrl;
         if (directoryShareLinkCreateLabel) directoryShareLinkCreateLabel.textContent = hasLink ? 'Odśwież link' : 'Utwórz link';
-        if (directoryShareLinkCopyBtn) directoryShareLinkCopyBtn.disabled = !hasLink;
-        if (directoryShareLinkRevokeBtn) directoryShareLinkRevokeBtn.disabled = !hasLink;
+        if (directoryShareLinkCreateBtn) directoryShareLinkCreateBtn.disabled = !directoryShareCanManage();
+        if (directoryShareLinkCopyBtn) directoryShareLinkCopyBtn.disabled = !directoryShareCanManage() || !hasLink;
+        if (directoryShareLinkRevokeBtn) directoryShareLinkRevokeBtn.disabled = !directoryShareCanManage() || !hasLink;
     }
 
     function directoryShareObjectPayload() {
@@ -985,9 +1016,111 @@ function initTasksPage() {
     }
 
     function directoryShareSearchTerms() {
-        return directorySharePersonInputs
-            .map(input => normalizePickerSearch(input.value))
+        const query = normalizePickerSearch(directoryShareSearchValue);
+        return query ? [query] : [];
+    }
+
+    function directoryShareTokensFromInput(value) {
+        return (value || '')
+            .split(':')
+            .map(token => token.trim())
+            .filter(token => token !== '@')
             .filter(Boolean);
+    }
+
+    function normalizeDirectoryShareValue(value) {
+        value = (value || '').trim().toLowerCase();
+        if (!value) return '';
+        return value.startsWith('@') ? value : `@${value}`;
+    }
+
+    function directoryShareActiveInputQuery(value) {
+        const parts = (value || '').split(':');
+        return (parts[parts.length - 1] || '').trim();
+    }
+
+    function directoryShareCommittedTokensFromInput(value) {
+        const tokens = directoryShareTokensFromInput(value);
+        const activeQuery = directoryShareActiveInputQuery(value);
+        if (!tokens.length || !activeQuery) return tokens;
+        if (/:\s*$/.test(value || '')) return tokens;
+        return tokens.slice(0, -1);
+    }
+
+    function directoryShareSelectedText(values) {
+        return values.join(': ');
+    }
+
+    function directoryShareSelectedValues() {
+        return (directoryShareSelectedInput?.value || '')
+            .split('\n')
+            .map(value => value.trim())
+            .filter(Boolean);
+    }
+
+    function setDirectoryShareSelectedValues(values, syncVisibleInput = false) {
+        if (!directoryShareSelectedInput) return;
+        const selectedValues = [];
+        const seenValues = new Set();
+        values.forEach(value => {
+            value = (value || '').trim();
+            const valueKey = normalizeDirectoryShareValue(value);
+            if (!value || seenValues.has(valueKey)) return;
+            seenValues.add(valueKey);
+            selectedValues.push(valueKey);
+        });
+        directoryShareSelectedInput.value = selectedValues.join('\n');
+        if (syncVisibleInput && directoryShareMemberInput) {
+            directoryShareMemberInput.value = directoryShareSelectedText(selectedValues);
+        }
+    }
+
+    function directoryShareSelectedSet() {
+        return new Set(
+            directoryShareSelectedValues()
+                .map(normalizeDirectoryShareValue)
+                .filter(Boolean)
+        );
+    }
+
+    function setDirectorySharePickOptionSelected(option, shouldSelect) {
+        const value = option?.dataset.shareValue || '';
+        if (!value) return;
+        const valueKey = normalizeDirectoryShareValue(value);
+        const selectedValues = directoryShareSelectedValues();
+        const isSelected = selectedValues.some(selectedValue => normalizeDirectoryShareValue(selectedValue) === valueKey);
+        setDirectoryShareSelectedValues(
+            shouldSelect
+                ? (isSelected ? selectedValues : [...selectedValues, value])
+                : selectedValues.filter(selectedValue => normalizeDirectoryShareValue(selectedValue) !== valueKey),
+            true
+        );
+        updateDirectoryShareSubmitState();
+        syncDirectoryShareResults();
+        directoryShareMemberInput?.focus();
+    }
+
+    function toggleDirectorySharePickOption(option) {
+        const value = option?.dataset.shareValue || '';
+        if (!value) return;
+        const valueKey = normalizeDirectoryShareValue(value);
+        const isSelected = directoryShareSelectedSet().has(valueKey);
+        setDirectorySharePickOptionSelected(option, !isSelected);
+    }
+
+    function toggleDirectorySharePickOptionFromCheckbox(option, checkbox) {
+        if (!checkbox) return;
+        setDirectorySharePickOptionSelected(option, checkbox.checked);
+    }
+
+    function hasIncompleteDirectoryShareSearch() {
+        return normalizePickerSearch(directoryShareSearchValue) === '@';
+    }
+
+    function syncDirectoryShareSelectedValuesFromInput(input) {
+        const value = input?.value || '';
+        directoryShareSearchValue = directoryShareActiveInputQuery(value);
+        setDirectoryShareSelectedValues(directoryShareCommittedTokensFromInput(value));
     }
 
     function setDirectoryShareContactsOpen(isOpen) {
@@ -996,13 +1129,14 @@ function initTasksPage() {
 
     function syncDirectoryShareResults() {
         const terms = directoryShareSearchTerms();
-        const selectedValue = directoryShareMemberInput?.value.trim() || '';
+        const hasIncompleteSearch = hasIncompleteDirectoryShareSearch();
+        const selectedValues = directoryShareSelectedSet();
         let visibleContactsCount = 0;
 
         directoryShareContactOptions.forEach(option => {
             const text = normalizePickerSearch(option.dataset.shareSearch || option.textContent);
-            const isVisible = !terms.length || terms.every(term => text.includes(term));
-            const isSelected = Boolean(selectedValue && option.dataset.shareValue === selectedValue);
+            const isSelected = selectedValues.has(normalizeDirectoryShareValue(option.dataset.shareValue || ''));
+            const isVisible = isSelected || (!hasIncompleteSearch && (!terms.length || terms.every(term => text.includes(term))));
             option.hidden = !isVisible;
             option.classList.toggle('is-active', isSelected);
             option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
@@ -1012,9 +1146,9 @@ function initTasksPage() {
         });
 
         const hasContacts = directoryShareContactOptions.length > 0;
-        const emptyMessage = terms.length && hasContacts
-            ? 'Brak kontaktów dla tego wyszukiwania.'
-            : 'Brak użytkowników w kontaktach.';
+        const emptyMessage = (terms.length || hasIncompleteSearch) && hasContacts
+            ? 'Brak użytkowników dla tego wyszukiwania.'
+            : 'Brak użytkowników.';
 
         [directoryShareContactsEmpty, directoryShareResultsEmpty].forEach(empty => {
             if (!empty) return;
@@ -1289,8 +1423,8 @@ function initTasksPage() {
     }
 
     const DIRECTORY_SHARE_PERMISSION_META = {
-        view: { label: 'Może wyświetlać', icon: 'eye' },
-        edit: { label: 'Może wyświetlać i edytować', icon: 'pen-line' }
+        view: { label: 'Może przeglądać', icon: 'eye' },
+        edit: { label: 'Może przeglądać i edytować', icon: 'pen-line' }
     };
 
     function normalizeDirectorySharePermission(value) {
@@ -1429,25 +1563,73 @@ function initTasksPage() {
         }
     }
 
-    function submitDirectorySharePermissionOption(option, permission) {
+    function directorySharePermissionPayload(option, permission) {
+        const payload = new FormData(directoryShareForm);
+        payload.set('action', option.dataset.shareAction || '');
+        payload.set('project_id', option.dataset.shareProjectId || '');
+        payload.set('section_id', option.dataset.shareSectionId || '');
+        payload.set('task_id', option.dataset.shareTaskId || '');
+        payload.set('member_id', option.dataset.shareMemberId || '');
+        payload.set('permission', permission);
+        directorySharePersonInputs.forEach(input => {
+            if (input.name) payload.set(input.name, '');
+        });
+        payload.set('member_queries', '');
+        return payload;
+    }
+
+    function setDirectorySharePermissionPickerLoading(picker, isLoading) {
+        if (!picker) return;
+        picker.classList.toggle('is-saving', isLoading);
+        if (isLoading) {
+            picker.setAttribute('aria-busy', 'true');
+        } else {
+            picker.removeAttribute('aria-busy');
+        }
+        picker.querySelectorAll('[data-directory-share-permission-toggle], [data-directory-share-permission-option]').forEach(control => {
+            control.disabled = isLoading;
+        });
+    }
+
+    async function submitDirectorySharePermissionOption(option, permission, previousPermission, picker) {
         if (!directoryShareForm || !option.hasAttribute('data-directory-share-permission-submit')) return;
-        if (directoryShareActionInput) directoryShareActionInput.value = option.dataset.shareAction || '';
-        if (directoryShareProjectInput) directoryShareProjectInput.value = option.dataset.shareProjectId || '';
-        if (directoryShareSectionInput) directoryShareSectionInput.value = option.dataset.shareSectionId || '';
-        if (directoryShareTaskInput) directoryShareTaskInput.value = option.dataset.shareTaskId || '';
-        if (directoryShareMemberIdInput) directoryShareMemberIdInput.value = option.dataset.shareMemberId || '';
-        if (directorySharePermissionInput) directorySharePermissionInput.value = permission;
-        directorySharePersonInputs.forEach(input => { input.value = ''; });
-        directoryShareForm.requestSubmit ? directoryShareForm.requestSubmit() : directoryShareForm.submit();
+
+        const endpoint = directoryShareForm.getAttribute('action') || window.location.href;
+        setDirectorySharePermissionPickerLoading(picker, true);
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': window.getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: directorySharePermissionPayload(option, permission)
+            });
+            const contentType = response.headers.get('content-type') || '';
+            const data = contentType.includes('application/json') ? await response.json() : {};
+            if (!response.ok || data.status !== 'success') {
+                throw new Error(data.message || 'Nie udało się zmienić poziomu dostępu.');
+            }
+            updateDirectorySharePermissionPicker(picker, data.permission || permission);
+            showMessage(data.message || 'Zmieniono poziom dostępu.', 'success');
+        } catch (error) {
+            updateDirectorySharePermissionPicker(picker, previousPermission);
+            showMessage(error.message || 'Nie udało się zmienić poziomu dostępu.', 'error');
+        } finally {
+            setDirectorySharePermissionPickerLoading(picker, false);
+        }
     }
 
     function selectDirectorySharePermissionOption(option) {
         const picker = option?.closest('[data-directory-share-permission-picker]');
         if (!picker) return;
+        const previousPermission = normalizeDirectorySharePermission(picker.dataset.permissionValue);
         const permission = normalizeDirectorySharePermission(option.dataset.permissionValue);
         updateDirectorySharePermissionPicker(picker, permission);
         closeDirectorySharePermissionPickers();
-        submitDirectorySharePermissionOption(option, permission);
+        if (permission !== previousPermission) {
+            submitDirectorySharePermissionOption(option, permission, previousPermission, picker);
+        }
     }
 
     function focusDirectorySharePermissionOption(option, direction) {
@@ -2351,6 +2533,7 @@ function initTasksPage() {
         const linkPermission = button.dataset.shareLinkPermission || 'view';
         const objectType = button.dataset.shareObjectType || '';
         const objectName = button.dataset.shareObjectName || '';
+        const canManageShare = button.dataset.shareCanManage !== 'false';
 
         if (directoryShareActionInput) directoryShareActionInput.value = action;
         if (directoryShareProjectInput) directoryShareProjectInput.value = projectId;
@@ -2360,8 +2543,11 @@ function initTasksPage() {
         if (directoryShareObjectIdInput) directoryShareObjectIdInput.value = objectId;
         if (directoryShareMemberIdInput) directoryShareMemberIdInput.value = '';
         if (directorySharePermissionInput) directorySharePermissionInput.value = linkPermission === 'edit' ? 'edit' : 'view';
+        setDirectoryShareManageState(canManageShare);
         syncDirectorySharePermissionPickers(directoryShareForm);
         directorySharePersonInputs.forEach(input => { input.value = ''; });
+        directoryShareSearchValue = '';
+        setDirectoryShareSelectedValues([]);
         updateDirectoryShareLinkState(linkUrl);
         syncDirectoryShareResults();
         setDirectoryShareContactsOpen(false);
@@ -2793,6 +2979,7 @@ function initTasksPage() {
     if (directorySharePersonInputs.length) {
         directorySharePersonInputs.forEach(input => {
             input.addEventListener('input', function() {
+                syncDirectoryShareSelectedValuesFromInput(this);
                 updateDirectoryShareSubmitState();
                 syncDirectoryShareResults();
                 if (this.value.trim()) {
@@ -2805,16 +2992,22 @@ function initTasksPage() {
     }
 
     directorySharePickOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            if (directoryShareMemberInput) directoryShareMemberInput.value = this.dataset.shareValue || '';
-            updateDirectoryShareSubmitState();
-            syncDirectoryShareResults();
-            directoryShareMemberInput?.focus();
+        const checkbox = option.querySelector('[data-directory-share-check]');
+        option.addEventListener('click', function(event) {
+            if (event.target.closest('[data-directory-share-check]')) return;
+            event.preventDefault();
+            toggleDirectorySharePickOption(this);
         });
         option.addEventListener('keydown', function(event) {
             if (event.key !== 'Enter' && event.key !== ' ') return;
             event.preventDefault();
             this.click();
+        });
+        checkbox?.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+        checkbox?.addEventListener('change', function() {
+            toggleDirectorySharePickOptionFromCheckbox(option, this);
         });
     });
 
@@ -2988,6 +3181,10 @@ function initTasksPage() {
             || (cell && cell.querySelector('.task-checkbox'));
     }
 
+    function isReadonlyTaskRow(row) {
+        return row?.dataset.readonly === 'true' || row?.getAttribute('draggable') === 'false';
+    }
+
     // Navigate to task detail on row click
     taskRows.forEach(row => {
         row.addEventListener('click', function(e) {
@@ -3077,6 +3274,8 @@ function initTasksPage() {
     }
 
     function moveTaskRow(row, dropTarget) {
+        if (isReadonlyTaskRow(row)) return;
+
         const columnId = getDropColumnId(dropTarget);
         const status = getDropStatus(dropTarget);
         const list = dropTarget.matches('.tasks-issue-list, .tasks-status-subgroup-list')
@@ -3130,6 +3329,10 @@ function initTasksPage() {
 
     document.querySelectorAll('.task-row[draggable="true"], .tasks-issue-row[draggable="true"]').forEach(row => {
         row.addEventListener('dragstart', function(event) {
+            if (isReadonlyTaskRow(this)) {
+                event.preventDefault();
+                return;
+            }
             this.classList.add('is-dragging');
             event.dataTransfer.effectAllowed = 'move';
             event.dataTransfer.setData('text/plain', this.dataset.taskId || '');
@@ -3169,6 +3372,7 @@ function initTasksPage() {
             const taskId = event.dataTransfer.getData('text/plain');
             const escapedTaskId = window.CSS?.escape ? CSS.escape(taskId) : taskId.replace(/["\\]/g, '\\$&');
             const row = document.querySelector(`.task-row[data-task-id="${escapedTaskId}"], .tasks-issue-row[data-task-id="${escapedTaskId}"]`);
+            if (isReadonlyTaskRow(row)) return;
             moveTaskRow(row, this);
         });
     });
@@ -3214,6 +3418,21 @@ function initTasksPage() {
         return checkbox.closest('.task-row, .tasks-project-row, .tasks-section-row, .tasks-all-groups-row, .contacts-directory-row');
     }
 
+    function taskCheckboxCanEdit(checkbox) {
+        if (!checkbox) return false;
+        const row = checkboxRow(checkbox);
+        if (row && isReadonlyTaskRow(row)) return false;
+        return checkbox.dataset.canEdit !== 'false';
+    }
+
+    function checkboxCanManage(checkbox) {
+        return Boolean(checkbox) && checkbox.dataset.canManage !== 'false';
+    }
+
+    function allCheckboxesCanManage(selectedCheckboxes) {
+        return selectedCheckboxes.length > 0 && selectedCheckboxes.every(checkboxCanManage);
+    }
+
     function getSelectAllTargetCheckboxes(visibleOnly = false) {
         const target = selectAllCheckbox?.dataset.selectAllTarget || '';
         let targetCheckboxes = [];
@@ -3232,6 +3451,8 @@ function initTasksPage() {
             targetCheckboxes = Array.from(checkboxes).filter(cb => cb.id !== 'select-all-checkbox');
         }
 
+        targetCheckboxes = targetCheckboxes.filter(cb => !cb.disabled);
+
         if (!visibleOnly) return targetCheckboxes;
 
         return targetCheckboxes.filter(cb => rowIsShown(checkboxRow(cb)));
@@ -3248,14 +3469,15 @@ function initTasksPage() {
 
     function updateDeleteMenuButtons() {
         const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
+        const selectedTaskCheckbox = selectedTaskCheckboxes.length === 1 ? selectedTaskCheckboxes[0] : null;
         setMenuButtonState(
             editSelectedTaskMenuBtn,
-            selectedTaskCheckboxes.length === 1,
-            { taskId: selectedTaskCheckboxes[0]?.dataset.taskId || '' }
+            selectedTaskCheckboxes.length === 1 && taskCheckboxCanEdit(selectedTaskCheckbox),
+            { taskId: selectedTaskCheckbox?.dataset.taskId || '' }
         );
         setMenuButtonState(
             deleteSelectedTaskMenuBtn,
-            selectedTaskCheckboxes.length > 0,
+            allCheckboxesCanManage(selectedTaskCheckboxes),
             { taskCount: String(selectedTaskCheckboxes.length) }
         );
 
@@ -3267,10 +3489,10 @@ function initTasksPage() {
             sectionDescription: selectedSectionCheckbox?.dataset.sectionDescription || '',
             sectionIcon: selectedSectionCheckbox?.dataset.sectionIcon || ''
         };
-        setMenuButtonState(editSelectedSectionMenuBtn, selectedSectionCheckboxes.length === 1, sectionDataset);
+        setMenuButtonState(editSelectedSectionMenuBtn, selectedSectionCheckboxes.length === 1 && checkboxCanManage(selectedSectionCheckbox), sectionDataset);
         setMenuButtonState(
             deleteSelectedSectionMenuBtn,
-            selectedSectionCheckboxes.length > 0,
+            allCheckboxesCanManage(selectedSectionCheckboxes),
             sectionDataset
         );
 
@@ -3283,10 +3505,10 @@ function initTasksPage() {
             projectCode: selectedProjectCheckbox?.dataset.projectCode || '',
             projectIcon: selectedProjectCheckbox?.dataset.projectIcon || ''
         };
-        setMenuButtonState(editSelectedProjectMenuBtn, selectedProjectCheckboxes.length === 1, projectDataset);
+        setMenuButtonState(editSelectedProjectMenuBtn, selectedProjectCheckboxes.length === 1 && checkboxCanManage(selectedProjectCheckbox), projectDataset);
         setMenuButtonState(
             deleteSelectedProjectMenuBtn,
-            selectedProjectCheckboxes.length > 0,
+            allCheckboxesCanManage(selectedProjectCheckboxes),
             projectDataset
         );
 
@@ -3308,6 +3530,9 @@ function initTasksPage() {
 
     function updateSelection() {
         const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
+        const editableTaskCheckboxes = selectedTaskCheckboxes.filter(taskCheckboxCanEdit);
+        const allSelectedTasksEditable = selectedTaskCheckboxes.length > 0 && editableTaskCheckboxes.length === selectedTaskCheckboxes.length;
+        const allSelectedTasksManageable = allCheckboxesCanManage(selectedTaskCheckboxes);
         const count = selectedTaskCheckboxes.length;
 
         if (selectedCountSpan) {
@@ -3323,12 +3548,19 @@ function initTasksPage() {
                 
                 // Show Edit only if exactly 1 is selected
                 if (editBtn) {
-                    editBtn.classList.toggle('u-hidden', count !== 1);
+                    const canEditSelectedTask = count === 1 && taskCheckboxCanEdit(selectedTaskCheckboxes[0]);
+                    editBtn.classList.toggle('u-hidden', !canEditSelectedTask);
+                    editBtn.disabled = !canEditSelectedTask;
+                }
+
+                if (deleteBtn) {
+                    deleteBtn.disabled = !allSelectedTasksManageable;
                 }
 
                 // Update Status Toggle Button
                 if (statusToggleBtn) {
-                    const statuses = Array.from(selectedTaskCheckboxes).map(cb => cb.closest('.task-row').dataset.status);
+                    statusToggleBtn.disabled = !allSelectedTasksEditable;
+                    const statuses = Array.from(editableTaskCheckboxes).map(cb => cb.closest('.task-row').dataset.status);
                     const anyOpen = statuses.some(s => s !== 'closed');
                     
                     if (anyOpen) {
@@ -3504,14 +3736,24 @@ function initTasksPage() {
     function editSelectedTask() {
         const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
         if (selectedTaskCheckboxes.length !== 1) return;
+        if (!taskCheckboxCanEdit(selectedTaskCheckboxes[0])) return;
+
+        const row = checkboxRow(selectedTaskCheckboxes[0]);
+        const viewUrl = row?.getAttribute('data-view-url');
+        if (viewUrl) {
+            rememberTaskReturnPoint(viewUrl);
+            navigateWithinApp(viewUrl);
+            return;
+        }
 
         const taskId = selectedTaskCheckboxes[0].dataset.taskId;
-        if (taskId) window.location.href = `/${taskAppSegment}/view-task/${taskId}/`;
+        if (taskId) navigateWithinApp(`/${taskAppSegment}/view-task/${taskId}/`);
     }
 
     function editSelectedSection() {
         const selectedSectionCheckbox = getSelectedSectionCheckbox();
         if (!selectedSectionCheckbox || !sectionRenameModal) return;
+        if (!checkboxCanManage(selectedSectionCheckbox)) return;
 
         if (sectionRenameIdInput) sectionRenameIdInput.value = selectedSectionCheckbox.dataset.sectionId || '';
         if (sectionRenameTitleInput) sectionRenameTitleInput.value = selectedSectionCheckbox.dataset.sectionTitle || '';
@@ -3526,6 +3768,7 @@ function initTasksPage() {
     function editSelectedProject() {
         const selectedProjectCheckbox = getSelectedProjectCheckbox();
         if (!selectedProjectCheckbox || !projectRenameModal) return;
+        if (!checkboxCanManage(selectedProjectCheckbox)) return;
 
         if (projectRenameIdInput) projectRenameIdInput.value = selectedProjectCheckbox.dataset.projectId || '';
         if (projectRenameNameInput) projectRenameNameInput.value = selectedProjectCheckbox.dataset.projectName || '';
@@ -3554,6 +3797,7 @@ function initTasksPage() {
 
     function deleteSelectedSection() {
         const selectedSectionCheckboxes = getSelectedSectionCheckboxes();
+        if (!allCheckboxesCanManage(selectedSectionCheckboxes)) return;
         const sectionIds = selectedSectionCheckboxes.map(cb => cb.dataset.sectionId).filter(Boolean);
         if (!sectionIds.length) return;
 
@@ -3575,6 +3819,7 @@ function initTasksPage() {
 
     function deleteSelectedProject() {
         const selectedProjectCheckboxes = getSelectedProjectCheckboxes();
+        if (!allCheckboxesCanManage(selectedProjectCheckboxes)) return;
         const projectIds = selectedProjectCheckboxes.map(cb => cb.dataset.projectId).filter(Boolean);
         if (!projectIds.length) return;
 
@@ -3617,6 +3862,7 @@ function initTasksPage() {
 
     function deleteSelectedTasks() {
         const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
+        if (!allCheckboxesCanManage(selectedTaskCheckboxes)) return;
         const taskIds = selectedTaskCheckboxes.map(cb => {
             const row = cb.closest('.task-row');
             return row ? row.dataset.taskId : null;
@@ -3676,6 +3922,7 @@ function initTasksPage() {
     if (statusToggleBtn) {
         statusToggleBtn.addEventListener('click', function() {
             const selectedCheckboxes = getSelectedTaskCheckboxes();
+            if (!selectedCheckboxes.length || selectedCheckboxes.some(cb => !taskCheckboxCanEdit(cb))) return;
             const taskIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.taskId));
             const targetStatus = this.dataset.targetStatus;
             const isClosing = targetStatus === 'closed';
@@ -4048,9 +4295,10 @@ function initTasksPage() {
 
         const editor = document.createElement('div');
         editor.className = `${input.className} tasks-description-editor`;
-        editor.contentEditable = 'true';
+        editor.contentEditable = input.disabled ? 'false' : 'true';
         editor.setAttribute('role', 'textbox');
         editor.setAttribute('aria-multiline', 'true');
+        if (input.disabled) editor.setAttribute('aria-readonly', 'true');
         editor.dataset.placeholder = input.getAttribute('placeholder') || '';
         editor.innerHTML = descriptionValueToEditorHtml(input.value);
 
@@ -4058,12 +4306,14 @@ function initTasksPage() {
         input.classList.add('tasks-description-source');
         input.insertAdjacentElement('afterend', editor);
 
-        editor.addEventListener('input', function() {
-            syncDescriptionInput(editor);
-        });
+        if (!input.disabled) {
+            editor.addEventListener('input', function() {
+                syncDescriptionInput(editor);
+            });
+        }
 
         const form = input.closest('form');
-        if (form) {
+        if (form && !input.disabled) {
             form.addEventListener('submit', function() {
                 syncDescriptionInput(editor);
             });

@@ -164,8 +164,8 @@ class ContactActivity(models.Model):
 
 class SharedItem(models.Model):
     PERMISSION_CHOICES = [
-        ('view', 'Może wyświetlać'),
-        ('edit', 'Może wyświetlać i edytować'),
+        ('view', 'Może przeglądać'),
+        ('edit', 'Może przeglądać i edytować'),
     ]
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)

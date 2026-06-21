@@ -38,33 +38,17 @@
             </span>
             Wszystkie projekty
         </a>
+        <a href="{% url 'tasks:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
+            <span class="tasks-rail-icon" aria-hidden="true">
+                <i data-lucide="folder-open" aria-hidden="true"></i>
+            </span>
+            Wszystkie grupy
+        </a>
         <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
             <span class="tasks-rail-icon" aria-hidden="true">
                 <i data-lucide="tag" aria-hidden="true"></i>
             </span>
             Tagi
-        </a>
-        <div class="tasks-rail-nav-separator" role="separator" aria-hidden="true"></div>
-        <a href="{% url 'tasks:tasks' %}?view=shared-projects" class="tasks-rail-link {% if active_view == 'shared_projects' %}is-active{% endif %}">
-            <span class="tasks-rail-icon" aria-hidden="true">
-                <i data-lucide="folder-symlink" aria-hidden="true"></i>
-            </span>
-            Udostępnione projekty
-            {% if shared_project_count %}<span class="tasks-rail-count">{{ shared_project_count }}</span>{% endif %}
-        </a>
-        <a href="{% url 'tasks:tasks' %}?view=shared-groups" class="tasks-rail-link {% if active_view == 'shared_groups' %}is-active{% endif %}">
-            <span class="tasks-rail-icon" aria-hidden="true">
-                <i data-lucide="folder-open" aria-hidden="true"></i>
-            </span>
-            Udostępnione grupy
-            {% if shared_group_count %}<span class="tasks-rail-count">{{ shared_group_count }}</span>{% endif %}
-        </a>
-        <a href="{% url 'tasks:tasks' %}?view=shared-tasks" class="tasks-rail-link {% if active_view == 'shared_tasks' %}is-active{% endif %}">
-            <span class="tasks-rail-icon" aria-hidden="true">
-                <i data-lucide="list-plus" aria-hidden="true"></i>
-            </span>
-            Udostępnione zadania
-            {% if shared_task_count %}<span class="tasks-rail-count">{{ shared_task_count }}</span>{% endif %}
         </a>
     </nav>
 

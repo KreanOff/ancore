@@ -1,5 +1,6 @@
 <article class="task-row tasks-issue-row {% if compact %}tasks-issue-row--compact{% endif %} {% if task.status == 'closed' %}completed{% endif %}"
-         draggable="true"
+         draggable="{% if task.can_edit %}true{% else %}false{% endif %}"
+         {% if not task.can_edit %}data-readonly="true" aria-readonly="true"{% endif %}
          data-task-id="{{ task.task_id }}"
          data-status="{{ task.status }}"
          data-priority="{{ task.priority }}"
@@ -9,7 +10,7 @@
          data-search-index="{{ task.task_id }} {% if not compact %}{{ project_code }}-{{ task.task_id }} {% endif %}{{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.get_status_display }} {{ task.get_priority_display }} {{ task.due_at|date:'d.m.Y H:i' }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {{ task.section.project.code|default:project_code }} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
          data-view-url="{% if task.shared_view_url %}{{ task.shared_view_url }}{% elif compact %}{% url 'tasks:view-subtask' task.task_id %}{% else %}{% url 'tasks:view-task' task.task_id %}{% endif %}">
     {% if compact %}
-    <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
+    <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" data-can-edit="{% if task.can_edit %}true{% else %}false{% endif %}" data-can-manage="{% if task.can_manage %}true{% else %}false{% endif %}" aria-label="Zaznacz {{ task.title }}">
     <span class="tasks-row-priority priority-{{ task.priority }}"
           title="Priorytet: {{ task.get_priority_display }}"
           aria-label="Priorytet: {{ task.get_priority_display }}">
@@ -18,7 +19,10 @@
     <span class="status-indicator status-{{ task.status }}">{{ task.get_status_display }}</span>
     <span class="tasks-row-title">
         <span class="tasks-row-title-content">
-            <span class="tasks-row-title-text">{{ task.title }}</span>
+            <span class="tasks-row-title-main">
+                <span class="tasks-row-title-text">{{ task.title }}</span>
+                {% include 'tasks/includes/shared_access_badge.html' with item=task only %}
+            </span>
             {% if task.description %}
             <span class="tasks-row-title-description">{{ task.description|striptags }}</span>
             {% endif %}
@@ -32,7 +36,7 @@
         {% endif %}
     </span>
     {% else %}
-    <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
+    <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" data-can-edit="{% if task.can_edit %}true{% else %}false{% endif %}" data-can-manage="{% if task.can_manage %}true{% else %}false{% endif %}" aria-label="Zaznacz {{ task.title }}">
     <span class="tasks-row-priority priority-{{ task.priority }}"
           title="Priorytet: {{ task.get_priority_display }}"
           aria-label="Priorytet: {{ task.get_priority_display }}">
@@ -41,7 +45,10 @@
     <span class="status-indicator status-{{ task.status }}" aria-label="{{ task.get_status_display }}"></span>
     <span class="tasks-row-title">
         <span class="tasks-row-title-content">
-            <span class="tasks-row-title-text">{{ task.title }}</span>
+            <span class="tasks-row-title-main">
+                <span class="tasks-row-title-text">{{ task.title }}</span>
+                {% include 'tasks/includes/shared_access_badge.html' with item=task only %}
+            </span>
         </span>
     </span>
     <span class="tasks-row-tags" title="Tagi: {{ task.tags.count }}" aria-label="Tagi: {{ task.tags.count }}">
