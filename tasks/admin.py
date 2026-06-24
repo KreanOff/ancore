@@ -20,8 +20,9 @@ class TaskSectionInline(admin.TabularInline):
 
 @admin.register(TaskProject)
 class TaskProjectAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code', 'user', 'created_at')
-    search_fields = ('name', 'code')
+    list_display = ('name', 'code', 'priority', 'due_at', 'company', 'user', 'created_at')
+    list_filter = ('priority', 'due_at', 'created_at')
+    search_fields = ('name', 'code', 'company__name')
     inlines = [TaskSectionInline]
 
 

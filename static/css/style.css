@@ -12,8 +12,8 @@
 @import 'components/dialogs.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/modals.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/tables.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/tasks.css?v=20260620-shared-access-badges';
-@import 'components/contacts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/tasks.css?v=20260624-directory-hidden-spacer-fix';
+@import 'components/contacts.css?v=20260624-directory-header-center';
 @import 'components/notifications.css?v=20260616-task-autosave';
 @import 'components/attachments.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/file-upload.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';

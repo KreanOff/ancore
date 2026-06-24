@@ -95,7 +95,7 @@
                             <i data-lucide="ellipsis" aria-hidden="true"></i>
                         </button>
                         <div class="tasks-project-menu" role="menu">
-                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}">
+                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-company-id="{{ project.company_id|default:'' }}">
                                 <i data-lucide="pencil" aria-hidden="true"></i>
                                 Edytuj projekt
                             </button>
@@ -227,6 +227,10 @@
                         {% include 'core/includes/trash_icon.html' %}
                         Usuń projekt
                     </button>
+                    <button type="button" class="tasks-project-menu-button" role="menuitem" id="unshare-selected-project-menu-btn" disabled hidden>
+                        <i data-lucide="log-out" aria-hidden="true"></i>
+                        Przestań udostępniać to dla mnie
+                    </button>
                     {% endif %}
                     {% if active_view == 'tags' %}
                     <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-tag-menu-btn" disabled>
@@ -244,6 +248,7 @@
 
         <div class="tasks-filterbar">
             <div class="tasks-filterbar-left">
+                {% if active_view != 'projects' %}
                 <div class="tasks-filter-dropdown" data-status-filter-menu>
                     <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-status-filter-toggle>
                         <i data-lucide="filter" aria-hidden="true"></i>
@@ -313,6 +318,7 @@
                         </button>
                     </div>
                 </div>
+                {% endif %}
             </div>
             <div class="tasks-filterbar-center tasks-search-actions">
                 <label class="tasks-search-field" for="filter-search">
@@ -353,6 +359,7 @@
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     </span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell" data-column="section">GRUPA</span>
+                    <span class="tasks-directory-shared-access-header tasks-directory-sheet__cell" data-column="shared_access" title="Status udostępnienia" aria-label="Status udostępnienia"></span>
                     <span class="tasks-directory-sheet__cell" data-column="members">UDOSTĘPNIONE</span>
                     <span class="tasks-directory-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA ZADANIA</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell" data-column="created_at">DATA</span>
@@ -367,7 +374,8 @@
                             <span class="tasks-row-title-text">{{ section.title }}</span>
                         </span>
                     </span>
-                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell' data_column='members' only %}
+                    {% include 'tasks/includes/directory_shared_access_cell.html' with item=section cell_class='tasks-directory-sheet__cell' only %}
+                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell' data_column='members' hide_shared_access_badge=True only %}
                     <span class="tasks-directory-assignee tasks-directory-sheet__cell" data-column="default_assignee">
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
@@ -455,6 +463,7 @@
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     </span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell" data-column="section">GRUPA</span>
+                    <span class="tasks-directory-shared-access-header tasks-directory-sheet__cell" data-column="shared_access" title="Status udostępnienia" aria-label="Status udostępnienia"></span>
                     <span class="tasks-directory-sheet__cell" data-column="members">UDOSTĘPNIONE</span>
                     <span class="tasks-directory-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA ZADANIA</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell" data-column="created_at">DATA</span>
@@ -469,7 +478,8 @@
                             <span class="tasks-row-title-text">{{ section.title }}</span>
                         </span>
                     </span>
-                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell' data_column='members' only %}
+                    {% include 'tasks/includes/directory_shared_access_cell.html' with item=section cell_class='tasks-directory-sheet__cell' only %}
+                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell' data_column='members' hide_shared_access_badge=True only %}
                     <span class="tasks-directory-assignee tasks-directory-sheet__cell" data-column="default_assignee">
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
@@ -617,6 +627,13 @@
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project">PROJEKT</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PROJEKTU</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">OPIS</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress">POSTĘP</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">TERMIN</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">ZADANIA</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">PRIORYTET</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">OSTATNIA AKTYWNOŚĆ</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">KLIENT / FIRMA</span>
+                    <span class="tasks-directory-shared-access-header tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="shared_access" title="Status udostępnienia" aria-label="Status udostępnienia"></span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members">UDOSTĘPNIONE</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA ZADANIA</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at">DATA</span>
@@ -624,8 +641,8 @@
                 </div>
                 <div class="tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista projektów">
                 {% for project in projects %}
-                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}">
-                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz projekt {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}">
+                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} {{ project.get_priority_display|default:'' }} {{ project.company.name|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz projekt {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}" data-can-self-unshare="{% if project.is_shared_with_current_user %}true{% else %}false{% endif %}" data-shared-access-permission="{{ project.shared_access_permission|default:'' }}">
                     <span class="tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project">
                         <span class="tasks-row-title-main">
                             <span class="tasks-row-title-text">{{ project.name }}</span>
@@ -633,7 +650,28 @@
                     </span>
                     <span class="tasks-project-sheet__code tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">{{ project.code }}</span>
                     <span class="tasks-project-row-description tasks-project-sheet__description tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">{{ project.description|default:"Brak opisu" }}</span>
-                    {% include 'tasks/includes/directory_members.html' with item=project item_kind='project' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell tasks-project-sheet__cell' data_column='members' only %}
+                    <span class="tasks-project-sheet__progress tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress" title="Ukończone zadania: {{ project.tasks_completed_count }} z {{ project.tasks_total_count }}">
+                        <span class="tasks-project-progress-track" aria-hidden="true">
+                            <span class="tasks-project-progress-fill" style="--tasks-project-progress: {{ project.progress_percent }}%;"></span>
+                        </span>
+                        <span>{{ project.progress_percent }}%</span>
+                    </span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">
+                        {% if project.due_at %}{{ project.due_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ project.tasks_count_label }}</span>
+                    <span class="tasks-project-sheet__priority tasks-project-sheet__priority--{{ project.priority|default:'none' }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">
+                        <span class="tasks-project-priority-dot" aria-hidden="true"></span>
+                        <span>{{ project.get_priority_display }}</span>
+                    </span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
+                        {% if project.last_activity_at %}{{ project.last_activity_at|date:"d.m.Y H:i" }}{% else %}<span class="tasks-project-sheet__muted">Brak aktywności</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">
+                        {% if project.company %}{{ project.company.name }}{% else %}<span class="tasks-project-sheet__muted">Brak firmy</span>{% endif %}
+                    </span>
+                    {% include 'tasks/includes/directory_shared_access_cell.html' with item=project cell_class='tasks-directory-sheet__cell tasks-project-sheet__cell' only %}
+                    {% include 'tasks/includes/directory_members.html' with item=project item_kind='project' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell tasks-project-sheet__cell' data_column='members' hide_shared_access_badge=True only %}
                     <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
@@ -733,6 +771,18 @@
                         <span>Pierwsza grupa</span>
                         {{ project_form.section_title }}
                     </label>
+                    <label>
+                        <span>Priorytet</span>
+                        {{ project_form.priority }}
+                    </label>
+                    <label>
+                        <span>Termin</span>
+                        {{ project_form.due_at }}
+                    </label>
+                    <label>
+                        <span>Klient / firma</span>
+                        {{ project_form.company }}
+                    </label>
                 </div>
             </div>
 
@@ -778,6 +828,29 @@
 
                     <label for="project-rename-description">Opis</label>
                     <textarea id="project-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ project_rename_form.description.value|default_if_none:'' }}</textarea>
+
+                    <label for="project-rename-priority">Priorytet</label>
+                    <select id="project-rename-priority" name="priority" class="tasks-inline-select">
+                        {% with selected_priority=project_rename_form.priority.value|default:'none' %}
+                        <option value="none" {% if selected_priority == 'none' %}selected{% endif %}>Brak</option>
+                        <option value="low" {% if selected_priority == 'low' %}selected{% endif %}>Niski</option>
+                        <option value="medium" {% if selected_priority == 'medium' %}selected{% endif %}>Średni</option>
+                        <option value="high" {% if selected_priority == 'high' %}selected{% endif %}>Wysoki</option>
+                        {% endwith %}
+                    </select>
+
+                    <label for="project-rename-due-at">Termin</label>
+                    <input type="date" id="project-rename-due-at" name="due_at" class="tasks-inline-input" value="{{ project_rename_form.due_at.value|date:'Y-m-d' }}">
+
+                    <label for="project-rename-company">Klient / firma</label>
+                    <select id="project-rename-company" name="company" class="tasks-inline-select">
+                        <option value="">Brak firmy</option>
+                        {% with selected_company_id=project_rename_form.company.value|stringformat:"s" %}
+                        {% for company in project_company_options %}
+                        <option value="{{ company.id }}" {% if selected_company_id == company.id|stringformat:"s" %}selected{% endif %}>{{ company.name }}</option>
+                        {% endfor %}
+                        {% endwith %}
+                    </select>
 
                     <span>Kod projektu</span>
                     <span class="tasks-inline-input tasks-inline-code tasks-inline-code--readonly" id="project-rename-code">{{ project_rename_form.instance.code|default:'Zostanie nadany automatycznie' }}</span>
@@ -898,8 +971,8 @@
                                 <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
                             </div>
                             {% for project in projects %}
-                            {% if project.can_manage %}
-                            <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
+                            {% if project.can_edit or project.has_editable_sections %}
+                            <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="">
                                 <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{% if project.icon %}<i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
                                 {{ project.name }}
                             </button>
@@ -921,12 +994,14 @@
                                 <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
                             </div>
                             {% for project in projects %}
-                                {% if project.can_manage %}
+                                {% if project.can_edit or project.has_editable_sections %}
                                 {% for section in project.sections.all %}
+                                {% if section.can_edit %}
                                 <button type="button" role="menuitem" data-section-option data-section-id="{{ section.id }}" data-section-project-id="{{ project.id }}" data-section-title="{{ section.title|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
                                     <span aria-hidden="true">{% if section.icon %}<i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
                                     {{ section.title }}
                                 </button>
+                                {% endif %}
                                 {% endfor %}
                                 {% endif %}
                             {% endfor %}

@@ -14,6 +14,13 @@ import re
 
 
 class TaskProject(models.Model):
+    PRIORITY_CHOICES = [
+        ('none', 'Brak'),
+        ('low', 'Niski'),
+        ('medium', 'Średni'),
+        ('high', 'Wysoki'),
+    ]
+
     CODE_LETTERS = string.ascii_uppercase
     CODE_DIGITS = string.digits
 
@@ -32,6 +39,9 @@ class TaskProject(models.Model):
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
     icon = models.CharField(max_length=64, blank=True, default='')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
+    due_at = models.DateField(null=True, blank=True)
+    company = models.ForeignKey('contacts.Company', on_delete=models.SET_NULL, related_name='task_projects', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_projects')
     created_at = models.DateTimeField(auto_now_add=True)
 

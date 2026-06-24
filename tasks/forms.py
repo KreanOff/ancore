@@ -1,4 +1,5 @@
 from django import forms
+from contacts.models import Company
 from .models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
@@ -139,8 +140,19 @@ class TaskForm(forms.ModelForm):
 
 class TaskProjectBaseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        kwargs.pop('user', None)
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        if 'company' in self.fields:
+            companies = Company.objects.none()
+            if user:
+                companies = Company.objects.filter(owner=user)
+                if self.instance and self.instance.company_id:
+                    companies = (companies | Company.objects.filter(pk=self.instance.company_id)).distinct()
+            self.fields['company'].queryset = companies
+            self.fields['company'].empty_label = 'Brak firmy'
+
+    def clean_priority(self):
+        return self.cleaned_data.get('priority') or 'none'
 
 
 class TaskProjectForm(TaskProjectBaseForm):
@@ -158,7 +170,7 @@ class TaskProjectForm(TaskProjectBaseForm):
 
     class Meta:
         model = TaskProject
-        fields = ['name', 'section_title', 'description']
+        fields = ['name', 'section_title', 'description', 'priority', 'due_at', 'company']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nowy projekt',
@@ -169,13 +181,28 @@ class TaskProjectForm(TaskProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'priority': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'due_at': forms.DateInput(format='%Y-%m-%d', attrs={
+                'type': 'date',
+                'class': 'tasks-inline-input',
+            }),
+            'company': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+        }
+        labels = {
+            'priority': 'Priorytet',
+            'due_at': 'Termin',
+            'company': 'Klient / firma',
         }
 
 
 class TaskProjectRenameForm(TaskProjectBaseForm):
     class Meta:
         model = TaskProject
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'priority', 'due_at', 'company']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa projektu',
@@ -186,6 +213,21 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'priority': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'due_at': forms.DateInput(format='%Y-%m-%d', attrs={
+                'type': 'date',
+                'class': 'tasks-inline-input',
+            }),
+            'company': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+        }
+        labels = {
+            'priority': 'Priorytet',
+            'due_at': 'Termin',
+            'company': 'Klient / firma',
         }
 
 
@@ -260,12 +302,19 @@ class TaskModalForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
+        sections_queryset = kwargs.pop('sections_queryset', None)
         super().__init__(*args, **kwargs)
-        if user:
+        if sections_queryset is not None:
+            sections = sections_queryset
+            if project:
+                sections = sections.filter(project=project)
+            self.fields['section'].queryset = sections
+        elif user:
             sections = TaskSection.objects.filter(project__user=user)
             if project:
                 sections = sections.filter(project=project)
             self.fields['section'].queryset = sections
+        if user:
             self.fields['tags'].queryset = TaskTag.objects.filter(user=user)
         self.fields['section'].required = True
         self.fields['section'].label = 'Grupa projektu'

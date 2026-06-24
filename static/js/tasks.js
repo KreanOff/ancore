@@ -20,6 +20,7 @@ function initTasksPage() {
     const deleteSelectedTaskMenuBtn = document.getElementById('delete-selected-task-menu-btn');
     const deleteSelectedSectionMenuBtn = document.getElementById('delete-selected-section-menu-btn');
     const deleteSelectedProjectMenuBtn = document.getElementById('delete-selected-project-menu-btn');
+    const unshareSelectedProjectMenuBtn = document.getElementById('unshare-selected-project-menu-btn');
     const deleteSelectedTagMenuBtn = document.getElementById('delete-selected-tag-menu-btn');
     const editBtn = document.getElementById('edit-selected-btn');
     const statusToggleBtn = document.getElementById('status-toggle-btn');
@@ -109,6 +110,9 @@ function initTasksPage() {
     const tagDescriptionInput = tagForm ? tagForm.querySelector('[name="description"]') : null;
     const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
+    const projectRenamePriorityInput = projectRenameForm ? projectRenameForm.querySelector('[name="priority"]') : null;
+    const projectRenameDueAtInput = projectRenameForm ? projectRenameForm.querySelector('[name="due_at"]') : null;
+    const projectRenameCompanyInput = projectRenameForm ? projectRenameForm.querySelector('[name="company"]') : null;
     const projectRenameCodeValue = document.getElementById('project-rename-code');
 
     const taskAppSegment = window.location.pathname.split('/').filter(Boolean)[0] === 'kanban' ? 'kanban' : 'tasks';
@@ -2829,6 +2833,9 @@ function initTasksPage() {
             if (projectRenameIdInput) projectRenameIdInput.value = button.dataset.projectId || '';
             if (projectRenameNameInput) projectRenameNameInput.value = button.dataset.projectName || '';
             if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = button.dataset.projectDescription || '';
+            if (projectRenamePriorityInput) projectRenamePriorityInput.value = button.dataset.projectPriority || 'none';
+            if (projectRenameDueAtInput) projectRenameDueAtInput.value = button.dataset.projectDueAt || '';
+            if (projectRenameCompanyInput) projectRenameCompanyInput.value = button.dataset.projectCompanyId || '';
             if (projectRenameCodeValue) projectRenameCodeValue.textContent = button.dataset.projectCode || '';
             if (projectRenameIconInput) projectRenameIconInput.value = button.dataset.projectIcon || '';
             syncProjectIconPickers();
@@ -3429,6 +3436,10 @@ function initTasksPage() {
         return Boolean(checkbox) && checkbox.dataset.canManage !== 'false';
     }
 
+    function checkboxCanSelfUnshare(checkbox) {
+        return Boolean(checkbox) && checkbox.dataset.canSelfUnshare === 'true';
+    }
+
     function allCheckboxesCanManage(selectedCheckboxes) {
         return selectedCheckboxes.length > 0 && selectedCheckboxes.every(checkboxCanManage);
     }
@@ -3503,12 +3514,28 @@ function initTasksPage() {
             projectName: selectedProjectCheckbox?.dataset.projectName || '',
             projectDescription: selectedProjectCheckbox?.dataset.projectDescription || '',
             projectCode: selectedProjectCheckbox?.dataset.projectCode || '',
-            projectIcon: selectedProjectCheckbox?.dataset.projectIcon || ''
+            projectIcon: selectedProjectCheckbox?.dataset.projectIcon || '',
+            projectPriority: selectedProjectCheckbox?.dataset.projectPriority || 'none',
+            projectDueAt: selectedProjectCheckbox?.dataset.projectDueAt || '',
+            projectCompanyId: selectedProjectCheckbox?.dataset.projectCompanyId || ''
         };
-        setMenuButtonState(editSelectedProjectMenuBtn, selectedProjectCheckboxes.length === 1 && checkboxCanManage(selectedProjectCheckbox), projectDataset);
+        const selectedProjectCanSelfUnshare = selectedProjectCheckboxes.length === 1 && checkboxCanSelfUnshare(selectedProjectCheckbox);
+        if (editSelectedProjectMenuBtn) editSelectedProjectMenuBtn.hidden = selectedProjectCanSelfUnshare;
+        if (deleteSelectedProjectMenuBtn) deleteSelectedProjectMenuBtn.hidden = selectedProjectCanSelfUnshare;
+        if (unshareSelectedProjectMenuBtn) unshareSelectedProjectMenuBtn.hidden = !selectedProjectCanSelfUnshare;
+        setMenuButtonState(
+            editSelectedProjectMenuBtn,
+            selectedProjectCheckboxes.length === 1 && !selectedProjectCanSelfUnshare && checkboxCanManage(selectedProjectCheckbox),
+            projectDataset
+        );
         setMenuButtonState(
             deleteSelectedProjectMenuBtn,
-            allCheckboxesCanManage(selectedProjectCheckboxes),
+            !selectedProjectCanSelfUnshare && allCheckboxesCanManage(selectedProjectCheckboxes),
+            projectDataset
+        );
+        setMenuButtonState(
+            unshareSelectedProjectMenuBtn,
+            selectedProjectCanSelfUnshare,
             projectDataset
         );
 
@@ -3725,6 +3752,11 @@ function initTasksPage() {
         postPageAction('delete_project', { project_ids: ids });
     }
 
+    function postUnshareProjectForCurrentUser(projectId) {
+        if (!projectId) return;
+        postPageAction('unshare_project', { project_id: projectId });
+    }
+
     function postDeleteTag(tagIds) {
         const ids = Array.isArray(tagIds) ? tagIds : [tagIds];
         postPageAction('delete_tag', {
@@ -3773,6 +3805,9 @@ function initTasksPage() {
         if (projectRenameIdInput) projectRenameIdInput.value = selectedProjectCheckbox.dataset.projectId || '';
         if (projectRenameNameInput) projectRenameNameInput.value = selectedProjectCheckbox.dataset.projectName || '';
         if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = selectedProjectCheckbox.dataset.projectDescription || '';
+        if (projectRenamePriorityInput) projectRenamePriorityInput.value = selectedProjectCheckbox.dataset.projectPriority || 'none';
+        if (projectRenameDueAtInput) projectRenameDueAtInput.value = selectedProjectCheckbox.dataset.projectDueAt || '';
+        if (projectRenameCompanyInput) projectRenameCompanyInput.value = selectedProjectCheckbox.dataset.projectCompanyId || '';
         if (projectRenameCodeValue) projectRenameCodeValue.textContent = selectedProjectCheckbox.dataset.projectCode || '';
         if (projectRenameIconInput) projectRenameIconInput.value = selectedProjectCheckbox.dataset.projectIcon || '';
         syncProjectIconPickers();
@@ -3837,6 +3872,14 @@ function initTasksPage() {
             confirmClass: 'btn-danger',
             onConfirm: () => postDeleteProject(projectIds)
         });
+    }
+
+    function unshareSelectedProjectForCurrentUser() {
+        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+        if (!checkboxCanSelfUnshare(selectedProjectCheckbox)) return;
+
+        closeSectionActionMenu();
+        postUnshareProjectForCurrentUser(selectedProjectCheckbox.dataset.projectId || '');
     }
 
     function deleteSelectedTag() {
@@ -4026,6 +4069,14 @@ function initTasksPage() {
             e.preventDefault();
             if (this.disabled) return;
             deleteSelectedProject();
+        });
+    }
+
+    if (unshareSelectedProjectMenuBtn) {
+        unshareSelectedProjectMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            unshareSelectedProjectForCurrentUser();
         });
     }
 
@@ -4330,10 +4381,34 @@ function initTasksPage() {
 
         const defaultDirectoryColumnWidth = 250;
         const defaultDirectoryColumnMinWidth = 50;
-        const columnMinimums = {
-            select: 18
+        const columnDefaultWidths = {
+            project_code: 170,
+            description: 220,
+            progress: 150,
+            due_at: 130,
+            tasks_count: 112,
+            priority: 132,
+            last_activity: 170,
+            company: 190,
+            shared_access: 50,
+            members: 210,
+            default_assignee: 230,
+            created_at: 130,
+            spacer: 0
         };
-        const fixedColumns = new Set();
+        const columnMinimums = {
+            select: 18,
+            progress: 120,
+            due_at: 112,
+            tasks_count: 92,
+            priority: 112,
+            last_activity: 140,
+            company: 140,
+            shared_access: 44,
+            created_at: 112,
+            spacer: 0
+        };
+        const fixedColumns = new Set(['spacer']);
         const resizeMediaQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(min-width: 901px)')
             : { matches: true };
@@ -4356,7 +4431,7 @@ function initTasksPage() {
 
             header.dataset.directoryResizeReady = 'true';
 
-            const cells = getDirectoryHeaderCells(header);
+            const cells = getDirectoryHeaderCells(board, header);
             cells.forEach((cell, index) => {
                 const column = cell.dataset.column || '';
                 if (!isResizableDirectoryColumn(column)) return;
@@ -4486,7 +4561,7 @@ function initTasksPage() {
             if (!header) return;
             if (!isDirectoryResizeEnabled(header)) return;
 
-            const cells = getDirectoryHeaderCells(header);
+            const cells = getDirectoryHeaderCells(board, header);
             const storedWidths = readStoredDirectoryWidths(cells);
             if (!Object.keys(storedWidths).length) {
                 if (isUniformDirectoryBoard(board)) {
@@ -4517,8 +4592,14 @@ function initTasksPage() {
             }
         }
 
-        function getDirectoryHeaderCells(header) {
-            return Array.from(header.querySelectorAll('[data-column]'));
+        function getDirectoryHeaderCells(board, header) {
+            return Array.from(header.querySelectorAll('[data-column]')).filter(cell => {
+                return !shouldIgnoreDirectoryColumn(board, cell.dataset.column || '');
+            });
+        }
+
+        function shouldIgnoreDirectoryColumn(board, column) {
+            return isUniformDirectoryBoard(board) && column === 'spacer';
         }
 
         function getDirectoryTrackWidths(header, cells) {
@@ -4549,7 +4630,7 @@ function initTasksPage() {
             const header = board.querySelector('.tasks-directory-header');
             if (!header || !isDirectoryResizeEnabled(header)) return;
 
-            const cells = getDirectoryHeaderCells(header);
+            const cells = getDirectoryHeaderCells(board, header);
             removeStoredDirectoryWidths(cells);
             setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
         }
@@ -4571,12 +4652,19 @@ function initTasksPage() {
         function getDefaultDirectoryTrackWidths(cells) {
             return cells.map(cell => {
                 const column = cell.dataset.column || '';
-                return column === 'select' ? getDirectoryColumnMinWidth(column) : defaultDirectoryColumnWidth;
+                if (column === 'select') return getDirectoryColumnMinWidth(column);
+                if (Object.prototype.hasOwnProperty.call(columnDefaultWidths, column)) {
+                    return columnDefaultWidths[column];
+                }
+                return defaultDirectoryColumnWidth;
             });
         }
 
         function getDirectoryColumnMinWidth(column) {
-            return columnMinimums[column] || defaultDirectoryColumnMinWidth;
+            if (Object.prototype.hasOwnProperty.call(columnMinimums, column)) {
+                return columnMinimums[column];
+            }
+            return defaultDirectoryColumnMinWidth;
         }
 
         function getDirectoryStorageColumn(column) {

@@ -30,7 +30,9 @@
         {% if item.can_share %}data-share-action="share_section" data-share-section-id="{{ item.id }}"{% endif %}
         {% endif %}
         {% endif %}>
+        {% if not hide_shared_access_badge %}
         {% include 'tasks/includes/shared_access_badge.html' with item=item compact=True only %}
+        {% endif %}
         <span class="tasks-directory-avatar-stack">
             {% for member in item.directory_visible_members %}
             {% include 'accounts/includes/user_avatar.html' with avatar=member.avatar avatar_class='tasks-directory-avatar' only %}

@@ -261,6 +261,21 @@
     padding-left: 0.75rem;
 }
 
+.contacts-directory-sheet .contacts-directory-header > .contacts-directory-sheet__cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    text-align: center;
+}
+
+.contacts-directory-sheet .contacts-directory-header > .tasks-directory-header-select,
+.contacts-directory-sheet .contacts-directory-header > [data-column="spacer"] {
+    padding-left: 0;
+    padding-right: 0;
+}
+
 .contacts-directory-sheet .contacts-directory-header > [data-column="contact"],
 .contacts-directory-sheet .contacts-directory-header > [data-column="company"],
 .contacts-directory-sheet .contacts-directory-header > [data-column="person"],

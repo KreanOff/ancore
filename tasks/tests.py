@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime, timedelta, timezone as datetime_timezone
+from datetime import date, datetime, timedelta, timezone as datetime_timezone
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
 
-from contacts.models import Contact, SharedItem, SharedItemLink, UserContact
+from contacts.models import Company, Contact, SharedItem, SharedItemLink, UserContact
 from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
@@ -43,15 +43,15 @@ class TaskProjectCreationTests(TestCase):
             shared_with=shared_with,
         ).exists()
 
-    def _assert_share_badge_starts_members_cell(self, response, row_marker, badge_class):
+    def _assert_share_badge_uses_shared_access_cell(self, response, row_marker, badge_class):
         html = response.content.decode()
         row_start = html.index(row_marker)
-        members_cell = html.index('data-directory-members-menu', row_start)
-        badge = html.index(badge_class, members_cell)
-        avatar_stack = html.index('tasks-directory-avatar-stack', members_cell)
+        shared_access_cell = html.index('data-column="shared_access"', row_start)
+        badge = html.index(badge_class, shared_access_cell)
+        members_cell = html.index('data-directory-members-menu', badge)
 
-        self.assertLess(members_cell, badge)
-        self.assertLess(badge, avatar_stack)
+        self.assertLess(shared_access_cell, badge)
+        self.assertLess(badge, members_cell)
 
     def _assert_input_with_marker_is_enabled(self, html, marker):
         marker_position = html.index(marker)
@@ -81,6 +81,26 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(section.kind, 'custom')
         self.assertEqual(section.icon, '')
         self.assertEqual(section.order, 0)
+
+    def test_create_project_saves_directory_metadata(self):
+        company = Company.objects.create(owner=self.user, name='Ancore Labs')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_project',
+            'name': 'Projekt z metadanymi',
+            'section_title': 'Plan',
+            'description': '',
+            'priority': 'high',
+            'due_at': '2026-07-15',
+            'company': company.id,
+        })
+
+        project = TaskProject.objects.get(user=self.user, name='Projekt z metadanymi')
+
+        self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
+        self.assertEqual(project.priority, 'high')
+        self.assertEqual(project.due_at, date(2026, 7, 15))
+        self.assertEqual(project.company, company)
 
     def test_create_project_uses_default_group_name_when_group_name_is_empty(self):
         response = self.client.post(reverse('tasks:tasks'), {
@@ -171,8 +191,21 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotEqual(first.icon_color, second.icon_color)
 
     def test_projects_list_does_not_render_icons_next_to_names(self):
-        project = TaskProject.objects.create(user=self.user, name='Projekt z ikoną', description='Opis projektu', code='PZI', icon='star')
+        company = Company.objects.create(owner=self.user, name='Acme CRM')
+        project = TaskProject.objects.create(
+            user=self.user,
+            name='Projekt z ikoną',
+            description='Opis projektu',
+            code='PZI',
+            icon='star',
+            priority='high',
+            due_at=date(2026, 7, 15),
+            company=company,
+        )
         TaskProject.objects.create(user=self.user, name='Projekt bez ikony', code='PBI', icon='')
+        section = TaskSection.objects.create(project=project, title='Plan')
+        Task.objects.create(user=self.user, section=section, title='Gotowe zadanie', status='closed')
+        Task.objects.create(user=self.user, section=section, title='Otwarte zadanie', status='new')
         TaskProject.objects.filter(pk=project.pk).update(
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
         )
@@ -185,9 +218,24 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '<span>Projekt bez ikony</span>', html=True)
         self.assertContains(response, 'KOD PROJEKTU')
         self.assertContains(response, 'OPIS')
+        self.assertContains(response, 'POSTĘP')
+        self.assertContains(response, 'TERMIN')
+        self.assertContains(response, 'ZADANIA')
+        self.assertContains(response, 'PRIORYTET')
+        self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
+        self.assertContains(response, 'KLIENT / FIRMA')
         self.assertContains(response, project.code)
         self.assertContains(response, 'Opis projektu')
         self.assertContains(response, 'Brak opisu')
+        self.assertContains(response, '50%')
+        self.assertContains(response, '1/2')
+        self.assertContains(response, 'Wysoki')
+        self.assertContains(response, '15.07.2026')
+        self.assertContains(response, 'Acme CRM')
+        self.assertContains(response, 'tasks-project-progress-fill')
+        self.assertContains(response, 'data-project-priority="high"')
+        self.assertContains(response, 'data-project-due-at="2026-07-15"')
+        self.assertContains(response, f'data-project-company-id="{company.id}"')
         self.assertContains(response, 'DATA')
         self.assertContains(response, '07.06.2026')
         self.assertNotContains(response, '7 cze')
@@ -312,6 +360,48 @@ class TaskProjectCreationTests(TestCase):
             'action': 'unshare_project',
             'project_id': project.id,
             'member_id': shared_user.id,
+            'next': reverse('tasks:tasks'),
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(self._shared_task_object_exists(project, shared_user))
+
+    def test_view_only_shared_project_exposes_self_unshare_menu_action(self):
+        shared_user = get_user_model().objects.create_user(
+            username='shared-view-self-remove',
+            email='shared-view-self-remove@example.com',
+            first_name='Shared',
+            last_name='Viewer',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt tylko do podglądu', code='VSP')
+        self._share_task_object(project, shared_user, permission='view')
+
+        self.client.force_login(shared_user)
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertContains(response, 'id="unshare-selected-project-menu-btn"')
+        self.assertContains(response, 'Przestań udostępniać to dla mnie')
+        self.assertContains(response, f'data-project-id="{project.id}"')
+        self.assertContains(response, 'data-can-manage="false"')
+        self.assertContains(response, 'data-can-self-unshare="true"')
+        self.assertContains(response, 'data-shared-access-permission="view"')
+
+    def test_shared_project_user_can_unshare_project_for_self(self):
+        shared_user = get_user_model().objects.create_user(
+            username='shared-self-remove',
+            email='shared-self-remove@example.com',
+            first_name='Shared',
+            last_name='Self Remove',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt do odpięcia', code='SDO')
+        self._share_task_object(project, shared_user, permission='view')
+
+        self.client.force_login(shared_user)
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'unshare_project',
+            'project_id': project.id,
             'next': reverse('tasks:tasks'),
         })
 
@@ -843,7 +933,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-shared-access-badge--view')
         self.assertContains(response, 'data-lucide="share-2"')
         self.assertContains(response, 'Udostępnione dla Ciebie: Może przeglądać')
-        self._assert_share_badge_starts_members_cell(
+        self._assert_share_badge_uses_shared_access_cell(
             response,
             f'data-project-id="{project.id}"',
             'tasks-shared-access-badge--incoming',
@@ -851,7 +941,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(project_response, 'Grupa widoczna normalnie')
         self.assertContains(project_response, 'tasks-shared-access-badge--incoming')
         self.assertContains(project_response, 'tasks-shared-access-badge--view')
-        self._assert_share_badge_starts_members_cell(
+        self._assert_share_badge_uses_shared_access_cell(
             project_response,
             f'data-section-id="{section.id}"',
             'tasks-shared-access-badge--incoming',
@@ -882,14 +972,14 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-shared-access-badge--outgoing')
         self.assertContains(response, 'data-lucide="send"')
         self.assertContains(response, 'Udostępnione przez Ciebie')
-        self._assert_share_badge_starts_members_cell(
+        self._assert_share_badge_uses_shared_access_cell(
             response,
             f'data-project-id="{project.id}"',
             'tasks-shared-access-badge--outgoing',
         )
         self.assertContains(project_response, 'Grupa wysłana')
         self.assertContains(project_response, 'tasks-shared-access-badge--outgoing')
-        self._assert_share_badge_starts_members_cell(
+        self._assert_share_badge_uses_shared_access_cell(
             project_response,
             f'data-section-id="{section.id}"',
             'tasks-shared-access-badge--outgoing',
@@ -1023,6 +1113,100 @@ class TaskProjectCreationTests(TestCase):
         self._assert_input_with_marker_is_enabled(list_html, f'data-task-id="{task.task_id}" data-can-edit="false"')
         self._assert_input_with_marker_is_enabled(projects_html, f'data-project-id="{project.id}"')
         self._assert_input_with_marker_is_enabled(sections_html, f'data-section-id="{section.id}"')
+
+    def test_view_only_shared_project_cannot_create_task(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@readonly.create',
+            email='readonly-create@example.com',
+            first_name='Read',
+            last_name='Create',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt bez edycji', code='PBE')
+        section = TaskSection.objects.create(project=project, title='Grupa bez edycji')
+        self._share_task_object(project, shared_user, permission='view')
+
+        self.client.force_login(shared_user)
+        group_response = self.client.get(reverse('tasks:task_group', args=[section.id]))
+        post_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_task_modal',
+            'project_id': project.id,
+            'section': section.id,
+            'title': 'Nie powinno powstać',
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+        })
+
+        self.assertContains(group_response, 'data-open-issue disabled')
+        self.assertEqual(post_response.status_code, 403)
+        self.assertFalse(Task.objects.filter(section=section, title='Nie powinno powstać').exists())
+
+    def test_edit_shared_project_can_create_task_for_project_owner(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@edit.create',
+            email='edit-create@example.com',
+            first_name='Edit',
+            last_name='Create',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt do edycji', code='PDE')
+        section = TaskSection.objects.create(project=project, title='Grupa do edycji')
+        self._share_task_object(project, shared_user, permission='edit')
+
+        self.client.force_login(shared_user)
+        group_response = self.client.get(reverse('tasks:task_group', args=[section.id]))
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_task_modal',
+            'project_id': project.id,
+            'section': section.id,
+            'title': 'Zadanie dodane przez edytora',
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+        })
+        task = Task.objects.get(section=section, title='Zadanie dodane przez edytora')
+
+        self.assertContains(group_response, f'data-project-option data-project-id="{project.id}"')
+        self.assertContains(group_response, f'data-section-option data-section-id="{section.id}"')
+        self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
+        self.assertEqual(task.user, self.user)
+
+    def test_edit_shared_section_can_create_task_even_without_project_edit(self):
+        shared_user = get_user_model().objects.create_user(
+            username='@section.edit.create',
+            email='section-edit-create@example.com',
+            first_name='Section',
+            last_name='Editor',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt z edytowaną grupą', code='PEG')
+        readonly_section = TaskSection.objects.create(project=project, title='Grupa tylko widoczna')
+        editable_section = TaskSection.objects.create(project=project, title='Grupa edytowalna')
+        self._share_task_object(project, shared_user, permission='view')
+        self._share_task_object(editable_section, shared_user, permission='edit')
+
+        self.client.force_login(shared_user)
+        group_response = self.client.get(reverse('tasks:task_group', args=[editable_section.id]))
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_task_modal',
+            'project_id': project.id,
+            'section': editable_section.id,
+            'title': 'Zadanie w edytowalnej grupie',
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+        })
+
+        self.assertContains(group_response, f'data-project-option data-project-id="{project.id}"')
+        self.assertContains(group_response, f'data-section-option data-section-id="{editable_section.id}"')
+        self.assertNotContains(group_response, f'data-section-option data-section-id="{readonly_section.id}"')
+        self.assertRedirects(response, reverse('tasks:task_group', args=[editable_section.id]))
+        self.assertTrue(Task.objects.filter(
+            user=self.user,
+            section=editable_section,
+            title='Zadanie w edytowalnej grupie',
+        ).exists())
 
     def test_project_and_group_icon_pickers_are_not_rendered(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -1203,6 +1387,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Wszystkie grupy')
         self.assertContains(response, 'tasks-directory-header')
         self.assertContains(response, 'UDOSTĘPNIONE')
+        self.assertContains(response, 'data-column="shared_access"', count=3)
         self.assertContains(response, 'ODPOWIEDZIALNY ZA ZADANIA')
         self.assertContains(response, 'DATA')
         self.assertContains(response, 'Frontend')
@@ -1784,6 +1969,7 @@ class TaskProjectCreationTests(TestCase):
         )
 
     def test_edit_project_updates_details_without_changing_code_or_icon(self):
+        company = Company.objects.create(owner=self.user, name='Firma projektowa')
         project = TaskProject.objects.create(user=self.user, name='Stara nazwa', description='Stary opis', code='OLD')
         old_code = project.code
 
@@ -1794,6 +1980,9 @@ class TaskProjectCreationTests(TestCase):
             'description': 'Nowy opis',
             'code': 'new',
             'icon': 'rocket',
+            'priority': 'medium',
+            'due_at': '2026-08-20',
+            'company': company.id,
         })
 
         project.refresh_from_db()
@@ -1801,6 +1990,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
         self.assertEqual(project.name, 'Nowa nazwa')
         self.assertEqual(project.description, 'Nowy opis')
+        self.assertEqual(project.priority, 'medium')
+        self.assertEqual(project.due_at, date(2026, 8, 20))
+        self.assertEqual(project.company, company)
         self.assertEqual(project.icon, '')
         self.assertEqual(project.code, old_code)
 

@@ -530,7 +530,7 @@
     padding: 0.75rem 1.25rem;
     border-bottom: 1px solid #edf0f3;
     display: grid;
-    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 1rem;
 }
 
@@ -539,7 +539,7 @@
 }
 
 .tasks-filterbar-center {
-    justify-self: start;
+    justify-self: center;
     min-width: 0;
 }
 
@@ -563,8 +563,8 @@
 }
 
 .tasks-search-field {
-    width: min(360px, 34vw);
-    height: 36px;
+    width: min(480px, 42vw);
+    height: 40px;
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
@@ -1963,7 +1963,8 @@ body.modal-open::before {
     font-weight: 650;
 }
 
-.tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-input[name="section_title"] {
+.tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-input,
+.tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-select {
     width: 100%;
     height: 38px;
     padding: 0 0.75rem;
@@ -1975,7 +1976,8 @@ body.modal-open::before {
     font-weight: 500;
 }
 
-.tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-input[name="section_title"]:focus {
+.tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-input:focus,
+.tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-select:focus {
     border-color: var(--accent-peach);
     box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
 }
@@ -7254,8 +7256,14 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-search-field {
-    width: min(300px, 34vw);
-    height: 30px;
+    width: min(420px, 42vw);
+    height: 36px;
+}
+
+@media (max-width: 768px) {
+    .tasks-search-field {
+        width: 100%;
+    }
 }
 
 .tasks-topbar-title {
@@ -7540,30 +7548,66 @@ body.is-resizing-directory-columns {
     --tasks-directory-default-column-width: 250px;
     --tasks-directory-select-width: 18px;
     --tasks-directory-name-width: var(--tasks-directory-default-column-width);
+    --tasks-directory-shared-access-width: 44px;
     --tasks-directory-members-width: var(--tasks-directory-default-column-width);
     --tasks-directory-assignee-width: var(--tasks-directory-default-column-width);
     --tasks-directory-date-width: var(--tasks-directory-default-column-width);
-    --tasks-directory-spacer-width: var(--tasks-directory-default-column-width);
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width) var(--tasks-directory-spacer-width);
+    --tasks-directory-spacer-width: 0px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
     padding: 0 0 1.25rem;
     overflow: visible;
+    background: #ffffff;
 }
 
 .tasks-directory-board.tasks-directory-sheet,
 .tasks-directory-board.contacts-directory-sheet {
     overflow: auto;
     scrollbar-gutter: stable;
+    background: #ffffff;
+}
+
+.tasks-directory-board.tasks-directory-sheet {
+    scrollbar-gutter: auto;
 }
 
 .tasks-directory-board .tasks-directory-group {
     overflow: visible;
     border: 0;
     border-radius: 0;
-    background: #f7f7f8;
+    background: #ffffff;
 }
 
 .tasks-directory-board .tasks-directory-list {
     overflow: visible;
+    background: #ffffff;
+}
+
+.tasks-directory-sheet,
+.tasks-directory-sheet .tasks-directory-group,
+.tasks-directory-sheet .tasks-directory-list,
+.tasks-directory-sheet .tasks-directory-header,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row,
+.tasks-directory-sheet .tasks-directory-header > [data-column="select"],
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-directory-sheet__cell,
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell {
+    background: #ffffff;
+}
+
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 1px;
+    left: 0;
+    width: calc(var(--tasks-directory-select-width) + 1.5rem);
+    background: #ffffff;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox {
+    position: relative;
+    z-index: 1;
 }
 
 .tasks-directory-header,
@@ -7581,6 +7625,7 @@ body.is-resizing-directory-columns {
     width: max-content;
     min-width: max-content;
     column-gap: 0;
+    padding-right: 0;
 }
 
 .tasks-directory-board.contacts-directory-sheet .tasks-directory-header,
@@ -7642,10 +7687,45 @@ body.is-resizing-directory-columns {
     border-left: 0;
 }
 
+.tasks-directory-sheet .tasks-directory-header > [data-column="shared_access"],
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > [data-column="shared_access"] {
+    justify-content: center;
+    padding-left: 0;
+}
+
+.tasks-directory-shared-access-cell .tasks-shared-access-badge {
+    margin: 0 auto;
+}
+
+.tasks-directory-spacer-cell {
+    display: none;
+}
+
 .tasks-project-sheet {
     --tasks-project-code-width: var(--tasks-directory-default-column-width);
     --tasks-project-description-width: var(--tasks-directory-default-column-width);
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width) var(--tasks-directory-spacer-width);
+    --tasks-project-progress-width: 150px;
+    --tasks-project-due-width: 130px;
+    --tasks-project-count-width: 112px;
+    --tasks-project-priority-width: 132px;
+    --tasks-project-activity-width: 170px;
+    --tasks-project-company-width: 190px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-company-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+}
+
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row {
+    min-height: 40px;
+}
+
+.tasks-project-sheet .tasks-directory-header,
+.tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell {
+    min-height: 42px;
+    background: #e7e8eb;
+}
+
+.tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="shared_access"]):not([data-column="spacer"]) {
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .tasks-project-sheet__code {
@@ -7659,12 +7739,93 @@ body.is-resizing-directory-columns {
     color: #5f646d;
 }
 
+.tasks-project-sheet__progress,
+.tasks-project-sheet__count,
+.tasks-project-sheet__priority,
+.tasks-project-sheet__date,
+.tasks-project-sheet__company {
+    min-width: 0;
+    color: #5f646d;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.tasks-project-sheet__progress {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.tasks-project-progress-track {
+    width: 68px;
+    height: 6px;
+    flex: 0 0 68px;
+    border-radius: 999px;
+    background: #dfe3e8;
+    overflow: hidden;
+}
+
+.tasks-project-progress-fill {
+    display: block;
+    width: var(--tasks-project-progress, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: #4f8f6f;
+}
+
+.tasks-project-sheet__count {
+    justify-content: flex-start;
+    color: #4f545e;
+}
+
+.tasks-project-sheet__priority {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #4f545e;
+}
+
+.tasks-project-priority-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    flex: 0 0 0.55rem;
+    border-radius: 999px;
+    background: #a0a6b0;
+}
+
+.tasks-project-sheet__priority--low .tasks-project-priority-dot {
+    background: #4f8f6f;
+}
+
+.tasks-project-sheet__priority--medium .tasks-project-priority-dot {
+    background: #b8842b;
+}
+
+.tasks-project-sheet__priority--high .tasks-project-priority-dot {
+    background: #bd4b4b;
+}
+
+.tasks-project-sheet__priority--none {
+    color: #777d87;
+}
+
+.tasks-project-sheet__muted {
+    color: #8b919b;
+    font-weight: 500;
+}
+
+.tasks-project-sheet__company {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .tasks-tag-sheet {
     --tasks-directory-tag-code-width: var(--tasks-directory-default-column-width);
     --tasks-directory-tag-name-width: var(--tasks-directory-default-column-width);
     --tasks-directory-description-width: var(--tasks-directory-default-column-width);
     --tasks-directory-task-count-width: var(--tasks-directory-default-column-width);
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-tag-code-width) var(--tasks-directory-tag-name-width) var(--tasks-directory-description-width) var(--tasks-directory-task-count-width) var(--tasks-directory-date-width) var(--tasks-directory-spacer-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-tag-code-width) var(--tasks-directory-tag-name-width) var(--tasks-directory-description-width) var(--tasks-directory-task-count-width) var(--tasks-directory-date-width);
 }
 
 .tasks-tag-sheet .tasks-directory-header > [data-column="tag_code"],
@@ -7697,7 +7858,7 @@ body.is-resizing-directory-columns {
 .tasks-directory-header {
     min-height: 44px;
     border-bottom: 1px solid #d7d9de;
-    background: #e7e8eb;
+    background: #ffffff;
     color: #6a6f78;
     font-size: var(--font-size-sm);
     font-weight: 800;
@@ -7716,6 +7877,27 @@ body.is-resizing-directory-columns {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.tasks-directory-board .tasks-directory-header > .tasks-directory-sheet__cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    text-align: center;
+}
+
+.tasks-directory-board .tasks-directory-header > .tasks-directory-header-select,
+.tasks-directory-board .tasks-directory-header > [data-column="shared_access"],
+.tasks-directory-board .tasks-directory-header > [data-column="spacer"] {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.tasks-directory-board .tasks-directory-header > .tasks-directory-spacer-cell,
+.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-directory-spacer-cell {
+    display: none;
 }
 
 .tasks-directory-column-resizer {
@@ -7797,9 +7979,16 @@ body.is-resizing-directory-columns {
     min-height: 52px;
     border-top: 0;
     border-bottom: 1px solid #e7e8eb;
-    background: #f7f7f8;
+    background: #ffffff;
     color: #464a52;
     overflow: visible;
+}
+
+.tasks-directory-board .tasks-issue-row,
+.tasks-directory-board .tasks-project-row,
+.tasks-directory-board .tasks-section-row,
+.tasks-directory-board .tasks-all-groups-row {
+    background: #ffffff;
 }
 
 .tasks-directory-list .tasks-directory-row:has(.tasks-directory-members-menu.is-open) {
@@ -8218,7 +8407,7 @@ body.is-resizing-directory-columns {
         --tasks-directory-members-width: var(--tasks-directory-default-column-width);
         --tasks-directory-assignee-width: var(--tasks-directory-default-column-width);
         --tasks-directory-date-width: var(--tasks-directory-default-column-width);
-        --tasks-directory-spacer-width: var(--tasks-directory-default-column-width);
+        --tasks-directory-spacer-width: 0px;
     }
 
     .tasks-directory-header,
@@ -8235,7 +8424,7 @@ body.is-resizing-directory-columns {
 
     .tasks-directory-header,
     .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
         column-gap: 0.75rem;
         padding: 0 0.9rem;
     }
@@ -8247,7 +8436,7 @@ body.is-resizing-directory-columns {
 
     .tasks-project-sheet .tasks-directory-header,
     .tasks-project-sheet .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
     }
 
     .tasks-directory-column-resizer {
@@ -8265,9 +8454,22 @@ body.is-resizing-directory-columns {
 
     .tasks-project-sheet .tasks-directory-header > [data-column="project_code"],
     .tasks-project-sheet .tasks-directory-header > [data-column="description"],
+    .tasks-project-sheet .tasks-directory-header > [data-column="progress"],
+    .tasks-project-sheet .tasks-directory-header > [data-column="due_at"],
+    .tasks-project-sheet .tasks-directory-header > [data-column="tasks_count"],
+    .tasks-project-sheet .tasks-directory-header > [data-column="priority"],
+    .tasks-project-sheet .tasks-directory-header > [data-column="last_activity"],
+    .tasks-project-sheet .tasks-directory-header > [data-column="company"],
+    .tasks-project-sheet .tasks-directory-header > [data-column="shared_access"],
     .tasks-project-sheet .tasks-directory-header > [data-column="members"],
     .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__code,
     .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__description,
+    .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__progress,
+    .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__date,
+    .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__count,
+    .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__priority,
+    .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__company,
+    .tasks-project-sheet .tasks-directory-list .tasks-directory-shared-access-cell,
     .tasks-project-sheet .tasks-directory-list .tasks-directory-members-menu {
         display: flex;
     }
@@ -8276,7 +8478,7 @@ body.is-resizing-directory-columns {
         display: none;
     }
 
-    .tasks-directory-header > :nth-child(4),
+    .tasks-directory-header > [data-column="default_assignee"],
     .tasks-directory-list .tasks-directory-assignee {
         display: none;
     }
@@ -8293,10 +8495,10 @@ body.is-resizing-directory-columns {
 
     .tasks-directory-list .tasks-directory-row {
         min-height: 74px;
-        grid-template-columns: 18px minmax(0, 1fr) 86px;
+        grid-template-columns: 18px minmax(0, 1fr) 34px 86px;
         grid-template-areas:
-            "check name date"
-            ". members members";
+            "check name shared date"
+            ". members members members";
         row-gap: 0.2rem;
         padding: 0.65rem 0.85rem;
     }
@@ -8311,13 +8513,16 @@ body.is-resizing-directory-columns {
     }
 
     .tasks-project-sheet .tasks-directory-list .tasks-directory-row {
-        min-height: 104px;
-        grid-template-columns: 18px minmax(0, 1fr) 86px;
+        min-height: 158px;
+        grid-template-columns: 18px minmax(0, 1fr) 34px 86px;
         grid-template-areas:
-            "check name date"
-            ". code code"
-            ". description description"
-            ". members members";
+            "check name shared date"
+            ". code code code"
+            ". description description description"
+            ". progress progress progress"
+            ". tasks priority priority"
+            ". due company company"
+            ". members members members";
     }
 
     .tasks-directory-sheet .tasks-directory-list .tasks-directory-row > * + * {
@@ -8334,6 +8539,10 @@ body.is-resizing-directory-columns {
     .tasks-directory-name {
         grid-area: name;
         font-size: var(--font-size-sm);
+    }
+
+    .tasks-directory-shared-access-cell {
+        grid-area: shared;
     }
 
     .tasks-tag-sheet__description {
@@ -8354,6 +8563,30 @@ body.is-resizing-directory-columns {
 
     .tasks-project-sheet__description {
         grid-area: description;
+    }
+
+    .tasks-project-sheet__progress {
+        grid-area: progress;
+    }
+
+    .tasks-project-sheet__count {
+        grid-area: tasks;
+    }
+
+    .tasks-project-sheet__priority {
+        grid-area: priority;
+    }
+
+    .tasks-project-sheet__date[data-column="due_at"] {
+        grid-area: due;
+    }
+
+    .tasks-project-sheet__date[data-column="last_activity"] {
+        display: none;
+    }
+
+    .tasks-project-sheet__company {
+        grid-area: company;
     }
 
     .tasks-directory-members-menu {
