@@ -518,15 +518,20 @@ def _decorate_project_directory_metrics(projects):
         return
 
     task_project_ids = {}
+    task_section_ids = {}
     tasks_by_project = defaultdict(list)
+    tasks_by_section = defaultdict(list)
 
     for project in projects:
         for section in project.sections.all():
             for task in section.tasks.all():
                 tasks_by_project[project.id].append(task)
+                tasks_by_section[section.id].append(task)
                 task_project_ids[task.id] = project.id
+                task_section_ids[task.id] = section.id
 
     activity_by_project = defaultdict(list)
+    activity_by_section = defaultdict(list)
     if task_project_ids:
         activity_rows = (
             TaskActivity.objects.filter(task_id__in=task_project_ids.keys())
@@ -535,6 +540,9 @@ def _decorate_project_directory_metrics(projects):
         )
         for row in activity_rows:
             activity_by_project[task_project_ids[row['task_id']]].append(row['last_activity'])
+            section_id = task_section_ids.get(row['task_id'])
+            if section_id:
+                activity_by_section[section_id].append(row['last_activity'])
 
     for project in projects:
         project_tasks = tasks_by_project.get(project.id, [])
@@ -563,6 +571,32 @@ def _decorate_project_directory_metrics(projects):
             (value for value in last_activity_candidates if value),
             default=project.created_at,
         )
+
+        for section in project.sections.all():
+            section_tasks = tasks_by_section.get(section.id, [])
+            section_total_tasks = len(section_tasks)
+            section_completed_tasks = sum(
+                1
+                for task in section_tasks
+                if task.is_completed or task.status == 'closed'
+            )
+            if section_total_tasks:
+                section_progress_percent = round((section_completed_tasks / section_total_tasks) * 100)
+            else:
+                section_progress_percent = 0
+
+            section_activity_candidates = [section.created_at]
+            section_activity_candidates.extend(task.created_at for task in section_tasks)
+            section_activity_candidates.extend(activity_by_section.get(section.id, []))
+
+            section.tasks_total_count = section_total_tasks
+            section.tasks_completed_count = section_completed_tasks
+            section.tasks_count_label = f'{section_completed_tasks}/{section_total_tasks}'
+            section.progress_percent = section_progress_percent
+            section.last_activity_at = max(
+                (value for value in section_activity_candidates if value),
+                default=section.created_at,
+            )
 
 
 def _shared_users_by_object(content_type, object_ids):

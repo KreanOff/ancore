@@ -352,36 +352,66 @@
             </div>
         </div>
         {% if active_project and not active_section %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-section-sheet">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
-                <div class="tasks-directory-header tasks-directory-sheet__header" role="row">
-                    <span class="tasks-directory-header-select tasks-directory-sheet__cell" data-column="select">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+                    <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     </span>
-                    <span class="tasks-directory-header-name tasks-directory-sheet__cell" data-column="section">GRUPA</span>
-                    <span class="tasks-directory-shared-access-header tasks-directory-sheet__cell" data-column="shared_access" title="Status udostępnienia" aria-label="Status udostępnienia"></span>
-                    <span class="tasks-directory-sheet__cell" data-column="members">UDOSTĘPNIONE</span>
-                    <span class="tasks-directory-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA ZADANIA</span>
-                    <span class="tasks-directory-header-date tasks-directory-sheet__cell" data-column="created_at">DATA</span>
-                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
+                    <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">GRUPA</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PROJEKTU</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">OPIS</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress">POSTĘP</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">TERMIN</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">ZADANIA</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">PRIORYTET</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">OSTATNIA AKTYWNOŚĆ</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">KLIENT / FIRMA</span>
+                    <span class="tasks-directory-shared-access-header tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="shared_access" title="Status udostępnienia" aria-label="Status udostępnienia"></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members">UDOSTĘPNIONE</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA ZADANIA</span>
+                    <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at">DATA</span>
+                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-section-list tasks-directory-list" aria-label="Lista grup projektu">
                 {% for section in active_project.sections.all %}
-                <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
-                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
-                    <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell" data-column="section">
+                <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }} {{ active_project.get_priority_display|default:'' }} {{ active_project.company.name|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
+                    <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">
                         <span class="tasks-row-title-main">
                             <span class="tasks-row-title-text">{{ section.title }}</span>
                         </span>
                     </span>
-                    {% include 'tasks/includes/directory_shared_access_cell.html' with item=section cell_class='tasks-directory-sheet__cell' only %}
-                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell' data_column='members' hide_shared_access_badge=True only %}
-                    <span class="tasks-directory-assignee tasks-directory-sheet__cell" data-column="default_assignee">
+                    <span class="tasks-project-sheet__code tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">{{ active_project.code }}</span>
+                    <span class="tasks-section-row-description tasks-project-sheet__description tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">{{ section.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-project-sheet__progress tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress" title="Ukończone zadania: {{ section.tasks_completed_count }} z {{ section.tasks_total_count }}">
+                        <span class="tasks-project-progress-track" aria-hidden="true">
+                            <span class="tasks-project-progress-fill" style="--tasks-project-progress: {{ section.progress_percent }}%;"></span>
+                        </span>
+                        <span>{{ section.progress_percent }}%</span>
+                    </span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">
+                        {% if active_project.due_at %}{{ active_project.due_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ section.tasks_count_label }}</span>
+                    <span class="tasks-project-sheet__priority tasks-project-sheet__priority--{{ active_project.priority|default:'none' }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">
+                        <span class="tasks-project-priority-dot" aria-hidden="true"></span>
+                        <span>{{ active_project.get_priority_display }}</span>
+                    </span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
+                        {% if section.last_activity_at %}{{ section.last_activity_at|date:"d.m.Y H:i" }}{% else %}<span class="tasks-project-sheet__muted">Brak aktywności</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">
+                        {% if active_project.company %}{{ active_project.company.name }}{% else %}<span class="tasks-project-sheet__muted">Brak firmy</span>{% endif %}
+                    </span>
+                    {% include 'tasks/includes/directory_shared_access_cell.html' with item=section cell_class='tasks-directory-sheet__cell tasks-project-sheet__cell' only %}
+                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell tasks-project-sheet__cell' data_column='members' hide_shared_access_badge=True only %}
+                    <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
                     </span>
-                    <span class="tasks-row-date tasks-directory-sheet__cell" data-column="created_at" title="Data utworzenia">{{ section.created_at|date:"d.m.Y" }}</span>
-                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
+                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ section.created_at|date:"d.m.Y" }}</span>
+                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
                 <div class="tasks-empty-state">
@@ -456,36 +486,64 @@
             {% endif %}
         </div>
         {% elif active_view == 'all_groups' %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-section-sheet">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
-                <div class="tasks-directory-header tasks-directory-sheet__header" role="row">
-                    <span class="tasks-directory-header-select tasks-directory-sheet__cell" data-column="select">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+                    <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     </span>
-                    <span class="tasks-directory-header-name tasks-directory-sheet__cell" data-column="section">GRUPA</span>
-                    <span class="tasks-directory-shared-access-header tasks-directory-sheet__cell" data-column="shared_access" title="Status udostępnienia" aria-label="Status udostępnienia"></span>
-                    <span class="tasks-directory-sheet__cell" data-column="members">UDOSTĘPNIONE</span>
-                    <span class="tasks-directory-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA ZADANIA</span>
-                    <span class="tasks-directory-header-date tasks-directory-sheet__cell" data-column="created_at">DATA</span>
-                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
+                    <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">GRUPA</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PROJEKTU</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">OPIS</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress">POSTĘP</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">TERMIN</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">ZADANIA</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">PRIORYTET</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">OSTATNIA AKTYWNOŚĆ</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_name">PROJEKT</span>
+                    <span class="tasks-directory-shared-access-header tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="shared_access" title="Status udostępnienia" aria-label="Status udostępnienia"></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members">UDOSTĘPNIONE</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA ZADANIA</span>
+                    <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at">DATA</span>
+                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-section-list tasks-directory-list" aria-label="Lista grup">
                 {% for section in all_sections %}
-                <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
-                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
-                    <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell" data-column="section">
+                <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }} {{ section.project.get_priority_display|default:'' }} {{ section.project.company.name|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
+                    <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">
                         <span class="tasks-row-title-main">
                             <span class="tasks-row-title-text">{{ section.title }}</span>
                         </span>
                     </span>
-                    {% include 'tasks/includes/directory_shared_access_cell.html' with item=section cell_class='tasks-directory-sheet__cell' only %}
-                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell' data_column='members' hide_shared_access_badge=True only %}
-                    <span class="tasks-directory-assignee tasks-directory-sheet__cell" data-column="default_assignee">
+                    <span class="tasks-project-sheet__code tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">{{ section.project.code }}</span>
+                    <span class="tasks-section-row-description tasks-project-sheet__description tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">{{ section.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-project-sheet__progress tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress" title="Ukończone zadania: {{ section.tasks_completed_count }} z {{ section.tasks_total_count }}">
+                        <span class="tasks-project-progress-track" aria-hidden="true">
+                            <span class="tasks-project-progress-fill" style="--tasks-project-progress: {{ section.progress_percent }}%;"></span>
+                        </span>
+                        <span>{{ section.progress_percent }}%</span>
+                    </span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">
+                        {% if section.project.due_at %}{{ section.project.due_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ section.tasks_count_label }}</span>
+                    <span class="tasks-project-sheet__priority tasks-project-sheet__priority--{{ section.project.priority|default:'none' }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">
+                        <span class="tasks-project-priority-dot" aria-hidden="true"></span>
+                        <span>{{ section.project.get_priority_display }}</span>
+                    </span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
+                        {% if section.last_activity_at %}{{ section.last_activity_at|date:"d.m.Y H:i" }}{% else %}<span class="tasks-project-sheet__muted">Brak aktywności</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_name">{{ section.project.name }}</span>
+                    {% include 'tasks/includes/directory_shared_access_cell.html' with item=section cell_class='tasks-directory-sheet__cell tasks-project-sheet__cell' only %}
+                    {% include 'tasks/includes/directory_members.html' with item=section item_kind='section' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-directory-sheet__cell tasks-project-sheet__cell' data_column='members' hide_shared_access_badge=True only %}
+                    <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
                     </span>
-                    <span class="tasks-row-date tasks-directory-sheet__cell" data-column="created_at" title="Data utworzenia">{{ section.created_at|date:"d.m.Y" }}</span>
-                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
+                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ section.created_at|date:"d.m.Y" }}</span>
+                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
                 <div class="tasks-empty-state">
@@ -496,14 +554,14 @@
             </section>
         </div>
         {% elif active_view == 'tags' %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie tagi" title="Zaznacz wszystkie tagi" data-select-all-checkbox data-select-all-target="tags">
                     </span>
-                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">KOD TAGU</span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">NAZWA TAGU</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">KOD TAGU</span>
                     <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="description">OPIS</span>
                     <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">ZADANIA</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at">DATA</span>
@@ -513,10 +571,10 @@
                 {% for tag in tags %}
                 <article class="tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
-                    <span class="tasks-tag-sheet__code tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">{{ tag.code }}</span>
                     <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">
                         <span>{{ tag.name }}</span>
                     </span>
+                    <span class="tasks-tag-sheet__code tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">{{ tag.code }}</span>
                     <span class="tasks-section-row-description tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="description">{{ tag.description|default:"Brak opisu" }}</span>
                     <span class="tasks-row-time tasks-tag-sheet__count tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">{{ tag.total_tasks }} zadań</span>
                     <span class="tasks-row-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at" title="Data utworzenia">{{ tag.created_at|date:"d.m.Y" }}</span>
@@ -618,7 +676,7 @@
             </section>
         </div>
         {% elif projects %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
@@ -641,7 +699,7 @@
                 </div>
                 <div class="tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista projektów">
                 {% for project in projects %}
-                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} {{ project.get_priority_display|default:'' }} {{ project.company.name|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}">
+                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} {{ project.get_priority_display|default:'' }} {{ project.company.name|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}" data-can-self-unshare="{% if project.is_shared_with_current_user %}true{% else %}false{% endif %}" data-shared-access-permission="{{ project.shared_access_permission|default:'' }}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz projekt {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}" data-can-self-unshare="{% if project.is_shared_with_current_user %}true{% else %}false{% endif %}" data-shared-access-permission="{{ project.shared_access_permission|default:'' }}">
                     <span class="tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project">
                         <span class="tasks-row-title-main">

@@ -1111,7 +1111,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(list_response, 'draggable="false"')
         self._assert_input_with_marker_is_enabled(html, f'data-task-id="{subtask.task_id}" data-can-edit="false"')
         self._assert_input_with_marker_is_enabled(list_html, f'data-task-id="{task.task_id}" data-can-edit="false"')
-        self._assert_input_with_marker_is_enabled(projects_html, f'data-project-id="{project.id}"')
+        self.assertContains(projects_response, f'data-project-id="{project.id}"')
+        self._assert_input_with_marker_is_enabled(projects_html, f'aria-label="Zaznacz projekt {project.name}"')
         self._assert_input_with_marker_is_enabled(sections_html, f'data-section-id="{section.id}"')
 
     def test_view_only_shared_project_cannot_create_task(self):
@@ -1216,8 +1217,18 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'Ikona grupy')
 
     def test_project_group_rows_do_not_render_group_type_label(self):
-        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
-        TaskSection.objects.create(project=project, title='Frontend')
+        company = Company.objects.create(owner=self.user, name='Acme CRM')
+        project = TaskProject.objects.create(
+            user=self.user,
+            name='Projekt',
+            code='PRJ',
+            priority='high',
+            due_at=date(2026, 7, 15),
+            company=company,
+        )
+        section = TaskSection.objects.create(project=project, title='Frontend', description='Prace po stronie UI')
+        Task.objects.create(user=self.user, section=section, title='Zadanie ukończone', status='closed')
+        Task.objects.create(user=self.user, section=section, title='Zadanie otwarte')
 
         response = self.client.get(f"{reverse('tasks:tasks')}?project={project.id}")
 
@@ -1226,11 +1237,28 @@ class TaskProjectCreationTests(TestCase):
             '<span class="status-indicator status-label-plain">Grupa</span>',
             html=True,
         )
+        self.assertContains(response, 'tasks-project-sheet--selectable')
+        self.assertContains(response, 'tasks-section-sheet')
+        self.assertContains(response, 'KOD PROJEKTU')
+        self.assertContains(response, 'POSTĘP')
+        self.assertContains(response, 'TERMIN')
+        self.assertContains(response, 'ZADANIA')
+        self.assertContains(response, 'PRIORYTET')
+        self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
+        self.assertContains(response, 'KLIENT / FIRMA')
+        self.assertContains(response, 'data-column="project_code"', count=2)
+        self.assertContains(response, 'data-column="company"', count=2)
+        self.assertContains(response, 'Prace po stronie UI')
+        self.assertContains(response, '50%')
+        self.assertContains(response, '1/2')
+        self.assertContains(response, 'Wysoki')
+        self.assertContains(response, '15.07.2026')
+        self.assertContains(response, 'Acme CRM')
         self.assertContains(
             response,
-            '<span class="tasks-directory-member-label">Task User</span>',
-            html=True,
+            '<div class="tasks-directory-members-menu tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" data-directory-members-menu>',
         )
+        self.assertContains(response, '<span class="tasks-directory-member-label">Task User</span>', html=True)
 
     def test_group_members_include_project_owner_and_shared_users(self):
         shared_project_user = get_user_model().objects.create_user(
@@ -1386,7 +1414,16 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertContains(response, 'Wszystkie grupy')
         self.assertContains(response, 'tasks-directory-header')
+        self.assertContains(response, 'tasks-section-sheet')
+        self.assertContains(response, 'KOD PROJEKTU')
+        self.assertContains(response, 'POSTĘP')
+        self.assertContains(response, 'TERMIN')
+        self.assertContains(response, 'PRIORYTET')
+        self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
         self.assertContains(response, 'UDOSTĘPNIONE')
+        self.assertContains(response, 'data-column="project_code"', count=3)
+        self.assertContains(response, 'data-column="progress"', count=3)
+        self.assertContains(response, 'data-column="project_name"', count=3)
         self.assertContains(response, 'data-column="shared_access"', count=3)
         self.assertContains(response, 'ODPOWIEDZIALNY ZA ZADANIA')
         self.assertContains(response, 'DATA')
@@ -1396,10 +1433,15 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Drugi projekt')
         self.assertContains(response, first_project.code)
         self.assertContains(response, second_project.code)
+        self.assertContains(response, '0/1')
+        self.assertContains(response, '0/0')
+        self.assertContains(response, '0%')
+        self.assertContains(response, 'Brak terminu')
+        self.assertContains(response, 'Brak')
         self.assertContains(response, 'Pracownik', count=2)
         self.assertContains(
             response,
-            '<div class="tasks-directory-members-menu tasks-directory-sheet__cell" data-column="members" data-directory-members-menu>',
+            '<div class="tasks-directory-members-menu tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" data-directory-members-menu>',
             count=2,
         )
         self.assertContains(
@@ -1429,6 +1471,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Tagi')
         self.assertContains(response, 'tasks-directory-header')
         self.assertContains(response, 'data-select-all-target="projects"')
+        self.assertContains(response, 'aria-label="Zaznacz projekt Projekt"')
         self.assertNotContains(response, 'Moje grupy')
 
     def test_tags_view_lists_tags(self):
@@ -1443,12 +1486,23 @@ class TaskProjectCreationTests(TestCase):
         task.tags.add(frontend)
 
         response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
+        html = response.content.decode()
 
         self.assertContains(response, 'Tagi')
+        self.assertContains(response, 'tasks-spreadsheet-sheet')
         self.assertContains(response, 'KOD TAGU')
         self.assertContains(response, 'NAZWA TAGU')
+        self.assertLess(
+            html.index('data-column="tag_name">NAZWA TAGU'),
+            html.index('data-column="tag_code">KOD TAGU'),
+        )
         self.assertContains(response, 'data-column="tag_code"', count=3)
         self.assertContains(response, 'data-column="tag_name"', count=3)
+        frontend_row_start = html.index(f'data-tag-id="{frontend.id}"')
+        self.assertLess(
+            html.index('data-column="tag_name"', frontend_row_start),
+            html.index('data-column="tag_code"', frontend_row_start),
+        )
         self.assertContains(response, 'Frontend')
         self.assertContains(response, 'Prace po stronie UI')
         self.assertContains(response, 'Brak opisu')
@@ -1556,6 +1610,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(projects_response, 'id="delete-selected-project-menu-btn"')
         self.assertContains(projects_response, 'id="edit-selected-project-menu-btn"')
         self.assertContains(projects_response, 'data-select-all-target="projects"')
+        self.assertContains(projects_response, 'aria-label="Zaznacz projekt Projekt"')
         self.assertContains(groups_response, 'id="delete-selected-section-menu-btn"')
         self.assertContains(groups_response, 'id="edit-selected-section-menu-btn"')
         self.assertContains(groups_response, 'data-select-all-target="sections"')

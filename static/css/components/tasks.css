@@ -7605,6 +7605,15 @@ body.is-resizing-directory-columns {
     pointer-events: none;
 }
 
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row::before {
+    content: none;
+}
+
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row::before {
+    content: "";
+    width: var(--tasks-directory-select-width);
+}
+
 .tasks-directory-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox {
     position: relative;
     z-index: 1;
@@ -7684,7 +7693,12 @@ body.is-resizing-directory-columns {
 
 .tasks-project-sheet .tasks-directory-header > [data-column="project"],
 .tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="project"] {
+    min-height: 100%;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
     border-left: 0;
+    padding-left: 0;
 }
 
 .tasks-directory-sheet .tasks-directory-header > [data-column="shared_access"],
@@ -7710,7 +7724,17 @@ body.is-resizing-directory-columns {
     --tasks-project-priority-width: 132px;
     --tasks-project-activity-width: 170px;
     --tasks-project-company-width: 190px;
+    --tasks-directory-grid: var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-company-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+}
+
+.tasks-project-sheet--selectable {
+    --tasks-directory-select-width: 40px;
     --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-company-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+}
+
+.tasks-project-sheet--selectable .tasks-directory-header,
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
+    padding-left: 0;
 }
 
 .tasks-project-sheet .tasks-directory-list .tasks-directory-row {
@@ -7726,6 +7750,31 @@ body.is-resizing-directory-columns {
 .tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="shared_access"]):not([data-column="spacer"]) {
     justify-content: flex-start;
     text-align: left;
+}
+
+.tasks-directory-board.tasks-project-sheet--selectable .tasks-directory-header > .tasks-directory-header-select {
+    min-width: var(--tasks-directory-select-width);
+    width: var(--tasks-directory-select-width);
+    justify-self: center;
+    justify-content: center;
+}
+
+.tasks-project-sheet--selectable .tasks-directory-header > [data-column="project"],
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > [data-column="project"] {
+    border-left: 1px solid var(--tasks-directory-column-separator);
+    padding-left: 0.75rem;
+}
+
+.tasks-project-sheet--selectable .tasks-directory-select-all,
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"] {
+    justify-self: center;
+    opacity: 1;
+}
+
+.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header > [data-column="section"],
+.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > [data-column="section"] {
+    border-left: 1px solid var(--tasks-directory-column-separator);
+    padding-left: 0.75rem;
 }
 
 .tasks-project-sheet__code {
@@ -7825,7 +7874,7 @@ body.is-resizing-directory-columns {
     --tasks-directory-tag-name-width: var(--tasks-directory-default-column-width);
     --tasks-directory-description-width: var(--tasks-directory-default-column-width);
     --tasks-directory-task-count-width: var(--tasks-directory-default-column-width);
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-tag-code-width) var(--tasks-directory-tag-name-width) var(--tasks-directory-description-width) var(--tasks-directory-task-count-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-tag-name-width) var(--tasks-directory-tag-code-width) var(--tasks-directory-description-width) var(--tasks-directory-task-count-width) var(--tasks-directory-date-width);
 }
 
 .tasks-tag-sheet .tasks-directory-header > [data-column="tag_code"],
@@ -7853,6 +7902,46 @@ body.is-resizing-directory-columns {
 .tasks-tag-sheet__count {
     justify-content: flex-start;
     color: #4f545e;
+}
+
+.tasks-spreadsheet-sheet {
+    --tasks-directory-select-width: 40px;
+}
+
+.tasks-spreadsheet-sheet .tasks-directory-header > .tasks-directory-sheet__cell {
+    min-height: 42px;
+    background: #e7e8eb;
+}
+
+.tasks-spreadsheet-sheet .tasks-directory-list .tasks-directory-row {
+    min-height: 40px;
+}
+
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-header,
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-list .tasks-directory-row {
+    padding-left: 0;
+}
+
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-list .tasks-directory-row::before {
+    width: var(--tasks-directory-select-width);
+}
+
+.tasks-directory-board.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-header > .tasks-directory-header-select {
+    min-width: var(--tasks-directory-select-width);
+    width: var(--tasks-directory-select-width);
+    justify-self: center;
+    justify-content: center;
+}
+
+.tasks-spreadsheet-sheet .tasks-directory-header > .tasks-directory-sheet__cell:not([data-column="select"]):not([data-column="shared_access"]):not([data-column="spacer"]) {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-header > [data-column="tag_code"],
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > [data-column="tag_code"] {
+    border-left: 1px solid var(--tasks-directory-column-separator);
+    padding-left: 0.75rem;
 }
 
 .tasks-directory-header {
@@ -7997,6 +8086,12 @@ body.is-resizing-directory-columns {
 
 .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox {
     margin-left: var(--tasks-directory-checkbox-offset);
+}
+
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"] {
+    justify-self: center;
+    align-self: center;
+    margin-left: 0;
 }
 
 .tasks-directory-list .tasks-directory-row:last-child {
@@ -8436,6 +8531,11 @@ body.is-resizing-directory-columns {
 
     .tasks-project-sheet .tasks-directory-header,
     .tasks-project-sheet .tasks-directory-list .tasks-directory-row {
+        --tasks-directory-grid: var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
+    }
+
+    .tasks-project-sheet--selectable .tasks-directory-header,
+    .tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
         --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
     }
 
@@ -8514,7 +8614,19 @@ body.is-resizing-directory-columns {
 
     .tasks-project-sheet .tasks-directory-list .tasks-directory-row {
         min-height: 158px;
-        grid-template-columns: 18px minmax(0, 1fr) 34px 86px;
+        grid-template-columns: minmax(0, 1fr) 34px 86px;
+        grid-template-areas:
+            "name shared date"
+            "code code code"
+            "description description description"
+            "progress progress progress"
+            "tasks priority priority"
+            "due company company"
+            "members members members";
+    }
+
+    .tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
+        grid-template-columns: var(--tasks-directory-select-width) minmax(0, 1fr) 34px 86px;
         grid-template-areas:
             "check name shared date"
             ". code code code"

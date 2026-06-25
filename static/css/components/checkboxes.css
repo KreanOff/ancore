@@ -118,3 +118,34 @@
 .contacts-directory-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox:indeterminate {
     opacity: 1;
 }
+
+.tasks-project-sheet--selectable .tasks-directory-select-all,
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"],
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-select-all,
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"],
+.contacts-spreadsheet-sheet .tasks-directory-select-all,
+.contacts-spreadsheet-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox[data-column="select"] {
+    opacity: 1;
+}
+
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"]:checked,
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"]:checked,
+.contacts-spreadsheet-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox[data-column="select"]:checked {
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
+    background-image: var(--checkbox-check-icon);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+}
+
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"]:indeterminate,
+.tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"]:indeterminate,
+.contacts-spreadsheet-sheet .contacts-directory-list .contacts-directory-row > .tasks-row-checkbox[data-column="select"]:indeterminate {
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
+    background-image: var(--checkbox-minus-icon);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+}

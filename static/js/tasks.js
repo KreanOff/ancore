@@ -4652,12 +4652,26 @@ function initTasksPage() {
         function getDefaultDirectoryTrackWidths(cells) {
             return cells.map(cell => {
                 const column = cell.dataset.column || '';
-                if (column === 'select') return getDirectoryColumnMinWidth(column);
+                if (column === 'select') return getDirectorySelectColumnWidth(cell);
                 if (Object.prototype.hasOwnProperty.call(columnDefaultWidths, column)) {
                     return columnDefaultWidths[column];
                 }
                 return defaultDirectoryColumnWidth;
             });
+        }
+
+        function getDirectorySelectColumnWidth(cell) {
+            const board = cell.closest('.tasks-directory-board');
+            const source = board || cell;
+            const configuredWidth = Number.parseFloat(
+                window.getComputedStyle(source).getPropertyValue('--tasks-directory-select-width')
+            );
+
+            if (Number.isFinite(configuredWidth) && configuredWidth > 0) {
+                return Math.round(configuredWidth);
+            }
+
+            return getDirectoryColumnMinWidth('select');
         }
 
         function getDirectoryColumnMinWidth(column) {
@@ -4685,7 +4699,7 @@ function initTasksPage() {
                 .filter(Boolean)
                 .join('-') || 'default';
 
-            return `${getDirectoryStorageSegment()}:directoryColumnWidths:v2:${schema}`;
+            return `${getDirectoryStorageSegment()}:directoryColumnWidths:v3:${schema}`;
         }
 
         function isFixedDirectoryColumn(column) {

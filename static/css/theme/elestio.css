@@ -565,6 +565,11 @@ body.auth-page,
     background: rgb(246, 246, 247);
 }
 
+.tasks-project-sheet .tasks-issue-group:not(.tasks-status-block) > .tasks-project-list,
+.tasks-project-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-project-list > .tasks-project-row {
+    background: #ffffff;
+}
+
 .tasks-table .task-row:hover td,
 .tasks-project-row:hover,
 .tasks-section-row:hover,
