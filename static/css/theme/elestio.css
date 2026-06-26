@@ -5,13 +5,11 @@ body {
     color: var(--text-main);
 }
 
-.app-topbar,
 .tasks-tracker-rail {
     background: var(--chrome-bg);
 }
 
-.sidebar,
-.app-topbar-right {
+.sidebar {
     background: var(--secondary-menu-bg);
 }
 
@@ -20,10 +18,6 @@ body {
 .secondary-menu-panel > .tasks-tracker-rail,
 .secondary-menu-panel > .dashboard-rail {
     background: #FBFBFC;
-}
-
-.app-topbar {
-    color: var(--text-muted);
 }
 
 .main-content {
@@ -63,7 +57,6 @@ body {
     background: var(--border-color);
 }
 
-.topbar-icon-button,
 .nav-link,
 .tasks-rail-add-button {
     color: var(--text-muted);
@@ -79,7 +72,6 @@ body {
     font-weight: 800;
 }
 
-.topbar-icon-button:hover,
 .nav-link:hover,
 .nav-link.active,
 .tasks-rail-link:hover,
@@ -93,7 +85,6 @@ body {
     color: var(--text-strong);
 }
 
-.topbar-clock,
 .tasks-rail-count,
 .tasks-rail-section-title,
 .tasks-topbar-title,

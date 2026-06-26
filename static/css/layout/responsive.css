@@ -88,20 +88,6 @@ body.sidebar-open .sidebar-backdrop {
 
 /* Telefon */
 @media (max-width: 768px) {
-    .app-topbar {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 0.5rem;
-        padding: 0 0.75rem;
-    }
-
-    .app-topbar-right {
-        gap: 0.375rem;
-    }
-
-    .topbar-clock span {
-        display: none;
-    }
-
     .page-container {
         padding: 1rem;
     }
@@ -125,15 +111,6 @@ body.sidebar-open .sidebar-backdrop {
 }
 
 @media (max-width: 480px) {
-    .topbar-icon-button {
-        width: 26px;
-        height: 26px;
-    }
-
-    .topbar-clock {
-        font-size: var(--font-size-sm);
-    }
-
     .sidebar {
         width: min(var(--app-viewport-width), var(--sidebar-width));
     }

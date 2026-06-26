@@ -20,7 +20,6 @@ function initTasksPage() {
     const deleteSelectedTaskMenuBtn = document.getElementById('delete-selected-task-menu-btn');
     const deleteSelectedSectionMenuBtn = document.getElementById('delete-selected-section-menu-btn');
     const deleteSelectedProjectMenuBtn = document.getElementById('delete-selected-project-menu-btn');
-    const unshareSelectedProjectMenuBtn = document.getElementById('unshare-selected-project-menu-btn');
     const deleteSelectedTagMenuBtn = document.getElementById('delete-selected-tag-menu-btn');
     const editBtn = document.getElementById('edit-selected-btn');
     const statusToggleBtn = document.getElementById('status-toggle-btn');
@@ -3436,10 +3435,6 @@ function initTasksPage() {
         return Boolean(checkbox) && checkbox.dataset.canManage !== 'false';
     }
 
-    function checkboxCanSelfUnshare(checkbox) {
-        return Boolean(checkbox) && checkbox.dataset.canSelfUnshare === 'true';
-    }
-
     function allCheckboxesCanManage(selectedCheckboxes) {
         return selectedCheckboxes.length > 0 && selectedCheckboxes.every(checkboxCanManage);
     }
@@ -3519,23 +3514,14 @@ function initTasksPage() {
             projectDueAt: selectedProjectCheckbox?.dataset.projectDueAt || '',
             projectCompanyId: selectedProjectCheckbox?.dataset.projectCompanyId || ''
         };
-        const selectedProjectCanSelfUnshare = selectedProjectCheckboxes.length === 1 && checkboxCanSelfUnshare(selectedProjectCheckbox);
-        if (editSelectedProjectMenuBtn) editSelectedProjectMenuBtn.hidden = selectedProjectCanSelfUnshare;
-        if (deleteSelectedProjectMenuBtn) deleteSelectedProjectMenuBtn.hidden = selectedProjectCanSelfUnshare;
-        if (unshareSelectedProjectMenuBtn) unshareSelectedProjectMenuBtn.hidden = !selectedProjectCanSelfUnshare;
         setMenuButtonState(
             editSelectedProjectMenuBtn,
-            selectedProjectCheckboxes.length === 1 && !selectedProjectCanSelfUnshare && checkboxCanManage(selectedProjectCheckbox),
+            selectedProjectCheckboxes.length === 1 && checkboxCanManage(selectedProjectCheckbox),
             projectDataset
         );
         setMenuButtonState(
             deleteSelectedProjectMenuBtn,
-            !selectedProjectCanSelfUnshare && allCheckboxesCanManage(selectedProjectCheckboxes),
-            projectDataset
-        );
-        setMenuButtonState(
-            unshareSelectedProjectMenuBtn,
-            selectedProjectCanSelfUnshare,
+            allCheckboxesCanManage(selectedProjectCheckboxes),
             projectDataset
         );
 
@@ -3752,11 +3738,6 @@ function initTasksPage() {
         postPageAction('delete_project', { project_ids: ids });
     }
 
-    function postUnshareProjectForCurrentUser(projectId) {
-        if (!projectId) return;
-        postPageAction('unshare_project', { project_id: projectId });
-    }
-
     function postDeleteTag(tagIds) {
         const ids = Array.isArray(tagIds) ? tagIds : [tagIds];
         postPageAction('delete_tag', {
@@ -3872,14 +3853,6 @@ function initTasksPage() {
             confirmClass: 'btn-danger',
             onConfirm: () => postDeleteProject(projectIds)
         });
-    }
-
-    function unshareSelectedProjectForCurrentUser() {
-        const selectedProjectCheckbox = getSelectedProjectCheckbox();
-        if (!checkboxCanSelfUnshare(selectedProjectCheckbox)) return;
-
-        closeSectionActionMenu();
-        postUnshareProjectForCurrentUser(selectedProjectCheckbox.dataset.projectId || '');
     }
 
     function deleteSelectedTag() {
@@ -4069,14 +4042,6 @@ function initTasksPage() {
             e.preventDefault();
             if (this.disabled) return;
             deleteSelectedProject();
-        });
-    }
-
-    if (unshareSelectedProjectMenuBtn) {
-        unshareSelectedProjectMenuBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (this.disabled) return;
-            unshareSelectedProjectForCurrentUser();
         });
     }
 

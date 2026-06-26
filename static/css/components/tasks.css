@@ -393,6 +393,7 @@
 }
 
 .tasks-topbar {
+    position: relative;
     min-height: 68px;
     padding: 0 1.25rem;
     border-bottom: 1px solid #edf0f3;
@@ -548,6 +549,20 @@
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
+}
+
+.tasks-titlebar-search {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(620px, 48vw);
+    justify-content: center;
+    transform: translate(-50%, -50%);
+}
+
+.tasks-titlebar-search .tasks-search-field {
+    flex: 1 1 auto;
+    width: auto;
 }
 
 .tasks-filterbar-right {
@@ -1941,20 +1956,32 @@ body.modal-open::before {
 
 .tasks-project-create-modal__body .tasks-modal-textarea {
     margin-top: 0.85rem;
-    min-height: 96px;
+    min-height: 58px;
     padding: 0.5rem 0 0;
     font-size: var(--font-size-sm);
+}
+
+.tasks-project-parameters {
+    margin-top: 1.25rem;
+}
+
+.tasks-project-parameters h3 {
+    margin: 0;
+    color: #20242b;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
+    line-height: 1.25;
 }
 
 .tasks-project-create-fields {
     display: flex;
     flex-wrap: wrap;
     gap: 0.65rem;
-    margin-top: 1.15rem;
+    margin-top: 0.65rem;
 }
 
 .tasks-project-create-fields label {
-    min-width: 220px;
+    min-width: 145px;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
@@ -1976,6 +2003,20 @@ body.modal-open::before {
     font-weight: 500;
 }
 
+.tasks-project-create-code {
+    width: 100%;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.75rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 7px;
+    background: #f7f8fa;
+    color: #6f737b;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
 .tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-input:focus,
 .tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-select:focus {
     border-color: var(--accent-peach);
@@ -1983,6 +2024,62 @@ body.modal-open::before {
 }
 
 .tasks-project-create-modal__footer {
+    justify-content: flex-end;
+}
+
+.tasks-project-edit-modal__dialog {
+    width: min(820px, 100%);
+    overflow: hidden;
+}
+
+.tasks-project-edit-modal__form {
+    min-height: 430px;
+}
+
+.tasks-project-edit-modal__body .tasks-inline-input[name="name"] {
+    width: 100%;
+    height: 50px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #23272f;
+    font-size: var(--font-size-lg);
+    font-weight: 500;
+    outline: none;
+}
+
+.tasks-project-edit-modal__body .tasks-inline-input[name="name"]::placeholder {
+    color: #a8adb5;
+}
+
+.tasks-project-edit-modal__body .tasks-modal-textarea {
+    margin-top: 0.85rem;
+    min-height: 58px;
+    padding: 0.5rem 0 0;
+    font-size: var(--font-size-sm);
+}
+
+.tasks-project-edit-modal__body .tasks-project-create-fields .tasks-inline-input,
+.tasks-project-edit-modal__body .tasks-project-create-fields .tasks-inline-select {
+    width: 100%;
+    height: 38px;
+    padding: 0 0.75rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #23272f;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.tasks-project-edit-modal__body .tasks-project-create-fields .tasks-inline-input:focus,
+.tasks-project-edit-modal__body .tasks-project-create-fields .tasks-inline-select:focus {
+    border-color: var(--accent-peach);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+}
+
+.tasks-project-edit-modal__footer {
     justify-content: flex-end;
 }
 
@@ -7017,6 +7114,16 @@ body.is-resizing-directory-columns {
         flex-direction: column;
         min-height: 0;
         padding: 0.875rem;
+    }
+
+    .tasks-titlebar-search {
+        position: static;
+        width: 100%;
+        transform: none;
+    }
+
+    .tasks-titlebar-search .tasks-search-field {
+        flex: 1 1 0;
     }
 
     .tasks-filterbar-left {

@@ -8,7 +8,6 @@
     height: var(--app-viewport-height);
     min-height: 0;
     overflow: auto;
-    padding-top: var(--topbar-height);
     background: #FBFBFC;
     transition: margin-left 0.1s ease;
 }
@@ -85,67 +84,6 @@ body.app-page-loading .app-loading-overlay {
     .app-loading-spinner {
         animation-duration: 1.4s;
     }
-}
-
-.app-topbar {
-    position: fixed;
-    inset: 0 0 auto 0;
-    height: var(--topbar-height);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0 1rem;
-    background: #f5f5f5;
-    color: #4f555d;
-    z-index: 200;
-}
-
-.app-topbar-right,
-.topbar-clock {
-    display: flex;
-    align-items: center;
-}
-
-.app-topbar-right {
-    align-self: stretch;
-    background: var(--secondary-menu-bg);
-    justify-content: flex-end;
-    gap: 0.65rem;
-    min-width: 0;
-}
-
-.topbar-icon-button {
-    --topbar-icon-size: 17px;
-    width: 26px;
-    height: 26px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: #6a7078;
-    cursor: pointer;
-    transition: background-color 0.075s ease, color 0.075s ease;
-}
-
-.topbar-icon-button:hover {
-    background: #edf0f3;
-    color: #22262b;
-}
-
-.topbar-icon-button svg {
-    width: var(--topbar-icon-size);
-    height: var(--topbar-icon-size);
-}
-
-.topbar-clock {
-    gap: 0.4rem;
-    white-space: nowrap;
-    font-size: var(--font-size-sm);
-    color: #4a4f55;
 }
 
 .page-container {

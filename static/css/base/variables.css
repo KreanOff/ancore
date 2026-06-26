@@ -37,7 +37,7 @@
     --radius-max: 8px;
     --radius: var(--radius-max);
     --toolbar-height: 52px;
-    --topbar-height: 34px;
+    --topbar-height: 0px;
     --sidebar-width: 56px;
     --secondary-menu-min-width: 230px;
     --secondary-menu-resize-max-width: 500px;

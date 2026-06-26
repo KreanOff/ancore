@@ -102,6 +102,44 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(project.due_at, date(2026, 7, 15))
         self.assertEqual(project.company, company)
 
+    def test_create_project_modal_shows_project_parameters(self):
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertContains(response, 'Parametry projektu')
+        self.assertContains(response, 'Pierwsza grupa')
+        self.assertContains(response, 'Kod projektu')
+        self.assertContains(response, 'Automatyczny')
+
+    def test_search_field_is_rendered_in_topbar(self):
+        response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
+        topbar_start = html.index('class="tasks-topbar"')
+        topbar_end = html.index('</header>', topbar_start)
+        topbar_html = html[topbar_start:topbar_end]
+        filterbar_start = html.index('class="tasks-filterbar"', topbar_end)
+        filterbar_end = html.index('</div>', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+
+        self.assertIn('tasks-titlebar-search', topbar_html)
+        self.assertIn('id="filter-search"', topbar_html)
+        self.assertIn('data-filter-search-submit', topbar_html)
+        self.assertNotIn('id="filter-search"', filterbar_html)
+
+    def test_edit_project_modal_uses_issue_modal_layout(self):
+        response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
+        modal_start = html.index('id="project-rename-modal"')
+        modal_end = html.index('id="section-create-modal"', modal_start)
+        modal_html = html[modal_start:modal_end]
+
+        self.assertIn('tasks-project-edit-modal', modal_html)
+        self.assertIn('tasks-issue-modal__dialog', modal_html)
+        self.assertIn('tasks-issue-modal__header', modal_html)
+        self.assertIn('tasks-issue-modal__body', modal_html)
+        self.assertIn('tasks-issue-modal__footer', modal_html)
+        self.assertIn('Parametry projektu', modal_html)
+        self.assertIn('class="u-sr-only" for="project-rename-name"', modal_html)
+
     def test_create_project_uses_default_group_name_when_group_name_is_empty(self):
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'create_project',
@@ -366,7 +404,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertFalse(self._shared_task_object_exists(project, shared_user))
 
-    def test_view_only_shared_project_exposes_self_unshare_menu_action(self):
+    def test_view_only_shared_project_does_not_expose_self_unshare_menu_action(self):
         shared_user = get_user_model().objects.create_user(
             username='shared-view-self-remove',
             email='shared-view-self-remove@example.com',
@@ -380,8 +418,8 @@ class TaskProjectCreationTests(TestCase):
         self.client.force_login(shared_user)
         response = self.client.get(reverse('tasks:tasks'))
 
-        self.assertContains(response, 'id="unshare-selected-project-menu-btn"')
-        self.assertContains(response, 'Przestań udostępniać to dla mnie')
+        self.assertNotContains(response, 'id="unshare-selected-project-menu-btn"')
+        self.assertNotContains(response, 'Przestań udostępniać to dla mnie')
         self.assertContains(response, f'data-project-id="{project.id}"')
         self.assertContains(response, 'data-can-manage="false"')
         self.assertContains(response, 'data-can-self-unshare="true"')
