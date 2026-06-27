@@ -12,15 +12,15 @@
 @import 'components/dialogs.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/modals.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/tables.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/tasks.css?v=20260627-project-columns-defaults';
+@import 'components/tasks.css?v=20260627-project-action-icons-centered';
 @import 'components/contacts.css?v=20260625-user-directory-project-sheet';
 @import 'components/notifications.css?v=20260616-task-autosave';
 @import 'components/attachments.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/file-upload.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/auth.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'calendar.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'calendar.css?v=20260627-right-full-height-modals';
 @import 'components/checkboxes.css?v=20260625-contacts-project-table-match';
-@import 'theme/elestio.css?v=20260626-all-groups-list-white';
+@import 'theme/elestio.css?v=20260627-project-icons-optical-size';
 @import 'components/profile.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
@@ -298,6 +298,12 @@ body .contacts-actions-menu__item--danger {
     color: var(--app-text-color) !important;
 }
 
+body .tasks-tag-topbar-button--secondary,
+body .tasks-tag-topbar-button--secondary :where(span) {
+    --app-text-color: var(--text-main);
+    color: var(--app-text-color) !important;
+}
+
 /* App-wide text weight: no bold text. */
 body :where(
     div,
@@ -344,7 +350,8 @@ body :where(
 }
 
 .tasks-tracker-rail .tasks-rail-header h1 {
-    font-weight: 600 !important;
+    font-size: 18px !important;
+    font-weight: 500 !important;
 }
 
 .tasks-topbar,
@@ -363,7 +370,18 @@ body :where(
 ):where(
     :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
 ) {
-    font-weight: 600 !important;
+    font-weight: 500 !important;
+}
+
+.tasks-issue-breadcrumb :where(
+    a,
+    span,
+    .tasks-issue-crumb
+):where(
+    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+) {
+    font-size: 16px !important;
+    font-weight: 500 !important;
 }
 
 .tasks-tracker-rail :where(

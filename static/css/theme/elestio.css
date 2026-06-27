@@ -31,7 +31,7 @@ body {
 
 .page-container.full-width {
     border-color: var(--border-color);
-    border-radius: 10px;
+    border-radius: 15px;
     box-shadow: none;
 }
 
@@ -175,6 +175,21 @@ body {
     background: var(--accent-peach);
     border-color: var(--accent-peach-border);
     color: var(--accent-on-peach);
+}
+
+.tasks-tag-topbar-button.tasks-tag-topbar-button--secondary,
+.tasks-tag-topbar-button.tasks-tag-topbar-button--secondary:hover,
+.tasks-tag-topbar-button.tasks-tag-topbar-button--secondary:disabled,
+.tasks-tag-topbar-button.tasks-tag-topbar-button--secondary:disabled:hover {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-main);
+    box-shadow: none;
+}
+
+.tasks-tag-topbar-button.tasks-tag-topbar-button--secondary:disabled,
+.tasks-tag-topbar-button.tasks-tag-topbar-button--secondary:disabled:hover {
+    opacity: 0.55;
 }
 
 .tasks-create-menu__panel button:hover,

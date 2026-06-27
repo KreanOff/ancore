@@ -43,6 +43,7 @@ class TaskProject(models.Model):
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
     due_at = models.DateField(null=True, blank=True)
     company = models.ForeignKey('contacts.Company', on_delete=models.SET_NULL, related_name='task_projects', null=True, blank=True)
+    responsible_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='responsible_task_projects', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_projects')
     created_at = models.DateTimeField(auto_now_add=True)
 

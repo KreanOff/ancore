@@ -16,6 +16,7 @@ function initTasksPage() {
     const editSelectedTaskMenuBtn = document.getElementById('edit-selected-task-menu-btn');
     const editSelectedSectionMenuBtn = document.getElementById('edit-selected-section-menu-btn');
     const editSelectedProjectMenuBtn = document.getElementById('edit-selected-project-menu-btn');
+    const editSelectedProjectBarBtn = document.getElementById('edit-selected-project-bar-btn');
     const editSelectedTagMenuBtn = document.getElementById('edit-selected-tag-menu-btn');
     const deleteSelectedTaskMenuBtn = document.getElementById('delete-selected-task-menu-btn');
     const deleteSelectedSectionMenuBtn = document.getElementById('delete-selected-section-menu-btn');
@@ -112,6 +113,7 @@ function initTasksPage() {
     const projectRenamePriorityInput = projectRenameForm ? projectRenameForm.querySelector('[name="priority"]') : null;
     const projectRenameDueAtInput = projectRenameForm ? projectRenameForm.querySelector('[name="due_at"]') : null;
     const projectRenameCompanyInput = projectRenameForm ? projectRenameForm.querySelector('[name="company"]') : null;
+    const projectRenameResponsibleInput = projectRenameForm ? projectRenameForm.querySelector('[name="responsible_user"]') : null;
     const projectRenameCodeValue = document.getElementById('project-rename-code');
 
     const taskAppSegment = window.location.pathname.split('/').filter(Boolean)[0] === 'kanban' ? 'kanban' : 'tasks';
@@ -1434,7 +1436,35 @@ function initTasksPage() {
             if (dropdown === exceptDropdown) return;
             dropdown.classList.remove('is-open');
             dropdown.querySelector('[data-company-select-toggle]')?.setAttribute('aria-expanded', 'false');
+            getCompanySelectMenu(dropdown)?.classList.remove('is-open');
         });
+    }
+
+    function closeResponsibleSelectDropdowns(exceptDropdown = null) {
+        document.querySelectorAll('[data-responsible-select-dropdown]').forEach(dropdown => {
+            if (dropdown === exceptDropdown) return;
+            dropdown.classList.remove('is-open');
+            dropdown.querySelector('[data-responsible-select-toggle]')?.setAttribute('aria-expanded', 'false');
+            getResponsibleSelectMenu(dropdown)?.classList.remove('is-open');
+        });
+    }
+
+    function getCompanySelectMenu(dropdown) {
+        const menuId = dropdown?.dataset.companySelectDropdown;
+        if (menuId) {
+            const escapedMenuId = window.CSS?.escape ? CSS.escape(menuId) : menuId.replace(/"/g, '\\"');
+            return document.querySelector(`[data-company-select-menu="${escapedMenuId}"]`);
+        }
+        return dropdown?.querySelector('.tasks-company-select__menu');
+    }
+
+    function getResponsibleSelectMenu(dropdown) {
+        const menuId = dropdown?.dataset.responsibleSelectDropdown;
+        if (menuId) {
+            const escapedMenuId = window.CSS?.escape ? CSS.escape(menuId) : menuId.replace(/"/g, '\\"');
+            return document.querySelector(`[data-responsible-select-menu="${escapedMenuId}"]`);
+        }
+        return dropdown?.querySelector('.tasks-responsible-select__menu');
     }
 
     function syncCompanySelectDropdown(dropdown) {
@@ -1442,11 +1472,12 @@ function initTasksPage() {
         if (!select) return;
 
         const currentValue = select.value || '';
-        const activeButton = Array.from(dropdown.querySelectorAll('[data-company-select-value]')).find(button => button.dataset.companySelectValue === currentValue);
+        const menu = getCompanySelectMenu(dropdown);
+        const activeButton = Array.from(menu?.querySelectorAll('[data-company-select-value]') || []).find(button => button.dataset.companySelectValue === currentValue);
         const label = dropdown.querySelector('[data-company-select-label]');
         const currentIcon = dropdown.querySelector('[data-company-select-current-icon]');
 
-        dropdown.querySelectorAll('[data-company-select-value]').forEach(button => {
+        menu?.querySelectorAll('[data-company-select-value]').forEach(button => {
             button.classList.toggle('is-active', button.dataset.companySelectValue === currentValue);
         });
 
@@ -1465,12 +1496,13 @@ function initTasksPage() {
     }
 
     function filterCompanySelectOptions(dropdown) {
-        const input = dropdown?.querySelector('[data-company-select-search]');
-        const empty = dropdown?.querySelector('[data-company-select-empty]');
+        const menu = getCompanySelectMenu(dropdown);
+        const input = menu?.querySelector('[data-company-select-search]');
+        const empty = menu?.querySelector('[data-company-select-empty]');
         const query = normalizePickerSearch(input?.value || '');
         let visibleCount = 0;
 
-        dropdown?.querySelectorAll('[data-company-select-value]').forEach(button => {
+        menu?.querySelectorAll('[data-company-select-value]').forEach(button => {
             const text = normalizePickerSearch(button.dataset.companySelectSearchText || button.textContent);
             const isVisible = !query || text.includes(query);
             button.hidden = !isVisible;
@@ -1485,6 +1517,153 @@ function initTasksPage() {
     function syncCompanySelectForSelect(select) {
         const dropdown = select?.closest('.tasks-company-select-wrap')?.querySelector('[data-company-select-dropdown]');
         syncCompanySelectDropdown(dropdown);
+    }
+
+    function setResponsibleSelectStatus(dropdown, message = '', state = '') {
+        const status = getResponsibleSelectMenu(dropdown)?.querySelector('[data-responsible-select-status]');
+        if (!status) return;
+        status.textContent = message;
+        if (state) {
+            status.dataset.state = state;
+        } else {
+            status.removeAttribute('data-state');
+        }
+    }
+
+    function ensureResponsibleSelectOption(select, user) {
+        if (!select || !user?.id) return null;
+        const value = String(user.id);
+        let option = Array.from(select.options).find(item => item.value === value);
+        if (!option) {
+            option = new Option(user.label || user.username || user.email || 'Osoba', value);
+            select.appendChild(option);
+        }
+        option.textContent = user.label || user.username || user.email || option.textContent;
+        return option;
+    }
+
+    function ensureResponsibleSelectButton(dropdown, user) {
+        if (!dropdown || !user?.id) return null;
+        const menu = getResponsibleSelectMenu(dropdown);
+        const value = String(user.id);
+        let button = Array.from(menu?.querySelectorAll('[data-responsible-select-value]') || []).find(item => item.dataset.responsibleSelectValue === value);
+        if (!button) {
+            button = document.createElement('button');
+            button.type = 'button';
+            button.setAttribute('role', 'menuitemradio');
+            button.setAttribute('aria-checked', 'false');
+            button.dataset.responsibleSelectValue = value;
+            const avatar = document.createElement('span');
+            avatar.className = 'profile-avatar tasks-responsible-select__avatar';
+            avatar.setAttribute('aria-hidden', 'true');
+            const person = document.createElement('span');
+            person.className = 'tasks-responsible-select__person';
+            const identity = document.createElement('span');
+            identity.className = 'tasks-responsible-select__identity';
+            const label = document.createElement('span');
+            label.className = 'tasks-responsible-select__name';
+            const username = document.createElement('span');
+            username.className = 'tasks-responsible-select__username';
+            identity.append(label, username);
+            person.append(avatar, identity);
+            const check = document.createElement('span');
+            check.className = 'tasks-responsible-select__check';
+            check.setAttribute('aria-hidden', 'true');
+            button.append(person, check);
+            const table = menu?.querySelector('.tasks-responsible-select__table');
+            table?.appendChild(button);
+        }
+
+        const labelText = user.label || user.username || user.email || 'Osoba';
+        const usernameText = user.username || '';
+        button.dataset.responsibleSelectName = labelText;
+        button.dataset.responsibleSelectUsername = usernameText;
+        button.dataset.responsibleSelectSearchText = `${labelText} ${usernameText} ${user.email || ''}`.toLowerCase();
+
+        const avatar = button.querySelector('.tasks-responsible-select__avatar');
+        if (avatar) {
+            avatar.classList.toggle('has-photo', Boolean(user.avatar?.photo_url));
+            avatar.classList.add(user.avatar?.color_class || '');
+            if (user.avatar?.color_style) avatar.setAttribute('style', user.avatar.color_style);
+            avatar.replaceChildren();
+            if (user.avatar?.photo_url) {
+                const image = document.createElement('img');
+                image.src = user.avatar.photo_url;
+                image.alt = '';
+                avatar.appendChild(image);
+            } else {
+                avatar.textContent = user.avatar?.initials || labelText.trim().charAt(0).toUpperCase() || 'O';
+            }
+        }
+
+        const name = button.querySelector('.tasks-responsible-select__name');
+        const username = button.querySelector('.tasks-responsible-select__username');
+        if (name) name.textContent = labelText;
+        if (username) username.textContent = usernameText;
+        return button;
+    }
+
+    function setResponsibleSelectDraft(dropdown, value) {
+        if (!dropdown) return;
+        const menu = getResponsibleSelectMenu(dropdown);
+        const draftValue = value || '';
+        dropdown.dataset.responsibleDraftValue = draftValue;
+        menu?.querySelectorAll('[data-responsible-select-value]').forEach(button => {
+            const isActive = button.dataset.responsibleSelectValue === draftValue;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-checked', String(isActive));
+        });
+    }
+
+    function syncResponsibleSelectDropdown(dropdown) {
+        const select = dropdown?.closest('.tasks-responsible-select-wrap')?.querySelector('select');
+        if (!select) return;
+
+        const currentValue = select.value || '';
+        const menu = getResponsibleSelectMenu(dropdown);
+        const hasCurrentButton = Array.from(menu?.querySelectorAll('[data-responsible-select-value]') || []).some(button => button.dataset.responsibleSelectValue === currentValue);
+        if (currentValue && !hasCurrentButton) {
+            const selectedOption = Array.from(select.options).find(option => option.value === currentValue);
+            if (selectedOption) {
+                ensureResponsibleSelectButton(dropdown, {
+                    id: currentValue,
+                    label: selectedOption.textContent.trim()
+                });
+            }
+        }
+        const activeButton = Array.from(menu?.querySelectorAll('[data-responsible-select-value]') || []).find(button => button.dataset.responsibleSelectValue === currentValue);
+        const label = dropdown.querySelector('[data-responsible-select-label]');
+        const currentIcon = dropdown.querySelector('[data-responsible-select-current-icon]');
+
+        setResponsibleSelectDraft(dropdown, currentValue);
+
+        if (label && activeButton) {
+            label.textContent = activeButton.dataset.responsibleSelectName || activeButton.textContent.trim();
+        }
+
+        if (currentIcon && activeButton) {
+            const activeIcon = activeButton.querySelector('.tasks-responsible-select__avatar, .tasks-responsible-select__empty-icon');
+            currentIcon.replaceChildren();
+            if (activeIcon) {
+                currentIcon.appendChild(activeIcon.cloneNode(true));
+            }
+            window.AncoreIcons?.render(currentIcon);
+        }
+    }
+
+    function filterResponsibleSelectOptions(dropdown) {
+        const menu = getResponsibleSelectMenu(dropdown);
+        const input = menu?.querySelector('[data-responsible-select-search]');
+        const query = normalizePickerSearch(input?.value || '');
+        menu?.querySelectorAll('[data-responsible-select-value]').forEach(button => {
+            const text = normalizePickerSearch(button.dataset.responsibleSelectSearchText || button.textContent);
+            button.hidden = !query || !text.includes(query);
+        });
+    }
+
+    function syncResponsibleSelectForSelect(select) {
+        const dropdown = select?.closest('.tasks-responsible-select-wrap')?.querySelector('[data-responsible-select-dropdown]');
+        syncResponsibleSelectDropdown(dropdown);
     }
 
     const DIRECTORY_SHARE_PERMISSION_META = {
@@ -2739,7 +2918,8 @@ function initTasksPage() {
     document.querySelectorAll('[data-company-select-dropdown]').forEach(dropdown => {
         const select = dropdown.closest('.tasks-company-select-wrap')?.querySelector('select');
         const toggle = dropdown.querySelector('[data-company-select-toggle]');
-        const search = dropdown.querySelector('[data-company-select-search]');
+        const menu = getCompanySelectMenu(dropdown);
+        const search = menu?.querySelector('[data-company-select-search]');
 
         syncCompanySelectDropdown(dropdown);
 
@@ -2755,6 +2935,7 @@ function initTasksPage() {
             closeInlineSelectDropdowns();
             closeCompanySelectDropdowns(dropdown);
             dropdown.classList.toggle('is-open', isOpen);
+            menu?.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
             if (isOpen) {
                 filterCompanySelectOptions(dropdown);
@@ -2766,11 +2947,15 @@ function initTasksPage() {
             e.stopPropagation();
         });
 
+        menu?.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
         search?.addEventListener('input', function() {
             filterCompanySelectOptions(dropdown);
         });
 
-        dropdown.querySelectorAll('[data-company-select-value]').forEach(button => {
+        menu?.querySelectorAll('[data-company-select-value]').forEach(button => {
             button.addEventListener('click', function() {
                 if (!select) return;
                 select.value = this.dataset.companySelectValue || '';
@@ -2782,6 +2967,118 @@ function initTasksPage() {
 
         select?.addEventListener('change', function() {
             syncCompanySelectDropdown(dropdown);
+        });
+    });
+
+    document.querySelectorAll('[data-responsible-select-dropdown]').forEach(dropdown => {
+        const wrap = dropdown.closest('.tasks-responsible-select-wrap');
+        const select = wrap?.querySelector('select');
+        const toggle = dropdown.querySelector('[data-responsible-select-toggle]');
+        const menu = getResponsibleSelectMenu(dropdown);
+        const search = menu?.querySelector('[data-responsible-select-search]');
+        const saveButton = menu?.querySelector('[data-responsible-select-save]');
+        const cancelButton = menu?.querySelector('[data-responsible-select-cancel]');
+        const lookupUrl = wrap?.dataset.responsibleSelectUrl || '';
+        let lookupTimer = null;
+        let lookupController = null;
+
+        syncResponsibleSelectDropdown(dropdown);
+
+        function lookupResponsibleUser() {
+            const query = (search?.value || '').trim();
+            filterResponsibleSelectOptions(dropdown);
+            if (lookupTimer) window.clearTimeout(lookupTimer);
+            lookupController?.abort();
+            if (!query || query.length < 2 || !lookupUrl) {
+                setResponsibleSelectStatus(dropdown);
+                return;
+            }
+
+            lookupTimer = window.setTimeout(() => {
+                lookupController = new AbortController();
+                setResponsibleSelectStatus(dropdown, 'Szukam po ID Ancore...', 'loading');
+                const url = `${lookupUrl}?q=${encodeURIComponent(query)}`;
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: lookupController.signal
+                })
+                    .then(response => response.ok ? response.json() : Promise.reject(new Error('lookup failed')))
+                    .then(data => {
+                        if (!data.found || !data.user) {
+                            setResponsibleSelectStatus(dropdown, data.message || 'Nie znaleziono osoby po ID Ancore.', 'error');
+                            return;
+                        }
+                        ensureResponsibleSelectOption(select, data.user);
+                        ensureResponsibleSelectButton(dropdown, data.user);
+                        filterResponsibleSelectOptions(dropdown);
+                        setResponsibleSelectStatus(dropdown, `Znaleziono: ${data.user.label || data.user.username}. Wybierz osobę z listy.`, 'success');
+                    })
+                    .catch(error => {
+                        if (error.name === 'AbortError') return;
+                        setResponsibleSelectStatus(dropdown, 'Nie udało się sprawdzić ID Ancore.', 'error');
+                    });
+            }, 300);
+        }
+
+        toggle?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !dropdown.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeStatusFilterMenu();
+            closePriorityFilterMenu();
+            closeIssuePickers();
+            closeInlineSelectDropdowns();
+            closeCompanySelectDropdowns();
+            closeResponsibleSelectDropdowns(dropdown);
+            dropdown.classList.toggle('is-open', isOpen);
+            menu?.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) {
+                setResponsibleSelectDraft(dropdown, select?.value || '');
+                filterResponsibleSelectOptions(dropdown);
+                setResponsibleSelectStatus(dropdown);
+                setTimeout(() => search?.focus(), 30);
+            }
+        });
+
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        menu?.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        search?.addEventListener('input', lookupResponsibleUser);
+
+        menu?.addEventListener('click', function(e) {
+            const button = e.target.closest('[data-responsible-select-value]');
+            if (!button) return;
+            if (!select) return;
+            select.value = button.dataset.responsibleSelectValue || '';
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            syncResponsibleSelectDropdown(dropdown);
+            setResponsibleSelectStatus(dropdown);
+            closeResponsibleSelectDropdowns();
+        });
+
+        cancelButton?.addEventListener('click', function() {
+            setResponsibleSelectDraft(dropdown, select?.value || '');
+            closeResponsibleSelectDropdowns();
+        });
+
+        saveButton?.addEventListener('click', function() {
+            if (!select) return;
+            select.value = dropdown.dataset.responsibleDraftValue || '';
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            syncResponsibleSelectDropdown(dropdown);
+            closeResponsibleSelectDropdowns();
+        });
+
+        select?.addEventListener('change', function() {
+            syncResponsibleSelectDropdown(dropdown);
         });
     });
 
@@ -2954,6 +3251,14 @@ function initTasksPage() {
             if (projectRenameDueAtInput) projectRenameDueAtInput.value = button.dataset.projectDueAt || '';
             if (projectRenameCompanyInput) projectRenameCompanyInput.value = button.dataset.projectCompanyId || '';
             syncCompanySelectForSelect(projectRenameCompanyInput);
+            if (projectRenameResponsibleInput && button.dataset.projectResponsibleUserId) {
+                ensureResponsibleSelectOption(projectRenameResponsibleInput, {
+                    id: button.dataset.projectResponsibleUserId,
+                    label: button.dataset.projectResponsibleUserLabel || ''
+                });
+            }
+            if (projectRenameResponsibleInput) projectRenameResponsibleInput.value = button.dataset.projectResponsibleUserId || '';
+            syncResponsibleSelectForSelect(projectRenameResponsibleInput);
             if (projectRenameCodeValue) projectRenameCodeValue.textContent = button.dataset.projectCode || '';
             if (projectRenameIconInput) projectRenameIconInput.value = button.dataset.projectIcon || '';
             syncProjectIconPickers();
@@ -3084,7 +3389,8 @@ function initTasksPage() {
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
         if (!e.target.closest('[data-inline-select-dropdown]')) closeInlineSelectDropdowns();
-        if (!e.target.closest('[data-company-select-dropdown]')) closeCompanySelectDropdowns();
+        if (!e.target.closest('[data-company-select-dropdown]') && !e.target.closest('[data-company-select-menu]')) closeCompanySelectDropdowns();
+        if (!e.target.closest('[data-responsible-select-dropdown]') && !e.target.closest('[data-responsible-select-menu]')) closeResponsibleSelectDropdowns();
         if (!e.target.closest('[data-directory-share-permission-picker]')) closeDirectorySharePermissionPickers();
         if (!e.target.closest('[data-contact-custom-select]')) closeContactCustomSelects();
         if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
@@ -3301,13 +3607,43 @@ function initTasksPage() {
         });
     }
 
+    const ignoredDirectoryRowClickColumns = new Set(['select', 'action']);
+
+    function getDirectoryRowColumnBounds(row, column) {
+        if (!row) return null;
+        const cells = Array.from(row.children).filter(child => child.dataset?.column);
+        const index = cells.findIndex(child => child.dataset.column === column);
+        if (index === -1) return null;
+
+        const rowRect = row.getBoundingClientRect();
+        const cellRect = cells[index].getBoundingClientRect();
+        const nextCellRect = cells[index + 1]?.getBoundingClientRect();
+
+        return {
+            left: index === 0 ? rowRect.left : cellRect.left,
+            right: nextCellRect ? nextCellRect.left : cellRect.right
+        };
+    }
+
+    function isIgnoredDirectoryColumnClick(event, row) {
+        if (!row || typeof event.clientX !== 'number') return false;
+
+        return Array.from(ignoredDirectoryRowClickColumns).some(column => {
+            const bounds = getDirectoryRowColumnBounds(row, column);
+            return bounds && event.clientX >= bounds.left && event.clientX < bounds.right;
+        });
+    }
+
     function shouldIgnoreRowClick(event, row = null) {
         const cell = event.target.closest('td');
+        const directoryCell = event.target.closest('[data-column]');
         const form = event.target.closest('form');
         const rowForm = row ? row.closest('form') : null;
 
         return event.target.type === 'checkbox'
             || (form && form !== rowForm)
+            || ignoredDirectoryRowClickColumns.has(directoryCell?.dataset.column)
+            || isIgnoredDirectoryColumnClick(event, row)
             || event.target.closest('a, input, button, select, textarea')
             || (cell && cell.querySelector('.task-checkbox'));
     }
@@ -3645,6 +3981,11 @@ function initTasksPage() {
             projectDataset
         );
         setMenuButtonState(
+            editSelectedProjectBarBtn,
+            selectedProjectCheckboxes.length === 1 && checkboxCanManage(selectedProjectCheckbox),
+            projectDataset
+        );
+        setMenuButtonState(
             deleteSelectedProjectMenuBtn,
             allCheckboxesCanManage(selectedProjectCheckboxes),
             projectDataset
@@ -3917,6 +4258,14 @@ function initTasksPage() {
         if (projectRenameDueAtInput) projectRenameDueAtInput.value = selectedProjectCheckbox.dataset.projectDueAt || '';
         if (projectRenameCompanyInput) projectRenameCompanyInput.value = selectedProjectCheckbox.dataset.projectCompanyId || '';
         syncCompanySelectForSelect(projectRenameCompanyInput);
+        if (projectRenameResponsibleInput && selectedProjectCheckbox.dataset.projectResponsibleUserId) {
+            ensureResponsibleSelectOption(projectRenameResponsibleInput, {
+                id: selectedProjectCheckbox.dataset.projectResponsibleUserId,
+                label: selectedProjectCheckbox.dataset.projectResponsibleUserLabel || ''
+            });
+        }
+        if (projectRenameResponsibleInput) projectRenameResponsibleInput.value = selectedProjectCheckbox.dataset.projectResponsibleUserId || '';
+        syncResponsibleSelectForSelect(projectRenameResponsibleInput);
         if (projectRenameCodeValue) projectRenameCodeValue.textContent = selectedProjectCheckbox.dataset.projectCode || '';
         if (projectRenameIconInput) projectRenameIconInput.value = selectedProjectCheckbox.dataset.projectIcon || '';
         syncProjectIconPickers();
@@ -4135,6 +4484,14 @@ function initTasksPage() {
 
     if (editSelectedProjectMenuBtn) {
         editSelectedProjectMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            editSelectedProject();
+        });
+    }
+
+    if (editSelectedProjectBarBtn) {
+        editSelectedProjectBarBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (this.disabled) return;
             editSelectedProject();
@@ -4478,6 +4835,7 @@ function initTasksPage() {
         const defaultDirectoryColumnWidth = 250;
         const defaultDirectoryColumnMinWidth = 50;
         const columnDefaultWidths = {
+            action: 40,
             project_code: 190,
             project: 320,
             section: 320,
@@ -4496,6 +4854,7 @@ function initTasksPage() {
         };
         const columnMinimums = {
             select: 18,
+            action: 40,
             project_code: 150,
             project: 150,
             section: 150,
@@ -4510,7 +4869,7 @@ function initTasksPage() {
             created_at: 112,
             spacer: 0
         };
-        const fixedColumns = new Set(['spacer']);
+        const fixedColumns = new Set(['action', 'spacer']);
         const resizeMediaQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(min-width: 901px)')
             : { matches: true };

@@ -4,12 +4,13 @@ from datetime import date, datetime, timedelta, timezone as datetime_timezone
 
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
 
-from contacts.models import Company
+from contacts.models import Company, SharedItem, UserContact
 from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
@@ -41,6 +42,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
         self.assertEqual(project.description, 'Opis projektu')
+        self.assertIsNone(project.responsible_user)
         self.assertEqual(project.icon, '')
         self.assertNotEqual(project.code, 'PT')
         self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
@@ -51,6 +53,14 @@ class TaskProjectCreationTests(TestCase):
 
     def test_create_project_saves_directory_metadata(self):
         company = Company.objects.create(owner=self.user, name='Ancore Labs')
+        responsible_user = get_user_model().objects.create_user(
+            username='responsible-user',
+            email='responsible@example.com',
+            first_name='Anna',
+            last_name='Projektowa',
+            password='test-pass-123',
+        )
+        UserContact.objects.create(owner=self.user, target_user=responsible_user)
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'create_project',
@@ -60,6 +70,7 @@ class TaskProjectCreationTests(TestCase):
             'priority': 'urgent',
             'due_at': '2026-07-15',
             'company': company.id,
+            'responsible_user': responsible_user.id,
         })
 
         project = TaskProject.objects.get(user=self.user, name='Projekt z metadanymi')
@@ -68,6 +79,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(project.priority, 'urgent')
         self.assertEqual(project.due_at, date(2026, 7, 15))
         self.assertEqual(project.company, company)
+        self.assertEqual(project.responsible_user, responsible_user)
 
     def test_create_project_modal_shows_project_parameters(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -78,8 +90,81 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-inline-priority-icon')
         self.assertContains(response, 'data-inline-select-value="urgent"')
         self.assertContains(response, 'Pilny')
+        self.assertContains(response, 'Odpowiedzialny za projekt')
         self.assertContains(response, 'Kod projektu')
         self.assertContains(response, 'Automatyczny')
+        self.assertContains(response, 'data-responsible-select-url')
+        self.assertContains(response, 'Szukaj lub wpisz ID Ancore')
+        self.assertContains(response, 'Kontakty')
+
+    def test_lookup_responsible_user_returns_ancore_user_payload(self):
+        target = get_user_model().objects.create_user(
+            username='@jan.kowalski',
+            email='jan@example.com',
+            first_name='Jan',
+            last_name='Kowalski',
+            password='test-pass-123',
+        )
+
+        response = self.client.get(reverse('tasks:lookup-responsible-user'), {'q': '@jan.kowalski'})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload['found'])
+        self.assertEqual(payload['user']['id'], target.id)
+        self.assertEqual(payload['user']['label'], 'Jan Kowalski')
+
+    def test_edit_project_accepts_responsible_user_found_by_ancore_id(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt')
+        target = get_user_model().objects.create_user(
+            username='@outside-contact',
+            email='outside@example.com',
+            first_name='Osoba',
+            last_name='Spoza Kontaktow',
+            password='test-pass-123',
+        )
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'edit_project',
+            'project_id': project.id,
+            'name': 'Projekt',
+            'description': '',
+            'priority': 'none',
+            'due_at': '',
+            'company': '',
+            'responsible_user': target.id,
+        })
+
+        project.refresh_from_db()
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertEqual(project.responsible_user, target)
+
+        response = self.client.get(reverse('tasks:tasks'))
+        self.assertContains(response, 'Osoba Spoza Kontaktow')
+        self.assertContains(response, '@outside-contact')
+        self.assertContains(response, 'tasks-responsible-select__avatar')
+
+    def test_project_responsible_dropdown_includes_shared_project_users(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt')
+        shared_user = get_user_model().objects.create_user(
+            username='@shared.user',
+            email='shared@example.com',
+            first_name='Shared',
+            last_name='User',
+            password='test-pass-123',
+        )
+        SharedItem.objects.create(
+            content_type=ContentType.objects.get_for_model(TaskProject),
+            object_id=project.id,
+            shared_by=self.user,
+            shared_with=shared_user,
+            permission='view',
+        )
+
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertContains(response, 'Shared User')
+        self.assertContains(response, '@shared.user')
 
     def test_search_field_is_rendered_in_topbar(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -273,6 +358,7 @@ class TaskProjectCreationTests(TestCase):
             priority='high',
             due_at=date(2026, 7, 15),
             company=company,
+            responsible_user=self.user,
         )
         TaskProject.objects.create(user=self.user, name='Projekt bez ikony', code='PBI', icon='')
         section = TaskSection.objects.create(project=project, title='Plan')
@@ -296,8 +382,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'PRIORYTET')
         self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
         self.assertContains(response, 'KLIENT / FIRMA')
+        self.assertContains(response, 'aria-label="Edytuj projekt"')
         content = response.content.decode()
         expected_columns = [
+            'data-column="action" aria-label="Edytuj projekt"',
             'data-column="project_code">KOD PROJEKTU',
             'data-column="project">PROJEKT',
             'data-column="description">OPIS',
@@ -307,7 +395,7 @@ class TaskProjectCreationTests(TestCase):
             'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
             'data-column="company">KLIENT / FIRMA',
-            'data-column="default_assignee">ODPOWIEDZIALNY ZA ZADANIA',
+            'data-column="default_assignee">ODPOWIEDZIALNY ZA PROJEKT',
             'data-column="created_at">DATA',
         ]
         column_positions = [content.index(column) for column in expected_columns]
@@ -320,14 +408,16 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Wysoki')
         self.assertContains(response, '15.07.2026')
         self.assertContains(response, 'Acme CRM')
+        self.assertContains(response, 'Task User')
         self.assertContains(response, 'tasks-project-progress-fill')
         self.assertContains(response, 'data-project-priority="high"')
         self.assertContains(response, 'data-project-due-at="2026-07-15"')
         self.assertContains(response, f'data-project-company-id="{company.id}"')
+        self.assertContains(response, f'data-project-responsible-user-id="{self.user.id}"')
         self.assertContains(response, 'DATA')
         self.assertContains(response, '07.06.2026')
         self.assertNotContains(response, '7 cze')
-        self.assertContains(response, 'Pracownik', count=2)
+        self.assertContains(response, 'Brak osoby')
 
     def test_project_create_modal_uses_large_task_style_layout(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -496,7 +586,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-column="project_code"', count=3)
         self.assertContains(response, 'data-column="progress"', count=3)
         self.assertContains(response, 'data-column="project_name"', count=3)
-        self.assertContains(response, 'ODPOWIEDZIALNY ZA ZADANIA')
+        self.assertContains(response, 'ODPOWIEDZIALNY ZA GRUPĘ')
         self.assertContains(response, 'DATA')
         self.assertContains(response, 'Frontend')
         self.assertContains(response, 'Prace po stronie UI')
@@ -673,6 +763,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(my_tasks_response, 'id="edit-selected-task-menu-btn"')
         self.assertContains(projects_response, 'id="delete-selected-project-menu-btn"')
         self.assertContains(projects_response, 'id="edit-selected-project-menu-btn"')
+        self.assertContains(projects_response, 'id="edit-selected-project-bar-btn"')
         self.assertContains(projects_response, 'data-select-all-target="projects"')
         self.assertContains(projects_response, 'aria-label="Zaznacz projekt Projekt"')
         self.assertContains(groups_response, 'id="delete-selected-section-menu-btn"')

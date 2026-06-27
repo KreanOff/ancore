@@ -130,7 +130,7 @@ body.app-page-loading .app-loading-overlay {
     min-height: 0;
     background: var(--bg-main);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 15px;
     overflow: hidden;
     background-clip: padding-box;
 }

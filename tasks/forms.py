@@ -1,5 +1,8 @@
 from django import forms
-from contacts.models import Company
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
+from contacts.models import Company, SharedItem, UserContact
 from .models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
 
 
@@ -25,6 +28,46 @@ class MultipleFileInput(forms.ClearableFileInput):
 
 
 DATETIME_LOCAL_INPUT_FORMATS = ['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S']
+
+
+class UserModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.get_full_name() or obj.email or obj.username
+
+
+def project_responsible_queryset(user):
+    if not user:
+        return get_user_model().objects.none()
+
+    contact_user_ids = UserContact.objects.filter(owner=user).values_list('target_user_id', flat=True)
+    project_responsible_user_ids = (
+        TaskProject.objects
+        .filter(user=user, responsible_user__isnull=False)
+        .values_list('responsible_user_id', flat=True)
+    )
+    project_content_type = ContentType.objects.get_for_model(TaskProject)
+    shared_project_user_ids = (
+        SharedItem.objects
+        .filter(
+            shared_by=user,
+            content_type=project_content_type,
+            object_id__in=TaskProject.objects.filter(user=user).values('pk'),
+            shared_with__is_active=True,
+        )
+        .values_list('shared_with_id', flat=True)
+    )
+    return (
+        get_user_model().objects
+        .filter(
+            Q(pk=user.pk)
+            | Q(pk__in=contact_user_ids)
+            | Q(pk__in=project_responsible_user_ids)
+            | Q(pk__in=shared_project_user_ids),
+            is_active=True,
+        )
+        .distinct()
+        .order_by('first_name', 'last_name', 'email')
+    )
 
 
 class TaskForm(forms.ModelForm):
@@ -139,9 +182,34 @@ class TaskForm(forms.ModelForm):
 
 
 class TaskProjectBaseForm(forms.ModelForm):
+    responsible_user = UserModelChoiceField(
+        queryset=get_user_model().objects.none(),
+        required=False,
+        label='Odpowiedzialny za projekt',
+        widget=forms.Select(attrs={
+            'class': 'tasks-inline-select',
+        }),
+    )
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        if 'responsible_user' in self.fields:
+            responsible_users = project_responsible_queryset(user)
+            selected_responsible_id = self.data.get(self.add_prefix('responsible_user')) if self.is_bound else None
+            responsible_filter = Q(pk__in=responsible_users.values('pk'))
+            if selected_responsible_id:
+                responsible_filter |= Q(pk=selected_responsible_id)
+            if self.instance and self.instance.responsible_user_id:
+                responsible_filter |= Q(pk=self.instance.responsible_user_id)
+            responsible_users = (
+                get_user_model().objects
+                .filter(responsible_filter, is_active=True)
+                .distinct()
+                .order_by('first_name', 'last_name', 'email')
+            )
+            self.fields['responsible_user'].queryset = responsible_users
+            self.fields['responsible_user'].empty_label = 'Brak osoby'
         if 'company' in self.fields:
             companies = Company.objects.none()
             if user:
@@ -170,7 +238,7 @@ class TaskProjectForm(TaskProjectBaseForm):
 
     class Meta:
         model = TaskProject
-        fields = ['name', 'section_title', 'description', 'priority', 'due_at', 'company']
+        fields = ['name', 'section_title', 'description', 'priority', 'due_at', 'company', 'responsible_user']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nowy projekt',
@@ -196,13 +264,14 @@ class TaskProjectForm(TaskProjectBaseForm):
             'priority': 'Priorytet',
             'due_at': 'Termin',
             'company': 'Klient / firma',
+            'responsible_user': 'Odpowiedzialny za projekt',
         }
 
 
 class TaskProjectRenameForm(TaskProjectBaseForm):
     class Meta:
         model = TaskProject
-        fields = ['name', 'description', 'priority', 'due_at', 'company']
+        fields = ['name', 'description', 'priority', 'due_at', 'company', 'responsible_user']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa projektu',
@@ -228,6 +297,7 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
             'priority': 'Priorytet',
             'due_at': 'Termin',
             'company': 'Klient / firma',
+            'responsible_user': 'Odpowiedzialny za projekt',
         }
 
 
