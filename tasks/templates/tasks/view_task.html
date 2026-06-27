@@ -322,14 +322,6 @@
                                 {{ task.user.get_full_name|default:task.user.username }}
                             </strong>
                         </div>
-                        {% if can_share_task %}
-                        <div class="tasks-issue-field">
-                            <span class="tasks-issue-field-label">
-                                <span>Udostępnione</span>
-                            </span>
-                            {% include 'tasks/includes/directory_members.html' with item=task item_kind='task' tasks_return_path=tasks_return_path csrf_token=csrf_token cell_class='tasks-issue-share-members' only %}
-                        </div>
-                        {% endif %}
                     </section>
 
                     <section class="tasks-issue-side-section">
@@ -495,8 +487,6 @@
         </form>
     </div>
 </div>
-
-{% include 'tasks/includes/share_modal.html' %}
 
 <div class="tasks-modal tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog">

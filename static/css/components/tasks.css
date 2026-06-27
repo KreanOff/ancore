@@ -438,11 +438,257 @@
     height: 19px;
 }
 
+.tasks-icon-button:hover svg,
+.tasks-icon-button.is-active svg,
+.tasks-directory-column-manager.is-open > .tasks-icon-button svg,
+.tasks-section-actions.is-open [data-section-menu-toggle] svg {
+    color: var(--accent-on-peach);
+    stroke: currentColor;
+}
+
 .tasks-section-actions {
     position: relative;
     display: inline-flex;
     gap: 0.45rem;
     flex-shrink: 0;
+}
+
+.tasks-directory-column-manager {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+.tasks-directory-column-manager.is-open > .tasks-icon-button {
+    background: var(--accent-peach);
+    border-color: var(--accent-peach);
+    color: var(--accent-on-peach);
+}
+
+.tasks-directory-column-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 145;
+    width: 260px;
+    display: none;
+    padding: var(--dropdown-menu-padding);
+    border: 1px solid #dfe3e8;
+    border-radius: var(--dropdown-menu-radius);
+    background: #ffffff;
+    box-shadow: var(--dropdown-menu-shadow);
+}
+
+.tasks-directory-column-manager.is-open .tasks-directory-column-menu {
+    display: block;
+}
+
+.tasks-directory-column-list {
+    max-height: min(360px, 54vh);
+    display: grid;
+    gap: 2px;
+    overflow-y: auto;
+    padding: 0.1rem 0;
+}
+
+.tasks-directory-column-search {
+    height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.35rem;
+    padding: 0 0.55rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background: #f9fafc;
+    color: #687083;
+}
+
+.tasks-directory-column-search svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+}
+
+.tasks-directory-column-search input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #242830;
+    font: inherit;
+    font-size: var(--dropdown-menu-font-size);
+}
+
+.tasks-directory-column-search input::placeholder {
+    color: #8a909a;
+}
+
+.tasks-directory-column-item {
+    min-height: var(--dropdown-menu-item-height);
+    display: grid;
+    grid-template-columns: var(--checkbox-size) minmax(0, 1fr) 20px;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0 0.45rem;
+    border-radius: var(--dropdown-menu-item-radius);
+    color: #2f343d;
+    font-size: var(--dropdown-menu-font-size);
+    font-weight: 600;
+    cursor: grab;
+}
+
+.tasks-directory-column-item:hover,
+.tasks-directory-column-item:focus-within {
+    background: var(--dropdown-menu-highlight-bg);
+    color: var(--dropdown-menu-highlight-color);
+}
+
+.tasks-directory-column-item.is-dragging {
+    opacity: 0.55;
+    cursor: grabbing;
+}
+
+.tasks-directory-column-item input {
+    width: var(--checkbox-size);
+    height: var(--checkbox-size);
+    min-width: var(--checkbox-size);
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--checkbox-border-color);
+    border-radius: 4px;
+    background-color: var(--checkbox-bg);
+    background-image: none;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+    cursor: pointer;
+    transition: border-color 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.tasks-directory-column-item input:hover {
+    border-color: var(--checkbox-hover-border-color);
+}
+
+.tasks-directory-column-item input:checked {
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
+    background-image: var(--checkbox-check-icon);
+}
+
+.tasks-directory-column-item input:focus-visible {
+    outline: none;
+    box-shadow: var(--checkbox-focus-ring);
+}
+
+.tasks-directory-column-item span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-directory-column-drag {
+    width: 20px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    color: #8a909a;
+    cursor: grab;
+}
+
+.tasks-directory-column-drag svg {
+    width: 15px;
+    height: 15px;
+}
+
+.tasks-directory-column-empty {
+    min-height: var(--dropdown-menu-item-height);
+    display: flex;
+    align-items: center;
+    padding: 0 0.45rem;
+    color: #8a909a;
+    font-size: var(--dropdown-menu-font-size);
+    font-weight: 600;
+}
+
+.tasks-directory-column-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-top: 0.45rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid #edf0f3;
+}
+
+.tasks-directory-column-action-group {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.tasks-directory-column-reset,
+.tasks-directory-column-cancel,
+.tasks-directory-column-save {
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.7rem;
+    border-radius: 6px;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.08s ease, border-color 0.08s ease, color 0.08s ease;
+}
+
+.tasks-directory-column-reset {
+    gap: 0.35rem;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #4a505b;
+}
+
+.tasks-directory-column-reset svg {
+    width: 14px;
+    height: 14px;
+}
+
+.tasks-directory-column-reset:hover,
+.tasks-directory-column-reset:focus-visible {
+    background: #f3f5f8;
+    border-color: #dfe3e8;
+}
+
+.tasks-directory-column-cancel {
+    border: 1px solid #dfe3e8;
+    background: #ffffff;
+    color: #4a505b;
+}
+
+.tasks-directory-column-cancel:hover,
+.tasks-directory-column-cancel:focus-visible {
+    background: #f3f5f8;
+    border-color: #cfd5dd;
+}
+
+.tasks-directory-column-save {
+    border: 1px solid var(--accent-peach);
+    background: var(--accent-peach);
+    color: var(--accent-on-peach);
+}
+
+.tasks-directory-column-save:hover,
+.tasks-directory-column-save:focus-visible {
+    box-shadow: 0 2px 6px rgba(92, 95, 193, 0.22);
 }
 
 .tasks-tag-topbar-button {
@@ -2081,6 +2327,136 @@ body.modal-open::before {
 
 .tasks-project-edit-modal__footer {
     justify-content: flex-end;
+}
+
+.tasks-company-select-wrap {
+    width: 100%;
+}
+
+.tasks-company-select-wrap > select {
+    display: none;
+}
+
+.tasks-company-select,
+.tasks-company-select__button {
+    width: 100%;
+}
+
+.tasks-project-create-fields .tasks-company-select__button {
+    height: 38px;
+    padding: 0 0.75rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #23272f;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.tasks-project-create-fields .tasks-company-select__button:hover,
+.tasks-project-create-fields .tasks-company-select.is-open .tasks-company-select__button {
+    border-color: var(--accent-peach);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+}
+
+.tasks-company-select__current-icon,
+.tasks-company-select__empty-icon,
+.tasks-company-select__avatar {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+}
+
+.tasks-company-select__current-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tasks-company-select__empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #eef1f5;
+    color: #6f7785;
+}
+
+.tasks-company-select__empty-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+.tasks-company-select__avatar {
+    border-radius: 6px;
+    font-size: 0.72rem;
+}
+
+.tasks-company-select__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tasks-company-select__menu {
+    width: 400px;
+    min-width: 100%;
+    max-width: calc(100vw - 2rem);
+    max-height: 260px;
+    padding: 0.45rem;
+    overflow-y: auto;
+}
+
+.tasks-company-select__search {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 34px;
+    margin-bottom: 0.35rem;
+    padding: 0 0.6rem;
+    border: 1px solid #dfe3e8;
+    border-radius: 7px;
+    background: #ffffff;
+}
+
+.tasks-company-select__search svg {
+    width: 15px;
+    height: 15px;
+    color: #7d8490;
+}
+
+.tasks-company-select__search input {
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: #23272f;
+    font: inherit;
+}
+
+.tasks-company-select__menu button {
+    width: 100%;
+    min-height: 36px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.tasks-company-select__menu button.is-active {
+    background: #eef0ff;
+    color: #4d50b7;
+}
+
+.tasks-company-select__empty {
+    margin: 0.35rem 0 0;
+    padding: 0.45rem 0.6rem;
+    color: #7d8490;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
 }
 
 .tasks-directory-share-modal {
@@ -6751,6 +7127,12 @@ body.is-resizing-directory-columns {
     overflow-y: auto;
 }
 
+.tasks-company-select .tasks-company-select__menu {
+    width: 400px;
+    min-width: 400px;
+    max-width: calc(100vw - 2rem);
+}
+
 .tasks-issue-dropdown-menu button {
     min-height: 30px;
     gap: 0.5rem;
@@ -7655,12 +8037,11 @@ body.is-resizing-directory-columns {
     --tasks-directory-default-column-width: 250px;
     --tasks-directory-select-width: 18px;
     --tasks-directory-name-width: var(--tasks-directory-default-column-width);
-    --tasks-directory-shared-access-width: 44px;
     --tasks-directory-members-width: var(--tasks-directory-default-column-width);
     --tasks-directory-assignee-width: var(--tasks-directory-default-column-width);
     --tasks-directory-date-width: var(--tasks-directory-default-column-width);
     --tasks-directory-spacer-width: 0px;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
     padding: 0 0 1.25rem;
     overflow: visible;
     background: #ffffff;
@@ -7755,6 +8136,10 @@ body.is-resizing-directory-columns {
     min-width: 0;
 }
 
+.tasks-directory-sheet [hidden] {
+    display: none !important;
+}
+
 .tasks-directory-sheet,
 .tasks-project-sheet {
     --tasks-directory-checkbox-offset: 0;
@@ -7808,35 +8193,32 @@ body.is-resizing-directory-columns {
     padding-left: 0;
 }
 
-.tasks-directory-sheet .tasks-directory-header > [data-column="shared_access"],
-.tasks-directory-sheet .tasks-directory-list .tasks-directory-row > [data-column="shared_access"] {
-    justify-content: center;
-    padding-left: 0;
-}
-
-.tasks-directory-shared-access-cell .tasks-shared-access-badge {
-    margin: 0 auto;
-}
-
 .tasks-directory-spacer-cell {
     display: none;
 }
 
 .tasks-project-sheet {
-    --tasks-project-code-width: var(--tasks-directory-default-column-width);
-    --tasks-project-description-width: var(--tasks-directory-default-column-width);
-    --tasks-project-progress-width: 150px;
-    --tasks-project-due-width: 130px;
-    --tasks-project-count-width: 112px;
-    --tasks-project-priority-width: 132px;
-    --tasks-project-activity-width: 170px;
-    --tasks-project-company-width: 190px;
-    --tasks-directory-grid: var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-company-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+    --tasks-project-code-width: 190px;
+    --tasks-directory-name-width: 320px;
+    --tasks-project-description-width: 320px;
+    --tasks-project-progress-width: 220px;
+    --tasks-project-due-width: 170px;
+    --tasks-project-count-width: 130px;
+    --tasks-project-priority-width: 170px;
+    --tasks-project-activity-width: 210px;
+    --tasks-project-company-width: 220px;
+    --tasks-directory-assignee-width: 230px;
+    --tasks-directory-date-width: 130px;
+    --tasks-directory-grid: var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-company-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
 }
 
 .tasks-project-sheet--selectable {
     --tasks-directory-select-width: 40px;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-company-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-members-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-company-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+}
+
+.tasks-section-sheet.tasks-project-sheet--selectable {
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-company-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
 }
 
 .tasks-project-sheet--selectable .tasks-directory-header,
@@ -7848,13 +8230,17 @@ body.is-resizing-directory-columns {
     min-height: 40px;
 }
 
-.tasks-project-sheet .tasks-directory-header,
+.tasks-project-sheet .tasks-directory-header {
+    min-height: 42px;
+    background: #ffffff;
+}
+
 .tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell {
     min-height: 42px;
     background: #e7e8eb;
 }
 
-.tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="shared_access"]):not([data-column="spacer"]) {
+.tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="spacer"]) {
     justify-content: flex-start;
     text-align: left;
 }
@@ -7870,6 +8256,11 @@ body.is-resizing-directory-columns {
 .tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > [data-column="project"] {
     border-left: 1px solid var(--tasks-directory-column-separator);
     padding-left: 0.75rem;
+}
+
+.tasks-project-sheet--selectable .tasks-directory-header > .is-directory-last-visible,
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > .is-directory-last-visible {
+    border-right: 1px solid var(--tasks-directory-column-separator);
 }
 
 .tasks-project-sheet--selectable .tasks-directory-select-all,
@@ -7910,15 +8301,60 @@ body.is-resizing-directory-columns {
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 0.75rem;
+}
+
+.tasks-project-sheet__company {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tasks-project-sheet__company-avatar,
+.tasks-project-sheet__company-empty-icon {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+}
+
+.tasks-project-sheet__company-avatar {
+    border-radius: 6px;
+    font-size: 0.72rem;
+}
+
+.tasks-project-sheet__company-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tasks-project-sheet__company-empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #eef1f5;
+    color: #6f7785;
+}
+
+.tasks-project-sheet__company-empty-icon svg {
+    width: 15px;
+    height: 15px;
 }
 
 .tasks-project-progress-track {
-    width: 68px;
-    height: 6px;
-    flex: 0 0 68px;
+    min-width: 44px;
+    height: 10px;
+    flex: 1 1 auto;
     border-radius: 999px;
     background: #dfe3e8;
     overflow: hidden;
+}
+
+.tasks-project-sheet__progress > span:last-child {
+    flex: 0 0 auto;
 }
 
 .tasks-project-progress-fill {
@@ -7937,8 +8373,12 @@ body.is-resizing-directory-columns {
 .tasks-project-sheet__priority {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.35rem;
     color: #4f545e;
+}
+
+.tasks-project-sheet__priority .tasks-row-priority {
+    flex: 0 0 22px;
 }
 
 .tasks-project-priority-dot {
@@ -7961,6 +8401,10 @@ body.is-resizing-directory-columns {
     background: #bd4b4b;
 }
 
+.tasks-project-sheet__priority--urgent .tasks-project-priority-dot {
+    background: #dc4b3e;
+}
+
 .tasks-project-sheet__priority--none {
     color: #777d87;
 }
@@ -7971,6 +8415,12 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-project-sheet__company {
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.tasks-project-sheet__company > span:last-child {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -8040,7 +8490,7 @@ body.is-resizing-directory-columns {
     justify-content: center;
 }
 
-.tasks-spreadsheet-sheet .tasks-directory-header > .tasks-directory-sheet__cell:not([data-column="select"]):not([data-column="shared_access"]):not([data-column="spacer"]) {
+.tasks-spreadsheet-sheet .tasks-directory-header > .tasks-directory-sheet__cell:not([data-column="select"]):not([data-column="spacer"]) {
     justify-content: flex-start;
     text-align: left;
 }
@@ -8085,7 +8535,6 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-directory-board .tasks-directory-header > .tasks-directory-header-select,
-.tasks-directory-board .tasks-directory-header > [data-column="shared_access"],
 .tasks-directory-board .tasks-directory-header > [data-column="spacer"] {
     padding-left: 0;
     padding-right: 0;
@@ -8207,6 +8656,13 @@ body.is-resizing-directory-columns {
 
 .tasks-directory-list .tasks-directory-row.checked,
 .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) {
+    background: #e9ebef;
+}
+
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row.checked::before,
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked)::before,
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row.checked > .tasks-project-sheet__cell,
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-project-sheet__cell {
     background: #e9ebef;
 }
 
@@ -8626,7 +9082,7 @@ body.is-resizing-directory-columns {
 
     .tasks-directory-header,
     .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
         column-gap: 0.75rem;
         padding: 0 0.9rem;
     }
@@ -8638,12 +9094,17 @@ body.is-resizing-directory-columns {
 
     .tasks-project-sheet .tasks-directory-header,
     .tasks-project-sheet .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
+        --tasks-directory-grid: var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
     }
 
     .tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-shared-access-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
+    }
+
+    .tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
+    .tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width) var(--tasks-directory-default-column-width);
     }
 
     .tasks-directory-column-resizer {
@@ -8667,17 +9128,13 @@ body.is-resizing-directory-columns {
     .tasks-project-sheet .tasks-directory-header > [data-column="priority"],
     .tasks-project-sheet .tasks-directory-header > [data-column="last_activity"],
     .tasks-project-sheet .tasks-directory-header > [data-column="company"],
-    .tasks-project-sheet .tasks-directory-header > [data-column="shared_access"],
-    .tasks-project-sheet .tasks-directory-header > [data-column="members"],
     .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__code,
     .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__description,
     .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__progress,
     .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__date,
     .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__count,
     .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__priority,
-    .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__company,
-    .tasks-project-sheet .tasks-directory-list .tasks-directory-shared-access-cell,
-    .tasks-project-sheet .tasks-directory-list .tasks-directory-members-menu {
+    .tasks-project-sheet .tasks-directory-list .tasks-project-sheet__company {
         display: flex;
     }
 
@@ -8720,7 +9177,7 @@ body.is-resizing-directory-columns {
     }
 
     .tasks-project-sheet .tasks-directory-list .tasks-directory-row {
-        min-height: 158px;
+        min-height: 136px;
         grid-template-columns: minmax(0, 1fr) 34px 86px;
         grid-template-areas:
             "name shared date"
@@ -8728,8 +9185,7 @@ body.is-resizing-directory-columns {
             "description description description"
             "progress progress progress"
             "tasks priority priority"
-            "due company company"
-            "members members members";
+            "due company company";
     }
 
     .tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
@@ -8740,8 +9196,18 @@ body.is-resizing-directory-columns {
             ". description description description"
             ". progress progress progress"
             ". tasks priority priority"
-            ". due company company"
-            ". members members members";
+            ". due company company";
+    }
+
+    .tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
+        min-height: 128px;
+        grid-template-areas:
+            "check name shared date"
+            ". code code code"
+            ". description description description"
+            ". progress progress progress"
+            ". tasks priority priority"
+            ". due company company";
     }
 
     .tasks-directory-sheet .tasks-directory-list .tasks-directory-row > * + * {

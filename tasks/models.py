@@ -19,6 +19,7 @@ class TaskProject(models.Model):
         ('low', 'Niski'),
         ('medium', 'Średni'),
         ('high', 'Wysoki'),
+        ('urgent', 'Pilny'),
     ]
 
     CODE_LETTERS = string.ascii_uppercase
@@ -94,6 +95,8 @@ class TaskProject(models.Model):
 
 
 class TaskSection(models.Model):
+    PRIORITY_CHOICES = TaskProject.PRIORITY_CHOICES
+
     KIND_CHOICES = [
         ('issues', 'Kwestie'),
         ('components', 'Komponenty'),
@@ -105,6 +108,7 @@ class TaskSection(models.Model):
     project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='sections')
     title = models.CharField(max_length=120)
     description = models.TextField(blank=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
     icon = models.CharField(max_length=64, blank=True, default='')
     order = models.PositiveIntegerField(default=0)

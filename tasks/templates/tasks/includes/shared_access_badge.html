@@ -1,7 +1,0 @@
-{% if item.has_shared_access_badge %}
-<span class="tasks-shared-access-badge tasks-shared-access-badge--{{ item.shared_access_kind|default:'incoming' }} tasks-shared-access-badge--{{ item.shared_access_permission|default:'view' }}{% if compact %} tasks-shared-access-badge--compact{% endif %}"
-      title="{{ item.shared_access_title|default:'Udostępnione' }}"
-      aria-label="{{ item.shared_access_title|default:'Udostępnione' }}">
-    <i data-lucide="{{ item.shared_access_icon|default:'share-2' }}" aria-hidden="true"></i>
-</span>
-{% endif %}

@@ -14,11 +14,7 @@ urlpatterns = [
     path('companies/<int:company_id>/edit/', views.edit_company, name='edit-company'),
     path('companies/<int:company_id>/delete/', views.delete_company, name='delete-company'),
     path('guests/', views.guest_contacts, name='guests'),
-    path('shared/', views.shared_items, name='shared'),
-    path('share/<int:share_id>/remove/', views.remove_share, name='remove-share'),
     path('view-contact/<int:contact_id>/', views.view_contact, name='view-contact'),
     path('view-contact/<int:contact_id>/edit/', views.edit_contact, name='edit-contact'),
-    path('view-contact/<int:contact_id>/share/', views.share_contact, name='share-contact'),
-    path('companies/<int:company_id>/share/', views.share_company, name='share-company'),
     path('delete/<int:contact_id>/', views.delete_contact, name='delete'),
 ]

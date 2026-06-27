@@ -700,10 +700,12 @@ function initTasksPage() {
     const projectRenameIdInput = projectRenameForm ? projectRenameForm.querySelector('[name="project_id"]') : null;
     const sectionCreateTitleInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="title"]') : null;
     const sectionCreateDescriptionInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="description"]') : null;
-    const sectionCreateProjectInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="project_id"]') : null;
+    const sectionCreateProjectInput = sectionCreateForm ? sectionCreateForm.querySelector('input[name="project_id"]') : null;
+    const sectionCreateProjectSelect = sectionCreateForm ? sectionCreateForm.querySelector('[data-section-create-project-select]') : null;
     const sectionCreateIconInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="icon"]') : null;
     const sectionRenameTitleInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="title"]') : null;
     const sectionRenameDescriptionInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="description"]') : null;
+    const sectionRenamePriorityInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="priority"]') : null;
     const sectionRenameIconInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="icon"]') : null;
     const sectionRenameIdInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="section_id"]') : null;
     const issueTitleInput = issueForm ? issueForm.querySelector('[name="title"]') : null;
@@ -1279,7 +1281,9 @@ function initTasksPage() {
 
     function updateSectionCreateSubmitState() {
         if (!sectionCreateSubmitBtn || !sectionCreateTitleInput) return;
-        sectionCreateSubmitBtn.disabled = sectionCreateTitleInput.value.trim().length === 0;
+        const hasTitle = sectionCreateTitleInput.value.trim().length > 0;
+        const hasProject = !sectionCreateProjectSelect || sectionCreateProjectSelect.value.trim().length > 0;
+        sectionCreateSubmitBtn.disabled = !hasTitle || !hasProject;
     }
 
     function updateSectionRenameSubmitState() {
@@ -1423,6 +1427,64 @@ function initTasksPage() {
             dropdown.classList.remove('is-open');
             dropdown.querySelector('[data-inline-select-toggle]')?.setAttribute('aria-expanded', 'false');
         });
+    }
+
+    function closeCompanySelectDropdowns(exceptDropdown = null) {
+        document.querySelectorAll('[data-company-select-dropdown]').forEach(dropdown => {
+            if (dropdown === exceptDropdown) return;
+            dropdown.classList.remove('is-open');
+            dropdown.querySelector('[data-company-select-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function syncCompanySelectDropdown(dropdown) {
+        const select = dropdown?.closest('.tasks-company-select-wrap')?.querySelector('select');
+        if (!select) return;
+
+        const currentValue = select.value || '';
+        const activeButton = Array.from(dropdown.querySelectorAll('[data-company-select-value]')).find(button => button.dataset.companySelectValue === currentValue);
+        const label = dropdown.querySelector('[data-company-select-label]');
+        const currentIcon = dropdown.querySelector('[data-company-select-current-icon]');
+
+        dropdown.querySelectorAll('[data-company-select-value]').forEach(button => {
+            button.classList.toggle('is-active', button.dataset.companySelectValue === currentValue);
+        });
+
+        if (label && activeButton) {
+            label.textContent = activeButton.dataset.companySelectName || activeButton.textContent.trim();
+        }
+
+        if (currentIcon && activeButton) {
+            const activeIcon = activeButton.querySelector('.tasks-company-select__avatar, .tasks-company-select__empty-icon');
+            currentIcon.replaceChildren();
+            if (activeIcon) {
+                currentIcon.appendChild(activeIcon.cloneNode(true));
+            }
+            window.AncoreIcons?.render(currentIcon);
+        }
+    }
+
+    function filterCompanySelectOptions(dropdown) {
+        const input = dropdown?.querySelector('[data-company-select-search]');
+        const empty = dropdown?.querySelector('[data-company-select-empty]');
+        const query = normalizePickerSearch(input?.value || '');
+        let visibleCount = 0;
+
+        dropdown?.querySelectorAll('[data-company-select-value]').forEach(button => {
+            const text = normalizePickerSearch(button.dataset.companySelectSearchText || button.textContent);
+            const isVisible = !query || text.includes(query);
+            button.hidden = !isVisible;
+            if (isVisible) visibleCount += 1;
+        });
+
+        if (empty) {
+            empty.hidden = !query || visibleCount > 0;
+        }
+    }
+
+    function syncCompanySelectForSelect(select) {
+        const dropdown = select?.closest('.tasks-company-select-wrap')?.querySelector('[data-company-select-dropdown]');
+        syncCompanySelectDropdown(dropdown);
     }
 
     const DIRECTORY_SHARE_PERMISSION_META = {
@@ -2024,7 +2086,13 @@ function initTasksPage() {
 
         if (priorityIcon) {
             priorityIcon.innerHTML = getPriorityFilterIconMarkup(currentValue);
+            window.AncoreIcons?.render(priorityIcon);
         }
+    }
+
+    function syncInlineSelectForSelect(select) {
+        const dropdown = select?.closest('.tasks-issue-select-wrap')?.querySelector('[data-inline-select-dropdown]');
+        syncInlineSelectDropdown(dropdown);
     }
 
     function closeIssuePickers(exceptPicker = null) {
@@ -2668,6 +2736,55 @@ function initTasksPage() {
         });
     });
 
+    document.querySelectorAll('[data-company-select-dropdown]').forEach(dropdown => {
+        const select = dropdown.closest('.tasks-company-select-wrap')?.querySelector('select');
+        const toggle = dropdown.querySelector('[data-company-select-toggle]');
+        const search = dropdown.querySelector('[data-company-select-search]');
+
+        syncCompanySelectDropdown(dropdown);
+
+        toggle?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !dropdown.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeStatusFilterMenu();
+            closePriorityFilterMenu();
+            closeIssuePickers();
+            closeInlineSelectDropdowns();
+            closeCompanySelectDropdowns(dropdown);
+            dropdown.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) {
+                filterCompanySelectOptions(dropdown);
+                setTimeout(() => search?.focus(), 30);
+            }
+        });
+
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        search?.addEventListener('input', function() {
+            filterCompanySelectOptions(dropdown);
+        });
+
+        dropdown.querySelectorAll('[data-company-select-value]').forEach(button => {
+            button.addEventListener('click', function() {
+                if (!select) return;
+                select.value = this.dataset.companySelectValue || '';
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                syncCompanySelectDropdown(dropdown);
+                closeCompanySelectDropdowns();
+            });
+        });
+
+        select?.addEventListener('change', function() {
+            syncCompanySelectDropdown(dropdown);
+        });
+    });
+
     initContactCustomSelects();
     initDirectorySharePermissionPickers(directoryShareForm || document);
 
@@ -2833,8 +2950,10 @@ function initTasksPage() {
             if (projectRenameNameInput) projectRenameNameInput.value = button.dataset.projectName || '';
             if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = button.dataset.projectDescription || '';
             if (projectRenamePriorityInput) projectRenamePriorityInput.value = button.dataset.projectPriority || 'none';
+            syncInlineSelectForSelect(projectRenamePriorityInput);
             if (projectRenameDueAtInput) projectRenameDueAtInput.value = button.dataset.projectDueAt || '';
             if (projectRenameCompanyInput) projectRenameCompanyInput.value = button.dataset.projectCompanyId || '';
+            syncCompanySelectForSelect(projectRenameCompanyInput);
             if (projectRenameCodeValue) projectRenameCodeValue.textContent = button.dataset.projectCode || '';
             if (projectRenameIconInput) projectRenameIconInput.value = button.dataset.projectIcon || '';
             syncProjectIconPickers();
@@ -2847,6 +2966,7 @@ function initTasksPage() {
     openSectionCreateButtons.forEach(button => {
         button.addEventListener('click', () => {
             if (sectionCreateProjectInput) sectionCreateProjectInput.value = button.dataset.projectId || '';
+            if (sectionCreateProjectSelect) sectionCreateProjectSelect.value = button.dataset.projectId || '';
             if (sectionCreateTitleInput) sectionCreateTitleInput.value = '';
             if (sectionCreateDescriptionInput) sectionCreateDescriptionInput.value = '';
             if (sectionCreateIconInput) sectionCreateIconInput.value = '';
@@ -2964,6 +3084,7 @@ function initTasksPage() {
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
         if (!e.target.closest('[data-inline-select-dropdown]')) closeInlineSelectDropdowns();
+        if (!e.target.closest('[data-company-select-dropdown]')) closeCompanySelectDropdowns();
         if (!e.target.closest('[data-directory-share-permission-picker]')) closeDirectorySharePermissionPickers();
         if (!e.target.closest('[data-contact-custom-select]')) closeContactCustomSelects();
         if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
@@ -3100,6 +3221,10 @@ function initTasksPage() {
 
     if (sectionCreateTitleInput) {
         sectionCreateTitleInput.addEventListener('input', updateSectionCreateSubmitState);
+        updateSectionCreateSubmitState();
+    }
+    if (sectionCreateProjectSelect) {
+        sectionCreateProjectSelect.addEventListener('change', updateSectionCreateSubmitState);
         updateSectionCreateSubmitState();
     }
 
@@ -3771,6 +3896,7 @@ function initTasksPage() {
         if (sectionRenameIdInput) sectionRenameIdInput.value = selectedSectionCheckbox.dataset.sectionId || '';
         if (sectionRenameTitleInput) sectionRenameTitleInput.value = selectedSectionCheckbox.dataset.sectionTitle || '';
         if (sectionRenameDescriptionInput) sectionRenameDescriptionInput.value = selectedSectionCheckbox.dataset.sectionDescription || '';
+        if (sectionRenamePriorityInput) sectionRenamePriorityInput.value = selectedSectionCheckbox.dataset.sectionPriority || 'none';
         if (sectionRenameIconInput) sectionRenameIconInput.value = selectedSectionCheckbox.dataset.sectionIcon || '';
         syncProjectIconPickers();
         closeSectionActionMenu();
@@ -3787,8 +3913,10 @@ function initTasksPage() {
         if (projectRenameNameInput) projectRenameNameInput.value = selectedProjectCheckbox.dataset.projectName || '';
         if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = selectedProjectCheckbox.dataset.projectDescription || '';
         if (projectRenamePriorityInput) projectRenamePriorityInput.value = selectedProjectCheckbox.dataset.projectPriority || 'none';
+        syncInlineSelectForSelect(projectRenamePriorityInput);
         if (projectRenameDueAtInput) projectRenameDueAtInput.value = selectedProjectCheckbox.dataset.projectDueAt || '';
         if (projectRenameCompanyInput) projectRenameCompanyInput.value = selectedProjectCheckbox.dataset.projectCompanyId || '';
+        syncCompanySelectForSelect(projectRenameCompanyInput);
         if (projectRenameCodeValue) projectRenameCodeValue.textContent = selectedProjectCheckbox.dataset.projectCode || '';
         if (projectRenameIconInput) projectRenameIconInput.value = selectedProjectCheckbox.dataset.projectIcon || '';
         syncProjectIconPickers();
@@ -4193,7 +4321,9 @@ function initTasksPage() {
 
         currentProjectRows().forEach(row => {
             const matchesSearch = rowMatchesSearch(row, searchVal);
-            row.style.display = matchesSearch ? '' : 'none';
+            const rowPriority = row.getAttribute('data-project-priority');
+            const matchesPriority = !priorityVal || rowPriority === priorityVal;
+            row.style.display = (matchesPriority && matchesSearch) ? '' : 'none';
         });
 
         currentSectionRows().forEach(row => {
@@ -4342,20 +4472,23 @@ function initTasksPage() {
     function initDirectoryColumnResize() {
         const boards = document.querySelectorAll('.tasks-directory-board.tasks-directory-sheet, .tasks-directory-board.contacts-directory-sheet');
         const resetButtons = document.querySelectorAll('[data-directory-table-reset]');
+        const columnManagers = document.querySelectorAll('[data-directory-column-manager]');
         if (!boards.length) return;
 
         const defaultDirectoryColumnWidth = 250;
         const defaultDirectoryColumnMinWidth = 50;
         const columnDefaultWidths = {
-            project_code: 170,
-            description: 220,
-            progress: 150,
-            due_at: 130,
-            tasks_count: 112,
-            priority: 132,
-            last_activity: 170,
-            company: 190,
-            shared_access: 50,
+            project_code: 190,
+            project: 320,
+            section: 320,
+            description: 320,
+            progress: 220,
+            due_at: 170,
+            tasks_count: 130,
+            priority: 170,
+            last_activity: 210,
+            company: 220,
+            project_name: 220,
             members: 210,
             default_assignee: 230,
             created_at: 130,
@@ -4363,13 +4496,17 @@ function initTasksPage() {
         };
         const columnMinimums = {
             select: 18,
+            project_code: 150,
+            project: 150,
+            section: 150,
+            description: 150,
             progress: 120,
             due_at: 112,
             tasks_count: 92,
             priority: 112,
             last_activity: 140,
             company: 140,
-            shared_access: 44,
+            default_assignee: 150,
             created_at: 112,
             spacer: 0
         };
@@ -4379,13 +4516,24 @@ function initTasksPage() {
             : { matches: true };
         let activeResize = null;
         const taskDirectoryBoards = Array.from(boards).filter(isUniformDirectoryBoard);
+        const projectDirectoryBoards = taskDirectoryBoards.filter(isProjectDirectoryBoard);
+        const columnManagerDrafts = new WeakMap();
+
+        projectDirectoryBoards.forEach(ensureDirectoryDefaultColumnOrder);
+        initDirectoryColumnManagers();
 
         resetButtons.forEach(button => {
             button.hidden = !taskDirectoryBoards.length;
             if (!taskDirectoryBoards.length) return;
 
             button.addEventListener('click', () => {
+                projectDirectoryBoards.forEach(board => {
+                    removeStoredDirectoryColumnLayout(board);
+                    applyDirectoryColumnLayout(board);
+                });
                 taskDirectoryBoards.forEach(resetDirectoryBoard);
+                renderDirectoryColumnManagers();
+                closeDirectoryColumnManagers();
                 showMessage('Zresetowano ustawienia tabeli', 'success');
             }, pageListenerOptions);
         });
@@ -4396,10 +4544,13 @@ function initTasksPage() {
 
             header.dataset.directoryResizeReady = 'true';
 
-            const cells = getDirectoryHeaderCells(board, header);
-            cells.forEach((cell, index) => {
+            applyDirectoryColumnLayout(board);
+
+            const cells = getDirectoryHeaderCells(board, header, true);
+            cells.forEach(cell => {
                 const column = cell.dataset.column || '';
                 if (!isResizableDirectoryColumn(column)) return;
+                if (cell.querySelector('[data-directory-column-resizer]')) return;
 
                 const handle = document.createElement('button');
                 const label = getDirectoryColumnLabel(cell);
@@ -4412,7 +4563,7 @@ function initTasksPage() {
                 handle.addEventListener('pointerdown', event => {
                     if (event.button !== undefined && event.button !== 0) return;
 
-                    const state = createDirectoryResizeState(board, header, cells, cell, handle, event.clientX);
+                    const state = createDirectoryResizeState(board, header, getDirectoryHeaderCells(board, header), cell, handle, event.clientX);
                     if (!state) return;
 
                     event.preventDefault();
@@ -4443,7 +4594,7 @@ function initTasksPage() {
                         return;
                     }
 
-                    const state = createDirectoryResizeState(board, header, cells, cell, handle, 0);
+                    const state = createDirectoryResizeState(board, header, getDirectoryHeaderCells(board, header), cell, handle, 0);
                     if (!state) return;
 
                     event.preventDefault();
@@ -4460,6 +4611,16 @@ function initTasksPage() {
 
             syncDirectoryResizeGrid(board);
         });
+
+        renderDirectoryColumnManagers();
+
+        if (columnManagers.length) {
+            document.addEventListener('click', event => {
+                if (!event.target.closest('[data-directory-column-manager]')) {
+                    closeDirectoryColumnManagers();
+                }
+            }, pageListenerOptions);
+        }
 
         const syncAllDirectoryResizeGrids = () => {
             boards.forEach(syncDirectoryResizeGrid);
@@ -4557,9 +4718,11 @@ function initTasksPage() {
             }
         }
 
-        function getDirectoryHeaderCells(board, header) {
+        function getDirectoryHeaderCells(board, header, includeHidden = false) {
             return Array.from(header.querySelectorAll('[data-column]')).filter(cell => {
                 return !shouldIgnoreDirectoryColumn(board, cell.dataset.column || '');
+            }).filter(cell => {
+                return includeHidden || !cell.hidden;
             });
         }
 
@@ -4664,7 +4827,7 @@ function initTasksPage() {
                 .filter(Boolean)
                 .join('-') || 'default';
 
-            return `${getDirectoryStorageSegment()}:directoryColumnWidths:v3:${schema}`;
+            return `${getDirectoryStorageSegment()}:directoryColumnWidths:v4:${schema}`;
         }
 
         function isFixedDirectoryColumn(column) {
@@ -4679,8 +4842,19 @@ function initTasksPage() {
             return board.classList.contains('tasks-directory-sheet') && !board.classList.contains('contacts-directory-sheet');
         }
 
+        function isProjectDirectoryBoard(board) {
+            return board.classList.contains('tasks-project-sheet--selectable')
+                && (!board.classList.contains('tasks-section-sheet') || board.classList.contains('tasks-all-groups-sheet'))
+                && !board.classList.contains('tasks-tag-sheet');
+        }
+
         function getDirectoryColumnLabel(cell) {
-            return (cell.textContent || 'kolumny').replace(/\s+/g, ' ').trim().toLowerCase();
+            return (cell?.textContent || 'kolumny').replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+
+        function getDirectoryColumnDisplayLabel(cell) {
+            const label = getDirectoryColumnLabel(cell);
+            return label ? label.charAt(0).toUpperCase() + label.slice(1) : 'Kolumna';
         }
 
         function readStoredDirectoryWidths(cells) {
@@ -4723,6 +4897,7 @@ function initTasksPage() {
             const segment = getDirectoryStorageSegment();
             const keys = new Set([
                 getDirectoryStorageKey(cells),
+                `${segment}:directoryColumnWidths:v3:${schema}`,
                 `${segment}:directoryColumnWidths:${schema}`,
                 `${taskAppSegment}:directoryColumnWidths`
             ]);
@@ -4732,6 +4907,427 @@ function initTasksPage() {
             } catch (error) {
                 // localStorage may be unavailable in private or restricted contexts.
             }
+        }
+
+        function initDirectoryColumnManagers() {
+            if (!columnManagers.length) return;
+
+            columnManagers.forEach(manager => {
+                const board = projectDirectoryBoards[0] || null;
+                const toggle = manager.querySelector('[data-directory-column-manager-toggle]');
+                const search = manager.querySelector('[data-directory-column-manager-search]');
+                const saveButton = manager.querySelector('[data-directory-column-manager-save]');
+                const cancelButton = manager.querySelector('[data-directory-column-manager-cancel]');
+
+                manager.hidden = !board;
+                if (!board || !toggle || manager.dataset.directoryColumnManagerReady === 'true') return;
+
+                manager.dataset.directoryColumnManagerReady = 'true';
+                manager.dataset.directoryColumnManagerBoard = getDirectoryColumnLayoutStorageKey(board);
+
+                toggle.addEventListener('click', event => {
+                    event.stopPropagation();
+                    const willOpen = !manager.classList.contains('is-open');
+                    closeDirectoryColumnManagers(manager);
+                    if (willOpen) {
+                        openDirectoryColumnManager(manager, board);
+                    } else {
+                        closeDirectoryColumnManagers();
+                    }
+                }, pageListenerOptions);
+
+                search?.addEventListener('input', () => {
+                    renderDirectoryColumnManager(manager, board);
+                }, pageListenerOptions);
+
+                search?.addEventListener('keydown', event => {
+                    if (event.key === 'Escape') {
+                        event.stopPropagation();
+                        closeDirectoryColumnManagers();
+                    }
+                }, pageListenerOptions);
+
+                saveButton?.addEventListener('click', () => {
+                    saveDirectoryColumnManager(manager, board);
+                }, pageListenerOptions);
+
+                cancelButton?.addEventListener('click', () => {
+                    closeDirectoryColumnManagers();
+                }, pageListenerOptions);
+            });
+        }
+
+        function renderDirectoryColumnManagers() {
+            columnManagers.forEach(manager => {
+                const board = projectDirectoryBoards[0] || null;
+                manager.hidden = !board;
+                if (board) renderDirectoryColumnManager(manager, board);
+            });
+        }
+
+        function renderDirectoryColumnManager(manager, board) {
+            const list = manager.querySelector('[data-directory-column-manager-list]');
+            if (!list) return;
+
+            const header = board.querySelector('.tasks-directory-header');
+            if (!header) return;
+
+            const draft = getDirectoryColumnManagerDraft(manager, board);
+            const hiddenColumns = new Set(draft.hidden);
+            const searchTerm = getDirectoryColumnManagerSearchTerm(manager);
+            let visibleCount = 0;
+
+            list.innerHTML = '';
+
+            draft.order.forEach(column => {
+                const cell = header.querySelector(`[data-column="${cssEscape(column)}"]`);
+                const item = document.createElement('label');
+                const checkbox = document.createElement('input');
+                const label = document.createElement('span');
+                const drag = document.createElement('span');
+                const displayLabel = getDirectoryColumnDisplayLabel(cell);
+
+                if (searchTerm && !displayLabel.toLowerCase().includes(searchTerm)) {
+                    return;
+                }
+
+                visibleCount += 1;
+
+                item.className = 'tasks-directory-column-item';
+                item.draggable = true;
+                item.dataset.directoryColumnItem = column;
+
+                checkbox.type = 'checkbox';
+                checkbox.checked = !hiddenColumns.has(column);
+                checkbox.dataset.directoryColumnToggle = column;
+                checkbox.setAttribute('aria-label', getDirectoryColumnLabel(cell));
+
+                label.textContent = displayLabel;
+
+                drag.className = 'tasks-directory-column-drag';
+                drag.innerHTML = '<i data-lucide="grip-vertical" aria-hidden="true"></i>';
+
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                item.appendChild(drag);
+                list.appendChild(item);
+
+                checkbox.addEventListener('change', () => {
+                    updateDirectoryColumnDraftVisibility(manager, board, column, checkbox.checked);
+                    renderDirectoryColumnManager(manager, board);
+                }, pageListenerOptions);
+
+                item.addEventListener('dragstart', event => {
+                    item.classList.add('is-dragging');
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', column);
+                }, pageListenerOptions);
+
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('is-dragging');
+                }, pageListenerOptions);
+            });
+
+            if (!visibleCount) {
+                const empty = document.createElement('div');
+                empty.className = 'tasks-directory-column-empty';
+                empty.textContent = 'Brak kolumn';
+                list.appendChild(empty);
+            }
+
+            list.ondragover = event => {
+                const draggingItem = list.querySelector('.tasks-directory-column-item.is-dragging');
+                if (!draggingItem) return;
+
+                event.preventDefault();
+                const afterItem = getDirectoryColumnManagerItemAfterPointer(list, event.clientY);
+                if (afterItem) {
+                    list.insertBefore(draggingItem, afterItem);
+                } else {
+                    list.appendChild(draggingItem);
+                }
+            };
+
+            list.ondrop = event => {
+                const filteredOrder = Array.from(list.querySelectorAll('[data-directory-column-item]'))
+                    .map(item => item.dataset.directoryColumnItem)
+                    .filter(Boolean);
+
+                event.preventDefault();
+                updateDirectoryColumnDraftOrder(manager, board, filteredOrder);
+                renderDirectoryColumnManager(manager, board);
+            };
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        function openDirectoryColumnManager(manager, board) {
+            const toggle = manager.querySelector('[data-directory-column-manager-toggle]');
+            const search = manager.querySelector('[data-directory-column-manager-search]');
+
+            columnManagerDrafts.set(manager, createDirectoryColumnManagerDraft(board));
+            if (search) search.value = '';
+
+            manager.classList.add('is-open');
+            toggle?.setAttribute('aria-expanded', 'true');
+            renderDirectoryColumnManager(manager, board);
+            window.setTimeout(() => search?.focus(), 0);
+        }
+
+        function saveDirectoryColumnManager(manager, board) {
+            const draft = getDirectoryColumnManagerDraft(manager, board);
+
+            writeStoredDirectoryColumnLayout(board, {
+                order: draft.order,
+                hidden: draft.hidden
+            });
+            applyDirectoryColumnLayout(board);
+            syncDirectoryResizeGrid(board);
+            closeDirectoryColumnManagers();
+        }
+
+        function closeDirectoryColumnManagers(exceptManager = null) {
+            columnManagers.forEach(manager => {
+                if (manager === exceptManager) return;
+                manager.classList.remove('is-open');
+                manager.querySelector('[data-directory-column-manager-toggle]')?.setAttribute('aria-expanded', 'false');
+                columnManagerDrafts.delete(manager);
+            });
+        }
+
+        function createDirectoryColumnManagerDraft(board) {
+            return {
+                order: getDirectoryManagedColumns(board),
+                hidden: readStoredDirectoryColumnLayout(board).hidden
+            };
+        }
+
+        function getDirectoryColumnManagerDraft(manager, board) {
+            if (!columnManagerDrafts.has(manager)) {
+                columnManagerDrafts.set(manager, createDirectoryColumnManagerDraft(board));
+            }
+            return columnManagerDrafts.get(manager);
+        }
+
+        function getDirectoryColumnManagerSearchTerm(manager) {
+            return (manager.querySelector('[data-directory-column-manager-search]')?.value || '').trim().toLowerCase();
+        }
+
+        function updateDirectoryColumnDraftVisibility(manager, board, column, isVisible) {
+            const draft = getDirectoryColumnManagerDraft(manager, board);
+            const hidden = new Set(draft.hidden);
+
+            if (isVisible) {
+                hidden.delete(column);
+            } else if (draft.order.filter(item => !hidden.has(item)).length > 1) {
+                hidden.add(column);
+            }
+
+            draft.hidden = Array.from(hidden);
+        }
+
+        function updateDirectoryColumnDraftOrder(manager, board, filteredOrder) {
+            const draft = getDirectoryColumnManagerDraft(manager, board);
+            const filteredSet = new Set(filteredOrder);
+            const untouchedColumns = draft.order.filter(column => !filteredSet.has(column));
+            const nextOrder = [];
+            let insertedFilteredOrder = false;
+
+            draft.order.forEach(column => {
+                if (filteredSet.has(column)) {
+                    if (!insertedFilteredOrder) {
+                        nextOrder.push(...filteredOrder);
+                        insertedFilteredOrder = true;
+                    }
+                    return;
+                }
+                if (untouchedColumns.includes(column)) nextOrder.push(column);
+            });
+
+            draft.order = nextOrder.filter((column, index, columns) => columns.indexOf(column) === index);
+        }
+
+        function getDirectoryManagedColumns(board) {
+            const header = board.querySelector('.tasks-directory-header');
+            if (!header) return [];
+
+            const storedLayout = readStoredDirectoryColumnLayout(board);
+            const defaultColumns = getDirectoryDefaultColumnOrder(board)
+                .filter(column => column && !isDirectoryColumnLayoutFixed(column) && !shouldIgnoreDirectoryColumn(board, column));
+            const defaultSet = new Set(defaultColumns);
+            const orderedColumns = storedLayout.order.filter(column => defaultSet.has(column));
+
+            defaultColumns.forEach(column => {
+                if (!orderedColumns.includes(column)) orderedColumns.push(column);
+            });
+
+            return orderedColumns;
+        }
+
+        function applyDirectoryColumnLayout(board) {
+            if (!isProjectDirectoryBoard(board)) return;
+
+            const header = board.querySelector('.tasks-directory-header');
+            if (!header) return;
+
+            const columns = getDirectoryManagedColumns(board);
+            const hiddenColumns = new Set(readStoredDirectoryColumnLayout(board).hidden);
+            const orderedColumns = ['select', ...columns, 'spacer'];
+
+            [header, ...board.querySelectorAll('.tasks-directory-list .tasks-directory-row')].forEach(row => {
+                const cells = Array.from(row.querySelectorAll(':scope > [data-column]'));
+                const cellsByColumn = new Map(cells.map(cell => [cell.dataset.column || '', cell]));
+
+                orderedColumns.forEach(column => {
+                    const cell = cellsByColumn.get(column);
+                    if (cell) row.appendChild(cell);
+                });
+
+                cells.forEach(cell => {
+                    const column = cell.dataset.column || '';
+                    if (!orderedColumns.includes(column)) row.appendChild(cell);
+                    cell.hidden = hiddenColumns.has(column);
+                });
+
+                markDirectoryLastVisibleColumn(row);
+            });
+        }
+
+        function markDirectoryLastVisibleColumn(row) {
+            const cells = Array.from(row.querySelectorAll(':scope > [data-column]'));
+
+            cells.forEach(cell => cell.classList.remove('is-directory-last-visible'));
+
+            const lastVisibleCell = cells.filter(cell => {
+                const column = cell.dataset.column || '';
+                return column !== 'select' && column !== 'spacer' && !cell.hidden;
+            }).pop();
+
+            lastVisibleCell?.classList.add('is-directory-last-visible');
+        }
+
+        function updateDirectoryColumnVisibility(board, column, isVisible) {
+            const layout = readStoredDirectoryColumnLayout(board);
+            const hidden = new Set(layout.hidden);
+
+            if (isVisible) {
+                hidden.delete(column);
+            } else if (getDirectoryVisibleManagedColumns(board).length > 1) {
+                hidden.add(column);
+            }
+
+            writeStoredDirectoryColumnLayout(board, {
+                order: getDirectoryManagedColumns(board),
+                hidden: Array.from(hidden)
+            });
+            applyDirectoryColumnLayout(board);
+            syncDirectoryResizeGrid(board);
+        }
+
+        function updateDirectoryColumnOrder(board, order) {
+            const validColumns = new Set(getDirectoryManagedColumns(board));
+            const nextOrder = order.filter(column => validColumns.has(column));
+
+            getDirectoryManagedColumns(board).forEach(column => {
+                if (!nextOrder.includes(column)) nextOrder.push(column);
+            });
+
+            writeStoredDirectoryColumnLayout(board, {
+                order: nextOrder,
+                hidden: readStoredDirectoryColumnLayout(board).hidden
+            });
+            applyDirectoryColumnLayout(board);
+            syncDirectoryResizeGrid(board);
+        }
+
+        function getDirectoryVisibleManagedColumns(board) {
+            const hiddenColumns = new Set(readStoredDirectoryColumnLayout(board).hidden);
+            return getDirectoryManagedColumns(board).filter(column => !hiddenColumns.has(column));
+        }
+
+        function getDirectoryColumnManagerItemAfterPointer(list, pointerY) {
+            const items = Array.from(list.querySelectorAll('.tasks-directory-column-item:not(.is-dragging)'));
+
+            return items.reduce((closest, item) => {
+                const box = item.getBoundingClientRect();
+                const offset = pointerY - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset, item };
+                }
+                return closest;
+            }, { offset: Number.NEGATIVE_INFINITY, item: null }).item;
+        }
+
+        function isDirectoryColumnLayoutFixed(column) {
+            return column === 'select' || column === 'spacer';
+        }
+
+        function getDirectoryColumnLayoutStorageKey(board) {
+            const schema = getDirectoryDefaultColumnOrder(board)
+                .map(column => getDirectoryStorageColumn(column))
+                .filter(Boolean)
+                .join('-') || 'default';
+
+            return `${getDirectoryStorageSegment()}:directoryColumnLayout:v2:${schema}`;
+        }
+
+        function ensureDirectoryDefaultColumnOrder(board) {
+            if (board.dataset.directoryDefaultColumnOrder) return;
+
+            const header = board.querySelector('.tasks-directory-header');
+            const columns = header
+                ? Array.from(header.querySelectorAll('[data-column]')).map(cell => cell.dataset.column || '').filter(Boolean)
+                : [];
+
+            board.dataset.directoryDefaultColumnOrder = JSON.stringify(columns);
+        }
+
+        function getDirectoryDefaultColumnOrder(board) {
+            ensureDirectoryDefaultColumnOrder(board);
+
+            try {
+                const columns = JSON.parse(board.dataset.directoryDefaultColumnOrder || '[]');
+                return Array.isArray(columns) ? columns.filter(Boolean) : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function readStoredDirectoryColumnLayout(board) {
+            try {
+                const value = JSON.parse(window.localStorage.getItem(getDirectoryColumnLayoutStorageKey(board)) || '{}');
+                return {
+                    order: Array.isArray(value.order) ? value.order.filter(Boolean) : [],
+                    hidden: Array.isArray(value.hidden) ? value.hidden.filter(Boolean) : []
+                };
+            } catch (error) {
+                return { order: [], hidden: [] };
+            }
+        }
+
+        function writeStoredDirectoryColumnLayout(board, layout) {
+            try {
+                window.localStorage.setItem(getDirectoryColumnLayoutStorageKey(board), JSON.stringify(layout));
+            } catch (error) {
+                // localStorage may be unavailable in private or restricted contexts.
+            }
+        }
+
+        function removeStoredDirectoryColumnLayout(board) {
+            try {
+                window.localStorage.removeItem(getDirectoryColumnLayoutStorageKey(board));
+            } catch (error) {
+                // localStorage may be unavailable in private or restricted contexts.
+            }
+        }
+
+        function cssEscape(value) {
+            if (window.CSS && typeof window.CSS.escape === 'function') {
+                return window.CSS.escape(value);
+            }
+            return String(value).replace(/"/g, '\\"');
         }
     }
 

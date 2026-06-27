@@ -232,9 +232,12 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
 
 
 class TaskSectionForm(forms.ModelForm):
+    def clean_priority(self):
+        return self.cleaned_data.get('priority') or 'none'
+
     class Meta:
         model = TaskSection
-        fields = ['title', 'description']
+        fields = ['title', 'description', 'priority']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
@@ -245,13 +248,22 @@ class TaskSectionForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'priority': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+        }
+        labels = {
+            'priority': 'Priorytet',
         }
 
 
 class TaskSectionRenameForm(forms.ModelForm):
+    def clean_priority(self):
+        return self.cleaned_data.get('priority') or 'none'
+
     class Meta:
         model = TaskSection
-        fields = ['title', 'description']
+        fields = ['title', 'description', 'priority']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
@@ -262,6 +274,12 @@ class TaskSectionRenameForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'priority': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+        }
+        labels = {
+            'priority': 'Priorytet',
         }
 
 

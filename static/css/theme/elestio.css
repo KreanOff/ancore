@@ -561,6 +561,18 @@ body.auth-page,
     background: #ffffff;
 }
 
+.tasks-directory-board .tasks-issue-group:not(.tasks-status-block),
+.tasks-directory-board .tasks-directory-group {
+    background: #ffffff;
+}
+
+.tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) > .tasks-section-list,
+.tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row,
+.tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row:not(.tasks-section-card),
+.tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row > .tasks-project-sheet__cell {
+    background: #ffffff;
+}
+
 .tasks-table .task-row:hover td,
 .tasks-project-row:hover,
 .tasks-section-row:hover,

@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -10,40 +9,17 @@ from django.views.decorators.http import require_GET
 from django.views.decorators.http import require_POST
 
 from accounts.models import normalize_public_username
-from .forms import CompanyForm, CompanyModalForm, ContactForm, ContactModalForm, ShareItemForm
-from .models import Company, CompanyMembership, Contact, ContactActivity, SharedItem, UserContact
-
-
-def _content_type_for(model):
-    return ContentType.objects.get_for_model(model)
-
-
-def _shared_object_ids(user, model, permission=None):
-    filters = {
-        'shared_with': user,
-        'content_type': _content_type_for(model),
-    }
-    if permission:
-        filters['permission'] = permission
-    return SharedItem.objects.filter(**filters).values('object_id')
+from .forms import CompanyForm, CompanyModalForm, ContactForm, ContactModalForm
+from .models import Company, CompanyMembership, Contact, ContactActivity, UserContact
 
 
 def _has_edit_access(user, obj):
     owner = getattr(obj, 'user', None) or getattr(obj, 'owner', None)
-    if owner == user:
-        return True
-    return SharedItem.objects.filter(
-        shared_with=user,
-        content_type=_content_type_for(obj.__class__),
-        object_id=obj.pk,
-        permission='edit',
-    ).exists()
+    return owner == user
 
 
 def _visible_contacts_queryset(user):
-    return Contact.objects.filter(
-        Q(user=user) | Q(pk__in=_shared_object_ids(user, Contact))
-    ).distinct()
+    return Contact.objects.filter(user=user)
 
 
 def _contacts_queryset(user):
@@ -80,9 +56,7 @@ def _contact_users_queryset(user):
 
 
 def _visible_companies_queryset(user):
-    return Company.objects.filter(
-        Q(owner=user) | Q(pk__in=_shared_object_ids(user, Company))
-    ).distinct().order_by('name')
+    return Company.objects.filter(owner=user).order_by('name')
 
 
 def _contacts_navigation_context(user, active_status='all', active_presence='all'):
@@ -119,7 +93,7 @@ def _contacts_navigation_context(user, active_status='all', active_presence='all
         'total_company_count': _visible_companies_queryset(user).count(),
         'total_guest_contact_count': _guest_contacts_queryset(user).count(),
         'total_user_contact_count': UserContact.objects.filter(owner=user).count(),
-        'shared_received_count': SharedItem.objects.filter(shared_with=user).count(),
+        'shared_received_count': 0,
         'active_contact_status': active_status,
         'active_user_presence': active_presence,
         'contact_status_rows': status_rows,
@@ -415,7 +389,6 @@ def _contact_detail_queryset(user):
 def view_contact(request, contact_id):
     contact = get_object_or_404(_contact_detail_queryset(request.user), pk=contact_id)
     can_edit_contact = _has_edit_access(request.user, contact)
-    share_form = ShareItemForm(user=request.user)
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -433,13 +406,8 @@ def view_contact(request, contact_id):
 
     context = {
         'contact': contact,
-        'share_form': share_form,
         'can_edit_contact': can_edit_contact,
-        'contact_shares': SharedItem.objects.filter(
-            content_type=_content_type_for(Contact),
-            object_id=contact.pk,
-            shared_by=request.user,
-        ).select_related('shared_with'),
+        'contact_shares': [],
         'activity_items': contact.activities.select_related('actor'),
         **_contacts_navigation_context(request.user, active_status=contact.status),
     }
@@ -477,13 +445,8 @@ def edit_contact(request, contact_id):
         'contact': contact,
         'form': form,
         'is_edit': True,
-        'share_form': ShareItemForm(user=request.user),
         'can_edit_contact': can_edit_contact,
-        'contact_shares': SharedItem.objects.filter(
-            content_type=_content_type_for(Contact),
-            object_id=contact.pk,
-            shared_by=request.user,
-        ).select_related('shared_with'),
+        'contact_shares': [],
         'activity_items': contact.activities.select_related('actor'),
         **_contacts_navigation_context(request.user, active_status=contact.status),
     }
@@ -636,7 +599,6 @@ def companies(request):
 def view_company(request, company_id):
     company = get_object_or_404(_visible_companies_queryset(request.user), pk=company_id)
     can_edit_company = _has_edit_access(request.user, company)
-    share_form = ShareItemForm(user=request.user)
     company_contacts = _contacts_queryset(request.user).filter(company_record=company)
 
     if request.method == 'POST':
@@ -645,14 +607,9 @@ def view_company(request, company_id):
 
     context = {
         'company': company,
-        'share_form': share_form,
         'can_edit_company': can_edit_company,
         'company_contacts': company_contacts,
-        'company_shares': SharedItem.objects.filter(
-            content_type=_content_type_for(Company),
-            object_id=company.pk,
-            shared_by=request.user,
-        ).select_related('shared_with'),
+        'company_shares': [],
         **_contacts_navigation_context(request.user, active_status='companies'),
     }
     return render(request, 'contacts/view_company.html', context)
@@ -682,14 +639,9 @@ def edit_company(request, company_id):
         'company': company,
         'form': form,
         'is_edit': True,
-        'share_form': ShareItemForm(user=request.user),
         'can_edit_company': can_edit_company,
         'company_contacts': company_contacts,
-        'company_shares': SharedItem.objects.filter(
-            content_type=_content_type_for(Company),
-            object_id=company.pk,
-            shared_by=request.user,
-        ).select_related('shared_with'),
+        'company_shares': [],
         **_contacts_navigation_context(request.user, active_status='companies'),
     }
     return render(request, 'contacts/view_company.html', context)
@@ -702,71 +654,3 @@ def delete_company(request, company_id):
     company.delete()
     messages.success(request, 'Firma usunięta.')
     return redirect('contacts:companies')
-
-
-def _share_object(request, obj, redirect_url):
-    owner = getattr(obj, 'user', None) or getattr(obj, 'owner', None)
-    if owner != request.user:
-        messages.error(request, 'Tylko właściciel może udostępniać ten element.')
-        return redirect(redirect_url)
-
-    form = ShareItemForm(request.POST, user=request.user)
-    if form.is_valid():
-        share, created = SharedItem.objects.update_or_create(
-            content_type=_content_type_for(obj.__class__),
-            object_id=obj.pk,
-            shared_by=request.user,
-            shared_with=form.cleaned_data['shared_with'],
-            defaults={
-                'permission': form.cleaned_data['permission'],
-                'note': form.cleaned_data['note'],
-            },
-        )
-        if created:
-            messages.success(request, 'Udostępniono.')
-        else:
-            messages.success(request, 'Zmieniono ustawienia udostępnienia.')
-    else:
-        messages.error(request, 'Nie udało się udostępnić.')
-
-    return redirect(redirect_url)
-
-
-@login_required
-@require_POST
-def share_contact(request, contact_id):
-    contact = get_object_or_404(Contact, pk=contact_id)
-    return _share_object(request, contact, reverse('contacts:view-contact', args=[contact.pk]))
-
-
-@login_required
-@require_POST
-def share_company(request, company_id):
-    company = get_object_or_404(Company, pk=company_id)
-    return _share_object(request, company, reverse('contacts:view-company', args=[company.pk]))
-
-
-@login_required
-@require_POST
-def remove_share(request, share_id):
-    share = get_object_or_404(SharedItem, pk=share_id, shared_by=request.user)
-    target = share.content_object
-    if isinstance(target, Contact):
-        redirect_url = reverse('contacts:view-contact', args=[target.pk])
-    elif isinstance(target, Company):
-        redirect_url = reverse('contacts:view-company', args=[target.pk])
-    else:
-        redirect_url = reverse('contacts:shared')
-    share.delete()
-    messages.success(request, 'Udostępnienie usunięte.')
-    return redirect(redirect_url)
-
-
-@login_required
-def shared_items(request):
-    shares = SharedItem.objects.filter(shared_with=request.user).select_related('shared_by', 'content_type')
-    context = {
-        'shares': shares,
-        **_contacts_navigation_context(request.user, active_status='shared'),
-    }
-    return render(request, 'contacts/shared_items.html', context)

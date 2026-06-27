@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 
 from accounts.models import normalize_public_username
-from .models import Company, Contact, SharedItem
+from .models import Company, Contact
 
 
 COMPANY_PHOTO_CROP_TYPES = {
@@ -167,7 +167,6 @@ class ContactModalForm(ContactForm):
             'class': 'tasks-inline-input tasks-modal-textarea',
             'rows': 4,
         })
-
     def _lookup_ancore_user(self, login):
         normalized_login = normalize_public_username(login)
         if not normalized_login:
@@ -341,34 +340,3 @@ class CompanyModalForm(CompanyForm):
             'class': 'tasks-inline-input tasks-modal-textarea',
             'rows': 4,
         })
-
-
-class ShareItemForm(forms.ModelForm):
-    shared_with = forms.ModelChoiceField(
-        queryset=get_user_model().objects.none(),
-        label='Udostępnij użytkownikowi',
-        empty_label='Wybierz użytkownika',
-        widget=forms.Select(attrs={'class': 'form-input contacts-custom-select__source'}),
-    )
-
-    class Meta:
-        model = SharedItem
-        fields = ['shared_with', 'permission', 'note']
-        widgets = {
-            'permission': forms.Select(attrs={'class': 'form-input contacts-custom-select__source'}),
-            'note': forms.TextInput(attrs={
-                'placeholder': 'Krótka wiadomość opcjonalnie',
-                'class': 'form-input',
-            }),
-        }
-
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
-        users = get_user_model().objects.filter(is_active=True)
-        if user is not None:
-            users = users.exclude(pk=user.pk)
-        self.fields['shared_with'].queryset = users.order_by('first_name', 'middle_name', 'last_name', 'email')
-
-    def clean_note(self):
-        return (self.cleaned_data.get('note') or '').strip()

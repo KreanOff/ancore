@@ -371,7 +371,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'is-open')
         self.assertContains(response, 'To pole jest wymagane.')
 
-    def test_shared_contact_is_visible_to_recipient(self):
+    def test_legacy_shared_contact_is_not_visible_to_recipient(self):
         contact = Contact.objects.create(
             user=self.owner,
             first_name='Kamil',
@@ -389,10 +389,7 @@ class ContactCollaborationTests(TestCase):
         self.client.force_login(self.other_user)
         response = self.client.get(reverse('contacts:view-contact', args=[contact.pk]))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Kamil')
-        self.assertNotContains(response, 'id="contact-detail-form"')
-        self.assertNotContains(response, 'class="tasks-modal__submit">Zapisz</button>')
+        self.assertEqual(response.status_code, 404)
 
     def test_contact_detail_is_read_only_and_links_to_edit(self):
         contact = Contact.objects.create(
@@ -417,7 +414,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'data-lucide="ellipsis"')
         self.assertContains(response, 'Opcje kontaktu')
         self.assertContains(response, 'Usuń')
-        self.assertContains(response, 'tasks.js?v=20260625-project-select-width')
+        self.assertContains(response, 'tasks.js?v=20260627-company-select-sync')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -548,7 +545,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'tasks-icon-button contacts-actions-menu__toggle')
         self.assertContains(response, 'Opcje firmy')
         self.assertContains(response, 'Usuń')
-        self.assertContains(response, 'tasks.js?v=20260625-project-select-width')
+        self.assertContains(response, 'tasks.js?v=20260627-company-select-sync')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -588,7 +585,7 @@ class ContactCollaborationTests(TestCase):
         response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="company-detail-form"')
-        self.assertContains(response, 'style.css?v=20260625-user-directory-project-sheet')
+        self.assertContains(response, 'style.css?v=20260627-company-column-logo')
         self.assertContains(response, 'profile.js?v=20260614-app-wide-navigation')
         self.assertContains(response, 'contacts-company-modal-title')
         self.assertContains(response, 'contacts-edit-modal is-open')
