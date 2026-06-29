@@ -39,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260627-company-panel-block">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260628-unified-modal-shell">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -115,12 +115,11 @@
     <main class="main-content">
         <div class="page-container {% block page_container_class %}{% endblock %}">
             {% block content %}{% endblock %}
+            <div id="app-page-modals">
+                {% block page_modals %}{% endblock %}
+            </div>
         </div>
     </main>
-
-    <div id="app-page-modals">
-        {% block page_modals %}{% endblock %}
-    </div>
 
     <div id="app-notifications">
         {% if messages %}
@@ -150,7 +149,7 @@
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260627-directory-action-click-guard"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260628-remove-project-client-owner"></script>
     <script src="{% static 'js/profile.js' %}?v=20260614-app-wide-navigation"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>
     <script src="{% static 'js/file-upload.js' %}?v=20260616-task-autosave"></script>

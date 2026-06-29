@@ -112,8 +112,6 @@ function initTasksPage() {
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
     const projectRenamePriorityInput = projectRenameForm ? projectRenameForm.querySelector('[name="priority"]') : null;
     const projectRenameDueAtInput = projectRenameForm ? projectRenameForm.querySelector('[name="due_at"]') : null;
-    const projectRenameCompanyInput = projectRenameForm ? projectRenameForm.querySelector('[name="company"]') : null;
-    const projectRenameResponsibleInput = projectRenameForm ? projectRenameForm.querySelector('[name="responsible_user"]') : null;
     const projectRenameCodeValue = document.getElementById('project-rename-code');
 
     const taskAppSegment = window.location.pathname.split('/').filter(Boolean)[0] === 'kanban' ? 'kanban' : 'tasks';
@@ -1499,15 +1497,23 @@ function initTasksPage() {
         const menu = getCompanySelectMenu(dropdown);
         const input = menu?.querySelector('[data-company-select-search]');
         const empty = menu?.querySelector('[data-company-select-empty]');
+        const table = menu?.querySelector('.tasks-company-select__table');
         const query = normalizePickerSearch(input?.value || '');
+        const select = dropdown?.closest('.tasks-company-select-wrap')?.querySelector('select');
+        const currentValue = select?.value || '';
         let visibleCount = 0;
 
         menu?.querySelectorAll('[data-company-select-value]').forEach(button => {
             const text = normalizePickerSearch(button.dataset.companySelectSearchText || button.textContent);
-            const isVisible = !query || text.includes(query);
+            const isSelectedCompany = !query && currentValue && button.dataset.companySelectValue === currentValue;
+            const isVisible = isSelectedCompany || (Boolean(query) && text.includes(query));
             button.hidden = !isVisible;
             if (isVisible) visibleCount += 1;
         });
+
+        if (table) {
+            table.hidden = visibleCount === 0;
+        }
 
         if (empty) {
             empty.hidden = !query || visibleCount > 0;
@@ -1654,11 +1660,23 @@ function initTasksPage() {
     function filterResponsibleSelectOptions(dropdown) {
         const menu = getResponsibleSelectMenu(dropdown);
         const input = menu?.querySelector('[data-responsible-select-search]');
+        const table = menu?.querySelector('.tasks-responsible-select__table');
         const query = normalizePickerSearch(input?.value || '');
+        const select = dropdown?.closest('.tasks-responsible-select-wrap')?.querySelector('select');
+        const currentValue = select?.value || '';
+        let visibleCount = 0;
+
         menu?.querySelectorAll('[data-responsible-select-value]').forEach(button => {
             const text = normalizePickerSearch(button.dataset.responsibleSelectSearchText || button.textContent);
-            button.hidden = !query || !text.includes(query);
+            const isSelectedPerson = !query && currentValue && button.dataset.responsibleSelectValue === currentValue;
+            const isVisible = isSelectedPerson || (Boolean(query) && text.includes(query));
+            button.hidden = !isVisible;
+            if (isVisible) visibleCount += 1;
         });
+
+        if (table) {
+            table.hidden = visibleCount === 0;
+        }
     }
 
     function syncResponsibleSelectForSelect(select) {
@@ -2938,6 +2956,7 @@ function initTasksPage() {
             menu?.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
             if (isOpen) {
+                if (search) search.value = '';
                 filterCompanySelectOptions(dropdown);
                 setTimeout(() => search?.focus(), 30);
             }
@@ -2956,9 +2975,10 @@ function initTasksPage() {
         });
 
         menu?.querySelectorAll('[data-company-select-value]').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(e) {
                 if (!select) return;
-                select.value = this.dataset.companySelectValue || '';
+                const clearTarget = e.target.closest('[data-company-select-clear]');
+                select.value = clearTarget && this.classList.contains('is-active') ? '' : this.dataset.companySelectValue || '';
                 select.dispatchEvent(new Event('change', { bubbles: true }));
                 syncCompanySelectDropdown(dropdown);
                 closeCompanySelectDropdowns();
@@ -3036,6 +3056,7 @@ function initTasksPage() {
             menu?.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
             if (isOpen) {
+                if (search) search.value = '';
                 setResponsibleSelectDraft(dropdown, select?.value || '');
                 filterResponsibleSelectOptions(dropdown);
                 setResponsibleSelectStatus(dropdown);
@@ -3249,16 +3270,6 @@ function initTasksPage() {
             if (projectRenamePriorityInput) projectRenamePriorityInput.value = button.dataset.projectPriority || 'none';
             syncInlineSelectForSelect(projectRenamePriorityInput);
             if (projectRenameDueAtInput) projectRenameDueAtInput.value = button.dataset.projectDueAt || '';
-            if (projectRenameCompanyInput) projectRenameCompanyInput.value = button.dataset.projectCompanyId || '';
-            syncCompanySelectForSelect(projectRenameCompanyInput);
-            if (projectRenameResponsibleInput && button.dataset.projectResponsibleUserId) {
-                ensureResponsibleSelectOption(projectRenameResponsibleInput, {
-                    id: button.dataset.projectResponsibleUserId,
-                    label: button.dataset.projectResponsibleUserLabel || ''
-                });
-            }
-            if (projectRenameResponsibleInput) projectRenameResponsibleInput.value = button.dataset.projectResponsibleUserId || '';
-            syncResponsibleSelectForSelect(projectRenameResponsibleInput);
             if (projectRenameCodeValue) projectRenameCodeValue.textContent = button.dataset.projectCode || '';
             if (projectRenameIconInput) projectRenameIconInput.value = button.dataset.projectIcon || '';
             syncProjectIconPickers();
@@ -3972,8 +3983,7 @@ function initTasksPage() {
             projectCode: selectedProjectCheckbox?.dataset.projectCode || '',
             projectIcon: selectedProjectCheckbox?.dataset.projectIcon || '',
             projectPriority: selectedProjectCheckbox?.dataset.projectPriority || 'none',
-            projectDueAt: selectedProjectCheckbox?.dataset.projectDueAt || '',
-            projectCompanyId: selectedProjectCheckbox?.dataset.projectCompanyId || ''
+            projectDueAt: selectedProjectCheckbox?.dataset.projectDueAt || ''
         };
         setMenuButtonState(
             editSelectedProjectMenuBtn,
@@ -4256,16 +4266,6 @@ function initTasksPage() {
         if (projectRenamePriorityInput) projectRenamePriorityInput.value = selectedProjectCheckbox.dataset.projectPriority || 'none';
         syncInlineSelectForSelect(projectRenamePriorityInput);
         if (projectRenameDueAtInput) projectRenameDueAtInput.value = selectedProjectCheckbox.dataset.projectDueAt || '';
-        if (projectRenameCompanyInput) projectRenameCompanyInput.value = selectedProjectCheckbox.dataset.projectCompanyId || '';
-        syncCompanySelectForSelect(projectRenameCompanyInput);
-        if (projectRenameResponsibleInput && selectedProjectCheckbox.dataset.projectResponsibleUserId) {
-            ensureResponsibleSelectOption(projectRenameResponsibleInput, {
-                id: selectedProjectCheckbox.dataset.projectResponsibleUserId,
-                label: selectedProjectCheckbox.dataset.projectResponsibleUserLabel || ''
-            });
-        }
-        if (projectRenameResponsibleInput) projectRenameResponsibleInput.value = selectedProjectCheckbox.dataset.projectResponsibleUserId || '';
-        syncResponsibleSelectForSelect(projectRenameResponsibleInput);
         if (projectRenameCodeValue) projectRenameCodeValue.textContent = selectedProjectCheckbox.dataset.projectCode || '';
         if (projectRenameIconInput) projectRenameIconInput.value = selectedProjectCheckbox.dataset.projectIcon || '';
         syncProjectIconPickers();

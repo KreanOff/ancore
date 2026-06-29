@@ -16,9 +16,9 @@ from django.contrib import messages
 import json
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
-from contacts.models import Company, SharedItem, SharedItemLink, UserContact
+from contacts.models import SharedItem, SharedItemLink, UserContact
 from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
-from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm, project_responsible_queryset
+from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
 
 def _mark_task_row_access(tasks, user):
@@ -544,9 +544,6 @@ def _decorate_directory_members(projects, current_user=None):
                 {'user': project.user, 'role': 'Właściciel', 'permission': 'owner'},
             ],
         )
-        project.responsible_user_label = _user_display_name(project.responsible_user) if project.responsible_user else ''
-        project.responsible_user_avatar = account_avatar(project.responsible_user) if project.responsible_user else None
-
         for section in project.sections.all():
             section.can_manage = can_manage_project
             section.can_share = False
@@ -748,32 +745,6 @@ def _resolve_share_target(user, query):
         return exact_user, ''
 
     return None, 'Nie znaleziono aktywnego użytkownika po ID Ancore.'
-
-
-@login_required
-def lookup_responsible_user(request):
-    ancore_id = normalize_public_username(request.GET.get('q') or request.GET.get('login') or '')
-    if not ancore_id:
-        return JsonResponse({'found': False, 'message': 'Wpisz ID Ancore.'})
-
-    target = (
-        get_user_model().objects
-        .filter(is_active=True, username__iexact=ancore_id)
-        .first()
-    )
-    if target is None:
-        return JsonResponse({'found': False, 'message': 'Nie znaleziono osoby po ID Ancore.'})
-
-    return JsonResponse({
-        'found': True,
-        'user': {
-            'id': target.id,
-            'label': _user_display_name(target),
-            'username': target.username,
-            'email': target.email,
-            'avatar': account_avatar(target),
-        },
-    })
 
 
 def _share_query_from_request(request):
@@ -1502,8 +1473,6 @@ def _tasks_page(request, active_section=None):
         'project_form': project_form,
         'project_rename_form': project_rename_form,
         'project_rename_project_id': project_rename_project_id,
-        'project_company_options': Company.objects.filter(owner=request.user).order_by('name'),
-        'project_responsible_options': project_responsible_queryset(request.user),
         'section_form': section_form,
         'tag_form': tag_form,
         'section_create_modal_open': section_create_modal_open,

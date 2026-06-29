@@ -1087,6 +1087,99 @@
     color: #4c5565;
 }
 
+.page-container.full-width .profile-edit-overlay {
+    --profile-edit-back-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 19-7-7 7-7'/%3E%3Cpath d='M19 12H5'/%3E%3C/svg%3E");
+    position: absolute;
+    inset: 0;
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+    background: #ffffff;
+}
+
+.page-container.full-width .profile-edit-dialog {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.page-container.full-width .profile-edit-header {
+    min-height: 50px;
+    justify-content: flex-start;
+    gap: 0.625rem;
+    padding: 0 20px;
+    background: #ffffff;
+}
+
+.page-container.full-width .profile-edit-header > div {
+    min-width: 0;
+}
+
+.page-container.full-width .profile-edit-header h2 {
+    color: #4e535d;
+    overflow: hidden;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.page-container.full-width .profile-edit-header p {
+    display: none;
+}
+
+.page-container.full-width .profile-edit-close {
+    order: -1;
+    width: 30px;
+    height: 30px;
+    margin-right: 0.35rem;
+    padding: 0 0.95rem 0 0;
+    border-right: 1px solid #eceff3;
+    border-radius: 6px 0 0 6px;
+    color: #4e535d;
+    box-sizing: content-box;
+}
+
+.page-container.full-width .profile-edit-close:hover,
+.page-container.full-width .profile-edit-close:focus-visible {
+    background: transparent;
+    color: #20242b;
+}
+
+.page-container.full-width .profile-edit-close svg {
+    display: none;
+}
+
+.page-container.full-width .profile-edit-close::before {
+    content: "";
+    width: 18px;
+    height: 18px;
+    display: block;
+    background: currentColor;
+    -webkit-mask: var(--profile-edit-back-icon) center / contain no-repeat;
+    mask: var(--profile-edit-back-icon) center / contain no-repeat;
+}
+
+.page-container.full-width .profile-edit-body {
+    padding: 20px;
+}
+
+.page-container.full-width .profile-edit-footer {
+    min-height: 50px;
+    align-items: center;
+    padding: 0 20px;
+    background: #ffffff;
+}
+
+.page-container.full-width .profile-edit-footer .btn,
+.page-container.full-width .profile-edit-footer button {
+    min-height: 36px;
+}
+
 @media (max-width: 768px) {
     .profile-name-fields {
         grid-template-columns: 1fr;

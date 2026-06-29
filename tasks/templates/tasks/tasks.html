@@ -96,7 +96,7 @@
                             <i data-lucide="ellipsis" aria-hidden="true"></i>
                         </button>
                         <div class="tasks-project-menu" role="menu">
-                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-responsible-user-label="{{ project.responsible_user_label|default:''|escape }}">
+                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}">
                                 <i data-lucide="pencil" aria-hidden="true"></i>
                                 Edytuj projekt
                             </button>
@@ -388,14 +388,13 @@
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">ZADANIA</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">PRIORYTET</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">OSTATNIA AKTYWNOŚĆ</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">KLIENT / FIRMA</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA GRUPĘ</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at">DATA</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-section-list tasks-directory-list" aria-label="Lista grup projektu">
                 {% for section in active_project.sections.all %}
-                <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }} {{ active_project.company.name|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
+                <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
                     <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">
                         <span class="tasks-row-title-main">
@@ -422,15 +421,6 @@
                     </span>
                     <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
                         {% if section.last_activity_at %}{{ section.last_activity_at|date:"d.m.Y H:i" }}{% else %}<span class="tasks-project-sheet__muted">Brak aktywności</span>{% endif %}
-                    </span>
-                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">
-                        {% if active_project.company %}
-                        {% include 'contacts/includes/company_avatar.html' with company=active_project.company avatar_class='tasks-project-sheet__company-avatar' only %}
-                        <span>{{ active_project.company.name }}</span>
-                        {% else %}
-                        <span class="tasks-project-sheet__company-empty-icon" aria-hidden="true"><i data-lucide="building-2"></i></span>
-                        <span class="tasks-project-sheet__muted">Brak firmy</span>
-                        {% endif %}
                     </span>
                     <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
@@ -533,7 +523,7 @@
                 </div>
                 <div class="tasks-issue-list tasks-section-list tasks-directory-list" aria-label="Lista grup">
                 {% for section in all_sections %}
-                <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }} {{ section.project.company.name|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
+                <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
                     <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">
                         <span class="tasks-row-title-main">
@@ -631,17 +621,15 @@
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">ZADANIA</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">PRIORYTET</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">OSTATNIA AKTYWNOŚĆ</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">KLIENT / FIRMA</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">ODPOWIEDZIALNY ZA PROJEKT</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at">DATA</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista projektów">
                 {% for project in projects %}
-                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} {{ project.get_priority_display|default:'' }} {{ project.company.name|default:'' }} {{ project.responsible_user_label|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-responsible-user-label="{{ project.responsible_user_label|default:''|escape }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}">
-                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz projekt {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-responsible-user-label="{{ project.responsible_user_label|default:''|escape }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}">
+                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} {{ project.get_priority_display|default:'' }}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz projekt {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}">
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
-                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj projekt" aria-label="Edytuj projekt {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-responsible-user-label="{{ project.responsible_user_label|default:''|escape }}">
+                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj projekt" aria-label="Edytuj projekt {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}">
                             <i data-lucide="pencil" aria-hidden="true"></i>
                         </button>
                     </span>
@@ -670,24 +658,6 @@
                     </span>
                     <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
                         {% if project.last_activity_at %}{{ project.last_activity_at|date:"d.m.Y H:i" }}{% else %}<span class="tasks-project-sheet__muted">Brak aktywności</span>{% endif %}
-                    </span>
-                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">
-                        {% if project.company %}
-                        {% include 'contacts/includes/company_avatar.html' with company=project.company avatar_class='tasks-project-sheet__company-avatar' only %}
-                        <span>{{ project.company.name }}</span>
-                        {% else %}
-                        <span class="tasks-project-sheet__company-empty-icon" aria-hidden="true"><i data-lucide="building-2"></i></span>
-                        <span class="tasks-project-sheet__muted">Brak firmy</span>
-                        {% endif %}
-                    </span>
-                    <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">
-                        {% if project.responsible_user_avatar %}
-                        {% include 'accounts/includes/user_avatar.html' with avatar=project.responsible_user_avatar avatar_class='tasks-project-sheet__assignee-avatar' only %}
-                        <span>{{ project.responsible_user_label }}</span>
-                        {% else %}
-                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
-                        <span class="tasks-project-sheet__muted">Brak osoby</span>
-                        {% endif %}
                     </span>
                     <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ project.created_at|date:"d.m.Y" }}</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
@@ -813,130 +783,9 @@
                             {{ project_form.due_at }}
                         </label>
                         <label>
-                            <span>Klient / firma</span>
-                            <div class="tasks-issue-select-wrap tasks-company-select-wrap">
-                                {{ project_form.company }}
-                                <div class="tasks-filter-dropdown tasks-issue-dropdown tasks-company-select" data-company-select-dropdown="project-create-company">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button tasks-company-select__button" aria-haspopup="menu" aria-expanded="false" data-company-select-toggle>
-                                        <span class="tasks-company-select__current-icon" aria-hidden="true" data-company-select-current-icon></span>
-                                        <span data-company-select-label>Brak firmy</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </label>
-                        <label>
-                            <span>Odpowiedzialny za projekt</span>
-                            <div class="tasks-responsible-select-wrap" data-responsible-select-url="{% url 'tasks:lookup-responsible-user' %}">
-                                {{ project_form.responsible_user }}
-                                <div class="tasks-filter-dropdown tasks-issue-dropdown tasks-responsible-select" data-responsible-select-dropdown="project-create-responsible">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button tasks-responsible-select__button" aria-haspopup="menu" aria-expanded="false" data-responsible-select-toggle>
-                                        <span class="tasks-responsible-select__current-icon" aria-hidden="true" data-responsible-select-current-icon><i data-lucide="user"></i></span>
-                                        <span data-responsible-select-label>Brak osoby</span>
-                                    </button>
-                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu tasks-responsible-select__menu" role="menu" aria-label="Wybierz osobę odpowiedzialną">
-                                        <div class="tasks-responsible-select__search">
-                                            <i data-lucide="search" aria-hidden="true"></i>
-                                            <input type="search" placeholder="Szukaj lub wpisz ID Ancore" aria-label="Szukaj lub wpisz ID Ancore" data-responsible-select-search>
-                                        </div>
-                                        <div class="tasks-responsible-select__table" role="presentation">
-                                            <div class="tasks-responsible-select__table-head" role="presentation">
-                                                <span>Osoba</span>
-                                                <span>Wybór</span>
-                                            </div>
-                                            <button type="button" role="menuitemradio" aria-checked="false" data-responsible-select-value="" data-responsible-select-name="Brak osoby" data-responsible-select-search-text="brak osoby">
-                                                <span class="tasks-responsible-select__person">
-                                                    <span class="tasks-responsible-select__empty-icon" aria-hidden="true"><i data-lucide="user-x"></i></span>
-                                                    <span class="tasks-responsible-select__name">Brak osoby</span>
-                                                    <span class="tasks-responsible-select__username"></span>
-                                                </span>
-                                                <span class="tasks-responsible-select__check" aria-hidden="true"></span>
-                                            </button>
-                                            {% for responsible_user in project_responsible_options %}
-                                            {% user_avatar responsible_user as responsible_avatar %}
-                                            <button type="button" role="menuitemradio" aria-checked="false" data-responsible-select-value="{{ responsible_user.id }}" data-responsible-select-name="{{ responsible_user.get_full_name|default:responsible_user.email|escape }}" data-responsible-select-username="{{ responsible_user.username|escape }}" data-responsible-select-search-text="{{ responsible_user.get_full_name|default:responsible_user.email|lower|escape }} {{ responsible_user.username|lower|escape }}">
-                                                <span class="tasks-responsible-select__person">
-                                                    {% include 'accounts/includes/user_avatar.html' with avatar=responsible_avatar avatar_class='tasks-responsible-select__avatar' only %}
-                                                    <span class="tasks-responsible-select__identity">
-                                                        <span class="tasks-responsible-select__name">{{ responsible_user.get_full_name|default:responsible_user.email }}</span>
-                                                        <span class="tasks-responsible-select__username">{{ responsible_user.username }}</span>
-                                                    </span>
-                                                </span>
-                                                <span class="tasks-responsible-select__check" aria-hidden="true"></span>
-                                            </button>
-                                            {% endfor %}
-                                        </div>
-                                        <p class="tasks-responsible-select__status" data-responsible-select-status aria-live="polite"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </label>
-                        <label>
                             <span>Kod projektu</span>
                             <span class="tasks-project-create-code" aria-label="Kod projektu zostanie nadany automatycznie">Automatyczny</span>
                         </label>
-                        <div class="tasks-responsible-select__menu tasks-responsible-select__panel" role="menu" aria-label="Wybierz osobę odpowiedzialną" data-responsible-select-menu="project-create-responsible">
-                            <div class="tasks-responsible-select__search">
-                                <i data-lucide="search" aria-hidden="true"></i>
-                                <input type="search" placeholder="Szukaj lub wpisz ID Ancore" aria-label="Szukaj lub wpisz ID Ancore" data-responsible-select-search>
-                            </div>
-                            <div class="tasks-responsible-select__table" role="presentation">
-                                <div class="tasks-responsible-select__table-head" role="presentation">
-                                    <span>Osoba</span>
-                                    <span>Wybór</span>
-                                </div>
-                                <button type="button" role="menuitemradio" aria-checked="false" data-responsible-select-value="" data-responsible-select-name="Brak osoby" data-responsible-select-search-text="brak osoby">
-                                    <span class="tasks-responsible-select__person">
-                                        <span class="tasks-responsible-select__empty-icon" aria-hidden="true"><i data-lucide="user-x"></i></span>
-                                        <span class="tasks-responsible-select__name">Brak osoby</span>
-                                        <span class="tasks-responsible-select__username"></span>
-                                    </span>
-                                    <span class="tasks-responsible-select__check" aria-hidden="true"></span>
-                                </button>
-                                {% for responsible_user in project_responsible_options %}
-                                {% user_avatar responsible_user as responsible_avatar %}
-                                <button type="button" role="menuitemradio" aria-checked="false" data-responsible-select-value="{{ responsible_user.id }}" data-responsible-select-name="{{ responsible_user.get_full_name|default:responsible_user.email|escape }}" data-responsible-select-username="{{ responsible_user.username|escape }}" data-responsible-select-search-text="{{ responsible_user.get_full_name|default:responsible_user.email|lower|escape }} {{ responsible_user.username|lower|escape }}">
-                                    <span class="tasks-responsible-select__person">
-                                        {% include 'accounts/includes/user_avatar.html' with avatar=responsible_avatar avatar_class='tasks-responsible-select__avatar' only %}
-                                        <span class="tasks-responsible-select__identity">
-                                            <span class="tasks-responsible-select__name">{{ responsible_user.get_full_name|default:responsible_user.email }}</span>
-                                            <span class="tasks-responsible-select__username">{{ responsible_user.username }}</span>
-                                        </span>
-                                    </span>
-                                    <span class="tasks-responsible-select__check" aria-hidden="true"></span>
-                                </button>
-                                {% endfor %}
-                            </div>
-                            <p class="tasks-responsible-select__status" data-responsible-select-status aria-live="polite"></p>
-                        </div>
-                        <div class="tasks-company-select__menu tasks-company-select__panel" role="menu" aria-label="Wybierz firmę" data-company-select-menu="project-create-company">
-                            <div class="tasks-company-select__search">
-                                <i data-lucide="search" aria-hidden="true"></i>
-                                <input type="search" placeholder="Szukaj firmy" aria-label="Szukaj firmy" data-company-select-search>
-                            </div>
-                            <div class="tasks-company-select__table" role="presentation">
-                                <div class="tasks-company-select__table-head" role="presentation">
-                                    <span>Firma</span>
-                                    <span>Wybór</span>
-                                </div>
-                                <button type="button" role="menuitem" data-company-select-value="" data-company-select-name="Brak firmy" data-company-select-search-text="brak firmy">
-                                    <span class="tasks-company-select__company">
-                                        <span class="tasks-company-select__empty-icon" aria-hidden="true"><i data-lucide="building-2"></i></span>
-                                        <span>Brak firmy</span>
-                                    </span>
-                                    <span class="tasks-company-select__check" aria-hidden="true"></span>
-                                </button>
-                                {% for company in project_company_options %}
-                                <button type="button" role="menuitem" data-company-select-value="{{ company.id }}" data-company-select-name="{{ company.name|escape }}" data-company-select-search-text="{{ company.name|lower|escape }}">
-                                    <span class="tasks-company-select__company">
-                                        {% include 'contacts/includes/company_avatar.html' with company=company avatar_class='tasks-company-select__avatar' only %}
-                                        <span>{{ company.name }}</span>
-                                    </span>
-                                    <span class="tasks-company-select__check" aria-hidden="true"></span>
-                                </button>
-                                {% endfor %}
-                            </div>
-                            <p class="tasks-company-select__empty" data-company-select-empty hidden>Brak wyników</p>
-                        </div>
                     </div>
                 </section>
             </div>
@@ -956,7 +805,9 @@
             <input type="hidden" name="project_id" value="{{ project_rename_project_id }}">
             <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
-                    <strong id="project-rename-modal-title">Edytuj projekt</strong>
+                    <strong class="tasks-project-edit-modal__title-chip" id="project-rename-modal-title">
+                        <span>Edytuj projekt</span>
+                    </strong>
                 </div>
                 <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
                     <i data-lucide="x" aria-hidden="true"></i>
@@ -1013,144 +864,9 @@
                             <input type="date" id="project-rename-due-at" name="due_at" class="tasks-inline-input" value="{{ project_rename_form.due_at.value|date:'Y-m-d' }}">
                         </label>
                         <label>
-                            <span>Klient / firma</span>
-                            <div class="tasks-issue-select-wrap tasks-company-select-wrap">
-                                <select id="project-rename-company" name="company" class="tasks-inline-select">
-                                    <option value="">Brak firmy</option>
-                                    {% with selected_company_id=project_rename_form.company.value|stringformat:"s" %}
-                                    {% for company in project_company_options %}
-                                    <option value="{{ company.id }}" {% if selected_company_id == company.id|stringformat:"s" %}selected{% endif %}>{{ company.name }}</option>
-                                    {% endfor %}
-                                    {% endwith %}
-                                </select>
-                                <div class="tasks-filter-dropdown tasks-issue-dropdown tasks-company-select" data-company-select-dropdown="project-edit-company">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button tasks-company-select__button" aria-haspopup="menu" aria-expanded="false" data-company-select-toggle>
-                                        <span class="tasks-company-select__current-icon" aria-hidden="true" data-company-select-current-icon></span>
-                                        <span data-company-select-label>Brak firmy</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </label>
-                        <label>
-                            <span>Odpowiedzialny za projekt</span>
-                            <div class="tasks-responsible-select-wrap" data-responsible-select-url="{% url 'tasks:lookup-responsible-user' %}">
-                                <select id="project-rename-responsible-user" name="responsible_user" class="tasks-inline-select">
-                                    <option value="">Brak osoby</option>
-                                    {% with selected_responsible_id=project_rename_form.responsible_user.value|stringformat:"s" %}
-                                    {% for responsible_user in project_responsible_options %}
-                                    <option value="{{ responsible_user.id }}" {% if selected_responsible_id == responsible_user.id|stringformat:"s" %}selected{% endif %}>{{ responsible_user.get_full_name|default:responsible_user.email }}</option>
-                                    {% endfor %}
-                                    {% endwith %}
-                                </select>
-                                <div class="tasks-filter-dropdown tasks-issue-dropdown tasks-responsible-select" data-responsible-select-dropdown="project-edit-responsible">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button tasks-responsible-select__button" aria-haspopup="menu" aria-expanded="false" data-responsible-select-toggle>
-                                        <span class="tasks-responsible-select__current-icon" aria-hidden="true" data-responsible-select-current-icon><i data-lucide="user"></i></span>
-                                        <span data-responsible-select-label>Brak osoby</span>
-                                    </button>
-                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu tasks-responsible-select__menu" role="menu" aria-label="Wybierz osobę odpowiedzialną">
-                                        <div class="tasks-responsible-select__search">
-                                            <i data-lucide="search" aria-hidden="true"></i>
-                                            <input type="search" placeholder="Szukaj lub wpisz ID Ancore" aria-label="Szukaj lub wpisz ID Ancore" data-responsible-select-search>
-                                        </div>
-                                        <div class="tasks-responsible-select__table" role="presentation">
-                                            <div class="tasks-responsible-select__table-head" role="presentation">
-                                                <span>Osoba</span>
-                                                <span>Wybór</span>
-                                            </div>
-                                            <button type="button" role="menuitemradio" aria-checked="false" data-responsible-select-value="" data-responsible-select-name="Brak osoby" data-responsible-select-search-text="brak osoby">
-                                                <span class="tasks-responsible-select__person">
-                                                    <span class="tasks-responsible-select__empty-icon" aria-hidden="true"><i data-lucide="user-x"></i></span>
-                                                    <span class="tasks-responsible-select__name">Brak osoby</span>
-                                                    <span class="tasks-responsible-select__username"></span>
-                                                </span>
-                                                <span class="tasks-responsible-select__check" aria-hidden="true"></span>
-                                            </button>
-                                            {% for responsible_user in project_responsible_options %}
-                                            {% user_avatar responsible_user as responsible_avatar %}
-                                            <button type="button" role="menuitemradio" aria-checked="false" data-responsible-select-value="{{ responsible_user.id }}" data-responsible-select-name="{{ responsible_user.get_full_name|default:responsible_user.email|escape }}" data-responsible-select-username="{{ responsible_user.username|escape }}" data-responsible-select-search-text="{{ responsible_user.get_full_name|default:responsible_user.email|lower|escape }} {{ responsible_user.username|lower|escape }}">
-                                                <span class="tasks-responsible-select__person">
-                                                    {% include 'accounts/includes/user_avatar.html' with avatar=responsible_avatar avatar_class='tasks-responsible-select__avatar' only %}
-                                                    <span class="tasks-responsible-select__identity">
-                                                        <span class="tasks-responsible-select__name">{{ responsible_user.get_full_name|default:responsible_user.email }}</span>
-                                                        <span class="tasks-responsible-select__username">{{ responsible_user.username }}</span>
-                                                    </span>
-                                                </span>
-                                                <span class="tasks-responsible-select__check" aria-hidden="true"></span>
-                                            </button>
-                                            {% endfor %}
-                                        </div>
-                                        <p class="tasks-responsible-select__status" data-responsible-select-status aria-live="polite"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </label>
-                        <label>
                             <span>Kod projektu</span>
                             <span class="tasks-project-create-code" id="project-rename-code">{{ project_rename_form.instance.code|default:'Zostanie nadany automatycznie' }}</span>
                         </label>
-                        <div class="tasks-responsible-select__menu tasks-responsible-select__panel" role="menu" aria-label="Wybierz osobę odpowiedzialną" data-responsible-select-menu="project-edit-responsible">
-                            <div class="tasks-responsible-select__search">
-                                <i data-lucide="search" aria-hidden="true"></i>
-                                <input type="search" placeholder="Szukaj lub wpisz ID Ancore" aria-label="Szukaj lub wpisz ID Ancore" data-responsible-select-search>
-                            </div>
-                            <div class="tasks-responsible-select__table" role="presentation">
-                                <div class="tasks-responsible-select__table-head" role="presentation">
-                                    <span>Osoba</span>
-                                    <span>Wybór</span>
-                                </div>
-                                <button type="button" role="menuitemradio" aria-checked="false" data-responsible-select-value="" data-responsible-select-name="Brak osoby" data-responsible-select-search-text="brak osoby">
-                                    <span class="tasks-responsible-select__person">
-                                        <span class="tasks-responsible-select__empty-icon" aria-hidden="true"><i data-lucide="user-x"></i></span>
-                                        <span class="tasks-responsible-select__name">Brak osoby</span>
-                                        <span class="tasks-responsible-select__username"></span>
-                                    </span>
-                                    <span class="tasks-responsible-select__check" aria-hidden="true"></span>
-                                </button>
-                                {% for responsible_user in project_responsible_options %}
-                                {% user_avatar responsible_user as responsible_avatar %}
-                                <button type="button" role="menuitemradio" aria-checked="false" data-responsible-select-value="{{ responsible_user.id }}" data-responsible-select-name="{{ responsible_user.get_full_name|default:responsible_user.email|escape }}" data-responsible-select-username="{{ responsible_user.username|escape }}" data-responsible-select-search-text="{{ responsible_user.get_full_name|default:responsible_user.email|lower|escape }} {{ responsible_user.username|lower|escape }}">
-                                    <span class="tasks-responsible-select__person">
-                                        {% include 'accounts/includes/user_avatar.html' with avatar=responsible_avatar avatar_class='tasks-responsible-select__avatar' only %}
-                                        <span class="tasks-responsible-select__identity">
-                                            <span class="tasks-responsible-select__name">{{ responsible_user.get_full_name|default:responsible_user.email }}</span>
-                                            <span class="tasks-responsible-select__username">{{ responsible_user.username }}</span>
-                                        </span>
-                                    </span>
-                                    <span class="tasks-responsible-select__check" aria-hidden="true"></span>
-                                </button>
-                                {% endfor %}
-                            </div>
-                            <p class="tasks-responsible-select__status" data-responsible-select-status aria-live="polite"></p>
-                        </div>
-                        <div class="tasks-company-select__menu tasks-company-select__panel" role="menu" aria-label="Wybierz firmę" data-company-select-menu="project-edit-company">
-                            <div class="tasks-company-select__search">
-                                <i data-lucide="search" aria-hidden="true"></i>
-                                <input type="search" placeholder="Szukaj firmy" aria-label="Szukaj firmy" data-company-select-search>
-                            </div>
-                            <div class="tasks-company-select__table" role="presentation">
-                                <div class="tasks-company-select__table-head" role="presentation">
-                                    <span>Firma</span>
-                                    <span>Wybór</span>
-                                </div>
-                                <button type="button" role="menuitem" data-company-select-value="" data-company-select-name="Brak firmy" data-company-select-search-text="brak firmy">
-                                    <span class="tasks-company-select__company">
-                                        <span class="tasks-company-select__empty-icon" aria-hidden="true"><i data-lucide="building-2"></i></span>
-                                        <span>Brak firmy</span>
-                                    </span>
-                                    <span class="tasks-company-select__check" aria-hidden="true"></span>
-                                </button>
-                                {% for company in project_company_options %}
-                                <button type="button" role="menuitem" data-company-select-value="{{ company.id }}" data-company-select-name="{{ company.name|escape }}" data-company-select-search-text="{{ company.name|lower|escape }}">
-                                    <span class="tasks-company-select__company">
-                                        {% include 'contacts/includes/company_avatar.html' with company=company avatar_class='tasks-company-select__avatar' only %}
-                                        <span>{{ company.name }}</span>
-                                    </span>
-                                    <span class="tasks-company-select__check" aria-hidden="true"></span>
-                                </button>
-                                {% endfor %}
-                            </div>
-                            <p class="tasks-company-select__empty" data-company-select-empty hidden>Brak wyników</p>
-                        </div>
                     </div>
                 </section>
             </div>
@@ -1280,61 +996,12 @@
             <input type="hidden" name="project_id" id="issue-project-id" value="{% if active_project %}{{ active_project.id }}{% endif %}">
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
-                    <div class="tasks-chip-picker" data-issue-project-picker>
-                        <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle {% if active_project %}style="--project-icon-fg: {{ active_project.icon_color.foreground }};"{% endif %}>
-                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_project and active_project.icon %}<i data-lucide="{{ active_project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
-                            <span data-picker-label>{% if active_project %}{{ active_project.name }}{% else %}Wybierz projekt{% endif %}</span>
-                            <i data-lucide="chevron-down" aria-hidden="true"></i>
-                        </button>
-                        <div class="tasks-chip-picker__menu" role="menu">
-                            <div class="tasks-chip-picker__search">
-                                <i data-lucide="search" aria-hidden="true"></i>
-                                <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
-                                <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
-                            </div>
-                            {% for project in projects %}
-                            {% if project.can_edit or project.has_editable_sections %}
-                            <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="">
-                                <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{% if project.icon %}<i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
-                                {{ project.name }}
-                            </button>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <span class="tasks-project-modal__chevron">›</span>
-                    <div class="tasks-chip-picker" data-issue-section-picker>
-                        <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
-                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_section and active_section.icon %}<i data-lucide="{{ active_section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
-                            <span data-picker-label>{% if active_section %}{{ active_section.title }}{% else %}Wybierz grupę{% endif %}</span>
-                            <i data-lucide="chevron-down" aria-hidden="true"></i>
-                        </button>
-                        <div class="tasks-chip-picker__menu" role="menu">
-                            <div class="tasks-chip-picker__search">
-                                <i data-lucide="search" aria-hidden="true"></i>
-                                <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
-                                <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
-                            </div>
-                            {% for project in projects %}
-                                {% if project.can_edit or project.has_editable_sections %}
-                                {% for section in project.sections.all %}
-                                {% if section.can_edit %}
-                                <button type="button" role="menuitem" data-section-option data-section-id="{{ section.id }}" data-section-project-id="{{ project.id }}" data-section-title="{{ section.title|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
-                                    <span aria-hidden="true">{% if section.icon %}<i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
-                                    {{ section.title }}
-                                </button>
-                                {% endif %}
-                                {% endfor %}
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <span class="tasks-project-modal__chevron">›</span>
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
+                        <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
                     <strong id="issue-modal-title">Nowe zadanie</strong>
                 </div>
-                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <i data-lucide="x" aria-hidden="true"></i>
-                </button>
             </header>
 
             <div class="tasks-modal__body tasks-issue-modal__body">
@@ -1361,6 +1028,58 @@
                         <span>Grupa projektu</span>
                         {{ task_modal_form.section }}
                     </label>
+                    <div class="tasks-issue-field tasks-issue-field--picker">
+                        <span>Projekt</span>
+                        <div class="tasks-chip-picker tasks-issue-chip-picker" data-issue-project-picker>
+                            <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle {% if active_project %}style="--project-icon-fg: {{ active_project.icon_color.foreground }};"{% endif %}>
+                                <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_project and active_project.icon %}<i data-lucide="{{ active_project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
+                                <span data-picker-label>{% if active_project %}{{ active_project.name }}{% else %}Wybierz projekt{% endif %}</span>
+                                <i data-lucide="chevron-down" aria-hidden="true"></i>
+                            </button>
+                            <div class="tasks-chip-picker__menu" role="menu">
+                                <div class="tasks-chip-picker__search">
+                                    <i data-lucide="search" aria-hidden="true"></i>
+                                    <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
+                                </div>
+                                {% for project in projects %}
+                                {% if project.can_edit or project.has_editable_sections %}
+                                <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="">
+                                    <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{% if project.icon %}<i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
+                                    {{ project.name }}
+                                </button>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tasks-issue-field tasks-issue-field--picker">
+                        <span>Grupa</span>
+                        <div class="tasks-chip-picker tasks-issue-chip-picker" data-issue-section-picker>
+                            <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
+                                <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_section and active_section.icon %}<i data-lucide="{{ active_section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
+                                <span data-picker-label>{% if active_section %}{{ active_section.title }}{% else %}Wybierz grupę{% endif %}</span>
+                                <i data-lucide="chevron-down" aria-hidden="true"></i>
+                            </button>
+                            <div class="tasks-chip-picker__menu" role="menu">
+                                <div class="tasks-chip-picker__search">
+                                    <i data-lucide="search" aria-hidden="true"></i>
+                                    <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
+                                </div>
+                                {% for project in projects %}
+                                    {% if project.can_edit or project.has_editable_sections %}
+                                    {% for section in project.sections.all %}
+                                    {% if section.can_edit %}
+                                    <button type="button" role="menuitem" data-section-option data-section-id="{{ section.id }}" data-section-project-id="{{ project.id }}" data-section-title="{{ section.title|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
+                                        <span aria-hidden="true">{% if section.icon %}<i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
+                                        {{ section.title }}
+                                    </button>
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
                     <label>
                         <span>Status</span>
                         <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">

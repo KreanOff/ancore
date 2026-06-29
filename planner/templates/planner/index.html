@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260628-unified-modal-shell">
 <script src="{% static 'js/calendar.js' %}?v=20260614-app-wide-navigation-v2" defer></script>
 {% endblock %}
 
@@ -155,14 +155,15 @@
     <div class="tasks-modal__dialog calendar-dialog-panel" role="dialog" aria-labelledby="event-dialog-title">
         <form id="event-form" class="tasks-modal__form calendar-dialog-form" novalidate>
             <header class="tasks-modal__header calendar-dialog-header">
+                <button type="button" class="tasks-issue-close cancel-event-btn" title="Wróć" aria-label="Wróć">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                </button>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
                 <h2 id="event-dialog-title">Nowe wydarzenie</h2>
                 <div class="calendar-dialog-actions">
                     <button type="button" class="calendar-delete-button u-hidden" id="event-delete-btn" title="Usuń wydarzenie">
                         {% include 'core/includes/trash_icon.html' %}
                         Usuń
-                    </button>
-                    <button type="button" class="tasks-modal__close cancel-event-btn" title="Zamknij (Esc)" aria-label="Zamknij">
-                        <i data-lucide="x" aria-hidden="true"></i>
                     </button>
                 </div>
             </header>
