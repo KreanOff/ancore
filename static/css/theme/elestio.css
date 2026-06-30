@@ -508,12 +508,12 @@ body.auth-page,
 .tasks-status-block,
 .tasks-status-subgroup {
     border-color: rgb(206, 207, 213);
-    background: rgb(246, 246, 247);
+    background: #ffffff;
 }
 
 .tasks-issue-group:not(.tasks-status-block) {
     border-color: rgb(206, 207, 213);
-    background: rgb(246, 246, 247);
+    background: #ffffff;
 }
 
 .tasks-issue-group-header:not(.tasks-status-block-header),
@@ -535,12 +535,12 @@ body.auth-page,
 .tasks-issue-group:not(.tasks-status-block) > .tasks-issue-list,
 .tasks-issue-group:not(.tasks-status-block) > .tasks-section-list,
 .tasks-issue-list.tasks-project-list {
-    background: rgb(246, 246, 247);
+    background: #ffffff;
 }
 
 .tasks-issue-row {
     border-top-color: rgb(232, 232, 232);
-    background: rgb(246, 246, 247);
+    background: #ffffff;
     color: rgb(18, 18, 18);
 }
 
@@ -581,10 +581,15 @@ body.auth-page,
     background: #ffffff;
 }
 
+.tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row,
+.tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row::before {
+    background: #ffffff;
+}
+
 .tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) > .tasks-section-list,
 .tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row,
 .tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row:not(.tasks-section-card),
-.tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row > .tasks-project-sheet__cell {
+.tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row > .tasks-project-sheet__cell:not([data-column="select"]) {
     background: #ffffff;
 }
 
@@ -597,7 +602,7 @@ body.auth-page,
 }
 
 .tasks-issue-row:hover {
-    background: rgb(240, 240, 242);
+    background: #ffffff;
     border-color: rgb(232, 232, 232);
 }
 
@@ -630,6 +635,15 @@ body.auth-page,
 .tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row.checked:hover {
     background: #e9ebef;
     border-color: #d6d9df;
+}
+
+.tasks-issue-row.checked,
+.tasks-issue-row.checked:hover,
+.tasks-issue-row:has(.task-checkbox:checked),
+.tasks-issue-row:has(.task-checkbox:checked):hover,
+.tasks-issue-row:has(.tasks-row-checkbox:checked),
+.tasks-issue-row:has(.tasks-row-checkbox:checked):hover {
+    background: #ffffff;
 }
 
 .tasks-row-title,

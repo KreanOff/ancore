@@ -125,13 +125,29 @@ body.sidebar-open .sidebar-backdrop {
 
 /* Wąski laptop */
 @media (max-width: 1280px) {
+    :root {
+        --secondary-menu-min-width: 218px;
+        --secondary-menu-resize-max-width: 280px;
+        --secondary-menu-content-min-width: 680px;
+    }
+
     .page-container:not(.full-width) {
         padding: 1.75rem;
+    }
+
+    .page-container.full-width {
+        border-radius: 12px;
     }
 }
 
 /* Toolbary — wspólne dla zadań i kalendarza */
 @media (max-width: 1024px) {
+    :root {
+        --secondary-menu-min-width: 218px;
+        --secondary-menu-resize-max-width: 320px;
+        --secondary-menu-width: 260px;
+    }
+
     .control-panel,
     .tasks-control-panel,
     .tasks-page .control-panel,
@@ -145,6 +161,16 @@ body.sidebar-open .sidebar-backdrop {
     .page-container.full-width:has(.calendar-page) {
         min-height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
         height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+    .main-content:has(.page-container.full-width) {
+        overflow: hidden;
+    }
+
+    .page-container.full-width {
+        min-width: 0;
     }
 }
 

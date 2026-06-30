@@ -27,9 +27,9 @@
             </button>
             <div class="tasks-create-menu__panel" id="create-menu-panel" role="menu" aria-labelledby="open-create-menu">
                 <button type="button" role="menuitem" data-open-project>Utwórz projekt</button>
+                <button type="button" role="menuitem" data-open-section-create{% if not section_create_uses_project_select and active_project %} data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}"{% endif %}>Utwórz grupę</button>
+                <button type="button" role="menuitem" data-open-issue {% if not can_create_issue %}disabled{% endif %}>Utwórz zadanie</button>
                 <button type="button" role="menuitem" data-open-tag>Utwórz tag</button>
-                <button type="button" role="menuitem" data-open-issue {% if not can_create_issue %}disabled{% endif %}>Nowe zadanie</button>
-                <button type="button" role="menuitem" disabled>Import</button>
             </div>
         </div>
 
@@ -79,7 +79,7 @@
             </div>
 
             <div class="tasks-project-tree-content" id="tasks-project-tree-content" data-project-tree-content>
-            {% for project in projects %}
+            {% for project in navigation_projects %}
             <div class="tasks-project-node {% if active_project.id == project.id %}is-current{% endif %}" data-project-node data-project-id="{{ project.id }}">
                 <div class="tasks-project-title-row">
                     <button type="button" class="tasks-project-title {% if not project.icon %}tasks-project-title--no-icon{% endif %}" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
@@ -177,18 +177,35 @@
                     {% elif active_view == 'tags' %}
                     <span>Tagi</span>
                     {% else %}
-                    <span>Moje projekty</span>
+                    <span>Wszystkie projekty</span>
                     {% endif %}
                     {% endif %}
                 </span>
             </div>
+            {% if active_view == 'projects' or active_view == 'all_groups' or active_view == 'tags' %}
+            <form class="tasks-titlebar-search tasks-search-actions" method="get" action="{% url 'tasks:tasks' %}" data-project-search-form>
+                <label class="tasks-search-field" for="filter-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" name="q" value="{% if active_view == 'all_groups' %}{{ group_query }}{% elif active_view == 'tags' %}{{ tag_query }}{% else %}{{ project_query }}{% endif %}" placeholder="Szukaj" autocomplete="off">
+                </label>
+                {% if active_view == 'all_groups' %}
+                <input type="hidden" name="view" value="all-groups">
+                {% elif active_view == 'tags' %}
+                <input type="hidden" name="view" value="tags">
+                {% endif %}
+                {% if active_view != 'tags' %}
+                <input type="hidden" id="filter-priority" name="priority" value="{% if active_view == 'all_groups' %}{{ group_priority_filter }}{% else %}{{ project_priority_filter }}{% endif %}">
+                {% endif %}
+                <input type="hidden" name="page_size" value="{% if active_view == 'all_groups' %}{{ group_window.page_size }}{% elif active_view == 'tags' %}{{ tag_window.page_size }}{% else %}{{ project_window.page_size }}{% endif %}" data-project-search-page-size>
+            </form>
+            {% else %}
             <div class="tasks-titlebar-search tasks-search-actions">
                 <label class="tasks-search-field" for="filter-search">
                     <i data-lucide="search" aria-hidden="true"></i>
                     <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
                 </label>
-                <button type="button" class="tasks-tag-topbar-button" data-filter-search-submit>Szukaj</button>
             </div>
+            {% endif %}
         </header>
 
         <div class="tasks-filterbar">
@@ -196,7 +213,7 @@
                 <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
                     <i data-lucide="arrow-up-wide-narrow" aria-hidden="true"></i>
                 </button>
-                {% if active_view == 'projects' or active_view == 'all_groups' %}
+                {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' %}
                 <div class="tasks-directory-column-manager" data-directory-column-manager hidden>
                     <button type="button" class="tasks-icon-button" title="Zarządzaj tabelą" aria-label="Zarządzaj tabelą" aria-haspopup="dialog" aria-expanded="false" data-directory-column-manager-toggle>
                         <i data-lucide="columns-3" aria-hidden="true"></i>
@@ -220,7 +237,7 @@
                     </div>
                 </div>
                 {% endif %}
-                {% if active_view != 'projects' and active_view != 'all_groups' %}
+                {% if active_view != 'projects' and active_view != 'project' and active_view != 'all_groups' %}
                 <div class="tasks-filter-dropdown" data-status-filter-menu>
                     <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-status-filter-toggle>
                         <i data-lucide="filter" aria-hidden="true"></i>
@@ -380,6 +397,9 @@
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     </span>
+                    <span class="tasks-project-sheet__cell" data-column="action" aria-label="Edytuj grupę">
+                        <i data-lucide="pencil" aria-hidden="true"></i>
+                    </span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">GRUPA</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PROJEKTU</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">OPIS</span>
@@ -396,6 +416,11 @@
                 {% for section in active_project.sections.all %}
                 <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
+                    <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
+                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj grupę" aria-label="Edytuj grupę {{ section.title }}" aria-haspopup="dialog" aria-controls="section-rename-modal" data-open-section-rename data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
+                            <i data-lucide="pencil" aria-hidden="true"></i>
+                        </button>
+                    </span>
                     <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">
                         <span class="tasks-row-title-main">
                             <span class="tasks-row-title-text">{{ section.title }}</span>
@@ -459,7 +484,7 @@
                 {% endif %}
                 {% endfor %}
 
-                {% if section.tasks.count == 0 %}
+                {% if section.tasks_total_count == 0 %}
                 <section class="tasks-issue-group">
                     <div class="tasks-empty-section">Brak zadań w tej grupie.</div>
                 </section>
@@ -508,6 +533,9 @@
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie grupy" title="Zaznacz wszystkie grupy" data-select-all-checkbox data-select-all-target="sections">
                     </span>
+                    <span class="tasks-project-sheet__cell" data-column="action" aria-label="Edytuj grupę">
+                        <i data-lucide="pencil" aria-hidden="true"></i>
+                    </span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">GRUPA</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PROJEKTU</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">OPIS</span>
@@ -525,6 +553,11 @@
                 {% for section in all_sections %}
                 <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
+                    <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
+                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj grupę" aria-label="Edytuj grupę {{ section.title }}" aria-haspopup="dialog" aria-controls="section-rename-modal" data-open-section-rename data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
+                            <i data-lucide="pencil" aria-hidden="true"></i>
+                        </button>
+                    </span>
                     <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">
                         <span class="tasks-row-title-main">
                             <span class="tasks-row-title-text">{{ section.title }}</span>
@@ -567,12 +600,55 @@
                 </div>
             </section>
         </div>
+        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ group_window.page }}" data-project-total-pages="{{ group_window.total_pages }}">
+            <div class="tasks-project-pagination__size">
+                <span>Na stronie</span>
+                <div class="tasks-filter-dropdown tasks-project-pagination__size-control" data-project-page-size-dropdown>
+                    <select aria-label="Liczba grup na stronie" data-project-page-size hidden>
+                        {% for page_size in group_window.page_size_options %}
+                        <option value="{{ page_size }}" {% if group_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="tasks-project-pagination__size-button" aria-label="Liczba grup na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
+                        <span data-project-page-size-label>{{ group_window.page_size }}</span>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba grup na stronie">
+                    {% for page_size in group_window.page_size_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if group_window.page_size == page_size %}true{% else %}false{% endif %}" {% if group_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
+                    {% endfor %}
+                    </div>
+                </div>
+                <span>grup</span>
+            </div>
+            <span class="tasks-project-pagination__summary" data-project-pagination-summary>{{ group_window.summary }}</span>
+            <nav class="tasks-project-pagination__pages" aria-label="Strony grup">
+                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie grupy" data-project-page-prev data-project-page-url="{{ group_window.previous_url }}" {% if not group_window.has_previous %}disabled{% endif %}>
+                    <i data-lucide="chevron-left" aria-hidden="true"></i>
+                </button>
+                <span class="tasks-project-pagination__numbers" data-project-pagination-pages>
+                    {% for page_item in group_window.page_items %}
+                    {% if page_item.is_ellipsis %}
+                    <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
+                    {% else %}
+                    <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-project-page="{{ page_item.page }}" {% if not page_item.is_current %}data-project-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
+                    {% endif %}
+                    {% endfor %}
+                </span>
+                <button type="button" class="tasks-project-pagination__button" aria-label="Następne grupy" data-project-page-next data-project-page-url="{{ group_window.next_url }}" {% if not group_window.has_next %}disabled{% endif %}>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+            </nav>
+        </div>
         {% elif active_view == 'tags' %}
         <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie tagi" title="Zaznacz wszystkie tagi" data-select-all-checkbox data-select-all-target="tags">
+                    </span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action" aria-label="Edytuj tag" title="Edytuj tag">
+                        <i data-lucide="pencil" aria-hidden="true"></i>
                     </span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">NAZWA TAGU</span>
                     <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">KOD TAGU</span>
@@ -585,6 +661,11 @@
                 {% for tag in tags %}
                 <article class="tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
+                    <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action">
+                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj tag" aria-label="Edytuj tag {{ tag.name }}" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag-edit data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
+                            <i data-lucide="pencil" aria-hidden="true"></i>
+                        </button>
+                    </span>
                     <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">
                         <span>{{ tag.name }}</span>
                     </span>
@@ -603,7 +684,47 @@
                 </div>
             </section>
         </div>
-        {% elif projects %}
+        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ tag_window.page }}" data-project-total-pages="{{ tag_window.total_pages }}">
+            <div class="tasks-project-pagination__size">
+                <span>Na stronie</span>
+                <div class="tasks-filter-dropdown tasks-project-pagination__size-control" data-project-page-size-dropdown>
+                    <select aria-label="Liczba tagów na stronie" data-project-page-size hidden>
+                        {% for page_size in tag_window.page_size_options %}
+                        <option value="{{ page_size }}" {% if tag_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="tasks-project-pagination__size-button" aria-label="Liczba tagów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
+                        <span data-project-page-size-label>{{ tag_window.page_size }}</span>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba tagów na stronie">
+                    {% for page_size in tag_window.page_size_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_window.page_size == page_size %}true{% else %}false{% endif %}" {% if tag_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
+                    {% endfor %}
+                    </div>
+                </div>
+                <span>tagów</span>
+            </div>
+            <span class="tasks-project-pagination__summary" data-project-pagination-summary>{{ tag_window.summary }}</span>
+            <nav class="tasks-project-pagination__pages" aria-label="Strony tagów">
+                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie tagi" data-project-page-prev data-project-page-url="{{ tag_window.previous_url }}" {% if not tag_window.has_previous %}disabled{% endif %}>
+                    <i data-lucide="chevron-left" aria-hidden="true"></i>
+                </button>
+                <span class="tasks-project-pagination__numbers" data-project-pagination-pages>
+                    {% for page_item in tag_window.page_items %}
+                    {% if page_item.is_ellipsis %}
+                    <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
+                    {% else %}
+                    <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-project-page="{{ page_item.page }}" {% if not page_item.is_current %}data-project-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
+                    {% endif %}
+                    {% endfor %}
+                </span>
+                <button type="button" class="tasks-project-pagination__button" aria-label="Następne tagi" data-project-page-next data-project-page-url="{{ tag_window.next_url }}" {% if not tag_window.has_next %}disabled{% endif %}>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+            </nav>
+        </div>
+        {% elif active_view == 'projects' %}
         <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
@@ -662,9 +783,53 @@
                     <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ project.created_at|date:"d.m.Y" }}</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
+                {% empty %}
+                <div class="tasks-empty-state">
+                    <p>Nie znaleziono projektów.</p>
+                </div>
                 {% endfor %}
                 </div>
             </section>
+        </div>
+        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ project_window.page }}" data-project-total-pages="{{ project_window.total_pages }}">
+            <div class="tasks-project-pagination__size">
+                <span>Na stronie</span>
+                <div class="tasks-filter-dropdown tasks-project-pagination__size-control" data-project-page-size-dropdown>
+                    <select aria-label="Liczba projektów na stronie" data-project-page-size hidden>
+                        {% for page_size in project_window.page_size_options %}
+                        <option value="{{ page_size }}" {% if project_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="tasks-project-pagination__size-button" aria-label="Liczba projektów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
+                        <span data-project-page-size-label>{{ project_window.page_size }}</span>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba projektów na stronie">
+                    {% for page_size in project_window.page_size_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if project_window.page_size == page_size %}true{% else %}false{% endif %}" {% if project_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
+                    {% endfor %}
+                    </div>
+                </div>
+                <span>projektów</span>
+            </div>
+            <span class="tasks-project-pagination__summary" data-project-pagination-summary>{{ project_window.summary }}</span>
+            <nav class="tasks-project-pagination__pages" aria-label="Strony projektów">
+                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie projekty" data-project-page-prev data-project-page-url="{{ project_window.previous_url }}" {% if not project_window.has_previous %}disabled{% endif %}>
+                    <i data-lucide="chevron-left" aria-hidden="true"></i>
+                </button>
+                <span class="tasks-project-pagination__numbers" data-project-pagination-pages>
+                    {% for page_item in project_window.page_items %}
+                    {% if page_item.is_ellipsis %}
+                    <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
+                    {% else %}
+                    <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-project-page="{{ page_item.page }}" {% if not page_item.is_current %}data-project-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
+                    {% endif %}
+                    {% endfor %}
+                </span>
+                <button type="button" class="tasks-project-pagination__button" aria-label="Następne projekty" data-project-page-next data-project-page-url="{{ project_window.next_url }}" {% if not project_window.has_next %}disabled{% endif %}>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+            </nav>
         </div>
         {% else %}
         <div class="tasks-empty-state">
@@ -883,7 +1048,7 @@
         <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="section-create-form">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_section">
-            {% if active_view != 'all_groups' %}
+            {% if not section_create_uses_project_select %}
             <input type="hidden" name="project_id" value="{{ section_create_project_id }}">
             {% endif %}
             <header class="tasks-modal__header">
@@ -908,11 +1073,11 @@
                 {% endif %}
 
                 <div class="tasks-settings-grid">
-                    {% if active_view == 'all_groups' %}
+                    {% if section_create_uses_project_select %}
                     <label for="section-create-project-select">Projekt</label>
                     <select id="section-create-project-select" class="tasks-inline-select" name="project_id" data-section-create-project-select required>
                         <option value="">Wybierz projekt</option>
-                        {% for project in projects %}
+                        {% for project in project_options %}
                         {% if project.can_manage %}
                         <option value="{{ project.id }}" {% if section_create_project_id|stringformat:'s' == project.id|stringformat:'s' %}selected{% endif %}>{{ project.name }}</option>
                         {% endif %}
@@ -1041,7 +1206,7 @@
                                     <i data-lucide="search" aria-hidden="true"></i>
                                     <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
                                 </div>
-                                {% for project in projects %}
+                                {% for project in project_options %}
                                 {% if project.can_edit or project.has_editable_sections %}
                                 <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="">
                                     <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{% if project.icon %}<i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
@@ -1065,7 +1230,7 @@
                                     <i data-lucide="search" aria-hidden="true"></i>
                                     <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
                                 </div>
-                                {% for project in projects %}
+                                {% for project in project_options %}
                                     {% if project.can_edit or project.has_editable_sections %}
                                     {% for section in project.sections.all %}
                                     {% if section.can_edit %}

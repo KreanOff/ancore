@@ -49,13 +49,13 @@
             </span>
         </span>
     </span>
-    <span class="tasks-row-tags" title="Tagi: {{ task.tags.count }}" aria-label="Tagi: {{ task.tags.count }}">
+    <span class="tasks-row-tags" title="Tagi: {{ task.tags_render_count }}" aria-label="Tagi: {{ task.tags_render_count }}">
         <i data-lucide="tag" aria-hidden="true"></i>
-        {{ task.tags.count }}
+        {{ task.tags_render_count }}
     </span>
-    <span class="tasks-row-attachments" title="Załączniki: {{ task.attachments.count }}">
+    <span class="tasks-row-attachments" title="Załączniki: {{ task.attachments_render_count }}">
         <i data-lucide="paperclip" aria-hidden="true"></i>
-        {{ task.attachments.count }}
+        {{ task.attachments_render_count }}
     </span>
     <span class="tasks-row-date tasks-row-due tasks-row-due--{{ task.due_urgency }}"
           title="{% if task.due_at %}Termin: {{ task.due_at|date:'d.m.Y, H:i' }}{% else %}Brak terminu{% endif %}"

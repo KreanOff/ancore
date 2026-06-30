@@ -12,6 +12,19 @@ function initTasksPage() {
     const projectRows = document.querySelectorAll('.tasks-project-row');
     const sectionRows = document.querySelectorAll('.tasks-section-row');
     const contactsDirectoryRows = document.querySelectorAll('.contacts-directory-row');
+    const projectPagination = document.querySelector('[data-project-pagination]');
+    const projectPageSizeSelect = document.querySelector('[data-project-page-size]');
+    const projectPageSizeDropdown = document.querySelector('[data-project-page-size-dropdown]');
+    const projectPageSizeToggle = document.querySelector('[data-project-page-size-toggle]');
+    const projectPageSizeLabel = document.querySelector('[data-project-page-size-label]');
+    const projectPageSizeOptions = document.querySelectorAll('[data-project-page-size-value]');
+    const projectPaginationSummary = document.querySelector('[data-project-pagination-summary]');
+    const projectPaginationPages = document.querySelector('[data-project-pagination-pages]');
+    const projectPagePrev = document.querySelector('[data-project-page-prev]');
+    const projectPageNext = document.querySelector('[data-project-page-next]');
+    const projectSearchForm = document.querySelector('[data-project-search-form]');
+    const projectSearchPageSizeInput = document.querySelector('[data-project-search-page-size]');
+    const usesServerProjectPagination = projectPagination?.dataset.serverPagination === 'true';
     const deleteBtn = document.getElementById('delete-selected-btn');
     const editSelectedTaskMenuBtn = document.getElementById('edit-selected-task-menu-btn');
     const editSelectedSectionMenuBtn = document.getElementById('edit-selected-section-menu-btn');
@@ -80,7 +93,9 @@ function initTasksPage() {
     const projectNodes = document.querySelectorAll('[data-project-node]');
     const openProjectButtons = document.querySelectorAll('[data-open-project]');
     const openTagButtons = document.querySelectorAll('[data-open-tag]');
+    const openTagEditButtons = document.querySelectorAll('[data-open-tag-edit]');
     const openProjectRenameButtons = document.querySelectorAll('[data-open-project-rename]');
+    const openSectionRenameButtons = document.querySelectorAll('[data-open-section-rename]');
     const openSectionCreateButtons = document.querySelectorAll('[data-open-section-create]');
     const openIssueButtons = document.querySelectorAll('#open-issue-modal, [data-open-issue]');
     const openContactButtons = document.querySelectorAll('[data-open-contact]');
@@ -148,6 +163,11 @@ function initTasksPage() {
     const taskReturnRestoreKey = `${taskAppSegment}:restoreTaskReturn`;
     const projectTreeStorageKey = taskAppSegment === 'kanban' ? 'collapsedKanbanProjectTree' : 'collapsedTaskProjectTree';
     const collapsedProjectsStorageKey = taskAppSegment === 'kanban' ? 'collapsedKanbanProjects' : 'collapsedTaskProjects';
+    const projectPageSizes = [10, 25, 50, 100, 150, 200];
+    let projectPaginationPage = Number.parseInt(projectPagination?.dataset.projectCurrentPage || '1', 10);
+    if (!Number.isFinite(projectPaginationPage) || projectPaginationPage < 1) {
+        projectPaginationPage = 1;
+    }
 
     initKanbanColumnCreateForms();
     initKanbanColumnReorder();
@@ -161,6 +181,54 @@ function initTasksPage() {
         }
 
         window.location.href = viewUrl;
+    }
+
+    function projectWindowUrl(extraParams = {}) {
+        const url = new URL(projectSearchForm?.getAttribute('action') || window.location.pathname, window.location.origin);
+        const formData = projectSearchForm ? new FormData(projectSearchForm) : null;
+        const currentUrl = new URL(window.location.href);
+        const viewValue = (formData?.get('view') || currentUrl.searchParams.get('view') || '').toString();
+        const searchValue = filterSearch?.value?.trim() || '';
+        const priorityValue = filterPriority?.value || '';
+        const pageSizeValue = String(getProjectPageSize());
+
+        ['after', 'before', 'page'].forEach(param => {
+            url.searchParams.delete(param);
+        });
+
+        if (viewValue) {
+            url.searchParams.set('view', viewValue);
+        } else {
+            url.searchParams.delete('view');
+        }
+        if (searchValue) {
+            url.searchParams.set('q', searchValue);
+        } else {
+            url.searchParams.delete('q');
+        }
+        if (priorityValue) {
+            url.searchParams.set('priority', priorityValue);
+        } else {
+            url.searchParams.delete('priority');
+        }
+        if (pageSizeValue) url.searchParams.set('page_size', pageSizeValue);
+
+        Object.entries(extraParams).forEach(([key, value]) => {
+            if (value) {
+                url.searchParams.set(key, value);
+            } else {
+                url.searchParams.delete(key);
+            }
+        });
+
+        return `${url.pathname}${url.search}`;
+    }
+
+    function navigateProjectWindow(extraParams = {}) {
+        if (projectSearchPageSizeInput) {
+            projectSearchPageSizeInput.value = String(getProjectPageSize());
+        }
+        navigateWithinApp(projectWindowUrl(extraParams));
     }
 
     function initKanbanWallpapers() {
@@ -1427,6 +1495,11 @@ function initTasksPage() {
             dropdown.classList.remove('is-open');
             dropdown.querySelector('[data-inline-select-toggle]')?.setAttribute('aria-expanded', 'false');
         });
+    }
+
+    function closeProjectPageSizeDropdown() {
+        projectPageSizeDropdown?.classList.remove('is-open');
+        projectPageSizeToggle?.setAttribute('aria-expanded', 'false');
     }
 
     function closeCompanySelectDropdowns(exceptDropdown = null) {
@@ -3400,6 +3473,7 @@ function initTasksPage() {
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
         if (!e.target.closest('[data-inline-select-dropdown]')) closeInlineSelectDropdowns();
+        if (!e.target.closest('[data-project-page-size-dropdown]')) closeProjectPageSizeDropdown();
         if (!e.target.closest('[data-company-select-dropdown]') && !e.target.closest('[data-company-select-menu]')) closeCompanySelectDropdowns();
         if (!e.target.closest('[data-responsible-select-dropdown]') && !e.target.closest('[data-responsible-select-menu]')) closeResponsibleSelectDropdowns();
         if (!e.target.closest('[data-directory-share-permission-picker]')) closeDirectorySharePermissionPickers();
@@ -3599,6 +3673,7 @@ function initTasksPage() {
             closeStatusFilterMenu();
             closePriorityFilterMenu();
             closeIssuePickers();
+            closeProjectPageSizeDropdown();
             closeContactCustomSelects();
             closeEmojiPicker();
             const openModalEl = document.querySelector('.tasks-modal.is-open');
@@ -3643,6 +3718,33 @@ function initTasksPage() {
             const bounds = getDirectoryRowColumnBounds(row, column);
             return bounds && event.clientX >= bounds.left && event.clientX < bounds.right;
         });
+    }
+
+    function isDirectoryColumnClick(event, row, column) {
+        if (!row || typeof event.clientX !== 'number') return false;
+
+        const bounds = getDirectoryRowColumnBounds(row, column);
+        return Boolean(bounds && event.clientX >= bounds.left && event.clientX < bounds.right);
+    }
+
+    function getDirectoryRowSelectCheckbox(row) {
+        return row?.querySelector(':scope > .tasks-row-checkbox[data-column="select"]') || null;
+    }
+
+    function toggleDirectoryRowCheckboxFromSelectColumn(event, row) {
+        if (!isDirectoryColumnClick(event, row, 'select')) return false;
+        if (event.target.type === 'checkbox' || event.target.closest('a, input, button, select, textarea')) {
+            return false;
+        }
+
+        const checkbox = getDirectoryRowSelectCheckbox(row);
+        if (!checkbox || checkbox.disabled) return false;
+
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
     }
 
     function shouldIgnoreRowClick(event, row = null) {
@@ -3693,6 +3795,7 @@ function initTasksPage() {
 
     [...projectRows, ...sectionRows, ...contactsDirectoryRows].forEach(row => {
         row.addEventListener('click', function(e) {
+            if (toggleDirectoryRowCheckboxFromSelectColumn(e, this)) return;
             if (shouldIgnoreRowClick(e, this)) return;
             const viewUrl = this.getAttribute('data-view-url');
             if (viewUrl) navigateWithinApp(viewUrl);
@@ -3705,6 +3808,20 @@ function initTasksPage() {
             if (!viewUrl) return;
             e.preventDefault();
             navigateWithinApp(viewUrl);
+        });
+    });
+
+    document.querySelectorAll('.tasks-directory-header > [data-column="select"], .contacts-directory-header > [data-column="select"]').forEach(selectCell => {
+        selectCell.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.closest('input, button, a, select, textarea')) return;
+
+            const checkbox = this.querySelector('input[type="checkbox"]');
+            if (!checkbox || checkbox.disabled) return;
+
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+            e.preventDefault();
+            e.stopPropagation();
         });
     });
 
@@ -4239,20 +4356,26 @@ function initTasksPage() {
         if (taskId) navigateWithinApp(`/${taskAppSegment}/view-task/${taskId}/`);
     }
 
-    function editSelectedSection() {
-        const selectedSectionCheckbox = getSelectedSectionCheckbox();
-        if (!selectedSectionCheckbox || !sectionRenameModal) return;
-        if (!checkboxCanManage(selectedSectionCheckbox)) return;
+    function openSectionRenameFromDataset(sectionDataset) {
+        if (!sectionDataset || !sectionRenameModal) return;
+        if (sectionDataset.canManage === 'false') return;
 
-        if (sectionRenameIdInput) sectionRenameIdInput.value = selectedSectionCheckbox.dataset.sectionId || '';
-        if (sectionRenameTitleInput) sectionRenameTitleInput.value = selectedSectionCheckbox.dataset.sectionTitle || '';
-        if (sectionRenameDescriptionInput) sectionRenameDescriptionInput.value = selectedSectionCheckbox.dataset.sectionDescription || '';
-        if (sectionRenamePriorityInput) sectionRenamePriorityInput.value = selectedSectionCheckbox.dataset.sectionPriority || 'none';
-        if (sectionRenameIconInput) sectionRenameIconInput.value = selectedSectionCheckbox.dataset.sectionIcon || '';
+        if (sectionRenameIdInput) sectionRenameIdInput.value = sectionDataset.sectionId || '';
+        if (sectionRenameTitleInput) sectionRenameTitleInput.value = sectionDataset.sectionTitle || '';
+        if (sectionRenameDescriptionInput) sectionRenameDescriptionInput.value = sectionDataset.sectionDescription || '';
+        if (sectionRenamePriorityInput) sectionRenamePriorityInput.value = sectionDataset.sectionPriority || 'none';
+        syncInlineSelectForSelect(sectionRenamePriorityInput);
+        if (sectionRenameIconInput) sectionRenameIconInput.value = sectionDataset.sectionIcon || '';
         syncProjectIconPickers();
         closeSectionActionMenu();
         openModal(sectionRenameModal, sectionRenameTitleInput, updateSectionRenameSubmitState);
         setTimeout(() => sectionRenameTitleInput?.select(), 60);
+    }
+
+    function editSelectedSection() {
+        const selectedSectionCheckbox = getSelectedSectionCheckbox();
+        if (!selectedSectionCheckbox || !checkboxCanManage(selectedSectionCheckbox)) return;
+        openSectionRenameFromDataset(selectedSectionCheckbox.dataset);
     }
 
     function editSelectedProject() {
@@ -4274,18 +4397,23 @@ function initTasksPage() {
         setTimeout(() => projectRenameNameInput?.select(), 60);
     }
 
-    function editSelectedTag() {
-        const selectedTagCheckbox = getSelectedTagCheckbox();
-        if (!selectedTagCheckbox || !tagModal) return;
+    function openTagEditFromDataset(tagDataset) {
+        if (!tagDataset || !tagModal) return;
 
         closeSectionActionMenu();
         setTagModalMode('edit', {
-            tagId: selectedTagCheckbox.dataset.tagId || '',
-            tagName: selectedTagCheckbox.dataset.tagName || '',
-            tagDescription: selectedTagCheckbox.dataset.tagDescription || ''
+            tagId: tagDataset.tagId || '',
+            tagName: tagDataset.tagName || '',
+            tagDescription: tagDataset.tagDescription || ''
         });
         openModal(tagModal, tagNameInput, updateTagSubmitState);
         setTimeout(() => tagNameInput?.select(), 60);
+    }
+
+    function editSelectedTag() {
+        const selectedTagCheckbox = getSelectedTagCheckbox();
+        if (!selectedTagCheckbox || !tagModal) return;
+        openTagEditFromDataset(selectedTagCheckbox.dataset);
     }
 
     function deleteSelectedSection() {
@@ -4482,6 +4610,13 @@ function initTasksPage() {
         });
     }
 
+    openSectionRenameButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            openSectionRenameFromDataset(this.dataset);
+        });
+    });
+
     if (editSelectedProjectMenuBtn) {
         editSelectedProjectMenuBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -4505,6 +4640,13 @@ function initTasksPage() {
             editSelectedTag();
         });
     }
+
+    openTagEditButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            openTagEditFromDataset(this.dataset);
+        });
+    });
 
     if (deleteSelectedTaskMenuBtn) {
         deleteSelectedTaskMenuBtn.addEventListener('click', function(e) {
@@ -4554,6 +4696,150 @@ function initTasksPage() {
     function currentContactRows() {
         return document.querySelectorAll('.contacts-directory-row');
     }
+
+    function getProjectPageSize() {
+        const value = Number.parseInt(projectPageSizeSelect?.value || '', 10);
+        return projectPageSizes.includes(value) ? value : projectPageSizes[0];
+    }
+
+    function syncProjectPageSizeDropdown() {
+        if (!projectPageSizeSelect) return;
+
+        const currentValue = String(getProjectPageSize());
+        projectPageSizeSelect.value = currentValue;
+        if (projectPageSizeLabel) {
+            projectPageSizeLabel.textContent = currentValue;
+        }
+        projectPageSizeOptions.forEach(button => {
+            const isActive = button.dataset.projectPageSizeValue === currentValue;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-checked', String(isActive));
+        });
+    }
+
+    function filteredProjectRows() {
+        return Array.from(currentProjectRows()).filter(row => row.dataset.projectFilterVisible !== 'false');
+    }
+
+    function setProjectRowVisibility(row, isVisible) {
+        row.dataset.projectPaginationHidden = isVisible ? 'false' : 'true';
+        row.style.display = isVisible ? '' : 'none';
+    }
+
+    function getProjectPaginationItems(totalPages) {
+        const maxVisiblePages = 6;
+
+        if (totalPages <= maxVisiblePages) {
+            return Array.from({ length: totalPages }, (_, index) => index + 1);
+        }
+
+        const halfWindow = Math.floor(maxVisiblePages / 2);
+        const maxStartPage = totalPages - maxVisiblePages + 1;
+        const startPage = Math.min(
+            Math.max(projectPaginationPage - halfWindow, 1),
+            maxStartPage
+        );
+
+        return Array.from({ length: maxVisiblePages }, (_, index) => startPage + index);
+    }
+
+    function renderProjectPagination(totalPages) {
+        if (!projectPaginationPages) return;
+
+        projectPaginationPages.replaceChildren();
+
+        getProjectPaginationItems(totalPages).forEach(item => {
+            if (item === 'ellipsis') {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'tasks-project-pagination__ellipsis';
+                ellipsis.setAttribute('aria-hidden', 'true');
+                ellipsis.textContent = '...';
+                projectPaginationPages.appendChild(ellipsis);
+                return;
+            }
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = `tasks-project-pagination__button${item === projectPaginationPage ? ' is-active' : ''}`;
+            button.textContent = String(item);
+            button.dataset.projectPage = String(item);
+            button.setAttribute('aria-label', `Strona ${item}`);
+            if (item === projectPaginationPage) {
+                button.setAttribute('aria-current', 'page');
+            }
+            projectPaginationPages.appendChild(button);
+        });
+    }
+
+    function applyProjectPagination({ resetPage = false } = {}) {
+        if (!projectPagination || !projectPageSizeSelect) return;
+        if (usesServerProjectPagination) {
+            projectPagination.hidden = false;
+            return;
+        }
+
+        const rows = Array.from(currentProjectRows());
+        if (!rows.length) {
+            projectPagination.hidden = true;
+            return;
+        }
+
+        if (resetPage) {
+            projectPaginationPage = 1;
+        }
+
+        const visibleRows = filteredProjectRows();
+        const pageSize = getProjectPageSize();
+        const totalPages = Math.max(1, Math.ceil(visibleRows.length / pageSize));
+        projectPaginationPage = Math.min(Math.max(projectPaginationPage, 1), totalPages);
+
+        const firstIndex = (projectPaginationPage - 1) * pageSize;
+        const lastIndex = firstIndex + pageSize;
+        const visibleRowSet = new Set(visibleRows.slice(firstIndex, lastIndex));
+
+        rows.forEach(row => {
+            if (row.dataset.projectFilterVisible === 'false') {
+                row.dataset.projectPaginationHidden = 'false';
+                row.style.display = 'none';
+                return;
+            }
+            setProjectRowVisibility(row, visibleRowSet.has(row));
+        });
+
+        if (projectPaginationSummary) {
+            if (!visibleRows.length) {
+                projectPaginationSummary.textContent = 'Brak projektów';
+            } else {
+                const firstVisible = firstIndex + 1;
+                const lastVisible = Math.min(lastIndex, visibleRows.length);
+                projectPaginationSummary.textContent = `${firstVisible}-${lastVisible} z ${visibleRows.length}`;
+            }
+        }
+
+        renderProjectPagination(totalPages);
+
+        if (projectPagePrev) {
+            projectPagePrev.disabled = projectPaginationPage <= 1 || visibleRows.length === 0;
+        }
+        if (projectPageNext) {
+            projectPageNext.disabled = projectPaginationPage >= totalPages || visibleRows.length === 0;
+        }
+
+        projectPagination.hidden = false;
+    }
+
+    function setProjectPaginationPage(page) {
+        projectPaginationPage = page;
+        applyProjectPagination();
+        updateGroupVisibility();
+        updateSelection();
+    }
+
+    window.ancoreRefreshProjectPagination = function({ resetPage = false } = {}) {
+        applyProjectPagination({ resetPage });
+        updateGroupVisibility();
+        updateSelection();
+    };
 
     function normalizeFilterText(value) {
         return (value || '')
@@ -4680,7 +4966,10 @@ function initTasksPage() {
             const matchesSearch = rowMatchesSearch(row, searchVal);
             const rowPriority = row.getAttribute('data-project-priority');
             const matchesPriority = !priorityVal || rowPriority === priorityVal;
-            row.style.display = (matchesPriority && matchesSearch) ? '' : 'none';
+            const isVisible = matchesPriority && matchesSearch;
+            row.dataset.projectFilterVisible = isVisible ? 'true' : 'false';
+            row.dataset.projectPaginationHidden = 'false';
+            row.style.display = isVisible ? '' : 'none';
         });
 
         currentSectionRows().forEach(row => {
@@ -4693,14 +4982,35 @@ function initTasksPage() {
             row.style.display = matchesSearch ? '' : 'none';
         });
 
+        applyProjectPagination({ resetPage: true });
         updateGroupVisibility();
         setActiveFilterButtons();
         updateSelection();
     }
 
+    if (projectSearchForm && usesServerProjectPagination) {
+        projectSearchForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            navigateProjectWindow();
+        }, pageListenerOptions);
+    }
+
     if (filterStatus) filterStatus.addEventListener('change', applyFilters);
-    if (filterPriority) filterPriority.addEventListener('change', applyFilters);
-    if (filterSearch) filterSearch.addEventListener('input', applyFilters);
+    if (filterPriority) {
+        filterPriority.addEventListener('change', function() {
+            if (usesServerProjectPagination) {
+                navigateProjectWindow();
+                return;
+            }
+            applyFilters();
+        });
+    }
+    if (filterSearch) {
+        filterSearch.addEventListener('input', function() {
+            if (usesServerProjectPagination) return;
+            applyFilters();
+        });
+    }
     filterSearchButtons.forEach(button => {
         button.addEventListener('click', function() {
             applyFilters();
@@ -4716,6 +5026,12 @@ function initTasksPage() {
             if (this.dataset.priorityFilter !== undefined && filterPriority) {
                 filterPriority.value = this.dataset.priorityFilter;
             }
+            if (usesServerProjectPagination && this.dataset.priorityFilter !== undefined) {
+                closeStatusFilterMenu();
+                closePriorityFilterMenu();
+                navigateProjectWindow();
+                return;
+            }
             if (this.dataset.statusFilter !== undefined && !filterStatus) {
                 document.querySelectorAll('[data-status-filter]').forEach(btn => btn.classList.remove('is-active'));
                 this.classList.add('is-active');
@@ -4729,6 +5045,100 @@ function initTasksPage() {
             applyFilters();
         });
     });
+
+    if (projectPageSizeDropdown && projectPageSizeToggle) {
+        syncProjectPageSizeDropdown();
+
+        projectPageSizeToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = !projectPageSizeDropdown.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeStatusFilterMenu();
+            closePriorityFilterMenu();
+            closeDirectoryMembersMenus();
+            closeIssuePickers();
+            closeInlineSelectDropdowns();
+            projectPageSizeDropdown.classList.toggle('is-open', isOpen);
+            projectPageSizeToggle.setAttribute('aria-expanded', String(isOpen));
+        }, pageListenerOptions);
+
+        projectPageSizeDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        }, pageListenerOptions);
+
+        projectPageSizeOptions.forEach(button => {
+            button.addEventListener('click', function() {
+                if (!projectPageSizeSelect || !this.dataset.projectPageSizeValue) return;
+
+                const previousValue = projectPageSizeSelect.value;
+                projectPageSizeSelect.value = this.dataset.projectPageSizeValue;
+                syncProjectPageSizeDropdown();
+                closeProjectPageSizeDropdown();
+                if (projectPageSizeSelect.value !== previousValue) {
+                    projectPageSizeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }, pageListenerOptions);
+        });
+    }
+
+    if (projectPageSizeSelect) {
+        syncProjectPageSizeDropdown();
+        projectPageSizeSelect.addEventListener('change', function() {
+            syncProjectPageSizeDropdown();
+            if (usesServerProjectPagination) {
+                navigateProjectWindow();
+                return;
+            }
+            projectPaginationPage = 1;
+            applyProjectPagination();
+            updateGroupVisibility();
+            updateSelection();
+        }, pageListenerOptions);
+    }
+
+    if (projectPagePrev) {
+        projectPagePrev.addEventListener('click', function() {
+            if (this.disabled) return;
+            if (usesServerProjectPagination) {
+                const url = this.dataset.projectPageUrl || '';
+                if (url) navigateWithinApp(url);
+                return;
+            }
+            setProjectPaginationPage(projectPaginationPage - 1);
+        }, pageListenerOptions);
+    }
+
+    if (projectPageNext) {
+        projectPageNext.addEventListener('click', function() {
+            if (this.disabled) return;
+            if (usesServerProjectPagination) {
+                const url = this.dataset.projectPageUrl || '';
+                if (url) navigateWithinApp(url);
+                return;
+            }
+            setProjectPaginationPage(projectPaginationPage + 1);
+        }, pageListenerOptions);
+    }
+
+    if (projectPaginationPages) {
+        projectPaginationPages.addEventListener('click', function(event) {
+            const button = event.target.closest('[data-project-page]');
+            if (!button) return;
+
+            if (usesServerProjectPagination) {
+                const url = button.dataset.projectPageUrl || '';
+                if (url) navigateWithinApp(url);
+                return;
+            }
+
+            const page = Number.parseInt(button.dataset.projectPage || '', 10);
+            if (!Number.isFinite(page) || page === projectPaginationPage) return;
+
+            setProjectPaginationPage(page);
+        }, pageListenerOptions);
+    }
 
     collapsibleGroupHeaders.forEach(header => {
         const button = header.querySelector('.tasks-group-caret');
@@ -5203,7 +5613,6 @@ function initTasksPage() {
 
         function isProjectDirectoryBoard(board) {
             return board.classList.contains('tasks-project-sheet--selectable')
-                && (!board.classList.contains('tasks-section-sheet') || board.classList.contains('tasks-all-groups-sheet'))
                 && !board.classList.contains('tasks-tag-sheet');
         }
 
@@ -5533,7 +5942,7 @@ function initTasksPage() {
 
             const columns = getDirectoryManagedColumns(board);
             const hiddenColumns = new Set(readStoredDirectoryColumnLayout(board).hidden);
-            const orderedColumns = ['select', ...columns, 'spacer'];
+            const orderedColumns = ['select', 'action', ...columns, 'spacer'];
 
             [header, ...board.querySelectorAll('.tasks-directory-list .tasks-directory-row')].forEach(row => {
                 const cells = Array.from(row.querySelectorAll(':scope > [data-column]'));
@@ -5547,7 +5956,7 @@ function initTasksPage() {
                 cells.forEach(cell => {
                     const column = cell.dataset.column || '';
                     if (!orderedColumns.includes(column)) row.appendChild(cell);
-                    cell.hidden = hiddenColumns.has(column);
+                    cell.hidden = hiddenColumns.has(column) && !isDirectoryColumnLayoutFixed(column);
                 });
 
                 markDirectoryLastVisibleColumn(row);
@@ -5620,7 +6029,7 @@ function initTasksPage() {
         }
 
         function isDirectoryColumnLayoutFixed(column) {
-            return column === 'select' || column === 'spacer';
+            return column === 'select' || isFixedDirectoryColumn(column);
         }
 
         function getDirectoryColumnLayoutStorageKey(board) {
@@ -5821,6 +6230,9 @@ if (!window.ancoreTaskSortHandlerInitialized) {
         const direction = button.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
         updateTaskSortButton(button, direction);
         sortCurrentTaskLists(direction);
+        if (typeof window.ancoreRefreshProjectPagination === 'function') {
+            window.ancoreRefreshProjectPagination();
+        }
     });
 }
 

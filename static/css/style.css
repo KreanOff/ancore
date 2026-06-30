@@ -3,8 +3,8 @@
 @import 'base/reset.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'layout/sidebar.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'layout/main.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'layout/responsive.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/cards.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'layout/responsive.css?v=20260630-desktop-tablet-ui';
+@import 'components/cards.css?v=20260630-dashboard-rail-title-match-tasks';
 @import 'components/buttons.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/toolbar.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/alerts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
@@ -12,15 +12,15 @@
 @import 'components/dialogs.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/modals.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/tables.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/tasks.css?v=20260628-unified-modal-shell';
-@import 'components/contacts.css?v=20260625-user-directory-project-sheet';
+@import 'components/tasks.css?v=20260630-project-pagination-white-text';
+@import 'components/contacts.css?v=20260630-desktop-tablet-ui';
 @import 'components/notifications.css?v=20260616-task-autosave';
 @import 'components/attachments.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/file-upload.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/auth.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'calendar.css?v=20260628-unified-modal-shell';
 @import 'components/checkboxes.css?v=20260625-contacts-project-table-match';
-@import 'theme/elestio.css?v=20260627-project-icons-optical-size';
+@import 'theme/elestio.css?v=20260630-task-surface-white-bg';
 @import 'components/profile.css?v=20260628-unified-modal-shell';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
@@ -349,7 +349,8 @@ body :where(
     font-weight: 400 !important;
 }
 
-.tasks-tracker-rail .tasks-rail-header h1 {
+.tasks-tracker-rail .tasks-rail-header h1,
+.secondary-menu .dashboard-rail .dashboard-rail-header h1 {
     font-size: 18px !important;
     font-weight: 500 !important;
 }

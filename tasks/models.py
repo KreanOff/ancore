@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Max
+from django.contrib.postgres.indexes import GinIndex
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.apps import apps
@@ -52,6 +53,13 @@ class TaskProject(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['code'], name='unique_task_project_code'),
         ]
+        indexes = [
+            models.Index(fields=['user', 'name', 'id'], name='taskproj_user_name_id_idx'),
+            models.Index(fields=['user', 'priority', 'name', 'id'], name='taskproj_user_prio_name_idx'),
+            GinIndex(fields=['name'], name='taskproj_name_trgm_idx', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['description'], name='taskproj_desc_trgm_idx', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['code'], name='taskproj_code_trgm_idx', opclasses=['gin_trgm_ops']),
+        ]
 
     def _code_scope_models(self):
         code_models = [self.__class__]
@@ -64,20 +72,22 @@ class TaskProject(models.Model):
                 code_models.append(model)
         return code_models
 
-    def _generate_unique_code(self):
-        existing_codes = set()
+    def _code_exists(self, candidate):
         for model in self._code_scope_models():
-            queryset = model.objects.all()
-            if model is self.__class__:
+            queryset = model.objects.filter(code=candidate)
+            if model is self.__class__ and self.pk:
                 queryset = queryset.exclude(pk=self.pk)
-            existing_codes.update(queryset.values_list('code', flat=True))
+            if queryset.exists():
+                return True
+        return False
 
+    def _generate_unique_code(self):
         while True:
             letters = ''.join(secrets.choice(self.CODE_LETTERS) for _ in range(3))
             first_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(4))
             second_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(3))
             candidate = f'{letters}-{first_digits}-{second_digits}'
-            if candidate not in existing_codes:
+            if not self._code_exists(candidate):
                 return candidate
 
     def save(self, *args, **kwargs):
@@ -117,6 +127,9 @@ class TaskSection(models.Model):
 
     class Meta:
         ordering = ['order', 'created_at']
+        indexes = [
+            models.Index(fields=['project', 'order', 'created_at'], name='tasksec_project_order_idx'),
+        ]
 
     def __str__(self):
         return f'{self.project.name} / {self.title}'
@@ -204,6 +217,12 @@ class Task(models.Model):
     section = models.ForeignKey(TaskSection, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
     tags = models.ManyToManyField(TaskTag, related_name='tasks', blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='subtasks', null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['section', 'parent', 'created_at'], name='task_section_parent_idx'),
+            models.Index(fields=['user', 'task_id'], name='task_user_task_id_idx'),
+        ]
 
     def save(self, *args, **kwargs):
         from django.utils import timezone

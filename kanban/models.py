@@ -52,20 +52,22 @@ class KanbanProject(models.Model):
                 code_models.append(model)
         return code_models
 
-    def _generate_unique_code(self):
-        existing_codes = set()
+    def _code_exists(self, candidate):
         for model in self._code_scope_models():
-            queryset = model.objects.all()
-            if model is self.__class__:
+            queryset = model.objects.filter(code=candidate)
+            if model is self.__class__ and self.pk:
                 queryset = queryset.exclude(pk=self.pk)
-            existing_codes.update(queryset.values_list('code', flat=True))
+            if queryset.exists():
+                return True
+        return False
 
+    def _generate_unique_code(self):
         while True:
             letters = ''.join(secrets.choice(self.CODE_LETTERS) for _ in range(3))
             first_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(4))
             second_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(3))
             candidate = f'{letters}-{first_digits}-{second_digits}'
-            if candidate not in existing_codes:
+            if not self._code_exists(candidate):
                 return candidate
 
     def save(self, *args, **kwargs):

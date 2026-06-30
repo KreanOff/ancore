@@ -60,6 +60,7 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Powiadomienia')
+        self.assertNotContains(response, 'Aktywność')
         self.assertContains(response, 'Brak nowych powiadomień.')
         self.assertNotContains(response, 'Centrum pracy')
         self.assertNotContains(response, 'Ostatnie aktywne zadania')

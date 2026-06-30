@@ -1,9 +1,12 @@
 import json
 import re
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag
@@ -89,6 +92,20 @@ class KanbanProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?project={project.id}")
         self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
         self.assertNotEqual(project.code, first.code)
+
+    def test_project_code_generation_does_not_load_all_project_codes(self):
+        for index in range(20):
+            KanbanProject.objects.create(user=self.user, name=f'Istniejący {index}', code=f'OLD-{index:03d}')
+
+        with patch('kanban.models.secrets.choice', side_effect=list('KBN1234567')):
+            with CaptureQueriesContext(connection) as queries:
+                project = KanbanProject.objects.create(user=self.user, name='Nowy projekt')
+
+        select_sql = ' '.join(query['sql'] for query in queries if query['sql'].startswith('SELECT'))
+        self.assertEqual(project.code, 'KBN-1234-567')
+        self.assertIn('"kanban_kanbanproject"."code" =', select_sql)
+        self.assertNotIn('SELECT "kanban_kanbanproject"."code"', select_sql)
+        self.assertLessEqual(len(queries), 4)
 
     def test_project_codes_are_unique_across_users(self):
         other_user = get_user_model().objects.create_user(username='other-user', password='test-pass-123')

@@ -1,4 +1,6 @@
+import json
 from collections import defaultdict
+from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
@@ -13,12 +15,16 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
-import json
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
 from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
+
+
+PROJECT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
+PROJECT_DEFAULT_PAGE_SIZE = 50
+PROJECT_NAVIGATION_LIMIT = 50
 
 
 def _mark_task_row_access(tasks, user):
@@ -31,6 +37,12 @@ def _mark_task_row_access(tasks, user):
         task.can_manage = task.user_id == user.id
         task.can_edit = task.can_manage
         task.shared_view_url = ''
+        task.tags_render_count = getattr(task, 'tags_total', None)
+        if task.tags_render_count is None:
+            task.tags_render_count = task.tags.count()
+        task.attachments_render_count = getattr(task, 'attachments_total', None)
+        if task.attachments_render_count is None:
+            task.attachments_render_count = task.attachments.count()
     return tasks
 
 
@@ -341,16 +353,117 @@ def _mark_project_permissions(projects, user):
             section.can_edit = section.can_manage
             if section.can_edit:
                 project.has_editable_sections = True
-            for task in section.tasks.all():
-                _clear_share_access_badge(task)
     return projects
 
 
-def _projects_for_user(user, tasks_queryset):
-    projects_filter = Q(user=user)
+def _project_page_size(request):
+    try:
+        page_size = int(request.GET.get('page_size') or PROJECT_DEFAULT_PAGE_SIZE)
+    except (TypeError, ValueError):
+        return PROJECT_DEFAULT_PAGE_SIZE
+    return page_size if page_size in PROJECT_PAGE_SIZE_OPTIONS else PROJECT_DEFAULT_PAGE_SIZE
 
-    projects = list(
-        TaskProject.objects.filter(projects_filter)
+
+def _project_page_number(request):
+    try:
+        page_number = int(request.GET.get('page') or 1)
+    except (TypeError, ValueError):
+        return 1
+    return max(page_number, 1)
+
+
+def _project_page_items(current_page, total_pages, base_params):
+    if total_pages < 1:
+        return []
+
+    if total_pages <= 7:
+        page_numbers = list(range(1, total_pages + 1))
+    elif current_page <= 4:
+        page_numbers = [1, 2, 3, 4, 5, total_pages]
+    elif current_page >= total_pages - 3:
+        page_numbers = [1, *range(total_pages - 4, total_pages + 1)]
+    else:
+        page_numbers = [1, current_page - 1, current_page, current_page + 1, total_pages]
+
+    items = []
+    previous_page = None
+    for page_number in page_numbers:
+        if previous_page and page_number - previous_page > 1:
+            items.append({'is_ellipsis': True})
+        page_params = {**base_params, 'page': page_number}
+        if page_number == 1:
+            page_params.pop('page', None)
+        items.append({
+            'page': page_number,
+            'url': _projects_url(page_params),
+            'is_current': page_number == current_page,
+        })
+        previous_page = page_number
+    return items
+
+
+def _projects_url(params):
+    cleaned_params = {
+        key: value
+        for key, value in params.items()
+        if value not in (None, '')
+    }
+    query_string = urlencode(cleaned_params)
+    base_url = reverse('tasks:tasks')
+    return f'{base_url}?{query_string}' if query_string else base_url
+
+
+def _project_filter_queryset(user, query='', priority=''):
+    queryset = TaskProject.objects.filter(user=user)
+    query = (query or '').strip()
+    if query:
+        queryset = queryset.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(code__icontains=query)
+        )
+    if priority in {value for value, _label in TaskProject.PRIORITY_CHOICES}:
+        queryset = queryset.filter(priority=priority)
+    return queryset
+
+
+def _group_filter_queryset(user, query='', priority=''):
+    queryset = TaskSection.objects.filter(project__user=user).select_related('project', 'project__user')
+    query = (query or '').strip()
+    if query:
+        queryset = queryset.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(project__name__icontains=query)
+            | Q(project__code__icontains=query)
+        )
+    if priority in {value for value, _label in TaskSection.PRIORITY_CHOICES}:
+        queryset = queryset.filter(priority=priority)
+    return queryset
+
+
+def _tag_filter_queryset(user, query=''):
+    queryset = TaskTag.objects.filter(user=user)
+    query = (query or '').strip()
+    if query:
+        queryset = queryset.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(code__icontains=query)
+        )
+    return queryset
+
+
+def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_by=('name', 'id'), limit=None, offset=0):
+    projects_filter = Q(user=user)
+    sections_queryset = TaskSection.objects.select_related('project', 'project__user')
+    if tasks_queryset is not None:
+        sections_queryset = sections_queryset.prefetch_related(
+            Prefetch('tasks', queryset=tasks_queryset)
+        )
+
+    queryset = (
+        (project_queryset if project_queryset is not None else TaskProject.objects.filter(projects_filter))
         .distinct()
         .select_related('user', 'company')
         .annotate(
@@ -362,91 +475,268 @@ def _projects_for_user(user, tasks_queryset):
         .prefetch_related(
             Prefetch(
                 'sections',
-                queryset=TaskSection.objects.select_related('project', 'project__user').prefetch_related(
-                    Prefetch('tasks', queryset=tasks_queryset)
-                ),
+                queryset=sections_queryset,
             )
         )
-        .order_by('name')
     )
+    if order_by:
+        queryset = queryset.order_by(*order_by)
+    if limit is not None:
+        queryset = queryset[offset:offset + limit]
+    projects = list(queryset)
     return _mark_project_permissions(projects, user)
+
+
+def _project_for_user(user, project_id):
+    if not project_id:
+        return None
+    projects = _projects_for_user(
+        user,
+        project_queryset=TaskProject.objects.filter(user=user, id=project_id),
+        order_by=None,
+        limit=1,
+    )
+    return projects[0] if projects else None
+
+
+def _project_window_for_request(request):
+    page_size = _project_page_size(request)
+    requested_page = _project_page_number(request)
+    query = (request.GET.get('q') or '').strip()
+    priority = (request.GET.get('priority') or '').strip()
+    queryset = _project_filter_queryset(request.user, query=query, priority=priority)
+    total_projects = queryset.count()
+    total_pages = max(1, (total_projects + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+
+    projects = _projects_for_user(
+        request.user,
+        project_queryset=queryset,
+        order_by=('name', 'id'),
+        limit=page_size,
+        offset=offset,
+    )
+
+    _decorate_project_directory_metrics(projects)
+    _decorate_directory_members(projects, current_user=request.user)
+
+    base_params = {
+        'q': query,
+        'priority': priority,
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_projects > 0
+    has_next = current_page < total_pages and total_projects > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_page_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_page_params.pop('page', None)
+        previous_url = _projects_url(previous_page_params)
+    if has_next:
+        next_url = _projects_url({**base_params, 'page': current_page + 1})
+
+    if not projects:
+        summary = 'Brak projektów'
+    else:
+        first_visible = offset + 1
+        last_visible = offset + len(projects)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_projects} projektów'
+
+    return {
+        'projects': projects,
+        'query': query,
+        'priority': priority,
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_projects': total_projects,
+        'page_size': page_size,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': _project_page_items(current_page, total_pages, base_params) if total_projects else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
+
+
+def _group_window_for_request(request):
+    page_size = _project_page_size(request)
+    requested_page = _project_page_number(request)
+    query = (request.GET.get('q') or '').strip()
+    priority = (request.GET.get('priority') or '').strip()
+    queryset = _group_filter_queryset(request.user, query=query, priority=priority)
+    total_groups = queryset.count()
+    total_pages = max(1, (total_groups + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+
+    sections = list(
+        queryset.order_by('project__name', 'order', 'created_at', 'id')[offset:offset + page_size]
+    )
+    _decorate_group_directory_rows(sections, current_user=request.user)
+
+    base_params = {
+        'view': 'all-groups',
+        'q': query,
+        'priority': priority,
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_groups > 0
+    has_next = current_page < total_pages and total_groups > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_page_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_page_params.pop('page', None)
+        previous_url = _projects_url(previous_page_params)
+    if has_next:
+        next_url = _projects_url({**base_params, 'page': current_page + 1})
+
+    if not sections:
+        summary = 'Brak grup'
+    else:
+        first_visible = offset + 1
+        last_visible = offset + len(sections)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_groups} grup'
+
+    return {
+        'sections': sections,
+        'query': query,
+        'priority': priority,
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_groups': total_groups,
+        'page_size': page_size,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': _project_page_items(current_page, total_pages, base_params) if total_groups else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
+
+
+def _tag_window_for_request(request):
+    page_size = _project_page_size(request)
+    requested_page = _project_page_number(request)
+    query = (request.GET.get('q') or '').strip()
+    queryset = _tag_filter_queryset(request.user, query=query)
+    total_tags = queryset.count()
+    total_pages = max(1, (total_tags + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+
+    tags = list(
+        queryset.annotate(
+            total_tasks=Count(
+                'tasks',
+                filter=Q(tasks__user=request.user, tasks__parent__isnull=True),
+            )
+        ).order_by('name', 'id')[offset:offset + page_size]
+    )
+
+    base_params = {
+        'view': 'tags',
+        'q': query,
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_tags > 0
+    has_next = current_page < total_pages and total_tags > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_page_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_page_params.pop('page', None)
+        previous_url = _projects_url(previous_page_params)
+    if has_next:
+        next_url = _projects_url({**base_params, 'page': current_page + 1})
+
+    if not tags:
+        summary = 'Brak tagów'
+    else:
+        first_visible = offset + 1
+        last_visible = offset + len(tags)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_tags} tagów'
+
+    return {
+        'tags': tags,
+        'query': query,
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_tags': total_tags,
+        'page_size': page_size,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': _project_page_items(current_page, total_pages, base_params) if total_tags else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
+
+
+def _navigation_projects_for_user(user, active_project=None):
+    projects = _projects_for_user(user, limit=PROJECT_NAVIGATION_LIMIT)
+    if active_project and all(project.id != active_project.id for project in projects):
+        projects = [active_project, *projects]
+    return projects
 
 
 def _decorate_project_directory_metrics(projects):
     if not projects:
         return
 
-    task_project_ids = {}
-    task_section_ids = {}
-    tasks_by_project = defaultdict(list)
-    tasks_by_section = defaultdict(list)
-
+    section_ids = []
     for project in projects:
         for section in project.sections.all():
-            for task in section.tasks.all():
-                tasks_by_project[project.id].append(task)
-                tasks_by_section[section.id].append(task)
-                task_project_ids[task.id] = project.id
-                task_section_ids[task.id] = section.id
+            section_ids.append(section.id)
 
-    activity_by_project = defaultdict(list)
-    activity_by_section = defaultdict(list)
-    if task_project_ids:
-        activity_rows = (
-            TaskActivity.objects.filter(task_id__in=task_project_ids.keys())
-            .values('task_id')
-            .annotate(last_activity=Max('created_at'))
-        )
-        for row in activity_rows:
-            activity_by_project[task_project_ids[row['task_id']]].append(row['last_activity'])
-            section_id = task_section_ids.get(row['task_id'])
-            if section_id:
-                activity_by_section[section_id].append(row['last_activity'])
-
-    for project in projects:
-        project_tasks = tasks_by_project.get(project.id, [])
-        total_tasks = len(project_tasks)
-        completed_tasks = sum(
-            1
-            for task in project_tasks
-            if task.is_completed or task.status == 'closed'
-        )
-
-        if total_tasks:
-            progress_percent = round((completed_tasks / total_tasks) * 100)
-        else:
-            progress_percent = 0
-
-        last_activity_candidates = [project.created_at]
-        last_activity_candidates.extend(section.created_at for section in project.sections.all())
-        last_activity_candidates.extend(task.created_at for task in project_tasks)
-        last_activity_candidates.extend(activity_by_project.get(project.id, []))
-
-        project.tasks_total_count = total_tasks
-        project.tasks_completed_count = completed_tasks
-        project.tasks_count_label = f'{completed_tasks}/{total_tasks}'
-        project.progress_percent = progress_percent
-        project.last_activity_at = max(
-            (value for value in last_activity_candidates if value),
-            default=project.created_at,
-        )
-
-        for section in project.sections.all():
-            section_tasks = tasks_by_section.get(section.id, [])
-            section_total_tasks = len(section_tasks)
-            section_completed_tasks = sum(
-                1
-                for task in section_tasks
-                if task.is_completed or task.status == 'closed'
+    metrics_by_section = {}
+    if section_ids:
+        metrics_by_section = {
+            row['section_id']: row
+            for row in (
+                Task.objects.filter(section_id__in=section_ids, parent__isnull=True)
+                .values('section_id')
+                .annotate(
+                    total_tasks=Count('id', distinct=True),
+                    completed_tasks=Count(
+                        'id',
+                        filter=Q(is_completed=True) | Q(status='closed'),
+                        distinct=True,
+                    ),
+                    last_task_created=Max('created_at'),
+                    last_activity=Max('activities__created_at'),
+                )
             )
+        }
+
+    for project in projects:
+        last_activity_candidates = [project.created_at]
+        project_total_tasks = 0
+        project_completed_tasks = 0
+
+        for section in project.sections.all():
+            section_metrics = metrics_by_section.get(section.id, {})
+            section_total_tasks = section_metrics.get('total_tasks') or 0
+            section_completed_tasks = section_metrics.get('completed_tasks') or 0
             if section_total_tasks:
                 section_progress_percent = round((section_completed_tasks / section_total_tasks) * 100)
             else:
                 section_progress_percent = 0
 
             section_activity_candidates = [section.created_at]
-            section_activity_candidates.extend(task.created_at for task in section_tasks)
-            section_activity_candidates.extend(activity_by_section.get(section.id, []))
+            section_activity_candidates.extend([
+                section_metrics.get('last_task_created'),
+                section_metrics.get('last_activity'),
+            ])
 
             section.tasks_total_count = section_total_tasks
             section.tasks_completed_count = section_completed_tasks
@@ -456,6 +746,77 @@ def _decorate_project_directory_metrics(projects):
                 (value for value in section_activity_candidates if value),
                 default=section.created_at,
             )
+            project_total_tasks += section_total_tasks
+            project_completed_tasks += section_completed_tasks
+            last_activity_candidates.append(section.last_activity_at)
+
+        if project_total_tasks:
+            project_progress_percent = round((project_completed_tasks / project_total_tasks) * 100)
+        else:
+            project_progress_percent = 0
+
+        project.tasks_total_count = project_total_tasks
+        project.tasks_completed_count = project_completed_tasks
+        project.tasks_count_label = f'{project_completed_tasks}/{project_total_tasks}'
+        project.progress_percent = project_progress_percent
+        project.last_activity_at = max(
+            (value for value in last_activity_candidates if value),
+            default=project.created_at,
+        )
+
+
+def _decorate_group_directory_rows(sections, current_user=None):
+    if not sections:
+        return
+
+    section_ids = [section.id for section in sections]
+    metrics_by_section = {
+        row['section_id']: row
+        for row in (
+            Task.objects.filter(section_id__in=section_ids, parent__isnull=True)
+            .values('section_id')
+            .annotate(
+                total_tasks=Count('id', distinct=True),
+                completed_tasks=Count(
+                    'id',
+                    filter=Q(is_completed=True) | Q(status='closed'),
+                    distinct=True,
+                ),
+                last_task_created=Max('created_at'),
+                last_activity=Max('activities__created_at'),
+            )
+        )
+    }
+
+    for section in sections:
+        project = section.project
+        can_manage_project = project.user_id == getattr(current_user, 'id', None)
+        project.can_manage = can_manage_project
+        project.can_share = False
+        project.can_edit = can_manage_project
+        _clear_share_access_badge(section)
+        section.can_manage = can_manage_project
+        section.can_share = False
+        section.can_edit = can_manage_project
+
+        section_metrics = metrics_by_section.get(section.id, {})
+        total_tasks = section_metrics.get('total_tasks') or 0
+        completed_tasks = section_metrics.get('completed_tasks') or 0
+        progress_percent = round((completed_tasks / total_tasks) * 100) if total_tasks else 0
+        activity_candidates = [
+            section.created_at,
+            section_metrics.get('last_task_created'),
+            section_metrics.get('last_activity'),
+        ]
+
+        section.tasks_total_count = total_tasks
+        section.tasks_completed_count = completed_tasks
+        section.tasks_count_label = f'{completed_tasks}/{total_tasks}'
+        section.progress_percent = progress_percent
+        section.last_activity_at = max(
+            (value for value in activity_candidates if value),
+            default=section.created_at,
+        )
 
 
 def _shared_users_by_object(content_type, object_ids):
@@ -925,34 +1286,21 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
             When(status='closed', then=Value(1)),
             default=Value(0),
             output_field=IntegerField(),
-        )
+        ),
+        tags_total=Count('tags', distinct=True),
+        attachments_total=Count('attachments', distinct=True),
     ).order_by('is_closed_sort', 'task_id')
 
-    navigation_tasks_qs = Task.objects.filter(_task_access_filter(user), parent__isnull=True).select_related(
-        'section',
-        'section__project',
-    ).prefetch_related('tags').annotate(
-        is_closed_sort=Case(
-            When(status='closed', then=Value(1)),
-            default=Value(0),
-            output_field=IntegerField(),
-        )
-    ).order_by('is_closed_sort', 'task_id')
-    projects = _projects_for_user(user, navigation_tasks_qs)
-
-    active_project = active_section.project if active_section else None
+    active_project = _project_for_user(user, active_section.project_id) if active_section else None
     if active_section:
-        for project in projects:
-            if project.id != active_section.project_id:
-                continue
-            active_project = project
-            active_section = next((section for section in project.sections.all() if section.id == active_section.id), active_section)
-            break
+        active_section = next((section for section in active_project.sections.all() if section.id == active_section.id), active_section)
 
     if active_view is None:
         active_view = 'section' if active_section else 'projects'
 
-    _decorate_directory_members(projects, current_user=user)
+    navigation_projects = _navigation_projects_for_user(user, active_project=active_project)
+    _decorate_project_directory_metrics(navigation_projects)
+    _decorate_directory_members(navigation_projects, current_user=user)
 
     can_create_issue = _user_can_create_issue(
         user,
@@ -961,13 +1309,15 @@ def _tasks_navigation_context(user, active_section=None, active_view=None):
     )
 
     return {
-        'projects': projects,
+        'projects': navigation_projects,
+        'navigation_projects': navigation_projects,
+        'project_options': navigation_projects,
         'active_project': active_project,
         'active_section': active_section,
         'active_view': active_view,
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
-        'total_group_count': len(_sections_for_projects(projects)),
+        'total_group_count': len(_sections_for_projects(navigation_projects)),
         'tags': TaskTag.objects.filter(user=user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=user, tasks__parent__isnull=True))),
         'total_tag_count': TaskTag.objects.filter(user=user).count(),
         'shared_task_count': 0,
@@ -1159,9 +1509,14 @@ def _tasks_page(request, active_section=None):
     if active_section:
         active_project_id = active_section.project_id
     active_project_for_form = _task_creation_project_for_user(request.user, active_project_id)
+    project_options_for_form = _navigation_projects_for_user(request.user, active_project=active_project_for_form)
     task_modal_sections = _editable_sections_queryset(request.user)
     if active_project_for_form:
         task_modal_sections = task_modal_sections.filter(project=active_project_for_form)
+    else:
+        task_modal_sections = task_modal_sections.filter(
+            project_id__in=[project.id for project in project_options_for_form]
+        )
     task_modal_form = TaskModalForm(
         user=request.user,
         project=active_project_for_form,
@@ -1385,52 +1740,15 @@ def _tasks_page(request, active_section=None):
             When(status='closed', then=Value(1)),
             default=Value(0),
             output_field=IntegerField(),
-        )
+        ),
+        tags_total=Count('tags', distinct=True),
+        attachments_total=Count('attachments', distinct=True),
     ).order_by('is_closed_sort', 'task_id')
 
-    navigation_tasks_qs = Task.objects.filter(_task_access_filter(request.user), parent__isnull=True).select_related(
-        'section',
-        'section__project',
-    ).prefetch_related('tags').annotate(
-        is_closed_sort=Case(
-            When(status='closed', then=Value(1)),
-            default=Value(0),
-            output_field=IntegerField(),
-        )
-    ).order_by('is_closed_sort', 'task_id')
-    projects = _projects_for_user(request.user, navigation_tasks_qs)
-
-    active_project = active_section.project if active_section else None
-    if active_section:
-        for project in projects:
-            if project.id != active_section.project_id:
-                continue
-            active_project = project
-            active_section = next((section for section in project.sections.all() if section.id == active_section.id), active_section)
-            break
-
-    active_project_id = request.GET.get('project') if not active_section else str(active_section.project_id)
-    if active_project_id and not active_project:
-        active_project = next((project for project in projects if str(project.id) == active_project_id), None)
-
-    _decorate_project_directory_metrics(projects)
-    _decorate_directory_members(projects, current_user=request.user)
-
-    orphan_tasks = tasks_qs.filter(section__isnull=True)
-    orphan_status_groups = _decorate_status_groups(projects, orphan_tasks, request.user)
-    all_status_groups = _status_groups_for_tasks(tasks_qs, request.user)
-    all_sections = _sections_for_projects(projects)
-    shared_projects = []
-    shared_sections = []
-    shared_tasks = []
-    shared_status_groups = _status_groups_for_tasks(shared_tasks, request.user)
-    _decorate_share_links(request, [*projects, *all_sections])
-    tags = TaskTag.objects.filter(user=request.user).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=request.user, tasks__parent__isnull=True)))
-    can_create_issue = _user_can_create_issue(
-        request.user,
-        active_project=active_project,
-        active_section=active_section,
-    )
+    active_project_id = str(active_section.project_id) if active_section else active_project_id
+    active_project = _project_for_user(request.user, active_project_id) if active_project_id else None
+    if active_section and active_project:
+        active_section = next((section for section in active_project.sections.all() if section.id == active_section.id), active_section)
 
     if active_section:
         active_view = 'section'
@@ -1447,8 +1765,100 @@ def _tasks_page(request, active_section=None):
     else:
         active_view = 'projects'
 
+    project_window = _project_window_for_request(request) if active_view == 'projects' else {
+        'projects': [],
+        'query': '',
+        'priority': '',
+        'page': 1,
+        'total_pages': 1,
+        'total_projects': 0,
+        'page_size': PROJECT_DEFAULT_PAGE_SIZE,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': [],
+        'has_previous': False,
+        'has_next': False,
+        'previous_url': '',
+        'next_url': '',
+        'summary': '',
+    }
+    group_window = _group_window_for_request(request) if active_view == 'all_groups' else {
+        'sections': [],
+        'query': '',
+        'priority': '',
+        'page': 1,
+        'total_pages': 1,
+        'total_groups': 0,
+        'page_size': PROJECT_DEFAULT_PAGE_SIZE,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': [],
+        'has_previous': False,
+        'has_next': False,
+        'previous_url': '',
+        'next_url': '',
+        'summary': '',
+    }
+    tag_window = _tag_window_for_request(request) if active_view == 'tags' else {
+        'tags': [],
+        'query': '',
+        'page': 1,
+        'total_pages': 1,
+        'total_tags': TaskTag.objects.filter(user=request.user).count(),
+        'page_size': PROJECT_DEFAULT_PAGE_SIZE,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': [],
+        'has_previous': False,
+        'has_next': False,
+        'previous_url': '',
+        'next_url': '',
+        'summary': '',
+    }
+    projects = project_window['projects']
+    navigation_projects = _navigation_projects_for_user(request.user, active_project=active_project)
+    project_options = _navigation_projects_for_user(request.user, active_project=active_project_for_form or active_project)
+    if active_project:
+        _decorate_project_directory_metrics([active_project])
+        _decorate_directory_members([active_project], current_user=request.user)
+    _decorate_project_directory_metrics(navigation_projects)
+    _decorate_directory_members(navigation_projects, current_user=request.user)
+    _decorate_project_directory_metrics(project_options)
+    _decorate_directory_members(project_options, current_user=request.user)
+
+    orphan_tasks = []
+    orphan_status_groups = []
+    all_status_groups = []
+    if active_section:
+        active_section.status_groups = _status_groups_for_tasks(
+            tasks_qs.filter(section_id=active_section.id),
+            request.user,
+        )
+    elif all_tasks_view or my_tasks_view:
+        all_status_groups = _status_groups_for_tasks(tasks_qs, request.user)
+    all_sections = group_window['sections'] if active_view == 'all_groups' else []
+    shared_projects = []
+    shared_sections = []
+    shared_tasks = []
+    shared_status_groups = []
+    _decorate_share_links(request, [*projects, *all_sections])
+    tags = tag_window['tags'] if active_view == 'tags' else TaskTag.objects.none()
+    total_task_count = tasks_qs.count() if (all_tasks_view or my_tasks_view) else 0
+    can_create_issue = _user_can_create_issue(
+        request.user,
+        active_project=active_project,
+        active_section=active_section,
+    )
+
     context = {
         'projects': projects,
+        'navigation_projects': navigation_projects,
+        'project_options': project_options,
+        'project_window': project_window,
+        'project_query': project_window['query'],
+        'project_priority_filter': project_window['priority'],
+        'group_window': group_window,
+        'group_query': group_window['query'],
+        'group_priority_filter': group_window['priority'],
+        'tag_window': tag_window,
+        'tag_query': tag_window['query'],
         'active_project': active_project,
         'active_section': active_section,
         'active_view': active_view,
@@ -1462,10 +1872,10 @@ def _tasks_page(request, active_section=None):
         'shared_sections': shared_sections,
         'shared_tasks': shared_tasks,
         'tasks': tasks_qs,
-        'total_task_count': tasks_qs.count(),
-        'total_group_count': len(all_sections),
+        'total_task_count': total_task_count,
+        'total_group_count': group_window['total_groups'] if active_view == 'all_groups' else len(_sections_for_projects(navigation_projects)),
         'tags': tags,
-        'total_tag_count': tags.count(),
+        'total_tag_count': tag_window['total_tags'],
         'shared_task_count': len(shared_tasks),
         'shared_group_count': len(shared_sections),
         'shared_project_count': len(shared_projects),
@@ -1477,6 +1887,11 @@ def _tasks_page(request, active_section=None):
         'tag_form': tag_form,
         'section_create_modal_open': section_create_modal_open,
         'section_create_project_id': section_create_project_id,
+        'section_create_uses_project_select': (
+            all_groups_view
+            or active_project is None
+            or not getattr(active_project, 'can_manage', False)
+        ),
         'section_rename_form': section_rename_form,
         'section_rename_section_id': section_rename_section_id,
         'section_rename_modal_open': section_rename_modal_open,
