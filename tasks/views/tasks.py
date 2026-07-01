@@ -18,13 +18,15 @@ from django.contrib import messages
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
-from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
+from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag, parse_hierarchy_code_number
 from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
 
 PROJECT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
 PROJECT_DEFAULT_PAGE_SIZE = 50
 PROJECT_NAVIGATION_LIMIT = 50
+TASK_PAGE_SIZE_OPTIONS = PROJECT_PAGE_SIZE_OPTIONS
+TASK_DEFAULT_PAGE_SIZE = PROJECT_DEFAULT_PAGE_SIZE
 
 
 def _mark_task_row_access(tasks, user):
@@ -46,7 +48,125 @@ def _mark_task_row_access(tasks, user):
     return tasks
 
 
-def _status_groups_for_tasks(tasks, user=None):
+def _task_status_page_param(status):
+    return f'task_{status}_page'
+
+
+def _task_status_page_size_param(status):
+    return f'task_{status}_page_size'
+
+
+def _task_status_page_size(request, status):
+    if request is None:
+        return TASK_DEFAULT_PAGE_SIZE
+
+    try:
+        page_size = int(request.GET.get(_task_status_page_size_param(status)) or TASK_DEFAULT_PAGE_SIZE)
+    except (TypeError, ValueError):
+        return TASK_DEFAULT_PAGE_SIZE
+    return page_size if page_size in TASK_PAGE_SIZE_OPTIONS else TASK_DEFAULT_PAGE_SIZE
+
+
+def _task_status_page_number(request, status):
+    if request is None:
+        return 1
+
+    try:
+        page_number = int(request.GET.get(_task_status_page_param(status)) or 1)
+    except (TypeError, ValueError):
+        return 1
+    return max(page_number, 1)
+
+
+def _request_query_params(request):
+    if request is None:
+        return {}
+    return {key: value for key, value in request.GET.items()}
+
+
+def _paginated_status_group_for_tasks(tasks, status, label, user=None, request=None, base_url=None):
+    page_param = _task_status_page_param(status)
+    page_size_param = _task_status_page_size_param(status)
+    page_size = _task_status_page_size(request, status)
+    requested_page = _task_status_page_number(request, status)
+    status_queryset = tasks.filter(status=status)
+    total_tasks = status_queryset.count()
+    total_pages = max(1, (total_tasks + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+    status_tasks = list(status_queryset[offset:offset + page_size])
+    _mark_task_row_access(status_tasks, user)
+
+    base_params = _request_query_params(request)
+    base_params[page_size_param] = page_size
+    has_previous = current_page > 1 and total_tasks > 0
+    has_next = current_page < total_pages and total_tasks > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_page_params = {**base_params, page_param: current_page - 1}
+        if current_page - 1 == 1:
+            previous_page_params.pop(page_param, None)
+        previous_url = _projects_url(previous_page_params, base_url=base_url)
+    if has_next:
+        next_url = _projects_url({**base_params, page_param: current_page + 1}, base_url=base_url)
+
+    if not status_tasks:
+        summary = 'Brak zadań'
+    else:
+        first_visible = offset + 1
+        last_visible = offset + len(status_tasks)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_tasks} zadań'
+
+    page_size_items = []
+    for option in TASK_PAGE_SIZE_OPTIONS:
+        page_size_params = {**base_params, page_size_param: option}
+        page_size_params.pop(page_param, None)
+        page_size_items.append({
+            'size': option,
+            'url': _projects_url(page_size_params, base_url=base_url),
+            'is_current': page_size == option,
+        })
+
+    return {
+        'status': status,
+        'label': label,
+        'tasks': status_tasks,
+        'count': total_tasks,
+        'page': current_page,
+        'total_pages': total_pages,
+        'page_size': page_size,
+        'page_size_options': TASK_PAGE_SIZE_OPTIONS,
+        'page_size_items': page_size_items,
+        'page_items': _project_page_items(
+            current_page,
+            total_pages,
+            base_params,
+            page_param=page_param,
+            base_url=base_url,
+        ) if total_tasks else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
+
+
+def _status_groups_for_tasks(tasks, user=None, request=None, base_url=None, paginate=False):
+    if paginate and request is not None and hasattr(tasks, 'filter'):
+        return [
+            _paginated_status_group_for_tasks(
+                tasks,
+                status,
+                label,
+                user=user,
+                request=request,
+                base_url=base_url,
+            )
+            for status, label in Task.STATUS_CHOICES
+        ]
+
     task_list = list(tasks)
     _mark_task_row_access(task_list, user)
     tasks_by_status = {status: [] for status, _label in Task.STATUS_CHOICES}
@@ -372,7 +492,7 @@ def _project_page_number(request):
     return max(page_number, 1)
 
 
-def _project_page_items(current_page, total_pages, base_params):
+def _project_page_items(current_page, total_pages, base_params, page_param='page', base_url=None):
     if total_pages < 1:
         return []
 
@@ -390,26 +510,26 @@ def _project_page_items(current_page, total_pages, base_params):
     for page_number in page_numbers:
         if previous_page and page_number - previous_page > 1:
             items.append({'is_ellipsis': True})
-        page_params = {**base_params, 'page': page_number}
+        page_params = {**base_params, page_param: page_number}
         if page_number == 1:
-            page_params.pop('page', None)
+            page_params.pop(page_param, None)
         items.append({
             'page': page_number,
-            'url': _projects_url(page_params),
+            'url': _projects_url(page_params, base_url=base_url),
             'is_current': page_number == current_page,
         })
         previous_page = page_number
     return items
 
 
-def _projects_url(params):
+def _projects_url(params, base_url=None):
     cleaned_params = {
         key: value
         for key, value in params.items()
         if value not in (None, '')
     }
     query_string = urlencode(cleaned_params)
-    base_url = reverse('tasks:tasks')
+    base_url = base_url or reverse('tasks:tasks')
     return f'{base_url}?{query_string}' if query_string else base_url
 
 
@@ -431,11 +551,17 @@ def _group_filter_queryset(user, query='', priority=''):
     queryset = TaskSection.objects.filter(project__user=user).select_related('project', 'project__user')
     query = (query or '').strip()
     if query:
-        queryset = queryset.filter(
+        group_code_number = parse_hierarchy_code_number(query, TaskSection.CODE_PREFIX)
+        query_filter = (
             Q(title__icontains=query)
             | Q(description__icontains=query)
             | Q(project__name__icontains=query)
             | Q(project__code__icontains=query)
+        )
+        if group_code_number:
+            query_filter |= Q(code_number=group_code_number)
+        queryset = queryset.filter(
+            query_filter
         )
     if priority in {value for value, _label in TaskSection.PRIORITY_CHOICES}:
         queryset = queryset.filter(priority=priority)
@@ -581,6 +707,79 @@ def _group_window_for_request(request):
 
     base_params = {
         'view': 'all-groups',
+        'q': query,
+        'priority': priority,
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_groups > 0
+    has_next = current_page < total_pages and total_groups > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_page_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_page_params.pop('page', None)
+        previous_url = _projects_url(previous_page_params)
+    if has_next:
+        next_url = _projects_url({**base_params, 'page': current_page + 1})
+
+    if not sections:
+        summary = 'Brak grup'
+    else:
+        first_visible = offset + 1
+        last_visible = offset + len(sections)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_groups} grup'
+
+    return {
+        'sections': sections,
+        'query': query,
+        'priority': priority,
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_groups': total_groups,
+        'page_size': page_size,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': _project_page_items(current_page, total_pages, base_params) if total_groups else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
+
+
+def _project_section_window_for_request(request, project):
+    page_size = _project_page_size(request)
+    requested_page = _project_page_number(request)
+    query = (request.GET.get('q') or '').strip()
+    priority = (request.GET.get('priority') or '').strip()
+    queryset = TaskSection.objects.filter(project=project).select_related('project', 'project__user')
+    if query:
+        group_code_number = parse_hierarchy_code_number(query, TaskSection.CODE_PREFIX)
+        query_filter = (
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(project__name__icontains=query)
+            | Q(project__code__icontains=query)
+        )
+        if group_code_number:
+            query_filter |= Q(code_number=group_code_number)
+        queryset = queryset.filter(
+            query_filter
+        )
+    if priority in {value for value, _label in TaskSection.PRIORITY_CHOICES}:
+        queryset = queryset.filter(priority=priority)
+
+    total_groups = queryset.count()
+    total_pages = max(1, (total_groups + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+
+    sections = list(queryset.order_by('order', 'created_at', 'id')[offset:offset + page_size])
+    _decorate_group_directory_rows(sections, current_user=request.user)
+
+    base_params = {
+        'project': project.id,
         'q': query,
         'priority': priority,
         'page_size': page_size,
@@ -1797,6 +1996,22 @@ def _tasks_page(request, active_section=None):
         'next_url': '',
         'summary': '',
     }
+    project_section_window = _project_section_window_for_request(request, active_project) if active_view == 'project' and active_project else {
+        'sections': [],
+        'query': '',
+        'priority': '',
+        'page': 1,
+        'total_pages': 1,
+        'total_groups': 0,
+        'page_size': PROJECT_DEFAULT_PAGE_SIZE,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': [],
+        'has_previous': False,
+        'has_next': False,
+        'previous_url': '',
+        'next_url': '',
+        'summary': '',
+    }
     tag_window = _tag_window_for_request(request) if active_view == 'tags' else {
         'tags': [],
         'query': '',
@@ -1830,9 +2045,18 @@ def _tasks_page(request, active_section=None):
         active_section.status_groups = _status_groups_for_tasks(
             tasks_qs.filter(section_id=active_section.id),
             request.user,
+            request=request,
+            base_url=request.path,
+            paginate=True,
         )
     elif all_tasks_view or my_tasks_view:
-        all_status_groups = _status_groups_for_tasks(tasks_qs, request.user)
+        all_status_groups = _status_groups_for_tasks(
+            tasks_qs,
+            request.user,
+            request=request,
+            base_url=request.path,
+            paginate=True,
+        )
     all_sections = group_window['sections'] if active_view == 'all_groups' else []
     shared_projects = []
     shared_sections = []
@@ -1846,6 +2070,7 @@ def _tasks_page(request, active_section=None):
         active_project=active_project,
         active_section=active_section,
     )
+    project_sections = project_section_window['sections'] if active_view == 'project' else []
 
     context = {
         'projects': projects,
@@ -1857,6 +2082,10 @@ def _tasks_page(request, active_section=None):
         'group_window': group_window,
         'group_query': group_window['query'],
         'group_priority_filter': group_window['priority'],
+        'project_section_window': project_section_window,
+        'project_sections': project_sections,
+        'project_section_query': project_section_window['query'],
+        'project_section_priority_filter': project_section_window['priority'],
         'tag_window': tag_window,
         'tag_query': tag_window['query'],
         'active_project': active_project,
@@ -1873,7 +2102,13 @@ def _tasks_page(request, active_section=None):
         'shared_tasks': shared_tasks,
         'tasks': tasks_qs,
         'total_task_count': total_task_count,
-        'total_group_count': group_window['total_groups'] if active_view == 'all_groups' else len(_sections_for_projects(navigation_projects)),
+        'total_group_count': (
+            group_window['total_groups']
+            if active_view == 'all_groups'
+            else project_section_window['total_groups']
+            if active_view == 'project'
+            else len(_sections_for_projects(navigation_projects))
+        ),
         'tags': tags,
         'total_tag_count': tag_window['total_tags'],
         'shared_task_count': len(shared_tasks),

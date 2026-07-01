@@ -10,12 +10,15 @@ from django.utils.formats import date_format
 import os
 import secrets
 import string
-import re
+
+
+BASE36_ALPHABET = string.digits + string.ascii_uppercase
 
 
 class KanbanProject(models.Model):
-    CODE_LETTERS = string.ascii_uppercase
-    CODE_DIGITS = string.digits
+    CODE_PREFIX = 'P'
+    CODE_LENGTH = 8
+    CODE_ALPHABET = BASE36_ALPHABET
 
     ICON_COLORS = [
         {'background': '#ADD8E6', 'foreground': '#1f2328'},
@@ -63,10 +66,8 @@ class KanbanProject(models.Model):
 
     def _generate_unique_code(self):
         while True:
-            letters = ''.join(secrets.choice(self.CODE_LETTERS) for _ in range(3))
-            first_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(4))
-            second_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(3))
-            candidate = f'{letters}-{first_digits}-{second_digits}'
+            body = ''.join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
+            candidate = f'{self.CODE_PREFIX}-{body}'
             if not self._code_exists(candidate):
                 return candidate
 
@@ -110,8 +111,9 @@ class KanbanSection(models.Model):
 
 
 class KanbanTag(models.Model):
-    CODE_PREFIX = 'TAG'
-    CODE_NUMBER_WIDTH = 3
+    CODE_PREFIX = 'T'
+    CODE_LENGTH = 8
+    CODE_ALPHABET = BASE36_ALPHABET
 
     name = models.CharField(max_length=80)
     description = models.TextField(blank=True)
@@ -123,31 +125,35 @@ class KanbanTag(models.Model):
         ordering = ['name']
         constraints = [
             models.UniqueConstraint(fields=['user', 'name'], name='unique_kanban_tag_per_user'),
-            models.UniqueConstraint(fields=['user', 'code'], name='unique_kanban_tag_code_per_user'),
+            models.UniqueConstraint(fields=['code'], name='unique_kanban_tag_code'),
         ]
 
+    def _code_scope_models(self):
+        code_models = [self.__class__]
+        for app_label, model_name in (('tasks', 'TaskTag'), ('kanban', 'KanbanTag')):
+            try:
+                model = apps.get_model(app_label, model_name)
+            except LookupError:
+                continue
+            if model not in code_models:
+                code_models.append(model)
+        return code_models
+
+    def _code_exists(self, candidate):
+        for model in self._code_scope_models():
+            queryset = model.objects.filter(code=candidate)
+            if model is self.__class__ and self.pk:
+                queryset = queryset.exclude(pk=self.pk)
+            if queryset.exists():
+                return True
+        return False
+
     def _generate_unique_code(self):
-        year = timezone.localtime(self.created_at).year if self.created_at else timezone.localtime().year
-        code_prefix = f'{self.CODE_PREFIX}-{year}-'
-        existing_codes = list(
-            KanbanTag.objects.filter(user=self.user)
-            .exclude(pk=self.pk)
-            .values_list('code', flat=True)
-        )
-        highest_number = 0
-        code_pattern = re.compile(rf'^{re.escape(code_prefix)}(\d+)$')
-
-        for code in existing_codes:
-            match = code_pattern.match(code or '')
-            if match:
-                highest_number = max(highest_number, int(match.group(1)))
-
-        next_number = highest_number + 1
         while True:
-            candidate = f'{code_prefix}{next_number:0{self.CODE_NUMBER_WIDTH}d}'
-            if candidate not in existing_codes:
+            body = ''.join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
+            candidate = f'{self.CODE_PREFIX}-{body}'
+            if not self._code_exists(candidate):
                 return candidate
-            next_number += 1
 
     def save(self, *args, **kwargs):
         if not self.code:

@@ -1,5 +1,5 @@
-from django.db import models
-from django.db.models import Max
+from django.db import models, transaction
+from django.db.models import F, Max, Q
 from django.contrib.postgres.indexes import GinIndex
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -11,7 +11,48 @@ from django.utils.formats import date_format
 import os
 import secrets
 import string
-import re
+
+
+BASE36_ALPHABET = string.digits + string.ascii_uppercase
+
+
+def format_base36(value, width=5):
+    try:
+        number = int(value or 0)
+    except (TypeError, ValueError):
+        number = 0
+    if number <= 0:
+        return ''
+
+    digits = []
+    while number:
+        number, remainder = divmod(number, 36)
+        digits.append(BASE36_ALPHABET[remainder])
+    return ''.join(reversed(digits)).rjust(width, '0')
+
+
+def parse_hierarchy_code_number(value, prefix):
+    value = (value or '').strip().upper()
+    if not value:
+        return None
+
+    token = value
+    prefixed = f'{prefix}-'
+    if '/' in token:
+        token = next((part for part in reversed(token.split('/')) if part.startswith(prefixed)), token)
+    if token.startswith(prefixed):
+        token = token[len(prefixed):]
+
+    if not token or any(character not in BASE36_ALPHABET for character in token):
+        return None
+    return int(token, 36)
+
+
+def _add_update_field(kwargs, field_name):
+    update_fields = kwargs.get('update_fields')
+    if update_fields is None:
+        return
+    kwargs['update_fields'] = set(update_fields) | {field_name}
 
 
 class TaskProject(models.Model):
@@ -23,8 +64,9 @@ class TaskProject(models.Model):
         ('urgent', 'Pilny'),
     ]
 
-    CODE_LETTERS = string.ascii_uppercase
-    CODE_DIGITS = string.digits
+    CODE_PREFIX = 'P'
+    CODE_LENGTH = 8
+    CODE_ALPHABET = BASE36_ALPHABET
 
     ICON_COLORS = [
         {'background': '#ADD8E6', 'foreground': '#1f2328'},
@@ -40,6 +82,7 @@ class TaskProject(models.Model):
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
+    next_section_code_number = models.PositiveIntegerField(default=1, editable=False)
     icon = models.CharField(max_length=64, blank=True, default='')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
     due_at = models.DateField(null=True, blank=True)
@@ -83,10 +126,8 @@ class TaskProject(models.Model):
 
     def _generate_unique_code(self):
         while True:
-            letters = ''.join(secrets.choice(self.CODE_LETTERS) for _ in range(3))
-            first_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(4))
-            second_digits = ''.join(secrets.choice(self.CODE_DIGITS) for _ in range(3))
-            candidate = f'{letters}-{first_digits}-{second_digits}'
+            body = ''.join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
+            candidate = f'{self.CODE_PREFIX}-{body}'
             if not self._code_exists(candidate):
                 return candidate
 
@@ -107,6 +148,8 @@ class TaskProject(models.Model):
 
 class TaskSection(models.Model):
     PRIORITY_CHOICES = TaskProject.PRIORITY_CHOICES
+    CODE_PREFIX = 'G'
+    CODE_WIDTH = 5
 
     KIND_CHOICES = [
         ('issues', 'Kwestie'),
@@ -119,6 +162,8 @@ class TaskSection(models.Model):
     project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='sections')
     title = models.CharField(max_length=120)
     description = models.TextField(blank=True)
+    code_number = models.PositiveIntegerField(default=0, editable=False)
+    next_task_code_number = models.PositiveIntegerField(default=1, editable=False)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
     icon = models.CharField(max_length=64, blank=True, default='')
@@ -129,15 +174,54 @@ class TaskSection(models.Model):
         ordering = ['order', 'created_at']
         indexes = [
             models.Index(fields=['project', 'order', 'created_at'], name='tasksec_project_order_idx'),
+            models.Index(fields=['project', 'code_number'], name='tasksec_project_code_idx'),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'code_number'],
+                condition=Q(code_number__gt=0),
+                name='unique_task_section_code_per_project',
+            ),
+        ]
+
+    def _claim_next_code_number(self):
+        if not self.project_id:
+            return 0
+        with transaction.atomic():
+            project = TaskProject.objects.select_for_update().only('id', 'next_section_code_number').get(pk=self.project_id)
+            next_number = project.next_section_code_number or 1
+            TaskProject.objects.filter(pk=project.pk).update(next_section_code_number=F('next_section_code_number') + 1)
+        return next_number
+
+    def save(self, *args, **kwargs):
+        original_project_id = None
+        if self.pk:
+            original_project_id = TaskSection.objects.filter(pk=self.pk).values_list('project_id', flat=True).first()
+
+        if self.project_id and (not self.pk or not self.code_number or original_project_id != self.project_id):
+            self.code_number = self._claim_next_code_number()
+            _add_update_field(kwargs, 'code_number')
+        super().save(*args, **kwargs)
+
+    @property
+    def code(self):
+        suffix = format_base36(self.code_number, self.CODE_WIDTH)
+        return f'{self.CODE_PREFIX}-{suffix}' if suffix else ''
+
+    @property
+    def full_code(self):
+        if not self.project_id or not self.code:
+            return ''
+        return f'{self.project.code}/{self.code}'
 
     def __str__(self):
         return f'{self.project.name} / {self.title}'
 
 
 class TaskTag(models.Model):
-    CODE_PREFIX = 'TAG'
-    CODE_NUMBER_WIDTH = 3
+    CODE_PREFIX = 'T'
+    CODE_LENGTH = 8
+    CODE_ALPHABET = BASE36_ALPHABET
 
     name = models.CharField(max_length=80)
     description = models.TextField(blank=True)
@@ -149,31 +233,35 @@ class TaskTag(models.Model):
         ordering = ['name']
         constraints = [
             models.UniqueConstraint(fields=['user', 'name'], name='unique_task_tag_per_user'),
-            models.UniqueConstraint(fields=['user', 'code'], name='unique_task_tag_code_per_user'),
+            models.UniqueConstraint(fields=['code'], name='unique_task_tag_code'),
         ]
 
+    def _code_scope_models(self):
+        code_models = [self.__class__]
+        for app_label, model_name in (('tasks', 'TaskTag'), ('kanban', 'KanbanTag')):
+            try:
+                model = apps.get_model(app_label, model_name)
+            except LookupError:
+                continue
+            if model not in code_models:
+                code_models.append(model)
+        return code_models
+
+    def _code_exists(self, candidate):
+        for model in self._code_scope_models():
+            queryset = model.objects.filter(code=candidate)
+            if model is self.__class__ and self.pk:
+                queryset = queryset.exclude(pk=self.pk)
+            if queryset.exists():
+                return True
+        return False
+
     def _generate_unique_code(self):
-        year = timezone.localtime(self.created_at).year if self.created_at else timezone.localtime().year
-        code_prefix = f'{self.CODE_PREFIX}-{year}-'
-        existing_codes = list(
-            TaskTag.objects.filter(user=self.user)
-            .exclude(pk=self.pk)
-            .values_list('code', flat=True)
-        )
-        highest_number = 0
-        code_pattern = re.compile(rf'^{re.escape(code_prefix)}(\d+)$')
-
-        for code in existing_codes:
-            match = code_pattern.match(code or '')
-            if match:
-                highest_number = max(highest_number, int(match.group(1)))
-
-        next_number = highest_number + 1
         while True:
-            candidate = f'{code_prefix}{next_number:0{self.CODE_NUMBER_WIDTH}d}'
-            if candidate not in existing_codes:
+            body = ''.join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
+            candidate = f'{self.CODE_PREFIX}-{body}'
+            if not self._code_exists(candidate):
                 return candidate
-            next_number += 1
 
     def save(self, *args, **kwargs):
         if not self.code:
@@ -186,6 +274,9 @@ class TaskTag(models.Model):
 
 
 class Task(models.Model):
+    CODE_PREFIX = 'T'
+    CODE_WIDTH = 5
+
     PRIORITY_CHOICES = [
         ('none', 'Brak priorytetu'),
         ('low', 'Niski'),
@@ -203,6 +294,7 @@ class Task(models.Model):
     ]
 
     task_id = models.PositiveIntegerField(default=0)
+    code_number = models.PositiveIntegerField(default=0, editable=False)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
@@ -222,7 +314,24 @@ class Task(models.Model):
         indexes = [
             models.Index(fields=['section', 'parent', 'created_at'], name='task_section_parent_idx'),
             models.Index(fields=['user', 'task_id'], name='task_user_task_id_idx'),
+            models.Index(fields=['section', 'code_number'], name='task_section_code_idx'),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['section', 'code_number'],
+                condition=Q(section__isnull=False, code_number__gt=0),
+                name='unique_task_code_per_section',
+            ),
+        ]
+
+    def _claim_next_code_number(self):
+        if not self.section_id:
+            return 0
+        with transaction.atomic():
+            section = TaskSection.objects.select_for_update().only('id', 'next_task_code_number').get(pk=self.section_id)
+            next_number = section.next_task_code_number or 1
+            TaskSection.objects.filter(pk=section.pk).update(next_task_code_number=F('next_task_code_number') + 1)
+        return next_number
 
     def save(self, *args, **kwargs):
         from django.utils import timezone
@@ -232,10 +341,13 @@ class Task(models.Model):
             try:
                 original_task = Task.objects.get(pk=self.pk)
                 original_status = original_task.status
+                original_section_id = original_task.section_id
             except Task.DoesNotExist:
                 original_status = None
+                original_section_id = None
         else:
             original_status = None
+            original_section_id = None
         
         # Set completion_date when status changes to 'closed'
         if self.status == 'closed' and original_status != 'closed':
@@ -244,6 +356,13 @@ class Task(models.Model):
         elif self.status != 'closed' and original_status == 'closed':
             self.completion_date = None
             self.is_completed = False
+
+        if self.section_id and (not self.pk or not self.code_number or original_section_id != self.section_id):
+            self.code_number = self._claim_next_code_number()
+            _add_update_field(kwargs, 'code_number')
+        elif not self.section_id and self.code_number:
+            self.code_number = 0
+            _add_update_field(kwargs, 'code_number')
             
         if not self.pk or self.task_id == 0:
             # Get the highest task_id for this user
@@ -268,6 +387,17 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def code(self):
+        suffix = format_base36(self.code_number, self.CODE_WIDTH)
+        return f'{self.CODE_PREFIX}-{suffix}' if suffix else ''
+
+    @property
+    def full_code(self):
+        if not self.section_id or not self.code:
+            return ''
+        return f'{self.section.full_code}/{self.code}' if self.section.full_code else self.code
 
     def _activity_datetime(self, value):
         if not value:

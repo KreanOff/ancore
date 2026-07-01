@@ -18,7 +18,9 @@ from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection
 
 
 class TaskProjectCreationTests(TestCase):
-    PROJECT_CODE_PATTERN = r'^[A-Z]{3}-\d{4}-\d{3}$'
+    PROJECT_CODE_PATTERN = r'^P-[0-9A-Z]{8}$'
+    GROUP_CODE_PATTERN = r'^G-[0-9A-Z]{5,}$'
+    TASK_CODE_PATTERN = r'^T-[0-9A-Z]{5,}$'
 
     def setUp(self):
         self.user = get_user_model().objects.create_user(
@@ -53,6 +55,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(section.kind, 'custom')
         self.assertEqual(section.icon, '')
         self.assertEqual(section.order, 0)
+        self.assertRegex(section.code, self.GROUP_CODE_PATTERN)
+        self.assertEqual(section.full_code, f'{project.code}/{section.code}')
 
     def test_create_project_ignores_removed_client_and_responsible_fields(self):
         company = Company.objects.create(owner=self.user, name='Ancore Labs')
@@ -156,6 +160,14 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-priority-filter-menu')
         self.assertContains(response, 'data-priority-filter-label')
         self.assertNotContains(response, 'data-status-filter-menu')
+
+    def test_tags_view_hides_status_and_priority_filters(self):
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
+
+        self.assertNotContains(response, 'data-status-filter-menu')
+        self.assertNotContains(response, 'data-status-filter-label')
+        self.assertNotContains(response, 'data-priority-filter-menu')
+        self.assertNotContains(response, 'data-priority-filter-label')
 
     def test_projects_priority_column_uses_priority_icons(self):
         project = TaskProject.objects.create(user=self.user, name='Pilny projekt', priority='urgent')
@@ -270,12 +282,12 @@ class TaskProjectCreationTests(TestCase):
         for index in range(20):
             TaskProject.objects.create(user=self.user, name=f'Istniejący {index}', code=f'OLD-{index:03d}')
 
-        with patch('tasks.models.secrets.choice', side_effect=list('TPC1234567')):
+        with patch('tasks.models.secrets.choice', side_effect=list('TPC12345')):
             with CaptureQueriesContext(connection) as queries:
                 project = TaskProject.objects.create(user=self.user, name='Nowy projekt')
 
         select_sql = ' '.join(query['sql'] for query in queries if query['sql'].startswith('SELECT'))
-        self.assertEqual(project.code, 'TPC-1234-567')
+        self.assertEqual(project.code, 'P-TPC12345')
         self.assertIn('"tasks_taskproject"."code" =', select_sql)
         self.assertNotIn('SELECT "tasks_taskproject"."code"', select_sql)
         self.assertLessEqual(len(queries), 4)
@@ -314,6 +326,23 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
         self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
         self.assertNotEqual(project.code, workspace.code)
+
+    def test_group_and_task_codes_use_project_group_task_hierarchy(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='P-8K3FQ2A9')
+        first_section = TaskSection.objects.create(project=project, title='Frontend')
+        second_section = TaskSection.objects.create(project=project, title='Backend')
+        first_task = Task.objects.create(user=self.user, section=first_section, title='Pierwsze zadanie')
+        second_task = Task.objects.create(user=self.user, section=first_section, title='Drugie zadanie')
+        other_group_task = Task.objects.create(user=self.user, section=second_section, title='Zadanie backendowe')
+
+        self.assertEqual(first_section.code, 'G-00001')
+        self.assertEqual(second_section.code, 'G-00002')
+        self.assertEqual(first_section.full_code, f'{project.code}/G-00001')
+        self.assertEqual(first_task.code, 'T-00001')
+        self.assertEqual(second_task.code, 'T-00002')
+        self.assertEqual(other_group_task.code, 'T-00001')
+        self.assertEqual(first_task.full_code, f'{project.code}/G-00001/T-00001')
+        self.assertEqual(other_group_task.full_code, f'{project.code}/G-00002/T-00001')
 
     def test_project_icons_get_different_badge_colors(self):
         first = TaskProject.objects.create(user=self.user, name='Pierwszy')
@@ -360,6 +389,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'KLIENT / FIRMA')
         self.assertNotContains(response, 'ODPOWIEDZIALNY ZA PROJEKT')
         self.assertContains(response, 'aria-label="Edytuj projekt"')
+        self.assertContains(response, 'aria-label="Informacje o projekcie"')
+        self.assertContains(response, 'data-open-project-info')
+        self.assertContains(response, 'id="project-info-modal"')
         self.assertContains(response, 'data-project-pagination')
         self.assertContains(response, 'data-project-page-size')
         self.assertContains(response, 'data-project-page-prev')
@@ -370,6 +402,7 @@ class TaskProjectCreationTests(TestCase):
         content = response.content.decode()
         expected_columns = [
             'data-column="action" aria-label="Edytuj projekt"',
+            'data-column="info" aria-label="Informacje o projekcie"',
             'data-column="project_code">KOD PROJEKTU',
             'data-column="project">PROJEKT',
             'data-column="description">OPIS',
@@ -527,6 +560,175 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('Grupa 010', table_html)
         self.assertIn('data-project-page="6"', html)
 
+    def test_project_view_paginates_project_groups(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt z grupami', code='PZG')
+        for index in range(60):
+            TaskSection.objects.create(
+                project=project,
+                title=f'Grupa projektu {index:03d}',
+                order=index,
+            )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?project={project.id}")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-server-pagination="true"')
+        self.assertContains(response, 'tasks-section-row tasks-directory-row', count=50)
+        self.assertIn('Grupa projektu 000', table_html)
+        self.assertIn('Grupa projektu 049', table_html)
+        self.assertNotIn('Grupa projektu 050', table_html)
+        self.assertContains(response, 'Na stronie')
+        self.assertContains(response, 'grup')
+        self.assertContains(response, 'Pokazano 1-50 z 60 grup')
+        self.assertIn(
+            f'data-project-page-url="/tasks/?project={project.id}&amp;page_size=50&amp;page=2"',
+            html,
+        )
+        self.assertIn('aria-current="page">1</button>', html)
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?project={project.id}&page_size=50&page=2")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertContains(response, 'tasks-section-row tasks-directory-row', count=10)
+        self.assertIn('Grupa projektu 050', table_html)
+        self.assertIn('Grupa projektu 059', table_html)
+        self.assertNotIn('Grupa projektu 049', table_html)
+        self.assertContains(response, 'Pokazano 51-60 z 60 grup')
+        self.assertIn('aria-current="page">2</button>', html)
+        self.assertIn(
+            f'data-project-page-url="/tasks/?project={project.id}&amp;page_size=50"',
+            html,
+        )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?project={project.id}&page_size=10")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertContains(response, 'tasks-section-row tasks-directory-row', count=10)
+        self.assertIn('Grupa projektu 000', table_html)
+        self.assertNotIn('Grupa projektu 010', table_html)
+        self.assertIn('data-project-page="6"', html)
+
+    def test_all_tasks_view_paginates_each_status_independently(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt zadań', code='TSK')
+        section = TaskSection.objects.create(project=project, title='Plan')
+        for index in range(60):
+            Task.objects.create(
+                user=self.user,
+                section=section,
+                title=f'Nowe zadanie {index:03d}',
+                status='new',
+            )
+        for index in range(12):
+            Task.objects.create(
+                user=self.user,
+                section=section,
+                title=f'Realizowane zadanie {index:03d}',
+                status='in_progress',
+            )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
+        html = response.content.decode()
+        new_start = html.index('id="all-tasks-new"')
+        new_end = html.index('</section>', new_start)
+        new_html = html[new_start:new_end]
+        in_progress_start = html.index('id="all-tasks-in_progress"')
+        in_progress_end = html.index('</section>', in_progress_start)
+        in_progress_html = html[in_progress_start:in_progress_end]
+
+        self.assertContains(
+            response,
+            'class="tasks-project-pagination tasks-status-pagination" data-task-status-pagination',
+            count=2,
+        )
+        self.assertContains(response, 'task-row tasks-issue-row', count=62)
+        self.assertIn('Nowe zadanie 000', new_html)
+        self.assertIn('Nowe zadanie 049', new_html)
+        self.assertNotIn('Nowe zadanie 050', new_html)
+        self.assertIn('Realizowane zadanie 011', in_progress_html)
+        self.assertContains(response, 'Pokazano 1-50 z 60 zadań')
+        self.assertContains(response, 'Pokazano 1-12 z 12 zadań')
+        self.assertIn(
+            'data-task-status-page-url="/tasks/?view=all-tasks&amp;task_new_page_size=50&amp;task_new_page=2"',
+            html,
+        )
+        self.assertIn('data-task-status-page="2"', html)
+
+        response = self.client.get(
+            f"{reverse('tasks:tasks')}?view=all-tasks&task_new_page_size=50&task_new_page=2"
+        )
+        html = response.content.decode()
+        new_start = html.index('id="all-tasks-new"')
+        new_end = html.index('</section>', new_start)
+        new_html = html[new_start:new_end]
+        in_progress_start = html.index('id="all-tasks-in_progress"')
+        in_progress_end = html.index('</section>', in_progress_start)
+        in_progress_html = html[in_progress_start:in_progress_end]
+
+        self.assertContains(response, 'task-row tasks-issue-row', count=22)
+        self.assertIn('Nowe zadanie 050', new_html)
+        self.assertIn('Nowe zadanie 059', new_html)
+        self.assertNotIn('Nowe zadanie 049', new_html)
+        self.assertIn('Realizowane zadanie 011', in_progress_html)
+        self.assertContains(response, 'Pokazano 51-60 z 60 zadań')
+        self.assertIn('aria-current="page">2</button>', html)
+        self.assertIn(
+            'data-task-status-page-url="/tasks/?view=all-tasks&amp;task_new_page_size=50"',
+            html,
+        )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks&task_new_page_size=10")
+        html = response.content.decode()
+        new_start = html.index('id="all-tasks-new"')
+        new_end = html.index('</section>', new_start)
+        new_html = html[new_start:new_end]
+
+        self.assertIn('Nowe zadanie 000', new_html)
+        self.assertNotIn('Nowe zadanie 010', new_html)
+        self.assertIn('data-task-status-page="6"', html)
+
+    def test_group_task_view_uses_group_url_for_status_pagination(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt grupy', code='GRP')
+        section = TaskSection.objects.create(project=project, title='Sprint')
+        for index in range(55):
+            Task.objects.create(
+                user=self.user,
+                section=section,
+                title=f'Zadanie grupy {index:03d}',
+                status='new',
+            )
+
+        group_url = reverse('tasks:task_group', args=[section.id])
+        response = self.client.get(group_url)
+        html = response.content.decode()
+
+        self.assertContains(response, 'task-row tasks-issue-row', count=50)
+        self.assertIn('Zadanie grupy 049', html)
+        self.assertNotIn('Zadanie grupy 050', html)
+        self.assertContains(response, 'Pokazano 1-50 z 55 zadań')
+        self.assertIn(
+            f'data-task-status-page-url="{group_url}?task_new_page_size=50&amp;task_new_page=2"',
+            html,
+        )
+
+        response = self.client.get(f"{group_url}?task_new_page_size=50&task_new_page=2")
+        html = response.content.decode()
+
+        self.assertContains(response, 'task-row tasks-issue-row', count=5)
+        self.assertIn('Zadanie grupy 050', html)
+        self.assertIn('Zadanie grupy 054', html)
+        self.assertNotIn('Zadanie grupy 049', html)
+        self.assertContains(response, 'Pokazano 51-55 z 55 zadań')
+
     def test_project_create_modal_uses_large_task_style_layout(self):
         response = self.client.get(reverse('tasks:tasks'))
 
@@ -596,7 +798,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Zarządzaj tabelą')
         self.assertContains(response, 'data-priority-filter-menu')
         self.assertNotContains(response, 'data-status-filter-menu')
-        self.assertContains(response, 'KOD PROJEKTU')
+        self.assertContains(response, 'KOD GRUPY')
         self.assertContains(response, 'POSTĘP')
         self.assertContains(response, 'TERMIN')
         self.assertContains(response, 'ZADANIA')
@@ -605,14 +807,19 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'KLIENT / FIRMA')
         self.assertContains(response, 'data-column="action"', count=2)
         self.assertContains(response, 'data-column="action" aria-label="Edytuj grupę"')
+        self.assertContains(response, 'data-column="info"', count=2)
+        self.assertContains(response, 'data-column="info" aria-label="Informacje o grupie"')
+        self.assertContains(response, 'data-open-section-info')
         self.assertContains(response, 'data-open-section-rename')
         self.assertContains(response, 'aria-label="Edytuj grupę Frontend"')
+        self.assertContains(response, 'aria-label="Informacje o grupie Frontend"')
         self.assertContains(response, f'data-section-id="{section.id}"')
         content = response.content.decode()
         expected_columns = [
             'data-column="action" aria-label="Edytuj grupę"',
+            'data-column="info" aria-label="Informacje o grupie"',
             'data-column="section">GRUPA',
-            'data-column="project_code">KOD PROJEKTU',
+            'data-column="project_code">KOD GRUPY',
             'data-column="description">OPIS',
             'data-column="progress">POSTĘP',
             'data-column="due_at">TERMIN',
@@ -624,6 +831,7 @@ class TaskProjectCreationTests(TestCase):
         column_positions = [content.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
         self.assertContains(response, 'data-column="project_code"', count=2)
+        self.assertContains(response, section.full_code)
         self.assertNotContains(response, 'data-column="company"')
         self.assertContains(response, 'Prace po stronie UI')
         self.assertContains(response, '50%')
@@ -725,11 +933,14 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-all-groups-sheet')
         self.assertContains(response, 'data-directory-column-manager')
         self.assertContains(response, 'data-directory-column-manager-toggle')
-        self.assertContains(response, 'KOD PROJEKTU')
+        self.assertContains(response, 'KOD GRUPY')
         self.assertContains(response, 'POSTĘP')
         self.assertContains(response, 'TERMIN')
         self.assertContains(response, 'data-column="action"', count=3)
         self.assertContains(response, 'data-column="action" aria-label="Edytuj grupę"')
+        self.assertContains(response, 'data-column="info"', count=3)
+        self.assertContains(response, 'data-column="info" aria-label="Informacje o grupie"')
+        self.assertContains(response, 'data-open-section-info', count=2)
         self.assertContains(response, 'data-open-section-rename', count=2)
         self.assertContains(response, f'data-section-id="{frontend.id}"')
         self.assertContains(response, 'data-column="priority"', count=3)
@@ -738,8 +949,9 @@ class TaskProjectCreationTests(TestCase):
         content = response.content.decode()
         expected_columns = [
             'data-column="action" aria-label="Edytuj grupę"',
+            'data-column="info" aria-label="Informacje o grupie"',
             'data-column="section">GRUPA',
-            'data-column="project_code">KOD PROJEKTU',
+            'data-column="project_code">KOD GRUPY',
             'data-column="description">OPIS',
             'data-column="progress">POSTĘP',
             'data-column="due_at">TERMIN',
@@ -757,6 +969,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'ODPOWIEDZIALNY ZA GRUPĘ')
         self.assertContains(response, 'DATA')
         self.assertContains(response, 'Frontend')
+        self.assertContains(response, frontend.full_code)
         self.assertContains(response, 'Prace po stronie UI')
         self.assertContains(response, 'Backend')
         self.assertContains(response, 'Drugi projekt')
@@ -816,6 +1029,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'NAZWA TAGU')
         expected_columns = [
             'data-column="action" aria-label="Edytuj tag"',
+            'data-column="info" aria-label="Informacje o tagu"',
             'data-column="tag_name">NAZWA TAGU',
             'data-column="tag_code">KOD TAGU',
             'data-column="description">OPIS',
@@ -826,15 +1040,25 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(column_positions, sorted(column_positions))
         self.assertContains(response, 'data-column="action"', count=3)
         self.assertContains(response, 'data-column="action" aria-label="Edytuj tag"')
+        self.assertContains(response, 'data-column="info"', count=3)
+        self.assertContains(response, 'data-column="info" aria-label="Informacje o tagu"')
         self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action"')
+        self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info"')
         self.assertContains(response, 'tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action"')
+        self.assertContains(response, 'tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info"')
         self.assertContains(response, 'data-open-tag-edit', count=2)
+        self.assertContains(response, 'data-open-tag-info', count=2)
         self.assertContains(response, 'aria-label="Edytuj tag Frontend"')
+        self.assertContains(response, 'aria-label="Informacje o tagu Frontend"')
         self.assertContains(response, 'data-column="tag_code"', count=3)
         self.assertContains(response, 'data-column="tag_name"', count=3)
         frontend_row_start = html.index(f'data-tag-id="{frontend.id}"')
         self.assertLess(
             html.index('data-column="action"', frontend_row_start),
+            html.index('data-column="info"', frontend_row_start),
+        )
+        self.assertLess(
+            html.index('data-column="info"', frontend_row_start),
             html.index('data-column="tag_name"', frontend_row_start),
         )
         self.assertLess(
@@ -927,22 +1151,22 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
         self.assertEqual(tag.description, 'Makiety i decyzje wizualne')
         self.assertNotEqual(tag.code, 'DES')
-        self.assertRegex(tag.code, r'^TAG-\d{4}-001$')
+        self.assertRegex(tag.code, r'^T-[0-9A-Z]{8}$')
 
-    def test_create_tag_uses_next_tag_number_for_current_year(self):
-        first = TaskTag.objects.create(user=self.user, name='Design')
+    def test_create_tag_avoids_existing_base36_tag_code(self):
+        TaskTag.objects.create(user=self.user, name='Design', code='T-COLLIDE1')
 
-        response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'create_tag',
-            'name': 'Backend',
-            'description': '',
-        })
+        with patch('tasks.models.secrets.choice', side_effect=list('COLLIDE1BACKEND1')):
+            response = self.client.post(reverse('tasks:tasks'), {
+                'action': 'create_tag',
+                'name': 'Backend',
+                'description': '',
+            })
 
         tag = TaskTag.objects.get(user=self.user, name='Backend')
-        prefix = first.code.rsplit('-', 1)[0]
 
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
-        self.assertEqual(tag.code, f'{prefix}-002')
+        self.assertEqual(tag.code, 'T-BACKEND1')
 
     def test_delete_tag_from_tasks_page(self):
         tag = TaskTag.objects.create(user=self.user, name='Design')
@@ -1110,7 +1334,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(detail_response, f'{project.code}-{subtask.task_id}')
         self.assertNotContains(list_response, 'Pierwsze podzadanie')
 
-    def test_task_detail_sidebar_shows_project_code(self):
+    def test_task_detail_sidebar_shows_task_code(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
         task = Task.objects.create(user=self.user, section=section, title='Zadanie')
@@ -1118,10 +1342,20 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
         content = response.content.decode()
 
-        self.assertContains(response, '<span>Kod projektu</span>', html=True)
-        self.assertContains(response, f'<strong class="tasks-issue-muted">{project.code}</strong>', html=True)
-        self.assertLess(content.index('<label for="id_tags">Tagi</label>'), content.index('<span>Kod projektu</span>'))
-        self.assertLess(content.index('<span>Kod projektu</span>'), content.index('<span>Utworzył</span>'))
+        self.assertContains(response, '<span>Kod zadania</span>', html=True)
+        self.assertContains(
+            response,
+            f'<span class="tasks-issue-code__value" data-task-code-value>{task.code}</span>',
+            html=True,
+        )
+        self.assertContains(response, f'data-task-code-short="{task.code}"')
+        self.assertContains(response, f'data-task-code-full="{task.full_code}"')
+        self.assertContains(response, f'data-task-code-copy="{task.full_code}"')
+        self.assertContains(response, 'data-task-code-toggle')
+        self.assertContains(response, 'data-lucide="eye-off"')
+        self.assertContains(response, 'data-lucide="copy"')
+        self.assertLess(content.index('<label for="id_tags">Tagi</label>'), content.index('<span>Kod zadania</span>'))
+        self.assertLess(content.index('<span>Kod zadania</span>'), content.index('<span>Utworzył</span>'))
 
     def test_subtask_detail_can_change_parent_task(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')

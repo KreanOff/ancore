@@ -13,7 +13,7 @@ from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn,
 
 
 class KanbanProjectCreationTests(TestCase):
-    PROJECT_CODE_PATTERN = r'^[A-Z]{3}-\d{4}-\d{3}$'
+    PROJECT_CODE_PATTERN = r'^P-[0-9A-Z]{8}$'
 
     def setUp(self):
         self.user = get_user_model().objects.create_user(
@@ -97,12 +97,12 @@ class KanbanProjectCreationTests(TestCase):
         for index in range(20):
             KanbanProject.objects.create(user=self.user, name=f'Istniejący {index}', code=f'OLD-{index:03d}')
 
-        with patch('kanban.models.secrets.choice', side_effect=list('KBN1234567')):
+        with patch('kanban.models.secrets.choice', side_effect=list('KBN12345')):
             with CaptureQueriesContext(connection) as queries:
                 project = KanbanProject.objects.create(user=self.user, name='Nowy projekt')
 
         select_sql = ' '.join(query['sql'] for query in queries if query['sql'].startswith('SELECT'))
-        self.assertEqual(project.code, 'KBN-1234-567')
+        self.assertEqual(project.code, 'P-KBN12345')
         self.assertIn('"kanban_kanbanproject"."code" =', select_sql)
         self.assertNotIn('SELECT "kanban_kanbanproject"."code"', select_sql)
         self.assertLessEqual(len(queries), 4)
@@ -255,22 +255,22 @@ class KanbanProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?view=tags")
         self.assertEqual(tag.description, 'Makiety i decyzje wizualne')
         self.assertNotEqual(tag.code, 'DES')
-        self.assertRegex(tag.code, r'^TAG-\d{4}-001$')
+        self.assertRegex(tag.code, r'^T-[0-9A-Z]{8}$')
 
-    def test_create_tag_uses_next_tag_number_for_current_year(self):
-        first = KanbanTag.objects.create(user=self.user, name='Design')
+    def test_create_tag_avoids_existing_base36_tag_code(self):
+        KanbanTag.objects.create(user=self.user, name='Design', code='T-COLLIDE1')
 
-        response = self.client.post(reverse('kanban:tasks'), {
-            'action': 'create_tag',
-            'name': 'Backend',
-            'description': '',
-        })
+        with patch('kanban.models.secrets.choice', side_effect=list('COLLIDE1KANBAN01')):
+            response = self.client.post(reverse('kanban:tasks'), {
+                'action': 'create_tag',
+                'name': 'Backend',
+                'description': '',
+            })
 
         tag = KanbanTag.objects.get(user=self.user, name='Backend')
-        prefix = first.code.rsplit('-', 1)[0]
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?view=tags")
-        self.assertEqual(tag.code, f'{prefix}-002')
+        self.assertEqual(tag.code, 'T-KANBAN01')
 
     def test_delete_tag_from_tasks_page(self):
         tag = KanbanTag.objects.create(user=self.user, name='Design')

@@ -22,6 +22,7 @@ function initTasksPage() {
     const projectPaginationPages = document.querySelector('[data-project-pagination-pages]');
     const projectPagePrev = document.querySelector('[data-project-page-prev]');
     const projectPageNext = document.querySelector('[data-project-page-next]');
+    const taskStatusPaginations = document.querySelectorAll('[data-task-status-pagination]');
     const projectSearchForm = document.querySelector('[data-project-search-form]');
     const projectSearchPageSizeInput = document.querySelector('[data-project-search-page-size]');
     const usesServerProjectPagination = projectPagination?.dataset.serverPagination === 'true';
@@ -94,7 +95,10 @@ function initTasksPage() {
     const openProjectButtons = document.querySelectorAll('[data-open-project]');
     const openTagButtons = document.querySelectorAll('[data-open-tag]');
     const openTagEditButtons = document.querySelectorAll('[data-open-tag-edit]');
+    const openTagInfoButtons = document.querySelectorAll('[data-open-tag-info]');
     const openProjectRenameButtons = document.querySelectorAll('[data-open-project-rename]');
+    const openProjectInfoButtons = document.querySelectorAll('[data-open-project-info]');
+    const openSectionInfoButtons = document.querySelectorAll('[data-open-section-info]');
     const openSectionRenameButtons = document.querySelectorAll('[data-open-section-rename]');
     const openSectionCreateButtons = document.querySelectorAll('[data-open-section-create]');
     const openIssueButtons = document.querySelectorAll('#open-issue-modal, [data-open-issue]');
@@ -103,6 +107,26 @@ function initTasksPage() {
     const projectModal = document.getElementById('project-modal');
     const tagModal = document.getElementById('tag-modal');
     const projectRenameModal = document.getElementById('project-rename-modal');
+    const projectInfoModal = document.getElementById('project-info-modal');
+    const projectInfoBody = projectInfoModal?.querySelector('[data-project-info-body]');
+    const projectInfoTitle = projectInfoModal?.querySelector('[data-project-info-title]');
+    const projectInfoName = projectInfoModal?.querySelector('[data-project-info-name]');
+    const projectInfoCode = projectInfoModal?.querySelector('[data-project-info-code]');
+    const projectInfoDescription = projectInfoModal?.querySelector('[data-project-info-description]');
+    const projectInfoProgress = projectInfoModal?.querySelector('[data-project-info-progress]');
+    const projectInfoTasks = projectInfoModal?.querySelector('[data-project-info-tasks]');
+    const projectInfoPriority = projectInfoModal?.querySelector('[data-project-info-priority]');
+    const projectInfoDue = projectInfoModal?.querySelector('[data-project-info-due]');
+    const projectInfoCreated = projectInfoModal?.querySelector('[data-project-info-created]');
+    const projectInfoLastActivity = projectInfoModal?.querySelector('[data-project-info-last-activity]');
+    const projectInfoRows = {
+        progress: projectInfoProgress?.closest('div'),
+        tasks: projectInfoTasks?.closest('div'),
+        priority: projectInfoPriority?.closest('div'),
+        due: projectInfoDue?.closest('div'),
+        created: projectInfoCreated?.closest('div'),
+        lastActivity: projectInfoLastActivity?.closest('div')
+    };
     const sectionCreateModal = document.getElementById('section-create-modal');
     const sectionRenameModal = document.getElementById('section-rename-modal');
     const issueModal = document.getElementById('issue-modal');
@@ -188,6 +212,7 @@ function initTasksPage() {
         const formData = projectSearchForm ? new FormData(projectSearchForm) : null;
         const currentUrl = new URL(window.location.href);
         const viewValue = (formData?.get('view') || currentUrl.searchParams.get('view') || '').toString();
+        const projectValue = (formData?.get('project') || currentUrl.searchParams.get('project') || '').toString();
         const searchValue = filterSearch?.value?.trim() || '';
         const priorityValue = filterPriority?.value || '';
         const pageSizeValue = String(getProjectPageSize());
@@ -198,8 +223,13 @@ function initTasksPage() {
 
         if (viewValue) {
             url.searchParams.set('view', viewValue);
+            url.searchParams.delete('project');
+        } else if (projectValue) {
+            url.searchParams.set('project', projectValue);
+            url.searchParams.delete('view');
         } else {
             url.searchParams.delete('view');
+            url.searchParams.delete('project');
         }
         if (searchValue) {
             url.searchParams.set('q', searchValue);
@@ -1500,6 +1530,14 @@ function initTasksPage() {
     function closeProjectPageSizeDropdown() {
         projectPageSizeDropdown?.classList.remove('is-open');
         projectPageSizeToggle?.setAttribute('aria-expanded', 'false');
+    }
+
+    function closeTaskStatusPageSizeDropdowns(exceptDropdown = null) {
+        document.querySelectorAll('[data-task-status-page-size-dropdown]').forEach(dropdown => {
+            if (dropdown === exceptDropdown) return;
+            dropdown.classList.remove('is-open');
+            dropdown.querySelector('[data-task-status-page-size-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
     }
 
     function closeCompanySelectDropdowns(exceptDropdown = null) {
@@ -3335,6 +3373,13 @@ function initTasksPage() {
         });
     });
 
+    openTagInfoButtons.forEach(button => {
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            openProjectInfoPanel(button);
+        });
+    });
+
     openProjectRenameButtons.forEach(button => {
         button.addEventListener('click', () => {
             if (projectRenameIdInput) projectRenameIdInput.value = button.dataset.projectId || '';
@@ -3349,6 +3394,100 @@ function initTasksPage() {
             closeProjectActionMenus();
             openModal(projectRenameModal, projectRenameNameInput, updateProjectRenameSubmitState);
             setTimeout(() => projectRenameNameInput?.select(), 60);
+        });
+    });
+
+    function readProjectInfoCell(row, column) {
+        if (!row || !column) return '';
+        return (row.querySelector(`[data-column="${column}"]`)?.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function setProjectInfoText(element, value, fallback = 'Brak danych') {
+        if (!element) return;
+        element.textContent = value && value.trim() ? value.trim() : fallback;
+    }
+
+    function setProjectInfoRowsVisible(visibleRows) {
+        Object.entries(projectInfoRows).forEach(([key, row]) => {
+            if (!row) return;
+            row.hidden = !visibleRows.has(key);
+        });
+    }
+
+    function openProjectInfoPanel(button) {
+        if (!projectInfoModal) return;
+
+        const isTagInfo = button.matches('[data-open-tag-info]');
+        const isSectionInfo = button.matches('[data-open-section-info]');
+        const row = button.closest(isTagInfo ? '.tasks-tag-sheet__row' : (isSectionInfo ? '.tasks-section-row' : '.tasks-project-row')) || button.closest('.tasks-directory-row');
+        const data = isTagInfo
+            ? {
+                name: button.dataset.tagName || readProjectInfoCell(row, 'tag_name'),
+                code: button.dataset.tagCode || readProjectInfoCell(row, 'tag_code'),
+                description: button.dataset.tagDescription || readProjectInfoCell(row, 'description'),
+                progress: '',
+                tasks: button.dataset.tagTasksLabel || readProjectInfoCell(row, 'task_count'),
+                priority: '',
+                due: '',
+                created: button.dataset.tagCreatedLabel || readProjectInfoCell(row, 'created_at'),
+                lastActivity: ''
+            }
+            : isSectionInfo
+            ? {
+                name: button.dataset.sectionTitle || readProjectInfoCell(row, 'section'),
+                code: button.dataset.sectionCode || button.dataset.sectionProjectCode || readProjectInfoCell(row, 'project_code'),
+                description: button.dataset.sectionDescription || readProjectInfoCell(row, 'description'),
+                progress: button.dataset.sectionProgressLabel || readProjectInfoCell(row, 'progress'),
+                tasks: button.dataset.sectionTasksLabel || readProjectInfoCell(row, 'tasks_count'),
+                priority: button.dataset.sectionPriorityLabel || readProjectInfoCell(row, 'priority'),
+                due: button.dataset.sectionDueLabel || readProjectInfoCell(row, 'due_at'),
+                created: button.dataset.sectionCreatedLabel || readProjectInfoCell(row, 'created_at'),
+                lastActivity: button.dataset.sectionLastActivityLabel || readProjectInfoCell(row, 'last_activity')
+            }
+            : {
+                name: button.dataset.projectName || row?.dataset.projectName || readProjectInfoCell(row, 'project'),
+                code: button.dataset.projectCode || row?.dataset.projectCode || readProjectInfoCell(row, 'project_code'),
+                description: button.dataset.projectDescription || row?.dataset.projectDescription || readProjectInfoCell(row, 'description'),
+                progress: button.dataset.projectProgressLabel || readProjectInfoCell(row, 'progress'),
+                tasks: button.dataset.projectTasksLabel || readProjectInfoCell(row, 'tasks_count'),
+                priority: button.dataset.projectPriorityLabel || readProjectInfoCell(row, 'priority'),
+                due: button.dataset.projectDueLabel || readProjectInfoCell(row, 'due_at'),
+                created: button.dataset.projectCreatedLabel || readProjectInfoCell(row, 'created_at'),
+                lastActivity: button.dataset.projectLastActivityLabel || readProjectInfoCell(row, 'last_activity')
+            };
+
+        if (projectInfoTitle) projectInfoTitle.textContent = isTagInfo ? 'Informacje o tagu' : (isSectionInfo ? 'Informacje o grupie' : 'Informacje o projekcie');
+        setProjectInfoRowsVisible(isTagInfo ? new Set(['tasks', 'created']) : new Set(['progress', 'tasks', 'priority', 'due', 'created', 'lastActivity']));
+        setProjectInfoText(projectInfoName, data.name, isTagInfo ? 'Tag' : (isSectionInfo ? 'Grupa' : 'Projekt'));
+        setProjectInfoText(projectInfoCode, data.code, isSectionInfo ? 'Brak kodu grupy' : 'Brak kodu');
+        setProjectInfoText(projectInfoDescription, data.description, 'Brak opisu');
+        setProjectInfoText(projectInfoProgress, data.progress, '0%');
+        setProjectInfoText(projectInfoTasks, data.tasks, '0/0');
+        setProjectInfoText(projectInfoPriority, data.priority, 'Brak');
+        setProjectInfoText(projectInfoDue, data.due, 'Brak terminu');
+        setProjectInfoText(projectInfoCreated, data.created, 'Brak danych');
+        setProjectInfoText(projectInfoLastActivity, data.lastActivity, 'Brak aktywności');
+
+        closeProjectActionMenus();
+        closeSectionActionMenu();
+        closeStatusFilterMenu();
+        closePriorityFilterMenu();
+        closeDirectoryMembersMenus();
+        closeInlineSelectDropdowns();
+        openModal(projectInfoModal, projectInfoBody);
+    }
+
+    openProjectInfoButtons.forEach(button => {
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            openProjectInfoPanel(button);
+        });
+    });
+
+    openSectionInfoButtons.forEach(button => {
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            openProjectInfoPanel(button);
         });
     });
 
@@ -3474,6 +3613,7 @@ function initTasksPage() {
         if (!e.target.closest('[data-issue-project-picker]') && !e.target.closest('[data-issue-section-picker]')) closeIssuePickers();
         if (!e.target.closest('[data-inline-select-dropdown]')) closeInlineSelectDropdowns();
         if (!e.target.closest('[data-project-page-size-dropdown]')) closeProjectPageSizeDropdown();
+        if (!e.target.closest('[data-task-status-page-size-dropdown]')) closeTaskStatusPageSizeDropdowns();
         if (!e.target.closest('[data-company-select-dropdown]') && !e.target.closest('[data-company-select-menu]')) closeCompanySelectDropdowns();
         if (!e.target.closest('[data-responsible-select-dropdown]') && !e.target.closest('[data-responsible-select-menu]')) closeResponsibleSelectDropdowns();
         if (!e.target.closest('[data-directory-share-permission-picker]')) closeDirectorySharePermissionPickers();
@@ -3693,7 +3833,7 @@ function initTasksPage() {
         });
     }
 
-    const ignoredDirectoryRowClickColumns = new Set(['select', 'action']);
+    const ignoredDirectoryRowClickColumns = new Set(['select', 'action', 'info']);
 
     function getDirectoryRowColumnBounds(row, column) {
         if (!row) return null;
@@ -5060,6 +5200,7 @@ function initTasksPage() {
             closeDirectoryMembersMenus();
             closeIssuePickers();
             closeInlineSelectDropdowns();
+            closeTaskStatusPageSizeDropdowns();
             projectPageSizeDropdown.classList.toggle('is-open', isOpen);
             projectPageSizeToggle.setAttribute('aria-expanded', String(isOpen));
         }, pageListenerOptions);
@@ -5139,6 +5280,51 @@ function initTasksPage() {
             setProjectPaginationPage(page);
         }, pageListenerOptions);
     }
+
+    taskStatusPaginations.forEach(pagination => {
+        const pageSizeDropdown = pagination.querySelector('[data-task-status-page-size-dropdown]');
+        const pageSizeToggle = pagination.querySelector('[data-task-status-page-size-toggle]');
+
+        if (pageSizeDropdown && pageSizeToggle) {
+            pageSizeToggle.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const isOpen = !pageSizeDropdown.classList.contains('is-open');
+                closeCreateMenu();
+                closeProjectActionMenus();
+                closeSectionActionMenu();
+                closeStatusFilterMenu();
+                closePriorityFilterMenu();
+                closeDirectoryMembersMenus();
+                closeIssuePickers();
+                closeInlineSelectDropdowns();
+                closeProjectPageSizeDropdown();
+                closeTaskStatusPageSizeDropdowns(pageSizeDropdown);
+                pageSizeDropdown.classList.toggle('is-open', isOpen);
+                pageSizeToggle.setAttribute('aria-expanded', String(isOpen));
+            }, pageListenerOptions);
+
+            pageSizeDropdown.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const button = event.target.closest('[data-task-status-page-url]');
+                if (!button || button.disabled) return;
+
+                const url = button.dataset.taskStatusPageUrl || '';
+                if (!url) return;
+                closeTaskStatusPageSizeDropdowns();
+                navigateWithinApp(url);
+            }, pageListenerOptions);
+        }
+
+        pagination.addEventListener('click', function(event) {
+            const button = event.target.closest('[data-task-status-page-url]');
+            if (!button || button.disabled) return;
+
+            const url = button.dataset.taskStatusPageUrl || '';
+            if (!url) return;
+            closeTaskStatusPageSizeDropdowns();
+            navigateWithinApp(url);
+        }, pageListenerOptions);
+    });
 
     collapsibleGroupHeaders.forEach(header => {
         const button = header.querySelector('.tasks-group-caret');
@@ -5246,6 +5432,7 @@ function initTasksPage() {
         const defaultDirectoryColumnMinWidth = 50;
         const columnDefaultWidths = {
             action: 40,
+            info: 40,
             project_code: 190,
             project: 320,
             section: 320,
@@ -5265,6 +5452,7 @@ function initTasksPage() {
         const columnMinimums = {
             select: 18,
             action: 40,
+            info: 40,
             project_code: 150,
             project: 150,
             section: 150,
@@ -5279,7 +5467,8 @@ function initTasksPage() {
             created_at: 112,
             spacer: 0
         };
-        const fixedColumns = new Set(['action', 'spacer']);
+        const fixedColumns = new Set(['spacer']);
+        const nonResizableColumns = new Set(['action', 'info', 'spacer']);
         const resizeMediaQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(min-width: 901px)')
             : { matches: true };
@@ -5604,7 +5793,7 @@ function initTasksPage() {
         }
 
         function isResizableDirectoryColumn(column) {
-            return column && column !== 'select' && !isFixedDirectoryColumn(column);
+            return column && column !== 'select' && !nonResizableColumns.has(column);
         }
 
         function isUniformDirectoryBoard(board) {
@@ -5617,7 +5806,8 @@ function initTasksPage() {
         }
 
         function getDirectoryColumnLabel(cell) {
-            return (cell?.textContent || 'kolumny').replace(/\s+/g, ' ').trim().toLowerCase();
+            const label = cell?.dataset.columnLabel || cell?.textContent || cell?.getAttribute('aria-label') || cell?.getAttribute('title') || 'kolumny';
+            return label.replace(/\s+/g, ' ').trim().toLowerCase();
         }
 
         function getDirectoryColumnDisplayLabel(cell) {
@@ -5926,9 +6116,22 @@ function initTasksPage() {
                 .filter(column => column && !isDirectoryColumnLayoutFixed(column) && !shouldIgnoreDirectoryColumn(board, column));
             const defaultSet = new Set(defaultColumns);
             const orderedColumns = storedLayout.order.filter(column => defaultSet.has(column));
+            const orderedSet = new Set(orderedColumns);
 
             defaultColumns.forEach(column => {
-                if (!orderedColumns.includes(column)) orderedColumns.push(column);
+                if (orderedSet.has(column)) return;
+
+                const nextColumn = defaultColumns
+                    .slice(defaultColumns.indexOf(column) + 1)
+                    .find(nextDefaultColumn => orderedSet.has(nextDefaultColumn));
+
+                if (nextColumn) {
+                    orderedColumns.splice(orderedColumns.indexOf(nextColumn), 0, column);
+                } else {
+                    orderedColumns.push(column);
+                }
+
+                orderedSet.add(column);
             });
 
             return orderedColumns;
@@ -5942,7 +6145,9 @@ function initTasksPage() {
 
             const columns = getDirectoryManagedColumns(board);
             const hiddenColumns = new Set(readStoredDirectoryColumnLayout(board).hidden);
-            const orderedColumns = ['select', 'action', ...columns, 'spacer'];
+            const fixedOrderedColumns = getDirectoryDefaultColumnOrder(board)
+                .filter(column => column && isDirectoryColumnLayoutFixed(column) && column !== 'select' && column !== 'spacer');
+            const orderedColumns = ['select', ...fixedOrderedColumns, ...columns, 'spacer'];
 
             [header, ...board.querySelectorAll('.tasks-directory-list .tasks-directory-row')].forEach(row => {
                 const cells = Array.from(row.querySelectorAll(':scope > [data-column]'));
