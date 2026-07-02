@@ -46,3 +46,181 @@ select.form-select {
     padding-right: 2rem;
     cursor: pointer;
 }
+
+.ancore-custom-select {
+    --ancore-custom-select-height: var(--dropdown-control-height);
+    --ancore-custom-select-radius: var(--dropdown-control-radius);
+    --ancore-custom-select-border: var(--border-color);
+    --ancore-custom-select-bg: #ffffff;
+    --ancore-custom-select-text: var(--text-main);
+    --ancore-custom-select-padding-x: 0.75rem;
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+.ancore-custom-select__source {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    clip-path: inset(50%) !important;
+}
+
+.ancore-custom-select__button {
+    width: 100%;
+    min-width: 0;
+    height: var(--ancore-custom-select-height);
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0 var(--ancore-custom-select-padding-x);
+    border: 1px solid var(--ancore-custom-select-border);
+    border-radius: var(--ancore-custom-select-radius);
+    background: var(--ancore-custom-select-bg);
+    color: var(--ancore-custom-select-text);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.1s, box-shadow 0.1s, background 0.1s;
+}
+
+.ancore-custom-select__button:hover,
+.ancore-custom-select.is-open .ancore-custom-select__button {
+    border-color: var(--accent-peach-border);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.08);
+}
+
+.ancore-custom-select__button:focus-visible {
+    outline: none;
+    border-color: var(--accent-peach-border);
+    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
+}
+
+.ancore-custom-select__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.ancore-custom-select.is-invalid .ancore-custom-select__button {
+    border-color: #d9485f;
+    box-shadow: 0 0 0 3px rgba(217, 72, 95, 0.12);
+}
+
+.ancore-custom-select__label {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ancore-custom-select__caret {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+    transition: transform 0.1s;
+}
+
+.ancore-custom-select.is-open .ancore-custom-select__caret {
+    transform: rotate(180deg);
+}
+
+.ancore-custom-select__menu {
+    position: absolute;
+    z-index: 2700;
+    top: calc(100% + 4px);
+    left: 0;
+    width: max(100%, var(--dropdown-menu-width));
+    min-width: 100%;
+    max-width: min(420px, calc(100vw - 2rem));
+    max-height: var(--dropdown-menu-max-height);
+    overflow-y: auto;
+    padding: var(--dropdown-menu-padding);
+    border: 1px solid var(--border-color);
+    border-radius: var(--dropdown-menu-radius);
+    background: #ffffff;
+    box-shadow: var(--dropdown-menu-shadow);
+}
+
+.ancore-custom-select__menu[hidden] {
+    display: none;
+}
+
+.ancore-custom-select__group-label {
+    display: block;
+    padding: 0.35rem 0.55rem 0.2rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.ancore-custom-select__option {
+    width: 100%;
+    min-height: var(--dropdown-menu-item-height);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.55rem;
+    border: 0;
+    border-radius: var(--dropdown-menu-item-radius);
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+    font-size: var(--dropdown-menu-font-size);
+    text-align: left;
+    cursor: pointer;
+}
+
+.ancore-custom-select__option:hover,
+.ancore-custom-select__option:focus-visible,
+.ancore-custom-select__option.is-selected {
+    outline: none;
+    background: var(--dropdown-menu-highlight-bg);
+    color: var(--dropdown-menu-highlight-color);
+}
+
+.ancore-custom-select__option:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.ancore-custom-select__check {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    border: 1px solid #cbd2dc;
+    border-radius: 4px;
+    background: #ffffff;
+}
+
+.ancore-custom-select__option.is-selected .ancore-custom-select__check {
+    border-color: var(--accent-peach-border);
+    background: var(--accent-peach);
+    box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+.ancore-custom-select__option-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-issue-fields .ancore-custom-select,
+.contacts-modal-fields .ancore-custom-select {
+    --ancore-custom-select-height: 38px;
+}
+
+.tasks-settings-grid > .ancore-custom-select,
+.tasks-project-create-fields .ancore-custom-select,
+.tasks-issue-fields .ancore-custom-select,
+.contacts-modal-fields .ancore-custom-select {
+    width: 100%;
+}

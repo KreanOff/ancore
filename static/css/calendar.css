@@ -647,7 +647,7 @@
 }
 
 .calendar-dialog-panel {
-    width: min(760px, 100%);
+    width: var(--tasks-modal-shell-width);
 }
 
 .calendar-dialog-form {

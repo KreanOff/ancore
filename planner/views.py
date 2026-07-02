@@ -10,6 +10,16 @@ from .forms import CalendarEventForm
 from .models import CalendarEvent
 
 
+def _active_workplace(request):
+    return getattr(request, 'workplace', None)
+
+
+def _filter_workplace(queryset, workplace):
+    if workplace is None:
+        return queryset
+    return queryset.filter(workplace=workplace)
+
+
 def _event_payload(event):
     return {
         'id': event.id,
@@ -67,11 +77,11 @@ def events_list(request):
     if not start or not end:
         return JsonResponse({'status': 'error', 'message': 'Zakres dat jest wymagany.'}, status=400)
 
-    events = CalendarEvent.objects.filter(
+    events = _filter_workplace(CalendarEvent.objects.filter(
         user=request.user,
         start__lte=end,
         end__gte=start,
-    )
+    ), _active_workplace(request))
     return JsonResponse({
         'status': 'success',
         'events': [_event_payload(event) for event in events],
@@ -87,6 +97,7 @@ def create_event(request):
 
     event = form.save(commit=False)
     event.user = request.user
+    event.workplace = _active_workplace(request)
     event.save()
     return JsonResponse({'status': 'success', 'event': _event_payload(event)})
 
@@ -94,7 +105,7 @@ def create_event(request):
 @login_required
 @require_POST
 def update_event(request, event_id):
-    event = get_object_or_404(CalendarEvent, id=event_id, user=request.user)
+    event = get_object_or_404(_filter_workplace(CalendarEvent.objects.filter(user=request.user), _active_workplace(request)), id=event_id)
     form = CalendarEventForm(request.POST, instance=event)
     if not form.is_valid():
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
@@ -106,6 +117,6 @@ def update_event(request, event_id):
 @login_required
 @require_POST
 def delete_event(request, event_id):
-    event = get_object_or_404(CalendarEvent, id=event_id, user=request.user)
+    event = get_object_or_404(_filter_workplace(CalendarEvent.objects.filter(user=request.user), _active_workplace(request)), id=event_id)
     event.delete()
     return JsonResponse({'status': 'success'})

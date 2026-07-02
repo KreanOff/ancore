@@ -58,7 +58,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertRegex(section.code, self.GROUP_CODE_PATTERN)
         self.assertEqual(section.full_code, f'{project.code}/{section.code}')
 
-    def test_create_project_ignores_removed_client_and_responsible_fields(self):
+    def test_create_project_saves_client_and_responsible_fields(self):
         company = Company.objects.create(owner=self.user, name='Ancore Labs')
         responsible_user = get_user_model().objects.create_user(
             username='responsible-user',
@@ -83,8 +83,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?project={project.id}")
         self.assertEqual(project.priority, 'urgent')
         self.assertEqual(project.due_at, date(2026, 7, 15))
-        self.assertIsNone(project.company)
-        self.assertIsNone(project.responsible_user)
+        self.assertEqual(project.company, company)
+        self.assertEqual(project.responsible_user, responsible_user)
 
     def test_create_project_modal_shows_project_parameters(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -95,14 +95,19 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-inline-priority-icon')
         self.assertContains(response, 'data-inline-select-value="urgent"')
         self.assertContains(response, 'Pilny')
+        self.assertContains(response, 'Firma')
+        self.assertContains(response, 'Odpowiedzialny')
+        self.assertContains(response, 'Status projektu')
+        self.assertContains(response, 'Etap')
+        self.assertContains(response, 'Kondycja')
+        self.assertContains(response, 'Budżet')
         self.assertNotContains(response, 'Klient / firma')
-        self.assertNotContains(response, 'Odpowiedzialny za projekt')
         self.assertContains(response, 'Kod projektu')
         self.assertContains(response, 'Automatyczny')
         self.assertNotContains(response, 'data-responsible-select-url')
         self.assertNotContains(response, 'Szukaj lub wpisz ID Ancore')
 
-    def test_edit_project_ignores_removed_responsible_field(self):
+    def test_edit_project_updates_responsible_field(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', responsible_user=self.user)
         target = get_user_model().objects.create_user(
             username='@outside-contact',
@@ -125,11 +130,11 @@ class TaskProjectCreationTests(TestCase):
 
         project.refresh_from_db()
         self.assertRedirects(response, reverse('tasks:tasks'))
-        self.assertEqual(project.responsible_user, self.user)
+        self.assertEqual(project.responsible_user, target)
 
         response = self.client.get(reverse('tasks:tasks'))
-        self.assertNotContains(response, 'Osoba Spoza Kontaktow')
-        self.assertNotContains(response, '@outside-contact')
+        self.assertContains(response, 'Osoba Spoza Kontaktow')
+        self.assertContains(response, 'data-project-responsible-user-id')
         self.assertNotContains(response, 'tasks-responsible-select__avatar')
 
     def test_search_field_is_rendered_in_topbar(self):
@@ -381,8 +386,16 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '<span>Projekt bez ikony</span>', html=True)
         self.assertContains(response, 'KOD PROJEKTU')
         self.assertContains(response, 'OPIS')
+        self.assertContains(response, 'FIRMA')
+        self.assertContains(response, 'ODPOWIEDZIALNY')
+        self.assertContains(response, 'STATUS')
+        self.assertContains(response, 'ETAP')
+        self.assertContains(response, 'KONDYCJA')
         self.assertContains(response, 'POSTĘP')
+        self.assertContains(response, 'START')
         self.assertContains(response, 'TERMIN')
+        self.assertContains(response, 'BUDŻET')
+        self.assertContains(response, 'ŹRÓDŁO')
         self.assertContains(response, 'ZADANIA')
         self.assertContains(response, 'PRIORYTET')
         self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
@@ -405,9 +418,17 @@ class TaskProjectCreationTests(TestCase):
             'data-column="info" aria-label="Informacje o projekcie"',
             'data-column="project_code">KOD PROJEKTU',
             'data-column="project">PROJEKT',
+            'data-column="company">FIRMA',
+            'data-column="responsible_user">ODPOWIEDZIALNY',
+            'data-column="project_status">STATUS',
+            'data-column="stage">ETAP',
+            'data-column="health">KONDYCJA',
             'data-column="description">OPIS',
             'data-column="progress">POSTĘP',
+            'data-column="start_at">START',
             'data-column="due_at">TERMIN',
+            'data-column="budget">BUDŻET',
+            'data-column="source">ŹRÓDŁO',
             'data-column="tasks_count">ZADANIA',
             'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
@@ -422,16 +443,16 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '1/2')
         self.assertContains(response, 'Wysoki')
         self.assertContains(response, '15.07.2026')
-        self.assertNotContains(response, 'Acme CRM')
+        self.assertContains(response, 'Acme CRM')
         self.assertContains(response, 'tasks-project-progress-fill')
         self.assertContains(response, 'data-project-priority="high"')
         self.assertContains(response, 'data-project-due-at="2026-07-15"')
-        self.assertNotContains(response, f'data-project-company-id="{company.id}"')
-        self.assertNotContains(response, f'data-project-responsible-user-id="{self.user.id}"')
+        self.assertContains(response, f'data-project-company-id="{company.id}"')
+        self.assertContains(response, f'data-project-responsible-user-id="{self.user.id}"')
         self.assertContains(response, 'DATA')
         self.assertContains(response, '07.06.2026')
         self.assertNotContains(response, '7 cze')
-        self.assertNotContains(response, 'Brak osoby')
+        self.assertContains(response, 'Brak osoby')
 
     def test_projects_view_query_count_does_not_grow_with_task_volume(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt')
@@ -696,6 +717,23 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('Nowe zadanie 010', new_html)
         self.assertIn('data-task-status-page="6"', html)
 
+    def test_task_rows_do_not_render_default_task_type_label(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt zadań', code='TSK')
+        section = TaskSection.objects.create(project=project, title='Plan')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie bez widocznego typu')
+
+        response = self.client.get(reverse('tasks:task_group', args=[section.id]))
+        html = response.content.decode()
+        task_marker = f'data-task-id="{task.task_id}"'
+        marker_index = html.index(task_marker)
+        row_start = html.rfind('<article', 0, marker_index)
+        row_end = html.index('</article>', row_start)
+        row_html = html[row_start:row_end]
+
+        self.assertIn('Zadanie bez widocznego typu', row_html)
+        self.assertNotIn('<span>Ogólne</span>', row_html)
+        self.assertNotIn('tasks-row-crm-meta', row_html)
+
     def test_group_task_view_uses_group_url_for_status_pagination(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt grupy', code='GRP')
         section = TaskSection.objects.create(project=project, title='Sprint')
@@ -799,8 +837,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-priority-filter-menu')
         self.assertNotContains(response, 'data-status-filter-menu')
         self.assertContains(response, 'KOD GRUPY')
+        self.assertContains(response, 'STATUS')
+        self.assertContains(response, 'TYP')
         self.assertContains(response, 'POSTĘP')
         self.assertContains(response, 'TERMIN')
+        self.assertContains(response, 'LIMIT WIP')
         self.assertContains(response, 'ZADANIA')
         self.assertContains(response, 'PRIORYTET')
         self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
@@ -820,9 +861,12 @@ class TaskProjectCreationTests(TestCase):
             'data-column="info" aria-label="Informacje o grupie"',
             'data-column="section">GRUPA',
             'data-column="project_code">KOD GRUPY',
+            'data-column="section_status">STATUS',
+            'data-column="section_kind">TYP',
             'data-column="description">OPIS',
             'data-column="progress">POSTĘP',
             'data-column="due_at">TERMIN',
+            'data-column="wip_limit">LIMIT WIP',
             'data-column="tasks_count">ZADANIA',
             'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
@@ -838,7 +882,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '1/2')
         self.assertContains(response, 'Wysoki')
         self.assertContains(response, '15.07.2026')
-        self.assertNotContains(response, 'Acme CRM')
+        self.assertContains(response, 'Acme CRM')
         self.assertNotContains(
             response,
             '<div class="tasks-directory-members-menu tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" data-directory-members-menu>',
@@ -1671,7 +1715,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(project.description, 'Nowy opis')
         self.assertEqual(project.priority, 'medium')
         self.assertEqual(project.due_at, date(2026, 8, 20))
-        self.assertIsNone(project.company)
+        self.assertEqual(project.company, company)
         self.assertEqual(project.icon, '')
         self.assertEqual(project.code, old_code)
 

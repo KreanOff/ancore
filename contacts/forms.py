@@ -22,12 +22,17 @@ COMPANY_PHOTO_MAX_SIZE = 5 * 1024 * 1024
 class ContactForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        workplace = kwargs.pop('workplace', None)
         self.user = user
+        self.workplace = workplace
         super().__init__(*args, **kwargs)
         self.fields['first_name'].required = False
         self.fields['company_record'].queryset = Company.objects.none()
         if user is not None:
-            self.fields['company_record'].queryset = Company.objects.filter(owner=user)
+            companies = Company.objects.filter(owner=user)
+            if workplace is not None:
+                companies = companies.filter(workplace=workplace)
+            self.fields['company_record'].queryset = companies
         self.fields['company_record'].empty_label = 'Brak powiązanej firmy'
 
     def _validate_required_identity(self, cleaned_data):

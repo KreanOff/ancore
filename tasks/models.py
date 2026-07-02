@@ -64,6 +64,29 @@ class TaskProject(models.Model):
         ('urgent', 'Pilny'),
     ]
 
+    STATUS_CHOICES = [
+        ('planned', 'Planowany'),
+        ('active', 'Aktywny'),
+        ('on_hold', 'Wstrzymany'),
+        ('completed', 'Zakończony'),
+        ('cancelled', 'Anulowany'),
+    ]
+
+    STAGE_CHOICES = [
+        ('lead', 'Lead'),
+        ('offer', 'Oferta'),
+        ('contract', 'Umowa'),
+        ('implementation', 'Realizacja'),
+        ('support', 'Utrzymanie'),
+        ('internal', 'Wewnętrzny'),
+    ]
+
+    HEALTH_CHOICES = [
+        ('ok', 'OK'),
+        ('at_risk', 'Zagrożony'),
+        ('delayed', 'Opóźniony'),
+    ]
+
     CODE_PREFIX = 'P'
     CODE_LENGTH = 8
     CODE_ALPHABET = BASE36_ALPHABET
@@ -85,10 +108,18 @@ class TaskProject(models.Model):
     next_section_code_number = models.PositiveIntegerField(default=1, editable=False)
     icon = models.CharField(max_length=64, blank=True, default='')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    stage = models.CharField(max_length=20, choices=STAGE_CHOICES, default='implementation')
+    health = models.CharField(max_length=20, choices=HEALTH_CHOICES, default='ok')
+    start_at = models.DateField(null=True, blank=True)
     due_at = models.DateField(null=True, blank=True)
+    budget_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, default='PLN', blank=True)
+    source = models.CharField(max_length=120, blank=True)
     company = models.ForeignKey('contacts.Company', on_delete=models.SET_NULL, related_name='task_projects', null=True, blank=True)
     responsible_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='responsible_task_projects', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_projects')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='task_projects', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -151,6 +182,14 @@ class TaskSection(models.Model):
     CODE_PREFIX = 'G'
     CODE_WIDTH = 5
 
+    STATUS_CHOICES = [
+        ('open', 'Otwarta'),
+        ('in_progress', 'W trakcie'),
+        ('ready', 'Gotowa'),
+        ('blocked', 'Zablokowana'),
+        ('closed', 'Zamknięta'),
+    ]
+
     KIND_CHOICES = [
         ('issues', 'Kwestie'),
         ('components', 'Komponenty'),
@@ -165,8 +204,12 @@ class TaskSection(models.Model):
     code_number = models.PositiveIntegerField(default=0, editable=False)
     next_task_code_number = models.PositiveIntegerField(default=1, editable=False)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
     icon = models.CharField(max_length=64, blank=True, default='')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='owned_task_sections', null=True, blank=True)
+    due_at = models.DateField(null=True, blank=True)
+    wip_limit = models.PositiveIntegerField(null=True, blank=True)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -227,12 +270,13 @@ class TaskTag(models.Model):
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_tags')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='task_tags', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['name']
         constraints = [
-            models.UniqueConstraint(fields=['user', 'name'], name='unique_task_tag_per_user'),
+            models.UniqueConstraint(fields=['user', 'workplace', 'name'], name='unique_task_tag_per_workplace'),
             models.UniqueConstraint(fields=['code'], name='unique_task_tag_code'),
         ]
 
@@ -293,6 +337,29 @@ class Task(models.Model):
         ('reopened', 'Ponownie otwarte'),
     ]
 
+    TASK_TYPE_CHOICES = [
+        ('general', 'Ogólne'),
+        ('call', 'Telefon'),
+        ('email', 'E-mail'),
+        ('meeting', 'Spotkanie'),
+        ('offer', 'Oferta'),
+        ('invoice', 'Faktura'),
+        ('complaint', 'Reklamacja'),
+        ('onboarding', 'Onboarding'),
+        ('internal', 'Wewnętrzne'),
+    ]
+
+    CONTACT_CHANNEL_CHOICES = [
+        ('none', 'Brak kanału'),
+        ('phone', 'Telefon'),
+        ('email', 'E-mail'),
+        ('meeting', 'Spotkanie'),
+        ('whatsapp', 'WhatsApp'),
+        ('linkedin', 'LinkedIn'),
+        ('form', 'Formularz'),
+        ('system', 'System'),
+    ]
+
     task_id = models.PositiveIntegerField(default=0)
     code_number = models.PositiveIntegerField(default=0, editable=False)
     title = models.CharField(max_length=255)
@@ -303,9 +370,19 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     completion_date = models.DateTimeField(null=True, blank=True)
     due_at = models.DateTimeField(null=True, blank=True)
+    reminder_at = models.DateTimeField(null=True, blank=True)
+    estimated_minutes = models.PositiveIntegerField(null=True, blank=True)
     time_spent_hours = models.PositiveIntegerField(null=True, blank=True)
     time_spent_minutes = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(59)])
+    task_type = models.CharField(max_length=20, choices=TASK_TYPE_CHOICES, default='general')
+    contact_channel = models.CharField(max_length=20, choices=CONTACT_CHANNEL_CHOICES, default='none', blank=True)
+    is_billable = models.BooleanField(default=False)
+    blocked_reason = models.TextField(blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
+    assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='assigned_tasks', null=True, blank=True)
+    company = models.ForeignKey('contacts.Company', on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
+    contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
     section = models.ForeignKey(TaskSection, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
     tags = models.ManyToManyField(TaskTag, related_name='tasks', blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='subtasks', null=True, blank=True)
@@ -314,7 +391,12 @@ class Task(models.Model):
         indexes = [
             models.Index(fields=['section', 'parent', 'created_at'], name='task_section_parent_idx'),
             models.Index(fields=['user', 'task_id'], name='task_user_task_id_idx'),
+            models.Index(fields=['user', 'workplace', 'task_id'], name='task_user_workspace_id_idx'),
             models.Index(fields=['section', 'code_number'], name='task_section_code_idx'),
+            models.Index(fields=['user', 'assignee', 'status'], name='task_user_assignee_status_idx'),
+            models.Index(fields=['user', 'company', 'status'], name='task_user_company_status_idx'),
+            models.Index(fields=['user', 'task_type', 'status'], name='task_user_type_status_idx'),
+            models.Index(fields=['user', 'reminder_at'], name='task_user_reminder_idx'),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -363,23 +445,33 @@ class Task(models.Model):
         elif not self.section_id and self.code_number:
             self.code_number = 0
             _add_update_field(kwargs, 'code_number')
+
+        if self.section_id:
+            section_workplace_id = self.section.project.workplace_id
+            if self.workplace_id != section_workplace_id:
+                self.workplace_id = section_workplace_id
+                _add_update_field(kwargs, 'workplace')
             
         if not self.pk or self.task_id == 0:
-            # Get the highest task_id for this user
-            max_task_id = Task.objects.filter(user=self.user).aggregate(Max('task_id'))['task_id__max'] or 0
+            task_scope = Task.objects.filter(user=self.user)
+            if self.workplace_id:
+                task_scope = task_scope.filter(workplace_id=self.workplace_id)
+            max_task_id = task_scope.aggregate(Max('task_id'))['task_id__max'] or 0
             self.task_id = max_task_id + 1
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         user = self.user
+        workplace = self.workplace
         super().delete(*args, **kwargs)
-        # Renumber remaining tasks for this user
-        self._renumber_user_tasks(user)
+        self._renumber_user_tasks(user, workplace)
 
     @classmethod
-    def _renumber_user_tasks(cls, user):
-        """Renumber tasks sequentially starting from 1 for a specific user"""
+    def _renumber_user_tasks(cls, user, workplace=None):
+        """Renumber tasks sequentially for a specific user and workplace."""
         tasks = cls.objects.filter(user=user).order_by('task_id')
+        if workplace is not None:
+            tasks = tasks.filter(workplace=workplace)
         for index, task in enumerate(tasks, 1):
             if task.task_id != index:
                 task.task_id = index

@@ -16,6 +16,13 @@ class CalendarEvent(models.Model):
         on_delete=models.CASCADE,
         related_name='calendar_events',
     )
+    workplace = models.ForeignKey(
+        'workplaces.Workplace',
+        on_delete=models.CASCADE,
+        related_name='calendar_events',
+        null=True,
+        blank=True,
+    )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     start = models.DateTimeField()

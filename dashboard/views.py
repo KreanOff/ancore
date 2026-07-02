@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 
 from accounts.avatar import account_avatar
@@ -159,11 +159,4 @@ def settings(request):
 
 @login_required
 def home(request):
-    dashboard_notifications = _dashboard_notifications(request.user)
-
-    context = {
-        'dashboard_notifications': dashboard_notifications,
-        'dashboard_notification_count': len(dashboard_notifications),
-    }
-
-    return render(request, 'dashboard/home.html', context)
+    return redirect('workplaces:workplaces')

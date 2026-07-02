@@ -165,3 +165,4 @@ obsidian-vault/
 ancore/__pycache__/settings.cpython-314.pyc
 
 /platform-develop
+run_lan.sh

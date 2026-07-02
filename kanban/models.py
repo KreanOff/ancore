@@ -36,6 +36,7 @@ class KanbanProject(models.Model):
     code = models.CharField(max_length=20, blank=True)
     icon = models.CharField(max_length=64, blank=True, default='')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_projects')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='kanban_projects', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -119,12 +120,13 @@ class KanbanTag(models.Model):
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_tags')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='kanban_tags', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['name']
         constraints = [
-            models.UniqueConstraint(fields=['user', 'name'], name='unique_kanban_tag_per_user'),
+            models.UniqueConstraint(fields=['user', 'workplace', 'name'], name='unique_kanban_tag_per_workplace'),
             models.UniqueConstraint(fields=['code'], name='unique_kanban_tag_code'),
         ]
 
@@ -211,6 +213,7 @@ class Kanban(models.Model):
     time_spent_hours = models.PositiveIntegerField(null=True, blank=True)
     time_spent_minutes = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(59)])
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_items')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='kanban_items', null=True, blank=True)
     section = models.ForeignKey(KanbanSection, on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
     column = models.ForeignKey(KanbanBoardColumn, on_delete=models.SET_NULL, related_name='cards', null=True, blank=True)
     tags = models.ManyToManyField(KanbanTag, related_name='tasks', blank=True)
@@ -240,25 +243,35 @@ class Kanban(models.Model):
         if self.section_id:
             if self.column_id and self.column.section_id != self.section_id:
                 self.column = None
+            section_workplace_id = self.section.project.workplace_id
+            if self.workplace_id != section_workplace_id:
+                self.workplace_id = section_workplace_id
+                update_fields = kwargs.get('update_fields')
+                if update_fields is not None:
+                    kwargs['update_fields'] = set(update_fields) | {'workplace'}
         else:
             self.column = None
             
         if not self.pk or self.task_id == 0:
-            # Get the highest task_id for this user
-            max_task_id = Kanban.objects.filter(user=self.user).aggregate(Max('task_id'))['task_id__max'] or 0
+            task_scope = Kanban.objects.filter(user=self.user)
+            if self.workplace_id:
+                task_scope = task_scope.filter(workplace_id=self.workplace_id)
+            max_task_id = task_scope.aggregate(Max('task_id'))['task_id__max'] or 0
             self.task_id = max_task_id + 1
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         user = self.user
+        workplace = self.workplace
         super().delete(*args, **kwargs)
-        # Renumber remaining tasks for this user
-        self._renumber_user_tasks(user)
+        self._renumber_user_tasks(user, workplace)
 
     @classmethod
-    def _renumber_user_tasks(cls, user):
-        """Renumber tasks sequentially starting from 1 for a specific user"""
+    def _renumber_user_tasks(cls, user, workplace=None):
+        """Renumber tasks sequentially for a specific user and workplace."""
         tasks = cls.objects.filter(user=user).order_by('task_id')
+        if workplace is not None:
+            tasks = tasks.filter(workplace=workplace)
         for index, task in enumerate(tasks, 1):
             if task.task_id != index:
                 task.task_id = index

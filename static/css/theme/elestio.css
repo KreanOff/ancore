@@ -593,6 +593,12 @@ body.auth-page,
     background: #ffffff;
 }
 
+.tasks-all-groups-sheet .tasks-directory-list .tasks-directory-row > [data-column="section_status"],
+.tasks-all-groups-sheet .tasks-directory-list .tasks-directory-row > [data-column="section_kind"],
+.tasks-all-groups-sheet .tasks-directory-list .tasks-directory-row > [data-column="wip_limit"] {
+    display: none !important;
+}
+
 .tasks-table .task-row:hover td,
 .tasks-project-row:hover,
 .tasks-section-row:hover,

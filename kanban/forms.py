@@ -16,6 +16,12 @@ def board_column_status_choices(user=None):
     return list(Kanban.STATUS_CHOICES)
 
 
+def _filter_workplace(queryset, workplace):
+    if workplace is None:
+        return queryset
+    return queryset.filter(workplace=workplace)
+
+
 class DynamicStatusFormMixin:
     def configure_dynamic_status_field(self, user):
         self._dynamic_status_user = user
@@ -57,22 +63,29 @@ class KanbanForm(DynamicStatusFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        workplace = kwargs.pop('workplace', None)
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
         super().__init__(*args, **kwargs)
         self.configure_dynamic_status_field(user)
+        if workplace is None and section is not None:
+            workplace = getattr(section.project, 'workplace', None)
         if user:
-            projects = KanbanProject.objects.filter(user=user).prefetch_related('sections')
+            projects = _filter_workplace(KanbanProject.objects.filter(user=user), workplace).prefetch_related('sections')
             sections = KanbanSection.objects.filter(project__user=user).select_related('project')
+            if workplace is not None:
+                sections = sections.filter(project__workplace=workplace)
             parents = Kanban.objects.none()
             if getattr(self.instance, 'parent_id', None):
                 parents = Kanban.objects.filter(user=user, parent__isnull=True).select_related('section', 'section__project').order_by('task_id')
+                if workplace is not None:
+                    parents = parents.filter(workplace=workplace)
                 if self.instance and self.instance.pk:
                     parents = parents.exclude(pk=self.instance.pk)
             self.fields['project'].queryset = projects
             self.fields['section'].queryset = sections
             self.fields['parent'].queryset = parents
-            self.fields['tags'].queryset = KanbanTag.objects.filter(user=user)
+            self.fields['tags'].queryset = _filter_workplace(KanbanTag.objects.filter(user=user), workplace)
         current_section = section or getattr(self.instance, 'section', None)
         if current_section:
             self.fields['project'].initial = current_section.project
@@ -278,16 +291,21 @@ class QuickKanbanForm(forms.ModelForm):
 class KanbanModalForm(DynamicStatusFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        workplace = kwargs.pop('workplace', None)
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
         super().__init__(*args, **kwargs)
         self.configure_dynamic_status_field(user)
+        if workplace is None and section is not None:
+            workplace = getattr(section.project, 'workplace', None)
         if user:
             sections = KanbanSection.objects.filter(project__user=user)
+            if workplace is not None:
+                sections = sections.filter(project__workplace=workplace)
             if project:
                 sections = sections.filter(project=project)
             self.fields['section'].queryset = sections
-            self.fields['tags'].queryset = KanbanTag.objects.filter(user=user)
+            self.fields['tags'].queryset = _filter_workplace(KanbanTag.objects.filter(user=user), workplace)
         self.fields['section'].required = True
         self.fields['section'].label = 'Tablica przestrzeni roboczej'
         self.fields['tags'].required = False

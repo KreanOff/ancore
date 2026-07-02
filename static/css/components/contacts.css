@@ -887,7 +887,7 @@
 }
 
 .contacts-create-modal__dialog {
-    width: min(820px, 100%);
+    width: var(--tasks-modal-shell-width);
 }
 
 .contacts-create-modal__body,

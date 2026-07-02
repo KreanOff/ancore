@@ -22,6 +22,7 @@ class Company(models.Model):
         validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
     )
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='companies')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='companies', null=True, blank=True)
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, through='CompanyMembership', related_name='company_memberships')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -30,8 +31,8 @@ class Company(models.Model):
         ordering = ['name']
         constraints = [
             models.UniqueConstraint(
-                fields=['owner', 'name'],
-                name='unique_company_name_per_owner',
+                fields=['owner', 'workplace', 'name'],
+                name='unique_company_name_per_workplace',
             ),
         ]
 
@@ -94,6 +95,7 @@ class Contact(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='contacts', db_column='owner_id')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='contacts', null=True, blank=True)
 
     class Meta:
         ordering = ['first_name', 'middle_name', 'last_name', 'company']
@@ -123,6 +125,7 @@ class Contact(models.Model):
 
 class UserContact(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_contacts')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='user_contacts', null=True, blank=True)
     target_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='added_by_users')
     linked_contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, null=True, blank=True, related_name='linked_user_contacts')
     note = models.CharField(max_length=240, blank=True)
@@ -132,8 +135,8 @@ class UserContact(models.Model):
         ordering = ['target_user__first_name', 'target_user__last_name', 'target_user__email']
         constraints = [
             models.UniqueConstraint(
-                fields=['owner', 'target_user'],
-                name='unique_user_contact_per_owner',
+                fields=['owner', 'workplace', 'target_user'],
+                name='unique_user_contact_per_workplace',
             ),
         ]
 

@@ -30,7 +30,17 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+def env_list(name):
+    return [value.strip() for value in os.getenv(name, '').split(',') if value.strip()]
+
+
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS')
+if os.getenv('DJANGO_ALLOW_LAN_HOSTS', '').lower() in {'1', 'true', 'yes', 'on'}:
+    ALLOWED_HOSTS = ['*']
+elif DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
 
 
 # Application definition
@@ -45,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.postgres',
     'core',
     'accounts',
+    'workplaces',
     'tasks',
     'kanban',
     'contacts',
@@ -59,6 +70,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'accounts.middleware.UserPresenceMiddleware',
+    'workplaces.middleware.ActiveWorkplaceMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -76,6 +88,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'accounts.context_processors.current_account_avatar',
+                'workplaces.context_processors.current_workplace',
             ],
         },
     },
@@ -152,7 +165,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 LOGOUT_REDIRECT_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = 'workplaces:workplaces'
 LOGIN_URL = 'login'
 
 AUTH_USER_MODEL = 'accounts.User'

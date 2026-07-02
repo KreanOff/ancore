@@ -115,15 +115,31 @@ function initTasksPage() {
     const projectInfoDescription = projectInfoModal?.querySelector('[data-project-info-description]');
     const projectInfoProgress = projectInfoModal?.querySelector('[data-project-info-progress]');
     const projectInfoTasks = projectInfoModal?.querySelector('[data-project-info-tasks]');
+    const projectInfoStatus = projectInfoModal?.querySelector('[data-project-info-status]');
+    const projectInfoStage = projectInfoModal?.querySelector('[data-project-info-stage]');
+    const projectInfoHealth = projectInfoModal?.querySelector('[data-project-info-health]');
+    const projectInfoCompany = projectInfoModal?.querySelector('[data-project-info-company]');
+    const projectInfoResponsible = projectInfoModal?.querySelector('[data-project-info-responsible]');
     const projectInfoPriority = projectInfoModal?.querySelector('[data-project-info-priority]');
+    const projectInfoStart = projectInfoModal?.querySelector('[data-project-info-start]');
     const projectInfoDue = projectInfoModal?.querySelector('[data-project-info-due]');
+    const projectInfoBudget = projectInfoModal?.querySelector('[data-project-info-budget]');
+    const projectInfoSource = projectInfoModal?.querySelector('[data-project-info-source]');
     const projectInfoCreated = projectInfoModal?.querySelector('[data-project-info-created]');
     const projectInfoLastActivity = projectInfoModal?.querySelector('[data-project-info-last-activity]');
     const projectInfoRows = {
         progress: projectInfoProgress?.closest('div'),
         tasks: projectInfoTasks?.closest('div'),
+        status: projectInfoStatus?.closest('div'),
+        stage: projectInfoStage?.closest('div'),
+        health: projectInfoHealth?.closest('div'),
+        company: projectInfoCompany?.closest('div'),
+        responsible: projectInfoResponsible?.closest('div'),
         priority: projectInfoPriority?.closest('div'),
+        start: projectInfoStart?.closest('div'),
         due: projectInfoDue?.closest('div'),
+        budget: projectInfoBudget?.closest('div'),
+        source: projectInfoSource?.closest('div'),
         created: projectInfoCreated?.closest('div'),
         lastActivity: projectInfoLastActivity?.closest('div')
     };
@@ -149,8 +165,17 @@ function initTasksPage() {
     const tagDescriptionInput = tagForm ? tagForm.querySelector('[name="description"]') : null;
     const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
+    const projectRenameCompanyInput = projectRenameForm ? projectRenameForm.querySelector('[name="company"]') : null;
+    const projectRenameResponsibleInput = projectRenameForm ? projectRenameForm.querySelector('[name="responsible_user"]') : null;
+    const projectRenameStatusInput = projectRenameForm ? projectRenameForm.querySelector('[name="status"]') : null;
+    const projectRenameStageInput = projectRenameForm ? projectRenameForm.querySelector('[name="stage"]') : null;
+    const projectRenameHealthInput = projectRenameForm ? projectRenameForm.querySelector('[name="health"]') : null;
     const projectRenamePriorityInput = projectRenameForm ? projectRenameForm.querySelector('[name="priority"]') : null;
+    const projectRenameStartAtInput = projectRenameForm ? projectRenameForm.querySelector('[name="start_at"]') : null;
     const projectRenameDueAtInput = projectRenameForm ? projectRenameForm.querySelector('[name="due_at"]') : null;
+    const projectRenameBudgetInput = projectRenameForm ? projectRenameForm.querySelector('[name="budget_amount"]') : null;
+    const projectRenameCurrencyInput = projectRenameForm ? projectRenameForm.querySelector('[name="currency"]') : null;
+    const projectRenameSourceInput = projectRenameForm ? projectRenameForm.querySelector('[name="source"]') : null;
     const projectRenameCodeValue = document.getElementById('project-rename-code');
 
     const taskAppSegment = window.location.pathname.split('/').filter(Boolean)[0] === 'kanban' ? 'kanban' : 'tasks';
@@ -800,10 +825,21 @@ function initTasksPage() {
     const sectionCreateDescriptionInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="description"]') : null;
     const sectionCreateProjectInput = sectionCreateForm ? sectionCreateForm.querySelector('input[name="project_id"]') : null;
     const sectionCreateProjectSelect = sectionCreateForm ? sectionCreateForm.querySelector('[data-section-create-project-select]') : null;
+    const sectionCreateKindInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="kind"]') : null;
+    const sectionCreateStatusInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="status"]') : null;
+    const sectionCreateOwnerInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="owner"]') : null;
+    const sectionCreatePriorityInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="priority"]') : null;
+    const sectionCreateDueAtInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="due_at"]') : null;
+    const sectionCreateWipLimitInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="wip_limit"]') : null;
     const sectionCreateIconInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="icon"]') : null;
     const sectionRenameTitleInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="title"]') : null;
     const sectionRenameDescriptionInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="description"]') : null;
+    const sectionRenameKindInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="kind"]') : null;
+    const sectionRenameStatusInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="status"]') : null;
+    const sectionRenameOwnerInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="owner"]') : null;
     const sectionRenamePriorityInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="priority"]') : null;
+    const sectionRenameDueAtInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="due_at"]') : null;
+    const sectionRenameWipLimitInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="wip_limit"]') : null;
     const sectionRenameIconInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="icon"]') : null;
     const sectionRenameIdInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="section_id"]') : null;
     const issueTitleInput = issueForm ? issueForm.querySelector('[name="title"]') : null;
@@ -2535,6 +2571,7 @@ function initTasksPage() {
         document.body.classList.add('modal-open');
         closeCreateMenu();
         if (onOpen) onOpen();
+        window.AncoreCustomSelect?.refresh(modal);
         setTimeout(() => focusTarget?.focus(), 50);
     }
 
@@ -3380,16 +3417,34 @@ function initTasksPage() {
         });
     });
 
+    function setFieldValue(input, value) {
+        if (!input) return;
+        input.value = value || '';
+    }
+
+    function setProjectRenameFieldsFromDataset(dataset = {}) {
+        setFieldValue(projectRenameIdInput, dataset.projectId);
+        setFieldValue(projectRenameNameInput, dataset.projectName);
+        setFieldValue(projectRenameDescriptionInput, dataset.projectDescription);
+        setFieldValue(projectRenameCompanyInput, dataset.projectCompanyId);
+        setFieldValue(projectRenameResponsibleInput, dataset.projectResponsibleUserId);
+        setFieldValue(projectRenameStatusInput, dataset.projectStatus || 'active');
+        setFieldValue(projectRenameStageInput, dataset.projectStage || 'implementation');
+        setFieldValue(projectRenameHealthInput, dataset.projectHealth || 'ok');
+        setFieldValue(projectRenamePriorityInput, dataset.projectPriority || 'none');
+        syncInlineSelectForSelect(projectRenamePriorityInput);
+        setFieldValue(projectRenameStartAtInput, dataset.projectStartAt);
+        setFieldValue(projectRenameDueAtInput, dataset.projectDueAt);
+        setFieldValue(projectRenameBudgetInput, dataset.projectBudgetAmount);
+        setFieldValue(projectRenameCurrencyInput, dataset.projectCurrency || 'PLN');
+        setFieldValue(projectRenameSourceInput, dataset.projectSource);
+        if (projectRenameCodeValue) projectRenameCodeValue.textContent = dataset.projectCode || '';
+        setFieldValue(projectRenameIconInput, dataset.projectIcon);
+    }
+
     openProjectRenameButtons.forEach(button => {
         button.addEventListener('click', () => {
-            if (projectRenameIdInput) projectRenameIdInput.value = button.dataset.projectId || '';
-            if (projectRenameNameInput) projectRenameNameInput.value = button.dataset.projectName || '';
-            if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = button.dataset.projectDescription || '';
-            if (projectRenamePriorityInput) projectRenamePriorityInput.value = button.dataset.projectPriority || 'none';
-            syncInlineSelectForSelect(projectRenamePriorityInput);
-            if (projectRenameDueAtInput) projectRenameDueAtInput.value = button.dataset.projectDueAt || '';
-            if (projectRenameCodeValue) projectRenameCodeValue.textContent = button.dataset.projectCode || '';
-            if (projectRenameIconInput) projectRenameIconInput.value = button.dataset.projectIcon || '';
+            setProjectRenameFieldsFromDataset(button.dataset);
             syncProjectIconPickers();
             closeProjectActionMenus();
             openModal(projectRenameModal, projectRenameNameInput, updateProjectRenameSubmitState);
@@ -3427,8 +3482,16 @@ function initTasksPage() {
                 description: button.dataset.tagDescription || readProjectInfoCell(row, 'description'),
                 progress: '',
                 tasks: button.dataset.tagTasksLabel || readProjectInfoCell(row, 'task_count'),
+                status: '',
+                stage: '',
+                health: '',
+                company: '',
+                responsible: '',
                 priority: '',
+                start: '',
                 due: '',
+                budget: '',
+                source: '',
                 created: button.dataset.tagCreatedLabel || readProjectInfoCell(row, 'created_at'),
                 lastActivity: ''
             }
@@ -3439,8 +3502,16 @@ function initTasksPage() {
                 description: button.dataset.sectionDescription || readProjectInfoCell(row, 'description'),
                 progress: button.dataset.sectionProgressLabel || readProjectInfoCell(row, 'progress'),
                 tasks: button.dataset.sectionTasksLabel || readProjectInfoCell(row, 'tasks_count'),
+                status: button.dataset.sectionStatusLabel || readProjectInfoCell(row, 'section_status'),
+                stage: button.dataset.sectionKindLabel || readProjectInfoCell(row, 'section_kind'),
+                health: '',
+                company: button.dataset.sectionProjectNameLabel || readProjectInfoCell(row, 'project_name'),
+                responsible: button.dataset.sectionOwnerLabel || readProjectInfoCell(row, 'default_assignee'),
                 priority: button.dataset.sectionPriorityLabel || readProjectInfoCell(row, 'priority'),
+                start: '',
                 due: button.dataset.sectionDueLabel || readProjectInfoCell(row, 'due_at'),
+                budget: button.dataset.sectionWipLabel || readProjectInfoCell(row, 'wip_limit'),
+                source: '',
                 created: button.dataset.sectionCreatedLabel || readProjectInfoCell(row, 'created_at'),
                 lastActivity: button.dataset.sectionLastActivityLabel || readProjectInfoCell(row, 'last_activity')
             }
@@ -3450,21 +3521,43 @@ function initTasksPage() {
                 description: button.dataset.projectDescription || row?.dataset.projectDescription || readProjectInfoCell(row, 'description'),
                 progress: button.dataset.projectProgressLabel || readProjectInfoCell(row, 'progress'),
                 tasks: button.dataset.projectTasksLabel || readProjectInfoCell(row, 'tasks_count'),
+                status: button.dataset.projectStatusLabel || readProjectInfoCell(row, 'project_status'),
+                stage: button.dataset.projectStageLabel || readProjectInfoCell(row, 'stage'),
+                health: button.dataset.projectHealthLabel || readProjectInfoCell(row, 'health'),
+                company: button.dataset.projectCompanyLabel || readProjectInfoCell(row, 'company'),
+                responsible: button.dataset.projectResponsibleLabel || readProjectInfoCell(row, 'responsible_user'),
                 priority: button.dataset.projectPriorityLabel || readProjectInfoCell(row, 'priority'),
+                start: button.dataset.projectStartLabel || readProjectInfoCell(row, 'start_at'),
                 due: button.dataset.projectDueLabel || readProjectInfoCell(row, 'due_at'),
+                budget: button.dataset.projectBudgetLabel || readProjectInfoCell(row, 'budget'),
+                source: button.dataset.projectSourceLabel || readProjectInfoCell(row, 'source'),
                 created: button.dataset.projectCreatedLabel || readProjectInfoCell(row, 'created_at'),
                 lastActivity: button.dataset.projectLastActivityLabel || readProjectInfoCell(row, 'last_activity')
             };
 
         if (projectInfoTitle) projectInfoTitle.textContent = isTagInfo ? 'Informacje o tagu' : (isSectionInfo ? 'Informacje o grupie' : 'Informacje o projekcie');
-        setProjectInfoRowsVisible(isTagInfo ? new Set(['tasks', 'created']) : new Set(['progress', 'tasks', 'priority', 'due', 'created', 'lastActivity']));
+        setProjectInfoRowsVisible(
+            isTagInfo
+                ? new Set(['tasks', 'created'])
+                : isSectionInfo
+                    ? new Set(['progress', 'tasks', 'status', 'stage', 'responsible', 'priority', 'due', 'budget', 'created', 'lastActivity'])
+                    : new Set(['progress', 'tasks', 'status', 'stage', 'health', 'company', 'responsible', 'priority', 'start', 'due', 'budget', 'source', 'created', 'lastActivity'])
+        );
         setProjectInfoText(projectInfoName, data.name, isTagInfo ? 'Tag' : (isSectionInfo ? 'Grupa' : 'Projekt'));
         setProjectInfoText(projectInfoCode, data.code, isSectionInfo ? 'Brak kodu grupy' : 'Brak kodu');
         setProjectInfoText(projectInfoDescription, data.description, 'Brak opisu');
         setProjectInfoText(projectInfoProgress, data.progress, '0%');
         setProjectInfoText(projectInfoTasks, data.tasks, '0/0');
+        setProjectInfoText(projectInfoStatus, data.status, 'Brak statusu');
+        setProjectInfoText(projectInfoStage, data.stage, isSectionInfo ? 'Brak typu' : 'Brak etapu');
+        setProjectInfoText(projectInfoHealth, data.health, 'Brak kondycji');
+        setProjectInfoText(projectInfoCompany, data.company, isSectionInfo ? 'Brak projektu' : 'Brak firmy');
+        setProjectInfoText(projectInfoResponsible, data.responsible, 'Brak osoby');
         setProjectInfoText(projectInfoPriority, data.priority, 'Brak');
+        setProjectInfoText(projectInfoStart, data.start, 'Brak startu');
         setProjectInfoText(projectInfoDue, data.due, 'Brak terminu');
+        setProjectInfoText(projectInfoBudget, data.budget, isSectionInfo ? 'Brak limitu' : 'Brak budżetu');
+        setProjectInfoText(projectInfoSource, data.source, 'Brak źródła');
         setProjectInfoText(projectInfoCreated, data.created, 'Brak danych');
         setProjectInfoText(projectInfoLastActivity, data.lastActivity, 'Brak aktywności');
 
@@ -3497,6 +3590,12 @@ function initTasksPage() {
             if (sectionCreateProjectSelect) sectionCreateProjectSelect.value = button.dataset.projectId || '';
             if (sectionCreateTitleInput) sectionCreateTitleInput.value = '';
             if (sectionCreateDescriptionInput) sectionCreateDescriptionInput.value = '';
+            setFieldValue(sectionCreateKindInput, 'issues');
+            setFieldValue(sectionCreateStatusInput, 'open');
+            setFieldValue(sectionCreateOwnerInput, '');
+            setFieldValue(sectionCreatePriorityInput, 'none');
+            setFieldValue(sectionCreateDueAtInput, '');
+            setFieldValue(sectionCreateWipLimitInput, '');
             if (sectionCreateIconInput) sectionCreateIconInput.value = '';
             syncProjectIconPickers();
             closeProjectActionMenus();
@@ -4500,12 +4599,17 @@ function initTasksPage() {
         if (!sectionDataset || !sectionRenameModal) return;
         if (sectionDataset.canManage === 'false') return;
 
-        if (sectionRenameIdInput) sectionRenameIdInput.value = sectionDataset.sectionId || '';
-        if (sectionRenameTitleInput) sectionRenameTitleInput.value = sectionDataset.sectionTitle || '';
-        if (sectionRenameDescriptionInput) sectionRenameDescriptionInput.value = sectionDataset.sectionDescription || '';
-        if (sectionRenamePriorityInput) sectionRenamePriorityInput.value = sectionDataset.sectionPriority || 'none';
+        setFieldValue(sectionRenameIdInput, sectionDataset.sectionId);
+        setFieldValue(sectionRenameTitleInput, sectionDataset.sectionTitle);
+        setFieldValue(sectionRenameDescriptionInput, sectionDataset.sectionDescription);
+        setFieldValue(sectionRenameKindInput, sectionDataset.sectionKind || 'issues');
+        setFieldValue(sectionRenameStatusInput, sectionDataset.sectionStatus || 'open');
+        setFieldValue(sectionRenameOwnerInput, sectionDataset.sectionOwnerId);
+        setFieldValue(sectionRenamePriorityInput, sectionDataset.sectionPriority || 'none');
         syncInlineSelectForSelect(sectionRenamePriorityInput);
-        if (sectionRenameIconInput) sectionRenameIconInput.value = sectionDataset.sectionIcon || '';
+        setFieldValue(sectionRenameDueAtInput, sectionDataset.sectionDueAt);
+        setFieldValue(sectionRenameWipLimitInput, sectionDataset.sectionWipLimit);
+        setFieldValue(sectionRenameIconInput, sectionDataset.sectionIcon);
         syncProjectIconPickers();
         closeSectionActionMenu();
         openModal(sectionRenameModal, sectionRenameTitleInput, updateSectionRenameSubmitState);
@@ -4523,14 +4627,7 @@ function initTasksPage() {
         if (!selectedProjectCheckbox || !projectRenameModal) return;
         if (!checkboxCanManage(selectedProjectCheckbox)) return;
 
-        if (projectRenameIdInput) projectRenameIdInput.value = selectedProjectCheckbox.dataset.projectId || '';
-        if (projectRenameNameInput) projectRenameNameInput.value = selectedProjectCheckbox.dataset.projectName || '';
-        if (projectRenameDescriptionInput) projectRenameDescriptionInput.value = selectedProjectCheckbox.dataset.projectDescription || '';
-        if (projectRenamePriorityInput) projectRenamePriorityInput.value = selectedProjectCheckbox.dataset.projectPriority || 'none';
-        syncInlineSelectForSelect(projectRenamePriorityInput);
-        if (projectRenameDueAtInput) projectRenameDueAtInput.value = selectedProjectCheckbox.dataset.projectDueAt || '';
-        if (projectRenameCodeValue) projectRenameCodeValue.textContent = selectedProjectCheckbox.dataset.projectCode || '';
-        if (projectRenameIconInput) projectRenameIconInput.value = selectedProjectCheckbox.dataset.projectIcon || '';
+        setProjectRenameFieldsFromDataset(selectedProjectCheckbox.dataset);
         syncProjectIconPickers();
         closeSectionActionMenu();
         openModal(projectRenameModal, projectRenameNameInput, updateProjectRenameSubmitState);
