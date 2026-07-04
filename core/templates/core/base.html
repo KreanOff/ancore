@@ -39,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260703-workplace-rail-v1">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260704-workplaces-console-v3">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -88,19 +88,19 @@
                 <i class="nav-icon nav-icon--home" data-lucide="building-2" aria-hidden="true"></i>
                 <span class="nav-label">Workplace</span>
             </a>
-            <a href="{% if workplace_app_urls.tasks %}{{ workplace_app_urls.tasks }}{% else %}{% url 'tasks:tasks' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'tasks' %}active{% endif %}" aria-label="Zadania" title="Zadania">
+            <a href="{% if workplace_app_urls.tasks %}{{ workplace_app_urls.tasks }}{% else %}{% url 'tasks:tasks' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}active{% endif %}" aria-label="Zadania" title="Zadania">
                 <i class="nav-icon nav-icon--tasks" data-lucide="list-todo" aria-hidden="true"></i>
                 <span class="nav-label">Zadania</span>
             </a>
-            <a href="{% if workplace_app_urls.kanban %}{{ workplace_app_urls.kanban }}{% else %}{% url 'kanban:tasks' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'kanban' %}active{% endif %}" aria-label="Kanban" title="Kanban">
+            <a href="{% if workplace_app_urls.kanban %}{{ workplace_app_urls.kanban }}{% else %}{% url 'kanban:tasks' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'kanban' or request.resolver_match.app_name == 'workplace_kanban' %}active{% endif %}" aria-label="Kanban" title="Kanban">
                 <i class="nav-icon nav-icon--kanban" data-lucide="kanban" aria-hidden="true"></i>
                 <span class="nav-label">Kanban</span>
             </a>
-            <a href="{% if workplace_app_urls.contacts %}{{ workplace_app_urls.contacts }}{% else %}{% url 'contacts:contacts' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'contacts' %}active{% endif %}" aria-label="Kontakty" title="Kontakty">
+            <a href="{% if workplace_app_urls.contacts %}{{ workplace_app_urls.contacts }}{% else %}{% url 'contacts:contacts' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'contacts' or request.resolver_match.app_name == 'workplace_contacts' %}active{% endif %}" aria-label="Kontakty" title="Kontakty">
                 <i class="nav-icon nav-icon--contacts" data-lucide="contact" aria-hidden="true"></i>
                 <span class="nav-label">Kontakty</span>
             </a>
-            <a href="{% if workplace_app_urls.calendar %}{{ workplace_app_urls.calendar }}{% else %}{% url 'planner:index' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'planner' %}active{% endif %}" aria-label="Kalendarz" title="Kalendarz">
+            <a href="{% if workplace_app_urls.calendar %}{{ workplace_app_urls.calendar }}{% else %}{% url 'planner:index' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'planner' or request.resolver_match.app_name == 'workplace_planner' %}active{% endif %}" aria-label="Kalendarz" title="Kalendarz">
                 <i class="nav-icon nav-icon--calendar" data-lucide="calendar-days" aria-hidden="true"></i>
                 <span class="nav-label">Kalendarz</span>
             </a>

@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     {% include 'core/includes/bootstrap.html' %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260703-workplace-rail-v1">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260704-workplaces-console-v3">
 </head>
 <body class="workplaces-standalone-page">
     <a class="workplaces-skip-link" href="#workplaces-page-title">Przejdź do listy workplace</a>
@@ -36,17 +36,21 @@
     </header>
 
     <main class="workplaces-standalone-shell">
-        <section class="workplaces-workspace workplaces-workspace--standalone" aria-labelledby="workplaces-page-title">
-            <header class="workplaces-topbar workplaces-topbar--standalone">
-                <div class="workplaces-titlebar-left">
-                    <span class="workplaces-topbar-title">
+        <section class="workplaces-workspace workplaces-workspace--standalone workplaces-console" aria-labelledby="workplaces-page-title">
+            <header class="workplaces-console__toolbar">
+                <div class="workplaces-console__title">
+                    <span class="workplaces-console__icon" aria-hidden="true">
                         <i data-lucide="building-2" aria-hidden="true"></i>
-                        <span id="workplaces-page-title">Workplaces</span>
                     </span>
+                    <div>
+                        <h1 id="workplaces-page-title">Workplaces</h1>
+                        <p>{{ workplaces.count }} {% if workplaces.count == 1 %}miejsce pracy{% else %}miejsca pracy{% endif %}</p>
+                    </div>
                 </div>
-                <form method="post" class="workplaces-create-form">
+
+                <form method="post" class="workplaces-create-form workplaces-create-form--console">
                     {% csrf_token %}
-                    <label class="workplaces-create-label" for="{{ form.name.id_for_label }}">Nowy workplace</label>
+                    <label class="workplaces-create-label" for="{{ form.name.id_for_label }}">Nazwa workplace</label>
                     {{ form.name }}
                     <button type="submit" class="workplaces-primary-button workplaces-create-button">
                         <i data-lucide="plus" aria-hidden="true"></i>
@@ -60,91 +64,159 @@
                 </form>
             </header>
 
-            <section class="workplaces-summary workplaces-summary--standalone" aria-label="Podsumowanie workplace">
-                <span class="workplaces-summary__icon" aria-hidden="true">
-                    <i data-lucide="briefcase-business" aria-hidden="true"></i>
-                </span>
-                <div class="workplaces-summary__copy">
-                    <p>Workplaces</p>
-                    <h1>{{ workplaces.count }} {% if workplaces.count == 1 %}miejsce pracy{% else %}miejsca pracy{% endif %}</h1>
-                    <span>{{ request.user.get_full_name|default:request.user.email }}</span>
-                </div>
-                <div class="workplaces-summary__stats" aria-label="Podsumowanie">
-                    <span>
-                        <strong>{{ workplaces.count }}</strong>
-                        <small>Workplaces</small>
-                    </span>
-                    <span>
-                        <strong>{% if active_workplace %}{{ active_workplace.name }}{% else %}-{% endif %}</strong>
-                        <small>Aktywny</small>
-                    </span>
-                </div>
-            </section>
-
-            <section class="workplaces-list workplaces-list--standalone" aria-label="Twoje workplace">
-                <div class="workplaces-list__header" aria-hidden="true">
-                    <span>Nazwa</span>
-                    <span>Członkowie</span>
-                    <span>Status</span>
-                    <span>Akcje</span>
-                </div>
-
-                <div class="workplaces-list__body">
-                    {% for workplace in workplaces %}
-                    <article class="workplace-card{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}">
-                        <div class="workplace-card__main">
-                            <div class="workplace-card__avatar" aria-hidden="true">{{ workplace.initials }}</div>
-                            <div class="workplace-card__body">
-                                <h2>{{ workplace.name }}</h2>
-                                <p>{{ workplace.slug }}</p>
-                            </div>
+            <div class="workplaces-console__body">
+                <section class="workplaces-directory" aria-label="Lista workplace">
+                    <div class="workplaces-directory__bar">
+                        <div>
+                            <strong>Katalog workplace</strong>
+                            <span>1-{{ workplaces.count }} z {{ workplaces.count }}</span>
                         </div>
-                        <span class="workplace-card__members">{{ workplace.memberships.count }} członków</span>
-                        <span class="workplace-card__status{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}">
-                            {% if active_workplace and workplace.id == active_workplace.id %}
-                            Aktywny
-                            {% else %}
-                            Dostępny
-                            {% endif %}
-                        </span>
-                        <div class="workplace-card__actions">
-                            <form method="post" action="{% url 'workplaces:switch' workplace.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="workplace-open-button{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}">
-                                    {% if active_workplace and workplace.id == active_workplace.id %}
-                                    Otwórz
-                                    {% else %}
-                                    Otwórz
-                                    {% endif %}
-                                </button>
-                            </form>
-                            <details class="workplace-settings">
-                                <summary class="workplace-settings__toggle" title="Ustawienia Workplace" aria-label="Ustawienia {{ workplace.name }}">
-                                    <i data-lucide="settings" aria-hidden="true"></i>
-                                </summary>
-                                <div class="workplace-settings__panel">
-                                    <form method="post" action="{% url 'workplaces:update' workplace.id %}" class="workplace-settings__form">
-                                        {% csrf_token %}
-                                        <label class="workplace-settings__label" for="workplace-name-{{ workplace.id }}">Nazwa</label>
-                                        <input id="workplace-name-{{ workplace.id }}" type="text" name="name" value="{{ workplace.name }}" class="form-input" autocomplete="off" required>
-                                        <button type="submit" class="workplace-settings__save">Zapisz</button>
-                                    </form>
-                                    <form method="post" action="{% url 'workplaces:delete' workplace.id %}" class="workplace-settings__delete-form">
-                                        {% csrf_token %}
-                                        <button type="submit" class="workplace-settings__delete">Usuń Workplace</button>
-                                    </form>
-                                </div>
-                            </details>
-                        </div>
-                    </article>
-                    {% empty %}
-                    <div class="workplaces-empty">
-                        <h2>Nie masz jeszcze Workplace.</h2>
-                        <p>Dodaj pierwszy workplace w górnym pasku.</p>
+                        <span class="workplaces-directory__scope">Organizacja</span>
                     </div>
-                    {% endfor %}
-                </div>
-            </section>
+
+                    <div class="workplaces-directory__table">
+                        <div class="workplaces-directory__head" role="row">
+                            <span>Nazwa</span>
+                            <span>Slug</span>
+                            <span>Członkowie</span>
+                            <span>Status</span>
+                            <span>Akcje</span>
+                        </div>
+
+                        <div class="workplaces-directory__body">
+                            {% for workplace in workplaces %}
+                            {% with member_count=workplace.memberships.count %}
+                            <article class="workplace-row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}">
+                                <div class="workplace-row__identity">
+                                    <span class="workplace-row__avatar" aria-hidden="true">{{ workplace.initials }}</span>
+                                    <div>
+                                        <h2>{{ workplace.name }}</h2>
+                                        <small>{% if active_workplace and workplace.id == active_workplace.id %}Aktualny kontekst{% else %}Dostępny workspace{% endif %}</small>
+                                    </div>
+                                </div>
+                                <span class="workplace-row__slug">{{ workplace.slug }}</span>
+                                <span class="workplace-row__members">
+                                    <i data-lucide="users" aria-hidden="true"></i>
+                                    {{ member_count }} {% if member_count == 1 %}członek{% else %}członków{% endif %}
+                                </span>
+                                <span class="workplace-row__status{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}">
+                                    <span aria-hidden="true"></span>
+                                    {% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}
+                                </span>
+                                <div class="workplace-row__actions">
+                                    <form method="post" action="{% url 'workplaces:switch' workplace.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="workplace-open-button{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}">
+                                            <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+                                            <span>Otwórz</span>
+                                        </button>
+                                    </form>
+                                    <details class="workplace-settings workplace-settings--console">
+                                        <summary class="workplace-settings__toggle" title="Ustawienia Workplace" aria-label="Ustawienia {{ workplace.name }}">
+                                            <i data-lucide="settings" aria-hidden="true"></i>
+                                        </summary>
+                                        <div class="workplace-settings__panel">
+                                            <form method="post" action="{% url 'workplaces:update' workplace.id %}" class="workplace-settings__form">
+                                                {% csrf_token %}
+                                                <label class="workplace-settings__label" for="workplace-name-{{ workplace.id }}">Nazwa</label>
+                                                <input id="workplace-name-{{ workplace.id }}" type="text" name="name" value="{{ workplace.name }}" class="form-input" autocomplete="off" required>
+                                                <button type="submit" class="workplace-settings__save">Zapisz</button>
+                                            </form>
+                                            <form method="post" action="{% url 'workplaces:delete' workplace.id %}" class="workplace-settings__delete-form">
+                                                {% csrf_token %}
+                                                <button type="submit" class="workplace-settings__delete">Usuń Workplace</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                </div>
+                            </article>
+                            {% endwith %}
+                            {% empty %}
+                            <div class="workplaces-empty workplaces-empty--console">
+                                <h2>Nie masz jeszcze Workplace.</h2>
+                                <p>Dodaj pierwszy workplace.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <aside class="workplace-inspector" aria-label="Szczegóły aktywnego workplace">
+                    {% if active_workplace %}
+                    {% with workplace=active_workplace member_count=active_workplace.memberships.count %}
+                    <header class="workplace-inspector__header">
+                        <div>
+                            <h2>{{ workplace.name }}</h2>
+                            <span class="workplace-inspector__status">
+                                <span aria-hidden="true"></span>
+                                Aktywny
+                            </span>
+                        </div>
+                        <span class="workplace-inspector__avatar" aria-hidden="true">{{ workplace.initials }}</span>
+                    </header>
+
+                    <dl class="workplace-inspector__details">
+                        <div>
+                            <dt>Nazwa</dt>
+                            <dd>{{ workplace.name }}</dd>
+                        </div>
+                        <div>
+                            <dt>Slug</dt>
+                            <dd>{{ workplace.slug }}</dd>
+                        </div>
+                        <div>
+                            <dt>Członkowie</dt>
+                            <dd>{{ member_count }}</dd>
+                        </div>
+                        <div>
+                            <dt>Kontekst</dt>
+                            <dd>Bieżący workplace</dd>
+                        </div>
+                        <div>
+                            <dt>Użytkownik</dt>
+                            <dd>{% firstof request.user.get_full_name request.user.username %}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="workplace-inspector__actions">
+                        <form method="post" action="{% url 'workplaces:switch' workplace.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="workplaces-primary-button workplace-inspector__open">
+                                <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+                                <span>Otwórz workplace</span>
+                            </button>
+                        </form>
+                        <details class="workplace-settings workplace-settings--inspector">
+                            <summary class="workplace-inspector__secondary">
+                                <i data-lucide="pencil" aria-hidden="true"></i>
+                                <span>Edytuj workplace</span>
+                            </summary>
+                            <div class="workplace-settings__panel">
+                                <form method="post" action="{% url 'workplaces:update' workplace.id %}" class="workplace-settings__form">
+                                    {% csrf_token %}
+                                    <label class="workplace-settings__label" for="inspector-workplace-name-{{ workplace.id }}">Nazwa</label>
+                                    <input id="inspector-workplace-name-{{ workplace.id }}" type="text" name="name" value="{{ workplace.name }}" class="form-input" autocomplete="off" required>
+                                    <button type="submit" class="workplace-settings__save">Zapisz</button>
+                                </form>
+                            </div>
+                        </details>
+                        <form method="post" action="{% url 'workplaces:delete' workplace.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="workplace-inspector__danger">
+                                <i data-lucide="trash-2" aria-hidden="true"></i>
+                                <span>Usuń workplace</span>
+                            </button>
+                        </form>
+                    </div>
+                    {% endwith %}
+                    {% else %}
+                    <div class="workplaces-empty workplaces-empty--console">
+                        <h2>Brak aktywnego Workplace.</h2>
+                        <p>Otwórz jeden z dostępnych workplace.</p>
+                    </div>
+                    {% endif %}
+                </aside>
+            </div>
         </section>
     </main>
 

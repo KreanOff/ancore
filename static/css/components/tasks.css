@@ -9111,7 +9111,7 @@ body.is-resizing-directory-columns {
 /* Compact desktop scale inspired by tracker-style issue lists. */
 .tasks-tracker-rail {
     gap: 0.65rem;
-    padding: 0.85rem 0.7rem;
+    padding: 1.45rem 0.7rem 0.85rem;
 }
 
 .tasks-rail-header {

@@ -12,13 +12,13 @@
 @import 'components/dialogs.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/modals.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/tables.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/tasks.css?v=20260702-unified-modal-window';
+@import 'components/tasks.css?v=20260704-rail-top-gap';
 @import 'components/contacts.css?v=20260702-unified-modal-window';
 @import 'components/notifications.css?v=20260616-task-autosave';
 @import 'components/attachments.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/file-upload.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/auth.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/workplaces.css?v=20260703-workplace-rail-v1';
+@import 'components/workplaces.css?v=20260704-workplaces-console-v3';
 @import 'calendar.css?v=20260702-unified-modal-window';
 @import 'components/checkboxes.css?v=20260625-contacts-project-table-match';
 @import 'theme/elestio.css?v=20260702-all-groups-sheet-v2';

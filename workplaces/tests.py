@@ -110,6 +110,21 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'Projekt w pierwszym')
         self.assertEqual(self.client.session['active_workplace_id'], self.second_workplace.pk)
 
+    def test_scoped_tasks_page_keeps_legacy_reverse_links_valid(self):
+        self.client.force_login(self.user)
+        project = TaskProject.objects.create(
+            name='Projekt w drugim',
+            user=self.user,
+            workplace=self.second_workplace,
+        )
+
+        response = self.client.get(scoped_workplace_app_path(self.second_workplace, 'tasks'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/tasks/?view=my-tasks"')
+        self.assertContains(response, f'data-view-url="/tasks/?project={project.pk}"')
+        self.assertNotContains(response, '/workplaces/-/tasks/')
+
     def test_legacy_tasks_url_redirects_after_workplace_flow(self):
         self.client.force_login(self.user)
         self._activate(self.second_workplace)
