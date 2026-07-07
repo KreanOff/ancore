@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.contrib.auth import get_user_model
 
@@ -30,6 +32,51 @@ class DateTimeLocalInput(forms.DateTimeInput):
 
     def __init__(self, attrs=None, format=None):
         super().__init__(attrs=attrs, format=format or '%Y-%m-%dT%H:%M')
+
+
+def _format_estimated_duration(total_minutes):
+    if total_minutes in (None, ''):
+        return ''
+    try:
+        total_minutes = int(total_minutes)
+    except (TypeError, ValueError):
+        return ''
+    hours, minutes = divmod(total_minutes, 60)
+    if hours and minutes:
+        return f'{hours} godz. {minutes} min.'
+    if hours:
+        return f'{hours} godz.'
+    return f'{minutes} min.' if minutes else ''
+
+
+def _parse_estimated_duration(value):
+    text = (value or '').strip().lower()
+    if not text:
+        return None
+
+    clock_match = re.fullmatch(r'(\d+)\s*[:.]\s*(\d{1,2})', text)
+    if clock_match:
+        hours = int(clock_match.group(1))
+        minutes = int(clock_match.group(2))
+        if minutes > 59:
+            return None
+        return hours * 60 + minutes
+
+    hours = 0
+    minutes = 0
+    matched = False
+    for amount, unit in re.findall(r'(\d+(?:[,.]\d+)?)\s*(godz\.?|godzina|godziny|godzin|h|min\.?|minuta|minuty|minut|m)(?=\s|$)', text):
+        matched = True
+        number = float(amount.replace(',', '.'))
+        if unit.startswith(('godz', 'h')):
+            hours += int(number)
+            minutes += round((number - int(number)) * 60)
+        else:
+            minutes += int(number)
+
+    if matched:
+        return hours * 60 + minutes
+    return None
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -614,9 +661,52 @@ class TaskSectionRenameForm(forms.ModelForm):
 
 
 class TaskTagForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        workplace = kwargs.pop('workplace', None)
+        super().__init__(*args, **kwargs)
+        if user is None:
+            user = getattr(self.instance, 'user', None)
+        if workplace is None:
+            workplace = getattr(self.instance, 'workplace', None)
+        related_queryset = TaskTag.objects.none()
+        if user:
+            related_queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
+            if self.instance and self.instance.pk:
+                related_queryset = related_queryset.exclude(pk=self.instance.pk)
+        self.fields['related_tags'].queryset = related_queryset.order_by('name', 'id')
+        self.fields['related_tags'].required = False
+        self.fields['related_tags'].label = 'Powiązane tagi'
+        for field_name in ('category', 'color', 'icon', 'priority', 'scope', 'status'):
+            self.fields[field_name].required = False
+
     class Meta:
         model = TaskTag
-        fields = ['name', 'description']
+        fields = [
+            'name',
+            'description',
+            'category',
+            'color',
+            'icon',
+            'priority',
+            'scope',
+            'owner_label',
+            'status',
+            'usage_notes',
+            'automation_rules',
+            'related_tags',
+        ]
+        labels = {
+            'category': 'Typ tagu',
+            'color': 'Kolor',
+            'icon': 'Ikona',
+            'priority': 'Priorytet',
+            'scope': 'Zakres',
+            'owner_label': 'Właściciel / dział',
+            'status': 'Status',
+            'usage_notes': 'Opis użycia',
+            'automation_rules': 'Reguły automatyczne',
+        }
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa tagu',
@@ -627,10 +717,72 @@ class TaskTagForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'category': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'color': forms.TextInput(attrs={
+                'placeholder': '#64748b',
+                'class': 'tasks-inline-input',
+            }),
+            'icon': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'scope': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'owner_label': forms.TextInput(attrs={
+                'placeholder': 'np. IT, sprzedaż, administracja',
+                'class': 'tasks-inline-input',
+            }),
+            'status': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'usage_notes': forms.Textarea(attrs={
+                'placeholder': 'Kiedy używać tego tagu...',
+                'rows': 3,
+                'class': 'tasks-inline-input tasks-modal-textarea',
+            }),
+            'automation_rules': forms.Textarea(attrs={
+                'placeholder': 'np. dodaj, gdy termin jest dzisiaj',
+                'rows': 3,
+                'class': 'tasks-inline-input tasks-modal-textarea',
+            }),
+            'related_tags': forms.SelectMultiple(attrs={
+                'class': 'tasks-inline-select',
+                'size': 4,
+            }),
         }
 
     def clean_name(self):
         return (self.cleaned_data.get('name') or '').strip()
+
+    def clean_color(self):
+        value = (self.cleaned_data.get('color') or '#64748b').strip()
+        if not value.startswith('#'):
+            value = f'#{value}'
+        value = value.lower()
+        hex_value = value[1:]
+        if len(hex_value) != 6 or any(character not in '0123456789abcdef' for character in hex_value):
+            raise forms.ValidationError('Podaj kolor w formacie #RRGGBB.')
+        return value
+
+    def clean_icon(self):
+        return self.cleaned_data.get('icon') or 'tag'
+
+    def clean_category(self):
+        return self.cleaned_data.get('category') or 'general'
+
+    def clean_priority(self):
+        return self.cleaned_data.get('priority') or 'none'
+
+    def clean_scope(self):
+        return self.cleaned_data.get('scope') or 'tasks'
+
+    def clean_status(self):
+        return self.cleaned_data.get('status') or 'active'
 
 
 class QuickTaskForm(forms.ModelForm):
@@ -646,6 +798,41 @@ class QuickTaskForm(forms.ModelForm):
 
 
 class TaskModalForm(forms.ModelForm):
+    estimated_duration = forms.CharField(
+        required=False,
+        label='Szacowany czas',
+        widget=forms.TextInput(attrs={
+            'class': 'tasks-inline-input tasks-estimate-duration-input',
+            'placeholder': '0 godz. 0 min.',
+            'autocomplete': 'off',
+            'inputmode': 'text',
+        }),
+    )
+    estimated_hours = forms.IntegerField(
+        required=False,
+        min_value=0,
+        label='Godziny',
+        widget=forms.NumberInput(attrs={
+            'class': 'tasks-inline-input',
+            'min': 0,
+            'placeholder': '0',
+            'inputmode': 'numeric',
+        }),
+    )
+    estimated_minutes_part = forms.IntegerField(
+        required=False,
+        min_value=0,
+        max_value=59,
+        label='Minuty',
+        widget=forms.NumberInput(attrs={
+            'class': 'tasks-inline-input',
+            'min': 0,
+            'max': 59,
+            'placeholder': '0',
+            'inputmode': 'numeric',
+        }),
+    )
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         workplace = kwargs.pop('workplace', None)
@@ -696,12 +883,35 @@ class TaskModalForm(forms.ModelForm):
         self.fields['contact_channel'].required = False
         if section:
             self.fields['section'].initial = section
+        if not self.is_bound and not getattr(self.instance, 'pk', None) and 'is_billable' not in self.initial:
+            self.fields['is_billable'].initial = True
+        estimated_minutes = self.initial.get('estimated_minutes', getattr(self.instance, 'estimated_minutes', None))
+        if not self.is_bound and estimated_minutes:
+            self.fields['estimated_duration'].initial = _format_estimated_duration(estimated_minutes)
+            self.fields['estimated_hours'].initial = estimated_minutes // 60
+            self.fields['estimated_minutes_part'].initial = estimated_minutes % 60
 
     def clean_task_type(self):
         return self.cleaned_data.get('task_type') or 'general'
 
     def clean_contact_channel(self):
         return self.cleaned_data.get('contact_channel') or 'none'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        duration = cleaned_data.get('estimated_duration')
+        hours = cleaned_data.get('estimated_hours')
+        minutes = cleaned_data.get('estimated_minutes_part')
+        has_split_estimate = hours is not None or minutes is not None
+        if duration:
+            parsed_duration = _parse_estimated_duration(duration)
+            if parsed_duration is None:
+                self.add_error('estimated_duration', 'Wpisz czas w formacie 2 godz. 15 min. albo 2:15.')
+            else:
+                cleaned_data['estimated_minutes'] = parsed_duration
+        elif has_split_estimate:
+            cleaned_data['estimated_minutes'] = (hours or 0) * 60 + (minutes or 0)
+        return cleaned_data
 
     class Meta:
         model = Task
@@ -767,11 +977,7 @@ class TaskModalForm(forms.ModelForm):
             'reminder_at': DateTimeLocalInput(attrs={
                 'class': 'tasks-inline-input',
             }),
-            'estimated_minutes': forms.NumberInput(attrs={
-                'class': 'tasks-inline-input',
-                'min': 0,
-                'placeholder': 'np. 60',
-            }),
+            'estimated_minutes': forms.HiddenInput(),
             'is_billable': forms.CheckboxInput(attrs={
                 'class': 'tasks-inline-checkbox',
             }),

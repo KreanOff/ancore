@@ -608,6 +608,9 @@ def _tag_filter_queryset(user, query='', workplace=None):
             Q(name__icontains=query)
             | Q(description__icontains=query)
             | Q(code__icontains=query)
+            | Q(owner_label__icontains=query)
+            | Q(usage_notes__icontains=query)
+            | Q(automation_rules__icontains=query)
         )
     return queryset
 
@@ -876,13 +879,17 @@ def _tag_window_for_request(request):
     offset = (current_page - 1) * page_size
 
     tags = list(
-        queryset.annotate(
+        queryset.prefetch_related('related_tags').annotate(
             total_tasks=Count(
                 'tasks',
                 filter=Q(tasks__user=request.user, tasks__workplace=workplace, tasks__parent__isnull=True),
             )
         ).order_by('name', 'id')[offset:offset + page_size]
     )
+    for tag in tags:
+        related_tags = list(tag.related_tags.all())
+        tag.related_tag_ids = ','.join(str(related_tag.id) for related_tag in related_tags)
+        tag.related_tags_label = ', '.join(related_tag.name for related_tag in related_tags) or 'Brak powiązań'
 
     base_params = {
         'view': 'tags',
@@ -1776,7 +1783,7 @@ def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
     project_form = TaskProjectForm(user=request.user, workplace=workplace)
     section_form = TaskSectionForm(user=request.user)
-    tag_form = TaskTagForm()
+    tag_form = TaskTagForm(user=request.user, workplace=workplace)
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
     all_groups_view = request.GET.get('view') == 'all-groups' and not active_section
@@ -1898,7 +1905,7 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się dodać grupy.')
 
         if action == 'create_tag':
-            tag_form = TaskTagForm(request.POST)
+            tag_form = TaskTagForm(request.POST, user=request.user, workplace=workplace)
             if tag_form.is_valid():
                 tag_name = tag_form.cleaned_data['name']
                 if _filter_workplace(TaskTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exists():
@@ -1908,6 +1915,7 @@ def _tasks_page(request, active_section=None):
                     tag.user = request.user
                     tag.workplace = workplace
                     tag.save()
+                    tag_form.save_m2m()
                     messages.success(request, 'Tag dodany.')
                     return redirect(f"{reverse('tasks:tasks')}?view=tags")
             tag_modal_open = True
@@ -1915,7 +1923,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'edit_tag':
             tag = get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=request.user), workplace), id=request.POST.get('tag_id'))
-            tag_form = TaskTagForm(request.POST, instance=tag)
+            tag_form = TaskTagForm(request.POST, instance=tag, user=request.user, workplace=workplace)
             if tag_form.is_valid():
                 tag_name = tag_form.cleaned_data['name']
                 if _filter_workplace(TaskTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exclude(pk=tag.pk).exists():

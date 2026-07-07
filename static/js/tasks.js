@@ -115,6 +115,13 @@ function initTasksPage() {
     const projectInfoDescription = projectInfoModal?.querySelector('[data-project-info-description]');
     const projectInfoProgress = projectInfoModal?.querySelector('[data-project-info-progress]');
     const projectInfoTasks = projectInfoModal?.querySelector('[data-project-info-tasks]');
+    const projectInfoTagCategory = projectInfoModal?.querySelector('[data-project-info-tag-category]');
+    const projectInfoTagVisual = projectInfoModal?.querySelector('[data-project-info-tag-visual]');
+    const projectInfoTagScope = projectInfoModal?.querySelector('[data-project-info-tag-scope]');
+    const projectInfoTagOwner = projectInfoModal?.querySelector('[data-project-info-tag-owner]');
+    const projectInfoTagUsage = projectInfoModal?.querySelector('[data-project-info-tag-usage]');
+    const projectInfoTagAutomation = projectInfoModal?.querySelector('[data-project-info-tag-automation]');
+    const projectInfoTagRelated = projectInfoModal?.querySelector('[data-project-info-tag-related]');
     const projectInfoStatus = projectInfoModal?.querySelector('[data-project-info-status]');
     const projectInfoStage = projectInfoModal?.querySelector('[data-project-info-stage]');
     const projectInfoHealth = projectInfoModal?.querySelector('[data-project-info-health]');
@@ -130,6 +137,13 @@ function initTasksPage() {
     const projectInfoRows = {
         progress: projectInfoProgress?.closest('div'),
         tasks: projectInfoTasks?.closest('div'),
+        tagCategory: projectInfoTagCategory?.closest('div'),
+        tagVisual: projectInfoTagVisual?.closest('div'),
+        tagScope: projectInfoTagScope?.closest('div'),
+        tagOwner: projectInfoTagOwner?.closest('div'),
+        tagUsage: projectInfoTagUsage?.closest('div'),
+        tagAutomation: projectInfoTagAutomation?.closest('div'),
+        tagRelated: projectInfoTagRelated?.closest('div'),
         status: projectInfoStatus?.closest('div'),
         stage: projectInfoStage?.closest('div'),
         health: projectInfoHealth?.closest('div'),
@@ -163,6 +177,16 @@ function initTasksPage() {
     const tagIdInput = tagForm ? tagForm.querySelector('[name="tag_id"]') : null;
     const tagNameInput = tagForm ? tagForm.querySelector('[name="name"]') : null;
     const tagDescriptionInput = tagForm ? tagForm.querySelector('[name="description"]') : null;
+    const tagCategoryInput = tagForm ? tagForm.querySelector('[name="category"]') : null;
+    const tagColorInput = tagForm ? tagForm.querySelector('[name="color"]') : null;
+    const tagIconInput = tagForm ? tagForm.querySelector('[name="icon"]') : null;
+    const tagPriorityInput = tagForm ? tagForm.querySelector('[name="priority"]') : null;
+    const tagScopeInput = tagForm ? tagForm.querySelector('[name="scope"]') : null;
+    const tagOwnerInput = tagForm ? tagForm.querySelector('[name="owner_label"]') : null;
+    const tagStatusInput = tagForm ? tagForm.querySelector('[name="status"]') : null;
+    const tagUsageNotesInput = tagForm ? tagForm.querySelector('[name="usage_notes"]') : null;
+    const tagAutomationRulesInput = tagForm ? tagForm.querySelector('[name="automation_rules"]') : null;
+    const tagRelatedTagsInput = tagForm ? tagForm.querySelector('[name="related_tags"]') : null;
     const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
     const projectRenameCompanyInput = projectRenameForm ? projectRenameForm.querySelector('[name="company"]') : null;
@@ -847,6 +871,7 @@ function initTasksPage() {
     const issueColumnInput = issueForm ? issueForm.querySelector('[name="column_id"]') : null;
     const issueSectionSelect = issueForm ? issueForm.querySelector('[name="section"]') : null;
     const issueStatusSelect = issueForm ? issueForm.querySelector('[name="status"]') : null;
+    const issueBillableInput = issueForm ? issueForm.querySelector('[name="is_billable"]') : null;
     const issueProjectPicker = issueForm ? issueForm.querySelector('[data-issue-project-picker]') : null;
     const issueSectionPicker = issueForm ? issueForm.querySelector('[data-issue-section-picker]') : null;
     const issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
@@ -3390,12 +3415,30 @@ function initTasksPage() {
         });
     });
 
+    function setMultiSelectValues(select, value) {
+        if (!select) return;
+        const selectedValues = new Set(String(value || '').split(',').map(item => item.trim()).filter(Boolean));
+        Array.from(select.options).forEach(option => {
+            option.selected = selectedValues.has(option.value);
+        });
+    }
+
     function setTagModalMode(mode, data = {}) {
         const isEdit = mode === 'edit';
         if (tagActionInput) tagActionInput.value = isEdit ? 'edit_tag' : 'create_tag';
         if (tagIdInput) tagIdInput.value = isEdit ? (data.tagId || '') : '';
         if (tagNameInput) tagNameInput.value = isEdit ? (data.tagName || '') : '';
         if (tagDescriptionInput) tagDescriptionInput.value = isEdit ? (data.tagDescription || '') : '';
+        if (tagCategoryInput) tagCategoryInput.value = isEdit ? (data.tagCategory || 'general') : 'general';
+        if (tagColorInput) tagColorInput.value = isEdit ? (data.tagColor || '#64748b') : '#64748b';
+        if (tagIconInput) tagIconInput.value = isEdit ? (data.tagIcon || 'tag') : 'tag';
+        if (tagPriorityInput) tagPriorityInput.value = isEdit ? (data.tagPriority || 'none') : 'none';
+        if (tagScopeInput) tagScopeInput.value = isEdit ? (data.tagScope || 'tasks') : 'tasks';
+        if (tagOwnerInput) tagOwnerInput.value = isEdit ? (data.tagOwnerLabel || '') : '';
+        if (tagStatusInput) tagStatusInput.value = isEdit ? (data.tagStatus || 'active') : 'active';
+        if (tagUsageNotesInput) tagUsageNotesInput.value = isEdit ? (data.tagUsageNotes || '') : '';
+        if (tagAutomationRulesInput) tagAutomationRulesInput.value = isEdit ? (data.tagAutomationRules || '') : '';
+        setMultiSelectValues(tagRelatedTagsInput, isEdit ? data.tagRelatedTags : '');
         const tagModalTitle = document.getElementById('tag-modal-title');
         if (tagModalTitle) tagModalTitle.textContent = isEdit ? 'Edytuj tag' : 'Nowy tag';
         if (tagSubmitBtn) tagSubmitBtn.textContent = isEdit ? 'Zapisz zmiany' : 'Utwórz tag';
@@ -3482,12 +3525,19 @@ function initTasksPage() {
                 description: button.dataset.tagDescription || readProjectInfoCell(row, 'description'),
                 progress: '',
                 tasks: button.dataset.tagTasksLabel || readProjectInfoCell(row, 'task_count'),
-                status: '',
+                tagCategory: button.dataset.tagCategoryLabel || readProjectInfoCell(row, 'tag_type'),
+                tagVisual: button.dataset.tagVisualLabel || readProjectInfoCell(row, 'tag_visual'),
+                tagScope: button.dataset.tagScopeLabel || readProjectInfoCell(row, 'scope'),
+                tagOwner: button.dataset.tagOwnerLabel || readProjectInfoCell(row, 'owner'),
+                tagUsage: button.dataset.tagUsageNotes || readProjectInfoCell(row, 'usage_notes'),
+                tagAutomation: button.dataset.tagAutomationRules || readProjectInfoCell(row, 'automation'),
+                tagRelated: button.dataset.tagRelatedTags || readProjectInfoCell(row, 'related_tags'),
+                status: button.dataset.tagStatusLabel || readProjectInfoCell(row, 'status'),
                 stage: '',
                 health: '',
                 company: '',
                 responsible: '',
-                priority: '',
+                priority: button.dataset.tagPriorityLabel || readProjectInfoCell(row, 'priority'),
                 start: '',
                 due: '',
                 budget: '',
@@ -3538,7 +3588,7 @@ function initTasksPage() {
         if (projectInfoTitle) projectInfoTitle.textContent = isTagInfo ? 'Informacje o tagu' : (isSectionInfo ? 'Informacje o grupie' : 'Informacje o projekcie');
         setProjectInfoRowsVisible(
             isTagInfo
-                ? new Set(['tasks', 'created'])
+                ? new Set(['tasks', 'tagCategory', 'tagVisual', 'tagScope', 'tagOwner', 'tagUsage', 'tagAutomation', 'tagRelated', 'status', 'priority', 'created'])
                 : isSectionInfo
                     ? new Set(['progress', 'tasks', 'status', 'stage', 'responsible', 'priority', 'due', 'budget', 'created', 'lastActivity'])
                     : new Set(['progress', 'tasks', 'status', 'stage', 'health', 'company', 'responsible', 'priority', 'start', 'due', 'budget', 'source', 'created', 'lastActivity'])
@@ -3548,6 +3598,13 @@ function initTasksPage() {
         setProjectInfoText(projectInfoDescription, data.description, 'Brak opisu');
         setProjectInfoText(projectInfoProgress, data.progress, '0%');
         setProjectInfoText(projectInfoTasks, data.tasks, '0/0');
+        setProjectInfoText(projectInfoTagCategory, data.tagCategory, 'Brak typu');
+        setProjectInfoText(projectInfoTagVisual, data.tagVisual, 'Brak danych');
+        setProjectInfoText(projectInfoTagScope, data.tagScope, 'Brak zakresu');
+        setProjectInfoText(projectInfoTagOwner, data.tagOwner, 'Brak właściciela');
+        setProjectInfoText(projectInfoTagUsage, data.tagUsage, 'Brak opisu użycia');
+        setProjectInfoText(projectInfoTagAutomation, data.tagAutomation, 'Brak reguł');
+        setProjectInfoText(projectInfoTagRelated, data.tagRelated, 'Brak powiązań');
         setProjectInfoText(projectInfoStatus, data.status, 'Brak statusu');
         setProjectInfoText(projectInfoStage, data.stage, isSectionInfo ? 'Brak typu' : 'Brak etapu');
         setProjectInfoText(projectInfoHealth, data.health, 'Brak kondycji');
@@ -3612,6 +3669,7 @@ function initTasksPage() {
             }
             setIssueColumn(button.dataset.issueColumnId || '');
             setIssueStatus(button.dataset.issueStatus || '');
+            if (issueBillableInput) issueBillableInput.checked = true;
             openModal(issueModal, issueTitleInput, updateIssueSubmitState);
         });
     });
@@ -4363,6 +4421,16 @@ function initTasksPage() {
             tagId: selectedTagCheckbox?.dataset.tagId || '',
             tagName: selectedTagCheckbox?.dataset.tagName || '',
             tagDescription: selectedTagCheckbox?.dataset.tagDescription || '',
+            tagCategory: selectedTagCheckbox?.dataset.tagCategory || '',
+            tagColor: selectedTagCheckbox?.dataset.tagColor || '',
+            tagIcon: selectedTagCheckbox?.dataset.tagIcon || '',
+            tagPriority: selectedTagCheckbox?.dataset.tagPriority || '',
+            tagScope: selectedTagCheckbox?.dataset.tagScope || '',
+            tagOwnerLabel: selectedTagCheckbox?.dataset.tagOwnerLabel || '',
+            tagStatus: selectedTagCheckbox?.dataset.tagStatus || '',
+            tagUsageNotes: selectedTagCheckbox?.dataset.tagUsageNotes || '',
+            tagAutomationRules: selectedTagCheckbox?.dataset.tagAutomationRules || '',
+            tagRelatedTags: selectedTagCheckbox?.dataset.tagRelatedTags || '',
             tagCount: String(selectedTagCheckboxes.length)
         };
         setMenuButtonState(editSelectedTagMenuBtn, selectedTagCheckboxes.length === 1, tagDataset);
@@ -4641,7 +4709,17 @@ function initTasksPage() {
         setTagModalMode('edit', {
             tagId: tagDataset.tagId || '',
             tagName: tagDataset.tagName || '',
-            tagDescription: tagDataset.tagDescription || ''
+            tagDescription: tagDataset.tagDescription || '',
+            tagCategory: tagDataset.tagCategory || '',
+            tagColor: tagDataset.tagColor || '',
+            tagIcon: tagDataset.tagIcon || '',
+            tagPriority: tagDataset.tagPriority || '',
+            tagScope: tagDataset.tagScope || '',
+            tagOwnerLabel: tagDataset.tagOwnerLabel || '',
+            tagStatus: tagDataset.tagStatus || '',
+            tagUsageNotes: tagDataset.tagUsageNotes || '',
+            tagAutomationRules: tagDataset.tagAutomationRules || '',
+            tagRelatedTags: tagDataset.tagRelatedTags || ''
         });
         openModal(tagModal, tagNameInput, updateTagSubmitState);
         setTimeout(() => tagNameInput?.select(), 60);
@@ -5180,6 +5258,9 @@ function initTasksPage() {
         if (priorityFilterIcon) {
             priorityFilterIcon.innerHTML = getPriorityFilterIconMarkup(priorityVal);
         }
+
+        statusFilterToggle?.classList.toggle('is-active', Boolean(statusVal));
+        priorityFilterToggle?.classList.toggle('is-active', Boolean(priorityVal));
     }
 
     function applyFilters() {
@@ -5546,6 +5627,20 @@ function initTasksPage() {
             created_at: 130,
             spacer: 0
         };
+        const tagColumnDefaultWidths = {
+            tag_name: 250,
+            tag_code: 250,
+            tag_type: 140,
+            tag_visual: 160,
+            priority: 140,
+            scope: 140,
+            owner: 190,
+            status: 140,
+            usage_notes: 260,
+            automation: 260,
+            related_tags: 220,
+            task_count: 250
+        };
         const columnMinimums = {
             select: 18,
             action: 40,
@@ -5564,6 +5659,20 @@ function initTasksPage() {
             created_at: 112,
             spacer: 0
         };
+        const tagColumnMinimums = {
+            tag_name: 150,
+            tag_code: 150,
+            tag_type: 110,
+            tag_visual: 130,
+            priority: 112,
+            scope: 112,
+            owner: 140,
+            status: 112,
+            usage_notes: 160,
+            automation: 160,
+            related_tags: 150,
+            task_count: 120
+        };
         const fixedColumns = new Set(['spacer']);
         const nonResizableColumns = new Set(['action', 'info', 'spacer']);
         const resizeMediaQuery = typeof window.matchMedia === 'function'
@@ -5571,10 +5680,10 @@ function initTasksPage() {
             : { matches: true };
         let activeResize = null;
         const taskDirectoryBoards = Array.from(boards).filter(isUniformDirectoryBoard);
-        const projectDirectoryBoards = taskDirectoryBoards.filter(isProjectDirectoryBoard);
+        const managedDirectoryBoards = taskDirectoryBoards.filter(isManagedDirectoryBoard);
         const columnManagerDrafts = new WeakMap();
 
-        projectDirectoryBoards.forEach(ensureDirectoryDefaultColumnOrder);
+        managedDirectoryBoards.forEach(ensureDirectoryDefaultColumnOrder);
         initDirectoryColumnManagers();
 
         resetButtons.forEach(button => {
@@ -5582,7 +5691,7 @@ function initTasksPage() {
             if (!taskDirectoryBoards.length) return;
 
             button.addEventListener('click', () => {
-                projectDirectoryBoards.forEach(board => {
+                managedDirectoryBoards.forEach(board => {
                     removeStoredDirectoryColumnLayout(board);
                     applyDirectoryColumnLayout(board);
                 });
@@ -5708,7 +5817,7 @@ function initTasksPage() {
                 widths,
                 columnIndex,
                 startColumnWidth: widths[columnIndex],
-                columnMinWidth: getDirectoryColumnMinWidth(cell.dataset.column)
+                columnMinWidth: getDirectoryColumnMinWidth(cell.dataset.column, cell)
             };
         }
 
@@ -5764,7 +5873,7 @@ function initTasksPage() {
 
                 if (!storedWidth) return;
 
-                widths[index] = Math.max(getDirectoryColumnMinWidth(cell.dataset.column), Math.round(storedWidth));
+                widths[index] = Math.max(getDirectoryColumnMinWidth(cell.dataset.column, cell), Math.round(storedWidth));
                 hasStoredColumn = true;
             });
 
@@ -5836,6 +5945,9 @@ function initTasksPage() {
             return cells.map(cell => {
                 const column = cell.dataset.column || '';
                 if (column === 'select') return getDirectorySelectColumnWidth(cell);
+                if (isTagDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(tagColumnDefaultWidths, column)) {
+                    return tagColumnDefaultWidths[column];
+                }
                 if (Object.prototype.hasOwnProperty.call(columnDefaultWidths, column)) {
                     return columnDefaultWidths[column];
                 }
@@ -5854,14 +5966,21 @@ function initTasksPage() {
                 return Math.round(configuredWidth);
             }
 
-            return getDirectoryColumnMinWidth('select');
+            return getDirectoryColumnMinWidth('select', cell);
         }
 
-        function getDirectoryColumnMinWidth(column) {
+        function getDirectoryColumnMinWidth(column, sourceCell = null) {
+            if (isTagDirectoryCell(sourceCell) && Object.prototype.hasOwnProperty.call(tagColumnMinimums, column)) {
+                return tagColumnMinimums[column];
+            }
             if (Object.prototype.hasOwnProperty.call(columnMinimums, column)) {
                 return columnMinimums[column];
             }
             return defaultDirectoryColumnMinWidth;
+        }
+
+        function isTagDirectoryCell(cell) {
+            return Boolean(cell?.closest('.tasks-tag-sheet'));
         }
 
         function getDirectoryStorageColumn(column) {
@@ -5897,9 +6016,9 @@ function initTasksPage() {
             return board.classList.contains('tasks-directory-sheet') && !board.classList.contains('contacts-directory-sheet');
         }
 
-        function isProjectDirectoryBoard(board) {
+        function isManagedDirectoryBoard(board) {
             return board.classList.contains('tasks-project-sheet--selectable')
-                && !board.classList.contains('tasks-tag-sheet');
+                || board.classList.contains('tasks-tag-sheet');
         }
 
         function getDirectoryColumnLabel(cell) {
@@ -5968,7 +6087,7 @@ function initTasksPage() {
             if (!columnManagers.length) return;
 
             columnManagers.forEach(manager => {
-                const board = projectDirectoryBoards[0] || null;
+                const board = managedDirectoryBoards[0] || null;
                 const toggle = manager.querySelector('[data-directory-column-manager-toggle]');
                 const search = manager.querySelector('[data-directory-column-manager-search]');
                 const saveButton = manager.querySelector('[data-directory-column-manager-save]');
@@ -6014,7 +6133,7 @@ function initTasksPage() {
 
         function renderDirectoryColumnManagers() {
             columnManagers.forEach(manager => {
-                const board = projectDirectoryBoards[0] || null;
+                const board = managedDirectoryBoards[0] || null;
                 manager.hidden = !board;
                 if (board) renderDirectoryColumnManager(manager, board);
             });
@@ -6235,7 +6354,7 @@ function initTasksPage() {
         }
 
         function applyDirectoryColumnLayout(board) {
-            if (!isProjectDirectoryBoard(board)) return;
+            if (!isManagedDirectoryBoard(board)) return;
 
             const header = board.querySelector('.tasks-directory-header');
             if (!header) return;
@@ -6511,6 +6630,8 @@ function sortCurrentTaskLists(direction) {
 
 function updateTaskSortButton(button, direction) {
     const sortArrowHead = button.querySelector('[data-sort-arrow-head]');
+    const sortIcon = button.querySelector('[data-task-sort-icon], [data-lucide]');
+    const iconName = direction === 'asc' ? 'arrow-up-wide-narrow' : 'arrow-down-wide-narrow';
 
     button.dataset.sortDirection = direction;
     button.setAttribute('aria-pressed', String(direction === 'asc'));
@@ -6519,6 +6640,20 @@ function updateTaskSortButton(button, direction) {
 
     if (sortArrowHead) {
         sortArrowHead.setAttribute('d', direction === 'asc' ? 'M5 7l3-3 3 3' : 'M5 17l3 3 3-3');
+    }
+
+    if (sortIcon && sortIcon.getAttribute('data-lucide') !== iconName) {
+        const icon = document.createElement('i');
+        icon.setAttribute('data-lucide', iconName);
+        icon.setAttribute('aria-hidden', 'true');
+        icon.setAttribute('data-task-sort-icon', '');
+        sortIcon.replaceWith(icon);
+
+        if (window.AncoreIcons?.render) {
+            window.AncoreIcons.render(button);
+        } else if (window.lucide?.createIcons) {
+            window.lucide.createIcons();
+        }
     }
 }
 

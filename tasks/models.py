@@ -265,12 +265,61 @@ class TaskTag(models.Model):
     CODE_PREFIX = 'T'
     CODE_LENGTH = 8
     CODE_ALPHABET = BASE36_ALPHABET
+    CATEGORY_CHOICES = [
+        ('general', 'Ogólny'),
+        ('priority', 'Priorytet'),
+        ('area', 'Obszar'),
+        ('client', 'Klient'),
+        ('stage', 'Etap'),
+        ('risk', 'Ryzyko'),
+        ('work_type', 'Typ pracy'),
+    ]
+    PRIORITY_CHOICES = [
+        ('none', 'Brak'),
+        ('low', 'Niski'),
+        ('medium', 'Średni'),
+        ('high', 'Wysoki'),
+        ('urgent', 'Krytyczny'),
+    ]
+    SCOPE_CHOICES = [
+        ('tasks', 'Zadania'),
+        ('projects', 'Projekty'),
+        ('clients', 'Klienci'),
+        ('documents', 'Dokumenty'),
+        ('all', 'Wszystko'),
+    ]
+    STATUS_CHOICES = [
+        ('active', 'Aktywny'),
+        ('archived', 'Archiwalny'),
+    ]
+    ICON_CHOICES = [
+        ('tag', 'Tag'),
+        ('flag', 'Flaga'),
+        ('alert-triangle', 'Ryzyko'),
+        ('briefcase', 'Praca'),
+        ('building-2', 'Firma'),
+        ('clock', 'Czas'),
+        ('layers', 'Etap'),
+        ('shield-alert', 'Blokada'),
+        ('user-round', 'Osoba'),
+        ('workflow', 'Proces'),
+    ]
 
     name = models.CharField(max_length=80)
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general')
+    color = models.CharField(max_length=7, default='#64748b', blank=True)
+    icon = models.CharField(max_length=32, choices=ICON_CHOICES, default='tag', blank=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
+    scope = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='tasks')
+    owner_label = models.CharField(max_length=120, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    usage_notes = models.TextField(blank=True)
+    automation_rules = models.TextField(blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_tags')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='task_tags', null=True, blank=True)
+    related_tags = models.ManyToManyField('self', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

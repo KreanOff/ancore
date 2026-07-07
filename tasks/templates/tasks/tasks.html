@@ -213,9 +213,9 @@
         <div class="tasks-filterbar">
             <div class="tasks-filterbar-left">
                 <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
-                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true"></i>
+                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
                 </button>
-                {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' %}
+                {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' %}
                 <div class="tasks-directory-column-manager" data-directory-column-manager hidden>
                     <button type="button" class="tasks-icon-button" title="Zarządzaj tabelą" aria-label="Zarządzaj tabelą" aria-haspopup="dialog" aria-expanded="false" data-directory-column-manager-toggle>
                         <i data-lucide="columns-3" aria-hidden="true"></i>
@@ -316,9 +316,8 @@
             <div class="tasks-filterbar-center"></div>
             <div class="tasks-filterbar-right">
                 {% if active_view == 'projects' %}
-                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--secondary" id="edit-selected-project-bar-btn" title="Edytuj projekt" aria-label="Edytuj projekt" aria-haspopup="dialog" aria-controls="project-rename-modal" disabled>
-                    <span aria-hidden="true"><i data-lucide="pencil"></i></span>
-                    <span>Edytuj projekt</span>
+                <button type="button" class="tasks-icon-button" id="edit-selected-project-bar-btn" title="Edytuj projekt" aria-label="Edytuj projekt" aria-haspopup="dialog" aria-controls="project-rename-modal" disabled>
+                    <i data-lucide="pencil" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--project-add" title="Dodaj projekt" aria-label="Dodaj projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
@@ -717,31 +716,40 @@
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie tagi" title="Zaznacz wszystkie tagi" data-select-all-checkbox data-select-all-target="tags">
                     </span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action" aria-label="Edytuj tag" title="Edytuj tag">
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action" aria-label="Edytuj tag" title="Edytuj tag" data-column-label="Edytuj">
                         <i data-lucide="pencil" aria-hidden="true"></i>
                     </span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info" aria-label="Informacje o tagu" title="Informacje o tagu">
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info" aria-label="Informacje o tagu" title="Informacje o tagu" data-column-label="Informacje">
                         <i data-lucide="info" aria-hidden="true"></i>
                         <span class="u-sr-only">Informacje</span>
                     </span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">NAZWA TAGU</span>
                     <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">KOD TAGU</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_type">TYP</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_visual">KOLOR / IKONA</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="priority">PRIORYTET</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="scope">ZAKRES</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="owner">WŁAŚCICIEL</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="status">STATUS</span>
                     <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="description">OPIS</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="usage_notes">UŻYCIE</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="automation">AUTOMATYKA</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="related_tags">POWIĄZANE</span>
                     <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">ZADANIA</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at">DATA</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list" aria-label="Lista tagów">
                 {% for tag in tags %}
-                <article class="tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }}">
-                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
+                <article class="tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.get_category_display }} {{ tag.get_scope_display }} {{ tag.owner_label|default:''|striptags }} {{ tag.get_status_display }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }} {{ tag.get_category_display }} {{ tag.get_priority_display }} {{ tag.get_scope_display }} {{ tag.owner_label|default:''|striptags }} {{ tag.get_status_display }} {{ tag.usage_notes|default:''|striptags }} {{ tag.automation_rules|default:''|striptags }} {{ tag.related_tags_label }}">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-category="{{ tag.category }}" data-tag-color="{{ tag.color|default:'#64748b' }}" data-tag-icon="{{ tag.icon|default:'tag' }}" data-tag-priority="{{ tag.priority|default:'none' }}" data-tag-scope="{{ tag.scope|default:'tasks' }}" data-tag-owner-label="{{ tag.owner_label|default:''|escape }}" data-tag-status="{{ tag.status|default:'active' }}" data-tag-usage-notes="{{ tag.usage_notes|default:''|escape }}" data-tag-automation-rules="{{ tag.automation_rules|default:''|escape }}" data-tag-related-tags="{{ tag.related_tag_ids }}">
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action">
-                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj tag" aria-label="Edytuj tag {{ tag.name }}" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag-edit data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
+                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj tag" aria-label="Edytuj tag {{ tag.name }}" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag-edit data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-category="{{ tag.category }}" data-tag-color="{{ tag.color|default:'#64748b' }}" data-tag-icon="{{ tag.icon|default:'tag' }}" data-tag-priority="{{ tag.priority|default:'none' }}" data-tag-scope="{{ tag.scope|default:'tasks' }}" data-tag-owner-label="{{ tag.owner_label|default:''|escape }}" data-tag-status="{{ tag.status|default:'active' }}" data-tag-usage-notes="{{ tag.usage_notes|default:''|escape }}" data-tag-automation-rules="{{ tag.automation_rules|default:''|escape }}" data-tag-related-tags="{{ tag.related_tag_ids }}">
                             <i data-lucide="pencil" aria-hidden="true"></i>
                         </button>
                     </span>
                     <span class="tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info">
-                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o tagu" aria-label="Informacje o tagu {{ tag.name }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-tag-info data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-code="{{ tag.code|escape }}" data-tag-tasks-label="{{ tag.total_tasks }} zadań" data-tag-created-label="{{ tag.created_at|date:'d.m.Y' }}">
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o tagu" aria-label="Informacje o tagu {{ tag.name }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-tag-info data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-code="{{ tag.code|escape }}" data-tag-tasks-label="{{ tag.total_tasks }} zadań" data-tag-category-label="{{ tag.get_category_display|escape }}" data-tag-visual-label="{{ tag.color|default:'#64748b' }} / {{ tag.get_icon_display|escape }}" data-tag-priority-label="{{ tag.get_priority_display|escape }}" data-tag-scope-label="{{ tag.get_scope_display|escape }}" data-tag-owner-label="{% if tag.owner_label %}{{ tag.owner_label|escape }}{% else %}Brak właściciela{% endif %}" data-tag-status-label="{{ tag.get_status_display|escape }}" data-tag-usage-notes="{% if tag.usage_notes %}{{ tag.usage_notes|escape }}{% else %}Brak opisu użycia{% endif %}" data-tag-automation-rules="{% if tag.automation_rules %}{{ tag.automation_rules|escape }}{% else %}Brak reguł{% endif %}" data-tag-related-tags="{{ tag.related_tags_label|escape }}" data-tag-created-label="{{ tag.created_at|date:'d.m.Y' }}">
                             <i data-lucide="info" aria-hidden="true"></i>
                         </button>
                     </span>
@@ -749,7 +757,20 @@
                         <span>{{ tag.name }}</span>
                     </span>
                     <span class="tasks-tag-sheet__code tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">{{ tag.code }}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_type">{{ tag.get_category_display }}</span>
+                    <span class="tasks-tag-sheet__visual tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_visual" title="{{ tag.get_icon_display }}">
+                        <span class="tasks-tag-color-swatch" style="--tag-color: {{ tag.color|default:'#64748b' }};"></span>
+                        <i data-lucide="{{ tag.icon|default:'tag' }}" aria-hidden="true"></i>
+                        <span>{{ tag.get_icon_display }}</span>
+                    </span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="priority">{{ tag.get_priority_display }}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="scope">{{ tag.get_scope_display }}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="owner">{% if tag.owner_label %}{{ tag.owner_label }}{% else %}<span class="tasks-project-sheet__muted">Brak właściciela</span>{% endif %}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="status">{{ tag.get_status_display }}</span>
                     <span class="tasks-section-row-description tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="description">{{ tag.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="usage_notes">{{ tag.usage_notes|default:"Brak opisu użycia" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="automation">{{ tag.automation_rules|default:"Brak reguł" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="related_tags">{{ tag.related_tags_label }}</span>
                     <span class="tasks-row-time tasks-tag-sheet__count tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">{{ tag.total_tasks }} zadań</span>
                     <span class="tasks-row-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at" title="Data utworzenia">{{ tag.created_at|date:"d.m.Y" }}</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
@@ -903,15 +924,14 @@
         <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ project_window.page }}" data-project-total-pages="{{ project_window.total_pages }}">
             <div class="tasks-project-pagination__size">
                 <span>Na stronie</span>
-                <div class="tasks-filter-dropdown tasks-project-pagination__size-control" data-project-page-size-dropdown>
+                <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact" data-project-page-size-dropdown>
                     <select aria-label="Liczba projektów na stronie" data-project-page-size hidden>
                         {% for page_size in project_window.page_size_options %}
                         <option value="{{ page_size }}" {% if project_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
                         {% endfor %}
                     </select>
-                    <button type="button" class="tasks-project-pagination__size-button" aria-label="Liczba projektów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
+                    <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact" aria-label="Liczba projektów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
                         <span data-project-page-size-label>{{ project_window.page_size }}</span>
-                        <i data-lucide="chevron-down" aria-hidden="true"></i>
                     </button>
                     <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba projektów na stronie">
                     {% for page_size in project_window.page_size_options %}
@@ -982,6 +1002,64 @@
                 {{ tag_form.name }}
                 <label class="u-sr-only" for="{{ tag_form.description.id_for_label }}">Opis</label>
                 {{ tag_form.description }}
+
+                <section class="tasks-tag-parameters" aria-labelledby="tag-meaning-title">
+                    <h3 class="u-sr-only" id="tag-meaning-title">Parametry tagu</h3>
+                    <div class="tasks-tag-fields">
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--category">
+                                    <span>Typ tagu</span>
+                                    {{ tag_form.category }}
+                                </label>
+                                <label class="tasks-tag-field--status">
+                                    <span>Status</span>
+                                    {{ tag_form.status }}
+                                </label>
+                                <label class="tasks-tag-field--color">
+                                    <span>Kolor</span>
+                                    {{ tag_form.color }}
+                                </label>
+                                <label class="tasks-tag-field--icon">
+                                    <span>Ikona</span>
+                                    {{ tag_form.icon }}
+                                </label>
+                                <label class="tasks-tag-field--priority">
+                                    <span>Priorytet</span>
+                                    {{ tag_form.priority }}
+                                </label>
+                                <label class="tasks-tag-field--scope">
+                                    <span>Zakres</span>
+                                    {{ tag_form.scope }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--owner">
+                                    <span>Właściciel / dział</span>
+                                    {{ tag_form.owner_label }}
+                                </label>
+                                <label class="tasks-tag-field--related">
+                                    <span>Powiązane tagi</span>
+                                    {{ tag_form.related_tags }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--usage">
+                                    <span>Opis użycia</span>
+                                    {{ tag_form.usage_notes }}
+                                </label>
+                                <label class="tasks-tag-field--automation">
+                                    <span>Reguły automatyczne</span>
+                                    {{ tag_form.automation_rules }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
@@ -1026,33 +1104,33 @@
                 {{ project_form.description }}
 
                 <section class="tasks-project-parameters" aria-labelledby="project-create-parameters-title">
-                    <h3 id="project-create-parameters-title">Parametry projektu</h3>
+                    <h3 class="u-sr-only" id="project-create-parameters-title">Parametry projektu</h3>
                     <div class="tasks-project-create-fields tasks-issue-fields">
-                        <label>
+                        <label class="tasks-project-create-field--section-title">
                             <span>Pierwsza grupa</span>
                             {{ project_form.section_title }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--company">
                             <span>Firma</span>
                             {{ project_form.company }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--responsible">
                             <span>Odpowiedzialny</span>
                             {{ project_form.responsible_user }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--status">
                             <span>Status projektu</span>
                             {{ project_form.status }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--stage">
                             <span>Etap</span>
                             {{ project_form.stage }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--health">
                             <span>Kondycja</span>
                             {{ project_form.health }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--priority">
                             <span>Priorytet</span>
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ project_form.priority }}
@@ -1074,27 +1152,27 @@
                                 </div>
                             </div>
                         </label>
-                        <label>
-                            <span>Start</span>
-                            {{ project_form.start_at }}
-                        </label>
-                        <label>
-                            <span>Termin</span>
-                            {{ project_form.due_at }}
-                        </label>
-                        <label>
-                            <span>Budżet</span>
-                            {{ project_form.budget_amount }}
-                        </label>
-                        <label>
-                            <span>Waluta</span>
-                            {{ project_form.currency }}
-                        </label>
-                        <label>
+                        <label class="tasks-project-create-field--source">
                             <span>Źródło</span>
                             {{ project_form.source }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--start">
+                            <span>Start</span>
+                            {{ project_form.start_at }}
+                        </label>
+                        <label class="tasks-project-create-field--due">
+                            <span>Termin</span>
+                            {{ project_form.due_at }}
+                        </label>
+                        <label class="tasks-project-create-field--budget">
+                            <span>Budżet</span>
+                            {{ project_form.budget_amount }}
+                        </label>
+                        <label class="tasks-project-create-field--currency">
+                            <span>Waluta</span>
+                            {{ project_form.currency }}
+                        </label>
+                        <label class="tasks-project-create-field--code">
                             <span>Kod projektu</span>
                             <span class="tasks-project-create-code" aria-label="Kod projektu zostanie nadany automatycznie">Automatyczny</span>
                         </label>
@@ -1259,6 +1337,34 @@
                         <dd data-project-info-tasks>0/0</dd>
                     </div>
                     <div>
+                        <dt>Typ tagu</dt>
+                        <dd data-project-info-tag-category>Brak typu</dd>
+                    </div>
+                    <div>
+                        <dt>Kolor / ikona</dt>
+                        <dd data-project-info-tag-visual>Brak danych</dd>
+                    </div>
+                    <div>
+                        <dt>Zakres</dt>
+                        <dd data-project-info-tag-scope>Brak zakresu</dd>
+                    </div>
+                    <div>
+                        <dt>Właściciel / dział</dt>
+                        <dd data-project-info-tag-owner>Brak właściciela</dd>
+                    </div>
+                    <div>
+                        <dt>Opis użycia</dt>
+                        <dd data-project-info-tag-usage>Brak opisu użycia</dd>
+                    </div>
+                    <div>
+                        <dt>Reguły automatyczne</dt>
+                        <dd data-project-info-tag-automation>Brak reguł</dd>
+                    </div>
+                    <div>
+                        <dt>Powiązane tagi</dt>
+                        <dd data-project-info-tag-related>Brak powiązań</dd>
+                    </div>
+                    <div>
                         <dt>Status</dt>
                         <dd data-project-info-status>Brak danych</dd>
                     </div>
@@ -1350,10 +1456,10 @@
                 {{ section_form.description }}
 
                 <section class="tasks-project-parameters" aria-labelledby="section-create-parameters-title">
-                    <h3 id="section-create-parameters-title">Parametry grupy</h3>
+                    <h3 class="u-sr-only" id="section-create-parameters-title">Parametry grupy</h3>
                     <div class="tasks-project-create-fields tasks-issue-fields">
                         {% if section_create_uses_project_select %}
-                        <label>
+                        <label class="tasks-section-create-field--project">
                             <span>Projekt</span>
                             <select id="section-create-project-select" class="tasks-inline-select" name="project_id" data-section-create-project-select required>
                                 <option value="">Wybierz projekt</option>
@@ -1365,27 +1471,27 @@
                             </select>
                         </label>
                         {% endif %}
-                        <label>
+                        <label class="tasks-section-create-field--kind">
                             <span>Typ grupy</span>
                             {{ section_form.kind }}
                         </label>
-                        <label>
+                        <label class="tasks-section-create-field--status">
                             <span>Status grupy</span>
                             {{ section_form.status }}
                         </label>
-                        <label>
+                        <label class="tasks-section-create-field--owner">
                             <span>Odpowiedzialny</span>
                             {{ section_form.owner }}
                         </label>
-                        <label>
+                        <label class="tasks-section-create-field--priority">
                             <span>Priorytet</span>
                             {{ section_form.priority }}
                         </label>
-                        <label>
+                        <label class="tasks-section-create-field--due">
                             <span>Termin</span>
                             {{ section_form.due_at }}
                         </label>
-                        <label>
+                        <label class="tasks-section-create-field--wip">
                             <span>Limit WIP</span>
                             {{ section_form.wip_limit }}
                         </label>
@@ -1631,40 +1737,6 @@
                                 <span>Kontakt</span>
                                 {{ task_modal_form.contact }}
                             </label>
-                            <label class="tasks-issue-field--assignee">
-                                <span>Przypisane do</span>
-                                {{ task_modal_form.assignee }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="tasks-issue-field-group tasks-issue-field-group--schedule">
-                        <div class="tasks-issue-field-grid">
-                            <label class="tasks-issue-field--due">
-                                <span>Termin wykonania</span>
-                                {{ task_modal_form.due_at }}
-                            </label>
-                            <label class="tasks-issue-field--reminder">
-                                <span>Przypomnienie</span>
-                                {{ task_modal_form.reminder_at }}
-                            </label>
-                            <label class="tasks-issue-field--estimate">
-                                <span>Szacowany czas (min)</span>
-                                {{ task_modal_form.estimated_minutes }}
-                            </label>
-                            <label class="tasks-issue-field--billable tasks-issue-checkbox-field">
-                                {{ task_modal_form.is_billable }}
-                                <span>Fakturowalne</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="tasks-issue-field-group tasks-issue-field-group--extras">
-                        <div class="tasks-issue-field-grid">
-                            <label class="tasks-issue-field--blocked-reason">
-                                <span>Powód blokady</span>
-                                {{ task_modal_form.blocked_reason }}
-                            </label>
                             <label class="tasks-issue-field--tags">
                                 <span>Tagi</span>
                                 <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
@@ -1688,6 +1760,41 @@
                                     </div>
                                     <div class="tasks-issue-selected-tags" data-inline-selected-tags aria-live="polite"></div>
                                 </div>
+                            </label>
+                            <label class="tasks-issue-field--assignee">
+                                <span>Przypisane do</span>
+                                {{ task_modal_form.assignee }}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="tasks-issue-field-group tasks-issue-field-group--schedule">
+                        <div class="tasks-issue-field-grid">
+                            <label class="tasks-issue-field--due">
+                                <span>Termin wykonania</span>
+                                {{ task_modal_form.due_at }}
+                            </label>
+                            <label class="tasks-issue-field--reminder">
+                                <span>Przypomnienie</span>
+                                {{ task_modal_form.reminder_at }}
+                            </label>
+                            <div class="tasks-issue-field tasks-issue-field--estimate">
+                                <span>Szacowany czas</span>
+                                {{ task_modal_form.estimated_minutes }}
+                                {{ task_modal_form.estimated_duration }}
+                            </div>
+                            <label class="tasks-issue-field--billable tasks-issue-checkbox-field">
+                                {{ task_modal_form.is_billable }}
+                                <span>Fakturowalne</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="tasks-issue-field-group tasks-issue-field-group--extras">
+                        <div class="tasks-issue-field-grid">
+                            <label class="tasks-issue-field--blocked-reason">
+                                <span>Powód blokady</span>
+                                {{ task_modal_form.blocked_reason }}
                             </label>
                         </div>
                     </div>

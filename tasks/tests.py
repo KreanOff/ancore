@@ -159,6 +159,25 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-priority-filter-label')
         self.assertNotContains(response, 'data-status-filter-menu')
 
+    def test_sort_button_exposes_mutable_lucide_icon(self):
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertContains(response, 'data-task-sort')
+        self.assertContains(response, 'data-sort-direction="asc"')
+        self.assertContains(response, 'data-lucide="arrow-up-wide-narrow"')
+        self.assertContains(response, 'data-task-sort-icon')
+
+    def test_task_create_modal_billable_checkbox_is_checked_by_default(self):
+        response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
+        field_index = html.index('name="is_billable"')
+        input_start = html.rfind('<input', 0, field_index)
+        input_end = html.index('>', field_index)
+        input_html = html[input_start:input_end]
+
+        self.assertIn('class="tasks-inline-checkbox"', input_html)
+        self.assertIn('checked', input_html)
+
     def test_all_groups_view_shows_priority_filter_without_status_filter(self):
         response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
 
@@ -775,6 +794,26 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-project-create-fields')
         self.assertContains(response, 'Utwórz projekt')
 
+    def test_section_create_modal_uses_task_style_field_layout(self):
+        response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
+        modal_start = html.index('id="section-create-modal"')
+        modal_end = html.index('id="section-rename-modal"', modal_start)
+        modal_html = html[modal_start:modal_end]
+
+        self.assertIn('id="section-create-form"', modal_html)
+        self.assertIn('class="u-sr-only" id="section-create-parameters-title"', modal_html)
+        expected_fields = [
+            'tasks-section-create-field--kind',
+            'tasks-section-create-field--status',
+            'tasks-section-create-field--owner',
+            'tasks-section-create-field--priority',
+            'tasks-section-create-field--due',
+            'tasks-section-create-field--wip',
+        ]
+        for field_class in expected_fields:
+            self.assertIn(field_class, modal_html)
+
     def test_create_menu_uses_requested_item_order(self):
         response = self.client.get(reverse('tasks:tasks'))
         html = response.content.decode()
@@ -1054,8 +1093,22 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'Moje grupy')
 
     def test_tags_view_lists_tags(self):
-        frontend = TaskTag.objects.create(user=self.user, name='Frontend', description='Prace po stronie UI')
+        frontend = TaskTag.objects.create(
+            user=self.user,
+            name='Frontend',
+            description='Prace po stronie UI',
+            category='area',
+            color='#1d4ed8',
+            icon='flag',
+            priority='high',
+            scope='projects',
+            owner_label='IT',
+            status='active',
+            usage_notes='Używaj przy pracach interfejsu.',
+            automation_rules='Dodaj przy kanale frontend.',
+        )
         backend = TaskTag.objects.create(user=self.user, name='Backend')
+        frontend.related_tags.add(backend)
         TaskTag.objects.filter(pk=frontend.pk).update(
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
         )
@@ -1071,12 +1124,30 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-spreadsheet-sheet')
         self.assertContains(response, 'KOD TAGU')
         self.assertContains(response, 'NAZWA TAGU')
+        self.assertContains(response, 'data-directory-column-manager')
+        self.assertContains(response, 'data-directory-column-manager-toggle')
+        self.assertContains(response, 'data-directory-column-manager-list')
+        self.assertContains(response, 'data-directory-column-manager-search')
+        self.assertContains(response, 'data-directory-column-manager-save')
+        self.assertContains(response, 'data-directory-column-manager-cancel')
+        self.assertContains(response, 'Zarządzaj tabelą')
+        self.assertContains(response, 'data-column-label="Edytuj"')
+        self.assertContains(response, 'data-column-label="Informacje"')
         expected_columns = [
             'data-column="action" aria-label="Edytuj tag"',
             'data-column="info" aria-label="Informacje o tagu"',
             'data-column="tag_name">NAZWA TAGU',
             'data-column="tag_code">KOD TAGU',
+            'data-column="tag_type">TYP',
+            'data-column="tag_visual">KOLOR / IKONA',
+            'data-column="priority">PRIORYTET',
+            'data-column="scope">ZAKRES',
+            'data-column="owner">WŁAŚCICIEL',
+            'data-column="status">STATUS',
             'data-column="description">OPIS',
+            'data-column="usage_notes">UŻYCIE',
+            'data-column="automation">AUTOMATYKA',
+            'data-column="related_tags">POWIĄZANE',
             'data-column="task_count">ZADANIA',
             'data-column="created_at">DATA',
         ]
@@ -1111,8 +1182,17 @@ class TaskProjectCreationTests(TestCase):
         )
         self.assertContains(response, 'Frontend')
         self.assertContains(response, 'Prace po stronie UI')
-        self.assertContains(response, 'Brak opisu')
+        self.assertContains(response, 'Obszar')
+        self.assertContains(response, '#1d4ed8')
+        self.assertContains(response, 'Flaga')
+        self.assertContains(response, 'Wysoki')
+        self.assertContains(response, 'Projekty')
+        self.assertContains(response, 'IT')
+        self.assertContains(response, 'Aktywny')
+        self.assertContains(response, 'Używaj przy pracach interfejsu.')
+        self.assertContains(response, 'Dodaj przy kanale frontend.')
         self.assertContains(response, 'Backend')
+        self.assertContains(response, 'Brak opisu')
         self.assertContains(response, frontend.code)
         self.assertContains(response, backend.code)
         self.assertContains(response, '1 zadań')
@@ -1183,10 +1263,21 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'href="/tasks/?view=tags"')
 
     def test_create_tag_from_tasks_page(self):
+        related = TaskTag.objects.create(user=self.user, name='Backend')
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'create_tag',
             'name': 'Design',
             'description': 'Makiety i decyzje wizualne',
+            'category': 'work_type',
+            'color': '#22c55e',
+            'icon': 'briefcase',
+            'priority': 'medium',
+            'scope': 'tasks',
+            'owner_label': 'Design',
+            'status': 'active',
+            'usage_notes': 'Używać dla makiet i UI.',
+            'automation_rules': 'Dodaj po imporcie briefu.',
+            'related_tags': [related.id],
             'code': 'DES',
         })
 
@@ -1194,6 +1285,16 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
         self.assertEqual(tag.description, 'Makiety i decyzje wizualne')
+        self.assertEqual(tag.category, 'work_type')
+        self.assertEqual(tag.color, '#22c55e')
+        self.assertEqual(tag.icon, 'briefcase')
+        self.assertEqual(tag.priority, 'medium')
+        self.assertEqual(tag.scope, 'tasks')
+        self.assertEqual(tag.owner_label, 'Design')
+        self.assertEqual(tag.status, 'active')
+        self.assertEqual(tag.usage_notes, 'Używać dla makiet i UI.')
+        self.assertEqual(tag.automation_rules, 'Dodaj po imporcie briefu.')
+        self.assertEqual(list(tag.related_tags.all()), [related])
         self.assertNotEqual(tag.code, 'DES')
         self.assertRegex(tag.code, r'^T-[0-9A-Z]{8}$')
 
@@ -1225,6 +1326,7 @@ class TaskProjectCreationTests(TestCase):
 
     def test_edit_tag_from_tasks_page(self):
         tag = TaskTag.objects.create(user=self.user, name='Design', description='Stary opis')
+        related = TaskTag.objects.create(user=self.user, name='Backend')
         old_code = tag.code
 
         response = self.client.post(reverse('tasks:tasks'), {
@@ -1232,6 +1334,16 @@ class TaskProjectCreationTests(TestCase):
             'tag_id': tag.id,
             'name': 'UI',
             'description': 'Nowy opis',
+            'category': 'area',
+            'color': '#0f766e',
+            'icon': 'layers',
+            'priority': 'high',
+            'scope': 'projects',
+            'owner_label': 'Produkt',
+            'status': 'archived',
+            'usage_notes': 'Stosować przy zmianach UI.',
+            'automation_rules': 'Dodaj przy typie zadania UI.',
+            'related_tags': [related.id],
             'code': 'NEW',
         })
 
@@ -1240,6 +1352,16 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
         self.assertEqual(tag.name, 'UI')
         self.assertEqual(tag.description, 'Nowy opis')
+        self.assertEqual(tag.category, 'area')
+        self.assertEqual(tag.color, '#0f766e')
+        self.assertEqual(tag.icon, 'layers')
+        self.assertEqual(tag.priority, 'high')
+        self.assertEqual(tag.scope, 'projects')
+        self.assertEqual(tag.owner_label, 'Produkt')
+        self.assertEqual(tag.status, 'archived')
+        self.assertEqual(tag.usage_notes, 'Stosować przy zmianach UI.')
+        self.assertEqual(tag.automation_rules, 'Dodaj przy typie zadania UI.')
+        self.assertEqual(list(tag.related_tags.all()), [related])
         self.assertEqual(tag.code, old_code)
 
     def test_more_options_render_edit_and_delete_actions_for_list_views(self):
@@ -1298,6 +1420,23 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
         self.assertEqual(list(task.tags.all()), [tag])
 
+    def test_create_task_modal_places_tags_before_assignee(self):
+        response = self.client.get(reverse('tasks:tasks'))
+        content = response.content.decode()
+
+        self.assertLess(
+            content.index('tasks-issue-field--company'),
+            content.index('tasks-issue-field--tags'),
+        )
+        self.assertLess(
+            content.index('tasks-issue-field--tags'),
+            content.index('tasks-issue-field--assignee'),
+        )
+        self.assertLess(
+            content.index('tasks-issue-field--assignee'),
+            content.index('tasks-issue-field--due'),
+        )
+
     def test_create_task_modal_saves_due_at(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
@@ -1317,6 +1456,47 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
         self.assertEqual(timezone.localtime(task.due_at).strftime('%Y-%m-%dT%H:%M'), '2026-06-12T14:30')
+
+    def test_create_task_modal_saves_split_estimated_time(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_task_modal',
+            'project_id': project.id,
+            'title': 'Zadanie z estymacją',
+            'section': section.id,
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+            'estimated_hours': '2',
+            'estimated_minutes_part': '15',
+        })
+
+        task = Task.objects.get(user=self.user, title='Zadanie z estymacją')
+
+        self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
+        self.assertEqual(task.estimated_minutes, 135)
+
+    def test_create_task_modal_saves_single_estimated_time_field(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_task_modal',
+            'project_id': project.id,
+            'title': 'Zadanie z jednym polem estymacji',
+            'section': section.id,
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+            'estimated_duration': '2 godz. 15 min.',
+        })
+
+        task = Task.objects.get(user=self.user, title='Zadanie z jednym polem estymacji')
+
+        self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
+        self.assertEqual(task.estimated_minutes, 135)
 
     def test_task_due_urgency_uses_time_remaining(self):
         now = timezone.now()

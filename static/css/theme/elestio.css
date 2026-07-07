@@ -167,7 +167,12 @@ body {
 
 .tasks-icon-button:hover,
 .tasks-icon-button.is-active,
-.tasks-section-actions.is-open [data-section-menu-toggle],
+.tasks-section-actions.is-open [data-section-menu-toggle] {
+    background: var(--nav-selected-bg);
+    border-color: transparent;
+    color: var(--text-main);
+}
+
 .calendar-day.is-today,
 .calendar-day.is-selected,
 .calendar-list-item--blue,
@@ -643,13 +648,32 @@ body.auth-page,
     border-color: #d6d9df;
 }
 
-.tasks-issue-row.checked,
-.tasks-issue-row.checked:hover,
-.tasks-issue-row:has(.task-checkbox:checked),
-.tasks-issue-row:has(.task-checkbox:checked):hover,
-.tasks-issue-row:has(.tasks-row-checkbox:checked),
-.tasks-issue-row:has(.tasks-row-checkbox:checked):hover {
-    background: #ffffff;
+.tasks-issue-row.checked:not(.tasks-directory-row),
+.tasks-issue-row.checked:not(.tasks-directory-row):hover,
+.tasks-issue-row:not(.tasks-directory-row):has(.task-checkbox:checked),
+.tasks-issue-row:not(.tasks-directory-row):has(.task-checkbox:checked):hover,
+.tasks-issue-row:not(.tasks-directory-row):has(.tasks-row-checkbox:checked),
+.tasks-issue-row:not(.tasks-directory-row):has(.tasks-row-checkbox:checked):hover {
+    background: #e9ebef;
+    border-color: #d6d9df;
+}
+
+.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked,
+.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked:hover,
+.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked),
+.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked):hover,
+.tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row.checked::before,
+.tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked)::before,
+.tasks-directory-board.tasks-tag-sheet .tasks-directory-list .tasks-directory-row.checked::before,
+.tasks-directory-board.tasks-tag-sheet .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked)::before,
+.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked > .tasks-directory-sheet__cell:not(.tasks-row-checkbox),
+.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-directory-sheet__cell:not(.tasks-row-checkbox),
+.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked > .tasks-project-sheet__cell:not(.tasks-row-checkbox),
+.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-project-sheet__cell:not(.tasks-row-checkbox),
+.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked > .tasks-tag-sheet__cell:not(.tasks-row-checkbox),
+.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-tag-sheet__cell:not(.tasks-row-checkbox) {
+    background: #e9ebef;
+    border-color: #d6d9df;
 }
 
 .tasks-row-title,
