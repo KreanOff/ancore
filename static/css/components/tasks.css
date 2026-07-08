@@ -2631,6 +2631,15 @@ body.modal-open::before {
     width: 100%;
 }
 
+#tag-create-form .tasks-tag-fields .ancore-custom-select__caret {
+    display: none;
+}
+
+#tag-create-form .tasks-tag-fields .tasks-inline-select {
+    background-image: none;
+    padding-right: 0.75rem;
+}
+
 #tag-create-form .tasks-tag-fields .ancore-custom-select__menu {
     z-index: 2600;
 }
@@ -2904,8 +2913,329 @@ body.modal-open::before {
     overflow-wrap: anywhere;
 }
 
+.tasks-project-notes-modal {
+    --tasks-modal-shell-width: 42vw;
+    --tasks-modal-shell-height: var(--app-viewport-height);
+    --tasks-modal-max-height: var(--tasks-modal-shell-height);
+    --tasks-modal-x-padding: 18px;
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 0;
+    background: transparent;
+}
+
+.page-container.full-width .tasks-project-notes-modal {
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 0;
+    background: transparent;
+}
+
+.tasks-project-notes-modal .tasks-modal__dialog,
+.page-container.full-width .tasks-project-notes-modal .tasks-modal__dialog {
+    width: var(--tasks-modal-shell-width);
+    max-width: var(--tasks-modal-shell-width);
+    height: var(--tasks-modal-shell-height);
+    max-height: var(--tasks-modal-max-height);
+    overflow: hidden;
+    border: 1px solid #e3e7ed;
+    border-radius: 15px 0 0 15px;
+    box-shadow: -18px 0 42px rgba(31, 35, 40, 0.18);
+    animation: tasks-modal-pop-in 0.18s ease-out;
+}
+
+.tasks-project-notes-modal .tasks-modal__form {
+    height: 100%;
+    min-height: 0;
+    max-height: var(--tasks-modal-max-height);
+}
+
+.tasks-project-notes-modal .tasks-modal__body {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.85rem;
+    max-height: calc(var(--tasks-modal-max-height) - 48px);
+    padding: 0.9rem var(--tasks-modal-x-padding) 1rem;
+    overflow: hidden;
+}
+
+.tasks-project-notes-modal__project {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.55rem;
+    align-items: center;
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.tasks-project-notes-modal__project span {
+    color: #747b86;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.tasks-project-notes-modal__project strong {
+    min-width: 0;
+    color: #23272f;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-project-notes-compose {
+    flex: 0 0 auto;
+    border: 1px solid #dfe3e8;
+    border-radius: 8px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.tasks-project-notes-compose__input {
+    display: block;
+    width: 100%;
+    min-height: 86px;
+    padding: 0.78rem 0.85rem;
+    border: 0;
+    background: transparent;
+    color: #242830;
+    font: inherit;
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+    outline: none;
+    resize: vertical;
+}
+
+.tasks-project-notes-compose__input::placeholder {
+    color: #a1a6ae;
+}
+
+.tasks-project-notes-compose__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem 0.7rem 0.65rem;
+    border-top: 1px solid #edf0f4;
+    background: #ffffff;
+}
+
+.tasks-project-notes-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.tasks-project-notes-thread {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.tasks-project-notes-thread[hidden] {
+    display: none;
+}
+
+.tasks-project-note {
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.78rem 0.85rem;
+    border: 1px solid #e2e6ed;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(31, 35, 40, 0.035);
+}
+
+.tasks-project-note__heading {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.tasks-project-note__icon {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #e2e6ed;
+    border-radius: 7px;
+    background: #f7f8fa;
+    color: #5f6672;
+}
+
+.tasks-project-note__icon svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2.2;
+}
+
+.tasks-project-note__meta {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.5rem;
+    color: #6d7481;
+    font-size: 12px;
+    line-height: 1.25;
+}
+
+.tasks-project-note__meta strong {
+    max-width: 100%;
+    color: #20242b;
+    font-weight: 650;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-project-note__meta time {
+    color: #7b8494;
+}
+
+.tasks-project-note__actions {
+    display: inline-flex;
+    gap: 0.18rem;
+}
+
+.tasks-project-note__delete-form {
+    display: contents;
+}
+
+.tasks-project-note__icon-button {
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #747b86;
+    cursor: pointer;
+}
+
+.tasks-project-note__icon-button:hover,
+.tasks-project-note__icon-button:focus-visible {
+    border-color: #dfe3e8;
+    background: #f2f4f7;
+    color: #242830;
+    outline: 0;
+}
+
+.tasks-project-note__icon-button svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2.25;
+}
+
+.tasks-project-note__body {
+    min-width: 0;
+    padding-left: 2.38rem;
+}
+
+.tasks-project-note__message {
+    color: #242830;
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.tasks-project-note__edit-form {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.tasks-project-note__edit-form[hidden] {
+    display: none;
+}
+
+.tasks-project-note.is-editing .tasks-project-note__message,
+.tasks-project-note.is-editing .tasks-project-note__actions {
+    display: none;
+}
+
+.tasks-project-note__edit-input {
+    width: 100%;
+    min-height: 92px;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #cfd5dd;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #242830;
+    font: inherit;
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+    resize: vertical;
+}
+
+.tasks-project-note__edit-input:focus,
+.tasks-project-notes-compose__input:focus {
+    outline: 0;
+}
+
+.tasks-project-note__edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.45rem;
+}
+
+.tasks-project-note__primary,
+.tasks-project-note__secondary {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0 0.75rem;
+    border-radius: 7px;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.tasks-project-note__primary {
+    --app-text-color: #ffffff;
+    border: 1px solid var(--accent-peach);
+    background: var(--accent-peach);
+    color: #ffffff !important;
+}
+
+.tasks-project-note__primary svg {
+    width: 15px;
+    height: 15px;
+    color: #ffffff;
+    stroke: currentColor;
+    stroke-width: 2.35;
+}
+
+.tasks-project-note__primary span {
+    color: #ffffff !important;
+}
+
+.tasks-project-note__secondary {
+    border: 1px solid #dfe3e8;
+    background: #ffffff;
+    color: #4f545e;
+}
+
+.tasks-project-notes-empty {
+    margin: 0;
+    padding: 1.4rem 0.5rem;
+    border: 1px dashed #d7dde6;
+    border-radius: 8px;
+    color: #7b8494;
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
 @media (max-width: 720px) {
     .tasks-project-info-modal,
+    .tasks-project-notes-modal,
+    .page-container.full-width .tasks-project-notes-modal,
     .page-container.full-width .tasks-project-info-modal {
         --tasks-modal-shell-width: calc(100vw - 1.5rem);
         --tasks-modal-shell-height: auto;
@@ -2916,8 +3246,11 @@ body.modal-open::before {
     }
 
     .tasks-project-info-modal__dialog,
+    .tasks-project-notes-modal .tasks-modal__dialog,
+    .page-container.full-width .tasks-project-notes-modal .tasks-modal__dialog,
     .page-container.full-width .tasks-project-info-modal .tasks-modal__dialog,
     .tasks-project-info-modal__form,
+    .tasks-project-notes-modal .tasks-modal__form,
     .page-container.full-width .tasks-project-info-modal .tasks-modal__form {
         width: var(--tasks-modal-shell-width);
         height: auto;
@@ -2930,8 +3263,26 @@ body.modal-open::before {
         padding: 0.9rem 1rem 1.1rem;
     }
 
+    .tasks-project-notes-modal .tasks-modal__body {
+        max-height: calc(var(--tasks-modal-max-height) - 48px);
+        padding: 0.9rem 1rem 1rem;
+    }
+
     .tasks-project-info-list > div {
         grid-template-columns: minmax(104px, 0.42fr) minmax(0, 1fr);
+    }
+
+    .tasks-project-note__heading {
+        grid-template-columns: 28px minmax(0, 1fr);
+    }
+
+    .tasks-project-note__actions {
+        grid-column: 1 / -1;
+        justify-self: end;
+    }
+
+    .tasks-project-note__body {
+        padding-left: 0;
     }
 }
 
@@ -5589,8 +5940,8 @@ body.modal-open::before {
 }
 
 .tasks-project-actions.is-open .tasks-project-more {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--nav-selected-bg);
+    color: var(--text-strong);
     outline: none;
 }
 
@@ -5658,8 +6009,8 @@ body.modal-open::before {
 
 .tasks-project-more:hover,
 .tasks-project-more:focus {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--nav-selected-bg);
+    color: var(--text-strong);
     outline: none;
 }
 
@@ -10026,7 +10377,9 @@ body.is-resizing-directory-columns {
 .tasks-project-pagination__size-button--compact {
     width: 50px;
     min-width: 50px;
-    padding: 0 0.55rem;
+    justify-content: center;
+    padding: 0;
+    border-radius: 6px;
 }
 
 .tasks-project-pagination__size-button:hover,
@@ -10257,6 +10610,7 @@ body.is-resizing-directory-columns {
     --tasks-project-company-width: 220px;
     --tasks-project-responsible-width: 220px;
     --tasks-project-status-width: 150px;
+    --tasks-project-notes-width: var(--tasks-directory-select-width, 40px);
     --tasks-project-stage-width: 160px;
     --tasks-project-health-width: 150px;
     --tasks-project-description-width: 320px;
@@ -10272,13 +10626,13 @@ body.is-resizing-directory-columns {
     --tasks-project-name-width: 220px;
     --tasks-directory-assignee-width: 230px;
     --tasks-directory-date-width: 130px;
-    --tasks-directory-grid: var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
 }
 
 .tasks-project-sheet--selectable {
     --tasks-directory-select-width: 40px;
     --tasks-directory-checkbox-offset: 0;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
 }
 
 .tasks-section-sheet.tasks-project-sheet--selectable {
@@ -10329,8 +10683,10 @@ body.is-resizing-directory-columns {
 
 .tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="action"]:not([data-column="select"]):not([data-column="spacer"]),
 .tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="info"]:not([data-column="select"]):not([data-column="spacer"]),
+.tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="notes"]:not([data-column="select"]):not([data-column="spacer"]),
 .tasks-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell[data-column="action"],
 .tasks-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell[data-column="info"],
+.tasks-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell[data-column="notes"],
 .tasks-tag-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="action"]:not([data-column="select"]):not([data-column="spacer"]),
 .tasks-tag-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="info"]:not([data-column="select"]):not([data-column="spacer"]),
 .tasks-tag-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell[data-column="action"],
@@ -10351,6 +10707,7 @@ body.is-resizing-directory-columns {
 
 .tasks-project-sheet .tasks-directory-header > [data-column="action"] svg,
 .tasks-project-sheet .tasks-directory-header > [data-column="info"] svg,
+.tasks-project-sheet .tasks-directory-header > [data-column="notes"] svg,
 .tasks-tag-sheet .tasks-directory-header > [data-column="action"] svg,
 .tasks-tag-sheet .tasks-directory-header > [data-column="info"] svg {
     width: 15px;
@@ -11273,6 +11630,7 @@ body.is-resizing-directory-columns {
     .tasks-project-sheet {
         --tasks-project-code-width: 150px;
         --tasks-directory-name-width: 260px;
+        --tasks-project-notes-width: var(--tasks-directory-select-width, 40px);
         --tasks-project-description-width: 260px;
         --tasks-project-progress-width: 180px;
         --tasks-project-due-width: 140px;
@@ -11311,6 +11669,7 @@ body.is-resizing-directory-columns {
     .tasks-project-sheet {
         --tasks-project-code-width: 132px;
         --tasks-directory-name-width: 220px;
+        --tasks-project-notes-width: var(--tasks-directory-select-width, 40px);
         --tasks-project-description-width: 230px;
         --tasks-project-progress-width: 160px;
         --tasks-project-due-width: 126px;
@@ -11344,12 +11703,12 @@ body.is-resizing-directory-columns {
 
     .tasks-project-sheet .tasks-directory-header,
     .tasks-project-sheet .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
     }
 
     .tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
     }
 
     .tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
@@ -11364,8 +11723,10 @@ body.is-resizing-directory-columns {
 
     .tasks-project-sheet .tasks-directory-header > [data-column="action"],
     .tasks-project-sheet .tasks-directory-header > [data-column="info"],
+    .tasks-project-sheet .tasks-directory-header > [data-column="notes"],
     .tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="action"],
-    .tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="info"] {
+    .tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="info"],
+    .tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="notes"] {
         display: none;
     }
 
@@ -11622,6 +11983,7 @@ body.is-resizing-directory-columns {
     --tasks-project-company-width: 220px;
     --tasks-project-responsible-width: 220px;
     --tasks-project-status-width: 150px;
+    --tasks-project-notes-width: var(--tasks-directory-select-width, 40px);
     --tasks-project-stage-width: 160px;
     --tasks-project-health-width: 150px;
     --tasks-project-description-width: 320px;
@@ -11637,13 +11999,13 @@ body.is-resizing-directory-columns {
     --tasks-project-name-width: 220px;
     --tasks-directory-assignee-width: 230px;
     --tasks-directory-date-width: 130px;
-    --tasks-directory-grid: var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
 }
 
 .tasks-directory-board.tasks-project-sheet--selectable {
     --tasks-directory-select-width: 40px;
     --tasks-directory-checkbox-offset: 0;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
 }
 
 .tasks-directory-board.tasks-section-sheet.tasks-project-sheet--selectable {
@@ -11838,12 +12200,12 @@ body.is-resizing-directory-columns {
 @media (max-width: 900px) {
     .tasks-directory-board.tasks-project-sheet .tasks-directory-header,
     .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
     }
 
     .tasks-directory-board.tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-directory-board.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
     }
 
     .tasks-directory-board.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
@@ -11858,8 +12220,10 @@ body.is-resizing-directory-columns {
 
     .tasks-directory-board.tasks-project-sheet .tasks-directory-header > [data-column="action"],
     .tasks-directory-board.tasks-project-sheet .tasks-directory-header > [data-column="info"],
+    .tasks-directory-board.tasks-project-sheet .tasks-directory-header > [data-column="notes"],
     .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="action"],
-    .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="info"] {
+    .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="info"],
+    .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="notes"] {
         display: none;
     }
 }

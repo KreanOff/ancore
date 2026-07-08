@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from dashboard.views import _dashboard_notifications
 from kanban.models import Kanban
 from tasks.models import Task, TaskActivity
 
@@ -25,6 +26,11 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Ustawienia Ancore')
+        self.assertContains(response, 'data-sticky-note-toggle')
+        self.assertContains(response, 'sidebar-sticker-toggle')
+        self.assertContains(response, 'id="app-sticky-note"')
+        self.assertContains(response, 'data-sticky-note-resize')
+        self.assertContains(response, 'sticky-note.js?v=20260707-sticker-close-fix')
         self.assertNotContains(response, 'Przegląd')
         self.assertContains(response, 'href="/admin/"')
         self.assertContains(response, reverse('profile'))
@@ -47,7 +53,7 @@ class DashboardViewTests(TestCase):
         self.assertLess(content.index('Pomoc'), content.index('Dodaj konto'))
         self.assertLess(content.index('Dodaj konto'), content.index('Wyloguj się'))
 
-    def test_home_renders_for_authenticated_user(self):
+    def test_home_redirects_authenticated_user_to_workplaces(self):
         user = get_user_model().objects.create_user(
             username='dashboard-user',
             email='dashboard-user@example.com',
@@ -58,16 +64,9 @@ class DashboardViewTests(TestCase):
 
         response = self.client.get(reverse('home'))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Powiadomienia')
-        self.assertNotContains(response, 'Aktywność')
-        self.assertContains(response, 'Brak nowych powiadomień.')
-        self.assertNotContains(response, 'Centrum pracy')
-        self.assertNotContains(response, 'Ostatnie aktywne zadania')
-        self.assertNotContains(response, 'Przekrój zadań')
-        self.assertNotContains(response, 'Najbliższe terminy')
+        self.assertRedirects(response, reverse('workplaces:workplaces'))
 
-    def test_home_rail_lists_task_and_kanban_notifications(self):
+    def test_dashboard_notifications_include_task_and_kanban_activity(self):
         user = get_user_model().objects.create_user(
             username='dashboard-user',
             email='dashboard-user@example.com',
@@ -96,27 +95,26 @@ class DashboardViewTests(TestCase):
         )
         kanban_card = Kanban.objects.create(user=user, title='Karta z Kanban')
         Task.objects.create(user=other_user, title='Zadanie innej osoby')
-        self.client.force_login(user)
 
-        response = self.client.get(reverse('home'))
+        notifications = _dashboard_notifications(user)
+        task_notification = next(
+            notification
+            for notification in notifications
+            if notification['object_id'] == task.task_id
+            and any(line['label'] == 'Status' for line in notification['detail_lines'])
+        )
+        kanban_notification = next(notification for notification in notifications if notification['object_id'] == kanban_card.task_id)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Powiadomienia')
-        self.assertContains(response, 'dashboard-notification--tasks')
-        self.assertContains(response, 'dashboard-notification--kanban')
-        self.assertContains(response, 'dashboard-notification-avatar')
-        self.assertContains(response, '/media/profile_photos/dashboard-user.webp')
-        self.assertContains(response, 'dashboard-user')
-        self.assertContains(response, 'utworzył zadanie')
-        self.assertContains(response, 'utworzył kartę')
-        self.assertContains(response, 'Gdzie:')
-        self.assertContains(response, 'Tytuł:')
-        self.assertContains(response, 'Status:')
-        self.assertContains(response, 'Ponownie otwarte')
-        self.assertContains(response, 'Rozwiązane')
-        self.assertContains(response, 'Zadanie z Tasks')
-        self.assertContains(response, 'Karta z Kanban')
-        self.assertContains(response, reverse('tasks:view-task', args=[task.task_id]))
-        self.assertContains(response, reverse('kanban:view-task', args=[kanban_card.task_id]))
-        self.assertNotContains(response, 'Zadanie innej osoby')
-        self.assertNotContains(response, 'dashboard-rail-nav tasks-rail-nav')
+        self.assertEqual(task_notification['source'], 'tasks')
+        self.assertEqual(task_notification['source_label'], 'Tasks')
+        self.assertEqual(task_notification['actor_label'], user.get_username())
+        self.assertEqual(task_notification['title'], 'Zadanie z Tasks')
+        self.assertEqual(task_notification['url'], reverse('tasks:view-task', args=[task.task_id]))
+        self.assertIn('Zadanie z Tasks', task_notification['location_label'])
+
+        self.assertEqual(kanban_notification['source'], 'kanban')
+        self.assertEqual(kanban_notification['source_label'], 'Kanban')
+        self.assertEqual(kanban_notification['actor_label'], user.get_username())
+        self.assertEqual(kanban_notification['title'], 'Karta z Kanban')
+        self.assertEqual(kanban_notification['url'], reverse('kanban:view-task', args=[kanban_card.task_id]))
+        self.assertNotIn('Zadanie innej osoby', [notification['title'] for notification in notifications])

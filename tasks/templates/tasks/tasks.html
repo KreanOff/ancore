@@ -838,6 +838,10 @@
                         <i data-lucide="info" aria-hidden="true"></i>
                         <span class="u-sr-only">Informacje</span>
                     </span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="notes" aria-label="Notatki projektu" title="Notatki projektu" data-column-label="Notatki">
+                        <i data-lucide="file-text" aria-hidden="true"></i>
+                        <span class="u-sr-only">Notatki</span>
+                    </span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PROJEKTU</span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project">PROJEKT</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">FIRMA</span>
@@ -869,6 +873,11 @@
                     <span class="tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="info">
                         <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o projekcie" aria-label="Informacje o projekcie {{ project.name }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-project-info data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-progress-label="{{ project.progress_percent }}%" data-project-tasks-label="{{ project.tasks_count_label }}" data-project-priority-label="{{ project.get_priority_display }}" data-project-status-label="{{ project.get_status_display }}" data-project-stage-label="{{ project.get_stage_display }}" data-project-health-label="{{ project.get_health_display }}" data-project-company-label="{% if project.company %}{{ project.company.name }}{% else %}Brak firmy{% endif %}" data-project-responsible-label="{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}" data-project-start-label="{% if project.start_at %}{{ project.start_at|date:'d.m.Y' }}{% else %}Brak startu{% endif %}" data-project-due-label="{% if project.due_at %}{{ project.due_at|date:'d.m.Y' }}{% else %}Brak terminu{% endif %}" data-project-budget-label="{% if project.budget_amount %}{{ project.budget_amount }} {{ project.currency }}{% else %}Brak budżetu{% endif %}" data-project-source-label="{% if project.source %}{{ project.source }}{% else %}Brak źródła{% endif %}" data-project-created-label="{{ project.created_at|date:'d.m.Y' }}" data-project-last-activity-label="{% if project.last_activity_at %}{{ project.last_activity_at|date:'d.m.Y H:i' }}{% else %}Brak aktywności{% endif %}">
                             <i data-lucide="info" aria-hidden="true"></i>
+                        </button>
+                    </span>
+                    <span class="tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="notes">
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button" title="Notatki projektu" aria-label="Notatki projektu {{ project.name }}" aria-haspopup="dialog" aria-controls="project-notes-modal" data-open-project-notes data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}">
+                            <i data-lucide="file-text" aria-hidden="true"></i>
                         </button>
                     </span>
                     <span class="tasks-project-sheet__code tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">{{ project.code }}</span>
@@ -1302,6 +1311,101 @@
                 <button type="submit" class="tasks-modal__submit" id="project-rename-submit">Zapisz zmiany</button>
             </footer>
         </form>
+    </div>
+</div>
+
+<div class="tasks-modal tasks-project-modal tasks-project-notes-modal" id="project-notes-modal" role="dialog" aria-modal="true" aria-labelledby="project-notes-modal-title" aria-hidden="true">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
+        <div class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form">
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
+                        <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong class="tasks-project-edit-modal__title-chip" id="project-notes-modal-title">
+                        <span>Notatki projektu</span>
+                    </strong>
+                </div>
+            </header>
+
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
+                <div class="tasks-project-notes-modal__project">
+                    <span>Projekt</span>
+                    <strong data-project-notes-name>Projekt</strong>
+                </div>
+                <form method="post" class="tasks-project-notes-compose" id="project-notes-form" data-project-note-create-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_project_note">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input type="hidden" name="project_id" value="" data-project-notes-id>
+                    <label class="u-sr-only" for="project-notes-message">Nowa notatka</label>
+                    <textarea id="project-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-project-notes-message></textarea>
+                    <div class="tasks-project-notes-compose__footer">
+                        <button type="submit" class="tasks-project-note__primary" id="project-notes-submit">
+                            <i data-lucide="plus" aria-hidden="true"></i>
+                            <span>Dodaj notatkę</span>
+                        </button>
+                    </div>
+                </form>
+                <div class="tasks-project-notes-list" data-project-notes-feed>
+                    {% for project in projects %}
+                    <section class="tasks-project-notes-thread" data-project-notes-thread data-project-id="{{ project.id }}" hidden>
+                        {% for note in project.project_notes.all %}
+                        <article class="tasks-project-note {% if note.author_id == request.user.id %}tasks-project-note--owned{% endif %}" data-project-note-item data-project-note-id="{{ note.id }}">
+                            <div class="tasks-project-note__heading">
+                                <span class="tasks-project-note__icon" aria-hidden="true">
+                                    <i data-lucide="file-text"></i>
+                                </span>
+                                <div class="tasks-project-note__meta">
+                                    <strong>{{ note.author.get_full_name|default:note.author.username|default:"System" }}</strong>
+                                    <time>{{ note.created_at|date:"d.m.Y, H:i" }}</time>
+                                </div>
+                                {% if note.author_id == request.user.id %}
+                                <div class="tasks-project-note__actions">
+                                    <button type="button" class="tasks-project-note__icon-button" title="Edytuj notatkę" aria-label="Edytuj notatkę" data-project-note-edit-toggle>
+                                        <i data-lucide="pencil" aria-hidden="true"></i>
+                                    </button>
+                                    <form method="post" class="tasks-project-note__delete-form" data-project-note-delete-form>
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_project_note">
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <input type="hidden" name="project_id" value="{{ project.id }}">
+                                        <input type="hidden" name="note_id" value="{{ note.id }}">
+                                        <button type="submit" class="tasks-project-note__icon-button" title="Usuń notatkę" aria-label="Usuń notatkę">
+                                            <i data-lucide="trash-2" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="tasks-project-note__body">
+                                <div class="tasks-project-note__message" data-project-note-message>{{ note.message|linebreaksbr }}</div>
+                                {% if note.author_id == request.user.id %}
+                                <form method="post" class="tasks-project-note__edit-form" data-project-note-edit-form hidden>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="edit_project_note">
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <input type="hidden" name="project_id" value="{{ project.id }}">
+                                    <input type="hidden" name="note_id" value="{{ note.id }}">
+                                    <label class="u-sr-only" for="project-note-edit-{{ note.id }}">Treść notatki</label>
+                                    <textarea id="project-note-edit-{{ note.id }}" name="message" class="tasks-project-note__edit-input" rows="3" data-project-note-edit-input>{{ note.message }}</textarea>
+                                    <div class="tasks-project-note__edit-actions">
+                                        <button type="button" class="tasks-project-note__secondary" data-project-note-edit-cancel>Anuluj</button>
+                                        <button type="submit" class="tasks-project-note__primary">Zapisz</button>
+                                    </div>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </article>
+                        {% empty %}
+                        <p class="tasks-project-notes-empty" data-project-notes-empty>Brak notatek. Napisz pierwszą.</p>
+                        {% endfor %}
+                    </section>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

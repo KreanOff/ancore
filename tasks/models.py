@@ -177,6 +177,30 @@ class TaskProject(models.Model):
         return self.ICON_COLORS[(index_source - 1) % len(self.ICON_COLORS)]
 
 
+class TaskProjectNote(models.Model):
+    project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='project_notes')
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='task_project_notes',
+        null=True,
+        blank=True,
+    )
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        indexes = [
+            models.Index(fields=['project', 'created_at', 'id'], name='taskproj_note_project_idx'),
+            models.Index(fields=['author', 'created_at'], name='taskproj_note_author_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.project} - {self.author or "System"}'
+
+
 class TaskSection(models.Model):
     PRIORITY_CHOICES = TaskProject.PRIORITY_CHOICES
     CODE_PREFIX = 'G'

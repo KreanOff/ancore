@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.urls import reverse
 
 from contacts.models import Company, SharedItem
-from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
+from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskTag
 
 
 class TaskProjectCreationTests(TestCase):
@@ -389,6 +389,9 @@ class TaskProjectCreationTests(TestCase):
             company=company,
             responsible_user=self.user,
         )
+        other_user = get_user_model().objects.create_user(username='project-note-other', password='test-pass-123')
+        TaskProjectNote.objects.create(project=project, author=self.user, message='Moja notatka projektu')
+        TaskProjectNote.objects.create(project=project, author=other_user, message='Cudza notatka projektu')
         TaskProject.objects.create(user=self.user, name='Projekt bez ikony', code='PBI', icon='')
         section = TaskSection.objects.create(project=project, title='Plan')
         Task.objects.create(user=self.user, section=section, title='Gotowe zadanie', status='closed')
@@ -422,8 +425,22 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'ODPOWIEDZIALNY ZA PROJEKT')
         self.assertContains(response, 'aria-label="Edytuj projekt"')
         self.assertContains(response, 'aria-label="Informacje o projekcie"')
+        self.assertContains(response, 'aria-label="Notatki projektu"')
+        self.assertContains(response, 'data-lucide="file-text"')
         self.assertContains(response, 'data-open-project-info')
+        self.assertContains(response, 'data-open-project-notes')
         self.assertContains(response, 'id="project-info-modal"')
+        self.assertContains(response, 'id="project-notes-modal"')
+        self.assertContains(response, 'name="action" value="add_project_note"')
+        self.assertContains(response, 'name="action" value="edit_project_note"')
+        self.assertContains(response, 'name="action" value="delete_project_note"')
+        self.assertContains(response, 'data-project-notes-message')
+        self.assertContains(response, 'tasks-project-notes-list')
+        self.assertContains(response, 'tasks-project-notes-compose__input')
+        self.assertContains(response, 'tasks-project-note--owned')
+        self.assertNotContains(response, 'tasks-project-note--mine')
+        self.assertContains(response, 'Moja notatka projektu')
+        self.assertContains(response, 'Cudza notatka projektu')
         self.assertContains(response, 'data-project-pagination')
         self.assertContains(response, 'data-project-page-size')
         self.assertContains(response, 'data-project-page-prev')
@@ -435,6 +452,7 @@ class TaskProjectCreationTests(TestCase):
         expected_columns = [
             'data-column="action" aria-label="Edytuj projekt"',
             'data-column="info" aria-label="Informacje o projekcie"',
+            'data-column="notes" aria-label="Notatki projektu"',
             'data-column="project_code">KOD PROJEKTU',
             'data-column="project">PROJEKT',
             'data-column="company">FIRMA',
@@ -455,6 +473,8 @@ class TaskProjectCreationTests(TestCase):
         ]
         column_positions = [content.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
+        self.assertEqual(content.count('data-project-note-edit-toggle'), 1)
+        self.assertEqual(content.count('name="action" value="delete_project_note"'), 1)
         self.assertContains(response, project.code)
         self.assertContains(response, 'Opis projektu')
         self.assertContains(response, 'Brak opisu')
@@ -690,15 +710,15 @@ class TaskProjectCreationTests(TestCase):
             'class="tasks-project-pagination tasks-status-pagination" data-task-status-pagination',
             count=2,
         )
-        self.assertContains(response, 'task-row tasks-issue-row', count=62)
+        self.assertContains(response, 'task-row tasks-issue-row', count=37)
         self.assertIn('Nowe zadanie 000', new_html)
-        self.assertIn('Nowe zadanie 049', new_html)
-        self.assertNotIn('Nowe zadanie 050', new_html)
+        self.assertIn('Nowe zadanie 024', new_html)
+        self.assertNotIn('Nowe zadanie 025', new_html)
         self.assertIn('Realizowane zadanie 011', in_progress_html)
-        self.assertContains(response, 'Pokazano 1-50 z 60 zadań')
+        self.assertContains(response, 'Pokazano 1-25 z 60 zadań')
         self.assertContains(response, 'Pokazano 1-12 z 12 zadań')
         self.assertIn(
-            'data-task-status-page-url="/tasks/?view=all-tasks&amp;task_new_page_size=50&amp;task_new_page=2"',
+            'data-task-status-page-url="/tasks/?view=all-tasks&amp;task_new_page_size=25&amp;task_new_page=2"',
             html,
         )
         self.assertIn('data-task-status-page="2"', html)
@@ -736,10 +756,24 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('Nowe zadanie 010', new_html)
         self.assertIn('data-task-status-page="6"', html)
 
-    def test_task_rows_do_not_render_default_task_type_label(self):
+    def test_task_rows_render_only_task_title_in_title_cell(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt zadań', code='TSK')
         section = TaskSection.objects.create(project=project, title='Plan')
-        task = Task.objects.create(user=self.user, section=section, title='Zadanie bez widocznego typu')
+        company = Company.objects.create(owner=self.user, name='Netology')
+        assignee = get_user_model().objects.create_user(
+            username='assignee-user',
+            first_name='Adam',
+            last_name='Mickiewicz',
+            password='test-pass-123',
+        )
+        task = Task.objects.create(
+            user=self.user,
+            section=section,
+            title='Zadanie bez widocznego typu',
+            company=company,
+            assignee=assignee,
+            is_billable=True,
+        )
 
         response = self.client.get(reverse('tasks:task_group', args=[section.id]))
         html = response.content.decode()
@@ -752,6 +786,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('Zadanie bez widocznego typu', row_html)
         self.assertNotIn('<span>Ogólne</span>', row_html)
         self.assertNotIn('tasks-row-crm-meta', row_html)
+        self.assertNotIn('<span>Netology</span>', row_html)
+        self.assertNotIn('<span>Adam Mickiewicz</span>', row_html)
+        self.assertNotIn('<span>Fakturowalne</span>', row_html)
 
     def test_group_task_view_uses_group_url_for_status_pagination(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt grupy', code='GRP')
@@ -768,12 +805,12 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(group_url)
         html = response.content.decode()
 
-        self.assertContains(response, 'task-row tasks-issue-row', count=50)
-        self.assertIn('Zadanie grupy 049', html)
-        self.assertNotIn('Zadanie grupy 050', html)
-        self.assertContains(response, 'Pokazano 1-50 z 55 zadań')
+        self.assertContains(response, 'task-row tasks-issue-row', count=25)
+        self.assertIn('Zadanie grupy 024', html)
+        self.assertNotIn('Zadanie grupy 025', html)
+        self.assertContains(response, 'Pokazano 1-25 z 55 zadań')
         self.assertIn(
-            f'data-task-status-page-url="{group_url}?task_new_page_size=50&amp;task_new_page=2"',
+            f'data-task-status-page-url="{group_url}?task_new_page_size=25&amp;task_new_page=2"',
             html,
         )
 
@@ -1898,6 +1935,74 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(project.company, company)
         self.assertEqual(project.icon, '')
         self.assertEqual(project.code, old_code)
+
+    def test_project_note_actions_add_edit_and_delete_own_notes(self):
+        project = TaskProject.objects.create(
+            user=self.user,
+            name='Projekt notatek',
+            description='Opis projektu',
+            code='NOTE',
+            status='active',
+        )
+        old_code = project.code
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'add_project_note',
+            'project_id': project.id,
+            'message': '  Nowa notatka projektu  ',
+        })
+
+        project.refresh_from_db()
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        note = TaskProjectNote.objects.get(project=project)
+        self.assertEqual(project.name, 'Projekt notatek')
+        self.assertEqual(project.description, 'Opis projektu')
+        self.assertEqual(project.status, 'active')
+        self.assertEqual(project.code, old_code)
+        self.assertEqual(note.author, self.user)
+        self.assertEqual(note.message, 'Nowa notatka projektu')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'edit_project_note',
+            'project_id': project.id,
+            'note_id': note.id,
+            'message': '  Poprawiona notatka  ',
+        })
+
+        note.refresh_from_db()
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertEqual(note.message, 'Poprawiona notatka')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_project_note',
+            'project_id': project.id,
+            'note_id': note.id,
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(TaskProjectNote.objects.filter(id=note.id).exists())
+
+    def test_project_note_actions_only_allow_author_to_change_note(self):
+        other_user = get_user_model().objects.create_user(username='note-owner', password='test-pass-123')
+        project = TaskProject.objects.create(user=self.user, name='Projekt notatek', code='NOTE')
+        note = TaskProjectNote.objects.create(project=project, author=other_user, message='Cudza notatka')
+
+        edit_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'edit_project_note',
+            'project_id': project.id,
+            'note_id': note.id,
+            'message': 'Nie moje',
+        })
+        delete_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_project_note',
+            'project_id': project.id,
+            'note_id': note.id,
+        })
+
+        note.refresh_from_db()
+        self.assertEqual(edit_response.status_code, 404)
+        self.assertEqual(delete_response.status_code, 404)
+        self.assertEqual(note.message, 'Cudza notatka')
 
     def test_edit_project_ignores_icon_field(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ', icon='rocket')

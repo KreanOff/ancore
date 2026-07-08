@@ -502,7 +502,7 @@ body.auth-page,
 
 .tasks-project-more:hover,
 .tasks-project-more:focus {
-    color: var(--accent-on-peach);
+    color: var(--text-strong);
 }
 
 .tasks-project-row-icon,

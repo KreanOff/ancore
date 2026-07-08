@@ -98,6 +98,7 @@ function initTasksPage() {
     const openTagInfoButtons = document.querySelectorAll('[data-open-tag-info]');
     const openProjectRenameButtons = document.querySelectorAll('[data-open-project-rename]');
     const openProjectInfoButtons = document.querySelectorAll('[data-open-project-info]');
+    const openProjectNotesButtons = document.querySelectorAll('[data-open-project-notes]');
     const openSectionInfoButtons = document.querySelectorAll('[data-open-section-info]');
     const openSectionRenameButtons = document.querySelectorAll('[data-open-section-rename]');
     const openSectionCreateButtons = document.querySelectorAll('[data-open-section-create]');
@@ -107,6 +108,7 @@ function initTasksPage() {
     const projectModal = document.getElementById('project-modal');
     const tagModal = document.getElementById('tag-modal');
     const projectRenameModal = document.getElementById('project-rename-modal');
+    const projectNotesModal = document.getElementById('project-notes-modal');
     const projectInfoModal = document.getElementById('project-info-modal');
     const projectInfoBody = projectInfoModal?.querySelector('[data-project-info-body]');
     const projectInfoTitle = projectInfoModal?.querySelector('[data-project-info-title]');
@@ -166,6 +168,7 @@ function initTasksPage() {
     const projectForm = document.getElementById('project-create-form');
     const tagForm = document.getElementById('tag-create-form');
     const projectRenameForm = document.getElementById('project-rename-form');
+    const projectNotesForm = document.getElementById('project-notes-form');
     const sectionCreateForm = document.getElementById('section-create-form');
     const sectionRenameForm = document.getElementById('section-rename-form');
     const issueForm = document.getElementById('issue-create-form');
@@ -189,6 +192,10 @@ function initTasksPage() {
     const tagRelatedTagsInput = tagForm ? tagForm.querySelector('[name="related_tags"]') : null;
     const projectRenameNameInput = projectRenameForm ? projectRenameForm.querySelector('[name="name"]') : null;
     const projectRenameDescriptionInput = projectRenameForm ? projectRenameForm.querySelector('[name="description"]') : null;
+    const projectNotesIdInput = projectNotesForm ? projectNotesForm.querySelector('[data-project-notes-id]') : null;
+    const projectNotesNameInput = projectNotesModal ? projectNotesModal.querySelector('[data-project-notes-name]') : null;
+    const projectNotesMessageInput = projectNotesForm ? projectNotesForm.querySelector('[data-project-notes-message]') : null;
+    const projectNotesThreads = projectNotesModal ? projectNotesModal.querySelectorAll('[data-project-notes-thread]') : [];
     const projectRenameCompanyInput = projectRenameForm ? projectRenameForm.querySelector('[name="company"]') : null;
     const projectRenameResponsibleInput = projectRenameForm ? projectRenameForm.querySelector('[name="responsible_user"]') : null;
     const projectRenameStatusInput = projectRenameForm ? projectRenameForm.querySelector('[name="status"]') : null;
@@ -3495,6 +3502,67 @@ function initTasksPage() {
         });
     });
 
+    function openProjectNotesModal(button) {
+        if (!projectNotesModal || !button) return;
+
+        const row = button.closest('.tasks-project-row') || button.closest('.tasks-directory-row');
+        const projectId = button.dataset.projectId || row?.dataset.projectId || '';
+        const projectName = button.dataset.projectName || row?.dataset.projectName || '';
+        if (projectNotesIdInput) projectNotesIdInput.value = projectId;
+        if (projectNotesNameInput) projectNotesNameInput.textContent = projectName || 'Projekt';
+        if (projectNotesMessageInput) projectNotesMessageInput.value = '';
+        projectNotesThreads.forEach(thread => {
+            thread.hidden = thread.dataset.projectId !== projectId;
+        });
+        closeProjectActionMenus();
+        openModal(projectNotesModal, projectNotesMessageInput);
+    }
+
+    openProjectNotesButtons.forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openProjectNotesModal(button);
+        });
+    });
+
+    projectNotesModal?.querySelectorAll('[data-project-note-edit-toggle]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            const item = button.closest('[data-project-note-item]');
+            const form = item?.querySelector('[data-project-note-edit-form]');
+            const input = form?.querySelector('[data-project-note-edit-input]');
+            if (!form) return;
+            form.hidden = false;
+            item.classList.add('is-editing');
+            setTimeout(() => {
+                input?.focus();
+                input?.setSelectionRange?.(input.value.length, input.value.length);
+            }, 30);
+        });
+    });
+
+    projectNotesModal?.querySelectorAll('[data-project-note-edit-cancel]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            const item = button.closest('[data-project-note-item]');
+            const form = item?.querySelector('[data-project-note-edit-form]');
+            if (!form) return;
+            const input = form.querySelector('[data-project-note-edit-input]');
+            if (input) input.value = input.defaultValue || '';
+            form.hidden = true;
+            item?.classList.remove('is-editing');
+        });
+    });
+
+    projectNotesModal?.querySelectorAll('[data-project-note-delete-form]').forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!window.confirm('Usunąć tę notatkę?')) {
+                event.preventDefault();
+            }
+        });
+    });
+
     function readProjectInfoCell(row, column) {
         if (!row || !column) return '';
         return (row.querySelector(`[data-column="${column}"]`)?.textContent || '').replace(/\s+/g, ' ').trim();
@@ -5614,6 +5682,7 @@ function initTasksPage() {
             project_code: 190,
             project: 320,
             section: 320,
+            notes: 40,
             description: 320,
             progress: 220,
             due_at: 170,
@@ -5648,6 +5717,7 @@ function initTasksPage() {
             project_code: 150,
             project: 150,
             section: 150,
+            notes: 40,
             description: 150,
             progress: 120,
             due_at: 112,
@@ -5674,7 +5744,7 @@ function initTasksPage() {
             task_count: 120
         };
         const fixedColumns = new Set(['spacer']);
-        const nonResizableColumns = new Set(['action', 'info', 'spacer']);
+        const nonResizableColumns = new Set(['action', 'info', 'notes', 'spacer']);
         const resizeMediaQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(min-width: 901px)')
             : { matches: true };

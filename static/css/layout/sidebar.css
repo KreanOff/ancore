@@ -187,7 +187,7 @@ body.secondary-menu-collapsed {
 
 .nav-section {
     position: relative;
-    padding: 0.65rem 0;
+    padding: 0 0 0.65rem;
     flex-grow: 1;
 }
 
@@ -205,6 +205,10 @@ body.secondary-menu-collapsed {
     transition: color 0.1s, background-color 0.1s, border-color 0.1s;
     border: 1px solid transparent;
     border-radius: 8px;
+}
+
+.nav-section > .secondary-menu-toggle {
+    margin-top: 0;
 }
 
 .nav-separator {
@@ -243,6 +247,24 @@ body.secondary-menu-collapsed {
 .nav-icon--contacts,
 .nav-icon--profile {
     --nav-icon-optical-scale: 1.08;
+}
+
+.sidebar-sticker-toggle {
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+}
+
+.sidebar-sticker-toggle[aria-expanded="true"],
+.sidebar-sticker-toggle.is-open {
+    color: var(--sidebar-active);
+    background-color: var(--nav-selected-bg);
+    border-color: transparent;
+}
+
+.nav-icon--notes {
+    --nav-icon-optical-scale: 1.04;
 }
 
 .nav-label {

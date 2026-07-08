@@ -18,7 +18,7 @@ from django.contrib import messages
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
-from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag, parse_hierarchy_code_number
+from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskTag, parse_hierarchy_code_number
 from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
 
@@ -26,7 +26,7 @@ PROJECT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
 PROJECT_DEFAULT_PAGE_SIZE = 50
 PROJECT_NAVIGATION_LIMIT = 50
 TASK_PAGE_SIZE_OPTIONS = PROJECT_PAGE_SIZE_OPTIONS
-TASK_DEFAULT_PAGE_SIZE = PROJECT_DEFAULT_PAGE_SIZE
+TASK_DEFAULT_PAGE_SIZE = 25
 
 
 def _active_workplace(request):
@@ -640,7 +640,11 @@ def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_b
             Prefetch(
                 'sections',
                 queryset=sections_queryset,
-            )
+            ),
+            Prefetch(
+                'project_notes',
+                queryset=TaskProjectNote.objects.select_related('author').order_by('created_at', 'id'),
+            ),
         )
     )
     if order_by:
@@ -1889,6 +1893,43 @@ def _tasks_page(request, active_section=None):
             project_rename_project_id = project.id
             active_project_for_form = project
             messages.error(request, 'Nie udało się zaktualizować projektu.')
+
+        if action in ('add_project_note', 'update_project_notes'):
+            project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
+            message = (request.POST.get('message') or request.POST.get('description') or '').strip()
+            if message:
+                TaskProjectNote.objects.create(project=project, author=request.user, message=message)
+                messages.success(request, 'Notatka dodana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_tasks_next_url(request))
+
+        if action == 'edit_project_note':
+            note_queryset = _filter_workplace(
+                TaskProjectNote.objects.filter(author=request.user, project__user=request.user),
+                workplace,
+                field_name='project__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), project_id=request.POST.get('project_id'))
+            message = (request.POST.get('message') or '').strip()
+            if message:
+                note.message = message
+                note.save(update_fields=['message', 'updated_at'])
+                messages.success(request, 'Notatka zaktualizowana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_tasks_next_url(request))
+
+        if action == 'delete_project_note':
+            note_queryset = _filter_workplace(
+                TaskProjectNote.objects.filter(author=request.user, project__user=request.user),
+                workplace,
+                field_name='project__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), project_id=request.POST.get('project_id'))
+            note.delete()
+            messages.success(request, 'Notatka usunięta.')
+            return redirect(_tasks_next_url(request))
 
         if action == 'create_section':
             project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))

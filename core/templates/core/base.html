@@ -39,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260706-tag-modal-cleanup">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260708-workspace-top-gap">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -62,11 +62,6 @@
     </div>
     <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
     <aside class="sidebar" id="app-sidebar">
-        <div class="sidebar-header">
-            <a href="{% url 'home' %}" class="logo" aria-label="Ancore - panel główny" title="Ancore">
-                <img src="{% static 'img/logo.png' %}" alt="Ancore">
-            </a>
-        </div>
         {% if request.user.is_authenticated %}
         <a href="{% url 'workplaces:workplaces' %}" class="sidebar-workplace {% if request.resolver_match.app_name == 'workplaces' %}active{% endif %}" title="Workplace">
             <span class="sidebar-workplace__avatar" aria-hidden="true">
@@ -80,14 +75,10 @@
         {% endif %}
         <nav class="nav-section">
             <button type="button" class="nav-link secondary-menu-toggle" id="secondary-menu-toggle" aria-label="Zwiń drugie menu" aria-controls="secondary-menu" aria-expanded="true" title="Zwiń drugie menu">
-                <i class="nav-icon nav-icon--toggle secondary-menu-toggle-icon" data-lucide="panel-left-close" aria-hidden="true" focusable="false"></i>
+                <i class="nav-icon nav-icon--toggle secondary-menu-toggle-icon" data-lucide="equal" data-lucide-fallback="minus" aria-hidden="true" focusable="false"></i>
                 <span class="nav-label">Drugie menu</span>
             </button>
             <div class="nav-separator" aria-hidden="true"></div>
-            <a href="{% url 'workplaces:workplaces' %}" class="nav-link {% if request.resolver_match.app_name == 'workplaces' %}active{% endif %}" aria-label="Workplace" title="Workplace">
-                <i class="nav-icon nav-icon--home" data-lucide="building-2" aria-hidden="true"></i>
-                <span class="nav-label">Workplace</span>
-            </a>
             <a href="{% if workplace_app_urls.tasks %}{{ workplace_app_urls.tasks }}{% else %}{% url 'tasks:tasks' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}active{% endif %}" aria-label="Zadania" title="Zadania">
                 <i class="nav-icon nav-icon--tasks" data-lucide="list-todo" aria-hidden="true"></i>
                 <span class="nav-label">Zadania</span>
@@ -106,6 +97,10 @@
             </a>
         </nav>
         <div class="sidebar-footer">
+            <button type="button" class="nav-link sidebar-sticker-toggle" aria-label="Sticker" title="Sticker" aria-controls="app-sticky-note" aria-expanded="false" data-sticky-note-toggle>
+                <i class="nav-icon nav-icon--notes" data-lucide="sticky-note" aria-hidden="true"></i>
+                <span class="nav-label">Sticker</span>
+            </button>
             <a href="{% url 'settings' %}" class="nav-link {% if request.resolver_match.view_name == 'settings' %}active{% endif %}" aria-label="Ustawienia Ancore" title="Ustawienia Ancore">
                 <i class="nav-icon nav-icon--admin" data-lucide="settings" aria-hidden="true"></i>
                 <span class="nav-label">Ustawienia</span>
@@ -144,6 +139,21 @@
         {% endif %}
     </div>
 
+    <section class="app-sticky-note" id="app-sticky-note" aria-label="Sticker" data-sticky-note hidden>
+        <header class="app-sticky-note__bar" data-sticky-note-handle>
+            <span class="app-sticky-note__title">
+                <i data-lucide="sticky-note" aria-hidden="true"></i>
+                Sticker
+            </span>
+            <button type="button" class="app-sticky-note__close" aria-label="Zamknij sticker" title="Zamknij sticker" data-sticky-note-close>
+                <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+        </header>
+        <label class="u-sr-only" for="app-sticky-note-text">Treść stickera</label>
+        <textarea class="app-sticky-note__text" id="app-sticky-note-text" placeholder="Napisz notatkę..." data-sticky-note-text></textarea>
+        <button type="button" class="app-sticky-note__resize" aria-label="Zmień rozmiar stickera" title="Zmień rozmiar stickera" data-sticky-note-resize></button>
+    </section>
+
     {% if request.user.is_authenticated %}
     <script>
         window.AncorePresence = {
@@ -160,10 +170,11 @@
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260707-sort-button-icon"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260707-project-notes-white-text"></script>
     <script src="{% static 'js/profile.js' %}?v=20260614-app-wide-navigation"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260702-custom-selects"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>
     <script src="{% static 'js/file-upload.js' %}?v=20260616-task-autosave"></script>
+    <script src="{% static 'js/sticky-note.js' %}?v=20260707-sticker-close-fix"></script>
 </body>
 </html>
