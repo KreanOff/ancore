@@ -96,9 +96,11 @@ function initTasksPage() {
     const openTagButtons = document.querySelectorAll('[data-open-tag]');
     const openTagEditButtons = document.querySelectorAll('[data-open-tag-edit]');
     const openTagInfoButtons = document.querySelectorAll('[data-open-tag-info]');
+    const openTagNotesButtons = document.querySelectorAll('[data-open-tag-notes]');
     const openProjectRenameButtons = document.querySelectorAll('[data-open-project-rename]');
     const openProjectInfoButtons = document.querySelectorAll('[data-open-project-info]');
     const openProjectNotesButtons = document.querySelectorAll('[data-open-project-notes]');
+    const openSectionNotesButtons = document.querySelectorAll('[data-open-section-notes]');
     const openSectionInfoButtons = document.querySelectorAll('[data-open-section-info]');
     const openSectionRenameButtons = document.querySelectorAll('[data-open-section-rename]');
     const openSectionCreateButtons = document.querySelectorAll('[data-open-section-create]');
@@ -109,6 +111,8 @@ function initTasksPage() {
     const tagModal = document.getElementById('tag-modal');
     const projectRenameModal = document.getElementById('project-rename-modal');
     const projectNotesModal = document.getElementById('project-notes-modal');
+    const sectionNotesModal = document.getElementById('section-notes-modal');
+    const tagNotesModal = document.getElementById('tag-notes-modal');
     const projectInfoModal = document.getElementById('project-info-modal');
     const projectInfoBody = projectInfoModal?.querySelector('[data-project-info-body]');
     const projectInfoTitle = projectInfoModal?.querySelector('[data-project-info-title]');
@@ -116,6 +120,8 @@ function initTasksPage() {
     const projectInfoCode = projectInfoModal?.querySelector('[data-project-info-code]');
     const projectInfoDescription = projectInfoModal?.querySelector('[data-project-info-description]');
     const projectInfoProgress = projectInfoModal?.querySelector('[data-project-info-progress]');
+    const projectInfoProgressFill = projectInfoModal?.querySelector('[data-project-info-progress-fill]');
+    const projectInfoProgressValue = projectInfoModal?.querySelector('[data-project-info-progress-value]');
     const projectInfoTasks = projectInfoModal?.querySelector('[data-project-info-tasks]');
     const projectInfoTagCategory = projectInfoModal?.querySelector('[data-project-info-tag-category]');
     const projectInfoTagVisual = projectInfoModal?.querySelector('[data-project-info-tag-visual]');
@@ -137,6 +143,7 @@ function initTasksPage() {
     const projectInfoCreated = projectInfoModal?.querySelector('[data-project-info-created]');
     const projectInfoLastActivity = projectInfoModal?.querySelector('[data-project-info-last-activity]');
     const projectInfoRows = {
+        code: projectInfoCode?.closest('div'),
         progress: projectInfoProgress?.closest('div'),
         tasks: projectInfoTasks?.closest('div'),
         tagCategory: projectInfoTagCategory?.closest('div'),
@@ -169,6 +176,8 @@ function initTasksPage() {
     const tagForm = document.getElementById('tag-create-form');
     const projectRenameForm = document.getElementById('project-rename-form');
     const projectNotesForm = document.getElementById('project-notes-form');
+    const sectionNotesForm = document.getElementById('section-notes-form');
+    const tagNotesForm = document.getElementById('tag-notes-form');
     const sectionCreateForm = document.getElementById('section-create-form');
     const sectionRenameForm = document.getElementById('section-rename-form');
     const issueForm = document.getElementById('issue-create-form');
@@ -196,6 +205,14 @@ function initTasksPage() {
     const projectNotesNameInput = projectNotesModal ? projectNotesModal.querySelector('[data-project-notes-name]') : null;
     const projectNotesMessageInput = projectNotesForm ? projectNotesForm.querySelector('[data-project-notes-message]') : null;
     const projectNotesThreads = projectNotesModal ? projectNotesModal.querySelectorAll('[data-project-notes-thread]') : [];
+    const sectionNotesIdInput = sectionNotesForm ? sectionNotesForm.querySelector('[data-section-notes-id]') : null;
+    const sectionNotesNameInput = sectionNotesModal ? sectionNotesModal.querySelector('[data-section-notes-name]') : null;
+    const sectionNotesMessageInput = sectionNotesForm ? sectionNotesForm.querySelector('[data-section-notes-message]') : null;
+    const sectionNotesThreads = sectionNotesModal ? sectionNotesModal.querySelectorAll('[data-section-notes-thread]') : [];
+    const tagNotesIdInput = tagNotesForm ? tagNotesForm.querySelector('[data-tag-notes-id]') : null;
+    const tagNotesNameInput = tagNotesModal ? tagNotesModal.querySelector('[data-tag-notes-name]') : null;
+    const tagNotesMessageInput = tagNotesForm ? tagNotesForm.querySelector('[data-tag-notes-message]') : null;
+    const tagNotesThreads = tagNotesModal ? tagNotesModal.querySelectorAll('[data-tag-notes-thread]') : [];
     const projectRenameCompanyInput = projectRenameForm ? projectRenameForm.querySelector('[name="company"]') : null;
     const projectRenameResponsibleInput = projectRenameForm ? projectRenameForm.querySelector('[name="responsible_user"]') : null;
     const projectRenameStatusInput = projectRenameForm ? projectRenameForm.querySelector('[name="status"]') : null;
@@ -3563,6 +3580,128 @@ function initTasksPage() {
         });
     });
 
+    function openSectionNotesModal(button) {
+        if (!sectionNotesModal || !button) return;
+
+        const row = button.closest('.tasks-section-row') || button.closest('.tasks-directory-row');
+        const sectionId = button.dataset.sectionId || row?.dataset.sectionId || '';
+        const sectionName = button.dataset.sectionTitle || row?.dataset.sectionTitle || '';
+        if (sectionNotesIdInput) sectionNotesIdInput.value = sectionId;
+        if (sectionNotesNameInput) sectionNotesNameInput.textContent = sectionName || 'Grupa';
+        if (sectionNotesMessageInput) sectionNotesMessageInput.value = '';
+        sectionNotesThreads.forEach(thread => {
+            thread.hidden = thread.dataset.sectionId !== sectionId;
+        });
+        closeProjectActionMenus();
+        openModal(sectionNotesModal, sectionNotesMessageInput);
+    }
+
+    openSectionNotesButtons.forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openSectionNotesModal(button);
+        });
+    });
+
+    sectionNotesModal?.querySelectorAll('[data-section-note-edit-toggle]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            const item = button.closest('[data-section-note-item]');
+            const form = item?.querySelector('[data-section-note-edit-form]');
+            const input = form?.querySelector('[data-section-note-edit-input]');
+            if (!form) return;
+            form.hidden = false;
+            item.classList.add('is-editing');
+            setTimeout(() => {
+                input?.focus();
+                input?.setSelectionRange?.(input.value.length, input.value.length);
+            }, 30);
+        });
+    });
+
+    sectionNotesModal?.querySelectorAll('[data-section-note-edit-cancel]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            const item = button.closest('[data-section-note-item]');
+            const form = item?.querySelector('[data-section-note-edit-form]');
+            if (!form) return;
+            const input = form.querySelector('[data-section-note-edit-input]');
+            if (input) input.value = input.defaultValue || '';
+            form.hidden = true;
+            item?.classList.remove('is-editing');
+        });
+    });
+
+    sectionNotesModal?.querySelectorAll('[data-section-note-delete-form]').forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!window.confirm('Usunąć tę notatkę?')) {
+                event.preventDefault();
+            }
+        });
+    });
+
+    function openTagNotesModal(button) {
+        if (!tagNotesModal || !button) return;
+
+        const row = button.closest('.tasks-tag-sheet__row') || button.closest('.tasks-directory-row');
+        const tagId = button.dataset.tagId || row?.dataset.tagId || '';
+        const tagName = button.dataset.tagName || row?.dataset.tagName || '';
+        if (tagNotesIdInput) tagNotesIdInput.value = tagId;
+        if (tagNotesNameInput) tagNotesNameInput.textContent = tagName || 'Tag';
+        if (tagNotesMessageInput) tagNotesMessageInput.value = '';
+        tagNotesThreads.forEach(thread => {
+            thread.hidden = thread.dataset.tagId !== tagId;
+        });
+        closeProjectActionMenus();
+        openModal(tagNotesModal, tagNotesMessageInput);
+    }
+
+    openTagNotesButtons.forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            openTagNotesModal(button);
+        });
+    });
+
+    tagNotesModal?.querySelectorAll('[data-tag-note-edit-toggle]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            const item = button.closest('[data-tag-note-item]');
+            const form = item?.querySelector('[data-tag-note-edit-form]');
+            const input = form?.querySelector('[data-tag-note-edit-input]');
+            if (!form) return;
+            form.hidden = false;
+            item.classList.add('is-editing');
+            setTimeout(() => {
+                input?.focus();
+                input?.setSelectionRange?.(input.value.length, input.value.length);
+            }, 30);
+        });
+    });
+
+    tagNotesModal?.querySelectorAll('[data-tag-note-edit-cancel]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            const item = button.closest('[data-tag-note-item]');
+            const form = item?.querySelector('[data-tag-note-edit-form]');
+            if (!form) return;
+            const input = form.querySelector('[data-tag-note-edit-input]');
+            if (input) input.value = input.defaultValue || '';
+            form.hidden = true;
+            item?.classList.remove('is-editing');
+        });
+    });
+
+    tagNotesModal?.querySelectorAll('[data-tag-note-delete-form]').forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!window.confirm('Usunąć tę notatkę?')) {
+                event.preventDefault();
+            }
+        });
+    });
+
     function readProjectInfoCell(row, column) {
         if (!row || !column) return '';
         return (row.querySelector(`[data-column="${column}"]`)?.textContent || '').replace(/\s+/g, ' ').trim();
@@ -3571,6 +3710,17 @@ function initTasksPage() {
     function setProjectInfoText(element, value, fallback = 'Brak danych') {
         if (!element) return;
         element.textContent = value && value.trim() ? value.trim() : fallback;
+    }
+
+    function setProjectInfoProgress(value) {
+        const label = value && value.trim() ? value.trim() : '0%';
+        const normalizedValue = Number.parseFloat(label.replace(',', '.'));
+        const progress = Number.isFinite(normalizedValue) ? Math.max(0, Math.min(100, normalizedValue)) : 0;
+
+        setProjectInfoText(projectInfoProgressValue || projectInfoProgress, label, '0%');
+        if (projectInfoProgressFill) {
+            projectInfoProgressFill.style.setProperty('--tasks-project-info-progress', `${progress}%`);
+        }
     }
 
     function setProjectInfoRowsVisible(visibleRows) {
@@ -3656,15 +3806,15 @@ function initTasksPage() {
         if (projectInfoTitle) projectInfoTitle.textContent = isTagInfo ? 'Informacje o tagu' : (isSectionInfo ? 'Informacje o grupie' : 'Informacje o projekcie');
         setProjectInfoRowsVisible(
             isTagInfo
-                ? new Set(['tasks', 'tagCategory', 'tagVisual', 'tagScope', 'tagOwner', 'tagUsage', 'tagAutomation', 'tagRelated', 'status', 'priority', 'created'])
+                ? new Set(['code', 'tasks', 'tagCategory', 'tagVisual', 'tagScope', 'tagOwner', 'tagUsage', 'tagAutomation', 'tagRelated', 'status', 'priority', 'created'])
                 : isSectionInfo
-                    ? new Set(['progress', 'tasks', 'status', 'stage', 'responsible', 'priority', 'due', 'budget', 'created', 'lastActivity'])
-                    : new Set(['progress', 'tasks', 'status', 'stage', 'health', 'company', 'responsible', 'priority', 'start', 'due', 'budget', 'source', 'created', 'lastActivity'])
+                    ? new Set(['code', 'progress', 'tasks', 'status', 'stage', 'responsible', 'priority', 'due', 'budget', 'created', 'lastActivity'])
+                    : new Set(['code', 'progress', 'tasks', 'status', 'stage', 'health', 'company', 'responsible', 'priority', 'start', 'due', 'budget', 'source', 'created', 'lastActivity'])
         );
         setProjectInfoText(projectInfoName, data.name, isTagInfo ? 'Tag' : (isSectionInfo ? 'Grupa' : 'Projekt'));
         setProjectInfoText(projectInfoCode, data.code, isSectionInfo ? 'Brak kodu grupy' : 'Brak kodu');
         setProjectInfoText(projectInfoDescription, data.description, 'Brak opisu');
-        setProjectInfoText(projectInfoProgress, data.progress, '0%');
+        setProjectInfoProgress(data.progress);
         setProjectInfoText(projectInfoTasks, data.tasks, '0/0');
         setProjectInfoText(projectInfoTagCategory, data.tagCategory, 'Brak typu');
         setProjectInfoText(projectInfoTagVisual, data.tagVisual, 'Brak danych');
@@ -5697,6 +5847,7 @@ function initTasksPage() {
             spacer: 0
         };
         const tagColumnDefaultWidths = {
+            notes: 40,
             tag_name: 250,
             tag_code: 250,
             tag_type: 140,
@@ -5730,6 +5881,7 @@ function initTasksPage() {
             spacer: 0
         };
         const tagColumnMinimums = {
+            notes: 40,
             tag_name: 150,
             tag_code: 150,
             tag_type: 110,

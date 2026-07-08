@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.urls import reverse
 
 from contacts.models import Company, SharedItem
-from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskTag
+from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag, TaskTagNote
 
 
 class TaskProjectCreationTests(TestCase):
@@ -895,6 +895,7 @@ class TaskProjectCreationTests(TestCase):
             company=company,
         )
         section = TaskSection.objects.create(project=project, title='Frontend', description='Prace po stronie UI')
+        TaskSectionNote.objects.create(section=section, author=self.user, message='Moja notatka grupy')
         Task.objects.create(user=self.user, section=section, title='Zadanie ukończone', status='closed')
         Task.objects.create(user=self.user, section=section, title='Zadanie otwarte')
 
@@ -926,15 +927,27 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-column="action" aria-label="Edytuj grupę"')
         self.assertContains(response, 'data-column="info"', count=2)
         self.assertContains(response, 'data-column="info" aria-label="Informacje o grupie"')
+        self.assertContains(response, 'data-column="notes"', count=2)
+        self.assertContains(response, 'data-column="notes" aria-label="Notatki grupy"')
         self.assertContains(response, 'data-open-section-info')
+        self.assertContains(response, 'data-open-section-notes')
         self.assertContains(response, 'data-open-section-rename')
         self.assertContains(response, 'aria-label="Edytuj grupę Frontend"')
         self.assertContains(response, 'aria-label="Informacje o grupie Frontend"')
+        self.assertContains(response, 'aria-label="Notatki grupy Frontend"')
+        self.assertContains(response, 'id="section-notes-modal"')
+        self.assertContains(response, 'name="action" value="add_section_note"')
+        self.assertContains(response, 'name="action" value="edit_section_note"')
+        self.assertContains(response, 'name="action" value="delete_section_note"')
+        self.assertContains(response, 'Moja notatka grupy')
+        self.assertContains(response, 'data-section-notes-message')
+        self.assertContains(response, 'data-section-note-edit-toggle')
         self.assertContains(response, f'data-section-id="{section.id}"')
         content = response.content.decode()
         expected_columns = [
             'data-column="action" aria-label="Edytuj grupę"',
             'data-column="info" aria-label="Informacje o grupie"',
+            'data-column="notes" aria-label="Notatki grupy"',
             'data-column="section">GRUPA',
             'data-column="project_code">KOD GRUPY',
             'data-column="section_status">STATUS',
@@ -1035,6 +1048,7 @@ class TaskProjectCreationTests(TestCase):
         first_project = TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
         second_project = TaskProject.objects.create(user=self.user, name='Drugi projekt', code='TWO')
         frontend = TaskSection.objects.create(project=first_project, title='Frontend', description='Prace po stronie UI')
+        TaskSectionNote.objects.create(section=frontend, author=self.user, message='Notatka Frontendu')
         TaskSection.objects.create(project=second_project, title='Backend')
         Task.objects.create(user=self.user, section=frontend, title='Zadanie frontendowe')
         TaskSection.objects.filter(pk=frontend.pk).update(
@@ -1060,8 +1074,16 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-column="action" aria-label="Edytuj grupę"')
         self.assertContains(response, 'data-column="info"', count=3)
         self.assertContains(response, 'data-column="info" aria-label="Informacje o grupie"')
+        self.assertContains(response, 'data-column="notes"', count=3)
+        self.assertContains(response, 'data-column="notes" aria-label="Notatki grupy"')
         self.assertContains(response, 'data-open-section-info', count=2)
+        self.assertContains(response, 'data-open-section-notes', count=2)
         self.assertContains(response, 'data-open-section-rename', count=2)
+        self.assertContains(response, 'id="section-notes-modal"')
+        self.assertContains(response, 'name="action" value="add_section_note"')
+        self.assertContains(response, 'name="action" value="edit_section_note"')
+        self.assertContains(response, 'name="action" value="delete_section_note"')
+        self.assertContains(response, 'Notatka Frontendu')
         self.assertContains(response, f'data-section-id="{frontend.id}"')
         self.assertContains(response, 'data-column="priority"', count=3)
         self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
@@ -1070,6 +1092,7 @@ class TaskProjectCreationTests(TestCase):
         expected_columns = [
             'data-column="action" aria-label="Edytuj grupę"',
             'data-column="info" aria-label="Informacje o grupie"',
+            'data-column="notes" aria-label="Notatki grupy"',
             'data-column="section">GRUPA',
             'data-column="project_code">KOD GRUPY',
             'data-column="description">OPIS',
@@ -1146,6 +1169,7 @@ class TaskProjectCreationTests(TestCase):
         )
         backend = TaskTag.objects.create(user=self.user, name='Backend')
         frontend.related_tags.add(backend)
+        TaskTagNote.objects.create(tag=frontend, author=self.user, message='Moja notatka tagu')
         TaskTag.objects.filter(pk=frontend.pk).update(
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
         )
@@ -1170,9 +1194,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Zarządzaj tabelą')
         self.assertContains(response, 'data-column-label="Edytuj"')
         self.assertContains(response, 'data-column-label="Informacje"')
+        self.assertContains(response, 'data-column-label="Notatki"')
         expected_columns = [
             'data-column="action" aria-label="Edytuj tag"',
             'data-column="info" aria-label="Informacje o tagu"',
+            'data-column="notes" aria-label="Notatki tagu"',
             'data-column="tag_name">NAZWA TAGU',
             'data-column="tag_code">KOD TAGU',
             'data-column="tag_type">TYP',
@@ -1194,14 +1220,27 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-column="action" aria-label="Edytuj tag"')
         self.assertContains(response, 'data-column="info"', count=3)
         self.assertContains(response, 'data-column="info" aria-label="Informacje o tagu"')
+        self.assertContains(response, 'data-column="notes"', count=3)
+        self.assertContains(response, 'data-column="notes" aria-label="Notatki tagu"')
         self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action"')
         self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info"')
+        self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes"')
         self.assertContains(response, 'tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action"')
         self.assertContains(response, 'tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info"')
+        self.assertContains(response, 'tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes"')
         self.assertContains(response, 'data-open-tag-edit', count=2)
         self.assertContains(response, 'data-open-tag-info', count=2)
+        self.assertContains(response, 'data-open-tag-notes', count=2)
         self.assertContains(response, 'aria-label="Edytuj tag Frontend"')
         self.assertContains(response, 'aria-label="Informacje o tagu Frontend"')
+        self.assertContains(response, 'aria-label="Notatki tagu Frontend"')
+        self.assertContains(response, 'id="tag-notes-modal"')
+        self.assertContains(response, 'name="action" value="add_tag_note"')
+        self.assertContains(response, 'name="action" value="edit_tag_note"')
+        self.assertContains(response, 'name="action" value="delete_tag_note"')
+        self.assertContains(response, 'Moja notatka tagu')
+        self.assertContains(response, 'data-tag-notes-message')
+        self.assertContains(response, 'data-tag-note-edit-toggle')
         self.assertContains(response, 'data-column="tag_code"', count=3)
         self.assertContains(response, 'data-column="tag_name"', count=3)
         frontend_row_start = html.index(f'data-tag-id="{frontend.id}"')
@@ -1211,6 +1250,10 @@ class TaskProjectCreationTests(TestCase):
         )
         self.assertLess(
             html.index('data-column="info"', frontend_row_start),
+            html.index('data-column="notes"', frontend_row_start),
+        )
+        self.assertLess(
+            html.index('data-column="notes"', frontend_row_start),
             html.index('data-column="tag_name"', frontend_row_start),
         )
         self.assertLess(
@@ -1360,6 +1403,73 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
         self.assertFalse(TaskTag.objects.filter(id=tag.id).exists())
+
+    def test_tag_note_actions_add_edit_and_delete_own_notes(self):
+        tag = TaskTag.objects.create(
+            user=self.user,
+            name='Design',
+            description='Opis tagu',
+            status='active',
+        )
+        old_code = tag.code
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'add_tag_note',
+            'tag_id': tag.id,
+            'message': '  Nowa notatka tagu  ',
+        })
+
+        tag.refresh_from_db()
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        note = TaskTagNote.objects.get(tag=tag)
+        self.assertEqual(tag.name, 'Design')
+        self.assertEqual(tag.description, 'Opis tagu')
+        self.assertEqual(tag.status, 'active')
+        self.assertEqual(tag.code, old_code)
+        self.assertEqual(note.author, self.user)
+        self.assertEqual(note.message, 'Nowa notatka tagu')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'edit_tag_note',
+            'tag_id': tag.id,
+            'note_id': note.id,
+            'message': '  Poprawiona notatka tagu  ',
+        })
+
+        note.refresh_from_db()
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertEqual(note.message, 'Poprawiona notatka tagu')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_tag_note',
+            'tag_id': tag.id,
+            'note_id': note.id,
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(TaskTagNote.objects.filter(id=note.id).exists())
+
+    def test_tag_note_actions_only_allow_author_to_change_note(self):
+        other_user = get_user_model().objects.create_user(username='tag-note-owner', password='test-pass-123')
+        tag = TaskTag.objects.create(user=self.user, name='Design')
+        note = TaskTagNote.objects.create(tag=tag, author=other_user, message='Cudza notatka tagu')
+
+        edit_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'edit_tag_note',
+            'tag_id': tag.id,
+            'note_id': note.id,
+            'message': 'Nie moje',
+        })
+        delete_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_tag_note',
+            'tag_id': tag.id,
+            'note_id': note.id,
+        })
+
+        note.refresh_from_db()
+        self.assertEqual(edit_response.status_code, 404)
+        self.assertEqual(delete_response.status_code, 404)
+        self.assertEqual(note.message, 'Cudza notatka tagu')
 
     def test_edit_tag_from_tasks_page(self):
         tag = TaskTag.objects.create(user=self.user, name='Design', description='Stary opis')
@@ -2003,6 +2113,75 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(edit_response.status_code, 404)
         self.assertEqual(delete_response.status_code, 404)
         self.assertEqual(note.message, 'Cudza notatka')
+
+    def test_section_note_actions_add_edit_and_delete_own_notes(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt grup', code='GRP')
+        section = TaskSection.objects.create(
+            project=project,
+            title='Grupa notatek',
+            description='Opis grupy',
+            status='open',
+        )
+        old_code = section.code
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'add_section_note',
+            'section_id': section.id,
+            'message': '  Nowa notatka grupy  ',
+        })
+
+        section.refresh_from_db()
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        note = TaskSectionNote.objects.get(section=section)
+        self.assertEqual(section.title, 'Grupa notatek')
+        self.assertEqual(section.description, 'Opis grupy')
+        self.assertEqual(section.status, 'open')
+        self.assertEqual(section.code, old_code)
+        self.assertEqual(note.author, self.user)
+        self.assertEqual(note.message, 'Nowa notatka grupy')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'edit_section_note',
+            'section_id': section.id,
+            'note_id': note.id,
+            'message': '  Poprawiona notatka grupy  ',
+        })
+
+        note.refresh_from_db()
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertEqual(note.message, 'Poprawiona notatka grupy')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_section_note',
+            'section_id': section.id,
+            'note_id': note.id,
+        })
+
+        self.assertRedirects(response, reverse('tasks:tasks'))
+        self.assertFalse(TaskSectionNote.objects.filter(id=note.id).exists())
+
+    def test_section_note_actions_only_allow_author_to_change_note(self):
+        other_user = get_user_model().objects.create_user(username='section-note-owner', password='test-pass-123')
+        project = TaskProject.objects.create(user=self.user, name='Projekt grup', code='GRP')
+        section = TaskSection.objects.create(project=project, title='Grupa')
+        note = TaskSectionNote.objects.create(section=section, author=other_user, message='Cudza notatka grupy')
+
+        edit_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'edit_section_note',
+            'section_id': section.id,
+            'note_id': note.id,
+            'message': 'Nie moje',
+        })
+        delete_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_section_note',
+            'section_id': section.id,
+            'note_id': note.id,
+        })
+
+        note.refresh_from_db()
+        self.assertEqual(edit_response.status_code, 404)
+        self.assertEqual(delete_response.status_code, 404)
+        self.assertEqual(note.message, 'Cudza notatka grupy')
 
     def test_edit_project_ignores_icon_field(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ', icon='rocket')

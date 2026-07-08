@@ -285,6 +285,30 @@ class TaskSection(models.Model):
         return f'{self.project.name} / {self.title}'
 
 
+class TaskSectionNote(models.Model):
+    section = models.ForeignKey(TaskSection, on_delete=models.CASCADE, related_name='section_notes')
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='task_section_notes',
+        null=True,
+        blank=True,
+    )
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        indexes = [
+            models.Index(fields=['section', 'created_at', 'id'], name='tasksec_note_section_idx'),
+            models.Index(fields=['author', 'created_at'], name='tasksec_note_author_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.section} - {self.author or "System"}'
+
+
 class TaskTag(models.Model):
     CODE_PREFIX = 'T'
     CODE_LENGTH = 8
@@ -388,6 +412,30 @@ class TaskTag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TaskTagNote(models.Model):
+    tag = models.ForeignKey(TaskTag, on_delete=models.CASCADE, related_name='tag_notes')
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='task_tag_notes',
+        null=True,
+        blank=True,
+    )
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        indexes = [
+            models.Index(fields=['tag', 'created_at', 'id'], name='tasktag_note_tag_idx'),
+            models.Index(fields=['author', 'created_at'], name='tasktag_note_author_idx'),
+        ]
+
+    def __str__(self):
+        return f'{self.tag} - {self.author or "System"}'
 
 
 class Task(models.Model):

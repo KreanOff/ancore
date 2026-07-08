@@ -1,0 +1,52 @@
+<section class="tasks-project-notes-thread" data-tag-notes-thread data-tag-id="{{ tag.id }}" hidden>
+    {% for note in tag.tag_notes.all %}
+    <article class="tasks-project-note {% if note.author_id == request.user.id %}tasks-project-note--owned{% endif %}" data-tag-note-item data-tag-note-id="{{ note.id }}">
+        <div class="tasks-project-note__heading">
+            <span class="tasks-project-note__icon" aria-hidden="true">
+                <i data-lucide="file-text"></i>
+            </span>
+            <div class="tasks-project-note__meta">
+                <strong>{{ note.author.get_full_name|default:note.author.username|default:"System" }}</strong>
+                <time>{{ note.created_at|date:"d.m.Y, H:i" }}</time>
+            </div>
+            {% if note.author_id == request.user.id %}
+            <div class="tasks-project-note__actions">
+                <button type="button" class="tasks-project-note__icon-button" title="Edytuj notatkę" aria-label="Edytuj notatkę" data-tag-note-edit-toggle>
+                    <i data-lucide="pencil" aria-hidden="true"></i>
+                </button>
+                <form method="post" class="tasks-project-note__delete-form" data-tag-note-delete-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_tag_note">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                    <input type="hidden" name="note_id" value="{{ note.id }}">
+                    <button type="submit" class="tasks-project-note__icon-button" title="Usuń notatkę" aria-label="Usuń notatkę">
+                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        <div class="tasks-project-note__body">
+            <div class="tasks-project-note__message" data-tag-note-message>{{ note.message|linebreaksbr }}</div>
+            {% if note.author_id == request.user.id %}
+            <form method="post" class="tasks-project-note__edit-form" data-tag-note-edit-form hidden>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_tag_note">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                <input type="hidden" name="note_id" value="{{ note.id }}">
+                <label class="u-sr-only" for="tag-note-edit-{{ note.id }}">Treść notatki</label>
+                <textarea id="tag-note-edit-{{ note.id }}" name="message" class="tasks-project-note__edit-input" rows="3" data-tag-note-edit-input>{{ note.message }}</textarea>
+                <div class="tasks-project-note__edit-actions">
+                    <button type="button" class="tasks-project-note__secondary" data-tag-note-edit-cancel>Anuluj</button>
+                    <button type="submit" class="tasks-project-note__primary">Zapisz</button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </article>
+    {% empty %}
+    <p class="tasks-project-notes-empty" data-tag-notes-empty>Brak notatek. Napisz pierwszą.</p>
+    {% endfor %}
+</section>

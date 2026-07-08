@@ -18,7 +18,7 @@ from django.contrib import messages
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
-from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskTag, parse_hierarchy_code_number
+from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag, TaskTagNote, parse_hierarchy_code_number
 from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
 
@@ -597,7 +597,12 @@ def _group_filter_queryset(user, query='', priority='', workplace=None):
         )
     if priority in {value for value, _label in TaskSection.PRIORITY_CHOICES}:
         queryset = queryset.filter(priority=priority)
-    return queryset
+    return queryset.prefetch_related(
+        Prefetch(
+            'section_notes',
+            queryset=TaskSectionNote.objects.select_related('author').order_by('created_at', 'id'),
+        )
+    )
 
 
 def _tag_filter_queryset(user, query='', workplace=None):
@@ -612,7 +617,12 @@ def _tag_filter_queryset(user, query='', workplace=None):
             | Q(usage_notes__icontains=query)
             | Q(automation_rules__icontains=query)
         )
-    return queryset
+    return queryset.prefetch_related(
+        Prefetch(
+            'tag_notes',
+            queryset=TaskTagNote.objects.select_related('author').order_by('created_at', 'id'),
+        )
+    )
 
 
 def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_by=('name', 'id'), limit=None, offset=0, workplace=None):
@@ -800,9 +810,14 @@ def _project_section_window_for_request(request, project):
     query = (request.GET.get('q') or '').strip()
     priority = (request.GET.get('priority') or '').strip()
     queryset = _filter_workplace(
-        TaskSection.objects.filter(project=project).select_related('project', 'project__user'),
+        TaskSection.objects.filter(project=project).select_related('project', 'project__user', 'owner'),
         _active_workplace(request),
         field_name='project__workplace',
+    ).prefetch_related(
+        Prefetch(
+            'section_notes',
+            queryset=TaskSectionNote.objects.select_related('author').order_by('created_at', 'id'),
+        )
     )
     if query:
         group_code_number = parse_hierarchy_code_number(query, TaskSection.CODE_PREFIX)
@@ -1931,6 +1946,50 @@ def _tasks_page(request, active_section=None):
             messages.success(request, 'Notatka usunięta.')
             return redirect(_tasks_next_url(request))
 
+        if action in ('add_section_note', 'update_section_notes'):
+            section = get_object_or_404(
+                _filter_workplace(
+                    TaskSection.objects.filter(project__user=request.user),
+                    workplace,
+                    field_name='project__workplace',
+                ),
+                id=request.POST.get('section_id'),
+            )
+            message = (request.POST.get('message') or request.POST.get('description') or '').strip()
+            if message:
+                TaskSectionNote.objects.create(section=section, author=request.user, message=message)
+                messages.success(request, 'Notatka dodana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_tasks_next_url(request))
+
+        if action == 'edit_section_note':
+            note_queryset = _filter_workplace(
+                TaskSectionNote.objects.filter(author=request.user, section__project__user=request.user),
+                workplace,
+                field_name='section__project__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), section_id=request.POST.get('section_id'))
+            message = (request.POST.get('message') or '').strip()
+            if message:
+                note.message = message
+                note.save(update_fields=['message', 'updated_at'])
+                messages.success(request, 'Notatka zaktualizowana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_tasks_next_url(request))
+
+        if action == 'delete_section_note':
+            note_queryset = _filter_workplace(
+                TaskSectionNote.objects.filter(author=request.user, section__project__user=request.user),
+                workplace,
+                field_name='section__project__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), section_id=request.POST.get('section_id'))
+            note.delete()
+            messages.success(request, 'Notatka usunięta.')
+            return redirect(_tasks_next_url(request))
+
         if action == 'create_section':
             project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
             section_form = TaskSectionForm(request.POST, user=request.user)
@@ -1977,6 +2036,46 @@ def _tasks_page(request, active_section=None):
             tag_edit_mode = True
             tag_edit_tag_id = tag.id
             messages.error(request, 'Nie udało się zaktualizować tagu.')
+
+        if action in ('add_tag_note', 'update_tag_notes'):
+            tag = get_object_or_404(
+                _filter_workplace(TaskTag.objects.filter(user=request.user), workplace),
+                id=request.POST.get('tag_id'),
+            )
+            message = (request.POST.get('message') or request.POST.get('description') or '').strip()
+            if message:
+                TaskTagNote.objects.create(tag=tag, author=request.user, message=message)
+                messages.success(request, 'Notatka dodana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_tasks_next_url(request))
+
+        if action == 'edit_tag_note':
+            note_queryset = _filter_workplace(
+                TaskTagNote.objects.filter(author=request.user, tag__user=request.user),
+                workplace,
+                field_name='tag__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), tag_id=request.POST.get('tag_id'))
+            message = (request.POST.get('message') or '').strip()
+            if message:
+                note.message = message
+                note.save(update_fields=['message', 'updated_at'])
+                messages.success(request, 'Notatka zaktualizowana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_tasks_next_url(request))
+
+        if action == 'delete_tag_note':
+            note_queryset = _filter_workplace(
+                TaskTagNote.objects.filter(author=request.user, tag__user=request.user),
+                workplace,
+                field_name='tag__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), tag_id=request.POST.get('tag_id'))
+            note.delete()
+            messages.success(request, 'Notatka usunięta.')
+            return redirect(_tasks_next_url(request))
 
         if action == 'delete_tag':
             tag_ids = _posted_ids(request, 'tag_ids', 'tag_id')
