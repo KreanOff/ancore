@@ -296,6 +296,115 @@ function initTasksPage() {
         window.location.href = viewUrl;
     }
 
+    function taskStatusBlockSelector(block) {
+        if (block?.id && window.CSS?.escape) {
+            return `#${CSS.escape(block.id)}`;
+        }
+        if (block?.id) {
+            return `#${block.id}`;
+        }
+
+        const status = block?.dataset.sectionStatus || '';
+        if (status && window.CSS?.escape) {
+            return `.tasks-status-block[data-section-status="${CSS.escape(status)}"]`;
+        }
+        if (status) {
+            return `.tasks-status-block[data-section-status="${status}"]`;
+        }
+
+        return '';
+    }
+
+    function preserveTaskStatusBlockState(fromBlock, toBlock) {
+        if (!fromBlock || !toBlock) return;
+
+        const isCollapsed = fromBlock.classList.contains('is-collapsed');
+        toBlock.classList.toggle('is-collapsed', isCollapsed);
+        const caret = toBlock.querySelector('.tasks-group-caret');
+        if (caret) {
+            caret.setAttribute('aria-expanded', String(!isCollapsed));
+            caret.setAttribute('aria-label', isCollapsed ? 'Rozwiń sekcję' : 'Zwiń sekcję');
+        }
+    }
+
+    async function navigateTaskStatusPage(viewUrl, pagination) {
+        const currentBlock = pagination?.closest('.tasks-status-block');
+        const selector = taskStatusBlockSelector(currentBlock);
+        const url = (() => {
+            try {
+                return new URL(viewUrl, window.location.href);
+            } catch (error) {
+                return null;
+            }
+        })();
+
+        if (!currentBlock || !selector || !url || url.origin !== window.location.origin) {
+            navigateWithinApp(viewUrl);
+            return;
+        }
+
+        if (window.ancoreTaskStatusPaginationController) {
+            window.ancoreTaskStatusPaginationController.abort();
+        }
+
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        window.ancoreTaskStatusPaginationController = controller;
+        currentBlock.setAttribute('aria-busy', 'true');
+
+        try {
+            const requestOptions = {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html',
+                },
+                credentials: 'same-origin',
+            };
+
+            if (controller) {
+                requestOptions.signal = controller.signal;
+            }
+
+            const response = await fetch(url.href, requestOptions);
+            if (!response.ok) {
+                navigateWithinApp(url.href);
+                return;
+            }
+
+            const html = await response.text();
+            const nextDocument = new DOMParser().parseFromString(html, 'text/html');
+            const nextBlock = nextDocument.querySelector(selector);
+
+            if (!nextBlock) {
+                navigateWithinApp(url.href);
+                return;
+            }
+
+            const replacement = nextBlock.cloneNode(true);
+            preserveTaskStatusBlockState(currentBlock, replacement);
+            currentBlock.replaceWith(replacement);
+
+            const responseUrl = response.url || url.href;
+            window.history.pushState({ ancorePartialNavigation: true }, '', responseUrl);
+            window.AncoreIcons?.render(replacement);
+            document.dispatchEvent(new CustomEvent('ancore:content-loaded', {
+                detail: {
+                    url: responseUrl,
+                    partial: 'task-status-pagination',
+                    statusBlock: replacement.id || replacement.dataset.sectionStatus || '',
+                },
+            }));
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                navigateWithinApp(url.href);
+            }
+        } finally {
+            if (!controller || window.ancoreTaskStatusPaginationController === controller) {
+                window.ancoreTaskStatusPaginationController = null;
+            }
+            currentBlock.removeAttribute('aria-busy');
+        }
+    }
+
     function projectWindowUrl(extraParams = {}) {
         const url = new URL(projectSearchForm?.getAttribute('action') || window.location.pathname, window.location.origin);
         const formData = projectSearchForm ? new FormData(projectSearchForm) : null;
@@ -6020,7 +6129,7 @@ function initTasksPage() {
                 const url = button.dataset.taskStatusPageUrl || '';
                 if (!url) return;
                 closeTaskStatusPageSizeDropdowns();
-                navigateWithinApp(url);
+                navigateTaskStatusPage(url, pagination);
             }, pageListenerOptions);
         }
 
@@ -6031,7 +6140,7 @@ function initTasksPage() {
             const url = button.dataset.taskStatusPageUrl || '';
             if (!url) return;
             closeTaskStatusPageSizeDropdowns();
-            navigateWithinApp(url);
+            navigateTaskStatusPage(url, pagination);
         }, pageListenerOptions);
     });
 
