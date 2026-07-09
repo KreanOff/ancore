@@ -3,8 +3,10 @@ import binascii
 import uuid
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from django.core.files.base import ContentFile
+from core.upload_validation import validate_image_bytes, validate_image_upload
 from .models import (
     PUBLIC_USERNAME_RE,
     User,
@@ -14,13 +16,7 @@ from .models import (
 )
 
 
-PROFILE_PHOTO_CROP_TYPES = {
-    'image/jpeg': 'jpg',
-    'image/jpg': 'jpg',
-    'image/png': 'png',
-    'image/webp': 'webp',
-}
-PROFILE_PHOTO_MAX_SIZE = 5 * 1024 * 1024
+PROFILE_PHOTO_MAX_SIZE = getattr(settings, 'MAX_PROFILE_PHOTO_SIZE', 5 * 1024 * 1024)
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -165,18 +161,13 @@ class UserProfileForm(forms.ModelForm):
         if not separator or not header.startswith('data:') or not header.endswith(';base64'):
             raise forms.ValidationError('Nie udało się odczytać przyciętego zdjęcia.')
 
-        content_type = header[5:-7].lower()
-        extension = PROFILE_PHOTO_CROP_TYPES.get(content_type)
-        if extension is None:
-            raise forms.ValidationError('Wybierz plik obrazu.')
-
         try:
             content = base64.b64decode(encoded, validate=True)
         except (binascii.Error, ValueError):
             raise forms.ValidationError('Nie udało się odczytać przyciętego zdjęcia.')
 
-        if len(content) > PROFILE_PHOTO_MAX_SIZE:
-            raise forms.ValidationError('Zdjęcie może mieć maksymalnie 5 MB.')
+        content_type = header[5:-7].lower()
+        extension = validate_image_bytes(content, content_type, PROFILE_PHOTO_MAX_SIZE)
 
         return {
             'content': content,
@@ -189,17 +180,7 @@ class UserProfileForm(forms.ModelForm):
         if not profile_photo:
             return profile_photo
 
-        content_type = getattr(profile_photo, 'content_type', '')
-        if not content_type:
-            return profile_photo
-
-        if content_type and not content_type.startswith('image/'):
-            raise forms.ValidationError('Wybierz plik obrazu.')
-
-        if profile_photo.size > PROFILE_PHOTO_MAX_SIZE:
-            raise forms.ValidationError('Zdjęcie może mieć maksymalnie 5 MB.')
-
-        return profile_photo
+        return validate_image_upload(profile_photo, PROFILE_PHOTO_MAX_SIZE)
 
     def clean_profile_photo_remove(self):
         return (self.cleaned_data.get('profile_photo_remove') or '').strip() == '1'

@@ -201,12 +201,12 @@ class FileUploadManager {
     }
 
     isImageFile(extension) {
-        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
         return imageExtensions.includes(extension);
     }
 
     isDocumentFile(extension) {
-        const docExtensions = ['.doc', '.docx', '.xls', '.xlsx', '.txt', '.rtf'];
+        const docExtensions = ['.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.rtf'];
         return docExtensions.includes(extension);
     }
 

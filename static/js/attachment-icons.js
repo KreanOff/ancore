@@ -25,9 +25,9 @@
 
     function extensionToTypeClass(ext) {
         const e = normalizeExt(ext);
-        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(e)) return 'image';
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(e)) return 'image';
         if (e === 'pdf') return 'pdf';
-        if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf'].includes(e)) return 'document';
+        if (['doc', 'docx', 'xls', 'xlsx', 'txt', 'csv', 'rtf'].includes(e)) return 'document';
         if (['zip', 'rar', '7z', 'tar', 'gz'].includes(e)) return 'archive';
         return 'default';
     }

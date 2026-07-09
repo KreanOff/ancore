@@ -1,11 +1,12 @@
 import json
+import logging
 import unicodedata
 from collections import defaultdict
 from datetime import timedelta
 from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
@@ -20,9 +21,12 @@ from django.contrib import messages
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
+from core.upload_validation import attachment_download_response, validate_attachment_upload
 from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag, TaskTagNote, parse_hierarchy_code_number
 from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
 
+
+logger = logging.getLogger(__name__)
 
 PROJECT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
 PROJECT_DEFAULT_PAGE_SIZE = 50
@@ -91,6 +95,16 @@ def _filter_workplace(queryset, workplace, field_name='workplace'):
     if workplace is None:
         return queryset
     return queryset.filter(**{field_name: workplace})
+
+
+def _attachment_validation_errors(files):
+    errors = []
+    for uploaded_file in files:
+        try:
+            validate_attachment_upload(uploaded_file)
+        except ValidationError as error:
+            errors.extend(error.messages)
+    return errors
 
 
 def _mark_task_row_access(tasks, user):
@@ -3443,6 +3457,20 @@ def delete_attachment(request, attachment_id):
     except TaskAttachment.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Załącznik nie znaleziony'}, status=404)
 
+
+@login_required
+def download_attachment(request, attachment_id):
+    attachment = get_object_or_404(
+        _filter_workplace(
+            TaskAttachment.objects.select_related('task'),
+            _active_workplace(request),
+            field_name='task__workplace',
+        ).filter(task__user=request.user),
+        id=attachment_id,
+    )
+    return attachment_download_response(attachment)
+
+
 @login_required
 @require_POST
 def delete_tasks(request):
@@ -3465,8 +3493,9 @@ def delete_tasks(request):
         })
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    except Exception:
+        logger.exception('Failed to delete tasks')
+        return JsonResponse({'status': 'error', 'message': 'Nie udało się usunąć zadań.'}, status=500)
 
 @login_required
 @require_POST
@@ -3519,8 +3548,9 @@ def bulk_update_status(request):
         })
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    except Exception:
+        logger.exception('Failed to bulk update task status')
+        return JsonResponse({'status': 'error', 'message': 'Nie udało się zaktualizować zadań.'}, status=500)
 
 def _task_detail_response(request, task_id=None, task_pk=None):
     workplace = _active_workplace(request)
@@ -3639,9 +3669,10 @@ def _task_detail_response(request, task_id=None, task_pk=None):
             if not can_edit_task:
                 raise PermissionDenied
             files = request.FILES.getlist('attachments') if can_add_attachments else []
+            file_errors = _attachment_validation_errors(files)
             before = _task_activity_snapshot(task)
             form = TaskForm(request.POST, request.FILES, instance=task, user=task.user, workplace=workplace)
-            if form.is_valid():
+            if form.is_valid() and not file_errors:
                 form.save()
                 recorded_activities = []
 
@@ -3713,12 +3744,14 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                 return _redirect_to_task_detail(task, request.user)
             else:
                 if is_ajax:
-                    error_messages = _form_error_messages(form)
+                    error_messages = [*file_errors, *_form_error_messages(form)]
                     return JsonResponse({
                         'status': 'error',
                         'message': error_messages[0] if error_messages else 'Nie udało się zapisać zmian.',
                         'errors': error_messages,
                     }, status=400)
+                for error in file_errors:
+                    messages.error(request, error)
                 for field, errors in form.errors.items():
                     for error in errors:
                         messages.error(request, f"{field}: {error}")

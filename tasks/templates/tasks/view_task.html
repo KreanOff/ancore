@@ -109,7 +109,7 @@
                     </div>
 
                     <input type="file" name="attachments" id="file-input" multiple hidden
-                           accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.rtf,.zip,.rar,.7z,.tar,.gz">
                     {% endif %}
 
                     {% if task.attachments.exists %}
@@ -117,7 +117,7 @@
                         <div class="tasks-attachments-grid">
                             {% for attachment in task.attachments.all %}
                             <div class="tasks-attachment-card" id="attachment-{{ attachment.id }}">
-                                <a href="{{ attachment.file.url }}" target="_blank" rel="noopener" class="tasks-attachment-info" title="{{ attachment.filename }}">
+                                <a href="{% url 'tasks:download_attachment' attachment.id %}" class="tasks-attachment-info" title="{{ attachment.filename }}">
                                     {% include 'core/includes/attachment_icon.html' with type_class=attachment.get_type_class size='lg' %}
                                     <span class="tasks-attachment-details">
                                         <span class="tasks-attachment-name">{{ attachment.filename }}</span>

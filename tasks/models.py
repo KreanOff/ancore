@@ -675,7 +675,7 @@ class TaskAttachment(models.Model):
 
     def is_image(self):
         """Check if the file is an image"""
-        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
         return self.get_file_extension() in image_extensions
 
     def is_pdf(self):

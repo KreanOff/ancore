@@ -1,14 +1,21 @@
+import logging
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Case, Count, IntegerField, Max, Prefetch, Q, Value, When
 from django.http import JsonResponse
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
-import json
+from core.upload_validation import attachment_download_response, validate_attachment_upload
 from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag
 from ..forms import QuickKanbanForm, SubKanbanModalForm, KanbanBoardColumnForm, KanbanForm, KanbanModalForm, KanbanProjectForm, KanbanProjectRenameForm, KanbanSectionForm, KanbanSectionRenameForm, KanbanTagForm
+
+
+logger = logging.getLogger(__name__)
 
 
 def _active_workplace(request):
@@ -19,6 +26,16 @@ def _filter_workplace(queryset, workplace, field_name='workplace'):
     if workplace is None:
         return queryset
     return queryset.filter(**{field_name: workplace})
+
+
+def _attachment_validation_errors(files):
+    errors = []
+    for uploaded_file in files:
+        try:
+            validate_attachment_upload(uploaded_file)
+        except ValidationError as error:
+            errors.extend(error.messages)
+    return errors
 
 
 def _status_groups_for_tasks(tasks):
@@ -834,6 +851,20 @@ def delete_attachment(request, attachment_id):
     except KanbanAttachment.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Załącznik nie znaleziony'}, status=404)
 
+
+@login_required
+def download_attachment(request, attachment_id):
+    attachment = get_object_or_404(
+        _filter_workplace(
+            KanbanAttachment.objects.select_related('task'),
+            _active_workplace(request),
+            field_name='task__workplace',
+        ).filter(task__user=request.user),
+        id=attachment_id,
+    )
+    return attachment_download_response(attachment)
+
+
 @login_required
 @require_POST
 def delete_tasks(request):
@@ -856,8 +887,9 @@ def delete_tasks(request):
         })
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    except Exception:
+        logger.exception('Failed to delete kanban cards')
+        return JsonResponse({'status': 'error', 'message': 'Nie udało się usunąć kart.'}, status=500)
 
 @login_required
 @require_POST
@@ -887,8 +919,9 @@ def bulk_update_status(request):
         })
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    except Exception:
+        logger.exception('Failed to bulk update kanban status')
+        return JsonResponse({'status': 'error', 'message': 'Nie udało się zaktualizować kart.'}, status=500)
 
 def _task_detail_response(request, task_id):
     workplace = _active_workplace(request)
@@ -974,9 +1007,10 @@ def _task_detail_response(request, task_id):
             return redirect(detail_route, task_id=task.task_id)
         else:
             files = request.FILES.getlist('attachments') if can_add_attachments else []
+            file_errors = _attachment_validation_errors(files)
             before = _task_activity_snapshot(task)
             form = KanbanForm(request.POST, request.FILES, instance=task, user=request.user, workplace=workplace)
-            if form.is_valid():
+            if form.is_valid() and not file_errors:
                 form.save()
 
                 # Handle staged attachment deletions
@@ -1024,6 +1058,8 @@ def _task_detail_response(request, task_id):
                 detail_route = 'kanban:view-subtask' if task.parent_id else 'kanban:view-task'
                 return redirect(detail_route, task_id=task.task_id)
             else:
+                for error in file_errors:
+                    messages.error(request, error)
                 for field, errors in form.errors.items():
                     for error in errors:
                         messages.error(request, f"{field}: {error}")

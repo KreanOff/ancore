@@ -1,5 +1,6 @@
 import json
 import re
+import tempfile
 from datetime import date, datetime, timedelta, timezone as datetime_timezone
 from unittest.mock import patch
 
@@ -9,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.db.models import Case, Count, IntegerField, Value, When
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from django.urls import reverse
@@ -2188,6 +2189,59 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, reverse('tasks:view-subtask', args=[subtask.task_id]))
         self.assertFalse(TaskAttachment.objects.filter(task=subtask).exists())
+
+    def test_task_detail_rejects_spoofed_attachment_content(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(reverse('tasks:view-task', args=[task.task_id]), {
+                'title': 'Zadanie',
+                'parent': '',
+                'section': section.id,
+                'description': '',
+                'priority': 'medium',
+                'status': 'new',
+                'time_spent_hours': '',
+                'time_spent_minutes': '',
+                'attachments': SimpleUploadedFile(
+                    'payload.png',
+                    b'<svg><script>alert(1)</script></svg>',
+                    content_type='image/png',
+                ),
+            })
+
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'Załącznik ma nieprawidłową zawartość.')
+            self.assertFalse(TaskAttachment.objects.filter(task=task).exists())
+
+    def test_task_attachment_download_requires_owner(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie')
+        other_user = get_user_model().objects.create_user(
+            username='other-user',
+            email='other@example.com',
+            first_name='Other',
+            last_name='User',
+            password='test-pass-123',
+        )
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            attachment = TaskAttachment.objects.create(
+                task=task,
+                file=SimpleUploadedFile('notatka.txt', b'tresc', content_type='text/plain'),
+            )
+
+            response = self.client.get(reverse('tasks:download_attachment', args=[attachment.id]))
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('attachment;', response['Content-Disposition'])
+            self.assertEqual(response['X-Content-Type-Options'], 'nosniff')
+
+            self.client.force_login(other_user)
+            response = self.client.get(reverse('tasks:download_attachment', args=[attachment.id]))
+            self.assertEqual(response.status_code, 404)
 
     def test_task_activity_comment_is_saved_from_detail_view(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')

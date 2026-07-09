@@ -3,20 +3,16 @@ import binascii
 import uuid
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 
 from accounts.models import normalize_public_username
+from core.upload_validation import validate_image_bytes, validate_image_upload
 from .models import Company, Contact
 
 
-COMPANY_PHOTO_CROP_TYPES = {
-    'image/jpeg': 'jpg',
-    'image/jpg': 'jpg',
-    'image/png': 'png',
-    'image/webp': 'webp',
-}
-COMPANY_PHOTO_MAX_SIZE = 5 * 1024 * 1024
+COMPANY_PHOTO_MAX_SIZE = getattr(settings, 'MAX_PROFILE_PHOTO_SIZE', 5 * 1024 * 1024)
 
 
 class ContactForm(forms.ModelForm):
@@ -280,18 +276,13 @@ class CompanyForm(forms.ModelForm):
         if not separator or not header.startswith('data:') or not header.endswith(';base64'):
             raise forms.ValidationError('Nie udało się odczytać przyciętego zdjęcia.')
 
-        content_type = header[5:-7].lower()
-        extension = COMPANY_PHOTO_CROP_TYPES.get(content_type)
-        if extension is None:
-            raise forms.ValidationError('Wybierz plik obrazu.')
-
         try:
             content = base64.b64decode(encoded, validate=True)
         except (binascii.Error, ValueError):
             raise forms.ValidationError('Nie udało się odczytać przyciętego zdjęcia.')
 
-        if len(content) > COMPANY_PHOTO_MAX_SIZE:
-            raise forms.ValidationError('Zdjęcie może mieć maksymalnie 5 MB.')
+        content_type = header[5:-7].lower()
+        extension = validate_image_bytes(content, content_type, COMPANY_PHOTO_MAX_SIZE)
 
         return {
             'content': content,
@@ -304,17 +295,7 @@ class CompanyForm(forms.ModelForm):
         if not company_photo:
             return company_photo
 
-        content_type = getattr(company_photo, 'content_type', '')
-        if not content_type:
-            return company_photo
-
-        if content_type and not content_type.startswith('image/'):
-            raise forms.ValidationError('Wybierz plik obrazu.')
-
-        if company_photo.size > COMPANY_PHOTO_MAX_SIZE:
-            raise forms.ValidationError('Zdjęcie może mieć maksymalnie 5 MB.')
-
-        return company_photo
+        return validate_image_upload(company_photo, COMPANY_PHOTO_MAX_SIZE)
 
     def clean_company_photo_remove(self):
         return (self.cleaned_data.get('company_photo_remove') or '').strip() == '1'
