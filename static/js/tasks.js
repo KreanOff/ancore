@@ -40,7 +40,11 @@ function initTasksPage() {
     const deleteBtn = document.getElementById('delete-selected-btn');
     const editSelectedTaskMenuBtn = document.getElementById('edit-selected-task-menu-btn');
     const editSelectedSectionMenuBtn = document.getElementById('edit-selected-section-menu-btn');
+    const infoSelectedSectionMenuBtn = document.getElementById('info-selected-section-menu-btn');
+    const notesSelectedSectionMenuBtn = document.getElementById('notes-selected-section-menu-btn');
     const editSelectedProjectMenuBtn = document.getElementById('edit-selected-project-menu-btn');
+    const infoSelectedProjectMenuBtn = document.getElementById('info-selected-project-menu-btn');
+    const notesSelectedProjectMenuBtn = document.getElementById('notes-selected-project-menu-btn');
     const editSelectedProjectBarBtn = document.getElementById('edit-selected-project-bar-btn');
     const editSelectedTagMenuBtn = document.getElementById('edit-selected-tag-menu-btn');
     const deleteSelectedTaskMenuBtn = document.getElementById('delete-selected-task-menu-btn');
@@ -4668,6 +4672,16 @@ function initTasksPage() {
         };
         setMenuButtonState(editSelectedSectionMenuBtn, selectedSectionCheckboxes.length === 1 && checkboxCanManage(selectedSectionCheckbox), sectionDataset);
         setMenuButtonState(
+            infoSelectedSectionMenuBtn,
+            selectedSectionCheckboxes.length === 1,
+            sectionDataset
+        );
+        setMenuButtonState(
+            notesSelectedSectionMenuBtn,
+            selectedSectionCheckboxes.length === 1,
+            sectionDataset
+        );
+        setMenuButtonState(
             deleteSelectedSectionMenuBtn,
             allCheckboxesCanManage(selectedSectionCheckboxes),
             sectionDataset
@@ -4692,6 +4706,16 @@ function initTasksPage() {
         setMenuButtonState(
             editSelectedProjectBarBtn,
             selectedProjectCheckboxes.length === 1 && checkboxCanManage(selectedProjectCheckbox),
+            projectDataset
+        );
+        setMenuButtonState(
+            infoSelectedProjectMenuBtn,
+            selectedProjectCheckboxes.length === 1,
+            projectDataset
+        );
+        setMenuButtonState(
+            notesSelectedProjectMenuBtn,
+            selectedProjectCheckboxes.length === 1,
             projectDataset
         );
         setMenuButtonState(
@@ -4975,6 +4999,26 @@ function initTasksPage() {
         openSectionRenameFromDataset(selectedSectionCheckbox.dataset);
     }
 
+    function openSelectedSectionInfo() {
+        const selectedSectionCheckbox = getSelectedSectionCheckbox();
+        if (!selectedSectionCheckbox) return;
+
+        const row = checkboxRow(selectedSectionCheckbox);
+        const infoButton = row?.querySelector('[data-open-section-info]');
+        if (!infoButton) return;
+
+        openProjectInfoPanel(infoButton);
+    }
+
+    function openSelectedSectionNotes() {
+        const selectedSectionCheckbox = getSelectedSectionCheckbox();
+        if (!selectedSectionCheckbox) return;
+
+        const row = checkboxRow(selectedSectionCheckbox);
+        closeSectionActionMenu();
+        openSectionNotesModal(row?.querySelector('[data-open-section-notes]') || selectedSectionCheckbox);
+    }
+
     function editSelectedProject() {
         const selectedProjectCheckbox = getSelectedProjectCheckbox();
         if (!selectedProjectCheckbox || !projectRenameModal) return;
@@ -4985,6 +5029,21 @@ function initTasksPage() {
         closeSectionActionMenu();
         openModal(projectRenameModal, projectRenameNameInput, updateProjectRenameSubmitState);
         setTimeout(() => projectRenameNameInput?.select(), 60);
+    }
+
+    function openSelectedProjectInfo() {
+        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+        if (!selectedProjectCheckbox) return;
+
+        openProjectInfoPanel(selectedProjectCheckbox);
+    }
+
+    function openSelectedProjectNotes() {
+        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+        if (!selectedProjectCheckbox) return;
+
+        closeSectionActionMenu();
+        openProjectNotesModal(selectedProjectCheckbox);
     }
 
     function openTagEditFromDataset(tagDataset) {
@@ -5210,6 +5269,22 @@ function initTasksPage() {
         });
     }
 
+    if (infoSelectedSectionMenuBtn) {
+        infoSelectedSectionMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            openSelectedSectionInfo();
+        });
+    }
+
+    if (notesSelectedSectionMenuBtn) {
+        notesSelectedSectionMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            openSelectedSectionNotes();
+        });
+    }
+
     openSectionRenameButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
@@ -5230,6 +5305,22 @@ function initTasksPage() {
             e.preventDefault();
             if (this.disabled) return;
             editSelectedProject();
+        });
+    }
+
+    if (infoSelectedProjectMenuBtn) {
+        infoSelectedProjectMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            openSelectedProjectInfo();
+        });
+    }
+
+    if (notesSelectedProjectMenuBtn) {
+        notesSelectedProjectMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            openSelectedProjectNotes();
         });
     }
 

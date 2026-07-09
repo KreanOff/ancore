@@ -330,8 +330,12 @@ class TaskProjectBaseForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if 'company' in self.fields:
             _replace_optional_model_choice(self, 'company', _company_queryset(user, workplace), 'Brak firmy')
+            self.fields['company'].widget.attrs['data-ancore-custom-select-search'] = 'true'
+            self.fields['company'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj firmy'
         if 'responsible_user' in self.fields:
             _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user), 'Brak osoby')
+            self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search'] = 'true'
+            self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         for field_name in ('status', 'stage', 'health', 'currency'):
             if field_name in self.fields:
                 self.fields[field_name].required = False
@@ -541,6 +545,8 @@ class TaskSectionForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         _replace_optional_model_choice(self, 'owner', _crm_user_queryset(user), 'Brak osoby')
+        self.fields['owner'].widget.attrs['data-ancore-custom-select-search'] = 'true'
+        self.fields['owner'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         self.fields['kind'].required = False
         self.fields['status'].required = False
 
@@ -603,6 +609,8 @@ class TaskSectionRenameForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         _replace_optional_model_choice(self, 'owner', _crm_user_queryset(user), 'Brak osoby')
+        self.fields['owner'].widget.attrs['data-ancore-custom-select-search'] = 'true'
+        self.fields['owner'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         self.fields['kind'].required = False
         self.fields['status'].required = False
 
@@ -753,6 +761,8 @@ class TaskTagForm(forms.ModelForm):
             'related_tags': forms.SelectMultiple(attrs={
                 'class': 'tasks-inline-select',
                 'size': 4,
+                'data-ancore-custom-select-search': 'true',
+                'data-ancore-custom-select-search-placeholder': 'Szukaj tagów',
             }),
         }
 

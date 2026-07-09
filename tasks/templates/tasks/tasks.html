@@ -100,6 +100,14 @@
                                 <i data-lucide="pencil" aria-hidden="true"></i>
                                 Edytuj projekt
                             </button>
+                            <button type="button" class="tasks-project-menu-button" role="menuitem" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-project-info data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-progress-label="{{ project.progress_percent }}%" data-project-tasks-label="{{ project.tasks_count_label }}" data-project-priority-label="{{ project.get_priority_display }}" data-project-status-label="{{ project.get_status_display }}" data-project-stage-label="{{ project.get_stage_display }}" data-project-health-label="{{ project.get_health_display }}" data-project-company-label="{% if project.company %}{{ project.company.name }}{% else %}Brak firmy{% endif %}" data-project-responsible-label="{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}" data-project-start-label="{% if project.start_at %}{{ project.start_at|date:'d.m.Y' }}{% else %}Brak startu{% endif %}" data-project-due-label="{% if project.due_at %}{{ project.due_at|date:'d.m.Y' }}{% else %}Brak terminu{% endif %}" data-project-budget-label="{% if project.budget_amount %}{{ project.budget_amount }} {{ project.currency }}{% else %}Brak budżetu{% endif %}" data-project-source-label="{% if project.source %}{{ project.source }}{% else %}Brak źródła{% endif %}" data-project-created-label="{{ project.created_at|date:'d.m.Y' }}" data-project-last-activity-label="{% if project.last_activity_at %}{{ project.last_activity_at|date:'d.m.Y H:i' }}{% else %}Brak aktywności{% endif %}">
+                                <i data-lucide="info" aria-hidden="true"></i>
+                                Informacje o projekcie
+                            </button>
+                            <button type="button" class="tasks-project-menu-button" role="menuitem" aria-haspopup="dialog" aria-controls="project-notes-modal" data-open-project-notes data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}">
+                                <i data-lucide="file-text" aria-hidden="true"></i>
+                                Notatki projektu
+                            </button>
                             <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-section-create data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}">
                                 <i data-lucide="plus" aria-hidden="true"></i>
                                 Dodaj grupę
@@ -725,6 +733,14 @@
                             <i data-lucide="pencil" aria-hidden="true"></i>
                             Edytuj grupę
                         </button>
+                        <button type="button" class="tasks-project-menu-button" role="menuitem" id="info-selected-section-menu-btn" aria-haspopup="dialog" aria-controls="project-info-modal" disabled>
+                            <i data-lucide="info" aria-hidden="true"></i>
+                            Informacje o grupie
+                        </button>
+                        <button type="button" class="tasks-project-menu-button" role="menuitem" id="notes-selected-section-menu-btn" aria-haspopup="dialog" aria-controls="section-notes-modal" disabled>
+                            <i data-lucide="file-text" aria-hidden="true"></i>
+                            Notatki grupy
+                        </button>
                         <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-section-menu-btn" disabled>
                             {% include 'core/includes/trash_icon.html' %}
                             Usuń grupę
@@ -734,6 +750,14 @@
                         <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-project-menu-btn" disabled>
                             <i data-lucide="pencil" aria-hidden="true"></i>
                             Edytuj projekt
+                        </button>
+                        <button type="button" class="tasks-project-menu-button" role="menuitem" id="info-selected-project-menu-btn" aria-haspopup="dialog" aria-controls="project-info-modal" disabled>
+                            <i data-lucide="info" aria-hidden="true"></i>
+                            Informacje o projekcie
+                        </button>
+                        <button type="button" class="tasks-project-menu-button" role="menuitem" id="notes-selected-project-menu-btn" aria-haspopup="dialog" aria-controls="project-notes-modal" disabled>
+                            <i data-lucide="file-text" aria-hidden="true"></i>
+                            Notatki projektu
                         </button>
                         <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-project-menu-btn" disabled>
                             {% include 'core/includes/trash_icon.html' %}
@@ -1888,126 +1912,7 @@
     </div>
 </div>
 
-<div class="tasks-modal tasks-project-modal tasks-project-info-modal" id="project-info-modal" role="dialog" aria-modal="true" aria-labelledby="project-info-modal-title" aria-hidden="true">
-    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-info-modal__dialog tasks-issue-modal__dialog">
-        <div class="tasks-modal__form tasks-project-info-modal__form tasks-issue-modal__form">
-            <header class="tasks-modal__header tasks-project-info-modal__header tasks-issue-modal__header">
-                <div class="tasks-issue-modal__crumbs">
-                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
-                        <i data-lucide="arrow-left" aria-hidden="true"></i>
-                    </button>
-                    <span class="tasks-issue-divider" aria-hidden="true"></span>
-                    <strong class="tasks-project-edit-modal__title-chip tasks-project-info-modal__title-chip" id="project-info-modal-title" data-project-info-title>
-                        <span>Informacje o projekcie</span>
-                    </strong>
-                </div>
-            </header>
-
-            <div class="tasks-modal__body tasks-project-info-modal__body tasks-issue-modal__body" tabindex="-1" data-project-info-body>
-                <section class="tasks-project-info-summary" aria-labelledby="project-info-name">
-                    <h3 id="project-info-name" data-project-info-name>Projekt</h3>
-                    <p data-project-info-description>Brak opisu</p>
-                </section>
-
-                <dl class="tasks-project-info-list">
-                    <div>
-                        <dt>Kod</dt>
-                        <dd class="tasks-project-info-code" data-project-info-code>---</dd>
-                    </div>
-                    <div>
-                        <dt>Postęp</dt>
-                        <dd class="tasks-project-info-progress" data-project-info-progress>
-                            <span class="tasks-project-info-progress-track" aria-hidden="true">
-                                <span class="tasks-project-info-progress-fill" style="--tasks-project-info-progress: 0%;" data-project-info-progress-fill></span>
-                            </span>
-                            <span class="tasks-project-info-progress-value" data-project-info-progress-value>0%</span>
-                        </dd>
-                    </div>
-                    <div>
-                        <dt>Zadania</dt>
-                        <dd data-project-info-tasks>0/0</dd>
-                    </div>
-                    <div>
-                        <dt>Typ tagu</dt>
-                        <dd data-project-info-tag-category>Brak typu</dd>
-                    </div>
-                    <div>
-                        <dt>Kolor / ikona</dt>
-                        <dd data-project-info-tag-visual>Brak danych</dd>
-                    </div>
-                    <div>
-                        <dt>Zakres</dt>
-                        <dd data-project-info-tag-scope>Brak zakresu</dd>
-                    </div>
-                    <div>
-                        <dt>Właściciel / dział</dt>
-                        <dd data-project-info-tag-owner>Brak właściciela</dd>
-                    </div>
-                    <div>
-                        <dt>Opis użycia</dt>
-                        <dd data-project-info-tag-usage>Brak opisu użycia</dd>
-                    </div>
-                    <div>
-                        <dt>Reguły automatyczne</dt>
-                        <dd data-project-info-tag-automation>Brak reguł</dd>
-                    </div>
-                    <div>
-                        <dt>Powiązane tagi</dt>
-                        <dd data-project-info-tag-related>Brak powiązań</dd>
-                    </div>
-                    <div>
-                        <dt>Status</dt>
-                        <dd data-project-info-status>Brak danych</dd>
-                    </div>
-                    <div>
-                        <dt>Etap / typ</dt>
-                        <dd data-project-info-stage>Brak danych</dd>
-                    </div>
-                    <div>
-                        <dt>Kondycja</dt>
-                        <dd data-project-info-health>Brak danych</dd>
-                    </div>
-                    <div>
-                        <dt>Firma</dt>
-                        <dd data-project-info-company>Brak firmy</dd>
-                    </div>
-                    <div>
-                        <dt>Odpowiedzialny</dt>
-                        <dd data-project-info-responsible>Brak osoby</dd>
-                    </div>
-                    <div>
-                        <dt>Priorytet</dt>
-                        <dd data-project-info-priority>Brak</dd>
-                    </div>
-                    <div>
-                        <dt>Start</dt>
-                        <dd data-project-info-start>Brak startu</dd>
-                    </div>
-                    <div>
-                        <dt>Termin</dt>
-                        <dd data-project-info-due>Brak terminu</dd>
-                    </div>
-                    <div>
-                        <dt>Budżet / limit</dt>
-                        <dd data-project-info-budget>Brak danych</dd>
-                    </div>
-                    <div>
-                        <dt>Źródło</dt>
-                        <dd data-project-info-source>Brak źródła</dd>
-                    </div>
-                    <div>
-                        <dt>Utworzono</dt>
-                        <dd data-project-info-created>Brak danych</dd>
-                    </div>
-                    <div>
-                        <dt>Ostatnia aktywność</dt>
-                        <dd data-project-info-last-activity>Brak aktywności</dd>
-                    </div>
-                </dl>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'tasks/includes/project_info_modal.html' %}
 
 <div class="tasks-modal tasks-project-modal tasks-project-create-modal {% if section_create_modal_open %}is-open{% endif %}" id="section-create-modal" role="dialog" aria-modal="true" aria-labelledby="section-create-modal-title" aria-hidden="{% if section_create_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-create-modal__dialog tasks-issue-modal__dialog">
@@ -2052,7 +1957,7 @@
                         {% if section_create_uses_project_select %}
                         <label class="tasks-section-create-field--project">
                             <span>Projekt</span>
-                            <select id="section-create-project-select" class="tasks-inline-select" name="project_id" data-section-create-project-select required>
+                            <select id="section-create-project-select" class="tasks-inline-select" name="project_id" data-section-create-project-select data-ancore-custom-select-search="true" data-ancore-custom-select-search-placeholder="Szukaj projektu" required>
                                 <option value="">Wybierz projekt</option>
                                 {% for project in project_options %}
                                 {% if project.can_manage %}

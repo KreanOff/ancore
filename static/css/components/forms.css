@@ -161,6 +161,52 @@ select.form-select {
     font-weight: 700;
 }
 
+.ancore-custom-select__search {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.25rem;
+    padding: 0.4rem 0.55rem;
+    border-bottom: 1px solid #edf0f4;
+    background: #ffffff;
+    color: #454b55;
+}
+
+.ancore-custom-select__search svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ancore-custom-select__search-input {
+    width: 100%;
+    height: 30px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #222832;
+    font: inherit;
+    font-size: var(--dropdown-menu-font-size);
+    outline: none;
+}
+
+.ancore-custom-select__search-input:focus {
+    outline: none;
+}
+
+.ancore-custom-select__search-input::placeholder {
+    color: #8a93a3;
+}
+
 .ancore-custom-select__option {
     width: 100%;
     min-height: var(--dropdown-menu-item-height);
@@ -211,6 +257,13 @@ select.form-select {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.ancore-custom-select__empty {
+    display: block;
+    padding: 0.55rem;
+    color: var(--text-muted);
+    font-size: var(--dropdown-menu-font-size);
 }
 
 .tasks-issue-fields .ancore-custom-select,
