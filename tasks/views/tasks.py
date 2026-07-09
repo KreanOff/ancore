@@ -148,17 +148,18 @@ def _request_query_params(request):
     return {key: value for key, value in request.GET.items()}
 
 
-def _paginated_status_group_for_tasks(tasks, status, label, user=None, request=None, base_url=None):
+def _paginated_status_group_for_tasks(tasks, status, label, user=None, request=None, base_url=None, total_tasks=None):
     page_param = _task_status_page_param(status)
     page_size_param = _task_status_page_size_param(status)
     page_size = _task_status_page_size(request, status)
     requested_page = _task_status_page_number(request, status)
     status_queryset = tasks.filter(status=status)
-    total_tasks = status_queryset.count()
+    if total_tasks is None:
+        total_tasks = status_queryset.count()
     total_pages = max(1, (total_tasks + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
     offset = (current_page - 1) * page_size
-    status_tasks = list(status_queryset[offset:offset + page_size])
+    status_tasks = list(status_queryset[offset:offset + page_size]) if total_tasks else []
     _mark_task_row_access(status_tasks, user)
 
     base_params = _request_query_params(request)
@@ -219,6 +220,16 @@ def _paginated_status_group_for_tasks(tasks, status, label, user=None, request=N
 
 def _status_groups_for_tasks(tasks, user=None, request=None, base_url=None, paginate=False):
     if paginate and request is not None and hasattr(tasks, 'filter'):
+        task_ids = tasks.order_by().values('pk')
+        status_counts = {
+            row['status']: row['total']
+            for row in (
+                tasks.model.objects
+                .filter(pk__in=task_ids)
+                .values('status')
+                .annotate(total=Count('pk'))
+            )
+        }
         return [
             _paginated_status_group_for_tasks(
                 tasks,
@@ -227,6 +238,7 @@ def _status_groups_for_tasks(tasks, user=None, request=None, base_url=None, pagi
                 user=user,
                 request=request,
                 base_url=base_url,
+                total_tasks=status_counts.get(status, 0),
             )
             for status, label in Task.STATUS_CHOICES
         ]
@@ -818,6 +830,16 @@ def _project_filter_options(user, workplace=None):
     }
 
 
+def _empty_project_filter_options():
+    return {
+        'statuses': _choice_options(TaskProject.STATUS_CHOICES),
+        'stages': _choice_options(TaskProject.STAGE_CHOICES),
+        'healths': _choice_options(TaskProject.HEALTH_CHOICES),
+        'companies': [],
+        'responsible_users': [],
+    }
+
+
 def _group_filter_queryset(
     user,
     query='',
@@ -968,6 +990,15 @@ def _group_filter_options(user, workplace=None):
         'kinds': _choice_options(TaskSection.KIND_CHOICES),
         'projects': projects,
         'owners': owners,
+    }
+
+
+def _empty_group_filter_options():
+    return {
+        'statuses': _choice_options(TaskSection.STATUS_CHOICES),
+        'kinds': _choice_options(TaskSection.KIND_CHOICES),
+        'projects': [],
+        'owners': [],
     }
 
 
@@ -1652,6 +1683,45 @@ def _navigation_projects_for_user(user, active_project=None, workplace=None):
     if active_project and all(project.id != active_project.id for project in projects):
         projects = [active_project, *projects]
     return projects
+
+
+def _navigation_project_ids_for_user(user, active_project=None, workplace=None):
+    project_ids = list(
+        _filter_workplace(TaskProject.objects.filter(user=user), workplace)
+        .order_by('name', 'id')
+        .values_list('id', flat=True)[:PROJECT_NAVIGATION_LIMIT]
+    )
+    if active_project and active_project.id not in project_ids:
+        project_ids.insert(0, active_project.id)
+    return project_ids
+
+
+def _task_modal_picker_options(projects):
+    options = []
+    for project in projects:
+        sections = [
+            {
+                'sectionId': str(section.id),
+                'sectionProjectId': str(project.id),
+                'sectionTitle': section.title,
+                'sectionIcon': section.icon or '',
+            }
+            for section in project.sections.all()
+            if getattr(section, 'can_edit', False)
+        ]
+        if not (getattr(project, 'can_edit', False) or getattr(project, 'has_editable_sections', False) or sections):
+            continue
+
+        icon_color = getattr(project, 'icon_color', None)
+        options.append({
+            'projectId': str(project.id),
+            'projectName': project.name,
+            'projectIcon': project.icon or '',
+            'projectColor': getattr(icon_color, 'foreground', ''),
+            'defaultSectionId': '',
+            'sections': sections,
+        })
+    return options
 
 
 def _decorate_project_directory_metrics(projects):
@@ -2520,14 +2590,16 @@ def _tasks_page(request, active_section=None):
     if active_section:
         active_project_id = active_section.project_id
     active_project_for_form = _task_creation_project_for_user(request.user, active_project_id, workplace=workplace)
-    project_options_for_form = _navigation_projects_for_user(request.user, active_project=active_project_for_form, workplace=workplace)
+    project_option_ids_for_form = _navigation_project_ids_for_user(
+        request.user,
+        active_project=active_project_for_form,
+        workplace=workplace,
+    )
     task_modal_sections = _editable_sections_queryset(request.user, workplace)
     if active_project_for_form:
         task_modal_sections = task_modal_sections.filter(project=active_project_for_form)
     else:
-        task_modal_sections = task_modal_sections.filter(
-            project_id__in=[project.id for project in project_options_for_form]
-        )
+        task_modal_sections = task_modal_sections.filter(project_id__in=project_option_ids_for_form)
     task_modal_form = TaskModalForm(
         user=request.user,
         workplace=workplace,
@@ -2934,7 +3006,7 @@ def _tasks_page(request, active_section=None):
         'sort_param': '',
         'sort_label': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['direction'],
-        'filters': _project_filter_options(request.user, workplace=workplace),
+        'filters': _empty_project_filter_options(),
         'page': 1,
         'total_pages': 1,
         'total_projects': 0,
@@ -2959,7 +3031,7 @@ def _tasks_page(request, active_section=None):
         'sort_param': '',
         'sort_label': GROUP_SORT_OPTION_MAP[GROUP_DEFAULT_SORT]['label'],
         'sort_direction': GROUP_SORT_OPTION_MAP[GROUP_DEFAULT_SORT]['direction'],
-        'filters': _group_filter_options(request.user, workplace=workplace),
+        'filters': _empty_group_filter_options(),
         'page': 1,
         'total_pages': 1,
         'total_groups': 0,
@@ -2993,7 +3065,7 @@ def _tasks_page(request, active_section=None):
         'query': '',
         'page': 1,
         'total_pages': 1,
-        'total_tags': _filter_workplace(TaskTag.objects.filter(user=request.user), workplace).count(),
+        'total_tags': 0,
         'page_size': PROJECT_DEFAULT_PAGE_SIZE,
         'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
         'page_items': [],
@@ -3033,14 +3105,25 @@ def _tasks_page(request, active_section=None):
     }
     projects = project_window['projects']
     navigation_projects = _navigation_projects_for_user(request.user, active_project=active_project, workplace=workplace)
-    project_options = _navigation_projects_for_user(request.user, active_project=active_project_for_form or active_project, workplace=workplace)
     if active_project:
-        _decorate_project_directory_metrics([active_project])
-        _decorate_directory_members([active_project], current_user=request.user)
+        navigation_active_project = next((project for project in navigation_projects if project.id == active_project.id), None)
+        if navigation_active_project:
+            active_project = navigation_active_project
+            if active_section:
+                active_section = next((section for section in active_project.sections.all() if section.id == active_section.id), active_section)
+    if active_project_for_form and (not active_project or active_project_for_form.id != active_project.id):
+        project_options = _navigation_projects_for_user(
+            request.user,
+            active_project=active_project_for_form,
+            workplace=workplace,
+        )
+    else:
+        project_options = navigation_projects
     _decorate_project_directory_metrics(navigation_projects)
     _decorate_directory_members(navigation_projects, current_user=request.user)
-    _decorate_project_directory_metrics(project_options)
-    _decorate_directory_members(project_options, current_user=request.user)
+    if project_options is not navigation_projects:
+        _decorate_project_directory_metrics(project_options)
+        _decorate_directory_members(project_options, current_user=request.user)
 
     orphan_tasks = []
     orphan_status_groups = []
@@ -3081,6 +3164,7 @@ def _tasks_page(request, active_section=None):
         'projects': projects,
         'navigation_projects': navigation_projects,
         'project_options': project_options,
+        'issue_picker_options': _task_modal_picker_options(project_options),
         'project_window': project_window,
         'project_query': project_window['query'],
         'project_priority_filter': project_window['priority'],
@@ -3401,10 +3485,32 @@ def bulk_update_status(request):
         user = request.user
         workplace = _active_workplace(request)
         tasks_to_update = _filter_workplace(Task.objects.filter(task_id__in=task_ids, user=user), workplace)
-        updated_count = 0
-        for task in tasks_to_update:
-            _set_task_status(task, status)
-            updated_count += 1
+        matched_tasks = list(tasks_to_update.values('id', 'status'))
+        updated_count = len(matched_tasks)
+        task_pks = [task['id'] for task in matched_tasks]
+        if task_pks:
+            update_queryset = Task.objects.filter(pk__in=task_pks)
+            if status == 'closed':
+                now = timezone.now()
+                newly_closed_pks = [task['id'] for task in matched_tasks if task['status'] != 'closed']
+                already_closed_pks = [task['id'] for task in matched_tasks if task['status'] == 'closed']
+                if newly_closed_pks:
+                    Task.objects.filter(pk__in=newly_closed_pks).update(
+                        status=status,
+                        is_completed=True,
+                        completion_date=now,
+                    )
+                if already_closed_pks:
+                    Task.objects.filter(pk__in=already_closed_pks).update(
+                        status=status,
+                        is_completed=True,
+                    )
+            else:
+                update_queryset.update(
+                    status=status,
+                    is_completed=False,
+                    completion_date=None,
+                )
         
         return JsonResponse({
             'status': 'success', 

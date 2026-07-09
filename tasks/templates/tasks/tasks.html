@@ -2082,6 +2082,7 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="create_task_modal">
             <input type="hidden" name="project_id" id="issue-project-id" value="{% if active_project %}{{ active_project.id }}{% endif %}">
+            {{ issue_picker_options|json_script:"issue-picker-options" }}
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
                     <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
@@ -2132,14 +2133,6 @@
                                             <i data-lucide="search" aria-hidden="true"></i>
                                             <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
                                         </div>
-                                        {% for project in project_options %}
-                                        {% if project.can_edit or project.has_editable_sections %}
-                                        <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="">
-                                            <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{% if project.icon %}<i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
-                                            {{ project.name }}
-                                        </button>
-                                        {% endif %}
-                                        {% endfor %}
                                     </div>
                                 </div>
                             </div>
@@ -2156,18 +2149,6 @@
                                             <i data-lucide="search" aria-hidden="true"></i>
                                             <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
                                         </div>
-                                        {% for project in project_options %}
-                                            {% if project.can_edit or project.has_editable_sections %}
-                                            {% for section in project.sections.all %}
-                                            {% if section.can_edit %}
-                                            <button type="button" role="menuitem" data-section-option data-section-id="{{ section.id }}" data-section-project-id="{{ project.id }}" data-section-title="{{ section.title|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
-                                                <span aria-hidden="true">{% if section.icon %}<i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
-                                                {{ section.title }}
-                                            </button>
-                                            {% endif %}
-                                            {% endfor %}
-                                            {% endif %}
-                                        {% endfor %}
                                     </div>
                                 </div>
                             </div>
@@ -2237,22 +2218,12 @@
                                 <span>Tagi</span>
                                 <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                     {{ task_modal_form.tags }}
-                                    <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown data-inline-select-multiple>
+                                    <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown data-inline-select-multiple data-inline-select-lazy data-inline-select-empty-label="Brak tagów">
                                         <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
                                             <i data-lucide="tag" aria-hidden="true"></i>
                                             <span data-inline-select-label>Tagi</span>
                                         </button>
-                                        <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi">
-                                            {% for tag in task_modal_form.tags.field.queryset %}
-                                            <button type="button" role="menuitemcheckbox" aria-checked="false" data-inline-select-value="{{ tag.id }}">
-                                                <span class="tasks-tag-chip"><span>{{ tag.name }}</span></span>
-                                            </button>
-                                            {% empty %}
-                                            <button type="button" role="menuitem" disabled>
-                                                <span>Brak tagów</span>
-                                            </button>
-                                            {% endfor %}
-                                        </div>
+                                        <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi"></div>
                                     </div>
                                     <div class="tasks-issue-selected-tags" data-inline-selected-tags aria-live="polite"></div>
                                 </div>

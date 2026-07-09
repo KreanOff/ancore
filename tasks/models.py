@@ -590,13 +590,16 @@ class Task(models.Model):
     @classmethod
     def _renumber_user_tasks(cls, user, workplace=None):
         """Renumber tasks sequentially for a specific user and workplace."""
-        tasks = cls.objects.filter(user=user).order_by('task_id')
+        tasks = cls.objects.filter(user=user).only('id', 'task_id').order_by('task_id', 'id')
         if workplace is not None:
             tasks = tasks.filter(workplace=workplace)
+        tasks_to_update = []
         for index, task in enumerate(tasks, 1):
             if task.task_id != index:
                 task.task_id = index
-                task.save(update_fields=['task_id'])
+                tasks_to_update.append(task)
+        if tasks_to_update:
+            cls.objects.bulk_update(tasks_to_update, ['task_id'], batch_size=500)
 
     def __str__(self):
         return self.title

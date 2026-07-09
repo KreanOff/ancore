@@ -252,7 +252,12 @@
 
         updateTasksUiBodyClass();
         scrollAfterNavigation(url);
-        window.AncoreIcons?.render(document);
+        [
+            document.querySelector('#secondary-menu .secondary-menu-panel'),
+            document.querySelector('.main-content .page-container'),
+            document.querySelector('#app-page-modals'),
+            document.querySelector('#app-notifications')
+        ].forEach(region => window.AncoreIcons?.render(region));
         document.dispatchEvent(new CustomEvent('ancore:content-loaded', { detail: { url: url.href } }));
     }
 

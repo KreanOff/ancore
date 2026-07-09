@@ -1059,10 +1059,13 @@ function initTasksPage() {
     const issueBillableInput = issueForm ? issueForm.querySelector('[name="is_billable"]') : null;
     const issueProjectPicker = issueForm ? issueForm.querySelector('[data-issue-project-picker]') : null;
     const issueSectionPicker = issueForm ? issueForm.querySelector('[data-issue-section-picker]') : null;
-    const issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
-    const issueSectionOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-section-option]')) : [];
+    let issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
+    let issueSectionOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-section-option]')) : [];
     const issuePickerSearchInputs = issueForm ? Array.from(issueForm.querySelectorAll('[data-picker-search]')) : [];
     const issuePickerSearchButtons = issueForm ? Array.from(issueForm.querySelectorAll('[data-picker-search-submit]')) : [];
+    const issuePickerOptionsData = parseIssuePickerOptions();
+    const issueSectionOptionsData = issuePickerOptionsData.flatMap(project => project.sections || []);
+    let issuePickerOptionsHydrated = false;
     const directoryShareActionInput = directoryShareForm ? directoryShareForm.querySelector('[name="action"]') : null;
     const directoryShareProjectInput = directoryShareForm ? directoryShareForm.querySelector('[name="project_id"]') : null;
     const directoryShareSectionInput = directoryShareForm ? directoryShareForm.querySelector('[name="section_id"]') : null;
@@ -2609,6 +2612,64 @@ function initTasksPage() {
         return dropdown?.closest('.tasks-issue-select-wrap')?.querySelector('select') || null;
     }
 
+    function createInlineSelectOptionButton(option, isMultiple) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', isMultiple ? 'menuitemcheckbox' : 'menuitem');
+        button.dataset.inlineSelectValue = option.value;
+        if (isMultiple) {
+            button.setAttribute('aria-checked', 'false');
+            const chip = document.createElement('span');
+            chip.className = 'tasks-tag-chip';
+            const label = document.createElement('span');
+            label.textContent = option.textContent.trim();
+            chip.appendChild(label);
+            button.appendChild(chip);
+        } else {
+            const label = document.createElement('span');
+            label.textContent = option.textContent.trim();
+            button.appendChild(label);
+        }
+        return button;
+    }
+
+    function ensureInlineSelectMenuOptions(dropdown) {
+        if (!dropdown || !dropdown.hasAttribute('data-inline-select-lazy')) return;
+        if (dropdown.dataset.inlineSelectHydrated === 'true') return;
+
+        const select = getInlineSelect(dropdown);
+        const menu = dropdown.querySelector('.tasks-filter-menu');
+        if (!select || !menu) return;
+
+        const isMultiple = dropdown.hasAttribute('data-inline-select-multiple');
+        const options = Array.from(select.options).filter(option => option.value !== '');
+        menu.replaceChildren();
+        if (!options.length) {
+            const emptyButton = document.createElement('button');
+            emptyButton.type = 'button';
+            emptyButton.disabled = true;
+            emptyButton.setAttribute('role', 'menuitem');
+            const label = document.createElement('span');
+            label.textContent = dropdown.dataset.inlineSelectEmptyLabel || 'Brak opcji';
+            emptyButton.appendChild(label);
+            menu.appendChild(emptyButton);
+        } else {
+            options.forEach(option => {
+                menu.appendChild(createInlineSelectOptionButton(option, isMultiple));
+            });
+        }
+        dropdown.dataset.inlineSelectHydrated = 'true';
+    }
+
+    function createSelectedTagChip(option) {
+        const chip = document.createElement('span');
+        chip.className = 'tasks-tag-chip';
+        const label = document.createElement('span');
+        label.textContent = option.textContent.trim();
+        chip.appendChild(label);
+        return chip;
+    }
+
     function syncInlineSelectDropdown(dropdown) {
         if (!dropdown) return;
         const select = getInlineSelect(dropdown);
@@ -2641,10 +2702,16 @@ function initTasksPage() {
 
         if (selectedTags && isMultiple) {
             selectedTags.replaceChildren();
-            dropdown.querySelectorAll('[data-inline-select-value].is-active').forEach(button => {
+            const activeButtons = dropdown.querySelectorAll('[data-inline-select-value].is-active');
+            activeButtons.forEach(button => {
                 const chip = button.querySelector('.tasks-tag-chip')?.cloneNode(true);
                 if (chip) selectedTags.appendChild(chip);
             });
+            if (!activeButtons.length && selectedValues.length) {
+                Array.from(select.selectedOptions).forEach(option => {
+                    selectedTags.appendChild(createSelectedTagChip(option));
+                });
+            }
         }
 
         if (statusIcon) {
@@ -2670,6 +2737,133 @@ function initTasksPage() {
         });
     }
 
+    function parseIssuePickerOptions() {
+        const dataScript = issueForm?.querySelector('#issue-picker-options');
+        if (!dataScript?.textContent) return [];
+        try {
+            const parsed = JSON.parse(dataScript.textContent);
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map(project => ({
+                projectId: String(project.projectId || ''),
+                projectName: project.projectName || '',
+                projectIcon: project.projectIcon || '',
+                projectColor: project.projectColor || '',
+                defaultSectionId: String(project.defaultSectionId || ''),
+                sections: Array.isArray(project.sections)
+                    ? project.sections.map(section => ({
+                        sectionId: String(section.sectionId || ''),
+                        sectionProjectId: String(section.sectionProjectId || project.projectId || ''),
+                        sectionTitle: section.sectionTitle || '',
+                        sectionIcon: section.sectionIcon || '',
+                    }))
+                    : [],
+            })).filter(project => project.projectId);
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function getIssueProjectRecords() {
+        if (issuePickerOptionsData.length) return issuePickerOptionsData;
+        return issueProjectOptions.map(option => option.dataset);
+    }
+
+    function getIssueSectionRecords() {
+        if (issueSectionOptionsData.length) return issueSectionOptionsData;
+        return issueSectionOptions.map(option => option.dataset);
+    }
+
+    function findIssueProjectRecord(projectId) {
+        const records = getIssueProjectRecords();
+        const selectedId = String(projectId || '');
+        return records.find(project => project.projectId === selectedId) || records[0] || null;
+    }
+
+    function findIssueSectionRecord(sectionId) {
+        const selectedId = String(sectionId || '');
+        if (!selectedId) return null;
+        return getIssueSectionRecords().find(section => section.sectionId === selectedId) || null;
+    }
+
+    function createIssueProjectOption(project) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'menuitem');
+        button.dataset.projectOption = '';
+        button.dataset.projectId = project.projectId;
+        button.dataset.projectName = project.projectName;
+        button.dataset.projectIcon = project.projectIcon;
+        button.dataset.projectColor = project.projectColor;
+        button.dataset.defaultSectionId = project.defaultSectionId || '';
+
+        const icon = document.createElement('span');
+        icon.setAttribute('aria-hidden', 'true');
+        if (project.projectColor) icon.style.setProperty('--project-icon-fg', project.projectColor);
+        if (project.projectIcon) icon.appendChild(createProjectIconElement(project.projectIcon));
+        button.append(icon, document.createTextNode(project.projectName));
+        return button;
+    }
+
+    function createIssueSectionOption(section) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'menuitem');
+        button.dataset.sectionOption = '';
+        button.dataset.sectionId = section.sectionId;
+        button.dataset.sectionProjectId = section.sectionProjectId;
+        button.dataset.sectionTitle = section.sectionTitle;
+        button.dataset.sectionIcon = section.sectionIcon;
+
+        const icon = document.createElement('span');
+        icon.setAttribute('aria-hidden', 'true');
+        if (section.sectionIcon) icon.appendChild(createProjectIconElement(section.sectionIcon));
+        button.append(icon, document.createTextNode(section.sectionTitle));
+        return button;
+    }
+
+    function appendEmptyIssuePickerOption(menu, labelText) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.disabled = true;
+        button.setAttribute('role', 'menuitem');
+        const label = document.createElement('span');
+        label.textContent = labelText;
+        button.appendChild(label);
+        menu.appendChild(button);
+    }
+
+    function hydrateIssuePickerOptions() {
+        if (issuePickerOptionsHydrated || !issuePickerOptionsData.length) return;
+        const projectMenu = issueProjectPicker?.querySelector('.tasks-chip-picker__menu');
+        const sectionMenu = issueSectionPicker?.querySelector('.tasks-chip-picker__menu');
+        if (!projectMenu || !sectionMenu) return;
+
+        projectMenu.querySelectorAll('[data-project-option]').forEach(option => option.remove());
+        sectionMenu.querySelectorAll('[data-section-option]').forEach(option => option.remove());
+
+        if (issuePickerOptionsData.length) {
+            issuePickerOptionsData.forEach(project => {
+                projectMenu.appendChild(createIssueProjectOption(project));
+            });
+        } else {
+            appendEmptyIssuePickerOption(projectMenu, 'Brak projektów');
+        }
+
+        if (issueSectionOptionsData.length) {
+            issueSectionOptionsData.forEach(section => {
+                sectionMenu.appendChild(createIssueSectionOption(section));
+            });
+        } else {
+            appendEmptyIssuePickerOption(sectionMenu, 'Brak grup');
+        }
+
+        issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
+        issueSectionOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-section-option]')) : [];
+        issuePickerOptionsHydrated = true;
+        renderLucideIcons(projectMenu);
+        renderLucideIcons(sectionMenu);
+    }
+
     function normalizePickerSearch(value) {
         return (value || '').trim().toLowerCase();
     }
@@ -2680,18 +2874,20 @@ function initTasksPage() {
         const selectedProjectId = issueProjectInput?.value || '';
 
         if (type === 'project') {
-            issueProjectOptions.forEach(option => {
-                const text = normalizePickerSearch(option.dataset.projectName || option.textContent);
-                option.hidden = query ? !text.includes(query) : false;
+            getIssueProjectRecords().forEach(project => {
+                const option = issueProjectOptions.find(item => item.dataset.projectId === project.projectId);
+                const text = normalizePickerSearch(project.projectName || option?.textContent);
+                if (option) option.hidden = query ? !text.includes(query) : false;
             });
             return;
         }
 
         if (type === 'section') {
-            issueSectionOptions.forEach(option => {
-                const belongsToProject = !selectedProjectId || option.dataset.sectionProjectId === selectedProjectId;
-                const text = normalizePickerSearch(option.dataset.sectionTitle || option.textContent);
-                option.hidden = !belongsToProject || (query ? !text.includes(query) : false);
+            getIssueSectionRecords().forEach(section => {
+                const option = issueSectionOptions.find(item => item.dataset.sectionId === section.sectionId);
+                const belongsToProject = !selectedProjectId || section.sectionProjectId === selectedProjectId;
+                const text = normalizePickerSearch(section.sectionTitle || option?.textContent);
+                if (option) option.hidden = !belongsToProject || (query ? !text.includes(query) : false);
             });
         }
     }
@@ -2880,15 +3076,15 @@ function initTasksPage() {
 
     function getSelectedSectionOption() {
         if (!issueSectionSelect?.value) return null;
-        return issueSectionOptions.find(option => option.dataset.sectionId === issueSectionSelect.value) || null;
+        return findIssueSectionRecord(issueSectionSelect.value);
     }
 
     function selectIssueSection(sectionId) {
-        const sectionOption = issueSectionOptions.find(option => option.dataset.sectionId === String(sectionId));
+        const sectionOption = findIssueSectionRecord(sectionId);
         if (!sectionOption || !issueSectionSelect) return false;
 
-        issueSectionSelect.value = sectionOption.dataset.sectionId || '';
-        setIssueChip(issueSectionPicker, sectionOption.dataset.sectionTitle || sectionCopy.emptyLabel, sectionOption.dataset.sectionIcon || '');
+        issueSectionSelect.value = sectionOption.sectionId || '';
+        setIssueChip(issueSectionPicker, sectionOption.sectionTitle || sectionCopy.emptyLabel, sectionOption.sectionIcon || '');
         return true;
     }
 
@@ -2897,12 +3093,13 @@ function initTasksPage() {
         const sectionSearch = issueSectionPicker?.querySelector('[data-picker-search]');
         const query = normalizePickerSearch(sectionSearch?.value);
 
-        issueSectionOptions.forEach(option => {
-            const text = normalizePickerSearch(option.dataset.sectionTitle || option.textContent);
-            const isVisible = (!projectId || option.dataset.sectionProjectId === String(projectId)) && (!query || text.includes(query));
-            option.hidden = !isVisible;
+        getIssueSectionRecords().forEach(section => {
+            const option = issueSectionOptions.find(item => item.dataset.sectionId === section.sectionId);
+            const text = normalizePickerSearch(section.sectionTitle || option?.textContent);
+            const isVisible = (!projectId || section.sectionProjectId === String(projectId)) && (!query || text.includes(query));
+            if (option) option.hidden = !isVisible;
             if (isVisible && !firstVisibleSectionId) {
-                firstVisibleSectionId = option.dataset.sectionId || '';
+                firstVisibleSectionId = section.sectionId || '';
             }
         });
 
@@ -2910,22 +3107,22 @@ function initTasksPage() {
     }
 
     function selectIssueProject(projectId, preferredSectionId = '') {
-        const projectOption = issueProjectOptions.find(option => option.dataset.projectId === String(projectId)) || issueProjectOptions[0];
+        const projectOption = findIssueProjectRecord(projectId);
         if (!projectOption) return;
 
-        const selectedProjectId = projectOption.dataset.projectId || '';
+        const selectedProjectId = projectOption.projectId || '';
         if (issueProjectInput) issueProjectInput.value = selectedProjectId;
         setIssueChip(
             issueProjectPicker,
-            projectOption.dataset.projectName || 'Wybierz przestrzeń',
-            projectOption.dataset.projectIcon || '',
-            projectOption.dataset.projectColor || ''
+            projectOption.projectName || 'Wybierz przestrzeń',
+            projectOption.projectIcon || '',
+            projectOption.projectColor || ''
         );
 
         const firstVisibleSectionId = filterIssueSections(selectedProjectId);
         const currentSectionOption = getSelectedSectionOption();
-        const currentSectionFits = currentSectionOption?.dataset.sectionProjectId === selectedProjectId;
-        const nextSectionId = preferredSectionId || (currentSectionFits ? currentSectionOption.dataset.sectionId : '') || projectOption.dataset.defaultSectionId || firstVisibleSectionId;
+        const currentSectionFits = currentSectionOption?.sectionProjectId === selectedProjectId;
+        const nextSectionId = preferredSectionId || (currentSectionFits ? currentSectionOption.sectionId : '') || projectOption.defaultSectionId || firstVisibleSectionId;
 
         if (!selectIssueSection(nextSectionId) && firstVisibleSectionId) {
             selectIssueSection(firstVisibleSectionId);
@@ -2933,19 +3130,20 @@ function initTasksPage() {
     }
 
     function syncIssuePickers() {
-        if (!issueForm || !issueProjectOptions.length) return;
+        const projectOptions = getIssueProjectRecords();
+        if (!issueForm || !projectOptions.length) return;
 
         const selectedSectionOption = getSelectedSectionOption();
-        const projectId = issueProjectInput?.value || selectedSectionOption?.dataset.sectionProjectId || issueProjectOptions[0]?.dataset.projectId || '';
-        selectIssueProject(projectId, selectedSectionOption?.dataset.sectionId || '');
+        const projectId = issueProjectInput?.value || selectedSectionOption?.sectionProjectId || projectOptions[0]?.projectId || '';
+        selectIssueProject(projectId, selectedSectionOption?.sectionId || '');
     }
 
     function selectIssueSectionContext(sectionId) {
         if (!sectionId) return false;
-        const sectionOption = issueSectionOptions.find(option => option.dataset.sectionId === String(sectionId));
+        const sectionOption = findIssueSectionRecord(sectionId);
         if (!sectionOption) return false;
 
-        selectIssueProject(sectionOption.dataset.sectionProjectId || '', sectionId);
+        selectIssueProject(sectionOption.sectionProjectId || '', sectionId);
         return true;
     }
 
@@ -3278,29 +3476,29 @@ function initTasksPage() {
             closePriorityFilterMenu();
             closeIssuePickers();
             closeInlineSelectDropdowns(dropdown);
+            if (isOpen) {
+                ensureInlineSelectMenuOptions(dropdown);
+                syncInlineSelectDropdown(dropdown);
+            }
             dropdown.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
         });
 
         dropdown.addEventListener('click', function(e) {
             e.stopPropagation();
-        });
+            const button = e.target.closest('[data-inline-select-value]');
+            if (!button || !dropdown.contains(button) || !select) return;
 
-        dropdown.querySelectorAll('[data-inline-select-value]').forEach(button => {
-            button.addEventListener('click', function() {
-                if (!select) return;
+            if (isMultiple) {
+                const option = Array.from(select.options).find(item => item.value === button.dataset.inlineSelectValue);
+                if (option) option.selected = !option.selected;
+            } else {
+                select.value = button.dataset.inlineSelectValue;
+                closeInlineSelectDropdowns();
+            }
 
-                if (isMultiple) {
-                    const option = Array.from(select.options).find(item => item.value === this.dataset.inlineSelectValue);
-                    if (option) option.selected = !option.selected;
-                } else {
-                    select.value = this.dataset.inlineSelectValue;
-                    closeInlineSelectDropdowns();
-                }
-
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-                syncInlineSelectDropdown(dropdown);
-            });
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            syncInlineSelectDropdown(dropdown);
         });
 
         select?.addEventListener('change', function() {
@@ -4091,6 +4289,7 @@ function initTasksPage() {
         issueProjectPicker.classList.toggle('is-open', isOpen);
         this.setAttribute('aria-expanded', String(isOpen));
         if (isOpen) {
+            hydrateIssuePickerOptions();
             resetPickerSearch(issueProjectPicker);
             setTimeout(() => issueProjectPicker.querySelector('[data-picker-search]')?.focus(), 30);
         }
@@ -4103,25 +4302,28 @@ function initTasksPage() {
         issueSectionPicker.classList.toggle('is-open', isOpen);
         this.setAttribute('aria-expanded', String(isOpen));
         if (isOpen) {
+            hydrateIssuePickerOptions();
             resetPickerSearch(issueSectionPicker);
             setTimeout(() => issueSectionPicker.querySelector('[data-picker-search]')?.focus(), 30);
         }
     });
 
-    issueProjectOptions.forEach(option => {
-        option.addEventListener('click', function(e) {
+    issueProjectPicker?.addEventListener('click', function(e) {
+        const option = e.target.closest('[data-project-option]');
+        if (option && issueProjectPicker.contains(option)) {
             e.stopPropagation();
-            selectIssueProject(this.dataset.projectId || '', this.dataset.defaultSectionId || '');
+            selectIssueProject(option.dataset.projectId || '', option.dataset.defaultSectionId || '');
             closeIssuePickers();
-        });
+        }
     });
 
-    issueSectionOptions.forEach(option => {
-        option.addEventListener('click', function(e) {
+    issueSectionPicker?.addEventListener('click', function(e) {
+        const option = e.target.closest('[data-section-option]');
+        if (option && issueSectionPicker.contains(option)) {
             e.stopPropagation();
-            selectIssueProject(this.dataset.sectionProjectId || '', this.dataset.sectionId || '');
+            selectIssueProject(option.dataset.sectionProjectId || '', option.dataset.sectionId || '');
             closeIssuePickers();
-        });
+        }
     });
 
     issuePickerSearchInputs.forEach(input => {
@@ -6876,7 +7078,9 @@ function initTasksPage() {
                 renderDirectoryColumnManager(manager, board);
             };
 
-            if (window.lucide) {
+            if (window.AncoreIcons?.render) {
+                window.AncoreIcons.render(list);
+            } else if (window.lucide?.createIcons) {
                 window.lucide.createIcons();
             }
         }

@@ -8,7 +8,8 @@ from django.contrib.messages import get_messages
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
-from django.test import TestCase
+from django.db.models import Case, Count, IntegerField, Value, When
+from django.test import RequestFactory, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from django.urls import reverse
@@ -737,6 +738,57 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertLessEqual(len(expanded_queries), len(baseline_queries) + 1)
+
+    def test_paginated_status_groups_batch_status_counts(self):
+        from tasks.views.tasks import _status_groups_for_tasks
+
+        project = TaskProject.objects.create(user=self.user, name='Projekt')
+        section = TaskSection.objects.create(project=project, title='Plan')
+        for index, status in enumerate(('new', 'new', 'in_progress', 'closed'), start=1):
+            Task.objects.create(
+                user=self.user,
+                section=section,
+                title=f'Zadanie {index}',
+                status=status,
+            )
+
+        request = RequestFactory().get(f"{reverse('tasks:tasks')}?view=all-tasks")
+        request.user = self.user
+        queryset = Task.objects.filter(user=self.user, parent__isnull=True).annotate(
+            is_closed_sort=Case(
+                When(status='closed', then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+            tags_total=Count('tags', distinct=True),
+            attachments_total=Count('attachments', distinct=True),
+        ).order_by('is_closed_sort', 'task_id')
+
+        with CaptureQueriesContext(connection) as queries:
+            groups = _status_groups_for_tasks(
+                queryset,
+                self.user,
+                request=request,
+                base_url=reverse('tasks:tasks'),
+                paginate=True,
+            )
+
+        sql_statements = [query['sql'] for query in queries]
+        per_status_count_queries = [
+            sql for sql in sql_statements
+            if sql.startswith('SELECT COUNT') and '"tasks_task"."status" =' in sql
+        ]
+        grouped_status_count_queries = [
+            sql for sql in sql_statements
+            if sql.startswith('SELECT "tasks_task"."status"') and 'COUNT' in sql
+        ]
+        counts_by_status = {group['status']: group['count'] for group in groups}
+
+        self.assertEqual(counts_by_status['new'], 2)
+        self.assertEqual(counts_by_status['in_progress'], 1)
+        self.assertEqual(counts_by_status['closed'], 1)
+        self.assertEqual(per_status_count_queries, [])
+        self.assertEqual(len(grouped_status_count_queries), 1)
 
     def test_projects_view_renders_only_server_side_window(self):
         for index in range(60):
@@ -2662,6 +2714,43 @@ class TaskProjectCreationTests(TestCase):
         self.assertTrue(second_task.is_completed)
         self.assertIsNotNone(first_task.completion_date)
         self.assertIsNotNone(second_task.completion_date)
+
+    def test_bulk_update_status_uses_batched_updates(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        tasks = [
+            Task.objects.create(user=self.user, section=section, title=f'Zadanie {index}')
+            for index in range(5)
+        ]
+        already_closed = Task.objects.create(
+            user=self.user,
+            section=section,
+            title='Zamknięte wcześniej',
+            status='closed',
+        )
+        original_completion_date = timezone.now() - timedelta(days=2)
+        Task.objects.filter(pk=already_closed.pk).update(completion_date=original_completion_date)
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.post(
+                reverse('tasks:bulk_update_status'),
+                data=json.dumps({
+                    'task_ids': [task.task_id for task in [*tasks, already_closed]],
+                    'status': 'closed',
+                }),
+                content_type='application/json',
+            )
+
+        already_closed.refresh_from_db()
+        task_status_update_queries = [
+            query['sql'] for query in queries
+            if query['sql'].startswith('UPDATE "tasks_task" SET "status"')
+        ]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['updated_count'], 6)
+        self.assertLessEqual(len(task_status_update_queries), 2)
+        self.assertEqual(already_closed.completion_date, original_completion_date)
 
     def test_bulk_update_status_rejects_invalid_status(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')

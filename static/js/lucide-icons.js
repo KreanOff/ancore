@@ -201,17 +201,51 @@
         return icon;
     }
 
-    function normalizeDataLucide(root) {
+    function dataLucideElements(root) {
         const scope = root && root.querySelectorAll ? root : document;
-        scope.querySelectorAll('[data-lucide]').forEach(icon => {
+        const icons = Array.from(scope.querySelectorAll('[data-lucide]'));
+        if (scope.matches && scope.matches('[data-lucide]')) {
+            icons.unshift(scope);
+        }
+        return icons;
+    }
+
+    function normalizeDataLucide(root) {
+        dataLucideElements(root).forEach(icon => {
             const fallback = icon.getAttribute('data-lucide-fallback') || 'circle';
             icon.setAttribute('data-lucide', safeIconName(icon.getAttribute('data-lucide'), fallback));
         });
     }
 
+    function renderScoped(root) {
+        if (!global.lucide || typeof global.lucide.createElement !== 'function' || !global.lucide.icons) {
+            return false;
+        }
+
+        dataLucideElements(root).forEach(icon => {
+            const iconName = safeIconName(icon.getAttribute('data-lucide'), icon.getAttribute('data-lucide-fallback') || 'circle');
+            const iconNode = global.lucide.icons[kebabToPascal(iconName)];
+            if (!iconNode) return;
+
+            const attrs = {};
+            Array.from(icon.attributes).forEach(attribute => {
+                if (attribute.name === 'data-lucide' || attribute.name === 'data-lucide-fallback') return;
+                attrs[attribute.name] = attribute.value;
+            });
+            attrs.class = [attrs.class, 'lucide', `lucide-${iconName}`].filter(Boolean).join(' ');
+
+            const svg = global.lucide.createElement(iconNode, attrs);
+            icon.replaceWith(svg);
+        });
+        return true;
+    }
+
     function render(root) {
         normalizeDataLucide(root);
         if (global.lucide && typeof global.lucide.createIcons === 'function') {
+            if (root && root !== document && renderScoped(root)) {
+                return;
+            }
             global.lucide.createIcons();
         }
     }
