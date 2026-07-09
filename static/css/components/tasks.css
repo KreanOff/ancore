@@ -6278,6 +6278,27 @@ body.modal-open::before {
     cursor: pointer;
 }
 
+.tasks-filterbar .tasks-filter-button {
+    max-width: 220px;
+}
+
+.tasks-filterbar .tasks-filter-button span:not(.status-indicator):not(.tasks-filter-priority-icon) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-filterbar.tasks-filterbar--task-directory {
+    height: auto;
+    align-items: flex-start;
+}
+
+.tasks-filterbar--task-directory .tasks-filterbar-left {
+    flex-wrap: wrap;
+    row-gap: 0.45rem;
+}
+
 .tasks-filterbar .tasks-filter-button:hover,
 .tasks-filterbar .tasks-filter-button.is-active,
 .tasks-filterbar .tasks-filter-button[aria-expanded="true"],
@@ -6340,6 +6361,70 @@ body.modal-open::before {
     background: #ffffff;
     box-shadow: var(--dropdown-menu-shadow);
     display: none;
+}
+
+.tasks-filter-menu--wide,
+.tasks-sort-menu {
+    --dropdown-menu-width: 220px;
+    max-height: min(320px, 52vh);
+    overflow-y: auto;
+}
+
+.tasks-filter-menu-search {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.25rem;
+    padding: 0.4rem 0.55rem;
+    border-bottom: 1px solid #edf0f4;
+    background: #ffffff;
+    color: #454b55;
+}
+
+.tasks-filter-menu-search svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tasks-filter-menu-search input {
+    width: 100%;
+    min-width: 0;
+    height: 30px;
+    border: 0;
+    background: transparent;
+    color: #222832;
+    font: inherit;
+    font-size: var(--dropdown-menu-font-size);
+    outline: none;
+}
+
+.tasks-filter-menu-search input::placeholder {
+    color: #8a93a3;
+}
+
+.tasks-filter-menu-empty {
+    min-height: var(--dropdown-menu-item-height);
+    display: flex;
+    align-items: center;
+    padding: 0 0.65rem;
+    color: #8a93a3;
+    font-size: var(--dropdown-menu-font-size);
+}
+
+.tasks-sort-menu button i,
+.tasks-sort-menu button svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
 }
 
 .tasks-filter-dropdown.is-open .tasks-filter-menu {
@@ -10035,6 +10120,7 @@ body.is-resizing-directory-columns {
     }
 
     .tasks-filterbar {
+        height: auto;
         min-height: 0;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;

@@ -25,7 +25,18 @@ function initTasksPage() {
     const taskStatusPaginations = document.querySelectorAll('[data-task-status-pagination]');
     const projectSearchForm = document.querySelector('[data-project-search-form]');
     const projectSearchPageSizeInput = document.querySelector('[data-project-search-page-size]');
+    const projectFilterInputs = document.querySelectorAll('[data-project-filter-input]');
+    const projectFilterToggles = document.querySelectorAll('[data-project-filter-toggle]');
+    const projectFilterOptions = document.querySelectorAll('[data-project-filter-option]');
+    const projectFilterMenus = document.querySelectorAll('[data-project-filter-menu]');
+    const projectFilterSearchInputs = document.querySelectorAll('[data-project-filter-search]');
+    const projectSortMenu = document.querySelector('[data-project-sort-menu]');
+    const projectSortToggle = document.querySelector('[data-project-sort-toggle]');
+    const projectSortInput = document.querySelector('[data-project-sort-input]');
+    const projectSortOptions = document.querySelectorAll('[data-project-sort-value]');
+    const projectDefaultSort = projectSortMenu?.dataset.projectDefaultSort || 'name_asc';
     const usesServerProjectPagination = projectPagination?.dataset.serverPagination === 'true';
+    const usesServerDirectoryFilters = usesServerProjectPagination || projectSearchForm?.dataset.serverDirectoryFilters === 'true';
     const deleteBtn = document.getElementById('delete-selected-btn');
     const editSelectedTaskMenuBtn = document.getElementById('edit-selected-task-menu-btn');
     const editSelectedSectionMenuBtn = document.getElementById('edit-selected-section-menu-btn');
@@ -261,6 +272,7 @@ function initTasksPage() {
     const projectTreeStorageKey = taskAppSegment === 'kanban' ? 'collapsedKanbanProjectTree' : 'collapsedTaskProjectTree';
     const collapsedProjectsStorageKey = taskAppSegment === 'kanban' ? 'collapsedKanbanProjects' : 'collapsedTaskProjects';
     const projectPageSizes = [10, 25, 50, 100, 150, 200];
+    let projectSearchDebounceTimer = null;
     let projectPaginationPage = Number.parseInt(projectPagination?.dataset.projectCurrentPage || '1', 10);
     if (!Number.isFinite(projectPaginationPage) || projectPaginationPage < 1) {
         projectPaginationPage = 1;
@@ -288,10 +300,20 @@ function initTasksPage() {
         const projectValue = (formData?.get('project') || currentUrl.searchParams.get('project') || '').toString();
         const searchValue = filterSearch?.value?.trim() || '';
         const priorityValue = filterPriority?.value || '';
-        const pageSizeValue = String(getProjectPageSize());
+        const pageSizeValue = projectPageSizeSelect ? String(getProjectPageSize()) : (projectSearchPageSizeInput?.value || '');
 
         ['after', 'before', 'page'].forEach(param => {
             url.searchParams.delete(param);
+        });
+        currentUrl.searchParams.forEach((value, key) => {
+            if (/^task_[a-z_]+_page_size$/.test(key)) {
+                url.searchParams.set(key, value);
+            }
+        });
+        Array.from(url.searchParams.keys()).forEach(key => {
+            if (/^task_[a-z_]+_page$/.test(key)) {
+                url.searchParams.delete(key);
+            }
         });
 
         if (viewValue) {
@@ -314,7 +336,33 @@ function initTasksPage() {
         } else {
             url.searchParams.delete('priority');
         }
-        if (pageSizeValue) url.searchParams.set('page_size', pageSizeValue);
+        projectFilterInputs.forEach(input => {
+            const name = input.getAttribute('name') || '';
+            if (!name) return;
+            const value = input.value || '';
+            if (value) {
+                url.searchParams.set(name, value);
+            } else {
+                url.searchParams.delete(name);
+            }
+        });
+        if (projectSortInput) {
+            const sortValue = projectSortInput.value || '';
+            if (sortValue) {
+                url.searchParams.set('sort', sortValue);
+            } else {
+                url.searchParams.delete('sort');
+            }
+        }
+        if (projectPageSizeSelect || projectSearchPageSizeInput) {
+            if (pageSizeValue) {
+                url.searchParams.set('page_size', pageSizeValue);
+            } else {
+                url.searchParams.delete('page_size');
+            }
+        } else {
+            url.searchParams.delete('page_size');
+        }
 
         Object.entries(extraParams).forEach(([key, value]) => {
             if (value) {
@@ -1571,6 +1619,19 @@ function initTasksPage() {
         if (!priorityFilterMenu || !priorityFilterToggle) return;
         priorityFilterMenu.classList.remove('is-open');
         priorityFilterToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function closeProjectFilterMenus(exceptMenu = null) {
+        projectFilterMenus.forEach(menu => {
+            if (menu === exceptMenu) return;
+            menu.classList.remove('is-open');
+            menu.querySelector('[data-project-filter-toggle]')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function closeProjectSortMenu() {
+        projectSortMenu?.classList.remove('is-open');
+        projectSortToggle?.setAttribute('aria-expanded', 'false');
     }
 
     function closeDirectoryMembersMenus(exceptMenu = null) {
@@ -2958,6 +3019,8 @@ function initTasksPage() {
             closeProjectActionMenus();
             closeSectionActionMenu();
             closePriorityFilterMenu();
+            closeProjectFilterMenus();
+            closeProjectSortMenu();
             closeDirectoryMembersMenus();
             statusFilterMenu.classList.toggle('is-open', isOpen);
             statusFilterToggle.setAttribute('aria-expanded', String(isOpen));
@@ -2976,6 +3039,8 @@ function initTasksPage() {
             closeProjectActionMenus();
             closeSectionActionMenu();
             closeStatusFilterMenu();
+            closeProjectFilterMenus();
+            closeProjectSortMenu();
             closeDirectoryMembersMenus();
             priorityFilterMenu.classList.toggle('is-open', isOpen);
             priorityFilterToggle.setAttribute('aria-expanded', String(isOpen));
@@ -3982,6 +4047,8 @@ function initTasksPage() {
         if (createMenu && !createMenu.contains(e.target)) closeCreateMenu();
         if (!e.target.closest('[data-status-filter-menu]')) closeStatusFilterMenu();
         if (!e.target.closest('[data-priority-filter-menu]')) closePriorityFilterMenu();
+        if (!e.target.closest('[data-project-filter-menu]')) closeProjectFilterMenus();
+        if (!e.target.closest('[data-project-sort-menu]')) closeProjectSortMenu();
         if (!e.target.closest('[data-directory-members-menu]')) closeDirectoryMembersMenus();
         if (!e.target.closest('[data-section-actions]')) closeSectionActionMenu();
         if (!e.target.closest('[data-project-actions]')) closeProjectActionMenus();
@@ -5524,17 +5591,167 @@ function initTasksPage() {
         updateSelection();
     }
 
-    if (projectSearchForm && usesServerProjectPagination) {
+    function getProjectFilterInput(param) {
+        if (!param) return null;
+        return document.querySelector(`[data-project-filter-input="${param}"]`);
+    }
+
+    function filterProjectFilterMenu(input) {
+        const menu = input?.closest('[data-project-filter-menu]');
+        if (!menu) return;
+
+        const query = normalizeFilterText(input.value || '');
+        const emptyState = menu.querySelector('[data-project-filter-empty]');
+        let visibleMatches = 0;
+
+        menu.querySelectorAll('[data-project-filter-option]').forEach(option => {
+            const value = option.dataset.projectFilterValue || '';
+            const isAllOption = value === '';
+            const label = normalizeFilterText(option.textContent || '');
+            const isVisible = isAllOption || !query || label.includes(query);
+            option.hidden = !isVisible;
+            if (isVisible && !isAllOption) {
+                visibleMatches += 1;
+            }
+        });
+
+        if (emptyState) {
+            emptyState.hidden = !query || visibleMatches > 0;
+        }
+    }
+
+    function resetProjectFilterMenuSearch(menu) {
+        const input = menu?.querySelector('[data-project-filter-search]');
+        if (!input) return;
+        input.value = '';
+        filterProjectFilterMenu(input);
+    }
+
+    function scheduleServerProjectSearch() {
+        if (!usesServerDirectoryFilters || !projectSearchForm) return;
+        window.clearTimeout(projectSearchDebounceTimer);
+        projectSearchDebounceTimer = window.setTimeout(() => {
+            navigateProjectWindow();
+        }, 360);
+    }
+
+    function setProjectSortValue(value) {
+        if (!projectSortInput) return;
+        projectSortInput.value = value === projectDefaultSort ? '' : value;
+    }
+
+    if (projectSearchForm && usesServerDirectoryFilters) {
         projectSearchForm.addEventListener('submit', function(event) {
             event.preventDefault();
+            window.clearTimeout(projectSearchDebounceTimer);
             navigateProjectWindow();
         }, pageListenerOptions);
     }
 
-    if (filterStatus) filterStatus.addEventListener('change', applyFilters);
+    projectFilterToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const menu = this.closest('[data-project-filter-menu]');
+            if (!menu) return;
+            const isOpen = !menu.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeStatusFilterMenu();
+            closePriorityFilterMenu();
+            closeProjectSortMenu();
+            closeProjectFilterMenus(menu);
+            closeDirectoryMembersMenus();
+            closeIssuePickers();
+            closeInlineSelectDropdowns();
+            closeProjectPageSizeDropdown();
+            closeTaskStatusPageSizeDropdowns();
+            menu.classList.toggle('is-open', isOpen);
+            this.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) {
+                resetProjectFilterMenuSearch(menu);
+                setTimeout(() => menu.querySelector('[data-project-filter-search]')?.focus(), 30);
+            }
+        }, pageListenerOptions);
+    });
+
+    projectFilterMenus.forEach(menu => {
+        menu.addEventListener('click', function(event) {
+            event.stopPropagation();
+        }, pageListenerOptions);
+    });
+
+    projectFilterSearchInputs.forEach(input => {
+        input.addEventListener('click', event => event.stopPropagation(), pageListenerOptions);
+        input.addEventListener('input', function() {
+            filterProjectFilterMenu(this);
+        }, pageListenerOptions);
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+            }
+            if (event.key === 'Escape') {
+                event.stopPropagation();
+                closeProjectFilterMenus();
+            }
+        }, pageListenerOptions);
+    });
+
+    projectFilterOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const param = this.dataset.projectFilterParam || '';
+            const input = getProjectFilterInput(param);
+            if (!input) return;
+            input.value = this.dataset.projectFilterValue || '';
+            closeProjectFilterMenus();
+            navigateProjectWindow();
+        }, pageListenerOptions);
+    });
+
+    if (projectSortToggle && projectSortMenu) {
+        projectSortToggle.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const isOpen = !projectSortMenu.classList.contains('is-open');
+            closeCreateMenu();
+            closeProjectActionMenus();
+            closeSectionActionMenu();
+            closeStatusFilterMenu();
+            closePriorityFilterMenu();
+            closeProjectFilterMenus();
+            closeDirectoryMembersMenus();
+            closeIssuePickers();
+            closeInlineSelectDropdowns();
+            closeProjectPageSizeDropdown();
+            closeTaskStatusPageSizeDropdowns();
+            projectSortMenu.classList.toggle('is-open', isOpen);
+            projectSortToggle.setAttribute('aria-expanded', String(isOpen));
+        }, pageListenerOptions);
+
+        projectSortMenu.addEventListener('click', function(event) {
+            event.stopPropagation();
+        }, pageListenerOptions);
+    }
+
+    projectSortOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            setProjectSortValue(this.dataset.projectSortValue || projectDefaultSort);
+            closeProjectSortMenu();
+            navigateProjectWindow();
+        }, pageListenerOptions);
+    });
+
+    if (filterStatus) {
+        filterStatus.addEventListener('change', function() {
+            if (usesServerDirectoryFilters) {
+                navigateProjectWindow();
+                return;
+            }
+            applyFilters();
+        });
+    }
     if (filterPriority) {
         filterPriority.addEventListener('change', function() {
-            if (usesServerProjectPagination) {
+            if (usesServerDirectoryFilters) {
                 navigateProjectWindow();
                 return;
             }
@@ -5543,7 +5760,10 @@ function initTasksPage() {
     }
     if (filterSearch) {
         filterSearch.addEventListener('input', function() {
-            if (usesServerProjectPagination) return;
+            if (usesServerDirectoryFilters) {
+                scheduleServerProjectSearch();
+                return;
+            }
             applyFilters();
         });
     }
@@ -5562,7 +5782,7 @@ function initTasksPage() {
             if (this.dataset.priorityFilter !== undefined && filterPriority) {
                 filterPriority.value = this.dataset.priorityFilter;
             }
-            if (usesServerProjectPagination && this.dataset.priorityFilter !== undefined) {
+            if (usesServerDirectoryFilters && (this.dataset.priorityFilter !== undefined || this.dataset.statusFilter !== undefined)) {
                 closeStatusFilterMenu();
                 closePriorityFilterMenu();
                 navigateProjectWindow();
@@ -5593,6 +5813,8 @@ function initTasksPage() {
             closeSectionActionMenu();
             closeStatusFilterMenu();
             closePriorityFilterMenu();
+            closeProjectFilterMenus();
+            closeProjectSortMenu();
             closeDirectoryMembersMenus();
             closeIssuePickers();
             closeInlineSelectDropdowns();
@@ -6885,6 +7107,7 @@ if (!window.ancoreTaskSortHandlerInitialized) {
     document.addEventListener('click', function(event) {
         const button = event.target.closest('[data-task-sort]');
         if (!button) return;
+        if (button.hasAttribute('data-project-sort-toggle')) return;
 
         const direction = button.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
         updateTaskSortButton(button, direction);

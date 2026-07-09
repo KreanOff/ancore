@@ -167,6 +167,112 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-lucide="arrow-up-wide-narrow"')
         self.assertContains(response, 'data-task-sort-icon')
 
+    def test_projects_view_renders_server_filter_and_sort_controls(self):
+        company = Company.objects.create(owner=self.user, name='Acme CRM')
+        TaskProject.objects.create(
+            user=self.user,
+            name='Projekt CRM',
+            status='planned',
+            stage='offer',
+            health='at_risk',
+            company=company,
+            responsible_user=self.user,
+        )
+        TaskProject.objects.create(user=self.user, name='Projekt bez firmy')
+
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertContains(response, 'data-project-sort-menu')
+        self.assertContains(response, 'data-project-sort-value="priority_desc"')
+        self.assertContains(response, 'data-project-filter-menu="status"')
+        self.assertContains(response, 'data-project-filter-menu="stage"')
+        self.assertContains(response, 'data-project-filter-menu="health"')
+        self.assertContains(response, 'data-project-filter-menu="company"')
+        self.assertContains(response, 'data-project-filter-menu="responsible"')
+        self.assertContains(response, 'data-project-filter-input="company"')
+        self.assertContains(response, 'data-project-filter-search', count=2)
+        self.assertContains(response, 'placeholder="Szukaj firmy"')
+        self.assertContains(response, 'placeholder="Szukaj osoby"')
+        self.assertContains(response, 'data-project-filter-empty', count=2)
+        self.assertContains(response, 'data-project-filter-value="none"')
+        self.assertContains(response, 'Acme CRM')
+        self.assertContains(response, 'Task User')
+
+    def test_projects_view_filters_searches_and_sorts_on_server(self):
+        company = Company.objects.create(owner=self.user, name='Acme CRM')
+        responsible = get_user_model().objects.create_user(
+            username='project-owner',
+            email='owner@example.com',
+            first_name='Anna',
+            last_name='Kowalska',
+            password='test-pass-123',
+        )
+        matching = TaskProject.objects.create(
+            user=self.user,
+            name='Oferta CRM',
+            code='P-CRM0001',
+            status='active',
+            stage='offer',
+            health='at_risk',
+            priority='high',
+            company=company,
+            responsible_user=responsible,
+        )
+        TaskProject.objects.create(
+            user=self.user,
+            name='Projekt wewnętrzny',
+            code='P-INT0001',
+            status='planned',
+            stage='internal',
+            health='ok',
+            priority='none',
+        )
+
+        response = self.client.get(
+            reverse('tasks:tasks'),
+            {
+                'q': 'aktywny',
+                'status': 'active',
+                'stage': 'offer',
+                'health': 'at_risk',
+                'company': company.id,
+                'responsible': responsible.id,
+                'priority': 'high',
+            },
+        )
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-project-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertContains(response, 'tasks-project-row tasks-directory-row', count=1)
+        self.assertIn(matching.name, table_html)
+        self.assertNotIn('Projekt wewnętrzny', table_html)
+        self.assertContains(response, 'value="active" data-project-filter-input="status"')
+        self.assertContains(response, 'Status: Aktywny')
+        self.assertContains(response, 'Etap: Oferta')
+        self.assertContains(response, 'Kondycja: Zagrożony')
+
+    def test_projects_view_sort_preserves_query_params_in_pagination(self):
+        low = TaskProject.objects.create(user=self.user, name='Niski projekt', priority='low')
+        urgent = TaskProject.objects.create(user=self.user, name='Pilny projekt', priority='urgent')
+        for index in range(55):
+            TaskProject.objects.create(
+                user=self.user,
+                name=f'Projekt testowy {index:03d}',
+                priority='low',
+            )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?sort=priority_desc&page_size=50")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-project-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertLess(table_html.index(urgent.name), table_html.index(low.name))
+        self.assertContains(response, 'Sortowanie: Priorytet')
+        self.assertContains(response, 'data-project-page-url="/tasks/?sort=priority_desc&amp;page_size=50&amp;page=2"')
+
     def test_task_create_modal_billable_checkbox_is_checked_by_default(self):
         response = self.client.get(reverse('tasks:tasks'))
         html = response.content.decode()
@@ -184,6 +290,115 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-priority-filter-menu')
         self.assertContains(response, 'data-priority-filter-label')
         self.assertNotContains(response, 'data-status-filter-menu')
+
+    def test_all_groups_view_renders_server_filter_and_sort_controls(self):
+        owner = get_user_model().objects.create_user(
+            username='group-owner',
+            email='group-owner@example.com',
+            first_name='Olga',
+            last_name='Grupowa',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt grupowy', code='GRP')
+        TaskSection.objects.create(
+            project=project,
+            title='Frontend',
+            status='ready',
+            kind='milestones',
+            owner=owner,
+        )
+        TaskSection.objects.create(project=project, title='Bez osoby')
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+
+        self.assertContains(response, 'data-project-sort-menu')
+        self.assertContains(response, 'data-project-sort-value="priority_desc"')
+        self.assertContains(response, 'data-project-filter-menu="status"')
+        self.assertContains(response, 'data-project-filter-menu="kind"')
+        self.assertContains(response, 'data-project-filter-menu="group_project"')
+        self.assertContains(response, 'data-project-filter-menu="owner"')
+        self.assertContains(response, 'data-project-filter-input="group_project"')
+        self.assertContains(response, 'placeholder="Szukaj projektu"')
+        self.assertContains(response, 'placeholder="Szukaj osoby"')
+        self.assertContains(response, 'data-project-filter-empty', count=2)
+        self.assertContains(response, 'Projekt grupowy')
+        self.assertContains(response, 'Olga Grupowa')
+        self.assertContains(response, 'data-project-filter-value="none"')
+
+    def test_all_groups_view_filters_searches_and_sorts_on_server(self):
+        owner = get_user_model().objects.create_user(
+            username='group-owner',
+            email='group-owner@example.com',
+            first_name='Olga',
+            last_name='Grupowa',
+            password='test-pass-123',
+        )
+        matching_project = TaskProject.objects.create(user=self.user, name='Projekt CRM', code='CRM')
+        other_project = TaskProject.objects.create(user=self.user, name='Projekt wewnętrzny', code='INT')
+        matching = TaskSection.objects.create(
+            project=matching_project,
+            title='Kamień CRM',
+            description='Gotowy etap wdrożenia',
+            status='ready',
+            kind='milestones',
+            priority='urgent',
+            owner=owner,
+        )
+        TaskSection.objects.create(
+            project=other_project,
+            title='Backend',
+            status='open',
+            kind='issues',
+            priority='none',
+        )
+
+        response = self.client.get(
+            reverse('tasks:tasks'),
+            {
+                'view': 'all-groups',
+                'q': 'gotowa',
+                'status': 'ready',
+                'kind': 'milestones',
+                'group_project': matching_project.id,
+                'owner': owner.id,
+                'priority': 'urgent',
+            },
+        )
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertContains(response, 'tasks-section-row tasks-directory-row', count=1)
+        self.assertIn(matching.title, table_html)
+        self.assertNotIn('Backend', table_html)
+        self.assertContains(response, 'value="ready" data-project-filter-input="status"')
+        self.assertContains(response, 'Status: Gotowa')
+        self.assertContains(response, 'Typ: Kamienie milowe')
+        self.assertContains(response, 'Projekt: Projekt CRM')
+        self.assertContains(response, 'Odpowiedzialny: Olga Grupowa')
+
+    def test_all_groups_view_sort_preserves_query_params_in_pagination(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt grup', code='GRP')
+        low = TaskSection.objects.create(project=project, title='Niska grupa', priority='low')
+        urgent = TaskSection.objects.create(project=project, title='Pilna grupa', priority='urgent')
+        for index in range(55):
+            TaskSection.objects.create(
+                project=project,
+                title=f'Grupa testowa {index:03d}',
+                priority='low',
+                order=index,
+            )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&sort=priority_desc&page_size=50")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertLess(table_html.index(urgent.title), table_html.index(low.title))
+        self.assertContains(response, 'Sortowanie: Priorytet')
+        self.assertContains(response, 'data-project-page-url="/tasks/?view=all-groups&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_tags_view_hides_status_and_priority_filters(self):
         response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
@@ -755,6 +970,132 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('Nowe zadanie 000', new_html)
         self.assertNotIn('Nowe zadanie 010', new_html)
         self.assertIn('data-task-status-page="6"', html)
+
+    def test_all_tasks_view_renders_server_search_sort_and_filter_controls(self):
+        company = Company.objects.create(owner=self.user, name='Alpha CRM')
+        assignee = get_user_model().objects.create_user(
+            username='alpha-owner',
+            first_name='Adam',
+            last_name='Nowak',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt Alpha', code='ALP')
+        section = TaskSection.objects.create(project=project, title='Wdrożenie')
+        Task.objects.create(
+            user=self.user,
+            section=section,
+            title='Zadanie Alpha',
+            company=company,
+            assignee=assignee,
+        )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
+
+        self.assertContains(response, 'data-server-directory-filters="true"')
+        self.assertContains(response, 'data-project-sort-menu')
+        self.assertContains(response, 'data-project-default-sort="task_id_asc"')
+        self.assertContains(response, 'aria-label="Sortowanie zadań"')
+        self.assertContains(response, 'id="filter-status"')
+        self.assertContains(response, 'name="task_project"')
+        self.assertContains(response, 'name="task_section"')
+        self.assertContains(response, 'name="task_assignee"')
+        self.assertContains(response, 'name="task_company"')
+        self.assertContains(response, 'name="task_type"')
+        self.assertContains(response, 'name="task_due"')
+        self.assertContains(response, 'data-project-filter-menu="task_project"')
+        self.assertContains(response, 'data-project-filter-menu="task_section"')
+        self.assertContains(response, 'data-project-filter-menu="task_assignee"')
+        self.assertContains(response, 'data-project-filter-menu="task_company"')
+        self.assertContains(response, 'data-project-filter-menu="task_type"')
+        self.assertContains(response, 'data-project-filter-menu="task_due"')
+        self.assertContains(response, 'data-project-filter-search', count=4)
+        self.assertContains(response, 'Szukaj projektu')
+        self.assertContains(response, 'Szukaj grupy')
+        self.assertContains(response, 'Szukaj osoby')
+        self.assertContains(response, 'Szukaj firmy')
+
+    def test_all_tasks_view_filters_searches_sorts_and_preserves_status_pagination_params(self):
+        company = Company.objects.create(owner=self.user, name='Alpha CRM')
+        other_company = Company.objects.create(owner=self.user, name='Beta CRM')
+        assignee = get_user_model().objects.create_user(
+            username='alpha-assignee',
+            first_name='Adam',
+            last_name='Nowak',
+            password='test-pass-123',
+        )
+        project = TaskProject.objects.create(user=self.user, name='Projekt Alpha', code='ALP')
+        section = TaskSection.objects.create(project=project, title='Wdrożenie')
+        due_at = timezone.now() - timedelta(days=1)
+        for index in range(30):
+            Task.objects.create(
+                user=self.user,
+                section=section,
+                title=f'Alpha telefon {index:03d}',
+                status='new',
+                priority='high',
+                task_type='call',
+                due_at=due_at,
+                company=company,
+                assignee=assignee,
+            )
+        Task.objects.create(
+            user=self.user,
+            section=section,
+            title='Alpha realizowane ukryte',
+            status='in_progress',
+            priority='high',
+            task_type='call',
+            due_at=due_at,
+            company=company,
+            assignee=assignee,
+        )
+        Task.objects.create(
+            user=self.user,
+            section=section,
+            title='Beta ukryte',
+            status='new',
+            priority='high',
+            task_type='call',
+            due_at=due_at,
+            company=other_company,
+            assignee=assignee,
+        )
+
+        response = self.client.get(
+            f"{reverse('tasks:tasks')}?view=all-tasks&q=Alpha&priority=high&status=new"
+            f"&task_project={project.id}&task_section={section.id}&task_assignee={assignee.id}"
+            f"&task_company={company.id}&task_type=call&task_due=overdue&sort=title_desc"
+        )
+        html = response.content.decode()
+        new_start = html.index('id="all-tasks-new"')
+        new_end = html.index('</section>', new_start)
+        new_html = html[new_start:new_end]
+
+        self.assertContains(response, 'task-row tasks-issue-row', count=25)
+        self.assertIn('Alpha telefon 029', new_html)
+        self.assertIn('Alpha telefon 005', new_html)
+        self.assertNotIn('Alpha telefon 004', new_html)
+        self.assertNotIn('Alpha realizowane ukryte', html)
+        self.assertNotIn('Beta ukryte', html)
+        self.assertIn('id="all-tasks-new"', html)
+        self.assertNotIn('id="all-tasks-in_progress"', html)
+        self.assertIn('task_new_page=2', html)
+        self.assertIn('q=Alpha', html)
+        self.assertIn('priority=high', html)
+        self.assertIn('status=new', html)
+        self.assertIn(f'task_project={project.id}', html)
+        self.assertIn(f'task_section={section.id}', html)
+        self.assertIn(f'task_assignee={assignee.id}', html)
+        self.assertIn(f'task_company={company.id}', html)
+        self.assertIn('task_type=call', html)
+        self.assertIn('task_due=overdue', html)
+        self.assertIn('sort=title_desc', html)
+        self.assertContains(response, 'Projekt: Projekt Alpha')
+        self.assertContains(response, 'Grupa: Wdrożenie (Projekt Alpha)')
+        self.assertContains(response, 'Odpowiedzialny: Adam Nowak')
+        self.assertContains(response, 'Firma: Alpha CRM')
+        self.assertContains(response, 'Typ: Telefon')
+        self.assertContains(response, 'Termin: Po terminie')
 
     def test_task_rows_render_only_task_title_in_title_cell(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt zadań', code='TSK')

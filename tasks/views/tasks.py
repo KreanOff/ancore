@@ -1,5 +1,7 @@
 import json
+import unicodedata
 from collections import defaultdict
+from datetime import timedelta
 from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
@@ -27,6 +29,58 @@ PROJECT_DEFAULT_PAGE_SIZE = 50
 PROJECT_NAVIGATION_LIMIT = 50
 TASK_PAGE_SIZE_OPTIONS = PROJECT_PAGE_SIZE_OPTIONS
 TASK_DEFAULT_PAGE_SIZE = 25
+PROJECT_DEFAULT_SORT = 'name_asc'
+PROJECT_SORT_OPTIONS = (
+    {'value': 'name_asc', 'label': 'Projekt A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'name_desc', 'label': 'Projekt Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'code_asc', 'label': 'Kod A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'company_asc', 'label': 'Firma A-Z', 'icon': 'building-2', 'direction': 'asc'},
+    {'value': 'responsible_asc', 'label': 'Odpowiedzialny', 'icon': 'circle-user-round', 'direction': 'asc'},
+    {'value': 'status_asc', 'label': 'Status', 'icon': 'circle-dot', 'direction': 'asc'},
+    {'value': 'priority_desc', 'label': 'Priorytet', 'icon': 'chart-no-axes-column-increasing', 'direction': 'desc'},
+    {'value': 'due_at_asc', 'label': 'Najbliższy termin', 'icon': 'calendar-clock', 'direction': 'asc'},
+    {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'clock-3', 'direction': 'desc'},
+    {'value': 'activity_desc', 'label': 'Ostatnia aktywność', 'icon': 'activity', 'direction': 'desc'},
+)
+PROJECT_SORT_OPTION_MAP = {option['value']: option for option in PROJECT_SORT_OPTIONS}
+GROUP_DEFAULT_SORT = 'project_asc'
+GROUP_SORT_OPTIONS = (
+    {'value': 'project_asc', 'label': 'Projekt A-Z', 'icon': 'folder-kanban', 'direction': 'asc'},
+    {'value': 'title_asc', 'label': 'Grupa A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'title_desc', 'label': 'Grupa Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'code_asc', 'label': 'Kod grupy', 'icon': 'hash', 'direction': 'asc'},
+    {'value': 'status_asc', 'label': 'Status', 'icon': 'circle-dot', 'direction': 'asc'},
+    {'value': 'kind_asc', 'label': 'Typ', 'icon': 'layers-3', 'direction': 'asc'},
+    {'value': 'priority_desc', 'label': 'Priorytet', 'icon': 'chart-no-axes-column-increasing', 'direction': 'desc'},
+    {'value': 'owner_asc', 'label': 'Odpowiedzialny', 'icon': 'circle-user-round', 'direction': 'asc'},
+    {'value': 'due_at_asc', 'label': 'Najbliższy termin', 'icon': 'calendar-clock', 'direction': 'asc'},
+    {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'clock-3', 'direction': 'desc'},
+    {'value': 'activity_desc', 'label': 'Ostatnia aktywność', 'icon': 'activity', 'direction': 'desc'},
+)
+GROUP_SORT_OPTION_MAP = {option['value']: option for option in GROUP_SORT_OPTIONS}
+TASK_DEFAULT_SORT = 'task_id_asc'
+TASK_SORT_OPTIONS = (
+    {'value': 'task_id_asc', 'label': 'Kolejność', 'icon': 'list-ordered', 'direction': 'asc'},
+    {'value': 'task_id_desc', 'label': 'Najnowsze ID', 'icon': 'arrow-down-wide-narrow', 'direction': 'desc'},
+    {'value': 'title_asc', 'label': 'Zadanie A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'title_desc', 'label': 'Zadanie Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'priority_desc', 'label': 'Priorytet', 'icon': 'chart-no-axes-column-increasing', 'direction': 'desc'},
+    {'value': 'project_asc', 'label': 'Projekt A-Z', 'icon': 'folder-kanban', 'direction': 'asc'},
+    {'value': 'section_asc', 'label': 'Grupa A-Z', 'icon': 'layers-3', 'direction': 'asc'},
+    {'value': 'assignee_asc', 'label': 'Odpowiedzialny', 'icon': 'circle-user-round', 'direction': 'asc'},
+    {'value': 'company_asc', 'label': 'Firma A-Z', 'icon': 'building-2', 'direction': 'asc'},
+    {'value': 'type_asc', 'label': 'Typ', 'icon': 'list-filter', 'direction': 'asc'},
+    {'value': 'due_at_asc', 'label': 'Najbliższy termin', 'icon': 'calendar-clock', 'direction': 'asc'},
+    {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'clock-3', 'direction': 'desc'},
+    {'value': 'activity_desc', 'label': 'Ostatnia aktywność', 'icon': 'activity', 'direction': 'desc'},
+)
+TASK_SORT_OPTION_MAP = {option['value']: option for option in TASK_SORT_OPTIONS}
+TASK_DUE_FILTER_OPTIONS = (
+    {'value': 'overdue', 'label': 'Po terminie'},
+    {'value': 'today', 'label': 'Dzisiaj'},
+    {'value': 'week', 'label': 'Ten tydzień'},
+    {'value': 'none', 'label': 'Brak terminu'},
+)
 
 
 def _active_workplace(request):
@@ -547,11 +601,76 @@ def _projects_url(params, base_url=None):
     return f'{base_url}?{query_string}' if query_string else base_url
 
 
-def _project_filter_queryset(user, query='', priority='', workplace=None):
+def _normalize_query_label(value):
+    return ''.join(
+        char for char in unicodedata.normalize('NFD', str(value or '').lower())
+        if unicodedata.category(char) != 'Mn'
+    ).strip()
+
+
+def _choice_options(choices):
+    return [{'value': value, 'label': label} for value, label in choices]
+
+
+def _choice_values_matching_query(choices, query):
+    normalized_query = _normalize_query_label(query)
+    if not normalized_query:
+        return []
+    return [
+        value
+        for value, label in choices
+        if normalized_query in _normalize_query_label(value)
+        or normalized_query in _normalize_query_label(label)
+    ]
+
+
+def _integer_filter_value(value):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
+
+
+def _project_sort_value(value):
+    return value if value in PROJECT_SORT_OPTION_MAP else PROJECT_DEFAULT_SORT
+
+
+def _group_sort_value(value):
+    return value if value in GROUP_SORT_OPTION_MAP else GROUP_DEFAULT_SORT
+
+
+def _task_sort_value(value):
+    return value if value in TASK_SORT_OPTION_MAP else TASK_DEFAULT_SORT
+
+
+def _choice_rank_case(field_name, choices):
+    return Case(
+        *[When(**{field_name: value}, then=Value(index)) for index, (value, _label) in enumerate(choices)],
+        default=Value(len(choices)),
+        output_field=IntegerField(),
+    )
+
+
+def _project_filter_queryset(
+    user,
+    query='',
+    priority='',
+    status='',
+    stage='',
+    health='',
+    company='',
+    responsible='',
+    workplace=None,
+):
     queryset = _filter_workplace(TaskProject.objects.filter(user=user), workplace)
     query = (query or '').strip()
     if query:
-        queryset = queryset.filter(
+        priority_matches = _choice_values_matching_query(TaskProject.PRIORITY_CHOICES, query)
+        status_matches = _choice_values_matching_query(TaskProject.STATUS_CHOICES, query)
+        stage_matches = _choice_values_matching_query(TaskProject.STAGE_CHOICES, query)
+        health_matches = _choice_values_matching_query(TaskProject.HEALTH_CHOICES, query)
+        query_filter = (
             Q(name__icontains=query)
             | Q(description__icontains=query)
             | Q(code__icontains=query)
@@ -566,17 +685,157 @@ def _project_filter_queryset(user, query='', priority='', workplace=None):
             | Q(responsible_user__email__icontains=query)
             | Q(responsible_user__username__icontains=query)
         )
+        if priority_matches:
+            query_filter |= Q(priority__in=priority_matches)
+        if status_matches:
+            query_filter |= Q(status__in=status_matches)
+        if stage_matches:
+            query_filter |= Q(stage__in=stage_matches)
+        if health_matches:
+            query_filter |= Q(health__in=health_matches)
+        queryset = queryset.filter(query_filter)
     if priority in {value for value, _label in TaskProject.PRIORITY_CHOICES}:
         queryset = queryset.filter(priority=priority)
+    if status in {value for value, _label in TaskProject.STATUS_CHOICES}:
+        queryset = queryset.filter(status=status)
+    if stage in {value for value, _label in TaskProject.STAGE_CHOICES}:
+        queryset = queryset.filter(stage=stage)
+    if health in {value for value, _label in TaskProject.HEALTH_CHOICES}:
+        queryset = queryset.filter(health=health)
+    if company == 'none':
+        queryset = queryset.filter(company__isnull=True)
+    elif company_id := _integer_filter_value(company):
+        queryset = queryset.filter(company_id=company_id)
+    if responsible == 'none':
+        queryset = queryset.filter(responsible_user__isnull=True)
+    elif responsible_id := _integer_filter_value(responsible):
+        queryset = queryset.filter(responsible_user_id=responsible_id)
     return queryset
 
 
-def _group_filter_queryset(user, query='', priority='', workplace=None):
+def _project_sort_queryset(queryset, sort_value):
+    sort_value = _project_sort_value(sort_value)
+    if sort_value == 'name_desc':
+        return queryset.order_by('-name', 'id')
+    if sort_value == 'code_asc':
+        return queryset.order_by('code', 'name', 'id')
+    if sort_value == 'company_asc':
+        return queryset.annotate(
+            company_empty_sort=Case(
+                When(company__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('company_empty_sort', 'company__name', 'name', 'id')
+    if sort_value == 'responsible_asc':
+        return queryset.annotate(
+            responsible_empty_sort=Case(
+                When(responsible_user__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by(
+            'responsible_empty_sort',
+            'responsible_user__last_name',
+            'responsible_user__first_name',
+            'responsible_user__username',
+            'name',
+            'id',
+        )
+    if sort_value == 'status_asc':
+        return queryset.annotate(
+            status_sort_rank=_choice_rank_case('status', TaskProject.STATUS_CHOICES)
+        ).order_by('status_sort_rank', 'name', 'id')
+    if sort_value == 'priority_desc':
+        return queryset.annotate(
+            priority_sort_rank=_choice_rank_case('priority', TaskProject.PRIORITY_CHOICES)
+        ).order_by('-priority_sort_rank', 'name', 'id')
+    if sort_value == 'due_at_asc':
+        return queryset.annotate(
+            due_empty_sort=Case(
+                When(due_at__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('due_empty_sort', 'due_at', 'name', 'id')
+    if sort_value == 'created_desc':
+        return queryset.order_by('-created_at', 'name', 'id')
+    if sort_value == 'activity_desc':
+        return queryset.annotate(
+            last_task_created_sort=Max('sections__tasks__created_at'),
+            last_activity_sort=Max('sections__tasks__activities__created_at'),
+        ).order_by('-last_activity_sort', '-last_task_created_sort', '-created_at', 'name', 'id')
+    return queryset.order_by('name', 'id')
+
+
+def _project_filter_options(user, workplace=None):
+    queryset = _filter_workplace(
+        TaskProject.objects.filter(user=user),
+        workplace,
+    ).select_related('company', 'responsible_user')
+    companies = [
+        {'value': str(row['company_id']), 'label': row['company__name']}
+        for row in queryset.filter(company__isnull=False)
+        .values('company_id', 'company__name')
+        .distinct()
+        .order_by('company__name', 'company_id')
+    ]
+    responsible_users = []
+    for row in (
+        queryset.filter(responsible_user__isnull=False)
+        .values(
+            'responsible_user_id',
+            'responsible_user__first_name',
+            'responsible_user__last_name',
+            'responsible_user__username',
+        )
+        .distinct()
+        .order_by('responsible_user__last_name', 'responsible_user__first_name', 'responsible_user__username')
+    ):
+        full_name = ' '.join(
+            part for part in (
+                row['responsible_user__first_name'],
+                row['responsible_user__last_name'],
+            )
+            if part
+        ).strip()
+        responsible_users.append({
+            'value': str(row['responsible_user_id']),
+            'label': full_name or row['responsible_user__username'],
+        })
+
+    if queryset.filter(company__isnull=True).exists():
+        companies.insert(0, {'value': 'none', 'label': 'Brak firmy'})
+    if queryset.filter(responsible_user__isnull=True).exists():
+        responsible_users.insert(0, {'value': 'none', 'label': 'Brak osoby'})
+
+    return {
+        'statuses': _choice_options(TaskProject.STATUS_CHOICES),
+        'stages': _choice_options(TaskProject.STAGE_CHOICES),
+        'healths': _choice_options(TaskProject.HEALTH_CHOICES),
+        'companies': companies,
+        'responsible_users': responsible_users,
+    }
+
+
+def _group_filter_queryset(
+    user,
+    query='',
+    priority='',
+    status='',
+    kind='',
+    project_filter='',
+    owner='',
+    workplace=None,
+):
     queryset = TaskSection.objects.filter(project__user=user).select_related('project', 'project__user', 'owner')
     queryset = _filter_workplace(queryset, workplace, field_name='project__workplace')
     query = (query or '').strip()
     if query:
         group_code_number = parse_hierarchy_code_number(query, TaskSection.CODE_PREFIX)
+        priority_matches = _choice_values_matching_query(TaskSection.PRIORITY_CHOICES, query)
+        status_matches = _choice_values_matching_query(TaskSection.STATUS_CHOICES, query)
+        kind_matches = _choice_values_matching_query(TaskSection.KIND_CHOICES, query)
         query_filter = (
             Q(title__icontains=query)
             | Q(description__icontains=query)
@@ -592,17 +851,394 @@ def _group_filter_queryset(user, query='', priority='', workplace=None):
         )
         if group_code_number:
             query_filter |= Q(code_number=group_code_number)
-        queryset = queryset.filter(
-            query_filter
-        )
+        if priority_matches:
+            query_filter |= Q(priority__in=priority_matches)
+        if status_matches:
+            query_filter |= Q(status__in=status_matches)
+        if kind_matches:
+            query_filter |= Q(kind__in=kind_matches)
+        queryset = queryset.filter(query_filter)
     if priority in {value for value, _label in TaskSection.PRIORITY_CHOICES}:
         queryset = queryset.filter(priority=priority)
+    if status in {value for value, _label in TaskSection.STATUS_CHOICES}:
+        queryset = queryset.filter(status=status)
+    if kind in {value for value, _label in TaskSection.KIND_CHOICES}:
+        queryset = queryset.filter(kind=kind)
+    if project_id := _integer_filter_value(project_filter):
+        queryset = queryset.filter(project_id=project_id)
+    if owner == 'none':
+        queryset = queryset.filter(owner__isnull=True)
+    elif owner_id := _integer_filter_value(owner):
+        queryset = queryset.filter(owner_id=owner_id)
     return queryset.prefetch_related(
         Prefetch(
             'section_notes',
             queryset=TaskSectionNote.objects.select_related('author').order_by('created_at', 'id'),
         )
     )
+
+
+def _group_sort_queryset(queryset, sort_value):
+    sort_value = _group_sort_value(sort_value)
+    if sort_value == 'title_asc':
+        return queryset.order_by('title', 'id')
+    if sort_value == 'title_desc':
+        return queryset.order_by('-title', 'id')
+    if sort_value == 'code_asc':
+        return queryset.order_by('project__code', 'code_number', 'title', 'id')
+    if sort_value == 'status_asc':
+        return queryset.annotate(
+            status_sort_rank=_choice_rank_case('status', TaskSection.STATUS_CHOICES)
+        ).order_by('status_sort_rank', 'project__name', 'order', 'id')
+    if sort_value == 'kind_asc':
+        return queryset.annotate(
+            kind_sort_rank=_choice_rank_case('kind', TaskSection.KIND_CHOICES)
+        ).order_by('kind_sort_rank', 'project__name', 'order', 'id')
+    if sort_value == 'priority_desc':
+        return queryset.annotate(
+            priority_sort_rank=_choice_rank_case('priority', TaskSection.PRIORITY_CHOICES)
+        ).order_by('-priority_sort_rank', 'project__name', 'order', 'id')
+    if sort_value == 'owner_asc':
+        return queryset.annotate(
+            owner_empty_sort=Case(
+                When(owner__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by(
+            'owner_empty_sort',
+            'owner__last_name',
+            'owner__first_name',
+            'owner__username',
+            'project__name',
+            'order',
+            'id',
+        )
+    if sort_value == 'due_at_asc':
+        return queryset.annotate(
+            due_empty_sort=Case(
+                When(due_at__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('due_empty_sort', 'due_at', 'project__name', 'order', 'id')
+    if sort_value == 'created_desc':
+        return queryset.order_by('-created_at', 'project__name', 'order', 'id')
+    if sort_value == 'activity_desc':
+        return queryset.annotate(
+            last_task_created_sort=Max('tasks__created_at'),
+            last_activity_sort=Max('tasks__activities__created_at'),
+        ).order_by('-last_activity_sort', '-last_task_created_sort', '-created_at', 'project__name', 'order', 'id')
+    return queryset.order_by('project__name', 'order', 'created_at', 'id')
+
+
+def _group_filter_options(user, workplace=None):
+    queryset = TaskSection.objects.filter(project__user=user).select_related('project', 'owner')
+    queryset = _filter_workplace(queryset, workplace, field_name='project__workplace')
+    projects = [
+        {'value': str(row['project_id']), 'label': row['project__name']}
+        for row in queryset.values('project_id', 'project__name')
+        .distinct()
+        .order_by('project__name', 'project_id')
+    ]
+    owners = []
+    for row in (
+        queryset.filter(owner__isnull=False)
+        .values('owner_id', 'owner__first_name', 'owner__last_name', 'owner__username')
+        .distinct()
+        .order_by('owner__last_name', 'owner__first_name', 'owner__username')
+    ):
+        full_name = ' '.join(
+            part for part in (
+                row['owner__first_name'],
+                row['owner__last_name'],
+            )
+            if part
+        ).strip()
+        owners.append({
+            'value': str(row['owner_id']),
+            'label': full_name or row['owner__username'],
+        })
+
+    if queryset.filter(owner__isnull=True).exists():
+        owners.insert(0, {'value': 'none', 'label': 'Brak osoby'})
+
+    return {
+        'statuses': _choice_options(TaskSection.STATUS_CHOICES),
+        'kinds': _choice_options(TaskSection.KIND_CHOICES),
+        'projects': projects,
+        'owners': owners,
+    }
+
+
+def _task_filter_queryset(
+    queryset,
+    query='',
+    priority='',
+    status='',
+    project_filter='',
+    section='',
+    assignee='',
+    company='',
+    task_type='',
+    due='',
+):
+    query = (query or '').strip()
+    if query:
+        task_code_number = parse_hierarchy_code_number(query, Task.CODE_PREFIX)
+        section_code_number = parse_hierarchy_code_number(query, TaskSection.CODE_PREFIX)
+        task_id = _integer_filter_value(query)
+        priority_matches = _choice_values_matching_query(Task.PRIORITY_CHOICES, query)
+        status_matches = _choice_values_matching_query(Task.STATUS_CHOICES, query)
+        type_matches = _choice_values_matching_query(Task.TASK_TYPE_CHOICES, query)
+        channel_matches = _choice_values_matching_query(Task.CONTACT_CHANNEL_CHOICES, query)
+        query_filter = (
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(section__title__icontains=query)
+            | Q(section__description__icontains=query)
+            | Q(section__project__name__icontains=query)
+            | Q(section__project__code__icontains=query)
+            | Q(company__name__icontains=query)
+            | Q(contact__first_name__icontains=query)
+            | Q(contact__middle_name__icontains=query)
+            | Q(contact__last_name__icontains=query)
+            | Q(contact__company__icontains=query)
+            | Q(contact__email__icontains=query)
+            | Q(assignee__first_name__icontains=query)
+            | Q(assignee__middle_name__icontains=query)
+            | Q(assignee__last_name__icontains=query)
+            | Q(assignee__email__icontains=query)
+            | Q(assignee__username__icontains=query)
+            | Q(tags__name__icontains=query)
+            | Q(tags__code__icontains=query)
+        )
+        if task_id:
+            query_filter |= Q(task_id=task_id)
+        if task_code_number:
+            query_filter |= Q(code_number=task_code_number)
+        if section_code_number:
+            query_filter |= Q(section__code_number=section_code_number)
+        if priority_matches:
+            query_filter |= Q(priority__in=priority_matches)
+        if status_matches:
+            query_filter |= Q(status__in=status_matches)
+        if type_matches:
+            query_filter |= Q(task_type__in=type_matches)
+        if channel_matches:
+            query_filter |= Q(contact_channel__in=channel_matches)
+        queryset = queryset.filter(query_filter).distinct()
+    if priority in {value for value, _label in Task.PRIORITY_CHOICES}:
+        queryset = queryset.filter(priority=priority)
+    if status in {value for value, _label in Task.STATUS_CHOICES}:
+        queryset = queryset.filter(status=status)
+    if project_id := _integer_filter_value(project_filter):
+        queryset = queryset.filter(section__project_id=project_id)
+    if section_id := _integer_filter_value(section):
+        queryset = queryset.filter(section_id=section_id)
+    if assignee == 'none':
+        queryset = queryset.filter(assignee__isnull=True)
+    elif assignee_id := _integer_filter_value(assignee):
+        queryset = queryset.filter(assignee_id=assignee_id)
+    if company == 'none':
+        queryset = queryset.filter(company__isnull=True)
+    elif company_id := _integer_filter_value(company):
+        queryset = queryset.filter(company_id=company_id)
+    if task_type in {value for value, _label in Task.TASK_TYPE_CHOICES}:
+        queryset = queryset.filter(task_type=task_type)
+    today = timezone.localdate()
+    if due == 'overdue':
+        queryset = queryset.filter(due_at__date__lt=today).exclude(status='closed')
+    elif due == 'today':
+        queryset = queryset.filter(due_at__date=today)
+    elif due == 'week':
+        queryset = queryset.filter(due_at__date__range=(today, today + timedelta(days=6)))
+    elif due == 'none':
+        queryset = queryset.filter(due_at__isnull=True)
+    return queryset
+
+
+def _task_sort_queryset(queryset, sort_value):
+    sort_value = _task_sort_value(sort_value)
+    if sort_value == 'task_id_desc':
+        return queryset.order_by('-task_id', '-created_at', '-id')
+    if sort_value == 'title_asc':
+        return queryset.order_by('title', 'task_id', 'id')
+    if sort_value == 'title_desc':
+        return queryset.order_by('-title', 'task_id', 'id')
+    if sort_value == 'priority_desc':
+        return queryset.annotate(
+            task_priority_sort_rank=_choice_rank_case('priority', Task.PRIORITY_CHOICES)
+        ).order_by('-task_priority_sort_rank', 'task_id', 'id')
+    if sort_value == 'project_asc':
+        return queryset.order_by('section__project__name', 'section__order', 'task_id', 'id')
+    if sort_value == 'section_asc':
+        return queryset.order_by('section__title', 'section__project__name', 'task_id', 'id')
+    if sort_value == 'assignee_asc':
+        return queryset.annotate(
+            task_assignee_empty_sort=Case(
+                When(assignee__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by(
+            'task_assignee_empty_sort',
+            'assignee__last_name',
+            'assignee__first_name',
+            'assignee__username',
+            'task_id',
+            'id',
+        )
+    if sort_value == 'company_asc':
+        return queryset.annotate(
+            task_company_empty_sort=Case(
+                When(company__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('task_company_empty_sort', 'company__name', 'task_id', 'id')
+    if sort_value == 'type_asc':
+        return queryset.annotate(
+            task_type_sort_rank=_choice_rank_case('task_type', Task.TASK_TYPE_CHOICES)
+        ).order_by('task_type_sort_rank', 'task_id', 'id')
+    if sort_value == 'due_at_asc':
+        return queryset.annotate(
+            task_due_empty_sort=Case(
+                When(due_at__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('task_due_empty_sort', 'due_at', 'task_id', 'id')
+    if sort_value == 'created_desc':
+        return queryset.order_by('-created_at', '-id')
+    if sort_value == 'activity_desc':
+        return queryset.annotate(
+            task_last_activity_sort=Max('activities__created_at'),
+        ).order_by('-task_last_activity_sort', '-created_at', '-id')
+    return queryset.order_by('is_closed_sort', 'task_id', 'id')
+
+
+def _task_filter_options(user, workplace=None):
+    queryset = _filter_workplace(
+        Task.objects.filter(user=user, parent__isnull=True),
+        workplace,
+    ).select_related('section', 'section__project', 'assignee', 'company')
+    projects = [
+        {'value': str(row['section__project_id']), 'label': row['section__project__name']}
+        for row in queryset.filter(section__project__isnull=False)
+        .values('section__project_id', 'section__project__name')
+        .distinct()
+        .order_by('section__project__name', 'section__project_id')
+    ]
+    sections = [
+        {
+            'value': str(row['section_id']),
+            'label': f"{row['section__title']} ({row['section__project__name']})",
+        }
+        for row in queryset.filter(section__isnull=False)
+        .values('section_id', 'section__title', 'section__project__name')
+        .distinct()
+        .order_by('section__project__name', 'section__title', 'section_id')
+    ]
+    assignees = []
+    for row in (
+        queryset.filter(assignee__isnull=False)
+        .values('assignee_id', 'assignee__first_name', 'assignee__last_name', 'assignee__username')
+        .distinct()
+        .order_by('assignee__last_name', 'assignee__first_name', 'assignee__username')
+    ):
+        full_name = ' '.join(
+            part for part in (
+                row['assignee__first_name'],
+                row['assignee__last_name'],
+            )
+            if part
+        ).strip()
+        assignees.append({
+            'value': str(row['assignee_id']),
+            'label': full_name or row['assignee__username'],
+        })
+    companies = [
+        {'value': str(row['company_id']), 'label': row['company__name']}
+        for row in queryset.filter(company__isnull=False)
+        .values('company_id', 'company__name')
+        .distinct()
+        .order_by('company__name', 'company_id')
+    ]
+
+    if queryset.filter(assignee__isnull=True).exists():
+        assignees.insert(0, {'value': 'none', 'label': 'Brak osoby'})
+    if queryset.filter(company__isnull=True).exists():
+        companies.insert(0, {'value': 'none', 'label': 'Brak firmy'})
+
+    return {
+        'statuses': _choice_options(Task.STATUS_CHOICES),
+        'priorities': _choice_options(Task.PRIORITY_CHOICES),
+        'types': _choice_options(Task.TASK_TYPE_CHOICES),
+        'due': TASK_DUE_FILTER_OPTIONS,
+        'projects': projects,
+        'sections': sections,
+        'assignees': assignees,
+        'companies': companies,
+    }
+
+
+def _task_window_for_request(request, queryset):
+    workplace = _active_workplace(request)
+    query = (request.GET.get('q') or '').strip()
+    priority = (request.GET.get('priority') or '').strip()
+    status = (request.GET.get('status') or '').strip()
+    project_filter = (request.GET.get('task_project') or '').strip()
+    section = (request.GET.get('task_section') or '').strip()
+    assignee = (request.GET.get('task_assignee') or '').strip()
+    company = (request.GET.get('task_company') or '').strip()
+    task_type = (request.GET.get('task_type') or '').strip()
+    due = (request.GET.get('task_due') or '').strip()
+    sort = _task_sort_value((request.GET.get('sort') or '').strip())
+    queryset = _task_filter_queryset(
+        queryset,
+        query=query,
+        priority=priority,
+        status=status,
+        project_filter=project_filter,
+        section=section,
+        assignee=assignee,
+        company=company,
+        task_type=task_type,
+        due=due,
+    )
+    queryset = _task_sort_queryset(queryset, sort)
+    active_filters = any((
+        query,
+        priority,
+        status,
+        project_filter,
+        section,
+        assignee,
+        company,
+        task_type,
+        due,
+        sort != TASK_DEFAULT_SORT,
+    ))
+    return {
+        'queryset': queryset,
+        'query': query,
+        'priority': priority,
+        'status': status,
+        'project_filter': project_filter,
+        'section': section,
+        'assignee': assignee,
+        'company': company,
+        'task_type': task_type,
+        'due': due,
+        'sort': sort,
+        'sort_param': '' if sort == TASK_DEFAULT_SORT else sort,
+        'sort_label': TASK_SORT_OPTION_MAP[sort]['label'],
+        'sort_direction': TASK_SORT_OPTION_MAP[sort]['direction'],
+        'filters': _task_filter_options(request.user, workplace=workplace),
+        'total_tasks': queryset.count(),
+        'has_active_filters': active_filters,
+    }
 
 
 def _tag_filter_queryset(user, query='', workplace=None):
@@ -684,7 +1320,24 @@ def _project_window_for_request(request):
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
     priority = (request.GET.get('priority') or '').strip()
-    queryset = _project_filter_queryset(request.user, query=query, priority=priority, workplace=workplace)
+    status = (request.GET.get('status') or '').strip()
+    stage = (request.GET.get('stage') or '').strip()
+    health = (request.GET.get('health') or '').strip()
+    company = (request.GET.get('company') or '').strip()
+    responsible = (request.GET.get('responsible') or '').strip()
+    sort = _project_sort_value((request.GET.get('sort') or '').strip())
+    queryset = _project_filter_queryset(
+        request.user,
+        query=query,
+        priority=priority,
+        status=status,
+        stage=stage,
+        health=health,
+        company=company,
+        responsible=responsible,
+        workplace=workplace,
+    )
+    queryset = _project_sort_queryset(queryset, sort)
     total_projects = queryset.count()
     total_pages = max(1, (total_projects + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
@@ -693,7 +1346,7 @@ def _project_window_for_request(request):
     projects = _projects_for_user(
         request.user,
         project_queryset=queryset,
-        order_by=('name', 'id'),
+        order_by=None,
         limit=page_size,
         offset=offset,
         workplace=workplace,
@@ -705,6 +1358,12 @@ def _project_window_for_request(request):
     base_params = {
         'q': query,
         'priority': priority,
+        'status': status,
+        'stage': stage,
+        'health': health,
+        'company': company,
+        'responsible': responsible,
+        'sort': '' if sort == PROJECT_DEFAULT_SORT else sort,
         'page_size': page_size,
     }
     has_previous = current_page > 1 and total_projects > 0
@@ -730,6 +1389,16 @@ def _project_window_for_request(request):
         'projects': projects,
         'query': query,
         'priority': priority,
+        'status': status,
+        'stage': stage,
+        'health': health,
+        'company': company,
+        'responsible': responsible,
+        'sort': sort,
+        'sort_param': '' if sort == PROJECT_DEFAULT_SORT else sort,
+        'sort_label': PROJECT_SORT_OPTION_MAP[sort]['label'],
+        'sort_direction': PROJECT_SORT_OPTION_MAP[sort]['direction'],
+        'filters': _project_filter_options(request.user, workplace=workplace),
         'page': current_page,
         'total_pages': total_pages,
         'total_projects': total_projects,
@@ -750,21 +1419,39 @@ def _group_window_for_request(request):
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
     priority = (request.GET.get('priority') or '').strip()
-    queryset = _group_filter_queryset(request.user, query=query, priority=priority, workplace=workplace)
+    status = (request.GET.get('status') or '').strip()
+    kind = (request.GET.get('kind') or '').strip()
+    project_filter = (request.GET.get('group_project') or '').strip()
+    owner = (request.GET.get('owner') or '').strip()
+    sort = _group_sort_value((request.GET.get('sort') or '').strip())
+    queryset = _group_filter_queryset(
+        request.user,
+        query=query,
+        priority=priority,
+        status=status,
+        kind=kind,
+        project_filter=project_filter,
+        owner=owner,
+        workplace=workplace,
+    )
+    queryset = _group_sort_queryset(queryset, sort)
     total_groups = queryset.count()
     total_pages = max(1, (total_groups + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
     offset = (current_page - 1) * page_size
 
-    sections = list(
-        queryset.order_by('project__name', 'order', 'created_at', 'id')[offset:offset + page_size]
-    )
+    sections = list(queryset[offset:offset + page_size])
     _decorate_group_directory_rows(sections, current_user=request.user)
 
     base_params = {
         'view': 'all-groups',
         'q': query,
         'priority': priority,
+        'status': status,
+        'kind': kind,
+        'group_project': project_filter,
+        'owner': owner,
+        'sort': '' if sort == GROUP_DEFAULT_SORT else sort,
         'page_size': page_size,
     }
     has_previous = current_page > 1 and total_groups > 0
@@ -790,6 +1477,15 @@ def _group_window_for_request(request):
         'sections': sections,
         'query': query,
         'priority': priority,
+        'status': status,
+        'kind': kind,
+        'project_filter': project_filter,
+        'owner': owner,
+        'sort': sort,
+        'sort_param': '' if sort == GROUP_DEFAULT_SORT else sort,
+        'sort_label': GROUP_SORT_OPTION_MAP[sort]['label'],
+        'sort_direction': GROUP_SORT_OPTION_MAP[sort]['direction'],
+        'filters': _group_filter_options(request.user, workplace=workplace),
         'page': current_page,
         'total_pages': total_pages,
         'total_groups': total_groups,
@@ -2229,6 +2925,16 @@ def _tasks_page(request, active_section=None):
         'projects': [],
         'query': '',
         'priority': '',
+        'status': '',
+        'stage': '',
+        'health': '',
+        'company': '',
+        'responsible': '',
+        'sort': PROJECT_DEFAULT_SORT,
+        'sort_param': '',
+        'sort_label': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['label'],
+        'sort_direction': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['direction'],
+        'filters': _project_filter_options(request.user, workplace=workplace),
         'page': 1,
         'total_pages': 1,
         'total_projects': 0,
@@ -2245,6 +2951,15 @@ def _tasks_page(request, active_section=None):
         'sections': [],
         'query': '',
         'priority': '',
+        'status': '',
+        'kind': '',
+        'project_filter': '',
+        'owner': '',
+        'sort': GROUP_DEFAULT_SORT,
+        'sort_param': '',
+        'sort_label': GROUP_SORT_OPTION_MAP[GROUP_DEFAULT_SORT]['label'],
+        'sort_direction': GROUP_SORT_OPTION_MAP[GROUP_DEFAULT_SORT]['direction'],
+        'filters': _group_filter_options(request.user, workplace=workplace),
         'page': 1,
         'total_pages': 1,
         'total_groups': 0,
@@ -2288,6 +3003,34 @@ def _tasks_page(request, active_section=None):
         'next_url': '',
         'summary': '',
     }
+    task_window = _task_window_for_request(request, tasks_qs) if active_view in ('all_tasks', 'my_tasks') else {
+        'queryset': tasks_qs,
+        'query': '',
+        'priority': '',
+        'status': '',
+        'project_filter': '',
+        'section': '',
+        'assignee': '',
+        'company': '',
+        'task_type': '',
+        'due': '',
+        'sort': TASK_DEFAULT_SORT,
+        'sort_param': '',
+        'sort_label': TASK_SORT_OPTION_MAP[TASK_DEFAULT_SORT]['label'],
+        'sort_direction': TASK_SORT_OPTION_MAP[TASK_DEFAULT_SORT]['direction'],
+        'filters': {
+            'statuses': _choice_options(Task.STATUS_CHOICES),
+            'priorities': _choice_options(Task.PRIORITY_CHOICES),
+            'types': _choice_options(Task.TASK_TYPE_CHOICES),
+            'due': TASK_DUE_FILTER_OPTIONS,
+            'projects': [],
+            'sections': [],
+            'assignees': [],
+            'companies': [],
+        },
+        'total_tasks': 0,
+        'has_active_filters': False,
+    }
     projects = project_window['projects']
     navigation_projects = _navigation_projects_for_user(request.user, active_project=active_project, workplace=workplace)
     project_options = _navigation_projects_for_user(request.user, active_project=active_project_for_form or active_project, workplace=workplace)
@@ -2312,7 +3055,7 @@ def _tasks_page(request, active_section=None):
         )
     elif all_tasks_view or my_tasks_view:
         all_status_groups = _status_groups_for_tasks(
-            tasks_qs,
+            task_window['queryset'],
             request.user,
             request=request,
             base_url=request.path,
@@ -2325,7 +3068,7 @@ def _tasks_page(request, active_section=None):
     shared_status_groups = []
     _decorate_share_links(request, [*projects, *all_sections])
     tags = tag_window['tags'] if active_view == 'tags' else TaskTag.objects.none()
-    total_task_count = tasks_qs.count() if (all_tasks_view or my_tasks_view) else 0
+    total_task_count = task_window['total_tasks'] if (all_tasks_view or my_tasks_view) else 0
     can_create_issue = _user_can_create_issue(
         request.user,
         active_project=active_project,
@@ -2341,15 +3084,56 @@ def _tasks_page(request, active_section=None):
         'project_window': project_window,
         'project_query': project_window['query'],
         'project_priority_filter': project_window['priority'],
+        'project_status_filter': project_window['status'],
+        'project_stage_filter': project_window['stage'],
+        'project_health_filter': project_window['health'],
+        'project_company_filter': project_window['company'],
+        'project_responsible_filter': project_window['responsible'],
+        'project_filter_options': project_window['filters'],
+        'project_sort_options': PROJECT_SORT_OPTIONS,
+        'project_sort': project_window['sort'],
+        'project_sort_param': project_window['sort_param'],
+        'project_sort_label': project_window['sort_label'],
+        'project_sort_direction': project_window['sort_direction'],
+        'project_default_sort': PROJECT_DEFAULT_SORT,
         'group_window': group_window,
         'group_query': group_window['query'],
         'group_priority_filter': group_window['priority'],
+        'group_status_filter': group_window['status'],
+        'group_kind_filter': group_window['kind'],
+        'group_project_filter': group_window['project_filter'],
+        'group_owner_filter': group_window['owner'],
+        'group_filter_options': group_window['filters'],
+        'group_sort_options': GROUP_SORT_OPTIONS,
+        'group_sort': group_window['sort'],
+        'group_sort_param': group_window['sort_param'],
+        'group_sort_label': group_window['sort_label'],
+        'group_sort_direction': group_window['sort_direction'],
+        'group_default_sort': GROUP_DEFAULT_SORT,
         'project_section_window': project_section_window,
         'project_sections': project_sections,
         'project_section_query': project_section_window['query'],
         'project_section_priority_filter': project_section_window['priority'],
         'tag_window': tag_window,
         'tag_query': tag_window['query'],
+        'task_window': task_window,
+        'task_query': task_window['query'],
+        'task_priority_filter': task_window['priority'],
+        'task_status_filter': task_window['status'],
+        'task_project_filter': task_window['project_filter'],
+        'task_section_filter': task_window['section'],
+        'task_assignee_filter': task_window['assignee'],
+        'task_company_filter': task_window['company'],
+        'task_type_filter': task_window['task_type'],
+        'task_due_filter': task_window['due'],
+        'task_filter_options': task_window['filters'],
+        'task_sort_options': TASK_SORT_OPTIONS,
+        'task_sort': task_window['sort'],
+        'task_sort_param': task_window['sort_param'],
+        'task_sort_label': task_window['sort_label'],
+        'task_sort_direction': task_window['sort_direction'],
+        'task_default_sort': TASK_DEFAULT_SORT,
+        'task_has_active_filters': task_window['has_active_filters'],
         'active_project': active_project,
         'active_section': active_section,
         'active_view': active_view,
