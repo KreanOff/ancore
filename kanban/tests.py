@@ -10,7 +10,7 @@ from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
-from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag
+from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag, KanbanTagNote
 
 
 class KanbanProjectCreationTests(TestCase):
@@ -213,24 +213,183 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, '<span class="tasks-rail-count">2</span>', html=True)
 
     def test_tags_view_lists_tags(self):
-        frontend = KanbanTag.objects.create(user=self.user, name='Frontend', description='Prace po stronie UI')
+        frontend = KanbanTag.objects.create(
+            user=self.user,
+            name='Frontend',
+            description='Prace po stronie UI',
+            category='area',
+            color='#1d4ed8',
+            icon='flag',
+            priority='high',
+            scope='projects',
+            owner_label='IT',
+            status='active',
+            usage_notes='Używaj przy kartach interfejsu.',
+            automation_rules='Dodaj przy kanale frontend.',
+        )
         backend = KanbanTag.objects.create(user=self.user, name='Backend')
+        frontend.related_tags.add(backend)
+        KanbanTagNote.objects.create(tag=frontend, author=self.user, message='Moja notatka tagu')
         project = KanbanProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
         section = KanbanSection.objects.create(project=project, title='Tablica')
         task = Kanban.objects.create(user=self.user, section=section, title='Zadanie frontendowe')
         task.tags.add(frontend)
 
         response = self.client.get(f"{reverse('kanban:tasks')}?view=tags")
+        html = response.content.decode()
 
         self.assertContains(response, 'Tagi')
+        self.assertContains(response, 'tasks-spreadsheet-sheet')
+        self.assertContains(response, 'KOD TAGU')
+        self.assertContains(response, 'NAZWA TAGU')
+        self.assertContains(response, 'data-directory-column-manager')
+        self.assertContains(response, 'data-directory-column-manager-toggle')
+        self.assertContains(response, 'data-directory-column-manager-list')
+        self.assertContains(response, 'data-directory-column-manager-search')
+        self.assertContains(response, 'data-directory-column-manager-save')
+        self.assertContains(response, 'data-directory-column-manager-cancel')
+        self.assertContains(response, 'Zarządzaj tabelą')
+        self.assertContains(response, 'data-ancore-custom-select-search-placeholder="Szukaj tagów"')
+        self.assertContains(response, 'data-column-label="Edytuj"')
+        self.assertContains(response, 'data-column-label="Informacje"')
+        self.assertContains(response, 'data-column-label="Notatki"')
+        expected_columns = [
+            'data-column="action" aria-label="Edytuj tag"',
+            'data-column="info" aria-label="Informacje o tagu"',
+            'data-column="notes" aria-label="Notatki tagu"',
+            'data-column="tag_name">NAZWA TAGU',
+            'data-column="tag_code">KOD TAGU',
+            'data-column="tag_type">TYP',
+            'data-column="tag_visual">KOLOR / IKONA',
+            'data-column="priority">PRIORYTET',
+            'data-column="scope">ZAKRES',
+            'data-column="owner">WŁAŚCICIEL',
+            'data-column="status">STATUS',
+            'data-column="description">OPIS',
+            'data-column="usage_notes">UŻYCIE',
+            'data-column="automation">AUTOMATYKA',
+            'data-column="related_tags">POWIĄZANE',
+            'data-column="task_count">KARTY',
+            'data-column="created_at">DATA',
+        ]
+        column_positions = [html.index(column) for column in expected_columns]
+        self.assertEqual(column_positions, sorted(column_positions))
+        self.assertContains(response, 'data-column="action"', count=3)
+        self.assertContains(response, 'data-column="action" aria-label="Edytuj tag"')
+        self.assertContains(response, 'data-column="info"', count=3)
+        self.assertContains(response, 'data-column="info" aria-label="Informacje o tagu"')
+        self.assertContains(response, 'data-column="notes"', count=3)
+        self.assertContains(response, 'data-column="notes" aria-label="Notatki tagu"')
+        self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action"')
+        self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info"')
+        self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes"')
+        self.assertContains(response, 'tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action"')
+        self.assertContains(response, 'tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info"')
+        self.assertContains(response, 'tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes"')
+        self.assertContains(response, 'data-open-tag-edit', count=2)
+        self.assertContains(response, 'data-open-tag-info', count=2)
+        self.assertContains(response, 'data-open-tag-notes', count=2)
+        self.assertContains(response, 'aria-label="Edytuj tag Frontend"')
+        self.assertContains(response, 'aria-label="Informacje o tagu Frontend"')
+        self.assertContains(response, 'aria-label="Notatki tagu Frontend"')
+        self.assertContains(response, 'id="tag-notes-modal"')
+        self.assertContains(response, 'id="project-info-modal"')
+        self.assertContains(response, 'name="action" value="add_tag_note"')
+        self.assertContains(response, 'name="action" value="edit_tag_note"')
+        self.assertContains(response, 'name="action" value="delete_tag_note"')
+        self.assertContains(response, 'Moja notatka tagu')
+        self.assertContains(response, 'data-tag-notes-message')
+        self.assertContains(response, 'data-tag-note-edit-toggle')
+        self.assertContains(response, 'data-column="tag_code"', count=3)
+        self.assertContains(response, 'data-column="tag_name"', count=3)
+        frontend_row_start = html.index(f'data-tag-id="{frontend.id}"')
+        self.assertLess(
+            html.index('data-column="action"', frontend_row_start),
+            html.index('data-column="info"', frontend_row_start),
+        )
+        self.assertLess(
+            html.index('data-column="info"', frontend_row_start),
+            html.index('data-column="notes"', frontend_row_start),
+        )
+        self.assertLess(
+            html.index('data-column="notes"', frontend_row_start),
+            html.index('data-column="tag_name"', frontend_row_start),
+        )
+        self.assertLess(
+            html.index('data-column="tag_name"', frontend_row_start),
+            html.index('data-column="tag_code"', frontend_row_start),
+        )
         self.assertContains(response, 'Frontend')
         self.assertContains(response, 'Prace po stronie UI')
+        self.assertContains(response, 'Obszar')
+        self.assertContains(response, '#1d4ed8')
+        self.assertContains(response, 'Flaga')
+        self.assertContains(response, 'Wysoki')
+        self.assertContains(response, 'Projekty')
+        self.assertContains(response, 'IT')
+        self.assertContains(response, 'Aktywny')
+        self.assertContains(response, 'Używaj przy kartach interfejsu.')
+        self.assertContains(response, 'Dodaj przy kanale frontend.')
         self.assertContains(response, 'Brak opisu')
         self.assertContains(response, 'Backend')
         self.assertContains(response, frontend.code)
         self.assertContains(response, backend.code)
         self.assertContains(response, '1 kart')
         self.assertContains(response, '0 kart')
+        self.assertContains(response, 'data-server-pagination="true"')
+        self.assertContains(response, 'Na stronie')
+        self.assertContains(response, 'tagów')
+
+    def test_tags_view_renders_only_server_side_window(self):
+        for index in range(60):
+            KanbanTag.objects.create(
+                user=self.user,
+                name=f'Tag {index:03d}',
+                description=f'Opis tagu {index:03d}',
+            )
+
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=tags")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-server-pagination="true"')
+        self.assertContains(response, 'tasks-tag-sheet__row', count=50)
+        self.assertIn('Tag 000', table_html)
+        self.assertIn('Tag 049', table_html)
+        self.assertNotIn('Tag 050', table_html)
+        self.assertContains(response, 'Na stronie')
+        self.assertContains(response, 'tagów')
+        self.assertContains(response, 'Pokazano 1-50 z 60 tagów')
+        self.assertIn('data-project-page-url="/kanban/?view=tags&amp;page_size=50&amp;page=2"', html)
+        self.assertIn('aria-current="page">1</button>', html)
+
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=tags&page_size=50&page=2")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertContains(response, 'tasks-tag-sheet__row', count=10)
+        self.assertIn('Tag 050', table_html)
+        self.assertIn('Tag 059', table_html)
+        self.assertNotIn('Tag 049', table_html)
+        self.assertContains(response, 'Pokazano 51-60 z 60 tagów')
+        self.assertIn('aria-current="page">2</button>', html)
+        self.assertIn('data-project-page-url="/kanban/?view=tags&amp;page_size=50"', html)
+
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=tags&page_size=10")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertContains(response, 'tasks-tag-sheet__row', count=10)
+        self.assertIn('Tag 000', table_html)
+        self.assertNotIn('Tag 010', table_html)
+        self.assertIn('data-project-page="6"', html)
 
     def test_tags_link_shows_tag_count(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
@@ -244,10 +403,21 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, '<span class="tasks-rail-count">2</span>', html=True)
 
     def test_create_tag_from_tasks_page(self):
+        related = KanbanTag.objects.create(user=self.user, name='Backend')
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'create_tag',
             'name': 'Design',
             'description': 'Makiety i decyzje wizualne',
+            'category': 'work_type',
+            'color': '#22c55e',
+            'icon': 'briefcase',
+            'priority': 'medium',
+            'scope': 'tasks',
+            'owner_label': 'Design',
+            'status': 'active',
+            'usage_notes': 'Używać dla makiet i UI.',
+            'automation_rules': 'Dodaj po imporcie briefu.',
+            'related_tags': [related.id],
             'code': 'DES',
         })
 
@@ -255,6 +425,16 @@ class KanbanProjectCreationTests(TestCase):
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?view=tags")
         self.assertEqual(tag.description, 'Makiety i decyzje wizualne')
+        self.assertEqual(tag.category, 'work_type')
+        self.assertEqual(tag.color, '#22c55e')
+        self.assertEqual(tag.icon, 'briefcase')
+        self.assertEqual(tag.priority, 'medium')
+        self.assertEqual(tag.scope, 'tasks')
+        self.assertEqual(tag.owner_label, 'Design')
+        self.assertEqual(tag.status, 'active')
+        self.assertEqual(tag.usage_notes, 'Używać dla makiet i UI.')
+        self.assertEqual(tag.automation_rules, 'Dodaj po imporcie briefu.')
+        self.assertEqual(list(tag.related_tags.all()), [related])
         self.assertNotEqual(tag.code, 'DES')
         self.assertRegex(tag.code, r'^T-[0-9A-Z]{8}$')
 
@@ -284,8 +464,54 @@ class KanbanProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?view=tags")
         self.assertFalse(KanbanTag.objects.filter(id=tag.id).exists())
 
+    def test_tag_note_actions_add_edit_and_delete_own_notes(self):
+        tag = KanbanTag.objects.create(
+            user=self.user,
+            name='Design',
+            description='Opis tagu',
+            status='active',
+        )
+        old_code = tag.code
+
+        response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'add_tag_note',
+            'tag_id': tag.id,
+            'message': '  Nowa notatka tagu  ',
+        })
+
+        tag.refresh_from_db()
+        self.assertRedirects(response, reverse('kanban:tasks'))
+        note = KanbanTagNote.objects.get(tag=tag)
+        self.assertEqual(tag.name, 'Design')
+        self.assertEqual(tag.description, 'Opis tagu')
+        self.assertEqual(tag.status, 'active')
+        self.assertEqual(tag.code, old_code)
+        self.assertEqual(note.author, self.user)
+        self.assertEqual(note.message, 'Nowa notatka tagu')
+
+        response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'edit_tag_note',
+            'tag_id': tag.id,
+            'note_id': note.id,
+            'message': '  Poprawiona notatka tagu  ',
+        })
+
+        note.refresh_from_db()
+        self.assertRedirects(response, reverse('kanban:tasks'))
+        self.assertEqual(note.message, 'Poprawiona notatka tagu')
+
+        response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'delete_tag_note',
+            'tag_id': tag.id,
+            'note_id': note.id,
+        })
+
+        self.assertRedirects(response, reverse('kanban:tasks'))
+        self.assertFalse(KanbanTagNote.objects.filter(id=note.id).exists())
+
     def test_edit_tag_from_tasks_page(self):
         tag = KanbanTag.objects.create(user=self.user, name='Design', description='Stary opis')
+        related = KanbanTag.objects.create(user=self.user, name='Backend')
         old_code = tag.code
 
         response = self.client.post(reverse('kanban:tasks'), {
@@ -293,6 +519,16 @@ class KanbanProjectCreationTests(TestCase):
             'tag_id': tag.id,
             'name': 'UI',
             'description': 'Nowy opis',
+            'category': 'area',
+            'color': '#0f766e',
+            'icon': 'layers',
+            'priority': 'high',
+            'scope': 'projects',
+            'owner_label': 'Produkt',
+            'status': 'archived',
+            'usage_notes': 'Stosować przy zmianach UI.',
+            'automation_rules': 'Dodaj przy typie karty UI.',
+            'related_tags': [related.id],
             'code': 'NEW',
         })
 
@@ -301,6 +537,16 @@ class KanbanProjectCreationTests(TestCase):
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?view=tags")
         self.assertEqual(tag.name, 'UI')
         self.assertEqual(tag.description, 'Nowy opis')
+        self.assertEqual(tag.category, 'area')
+        self.assertEqual(tag.color, '#0f766e')
+        self.assertEqual(tag.icon, 'layers')
+        self.assertEqual(tag.priority, 'high')
+        self.assertEqual(tag.scope, 'projects')
+        self.assertEqual(tag.owner_label, 'Produkt')
+        self.assertEqual(tag.status, 'archived')
+        self.assertEqual(tag.usage_notes, 'Stosować przy zmianach UI.')
+        self.assertEqual(tag.automation_rules, 'Dodaj przy typie karty UI.')
+        self.assertEqual(list(tag.related_tags.all()), [related])
         self.assertEqual(tag.code, old_code)
 
     def test_more_options_render_edit_and_delete_actions_for_list_views(self):

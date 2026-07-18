@@ -5,6 +5,7 @@ from django.urls import reverse
 from tasks.models import TaskProject
 from .models import WorkplaceMembership, create_workplace_for_user
 from .services import scoped_workplace_app_path
+from .templatetags.workplace_avatar import workplace_avatar
 
 
 class WorkplaceSelectionTests(TestCase):
@@ -43,9 +44,65 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.get(reverse('workplaces:workplaces'))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-workplaces-select-all')
+        self.assertContains(response, 'data-workplace-id=', count=2)
         self.assertContains(response, 'Pierwszy Workplace')
         self.assertContains(response, 'Drugi Workplace')
         self.assertNotContains(response, 'Nie moj Workplace')
+
+    def test_workplace_avatar_uses_workplace_specific_background_color(self):
+        first_avatar = workplace_avatar(self.first_workplace)
+        second_avatar = workplace_avatar(self.second_workplace)
+
+        self.assertEqual(first_avatar['background_color'], workplace_avatar(self.first_workplace)['background_color'])
+        self.assertNotEqual(first_avatar['background_color'], second_avatar['background_color'])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('workplaces:workplaces'))
+
+        self.assertContains(response, first_avatar['color_style'])
+        self.assertContains(response, second_avatar['color_style'])
+
+    def test_workplace_edit_renders_in_tasks_modal_shell(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('workplaces:workplaces'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-workplace-edit-modal>', count=2)
+        self.assertContains(response, 'data-workplace-edit-open="workplace-edit-modal-')
+        self.assertContains(response, 'tasks-modal tasks-project-modal tasks-project-edit-modal tasks-issue-modal workplace-edit-modal')
+        self.assertContains(response, 'tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form workplace-edit-modal__form')
+        self.assertContains(response, 'Edytuj miejsce pracy')
+        self.assertNotContains(response, 'class="workplace-settings workplace-settings--inspector"')
+        self.assertNotContains(response, 'class="workplace-settings__form"')
+
+    def test_sidebar_workplace_avatar_uses_active_workplace_photo(self):
+        self.first_workplace.workplace_photo = 'workplace_photos/moje-miejsce.webp'
+        self.first_workplace.save(update_fields=['workplace_photo'])
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'sidebar-workplace__avatar has-photo')
+        self.assertContains(response, '/media/workplace_photos/moje-miejsce.webp')
+        self.assertContains(response, '<img src="/media/workplace_photos/moje-miejsce.webp" alt="">', html=True)
+
+    def test_sidebar_workplace_avatar_uses_workplace_logo_icon_without_photo(self):
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'sidebar-workplace__avatar')
+        self.assertContains(
+            response,
+            '<i class="profile-avatar-icon sidebar-workplace__icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>',
+            html=True,
+        )
 
     def test_tasks_projects_are_scoped_to_active_workplace(self):
         self.client.force_login(self.user)

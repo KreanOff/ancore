@@ -59,12 +59,12 @@
         </nav>
 
         <div class="tasks-rail-section tasks-project-tree" data-project-tree>
-            <div class="tasks-rail-section-title">
-                <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń Moje przestrzenie robocze" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle>
+            <div class="tasks-rail-section-title tasks-project-tree-heading">
+                <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń sekcję Twoje projekty" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle data-project-tree-label="Twoje projekty">
                     <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    <span class="tasks-project-tree-label">Moje przestrzenie</span>
+                    <span class="tasks-project-tree-label">Twoje projekty</span>
                 </button>
-                <button type="button" class="tasks-rail-add-button" aria-label="Dodaj przestrzeń roboczą" title="Dodaj przestrzeń roboczą" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
+                <button type="button" class="tasks-rail-add-button" aria-label="Nowy projekt" title="Nowy projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
                 </button>
             </div>
@@ -109,18 +109,13 @@
                 <div class="tasks-section-links" id="project-sections-{{ project.id }}" data-project-sections>
                     {% for section in project.sections.all %}
                     <a href="{% url 'kanban:task_group' section.id %}"
-                       class="tasks-rail-link tasks-section-rail-card tasks-section-card--accent-{% cycle 'blue' 'teal' 'violet' 'green' %} {% if active_section.id == section.id %}is-active{% endif %}"
-                       data-kanban-wallpaper-key="{% url 'kanban:task_group' section.id %}">
-                        <span class="tasks-section-card__cover tasks-section-rail-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
-                            <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
-                            <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
+                       class="tasks-rail-link {% if active_section.id == section.id %}is-active{% endif %}">
+                        {% if section.icon %}
+                        <span class="tasks-rail-icon" aria-hidden="true">
+                            <i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
                         </span>
-                        <span class="tasks-section-rail-card__body">
-                            {% if section.icon %}
-                            <span class="tasks-rail-icon tasks-section-rail-card__icon" aria-hidden="true"><i data-lucide="{{ section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i></span>
-                            {% endif %}
-                            <span class="tasks-section-rail-card__title">{{ section.title }}</span>
-                        </span>
+                        {% endif %}
+                        {{ section.title }}
                     </a>
                     {% empty %}
                     <div class="tasks-empty-rail-note">Dodaj pierwszą tablicę</div>
@@ -145,12 +140,14 @@
     <section class="tasks-workspace" aria-label="Lista kart">
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
+                {% if active_view != 'tags' %}
                 <button type="button" class="tasks-icon-button is-active" aria-label="Widok listy" title="Widok listy">
                     <i data-lucide="list" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
                     <i data-lucide="arrow-up-wide-narrow" aria-hidden="true"></i>
                 </button>
+                {% endif %}
                 <span class="tasks-topbar-title">
                     {% if active_project %}
                     <span class="tasks-topbar-title-item">
@@ -185,6 +182,16 @@
                     {% endif %}
                 </span>
             </div>
+            {% if active_view == 'tags' %}
+            <form class="tasks-titlebar-search tasks-search-actions" method="get" action="{% url 'kanban:tasks' %}" data-project-search-form>
+                <label class="tasks-search-field" for="filter-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" name="q" value="{{ tag_query }}" placeholder="Szukaj" autocomplete="off">
+                </label>
+                <input type="hidden" name="view" value="tags">
+                <input type="hidden" name="page_size" value="{{ tag_window.page_size }}" data-project-search-page-size>
+            </form>
+            {% endif %}
             <div class="tasks-section-actions" data-section-actions>
                 <button type="button" class="tasks-icon-button" aria-label="Więcej opcji" title="Więcej opcji" aria-haspopup="menu" aria-expanded="false" data-section-menu-toggle>
                     <i data-lucide="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
@@ -242,6 +249,33 @@
 
         <div class="tasks-filterbar">
             <div class="tasks-filterbar-left">
+                {% if active_view == 'tags' %}
+                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
+                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
+                </button>
+                <div class="tasks-directory-column-manager" data-directory-column-manager hidden>
+                    <button type="button" class="tasks-icon-button" title="Zarządzaj tabelą" aria-label="Zarządzaj tabelą" aria-haspopup="dialog" aria-expanded="false" data-directory-column-manager-toggle>
+                        <i data-lucide="columns-3" aria-hidden="true"></i>
+                    </button>
+                    <div class="tasks-directory-column-menu" role="dialog" aria-label="Zarządzanie tabelą" data-directory-column-manager-menu>
+                        <label class="tasks-directory-column-search">
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            <input type="search" placeholder="Szukaj kolumny" autocomplete="off" data-directory-column-manager-search>
+                        </label>
+                        <div class="tasks-directory-column-list" data-directory-column-manager-list></div>
+                        <div class="tasks-directory-column-actions">
+                            <button type="button" class="tasks-directory-column-reset" title="Resetuj ustawienia tabeli" data-directory-table-reset hidden>
+                                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                                <span>Resetuj</span>
+                            </button>
+                            <span class="tasks-directory-column-action-group">
+                                <button type="button" class="tasks-directory-column-cancel" data-directory-column-manager-cancel>Anuluj</button>
+                                <button type="button" class="tasks-directory-column-save" data-directory-column-manager-save>Zapisz</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
                 <div class="tasks-filter-dropdown" data-status-filter-menu>
                     <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-status-filter-toggle>
                         <i data-lucide="filter" aria-hidden="true"></i>
@@ -301,7 +335,11 @@
                         </button>
                     </div>
                 </div>
+                {% endif %}
             </div>
+            {% if active_view == 'tags' %}
+            <div class="tasks-filterbar-center"></div>
+            {% else %}
             <div class="tasks-filterbar-center tasks-search-actions">
                 <label class="tasks-search-field" for="filter-search">
                     <i data-lucide="search" aria-hidden="true"></i>
@@ -309,6 +347,7 @@
                 </label>
                 <button type="button" class="tasks-tag-topbar-button" data-filter-search-submit>Szukaj</button>
             </div>
+            {% endif %}
             <div class="tasks-filterbar-right">
                 {% if active_view == 'projects' %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj przestrzeń roboczą" aria-label="Dodaj przestrzeń roboczą" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
@@ -538,30 +577,80 @@
             </section>
         </div>
         {% elif active_view == 'tags' %}
-        <div class="tasks-table-wrap tasks-board">
-            <section class="tasks-issue-group" data-section-status="">
-                <header class="tasks-issue-group-header">
-                    <button type="button" class="tasks-group-caret" aria-label="Zwiń sekcję Tagi" aria-expanded="true">
-                        <i data-lucide="chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <span class="status-indicator status-label-plain">Tagi</span>
-                    <button type="button" class="tasks-rail-add-button tasks-tag-create-button" aria-label="Dodaj tag" title="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag></button>
-                    <span class="tasks-rail-count">{{ total_tag_count }}</span>
-                </header>
-                <div class="tasks-issue-list tasks-section-list" aria-label="Lista tagów">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet">
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header" role="row">
+                    <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select">
+                        <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie tagi" title="Zaznacz wszystkie tagi" data-select-all-checkbox data-select-all-target="tags">
+                    </span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action" aria-label="Edytuj tag" title="Edytuj tag" data-column-label="Edytuj">
+                        <i data-lucide="pencil" aria-hidden="true"></i>
+                    </span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info" aria-label="Informacje o tagu" title="Informacje o tagu" data-column-label="Informacje">
+                        <i data-lucide="info" aria-hidden="true"></i>
+                        <span class="u-sr-only">Informacje</span>
+                    </span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes" aria-label="Notatki tagu" title="Notatki tagu" data-column-label="Notatki">
+                        <i data-lucide="file-text" aria-hidden="true"></i>
+                        <span class="u-sr-only">Notatki</span>
+                    </span>
+                    <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">NAZWA TAGU</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">KOD TAGU</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_type">TYP</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_visual">KOLOR / IKONA</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="priority">PRIORYTET</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="scope">ZAKRES</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="owner">WŁAŚCICIEL</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="status">STATUS</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="description">OPIS</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="usage_notes">UŻYCIE</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="automation">AUTOMATYKA</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="related_tags">POWIĄZANE</span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">KARTY</span>
+                    <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at">DATA</span>
+                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
+                </div>
+                <div class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list" aria-label="Lista tagów">
                 {% for tag in tags %}
-                <div class="tasks-issue-row tasks-section-row tasks-all-groups-row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }}">
-                    <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
-                    <span class="tasks-row-spacer" aria-hidden="true"></span>
-                    <span class="tasks-row-id">{{ tag.code }}</span>
-                    <span class="tasks-row-spacer tasks-row-spacer--status" aria-hidden="true"></span>
-                    <span class="tasks-row-title tasks-section-row-title">
+                <article class="tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.get_category_display }} {{ tag.get_scope_display }} {{ tag.owner_label|default:''|striptags }} {{ tag.get_status_display }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }} {{ tag.get_category_display }} {{ tag.get_priority_display }} {{ tag.get_scope_display }} {{ tag.owner_label|default:''|striptags }} {{ tag.get_status_display }} {{ tag.usage_notes|default:''|striptags }} {{ tag.automation_rules|default:''|striptags }} {{ tag.related_tags_label }}">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-category="{{ tag.category }}" data-tag-color="{{ tag.color|default:'#64748b' }}" data-tag-icon="{{ tag.icon|default:'tag' }}" data-tag-priority="{{ tag.priority|default:'none' }}" data-tag-scope="{{ tag.scope|default:'tasks' }}" data-tag-owner-label="{{ tag.owner_label|default:''|escape }}" data-tag-status="{{ tag.status|default:'active' }}" data-tag-usage-notes="{{ tag.usage_notes|default:''|escape }}" data-tag-automation-rules="{{ tag.automation_rules|default:''|escape }}" data-tag-related-tags="{{ tag.related_tag_ids }}">
+                    <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action">
+                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj tag" aria-label="Edytuj tag {{ tag.name }}" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag-edit data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-category="{{ tag.category }}" data-tag-color="{{ tag.color|default:'#64748b' }}" data-tag-icon="{{ tag.icon|default:'tag' }}" data-tag-priority="{{ tag.priority|default:'none' }}" data-tag-scope="{{ tag.scope|default:'tasks' }}" data-tag-owner-label="{{ tag.owner_label|default:''|escape }}" data-tag-status="{{ tag.status|default:'active' }}" data-tag-usage-notes="{{ tag.usage_notes|default:''|escape }}" data-tag-automation-rules="{{ tag.automation_rules|default:''|escape }}" data-tag-related-tags="{{ tag.related_tag_ids }}">
+                            <i data-lucide="pencil" aria-hidden="true"></i>
+                        </button>
+                    </span>
+                    <span class="tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info">
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o tagu" aria-label="Informacje o tagu {{ tag.name }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-tag-info data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-code="{{ tag.code|escape }}" data-tag-tasks-label="{{ tag.total_tasks }} kart" data-tag-category-label="{{ tag.get_category_display|escape }}" data-tag-visual-label="{{ tag.color|default:'#64748b' }} / {{ tag.get_icon_display|escape }}" data-tag-priority-label="{{ tag.get_priority_display|escape }}" data-tag-scope-label="{{ tag.get_scope_display|escape }}" data-tag-owner-label="{% if tag.owner_label %}{{ tag.owner_label|escape }}{% else %}Brak właściciela{% endif %}" data-tag-status-label="{{ tag.get_status_display|escape }}" data-tag-usage-notes="{% if tag.usage_notes %}{{ tag.usage_notes|escape }}{% else %}Brak opisu użycia{% endif %}" data-tag-automation-rules="{% if tag.automation_rules %}{{ tag.automation_rules|escape }}{% else %}Brak reguł{% endif %}" data-tag-related-tags="{{ tag.related_tags_label|escape }}" data-tag-created-label="{{ tag.created_at|date:'d.m.Y' }}">
+                            <i data-lucide="info" aria-hidden="true"></i>
+                        </button>
+                    </span>
+                    <span class="tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes">
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button" title="Notatki tagu" aria-label="Notatki tagu {{ tag.name }}" aria-haspopup="dialog" aria-controls="tag-notes-modal" data-open-tag-notes data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
+                            <i data-lucide="file-text" aria-hidden="true"></i>
+                        </button>
+                    </span>
+                    <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">
                         <span>{{ tag.name }}</span>
                     </span>
-                    <span class="tasks-section-row-description">{{ tag.description|default:"Brak opisu" }}</span>
-                    <span class="tasks-row-time">{{ tag.total_tasks }} kart</span>
-                    <span class="tasks-row-date">{{ tag.created_at|date:"d M" }}</span>
-                </div>
+                    <span class="tasks-tag-sheet__code tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">{{ tag.code }}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_type">{{ tag.get_category_display }}</span>
+                    <span class="tasks-tag-sheet__visual tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_visual" title="{{ tag.get_icon_display }}">
+                        <span class="tasks-tag-color-swatch" style="--tag-color: {{ tag.color|default:'#64748b' }};"></span>
+                        <i data-lucide="{{ tag.icon|default:'tag' }}" aria-hidden="true"></i>
+                        <span>{{ tag.get_icon_display }}</span>
+                    </span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="priority">{{ tag.get_priority_display }}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="scope">{{ tag.get_scope_display }}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="owner">{% if tag.owner_label %}{{ tag.owner_label }}{% else %}<span class="tasks-project-sheet__muted">Brak właściciela</span>{% endif %}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="status">{{ tag.get_status_display }}</span>
+                    <span class="tasks-section-row-description tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="description">{{ tag.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="usage_notes">{{ tag.usage_notes|default:"Brak opisu użycia" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="automation">{{ tag.automation_rules|default:"Brak reguł" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="related_tags">{{ tag.related_tags_label }}</span>
+                    <span class="tasks-row-time tasks-tag-sheet__count tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">{{ tag.total_tasks }} kart</span>
+                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at" title="Data utworzenia">{{ tag.created_at|date:"d.m.Y" }}</span>
+                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
+                </article>
                 {% empty %}
                 <div class="tasks-empty-state">
                     <p>Nie ma jeszcze tagów.</p>
@@ -570,6 +659,46 @@
                 {% endfor %}
                 </div>
             </section>
+        </div>
+        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ tag_window.page }}" data-project-total-pages="{{ tag_window.total_pages }}">
+            <div class="tasks-project-pagination__size">
+                <span>Na stronie</span>
+                <div class="tasks-filter-dropdown tasks-project-pagination__size-control" data-project-page-size-dropdown>
+                    <select aria-label="Liczba tagów na stronie" data-project-page-size hidden>
+                        {% for page_size in tag_window.page_size_options %}
+                        <option value="{{ page_size }}" {% if tag_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="tasks-project-pagination__size-button" aria-label="Liczba tagów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
+                        <span data-project-page-size-label>{{ tag_window.page_size }}</span>
+                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba tagów na stronie">
+                    {% for page_size in tag_window.page_size_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_window.page_size == page_size %}true{% else %}false{% endif %}" {% if tag_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
+                    {% endfor %}
+                    </div>
+                </div>
+                <span>tagów</span>
+            </div>
+            <span class="tasks-project-pagination__summary" data-project-pagination-summary>{{ tag_window.summary }}</span>
+            <nav class="tasks-project-pagination__pages" aria-label="Strony tagów">
+                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie tagi" data-project-page-prev data-project-page-url="{{ tag_window.previous_url }}" {% if not tag_window.has_previous %}disabled{% endif %}>
+                    <i data-lucide="chevron-left" aria-hidden="true"></i>
+                </button>
+                <span class="tasks-project-pagination__numbers" data-project-pagination-pages>
+                    {% for page_item in tag_window.page_items %}
+                    {% if page_item.is_ellipsis %}
+                    <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
+                    {% else %}
+                    <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-project-page="{{ page_item.page }}" {% if not page_item.is_current %}data-project-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
+                    {% endif %}
+                    {% endfor %}
+                </span>
+                <button type="button" class="tasks-project-pagination__button" aria-label="Następne tagi" data-project-page-next data-project-page-url="{{ tag_window.next_url }}" {% if not tag_window.has_next %}disabled{% endif %}>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+            </nav>
         </div>
         {% elif projects %}
         <div class="tasks-table-wrap tasks-board">
@@ -625,20 +754,23 @@
     </section>
 </div>
 
-<div class="tasks-modal tasks-project-modal {% if tag_modal_open %}is-open{% endif %}" id="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title" aria-hidden="{% if tag_modal_open %}false{% else %}true{% endif %}">
-    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="tag-create-form">
+<div class="tasks-modal tasks-project-modal tasks-project-edit-modal {% if tag_modal_open %}is-open{% endif %}" id="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title" aria-hidden="{% if tag_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form" id="tag-create-form">
             {% csrf_token %}
             <input type="hidden" name="action" value="{% if tag_edit_mode %}edit_tag{% else %}create_tag{% endif %}">
             <input type="hidden" name="tag_id" value="{{ tag_edit_tag_id }}">
-            <header class="tasks-modal__header">
-                <h2 id="tag-modal-title">{% if tag_edit_mode %}Edytuj tag{% else %}Nowy tag{% endif %}</h2>
-                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <i data-lucide="x" aria-hidden="true"></i>
-                </button>
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
+                        <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong id="tag-modal-title">{% if tag_edit_mode %}Edytuj tag{% else %}Nowy tag{% endif %}</strong>
+                </div>
             </header>
 
-            <div class="tasks-modal__body tasks-project-modal__body">
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
                 {% if tag_form.errors %}
                 <div class="tasks-modal__errors">
                     {% for field in tag_form %}
@@ -652,20 +784,122 @@
                 </div>
                 {% endif %}
 
-                <div class="tasks-settings-grid">
-                    <label for="{{ tag_form.name.id_for_label }}">Nazwa tagu</label>
-                    {{ tag_form.name }}
-                    <label for="{{ tag_form.description.id_for_label }}">Opis</label>
-                    {{ tag_form.description }}
-                </div>
+                <label class="u-sr-only" for="{{ tag_form.name.id_for_label }}">Nazwa tagu</label>
+                {{ tag_form.name }}
+                <label class="u-sr-only" for="{{ tag_form.description.id_for_label }}">Opis</label>
+                {{ tag_form.description }}
+
+                <section class="tasks-tag-parameters" aria-labelledby="tag-meaning-title">
+                    <h3 class="u-sr-only" id="tag-meaning-title">Parametry tagu</h3>
+                    <div class="tasks-tag-fields">
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--category">
+                                    <span>Typ tagu</span>
+                                    {{ tag_form.category }}
+                                </label>
+                                <label class="tasks-tag-field--status">
+                                    <span>Status</span>
+                                    {{ tag_form.status }}
+                                </label>
+                                <label class="tasks-tag-field--color">
+                                    <span>Kolor</span>
+                                    {{ tag_form.color }}
+                                </label>
+                                <label class="tasks-tag-field--icon">
+                                    <span>Ikona</span>
+                                    {{ tag_form.icon }}
+                                </label>
+                                <label class="tasks-tag-field--priority">
+                                    <span>Priorytet</span>
+                                    {{ tag_form.priority }}
+                                </label>
+                                <label class="tasks-tag-field--scope">
+                                    <span>Zakres</span>
+                                    {{ tag_form.scope }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--owner">
+                                    <span>Właściciel / dział</span>
+                                    {{ tag_form.owner_label }}
+                                </label>
+                                <label class="tasks-tag-field--related">
+                                    <span>Powiązane tagi</span>
+                                    {{ tag_form.related_tags }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--usage">
+                                    <span>Opis użycia</span>
+                                    {{ tag_form.usage_notes }}
+                                </label>
+                                <label class="tasks-tag-field--automation">
+                                    <span>Reguły automatyczne</span>
+                                    {{ tag_form.automation_rules }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
-            <footer class="tasks-modal__footer">
+            <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
                 <button type="submit" class="tasks-modal__submit" id="tag-create-submit">{% if tag_edit_mode %}Zapisz zmiany{% else %}Utwórz tag{% endif %}</button>
             </footer>
         </form>
     </div>
 </div>
+
+<div class="tasks-modal tasks-project-modal tasks-project-notes-modal" id="tag-notes-modal" role="dialog" aria-modal="true" aria-labelledby="tag-notes-modal-title" aria-hidden="true">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
+        <div class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form">
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
+                        <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong class="tasks-project-edit-modal__title-chip" id="tag-notes-modal-title">
+                        <span>Notatki tagu</span>
+                    </strong>
+                </div>
+            </header>
+
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
+                <div class="tasks-project-notes-modal__project">
+                    <span>Tag</span>
+                    <strong data-tag-notes-name>Tag</strong>
+                </div>
+                <form method="post" class="tasks-project-notes-compose" id="tag-notes-form" data-tag-note-create-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_tag_note">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input type="hidden" name="tag_id" value="" data-tag-notes-id>
+                    <label class="u-sr-only" for="tag-notes-message">Nowa notatka</label>
+                    <textarea id="tag-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-tag-notes-message></textarea>
+                    <div class="tasks-project-notes-compose__footer">
+                        <button type="submit" class="tasks-project-note__primary" id="tag-notes-submit">
+                            <i data-lucide="plus" aria-hidden="true"></i>
+                            <span>Dodaj notatkę</span>
+                        </button>
+                    </div>
+                </form>
+                <div class="tasks-project-notes-list" data-tag-notes-feed>
+                    {% for tag in tags %}
+                        {% include 'tasks/includes/tag_notes_thread.html' with tag=tag %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'tasks/includes/project_info_modal.html' %}
 
 <div class="tasks-modal tasks-project-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog">

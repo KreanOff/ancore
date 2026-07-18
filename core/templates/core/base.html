@@ -1,4 +1,4 @@
-{% load static %}
+{% load static workplace_avatar %}
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -39,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260709-tag-input-borders">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260715-workplace-logo-no-border">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -63,12 +63,19 @@
     <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
     <aside class="sidebar" id="app-sidebar">
         {% if request.user.is_authenticated %}
-        <a href="{% url 'workplaces:workplaces' %}" class="sidebar-workplace {% if request.resolver_match.app_name == 'workplaces' %}active{% endif %}" title="Workplace">
-            <span class="sidebar-workplace__avatar" aria-hidden="true">
-                {% if current_workplace %}{{ current_workplace.initials }}{% else %}W{% endif %}
+        <a href="{% url 'workplaces:workplaces' %}" class="sidebar-workplace {% if request.resolver_match.app_name == 'workplaces' %}active{% endif %}" title="Miejsce pracy">
+            {% if current_workplace %}
+                {% workplace_avatar current_workplace as current_workplace_avatar %}
+            {% endif %}
+            <span class="sidebar-workplace__avatar{% if current_workplace_avatar.photo_url %} has-photo{% endif %}" {% if current_workplace %}style="{{ current_workplace_avatar.color_style }}"{% endif %} aria-hidden="true">
+                {% if current_workplace_avatar.photo_url %}
+                    <img src="{{ current_workplace_avatar.photo_url }}" alt="">
+                {% else %}
+                    <i class="profile-avatar-icon sidebar-workplace__icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>
+                {% endif %}
             </span>
             <span class="sidebar-workplace__label">
-                <span class="sidebar-workplace__eyebrow">Workplace</span>
+                <span class="sidebar-workplace__eyebrow">Miejsce pracy</span>
                 <span class="sidebar-workplace__name">{% if current_workplace %}{{ current_workplace.name }}{% else %}Wybierz{% endif %}</span>
             </span>
         </a>

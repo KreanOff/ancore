@@ -1,5 +1,6 @@
 import logging
 import json
+from urllib.parse import urlencode
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -11,11 +12,14 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from core.upload_validation import attachment_download_response, validate_attachment_upload
-from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag
+from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag, KanbanTagNote
 from ..forms import QuickKanbanForm, SubKanbanModalForm, KanbanBoardColumnForm, KanbanForm, KanbanModalForm, KanbanProjectForm, KanbanProjectRenameForm, KanbanSectionForm, KanbanSectionRenameForm, KanbanTagForm
 
 
 logger = logging.getLogger(__name__)
+
+PROJECT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
+PROJECT_DEFAULT_PAGE_SIZE = 50
 
 
 def _active_workplace(request):
@@ -26,6 +30,71 @@ def _filter_workplace(queryset, workplace, field_name='workplace'):
     if workplace is None:
         return queryset
     return queryset.filter(**{field_name: workplace})
+
+
+def _project_page_size(request):
+    try:
+        page_size = int(request.GET.get('page_size') or PROJECT_DEFAULT_PAGE_SIZE)
+    except (TypeError, ValueError):
+        return PROJECT_DEFAULT_PAGE_SIZE
+    return page_size if page_size in PROJECT_PAGE_SIZE_OPTIONS else PROJECT_DEFAULT_PAGE_SIZE
+
+
+def _project_page_number(request):
+    try:
+        page_number = int(request.GET.get('page') or 1)
+    except (TypeError, ValueError):
+        return 1
+    return max(page_number, 1)
+
+
+def _projects_url(params, base_url=None):
+    cleaned_params = {
+        key: value
+        for key, value in params.items()
+        if value not in (None, '')
+    }
+    query_string = urlencode(cleaned_params)
+    base_url = base_url or reverse('kanban:tasks')
+    return f'{base_url}?{query_string}' if query_string else base_url
+
+
+def _project_page_items(current_page, total_pages, base_params, page_param='page', base_url=None):
+    if total_pages < 1:
+        return []
+
+    if total_pages <= 7:
+        page_numbers = list(range(1, total_pages + 1))
+    elif current_page <= 4:
+        page_numbers = [1, 2, 3, 4, 5, total_pages]
+    elif current_page >= total_pages - 3:
+        page_numbers = [1, *range(total_pages - 4, total_pages + 1)]
+    else:
+        page_numbers = [1, current_page - 1, current_page, current_page + 1, total_pages]
+
+    items = []
+    previous_page = None
+    for page_number in page_numbers:
+        if previous_page and page_number - previous_page > 1:
+            items.append({'is_ellipsis': True})
+        page_params = {**base_params, page_param: page_number}
+        if page_number == 1:
+            page_params.pop(page_param, None)
+        items.append({
+            'page': page_number,
+            'url': _projects_url(page_params, base_url=base_url),
+            'is_current': page_number == current_page,
+        })
+        previous_page = page_number
+    return items
+
+
+def _kanban_next_url(request):
+    fallback = reverse('kanban:tasks')
+    next_url = (request.POST.get('next') or '').strip()
+    if next_url == fallback or next_url.startswith(f'{fallback}?') or next_url.startswith('/kanban/'):
+        return next_url
+    return fallback
 
 
 def _attachment_validation_errors(files):
@@ -170,6 +239,92 @@ def _posted_ids(request, plural_name, singular_name):
     if not ids:
         ids = [request.POST.get(singular_name)]
     return [item for item in ids if item]
+
+
+def _tag_filter_queryset(user, query='', workplace=None):
+    queryset = _filter_workplace(KanbanTag.objects.filter(user=user), workplace)
+    query = (query or '').strip()
+    if query:
+        queryset = queryset.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(code__icontains=query)
+            | Q(owner_label__icontains=query)
+            | Q(usage_notes__icontains=query)
+            | Q(automation_rules__icontains=query)
+        )
+    return queryset.prefetch_related(
+        'related_tags',
+        Prefetch(
+            'tag_notes',
+            queryset=KanbanTagNote.objects.select_related('author').order_by('created_at', 'id'),
+        ),
+    )
+
+
+def _tag_window_for_request(request):
+    workplace = _active_workplace(request)
+    page_size = _project_page_size(request)
+    requested_page = _project_page_number(request)
+    query = (request.GET.get('q') or '').strip()
+    queryset = _tag_filter_queryset(request.user, query=query, workplace=workplace)
+    total_tags = queryset.count()
+    total_pages = max(1, (total_tags + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+
+    tags = list(
+        queryset.annotate(
+            total_tasks=Count(
+                'tasks',
+                filter=Q(tasks__user=request.user, tasks__workplace=workplace, tasks__parent__isnull=True),
+            )
+        ).order_by('name', 'id')[offset:offset + page_size]
+    )
+    for tag in tags:
+        related_tags = list(tag.related_tags.all())
+        tag.related_tag_ids = ','.join(str(related_tag.id) for related_tag in related_tags)
+        tag.related_tags_label = ', '.join(related_tag.name for related_tag in related_tags) or 'Brak powiązań'
+
+    base_params = {
+        'view': 'tags',
+        'q': query,
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_tags > 0
+    has_next = current_page < total_pages and total_tags > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_page_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_page_params.pop('page', None)
+        previous_url = _projects_url(previous_page_params)
+    if has_next:
+        next_url = _projects_url({**base_params, 'page': current_page + 1})
+
+    if not tags:
+        summary = 'Brak tagów'
+    else:
+        first_visible = offset + 1
+        last_visible = offset + len(tags)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_tags} tagów'
+
+    return {
+        'tags': tags,
+        'query': query,
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_tags': total_tags,
+        'page_size': page_size,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': _project_page_items(current_page, total_pages, base_params) if total_tags else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
 
 
 def _section_accent(section):
@@ -370,7 +525,7 @@ def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
     project_form = KanbanProjectForm(user=request.user)
     section_form = KanbanSectionForm()
-    tag_form = KanbanTagForm()
+    tag_form = KanbanTagForm(user=request.user, workplace=workplace)
     board_column_form = KanbanBoardColumnForm()
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
@@ -471,7 +626,7 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się dodać tablicy.')
 
         if action == 'create_tag':
-            tag_form = KanbanTagForm(request.POST)
+            tag_form = KanbanTagForm(request.POST, user=request.user, workplace=workplace)
             if tag_form.is_valid():
                 tag_name = tag_form.cleaned_data['name']
                 if _filter_workplace(KanbanTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exists():
@@ -481,6 +636,7 @@ def _tasks_page(request, active_section=None):
                     tag.user = request.user
                     tag.workplace = workplace
                     tag.save()
+                    tag_form.save_m2m()
                     messages.success(request, 'Tag dodany.')
                     return redirect(f"{reverse('kanban:tasks')}?view=tags")
             tag_modal_open = True
@@ -488,7 +644,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'edit_tag':
             tag = get_object_or_404(_filter_workplace(KanbanTag.objects.filter(user=request.user), workplace), id=request.POST.get('tag_id'))
-            tag_form = KanbanTagForm(request.POST, instance=tag)
+            tag_form = KanbanTagForm(request.POST, instance=tag, user=request.user, workplace=workplace)
             if tag_form.is_valid():
                 tag_name = tag_form.cleaned_data['name']
                 if _filter_workplace(KanbanTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exclude(pk=tag.pk).exists():
@@ -501,6 +657,46 @@ def _tasks_page(request, active_section=None):
             tag_edit_mode = True
             tag_edit_tag_id = tag.id
             messages.error(request, 'Nie udało się zaktualizować tagu.')
+
+        if action in ('add_tag_note', 'update_tag_notes'):
+            tag = get_object_or_404(
+                _filter_workplace(KanbanTag.objects.filter(user=request.user), workplace),
+                id=request.POST.get('tag_id'),
+            )
+            message = (request.POST.get('message') or request.POST.get('description') or '').strip()
+            if message:
+                KanbanTagNote.objects.create(tag=tag, author=request.user, message=message)
+                messages.success(request, 'Notatka dodana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_kanban_next_url(request))
+
+        if action == 'edit_tag_note':
+            note_queryset = _filter_workplace(
+                KanbanTagNote.objects.filter(author=request.user, tag__user=request.user),
+                workplace,
+                field_name='tag__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), tag_id=request.POST.get('tag_id'))
+            message = (request.POST.get('message') or '').strip()
+            if message:
+                note.message = message
+                note.save(update_fields=['message', 'updated_at'])
+                messages.success(request, 'Notatka zaktualizowana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_kanban_next_url(request))
+
+        if action == 'delete_tag_note':
+            note_queryset = _filter_workplace(
+                KanbanTagNote.objects.filter(author=request.user, tag__user=request.user),
+                workplace,
+                field_name='tag__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), tag_id=request.POST.get('tag_id'))
+            note.delete()
+            messages.success(request, 'Notatka usunięta.')
+            return redirect(_kanban_next_url(request))
 
         if action == 'delete_tag':
             tag_ids = _posted_ids(request, 'tag_ids', 'tag_id')
@@ -675,9 +871,7 @@ def _tasks_page(request, active_section=None):
     all_status_groups = _status_groups_for_tasks(list(tasks_qs))
     all_task_board_columns = _all_task_board_columns(request.user, tasks_qs, workplace=workplace)
     all_sections = _sections_for_projects(projects)
-    tags = _filter_workplace(KanbanTag.objects.filter(user=request.user), workplace).annotate(
-        total_tasks=Count('tasks', filter=Q(tasks__user=request.user, tasks__workplace=workplace, tasks__parent__isnull=True))
-    )
+    total_tag_count = _filter_workplace(KanbanTag.objects.filter(user=request.user), workplace).count()
     if active_section:
         can_create_issue = True
     elif active_project:
@@ -700,6 +894,23 @@ def _tasks_page(request, active_section=None):
     else:
         active_view = 'projects'
 
+    tag_window = _tag_window_for_request(request) if active_view == 'tags' else {
+        'tags': [],
+        'query': '',
+        'page': 1,
+        'total_pages': 1,
+        'total_tags': total_tag_count,
+        'page_size': PROJECT_DEFAULT_PAGE_SIZE,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': [],
+        'has_previous': False,
+        'has_next': False,
+        'previous_url': '',
+        'next_url': '',
+        'summary': '',
+    }
+    tags = tag_window['tags'] if active_view == 'tags' else KanbanTag.objects.none()
+
     context = {
         'projects': projects,
         'active_project': active_project,
@@ -717,7 +928,9 @@ def _tasks_page(request, active_section=None):
         'total_task_count': tasks_qs.count(),
         'total_group_count': len(all_sections),
         'tags': tags,
-        'total_tag_count': tags.count(),
+        'tag_window': tag_window,
+        'tag_query': tag_window['query'],
+        'total_tag_count': total_tag_count,
         'project_form': project_form,
         'project_rename_form': project_rename_form,
         'project_rename_project_id': project_rename_project_id,

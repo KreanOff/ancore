@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
 from django.utils.text import slugify
 
@@ -6,6 +7,11 @@ from django.utils.text import slugify
 class Workplace(models.Model):
     name = models.CharField(max_length=140)
     slug = models.SlugField(max_length=160, blank=True)
+    workplace_photo = models.FileField(
+        blank=True,
+        upload_to='workplace_photos/',
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
+    )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

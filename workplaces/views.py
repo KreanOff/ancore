@@ -14,17 +14,17 @@ def workplaces(request):
     form = WorkplaceForm()
 
     if request.method == 'POST':
-        form = WorkplaceForm(request.POST)
+        form = WorkplaceForm(request.POST, request.FILES)
         if form.is_valid():
             name = form.cleaned_data['name']
             if workplaces_for_user(request.user).filter(name__iexact=name).exists():
-                form.add_error('name', 'Masz już Workplace o takiej nazwie.')
+                form.add_error('name', 'Masz już miejsce pracy o takiej nazwie.')
             else:
                 workplace = create_workplace_for_user(request.user, name)
                 set_active_workplace(request, workplace)
-                messages.success(request, 'Workplace utworzony.')
+                messages.success(request, 'Miejsce pracy utworzone.')
                 return redirect(scoped_workplace_app_path(workplace, 'tasks'))
-        messages.error(request, 'Nie udało się utworzyć Workplace.')
+        messages.error(request, 'Nie udało się utworzyć miejsca pracy.')
 
     user_workplaces = workplaces_for_user(request.user)
     return render(request, 'workplaces/workplaces.html', {
@@ -57,7 +57,7 @@ def workplace_home(request, workplace_slug):
 @require_POST
 def update_workplace(request, workplace_id):
     workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
-    form = WorkplaceForm(request.POST, instance=workplace)
+    form = WorkplaceForm(request.POST, request.FILES, instance=workplace)
     if form.is_valid():
         name = form.cleaned_data['name']
         duplicate_exists = (
@@ -67,12 +67,12 @@ def update_workplace(request, workplace_id):
             .exists()
         )
         if duplicate_exists:
-            messages.error(request, 'Masz już Workplace o takiej nazwie.')
+            messages.error(request, 'Masz już miejsce pracy o takiej nazwie.')
         else:
             form.save()
-            messages.success(request, 'Ustawienia Workplace zapisane.')
+            messages.success(request, 'Ustawienia miejsca pracy zapisane.')
     else:
-        messages.error(request, 'Nie udało się zapisać ustawień Workplace.')
+        messages.error(request, 'Nie udało się zapisać ustawień miejsca pracy.')
     return redirect('workplaces:workplaces')
 
 
@@ -83,12 +83,12 @@ def delete_workplace(request, workplace_id):
     workplace = get_object_or_404(workplaces, pk=workplace_id)
     replacement = workplaces.exclude(pk=workplace.pk).first()
     if replacement is None:
-        messages.error(request, 'Nie możesz usunąć ostatniego Workplace.')
+        messages.error(request, 'Nie możesz usunąć ostatniego miejsca pracy.')
         return redirect('workplaces:workplaces')
 
     was_active = getattr(request, 'workplace', None) and request.workplace.pk == workplace.pk
     workplace.delete()
     if was_active:
         set_active_workplace(request, replacement)
-    messages.success(request, 'Workplace usunięty.')
+    messages.success(request, 'Miejsce pracy usunięte.')
     return redirect('workplaces:workplaces')
