@@ -39,21 +39,18 @@
                         <i data-lucide="folders" aria-hidden="true"></i>
                     </span>
                     Wszystkie przestrzenie
-                    <span class="tasks-rail-count">{{ projects|length }}</span>
                 </a>
                 <a href="{% url 'kanban:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
                     <span class="tasks-rail-icon" aria-hidden="true">
                         <i data-lucide="kanban" aria-hidden="true"></i>
                     </span>
                     Wszystkie tablice
-                    <span class="tasks-rail-count">{{ total_group_count }}</span>
                 </a>
                 <a href="{% url 'kanban:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
                     <span class="tasks-rail-icon" aria-hidden="true">
                         <i data-lucide="tag" aria-hidden="true"></i>
                     </span>
                     Tagi
-                    <span class="tasks-rail-count">{{ total_tag_count }}</span>
                 </a>
             </div>
         </nav>
@@ -140,7 +137,7 @@
     <section class="tasks-workspace" aria-label="Lista kart">
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
-                {% if active_view != 'tags' %}
+                {% if active_view != 'tags' and active_view != 'projects' and active_view != 'all_groups' %}
                 <button type="button" class="tasks-icon-button is-active" aria-label="Widok listy" title="Widok listy">
                     <i data-lucide="list" aria-hidden="true"></i>
                 </button>
@@ -189,70 +186,43 @@
                     <input id="filter-search" type="search" name="q" value="{{ tag_query }}" placeholder="Szukaj" autocomplete="off">
                 </label>
                 <input type="hidden" name="view" value="tags">
+                <input type="hidden" name="status" value="{{ tag_status_filter }}" data-project-filter-input="status">
+                <input type="hidden" name="category" value="{{ tag_category_filter }}" data-project-filter-input="category">
+                <input type="hidden" name="scope" value="{{ tag_scope_filter }}" data-project-filter-input="scope">
+                <input type="hidden" name="owner" value="{{ tag_owner_filter }}" data-project-filter-input="owner">
+                <input type="hidden" name="priority" value="{{ tag_priority_filter }}" data-project-filter-input="priority">
+                <input type="hidden" name="sort" value="{{ tag_sort_param }}" data-project-sort-input>
                 <input type="hidden" name="page_size" value="{{ tag_window.page_size }}" data-project-search-page-size>
             </form>
-            {% endif %}
-            <div class="tasks-section-actions" data-section-actions>
-                <button type="button" class="tasks-icon-button" aria-label="Więcej opcji" title="Więcej opcji" aria-haspopup="menu" aria-expanded="false" data-section-menu-toggle>
-                    <i data-lucide="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
-                </button>
-                <div class="tasks-section-menu" role="menu">
-                    {% if active_section %}
-                    <button type="button" class="tasks-project-menu-button tasks-kanban-wallpaper-toggle" role="menuitem" title="Tapety tablicy" aria-label="Tapety tablicy" aria-haspopup="dialog" aria-expanded="false" data-kanban-wallpaper-toggle>
-                        <i data-lucide="image" aria-hidden="true"></i>
-                        Tapety tablicy
-                    </button>
-                    {% endif %}
-                    {% if active_section or active_view == 'all_tasks' or active_view == 'my_tasks' %}
-                    <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-task-menu-btn" disabled>
-                        <i data-lucide="pencil" aria-hidden="true"></i>
-                        Edytuj kartę
-                    </button>
-                    <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-task-menu-btn" disabled>
-                        {% include 'core/includes/trash_icon.html' %}
-                        Usuń kartę
-                    </button>
-                    {% endif %}
-                    {% if active_project and not active_section or active_view == 'all_groups' %}
-                    <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-section-menu-btn" disabled>
-                        <i data-lucide="pencil" aria-hidden="true"></i>
-                        Edytuj tablicę
-                    </button>
-                    <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-section-menu-btn" disabled>
-                        {% include 'core/includes/trash_icon.html' %}
-                        Usuń tablicę
-                    </button>
-                    {% endif %}
-                    {% if active_view == 'projects' %}
-                    <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-project-menu-btn" disabled>
-                        <i data-lucide="pencil" aria-hidden="true"></i>
-                        Edytuj przestrzeń
-                    </button>
-                    <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-project-menu-btn" disabled>
-                        {% include 'core/includes/trash_icon.html' %}
-                        Usuń przestrzeń
-                    </button>
-                    {% endif %}
-                    {% if active_view == 'tags' %}
-                    <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-tag-menu-btn" disabled>
-                        <i data-lucide="pencil" aria-hidden="true"></i>
-                        Edytuj tag
-                    </button>
-                    <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-tag-menu-btn" disabled>
-                        {% include 'core/includes/trash_icon.html' %}
-                        Usuń tag
-                    </button>
-                    {% endif %}
-                </div>
+            {% elif active_view == 'projects' or active_view == 'all_groups' %}
+            <div class="tasks-titlebar-search tasks-search-actions">
+                <label class="tasks-search-field" for="filter-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
+                </label>
             </div>
+            {% endif %}
+            {% if active_view != 'projects' and active_view != 'all_groups' and active_view != 'tags' %}
+            {% include 'kanban/includes/tasks_section_actions.html' %}
+            {% endif %}
         </header>
 
-        <div class="tasks-filterbar">
+        <div class="tasks-filterbar{% if active_view == 'projects' or active_view == 'all_groups' %} tasks-filterbar--task-directory{% endif %}">
             <div class="tasks-filterbar-left">
                 {% if active_view == 'tags' %}
-                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
-                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
-                </button>
+                <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ tag_default_sort }}">
+                    <button type="button" class="tasks-icon-button tasks-sort-button{% if tag_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ tag_sort_label }}" title="Sortowanie: {{ tag_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if tag_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ tag_sort_direction }}">
+                        <i data-lucide="{% if tag_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+                    </button>
+                    <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie tagów">
+                        {% for option in tag_sort_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_sort == option.value %}true{% else %}false{% endif %}" {% if tag_sort == option.value %}class="is-active"{% endif %} data-project-sort-value="{{ option.value }}">
+                            <i data-lucide="{{ option.icon }}" aria-hidden="true"></i>
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
                 <div class="tasks-directory-column-manager" data-directory-column-manager hidden>
                     <button type="button" class="tasks-icon-button" title="Zarządzaj tabelą" aria-label="Zarządzaj tabelą" aria-haspopup="dialog" aria-expanded="false" data-directory-column-manager-toggle>
                         <i data-lucide="columns-3" aria-hidden="true"></i>
@@ -275,7 +245,97 @@
                         </div>
                     </div>
                 </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="status">
+                    <button type="button" class="tasks-filter-button{% if tag_status_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="status">
+                        <i data-lucide="circle-dot" aria-hidden="true"></i>
+                        <span data-project-filter-label="status">Status{% for option in tag_filter_options.statuses %}{% if option.value == tag_status_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr statusu tagu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_status_filter %}true{% else %}false{% endif %}" {% if not tag_status_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="status" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.statuses %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_status_filter == option.value %}true{% else %}false{% endif %}" {% if tag_status_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="status" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="category">
+                    <button type="button" class="tasks-filter-button{% if tag_category_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="category">
+                        <i data-lucide="layers-3" aria-hidden="true"></i>
+                        <span data-project-filter-label="category">Typ{% for option in tag_filter_options.categories %}{% if option.value == tag_category_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr typu tagu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_category_filter %}true{% else %}false{% endif %}" {% if not tag_category_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="category" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.categories %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_category_filter == option.value %}true{% else %}false{% endif %}" {% if tag_category_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="category" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="scope">
+                    <button type="button" class="tasks-filter-button{% if tag_scope_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="scope">
+                        <i data-lucide="target" aria-hidden="true"></i>
+                        <span data-project-filter-label="scope">Zakres{% for option in tag_filter_options.scopes %}{% if option.value == tag_scope_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr zakresu tagu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_scope_filter %}true{% else %}false{% endif %}" {% if not tag_scope_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="scope" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.scopes %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_scope_filter == option.value %}true{% else %}false{% endif %}" {% if tag_scope_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="scope" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="owner">
+                    <button type="button" class="tasks-filter-button{% if tag_owner_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="owner">
+                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
+                        <span data-project-filter-label="owner">Właściciel{% for option in tag_filter_options.owners %}{% if option.value == tag_owner_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu tasks-filter-menu--wide" role="menu" aria-label="Filtr właściciela tagu">
+                        <label class="tasks-filter-menu-search">
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            <input type="search" placeholder="Szukaj właściciela" autocomplete="off" data-project-filter-search>
+                        </label>
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_owner_filter %}true{% else %}false{% endif %}" {% if not tag_owner_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="owner" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.owners %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_owner_filter == option.value %}true{% else %}false{% endif %}" {% if tag_owner_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="owner" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                        <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="priority">
+                    <button type="button" class="tasks-filter-button{% if tag_priority_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="priority">
+                        <i data-lucide="chart-no-axes-column-increasing" aria-hidden="true"></i>
+                        <span data-project-filter-label="priority">Priorytet{% for option in tag_filter_options.priorities %}{% if option.value == tag_priority_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr priorytetu tagu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_priority_filter %}true{% else %}false{% endif %}" {% if not tag_priority_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="priority" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.priorities %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_priority_filter == option.value %}true{% else %}false{% endif %}" {% if tag_priority_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="priority" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% else %}
+                {% if active_view == 'projects' or active_view == 'all_groups' %}
+                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
+                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
+                </button>
+                {% endif %}
                 <div class="tasks-filter-dropdown" data-status-filter-menu>
                     <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-status-filter-toggle>
                         <i data-lucide="filter" aria-hidden="true"></i>
@@ -337,7 +397,7 @@
                 </div>
                 {% endif %}
             </div>
-            {% if active_view == 'tags' %}
+            {% if active_view == 'tags' or active_view == 'projects' or active_view == 'all_groups' %}
             <div class="tasks-filterbar-center"></div>
             {% else %}
             <div class="tasks-filterbar-center tasks-search-actions">
@@ -349,11 +409,8 @@
             </div>
             {% endif %}
             <div class="tasks-filterbar-right">
-                {% if active_view == 'projects' %}
-                <button type="button" class="tasks-tag-topbar-button" title="Dodaj przestrzeń roboczą" aria-label="Dodaj przestrzeń roboczą" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
-                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
-                    <span>Dodaj przestrzeń</span>
-                </button>
+                {% if active_view == 'projects' or active_view == 'all_groups' %}
+                {% include 'kanban/includes/tasks_section_actions.html' %}
                 {% elif active_project and not active_section %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj tablicę" aria-label="Dodaj tablicę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}">
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
@@ -369,6 +426,7 @@
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj tag</span>
                 </button>
+                {% include 'kanban/includes/tasks_section_actions.html' %}
                 {% endif %}
             </div>
         </div>

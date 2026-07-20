@@ -405,13 +405,123 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Sortowanie: Priorytet')
         self.assertContains(response, 'data-project-page-url="/tasks/?view=all-groups&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
-    def test_tags_view_hides_status_and_priority_filters(self):
+    def test_tags_view_renders_server_filter_controls(self):
+        TaskTag.objects.create(user=self.user, name='Tag właściciela', owner_label='Zespół CRM')
         response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
 
+        self.assertContains(response, 'data-project-filter-menu="status"')
+        self.assertContains(response, 'data-project-filter-menu="category"')
+        self.assertContains(response, 'data-project-filter-menu="scope"')
+        self.assertContains(response, 'data-project-filter-menu="owner"')
+        self.assertContains(response, 'data-project-filter-menu="priority"')
+        self.assertContains(response, 'name="status" value="" data-project-filter-input="status"')
+        self.assertContains(response, 'name="category" value="" data-project-filter-input="category"')
+        self.assertContains(response, 'name="scope" value="" data-project-filter-input="scope"')
+        self.assertContains(response, 'name="owner" value="" data-project-filter-input="owner"')
+        self.assertContains(response, 'name="priority" value="" data-project-filter-input="priority"')
+        self.assertContains(response, 'placeholder="Szukaj właściciela"')
+        self.assertContains(response, 'Zespół CRM')
         self.assertNotContains(response, 'data-status-filter-menu')
-        self.assertNotContains(response, 'data-status-filter-label')
         self.assertNotContains(response, 'data-priority-filter-menu')
-        self.assertNotContains(response, 'data-priority-filter-label')
+
+    def test_tags_view_filters_on_server(self):
+        matching = TaskTag.objects.create(
+            user=self.user,
+            name='Ryzyko klienta',
+            description='Pilny temat wdrożenia',
+            category='risk',
+            priority='urgent',
+            scope='clients',
+            owner_label='Zespół CRM',
+            status='archived',
+        )
+        TaskTag.objects.create(
+            user=self.user,
+            name='Tag ogólny',
+            description='Inny temat',
+            category='general',
+            priority='low',
+            scope='tasks',
+            owner_label='Zespół Support',
+            status='active',
+        )
+
+        response = self.client.get(
+            reverse('tasks:tasks'),
+            {
+                'view': 'tags',
+                'q': 'ryzyko',
+                'status': 'archived',
+                'category': 'risk',
+                'scope': 'clients',
+                'owner': 'Zespół CRM',
+                'priority': 'urgent',
+            },
+        )
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertContains(response, 'tasks-tag-sheet__row', count=1)
+        self.assertIn(matching.name, table_html)
+        self.assertNotIn('Tag ogólny', table_html)
+        self.assertContains(response, 'Status: Archiwalny')
+        self.assertContains(response, 'Typ: Ryzyko')
+        self.assertContains(response, 'Zakres: Klienci')
+        self.assertContains(response, 'Właściciel: Zespół CRM')
+        self.assertContains(response, 'Priorytet: Krytyczny')
+
+    def test_tags_view_renders_server_sort_controls(self):
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
+
+        self.assertContains(response, 'data-project-sort-menu')
+        self.assertContains(response, 'data-project-default-sort="name_asc"')
+        self.assertContains(response, 'aria-label="Sortowanie tagów"')
+        self.assertContains(response, 'name="sort" value="" data-project-sort-input')
+        self.assertContains(response, 'data-project-sort-value="name_desc"')
+        self.assertContains(response, 'data-project-sort-value="priority_desc"')
+        self.assertContains(response, 'data-project-sort-value="task_count_desc"')
+        self.assertContains(response, 'data-project-sort-value="related_desc"')
+
+    def test_tags_view_sorts_by_priority_and_preserves_query_params_in_pagination(self):
+        low = TaskTag.objects.create(user=self.user, name='Niski tag', priority='low')
+        urgent = TaskTag.objects.create(user=self.user, name='Pilny tag', priority='urgent')
+        for index in range(55):
+            TaskTag.objects.create(
+                user=self.user,
+                name=f'Tag testowy {index:03d}',
+                priority='low',
+            )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags&sort=priority_desc&page_size=50")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertLess(table_html.index(urgent.name), table_html.index(low.name))
+        self.assertContains(response, 'Sortowanie: Priorytet')
+        self.assertContains(response, 'data-project-page-url="/tasks/?view=tags&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
+
+    def test_tags_view_sorts_by_task_count(self):
+        busy = TaskTag.objects.create(user=self.user, name='Aktywny tag')
+        quiet = TaskTag.objects.create(user=self.user, name='Cichy tag')
+        for index in range(2):
+            task = Task.objects.create(user=self.user, title=f'Zadanie aktywne {index}')
+            task.tags.add(busy)
+        task = Task.objects.create(user=self.user, title='Zadanie ciche')
+        task.tags.add(quiet)
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags&sort=task_count_desc")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertLess(table_html.index(busy.name), table_html.index(quiet.name))
+        self.assertContains(response, 'Sortowanie: Najwięcej zadań')
+        self.assertContains(response, '2 zadań')
 
     def test_projects_priority_column_uses_priority_icons(self):
         project = TaskProject.objects.create(user=self.user, name='Pilny projekt', priority='urgent')

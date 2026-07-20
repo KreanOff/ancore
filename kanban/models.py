@@ -7,12 +7,15 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 from django.utils.formats import date_format
+from tasks.models import TaskTag, TaskTagNote
 import os
 import secrets
 import string
 
 
 BASE36_ALPHABET = string.digits + string.ascii_uppercase
+KanbanTag = TaskTag
+KanbanTagNote = TaskTagNote
 
 
 class KanbanProject(models.Model):
@@ -111,135 +114,6 @@ class KanbanSection(models.Model):
         return f'{self.project.name} / {self.title}'
 
 
-class KanbanTag(models.Model):
-    CODE_PREFIX = 'T'
-    CODE_LENGTH = 8
-    CODE_ALPHABET = BASE36_ALPHABET
-    CATEGORY_CHOICES = [
-        ('general', 'Ogólny'),
-        ('priority', 'Priorytet'),
-        ('area', 'Obszar'),
-        ('client', 'Klient'),
-        ('stage', 'Etap'),
-        ('risk', 'Ryzyko'),
-        ('work_type', 'Typ pracy'),
-    ]
-    PRIORITY_CHOICES = [
-        ('none', 'Brak'),
-        ('low', 'Niski'),
-        ('medium', 'Średni'),
-        ('high', 'Wysoki'),
-        ('urgent', 'Krytyczny'),
-    ]
-    SCOPE_CHOICES = [
-        ('tasks', 'Zadania'),
-        ('projects', 'Projekty'),
-        ('clients', 'Klienci'),
-        ('documents', 'Dokumenty'),
-        ('all', 'Wszystko'),
-    ]
-    STATUS_CHOICES = [
-        ('active', 'Aktywny'),
-        ('archived', 'Archiwalny'),
-    ]
-    ICON_CHOICES = [
-        ('tag', 'Tag'),
-        ('flag', 'Flaga'),
-        ('alert-triangle', 'Ryzyko'),
-        ('briefcase', 'Praca'),
-        ('building-2', 'Firma'),
-        ('clock', 'Czas'),
-        ('layers', 'Etap'),
-        ('shield-alert', 'Blokada'),
-        ('user-round', 'Osoba'),
-        ('workflow', 'Proces'),
-    ]
-
-    name = models.CharField(max_length=80)
-    description = models.TextField(blank=True)
-    code = models.CharField(max_length=20, blank=True)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general')
-    color = models.CharField(max_length=7, default='#64748b', blank=True)
-    icon = models.CharField(max_length=32, choices=ICON_CHOICES, default='tag', blank=True)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
-    scope = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='tasks')
-    owner_label = models.CharField(max_length=120, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    usage_notes = models.TextField(blank=True)
-    automation_rules = models.TextField(blank=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_tags')
-    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='kanban_tags', null=True, blank=True)
-    related_tags = models.ManyToManyField('self', blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['name']
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'workplace', 'name'], name='unique_kanban_tag_per_workplace'),
-            models.UniqueConstraint(fields=['code'], name='unique_kanban_tag_code'),
-        ]
-
-    def _code_scope_models(self):
-        code_models = [self.__class__]
-        for app_label, model_name in (('tasks', 'TaskTag'), ('kanban', 'KanbanTag')):
-            try:
-                model = apps.get_model(app_label, model_name)
-            except LookupError:
-                continue
-            if model not in code_models:
-                code_models.append(model)
-        return code_models
-
-    def _code_exists(self, candidate):
-        for model in self._code_scope_models():
-            queryset = model.objects.filter(code=candidate)
-            if model is self.__class__ and self.pk:
-                queryset = queryset.exclude(pk=self.pk)
-            if queryset.exists():
-                return True
-        return False
-
-    def _generate_unique_code(self):
-        while True:
-            body = ''.join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
-            candidate = f'{self.CODE_PREFIX}-{body}'
-            if not self._code_exists(candidate):
-                return candidate
-
-    def save(self, *args, **kwargs):
-        if not self.code:
-            self.code = self._generate_unique_code()
-        self.code = self.code.upper()
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.name
-
-
-class KanbanTagNote(models.Model):
-    tag = models.ForeignKey(KanbanTag, on_delete=models.CASCADE, related_name='tag_notes')
-    author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name='kanban_tag_notes',
-        null=True,
-        blank=True,
-    )
-    message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['created_at', 'id']
-        indexes = [
-            models.Index(fields=['tag', 'created_at', 'id'], name='kanbantag_note_tag_idx'),
-            models.Index(fields=['author', 'created_at'], name='kanbantag_note_author_idx'),
-        ]
-
-    def __str__(self):
-        return f'{self.tag} - {self.author or "System"}'
-
-
 class KanbanBoardColumn(models.Model):
     section = models.ForeignKey(KanbanSection, on_delete=models.CASCADE, related_name='columns')
     title = models.CharField(max_length=80)
@@ -289,7 +163,7 @@ class Kanban(models.Model):
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='kanban_items', null=True, blank=True)
     section = models.ForeignKey(KanbanSection, on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
     column = models.ForeignKey(KanbanBoardColumn, on_delete=models.SET_NULL, related_name='cards', null=True, blank=True)
-    tags = models.ManyToManyField(KanbanTag, related_name='tasks', blank=True)
+    tags = models.ManyToManyField(TaskTag, related_name='kanban_cards', blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='subtasks', null=True, blank=True)
 
     def save(self, *args, **kwargs):

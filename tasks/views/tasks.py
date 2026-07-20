@@ -79,6 +79,23 @@ TASK_SORT_OPTIONS = (
     {'value': 'activity_desc', 'label': 'Ostatnia aktywność', 'icon': 'activity', 'direction': 'desc'},
 )
 TASK_SORT_OPTION_MAP = {option['value']: option for option in TASK_SORT_OPTIONS}
+TAG_DEFAULT_SORT = 'name_asc'
+TAG_SORT_OPTIONS = (
+    {'value': 'name_asc', 'label': 'Nazwa A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'name_desc', 'label': 'Nazwa Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'code_asc', 'label': 'Kod A-Z', 'icon': 'hash', 'direction': 'asc'},
+    {'value': 'code_desc', 'label': 'Kod Z-A', 'icon': 'hash', 'direction': 'desc'},
+    {'value': 'category_asc', 'label': 'Typ', 'icon': 'list-filter', 'direction': 'asc'},
+    {'value': 'visual_asc', 'label': 'Kolor i ikona', 'icon': 'palette', 'direction': 'asc'},
+    {'value': 'priority_desc', 'label': 'Priorytet', 'icon': 'chart-no-axes-column-increasing', 'direction': 'desc'},
+    {'value': 'scope_asc', 'label': 'Zakres', 'icon': 'target', 'direction': 'asc'},
+    {'value': 'owner_asc', 'label': 'Właściciel', 'icon': 'circle-user-round', 'direction': 'asc'},
+    {'value': 'status_asc', 'label': 'Status', 'icon': 'circle-dot', 'direction': 'asc'},
+    {'value': 'related_desc', 'label': 'Najwięcej powiązań', 'icon': 'network', 'direction': 'desc'},
+    {'value': 'task_count_desc', 'label': 'Najwięcej zadań', 'icon': 'list-checks', 'direction': 'desc'},
+    {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'clock-3', 'direction': 'desc'},
+)
+TAG_SORT_OPTION_MAP = {option['value']: option for option in TAG_SORT_OPTIONS}
 TASK_DUE_FILTER_OPTIONS = (
     {'value': 'overdue', 'label': 'Po terminie'},
     {'value': 'today', 'label': 'Dzisiaj'},
@@ -668,6 +685,10 @@ def _group_sort_value(value):
 
 def _task_sort_value(value):
     return value if value in TASK_SORT_OPTION_MAP else TASK_DEFAULT_SORT
+
+
+def _tag_sort_value(value):
+    return value if value in TAG_SORT_OPTION_MAP else TAG_DEFAULT_SORT
 
 
 def _choice_rank_case(field_name, choices):
@@ -1286,11 +1307,25 @@ def _task_window_for_request(request, queryset):
     }
 
 
-def _tag_filter_queryset(user, query='', workplace=None):
+def _tag_filter_queryset(
+    user,
+    query='',
+    priority='',
+    status='',
+    category='',
+    scope='',
+    owner='',
+    workplace=None,
+):
     queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
     query = (query or '').strip()
     if query:
-        queryset = queryset.filter(
+        priority_matches = _choice_values_matching_query(TaskTag.PRIORITY_CHOICES, query)
+        status_matches = _choice_values_matching_query(TaskTag.STATUS_CHOICES, query)
+        category_matches = _choice_values_matching_query(TaskTag.CATEGORY_CHOICES, query)
+        scope_matches = _choice_values_matching_query(TaskTag.SCOPE_CHOICES, query)
+        icon_matches = _choice_values_matching_query(TaskTag.ICON_CHOICES, query)
+        query_filter = (
             Q(name__icontains=query)
             | Q(description__icontains=query)
             | Q(code__icontains=query)
@@ -1298,12 +1333,119 @@ def _tag_filter_queryset(user, query='', workplace=None):
             | Q(usage_notes__icontains=query)
             | Q(automation_rules__icontains=query)
         )
+        if priority_matches:
+            query_filter |= Q(priority__in=priority_matches)
+        if status_matches:
+            query_filter |= Q(status__in=status_matches)
+        if category_matches:
+            query_filter |= Q(category__in=category_matches)
+        if scope_matches:
+            query_filter |= Q(scope__in=scope_matches)
+        if icon_matches:
+            query_filter |= Q(icon__in=icon_matches)
+        queryset = queryset.filter(query_filter)
+    if priority in {value for value, _label in TaskTag.PRIORITY_CHOICES}:
+        queryset = queryset.filter(priority=priority)
+    if status in {value for value, _label in TaskTag.STATUS_CHOICES}:
+        queryset = queryset.filter(status=status)
+    if category in {value for value, _label in TaskTag.CATEGORY_CHOICES}:
+        queryset = queryset.filter(category=category)
+    if scope in {value for value, _label in TaskTag.SCOPE_CHOICES}:
+        queryset = queryset.filter(scope=scope)
+    if owner == 'none':
+        queryset = queryset.filter(owner_label='')
+    elif owner:
+        queryset = queryset.filter(
+            owner_label=owner
+        )
     return queryset.prefetch_related(
         Prefetch(
             'tag_notes',
             queryset=TaskTagNote.objects.select_related('author').order_by('created_at', 'id'),
         )
     )
+
+
+def _tag_filter_options(user, workplace=None):
+    queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
+    owners = [
+        {'value': row['owner_label'], 'label': row['owner_label']}
+        for row in queryset.exclude(owner_label='')
+        .values('owner_label')
+        .distinct()
+        .order_by('owner_label')
+    ]
+    if queryset.filter(owner_label='').exists():
+        owners.insert(0, {'value': 'none', 'label': 'Brak właściciela'})
+
+    return {
+        'priorities': _choice_options(TaskTag.PRIORITY_CHOICES),
+        'statuses': _choice_options(TaskTag.STATUS_CHOICES),
+        'categories': _choice_options(TaskTag.CATEGORY_CHOICES),
+        'scopes': _choice_options(TaskTag.SCOPE_CHOICES),
+        'owners': owners,
+    }
+
+
+def _empty_tag_filter_options():
+    return {
+        'priorities': _choice_options(TaskTag.PRIORITY_CHOICES),
+        'statuses': _choice_options(TaskTag.STATUS_CHOICES),
+        'categories': _choice_options(TaskTag.CATEGORY_CHOICES),
+        'scopes': _choice_options(TaskTag.SCOPE_CHOICES),
+        'owners': [],
+    }
+
+
+def _tag_task_count_filter(user, workplace):
+    task_filter = Q(tasks__user=user, tasks__parent__isnull=True)
+    task_filter &= Q(tasks__workplace=workplace) if workplace is not None else Q(tasks__workplace__isnull=True)
+    return task_filter
+
+
+def _tag_sort_queryset(queryset, sort_value):
+    sort_value = _tag_sort_value(sort_value)
+    if sort_value == 'name_desc':
+        return queryset.order_by('-name', 'id')
+    if sort_value == 'code_asc':
+        return queryset.order_by('code', 'name', 'id')
+    if sort_value == 'code_desc':
+        return queryset.order_by('-code', 'name', 'id')
+    if sort_value == 'category_asc':
+        return queryset.annotate(
+            tag_category_sort_rank=_choice_rank_case('category', TaskTag.CATEGORY_CHOICES)
+        ).order_by('tag_category_sort_rank', 'name', 'id')
+    if sort_value == 'visual_asc':
+        return queryset.order_by('color', 'icon', 'name', 'id')
+    if sort_value == 'priority_desc':
+        return queryset.annotate(
+            tag_priority_sort_rank=_choice_rank_case('priority', TaskTag.PRIORITY_CHOICES)
+        ).order_by('-tag_priority_sort_rank', 'name', 'id')
+    if sort_value == 'scope_asc':
+        return queryset.annotate(
+            tag_scope_sort_rank=_choice_rank_case('scope', TaskTag.SCOPE_CHOICES)
+        ).order_by('tag_scope_sort_rank', 'name', 'id')
+    if sort_value == 'owner_asc':
+        return queryset.annotate(
+            tag_owner_empty_sort=Case(
+                When(owner_label='', then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('tag_owner_empty_sort', 'owner_label', 'name', 'id')
+    if sort_value == 'status_asc':
+        return queryset.annotate(
+            tag_status_sort_rank=_choice_rank_case('status', TaskTag.STATUS_CHOICES)
+        ).order_by('tag_status_sort_rank', 'name', 'id')
+    if sort_value == 'related_desc':
+        return queryset.annotate(
+            related_tags_sort=Count('related_tags', distinct=True)
+        ).order_by('-related_tags_sort', 'name', 'id')
+    if sort_value == 'task_count_desc':
+        return queryset.order_by('-total_tasks', 'name', 'id')
+    if sort_value == 'created_desc':
+        return queryset.order_by('-created_at', 'name', 'id')
+    return queryset.order_by('name', 'id')
 
 
 def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_by=('name', 'id'), limit=None, offset=0, workplace=None):
@@ -1632,19 +1774,36 @@ def _tag_window_for_request(request):
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
-    queryset = _tag_filter_queryset(request.user, query=query, workplace=workplace)
+    priority = (request.GET.get('priority') or '').strip()
+    status = (request.GET.get('status') or '').strip()
+    category = (request.GET.get('category') or '').strip()
+    scope = (request.GET.get('scope') or '').strip()
+    owner = (request.GET.get('owner') or '').strip()
+    sort = _tag_sort_value((request.GET.get('sort') or '').strip())
+    queryset = _tag_filter_queryset(
+        request.user,
+        query=query,
+        priority=priority,
+        status=status,
+        category=category,
+        scope=scope,
+        owner=owner,
+        workplace=workplace,
+    ).annotate(
+        total_tasks=Count(
+            'tasks',
+            filter=_tag_task_count_filter(request.user, workplace),
+            distinct=True,
+        )
+    )
+    queryset = _tag_sort_queryset(queryset, sort)
     total_tags = queryset.count()
     total_pages = max(1, (total_tags + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
     offset = (current_page - 1) * page_size
 
     tags = list(
-        queryset.prefetch_related('related_tags').annotate(
-            total_tasks=Count(
-                'tasks',
-                filter=Q(tasks__user=request.user, tasks__workplace=workplace, tasks__parent__isnull=True),
-            )
-        ).order_by('name', 'id')[offset:offset + page_size]
+        queryset.prefetch_related('related_tags')[offset:offset + page_size]
     )
     for tag in tags:
         related_tags = list(tag.related_tags.all())
@@ -1654,6 +1813,12 @@ def _tag_window_for_request(request):
     base_params = {
         'view': 'tags',
         'q': query,
+        'priority': priority,
+        'status': status,
+        'category': category,
+        'scope': scope,
+        'owner': owner,
+        'sort': '' if sort == TAG_DEFAULT_SORT else sort,
         'page_size': page_size,
     }
     has_previous = current_page > 1 and total_tags > 0
@@ -1678,6 +1843,16 @@ def _tag_window_for_request(request):
     return {
         'tags': tags,
         'query': query,
+        'priority': priority,
+        'status': status,
+        'category': category,
+        'scope': scope,
+        'owner': owner,
+        'sort': sort,
+        'sort_param': '' if sort == TAG_DEFAULT_SORT else sort,
+        'sort_label': TAG_SORT_OPTION_MAP[sort]['label'],
+        'sort_direction': TAG_SORT_OPTION_MAP[sort]['direction'],
+        'filters': _tag_filter_options(request.user, workplace=workplace),
         'page': current_page,
         'total_pages': total_pages,
         'total_tags': total_tags,
@@ -3077,6 +3252,16 @@ def _tasks_page(request, active_section=None):
     tag_window = _tag_window_for_request(request) if active_view == 'tags' else {
         'tags': [],
         'query': '',
+        'priority': '',
+        'status': '',
+        'category': '',
+        'scope': '',
+        'owner': '',
+        'sort': TAG_DEFAULT_SORT,
+        'sort_param': '',
+        'sort_label': TAG_SORT_OPTION_MAP[TAG_DEFAULT_SORT]['label'],
+        'sort_direction': TAG_SORT_OPTION_MAP[TAG_DEFAULT_SORT]['direction'],
+        'filters': _empty_tag_filter_options(),
         'page': 1,
         'total_pages': 1,
         'total_tags': 0,
@@ -3214,6 +3399,18 @@ def _tasks_page(request, active_section=None):
         'project_section_priority_filter': project_section_window['priority'],
         'tag_window': tag_window,
         'tag_query': tag_window['query'],
+        'tag_priority_filter': tag_window['priority'],
+        'tag_status_filter': tag_window['status'],
+        'tag_category_filter': tag_window['category'],
+        'tag_scope_filter': tag_window['scope'],
+        'tag_owner_filter': tag_window['owner'],
+        'tag_filter_options': tag_window['filters'],
+        'tag_sort_options': TAG_SORT_OPTIONS,
+        'tag_sort': tag_window['sort'],
+        'tag_sort_param': tag_window['sort_param'],
+        'tag_sort_label': tag_window['sort_label'],
+        'tag_sort_direction': tag_window['sort_direction'],
+        'tag_default_sort': TAG_DEFAULT_SORT,
         'task_window': task_window,
         'task_query': task_window['query'],
         'task_priority_filter': task_window['priority'],

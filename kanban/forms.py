@@ -1,5 +1,6 @@
 from django import forms
-from .models import Kanban, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag
+from tasks.models import TaskTag
+from .models import Kanban, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
 
 
 class TwoDigitNumberInput(forms.NumberInput):
@@ -85,7 +86,7 @@ class KanbanForm(DynamicStatusFormMixin, forms.ModelForm):
             self.fields['project'].queryset = projects
             self.fields['section'].queryset = sections
             self.fields['parent'].queryset = parents
-            self.fields['tags'].queryset = _filter_workplace(KanbanTag.objects.filter(user=user), workplace)
+            self.fields['tags'].queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
         current_section = section or getattr(self.instance, 'section', None)
         if current_section:
             self.fields['project'].initial = current_section.project
@@ -250,9 +251,9 @@ class KanbanTagForm(forms.ModelForm):
             user = getattr(self.instance, 'user', None)
         if workplace is None:
             workplace = getattr(self.instance, 'workplace', None)
-        related_queryset = KanbanTag.objects.none()
+        related_queryset = TaskTag.objects.none()
         if user:
-            related_queryset = _filter_workplace(KanbanTag.objects.filter(user=user), workplace)
+            related_queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
             if self.instance and self.instance.pk:
                 related_queryset = related_queryset.exclude(pk=self.instance.pk)
         self.fields['related_tags'].queryset = related_queryset.order_by('name', 'id')
@@ -262,7 +263,7 @@ class KanbanTagForm(forms.ModelForm):
             self.fields[field_name].required = False
 
     class Meta:
-        model = KanbanTag
+        model = TaskTag
         fields = [
             'name',
             'description',
@@ -412,7 +413,7 @@ class KanbanModalForm(DynamicStatusFormMixin, forms.ModelForm):
             if project:
                 sections = sections.filter(project=project)
             self.fields['section'].queryset = sections
-            self.fields['tags'].queryset = _filter_workplace(KanbanTag.objects.filter(user=user), workplace)
+            self.fields['tags'].queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
         self.fields['section'].required = True
         self.fields['section'].label = 'Tablica przestrzeni roboczej'
         self.fields['tags'].required = False

@@ -1,5 +1,6 @@
 import logging
 import json
+import unicodedata
 from urllib.parse import urlencode
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -12,7 +13,8 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from core.upload_validation import attachment_download_response, validate_attachment_upload
-from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag, KanbanTagNote
+from tasks.models import TaskTag, TaskTagNote
+from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
 from ..forms import QuickKanbanForm, SubKanbanModalForm, KanbanBoardColumnForm, KanbanForm, KanbanModalForm, KanbanProjectForm, KanbanProjectRenameForm, KanbanSectionForm, KanbanSectionRenameForm, KanbanTagForm
 
 
@@ -20,6 +22,23 @@ logger = logging.getLogger(__name__)
 
 PROJECT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
 PROJECT_DEFAULT_PAGE_SIZE = 50
+TAG_DEFAULT_SORT = 'name_asc'
+TAG_SORT_OPTIONS = (
+    {'value': 'name_asc', 'label': 'Nazwa A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'name_desc', 'label': 'Nazwa Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'code_asc', 'label': 'Kod A-Z', 'icon': 'hash', 'direction': 'asc'},
+    {'value': 'code_desc', 'label': 'Kod Z-A', 'icon': 'hash', 'direction': 'desc'},
+    {'value': 'category_asc', 'label': 'Typ', 'icon': 'list-filter', 'direction': 'asc'},
+    {'value': 'visual_asc', 'label': 'Kolor i ikona', 'icon': 'palette', 'direction': 'asc'},
+    {'value': 'priority_desc', 'label': 'Priorytet', 'icon': 'chart-no-axes-column-increasing', 'direction': 'desc'},
+    {'value': 'scope_asc', 'label': 'Zakres', 'icon': 'target', 'direction': 'asc'},
+    {'value': 'owner_asc', 'label': 'Właściciel', 'icon': 'circle-user-round', 'direction': 'asc'},
+    {'value': 'status_asc', 'label': 'Status', 'icon': 'circle-dot', 'direction': 'asc'},
+    {'value': 'related_desc', 'label': 'Najwięcej powiązań', 'icon': 'network', 'direction': 'desc'},
+    {'value': 'task_count_desc', 'label': 'Najwięcej zadań', 'icon': 'list-checks', 'direction': 'desc'},
+    {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'clock-3', 'direction': 'desc'},
+)
+TAG_SORT_OPTION_MAP = {option['value']: option for option in TAG_SORT_OPTIONS}
 
 
 def _active_workplace(request):
@@ -30,6 +49,43 @@ def _filter_workplace(queryset, workplace, field_name='workplace'):
     if workplace is None:
         return queryset
     return queryset.filter(**{field_name: workplace})
+
+
+def _normalize_query_label(value):
+    normalized = unicodedata.normalize('NFKD', str(value or '').casefold())
+    return ''.join(
+        char
+        for char in normalized
+        if unicodedata.category(char) != 'Mn'
+    ).strip()
+
+
+def _choice_options(choices):
+    return [{'value': value, 'label': label} for value, label in choices]
+
+
+def _choice_values_matching_query(choices, query):
+    normalized_query = _normalize_query_label(query)
+    if not normalized_query:
+        return []
+    return [
+        value
+        for value, label in choices
+        if normalized_query in _normalize_query_label(value)
+        or normalized_query in _normalize_query_label(label)
+    ]
+
+
+def _tag_sort_value(value):
+    return value if value in TAG_SORT_OPTION_MAP else TAG_DEFAULT_SORT
+
+
+def _choice_rank_case(field_name, choices):
+    return Case(
+        *[When(**{field_name: value}, then=Value(index)) for index, (value, _label) in enumerate(choices)],
+        default=Value(len(choices)),
+        output_field=IntegerField(),
+    )
 
 
 def _project_page_size(request):
@@ -241,11 +297,25 @@ def _posted_ids(request, plural_name, singular_name):
     return [item for item in ids if item]
 
 
-def _tag_filter_queryset(user, query='', workplace=None):
-    queryset = _filter_workplace(KanbanTag.objects.filter(user=user), workplace)
+def _tag_filter_queryset(
+    user,
+    query='',
+    priority='',
+    status='',
+    category='',
+    scope='',
+    owner='',
+    workplace=None,
+):
+    queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
     query = (query or '').strip()
     if query:
-        queryset = queryset.filter(
+        priority_matches = _choice_values_matching_query(TaskTag.PRIORITY_CHOICES, query)
+        status_matches = _choice_values_matching_query(TaskTag.STATUS_CHOICES, query)
+        category_matches = _choice_values_matching_query(TaskTag.CATEGORY_CHOICES, query)
+        scope_matches = _choice_values_matching_query(TaskTag.SCOPE_CHOICES, query)
+        icon_matches = _choice_values_matching_query(TaskTag.ICON_CHOICES, query)
+        query_filter = (
             Q(name__icontains=query)
             | Q(description__icontains=query)
             | Q(code__icontains=query)
@@ -253,13 +323,121 @@ def _tag_filter_queryset(user, query='', workplace=None):
             | Q(usage_notes__icontains=query)
             | Q(automation_rules__icontains=query)
         )
+        if priority_matches:
+            query_filter |= Q(priority__in=priority_matches)
+        if status_matches:
+            query_filter |= Q(status__in=status_matches)
+        if category_matches:
+            query_filter |= Q(category__in=category_matches)
+        if scope_matches:
+            query_filter |= Q(scope__in=scope_matches)
+        if icon_matches:
+            query_filter |= Q(icon__in=icon_matches)
+        queryset = queryset.filter(query_filter)
+    if priority in {value for value, _label in TaskTag.PRIORITY_CHOICES}:
+        queryset = queryset.filter(priority=priority)
+    if status in {value for value, _label in TaskTag.STATUS_CHOICES}:
+        queryset = queryset.filter(status=status)
+    if category in {value for value, _label in TaskTag.CATEGORY_CHOICES}:
+        queryset = queryset.filter(category=category)
+    if scope in {value for value, _label in TaskTag.SCOPE_CHOICES}:
+        queryset = queryset.filter(scope=scope)
+    if owner == 'none':
+        queryset = queryset.filter(owner_label='')
+    elif owner:
+        queryset = queryset.filter(owner_label=owner)
     return queryset.prefetch_related(
         'related_tags',
         Prefetch(
             'tag_notes',
-            queryset=KanbanTagNote.objects.select_related('author').order_by('created_at', 'id'),
+            queryset=TaskTagNote.objects.select_related('author').order_by('created_at', 'id'),
         ),
     )
+
+
+def _tag_filter_options(user, workplace=None):
+    queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
+    owners = [
+        {'value': row['owner_label'], 'label': row['owner_label']}
+        for row in queryset.exclude(owner_label='')
+        .values('owner_label')
+        .distinct()
+        .order_by('owner_label')
+    ]
+    if queryset.filter(owner_label='').exists():
+        owners.insert(0, {'value': 'none', 'label': 'Brak właściciela'})
+
+    return {
+        'priorities': _choice_options(TaskTag.PRIORITY_CHOICES),
+        'statuses': _choice_options(TaskTag.STATUS_CHOICES),
+        'categories': _choice_options(TaskTag.CATEGORY_CHOICES),
+        'scopes': _choice_options(TaskTag.SCOPE_CHOICES),
+        'owners': owners,
+    }
+
+
+def _empty_tag_filter_options():
+    return {
+        'priorities': _choice_options(TaskTag.PRIORITY_CHOICES),
+        'statuses': _choice_options(TaskTag.STATUS_CHOICES),
+        'categories': _choice_options(TaskTag.CATEGORY_CHOICES),
+        'scopes': _choice_options(TaskTag.SCOPE_CHOICES),
+        'owners': [],
+    }
+
+
+def _tag_card_count_filter(user, workplace):
+    card_filter = Q(kanban_cards__user=user, kanban_cards__parent__isnull=True)
+    card_filter &= (
+        Q(kanban_cards__workplace=workplace)
+        if workplace is not None else Q(kanban_cards__workplace__isnull=True)
+    )
+    return card_filter
+
+
+def _tag_sort_queryset(queryset, sort_value):
+    sort_value = _tag_sort_value(sort_value)
+    if sort_value == 'name_desc':
+        return queryset.order_by('-name', 'id')
+    if sort_value == 'code_asc':
+        return queryset.order_by('code', 'name', 'id')
+    if sort_value == 'code_desc':
+        return queryset.order_by('-code', 'name', 'id')
+    if sort_value == 'category_asc':
+        return queryset.annotate(
+            tag_category_sort_rank=_choice_rank_case('category', TaskTag.CATEGORY_CHOICES)
+        ).order_by('tag_category_sort_rank', 'name', 'id')
+    if sort_value == 'visual_asc':
+        return queryset.order_by('color', 'icon', 'name', 'id')
+    if sort_value == 'priority_desc':
+        return queryset.annotate(
+            tag_priority_sort_rank=_choice_rank_case('priority', TaskTag.PRIORITY_CHOICES)
+        ).order_by('-tag_priority_sort_rank', 'name', 'id')
+    if sort_value == 'scope_asc':
+        return queryset.annotate(
+            tag_scope_sort_rank=_choice_rank_case('scope', TaskTag.SCOPE_CHOICES)
+        ).order_by('tag_scope_sort_rank', 'name', 'id')
+    if sort_value == 'owner_asc':
+        return queryset.annotate(
+            tag_owner_empty_sort=Case(
+                When(owner_label='', then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('tag_owner_empty_sort', 'owner_label', 'name', 'id')
+    if sort_value == 'status_asc':
+        return queryset.annotate(
+            tag_status_sort_rank=_choice_rank_case('status', TaskTag.STATUS_CHOICES)
+        ).order_by('tag_status_sort_rank', 'name', 'id')
+    if sort_value == 'related_desc':
+        return queryset.annotate(
+            related_tags_sort=Count('related_tags', distinct=True)
+        ).order_by('-related_tags_sort', 'name', 'id')
+    if sort_value == 'task_count_desc':
+        return queryset.order_by('-total_tasks', 'name', 'id')
+    if sort_value == 'created_desc':
+        return queryset.order_by('-created_at', 'name', 'id')
+    return queryset.order_by('name', 'id')
 
 
 def _tag_window_for_request(request):
@@ -267,20 +445,35 @@ def _tag_window_for_request(request):
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
-    queryset = _tag_filter_queryset(request.user, query=query, workplace=workplace)
+    priority = (request.GET.get('priority') or '').strip()
+    status = (request.GET.get('status') or '').strip()
+    category = (request.GET.get('category') or '').strip()
+    scope = (request.GET.get('scope') or '').strip()
+    owner = (request.GET.get('owner') or '').strip()
+    sort = _tag_sort_value((request.GET.get('sort') or '').strip())
+    queryset = _tag_filter_queryset(
+        request.user,
+        query=query,
+        priority=priority,
+        status=status,
+        category=category,
+        scope=scope,
+        owner=owner,
+        workplace=workplace,
+    ).annotate(
+        total_tasks=Count(
+            'kanban_cards',
+            filter=_tag_card_count_filter(request.user, workplace),
+            distinct=True,
+        )
+    )
+    queryset = _tag_sort_queryset(queryset, sort)
     total_tags = queryset.count()
     total_pages = max(1, (total_tags + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
     offset = (current_page - 1) * page_size
 
-    tags = list(
-        queryset.annotate(
-            total_tasks=Count(
-                'tasks',
-                filter=Q(tasks__user=request.user, tasks__workplace=workplace, tasks__parent__isnull=True),
-            )
-        ).order_by('name', 'id')[offset:offset + page_size]
-    )
+    tags = list(queryset[offset:offset + page_size])
     for tag in tags:
         related_tags = list(tag.related_tags.all())
         tag.related_tag_ids = ','.join(str(related_tag.id) for related_tag in related_tags)
@@ -289,6 +482,12 @@ def _tag_window_for_request(request):
     base_params = {
         'view': 'tags',
         'q': query,
+        'priority': priority,
+        'status': status,
+        'category': category,
+        'scope': scope,
+        'owner': owner,
+        'sort': '' if sort == TAG_DEFAULT_SORT else sort,
         'page_size': page_size,
     }
     has_previous = current_page > 1 and total_tags > 0
@@ -313,6 +512,16 @@ def _tag_window_for_request(request):
     return {
         'tags': tags,
         'query': query,
+        'priority': priority,
+        'status': status,
+        'category': category,
+        'scope': scope,
+        'owner': owner,
+        'sort': sort,
+        'sort_param': '' if sort == TAG_DEFAULT_SORT else sort,
+        'sort_label': TAG_SORT_OPTION_MAP[sort]['label'],
+        'sort_direction': TAG_SORT_OPTION_MAP[sort]['direction'],
+        'filters': _tag_filter_options(request.user, workplace=workplace),
         'page': current_page,
         'total_pages': total_pages,
         'total_tags': total_tags,
@@ -387,8 +596,8 @@ def _tasks_navigation_context(user, active_section=None, active_view=None, workp
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
         'total_group_count': len(_sections_for_projects(projects)),
-        'tags': _filter_workplace(KanbanTag.objects.filter(user=user), workplace).annotate(total_tasks=Count('tasks', filter=Q(tasks__user=user, tasks__workplace=workplace, tasks__parent__isnull=True))),
-        'total_tag_count': _filter_workplace(KanbanTag.objects.filter(user=user), workplace).count(),
+        'tags': _filter_workplace(TaskTag.objects.filter(user=user), workplace).annotate(total_tasks=Count('kanban_cards', filter=Q(kanban_cards__user=user, kanban_cards__workplace=workplace, kanban_cards__parent__isnull=True))),
+        'total_tag_count': _filter_workplace(TaskTag.objects.filter(user=user), workplace).count(),
         'can_create_issue': can_create_issue,
     }
 
@@ -629,7 +838,7 @@ def _tasks_page(request, active_section=None):
             tag_form = KanbanTagForm(request.POST, user=request.user, workplace=workplace)
             if tag_form.is_valid():
                 tag_name = tag_form.cleaned_data['name']
-                if _filter_workplace(KanbanTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exists():
+                if _filter_workplace(TaskTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exists():
                     tag_form.add_error('name', 'Taki tag już istnieje.')
                 else:
                     tag = tag_form.save(commit=False)
@@ -643,11 +852,11 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się dodać tagu.')
 
         if action == 'edit_tag':
-            tag = get_object_or_404(_filter_workplace(KanbanTag.objects.filter(user=request.user), workplace), id=request.POST.get('tag_id'))
+            tag = get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=request.user), workplace), id=request.POST.get('tag_id'))
             tag_form = KanbanTagForm(request.POST, instance=tag, user=request.user, workplace=workplace)
             if tag_form.is_valid():
                 tag_name = tag_form.cleaned_data['name']
-                if _filter_workplace(KanbanTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exclude(pk=tag.pk).exists():
+                if _filter_workplace(TaskTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exclude(pk=tag.pk).exists():
                     tag_form.add_error('name', 'Taki tag już istnieje.')
                 else:
                     tag_form.save()
@@ -660,12 +869,12 @@ def _tasks_page(request, active_section=None):
 
         if action in ('add_tag_note', 'update_tag_notes'):
             tag = get_object_or_404(
-                _filter_workplace(KanbanTag.objects.filter(user=request.user), workplace),
+                _filter_workplace(TaskTag.objects.filter(user=request.user), workplace),
                 id=request.POST.get('tag_id'),
             )
             message = (request.POST.get('message') or request.POST.get('description') or '').strip()
             if message:
-                KanbanTagNote.objects.create(tag=tag, author=request.user, message=message)
+                TaskTagNote.objects.create(tag=tag, author=request.user, message=message)
                 messages.success(request, 'Notatka dodana.')
             else:
                 messages.error(request, 'Wpisz treść notatki.')
@@ -673,7 +882,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'edit_tag_note':
             note_queryset = _filter_workplace(
-                KanbanTagNote.objects.filter(author=request.user, tag__user=request.user),
+                TaskTagNote.objects.filter(author=request.user, tag__user=request.user),
                 workplace,
                 field_name='tag__workplace',
             )
@@ -689,7 +898,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_tag_note':
             note_queryset = _filter_workplace(
-                KanbanTagNote.objects.filter(author=request.user, tag__user=request.user),
+                TaskTagNote.objects.filter(author=request.user, tag__user=request.user),
                 workplace,
                 field_name='tag__workplace',
             )
@@ -700,9 +909,9 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_tag':
             tag_ids = _posted_ids(request, 'tag_ids', 'tag_id')
-            tags_to_delete = _filter_workplace(KanbanTag.objects.filter(id__in=tag_ids, user=request.user), workplace)
+            tags_to_delete = _filter_workplace(TaskTag.objects.filter(id__in=tag_ids, user=request.user), workplace)
             if not tags_to_delete.exists():
-                get_object_or_404(_filter_workplace(KanbanTag.objects.filter(user=request.user), workplace), id=request.POST.get('tag_id'))
+                get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=request.user), workplace), id=request.POST.get('tag_id'))
             tag_count = tags_to_delete.count()
             tags_to_delete.delete()
             if tag_count == 1:
@@ -871,7 +1080,7 @@ def _tasks_page(request, active_section=None):
     all_status_groups = _status_groups_for_tasks(list(tasks_qs))
     all_task_board_columns = _all_task_board_columns(request.user, tasks_qs, workplace=workplace)
     all_sections = _sections_for_projects(projects)
-    total_tag_count = _filter_workplace(KanbanTag.objects.filter(user=request.user), workplace).count()
+    total_tag_count = _filter_workplace(TaskTag.objects.filter(user=request.user), workplace).count()
     if active_section:
         can_create_issue = True
     elif active_project:
@@ -897,6 +1106,16 @@ def _tasks_page(request, active_section=None):
     tag_window = _tag_window_for_request(request) if active_view == 'tags' else {
         'tags': [],
         'query': '',
+        'priority': '',
+        'status': '',
+        'category': '',
+        'scope': '',
+        'owner': '',
+        'sort': TAG_DEFAULT_SORT,
+        'sort_param': '',
+        'sort_label': TAG_SORT_OPTION_MAP[TAG_DEFAULT_SORT]['label'],
+        'sort_direction': TAG_SORT_OPTION_MAP[TAG_DEFAULT_SORT]['direction'],
+        'filters': _empty_tag_filter_options(),
         'page': 1,
         'total_pages': 1,
         'total_tags': total_tag_count,
@@ -909,7 +1128,7 @@ def _tasks_page(request, active_section=None):
         'next_url': '',
         'summary': '',
     }
-    tags = tag_window['tags'] if active_view == 'tags' else KanbanTag.objects.none()
+    tags = tag_window['tags'] if active_view == 'tags' else TaskTag.objects.none()
 
     context = {
         'projects': projects,
@@ -930,6 +1149,18 @@ def _tasks_page(request, active_section=None):
         'tags': tags,
         'tag_window': tag_window,
         'tag_query': tag_window['query'],
+        'tag_priority_filter': tag_window['priority'],
+        'tag_status_filter': tag_window['status'],
+        'tag_category_filter': tag_window['category'],
+        'tag_scope_filter': tag_window['scope'],
+        'tag_owner_filter': tag_window['owner'],
+        'tag_filter_options': tag_window['filters'],
+        'tag_sort_options': TAG_SORT_OPTIONS,
+        'tag_sort': tag_window['sort'],
+        'tag_sort_param': tag_window['sort_param'],
+        'tag_sort_label': tag_window['sort_label'],
+        'tag_sort_direction': tag_window['sort_direction'],
+        'tag_default_sort': TAG_DEFAULT_SORT,
         'total_tag_count': total_tag_count,
         'project_form': project_form,
         'project_rename_form': project_rename_form,

@@ -60,7 +60,6 @@ def backfill_legacy_records_for_workplace(user, workplace):
         ('tasks', 'TaskTag', 'user'),
         ('tasks', 'Task', 'user'),
         ('kanban', 'KanbanProject', 'user'),
-        ('kanban', 'KanbanTag', 'user'),
         ('kanban', 'Kanban', 'user'),
         ('contacts', 'Company', 'owner'),
         ('contacts', 'Contact', 'user'),

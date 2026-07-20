@@ -10,7 +10,8 @@ from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
-from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection, KanbanTag, KanbanTagNote
+from tasks.models import TaskTag, TaskTagNote
+from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
 
 
 class KanbanProjectCreationTests(TestCase):
@@ -25,6 +26,14 @@ class KanbanProjectCreationTests(TestCase):
             password='test-pass-123',
         )
         self.client.force_login(self.user)
+
+    def _rail_link_html(self, response, label):
+        html = response.content.decode()
+        nav_start = html.index('class="tasks-rail-nav-group"')
+        label_start = html.index(label, nav_start)
+        link_start = html.rfind('<a ', nav_start, label_start)
+        link_end = html.index('</a>', label_start) + len('</a>')
+        return html[link_start:link_end]
 
     def test_create_project_adds_default_group(self):
         response = self.client.post(reverse('kanban:tasks'), {
@@ -172,6 +181,55 @@ class KanbanProjectCreationTests(TestCase):
         self.assertNotContains(response, 'Ikona przestrzeni roboczej')
         self.assertNotContains(response, 'Ikona tablicy')
 
+    def test_projects_view_bars_match_all_tasks_layout(self):
+        KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
+
+        response = self.client.get(reverse('kanban:tasks'))
+        html = response.content.decode()
+        topbar_start = html.index('class="tasks-topbar"')
+        topbar_end = html.index('</header>', topbar_start)
+        topbar_html = html[topbar_start:topbar_end]
+        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
+        filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+
+        self.assertIn('Wszystkie przestrzenie', topbar_html)
+        self.assertIn('tasks-titlebar-search', topbar_html)
+        self.assertIn('id="filter-search"', topbar_html)
+        self.assertNotIn('data-task-sort', topbar_html)
+        self.assertNotIn('data-section-actions', topbar_html)
+        self.assertIn('tasks-filterbar--task-directory', filterbar_html)
+        self.assertIn('data-task-sort', filterbar_html)
+        self.assertIn('data-section-actions', filterbar_html)
+        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertNotIn('data-filter-search-submit', filterbar_html)
+        self.assertNotIn('Dodaj przestrzeń', filterbar_html)
+
+    def test_all_groups_view_bars_match_all_tasks_layout(self):
+        project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
+        KanbanSection.objects.create(project=project, title='Tablica testowa')
+
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
+        html = response.content.decode()
+        topbar_start = html.index('class="tasks-topbar"')
+        topbar_end = html.index('</header>', topbar_start)
+        topbar_html = html[topbar_start:topbar_end]
+        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
+        filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+
+        self.assertIn('Wszystkie tablice', topbar_html)
+        self.assertIn('tasks-titlebar-search', topbar_html)
+        self.assertIn('id="filter-search"', topbar_html)
+        self.assertNotIn('data-task-sort', topbar_html)
+        self.assertNotIn('data-section-actions', topbar_html)
+        self.assertIn('tasks-filterbar--task-directory', filterbar_html)
+        self.assertIn('data-task-sort', filterbar_html)
+        self.assertIn('data-section-actions', filterbar_html)
+        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertNotIn('data-filter-search-submit', filterbar_html)
+        self.assertNotIn('Dodaj tablicę', filterbar_html)
+
     def test_project_group_rows_do_not_render_group_type_label(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         KanbanSection.objects.create(project=project, title='Frontend')
@@ -201,19 +259,29 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, first_project.code)
         self.assertContains(response, second_project.code)
 
-    def test_all_groups_link_shows_board_count(self):
+    def test_projects_link_hides_workspace_count(self):
+        KanbanProject.objects.create(user=self.user, name='Pierwsza przestrzeń', code='ONE')
+        KanbanProject.objects.create(user=self.user, name='Druga przestrzeń', code='TWO')
+
+        response = self.client.get(reverse('kanban:tasks'))
+
+        link_html = self._rail_link_html(response, 'Wszystkie przestrzenie')
+        self.assertNotIn('tasks-rail-count', link_html)
+
+    def test_all_groups_link_hides_board_count(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         KanbanSection.objects.create(project=project, title='Frontend')
         KanbanSection.objects.create(project=project, title='Backend')
-        KanbanTag.objects.create(user=self.user, name='Design')
+        TaskTag.objects.create(user=self.user, name='Design')
 
         response = self.client.get(reverse('kanban:tasks'))
 
         self.assertContains(response, 'Wszystkie tablice')
-        self.assertContains(response, '<span class="tasks-rail-count">2</span>', html=True)
+        link_html = self._rail_link_html(response, 'Wszystkie tablice')
+        self.assertNotIn('tasks-rail-count', link_html)
 
     def test_tags_view_lists_tags(self):
-        frontend = KanbanTag.objects.create(
+        frontend = TaskTag.objects.create(
             user=self.user,
             name='Frontend',
             description='Prace po stronie UI',
@@ -227,9 +295,9 @@ class KanbanProjectCreationTests(TestCase):
             usage_notes='Używaj przy kartach interfejsu.',
             automation_rules='Dodaj przy kanale frontend.',
         )
-        backend = KanbanTag.objects.create(user=self.user, name='Backend')
+        backend = TaskTag.objects.create(user=self.user, name='Backend')
         frontend.related_tags.add(backend)
-        KanbanTagNote.objects.create(tag=frontend, author=self.user, message='Moja notatka tagu')
+        TaskTagNote.objects.create(tag=frontend, author=self.user, message='Moja notatka tagu')
         project = KanbanProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
         section = KanbanSection.objects.create(project=project, title='Tablica')
         task = Kanban.objects.create(user=self.user, section=section, title='Zadanie frontendowe')
@@ -340,9 +408,66 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, 'Na stronie')
         self.assertContains(response, 'tagów')
 
+    def test_tags_view_uses_tasks_tag_filter_toolbar(self):
+        TaskTag.objects.create(
+            user=self.user,
+            name='Widoczny tag',
+            category='area',
+            priority='high',
+            scope='projects',
+            owner_label='IT',
+            status='active',
+        )
+        TaskTag.objects.create(
+            user=self.user,
+            name='Ukryty tag',
+            category='general',
+            priority='none',
+            scope='tasks',
+            status='archived',
+        )
+
+        response = self.client.get(
+            f"{reverse('kanban:tasks')}?view=tags&status=active&category=area"
+            "&scope=projects&owner=IT&priority=high&sort=priority_desc"
+        )
+        html = response.content.decode()
+        topbar_start = html.index('class="tasks-topbar"')
+        topbar_end = html.index('</header>', topbar_start)
+        topbar_html = html[topbar_start:topbar_end]
+        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
+        filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-project-sort-menu')
+        self.assertContains(response, 'data-project-default-sort="name_asc"')
+        self.assertNotIn('data-section-actions', topbar_html)
+        self.assertIn('data-section-actions', filterbar_html)
+        self.assertIn('Dodaj tag', filterbar_html)
+        self.assertLess(filterbar_html.index('Dodaj tag'), filterbar_html.index('data-section-actions'))
+        self.assertIn('name="sort" value="priority_desc" data-project-sort-input', html)
+        self.assertIn('name="status" value="active" data-project-filter-input="status"', html)
+        self.assertIn('name="category" value="area" data-project-filter-input="category"', html)
+        self.assertIn('name="scope" value="projects" data-project-filter-input="scope"', html)
+        self.assertIn('name="owner" value="IT" data-project-filter-input="owner"', html)
+        self.assertIn('name="priority" value="high" data-project-filter-input="priority"', html)
+        for filter_name in ('status', 'category', 'scope', 'owner', 'priority'):
+            self.assertContains(response, f'data-project-filter-menu="{filter_name}"')
+        self.assertContains(response, 'Status: Aktywny')
+        self.assertContains(response, 'Typ: Obszar')
+        self.assertContains(response, 'Zakres: Projekty')
+        self.assertContains(response, 'Właściciel: IT')
+        self.assertContains(response, 'Priorytet: Wysoki')
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+        self.assertIn('Widoczny tag', table_html)
+        self.assertNotIn('Ukryty tag', table_html)
+
     def test_tags_view_renders_only_server_side_window(self):
         for index in range(60):
-            KanbanTag.objects.create(
+            TaskTag.objects.create(
                 user=self.user,
                 name=f'Tag {index:03d}',
                 description=f'Opis tagu {index:03d}',
@@ -391,19 +516,46 @@ class KanbanProjectCreationTests(TestCase):
         self.assertNotIn('Tag 010', table_html)
         self.assertIn('data-project-page="6"', html)
 
-    def test_tags_link_shows_tag_count(self):
+    def test_tags_link_hides_tag_count(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         KanbanSection.objects.create(project=project, title='Frontend')
-        KanbanTag.objects.create(user=self.user, name='Frontend')
-        KanbanTag.objects.create(user=self.user, name='Backend')
+        TaskTag.objects.create(user=self.user, name='Frontend')
+        TaskTag.objects.create(user=self.user, name='Backend')
 
         response = self.client.get(reverse('kanban:tasks'))
 
         self.assertContains(response, 'Tagi')
-        self.assertContains(response, '<span class="tasks-rail-count">2</span>', html=True)
+        link_html = self._rail_link_html(response, 'Tagi')
+        self.assertNotIn('tasks-rail-count', link_html)
+
+    def test_kanban_uses_tags_created_in_tasks_system(self):
+        shared_tag = TaskTag.objects.create(user=self.user, name='Wspólny tag')
+        project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = KanbanSection.objects.create(project=project, title='Frontend')
+
+        tags_response = self.client.get(f"{reverse('kanban:tasks')}?view=tags")
+
+        self.assertContains(tags_response, 'Wspólny tag')
+        self.assertContains(tags_response, shared_tag.code)
+
+        response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'create_task_modal',
+            'project_id': project.id,
+            'title': 'Karta ze wspólnym tagiem',
+            'section': section.id,
+            'description': '',
+            'priority': 'medium',
+            'status': 'new',
+            'tags': [shared_tag.id],
+        })
+
+        card = Kanban.objects.get(user=self.user, title='Karta ze wspólnym tagiem')
+
+        self.assertRedirects(response, reverse('kanban:task_group', args=[section.id]))
+        self.assertEqual(list(card.tags.all()), [shared_tag])
 
     def test_create_tag_from_tasks_page(self):
-        related = KanbanTag.objects.create(user=self.user, name='Backend')
+        related = TaskTag.objects.create(user=self.user, name='Backend')
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'create_tag',
             'name': 'Design',
@@ -421,7 +573,7 @@ class KanbanProjectCreationTests(TestCase):
             'code': 'DES',
         })
 
-        tag = KanbanTag.objects.get(user=self.user, name='Design')
+        tag = TaskTag.objects.get(user=self.user, name='Design')
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?view=tags")
         self.assertEqual(tag.description, 'Makiety i decyzje wizualne')
@@ -437,24 +589,25 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(list(tag.related_tags.all()), [related])
         self.assertNotEqual(tag.code, 'DES')
         self.assertRegex(tag.code, r'^T-[0-9A-Z]{8}$')
+        self.assertContains(self.client.get(f"{reverse('tasks:tasks')}?view=tags"), 'Design')
 
     def test_create_tag_avoids_existing_base36_tag_code(self):
-        KanbanTag.objects.create(user=self.user, name='Design', code='T-COLLIDE1')
+        TaskTag.objects.create(user=self.user, name='Design', code='T-COLLIDE1')
 
-        with patch('kanban.models.secrets.choice', side_effect=list('COLLIDE1KANBAN01')):
+        with patch('tasks.models.secrets.choice', side_effect=list('COLLIDE1KANBAN01')):
             response = self.client.post(reverse('kanban:tasks'), {
                 'action': 'create_tag',
                 'name': 'Backend',
                 'description': '',
             })
 
-        tag = KanbanTag.objects.get(user=self.user, name='Backend')
+        tag = TaskTag.objects.get(user=self.user, name='Backend')
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?view=tags")
         self.assertEqual(tag.code, 'T-KANBAN01')
 
     def test_delete_tag_from_tasks_page(self):
-        tag = KanbanTag.objects.create(user=self.user, name='Design')
+        tag = TaskTag.objects.create(user=self.user, name='Design')
 
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'delete_tag',
@@ -462,10 +615,10 @@ class KanbanProjectCreationTests(TestCase):
         })
 
         self.assertRedirects(response, f"{reverse('kanban:tasks')}?view=tags")
-        self.assertFalse(KanbanTag.objects.filter(id=tag.id).exists())
+        self.assertFalse(TaskTag.objects.filter(id=tag.id).exists())
 
     def test_tag_note_actions_add_edit_and_delete_own_notes(self):
-        tag = KanbanTag.objects.create(
+        tag = TaskTag.objects.create(
             user=self.user,
             name='Design',
             description='Opis tagu',
@@ -481,7 +634,7 @@ class KanbanProjectCreationTests(TestCase):
 
         tag.refresh_from_db()
         self.assertRedirects(response, reverse('kanban:tasks'))
-        note = KanbanTagNote.objects.get(tag=tag)
+        note = TaskTagNote.objects.get(tag=tag)
         self.assertEqual(tag.name, 'Design')
         self.assertEqual(tag.description, 'Opis tagu')
         self.assertEqual(tag.status, 'active')
@@ -507,11 +660,11 @@ class KanbanProjectCreationTests(TestCase):
         })
 
         self.assertRedirects(response, reverse('kanban:tasks'))
-        self.assertFalse(KanbanTagNote.objects.filter(id=note.id).exists())
+        self.assertFalse(TaskTagNote.objects.filter(id=note.id).exists())
 
     def test_edit_tag_from_tasks_page(self):
-        tag = KanbanTag.objects.create(user=self.user, name='Design', description='Stary opis')
-        related = KanbanTag.objects.create(user=self.user, name='Backend')
+        tag = TaskTag.objects.create(user=self.user, name='Design', description='Stary opis')
+        related = TaskTag.objects.create(user=self.user, name='Backend')
         old_code = tag.code
 
         response = self.client.post(reverse('kanban:tasks'), {
@@ -553,7 +706,7 @@ class KanbanProjectCreationTests(TestCase):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = KanbanSection.objects.create(project=project, title='Frontend')
         Kanban.objects.create(user=self.user, section=section, title='Zadanie')
-        KanbanTag.objects.create(user=self.user, name='Design')
+        TaskTag.objects.create(user=self.user, name='Design')
 
         section_response = self.client.get(reverse('kanban:task_group', args=[section.id]))
         project_response = self.client.get(f"{reverse('kanban:tasks')}?project={project.id}")
@@ -622,7 +775,7 @@ class KanbanProjectCreationTests(TestCase):
     def test_create_task_modal_assigns_existing_tags(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = KanbanSection.objects.create(project=project, title='Frontend')
-        tag = KanbanTag.objects.create(user=self.user, name='Pilne')
+        tag = TaskTag.objects.create(user=self.user, name='Pilne')
 
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'create_task_modal',
