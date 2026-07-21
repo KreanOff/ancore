@@ -34,6 +34,14 @@
             <i data-lucide="pencil" aria-hidden="true"></i>
             Edytuj przestrzeń
         </button>
+        <button type="button" class="tasks-project-menu-button" role="menuitem" id="info-selected-project-menu-btn" aria-haspopup="dialog" aria-controls="project-info-modal" disabled>
+            <i data-lucide="info" aria-hidden="true"></i>
+            Informacje o przestrzeni
+        </button>
+        <button type="button" class="tasks-project-menu-button" role="menuitem" id="notes-selected-project-menu-btn" aria-haspopup="dialog" aria-controls="project-notes-modal" disabled>
+            <i data-lucide="file-text" aria-hidden="true"></i>
+            Notatki przestrzeni
+        </button>
         <button type="button" class="tasks-project-delete-button" role="menuitem" id="delete-selected-project-menu-btn" disabled>
             {% include 'core/includes/trash_icon.html' %}
             Usuń przestrzeń

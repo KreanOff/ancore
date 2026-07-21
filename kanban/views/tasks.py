@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 from core.upload_validation import attachment_download_response, validate_attachment_upload
 from tasks.models import TaskTag, TaskTagNote
-from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
+from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanProjectNote, KanbanSection
 from ..forms import QuickKanbanForm, SubKanbanModalForm, KanbanBoardColumnForm, KanbanForm, KanbanModalForm, KanbanProjectForm, KanbanProjectRenameForm, KanbanSectionForm, KanbanSectionRenameForm, KanbanTagForm
 
 
@@ -22,6 +22,18 @@ logger = logging.getLogger(__name__)
 
 PROJECT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
 PROJECT_DEFAULT_PAGE_SIZE = 50
+PROJECT_DEFAULT_SORT = 'name_asc'
+PROJECT_SORT_OPTIONS = (
+    {'value': 'name_asc', 'label': 'Nazwa A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'name_desc', 'label': 'Nazwa Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'code_asc', 'label': 'Kod A-Z', 'icon': 'hash', 'direction': 'asc'},
+    {'value': 'code_desc', 'label': 'Kod Z-A', 'icon': 'hash', 'direction': 'desc'},
+    {'value': 'sections_desc', 'label': 'Najwięcej tablic', 'icon': 'kanban', 'direction': 'desc'},
+    {'value': 'cards_desc', 'label': 'Najwięcej kart', 'icon': 'list-checks', 'direction': 'desc'},
+    {'value': 'activity_desc', 'label': 'Ostatnia aktywność', 'icon': 'clock-3', 'direction': 'desc'},
+    {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'calendar-plus', 'direction': 'desc'},
+)
+PROJECT_SORT_OPTION_MAP = {option['value']: option for option in PROJECT_SORT_OPTIONS}
 TAG_DEFAULT_SORT = 'name_asc'
 TAG_SORT_OPTIONS = (
     {'value': 'name_asc', 'label': 'Nazwa A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
@@ -86,6 +98,10 @@ def _choice_rank_case(field_name, choices):
         default=Value(len(choices)),
         output_field=IntegerField(),
     )
+
+
+def _project_sort_value(value):
+    return value if value in PROJECT_SORT_OPTION_MAP else PROJECT_DEFAULT_SORT
 
 
 def _project_page_size(request):
@@ -295,6 +311,212 @@ def _posted_ids(request, plural_name, singular_name):
     if not ids:
         ids = [request.POST.get(singular_name)]
     return [item for item in ids if item]
+
+
+def _project_card_filter(user, workplace):
+    card_filter = Q(sections__tasks__user=user, sections__tasks__parent__isnull=True)
+    card_filter &= (
+        Q(sections__tasks__workplace=workplace)
+        if workplace is not None else Q(sections__tasks__workplace__isnull=True)
+    )
+    return card_filter
+
+
+def _project_directory_queryset(user, workplace=None):
+    card_filter = _project_card_filter(user, workplace)
+    return _filter_workplace(KanbanProject.objects.filter(user=user), workplace).annotate(
+        sections_count=Count('sections', distinct=True),
+        cards_total_count=Count('sections__tasks', filter=card_filter, distinct=True),
+        cards_closed_count=Count('sections__tasks', filter=card_filter & Q(sections__tasks__status='closed'), distinct=True),
+        last_activity_at=Max('sections__tasks__activities__created_at'),
+        last_card_at=Max('sections__tasks__created_at'),
+    ).prefetch_related(
+        Prefetch(
+            'project_notes',
+            queryset=KanbanProjectNote.objects.select_related('author').order_by('created_at', 'id'),
+        ),
+    )
+
+
+def _project_filter_queryset(user, query='', workplace=None):
+    queryset = _project_directory_queryset(user, workplace=workplace)
+    query = (query or '').strip()
+    if query:
+        queryset = queryset.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(code__icontains=query)
+        )
+    return queryset
+
+
+def _project_sort_queryset(queryset, sort_value):
+    sort_value = _project_sort_value(sort_value)
+    if sort_value == 'name_desc':
+        return queryset.order_by('-name', 'id')
+    if sort_value == 'code_asc':
+        return queryset.order_by('code', 'name', 'id')
+    if sort_value == 'code_desc':
+        return queryset.order_by('-code', 'name', 'id')
+    if sort_value == 'sections_desc':
+        return queryset.order_by('-sections_count', 'name', 'id')
+    if sort_value == 'cards_desc':
+        return queryset.order_by('-cards_total_count', 'name', 'id')
+    if sort_value == 'activity_desc':
+        return queryset.order_by('-last_activity_at', '-last_card_at', 'name', 'id')
+    if sort_value == 'created_desc':
+        return queryset.order_by('-created_at', 'name', 'id')
+    return queryset.order_by('name', 'id')
+
+
+def _kanban_project_count_label(value, singular, plural):
+    count = int(value or 0)
+    label = singular if count == 1 else plural
+    return f'{count} {label}'
+
+
+def _decorate_project_directory_metrics(projects):
+    for project in projects:
+        total_cards = int(getattr(project, 'cards_total_count', 0) or 0)
+        closed_cards = int(getattr(project, 'cards_closed_count', 0) or 0)
+        progress_percent = round((closed_cards / total_cards) * 100) if total_cards else 0
+        project.progress_percent = progress_percent
+        project.cards_count_label = _kanban_project_count_label(total_cards, 'karta', 'kart')
+        project.sections_count_label = _kanban_project_count_label(getattr(project, 'sections_count', 0), 'tablica', 'tablic')
+        project.last_activity_display_at = getattr(project, 'last_activity_at', None) or getattr(project, 'last_card_at', None)
+    return projects
+
+
+def _project_window_for_request(request):
+    workplace = _active_workplace(request)
+    page_size = _project_page_size(request)
+    requested_page = _project_page_number(request)
+    query = (request.GET.get('q') or '').strip()
+    sort = _project_sort_value((request.GET.get('sort') or '').strip())
+    queryset = _project_sort_queryset(
+        _project_filter_queryset(request.user, query=query, workplace=workplace),
+        sort,
+    )
+    total_projects = queryset.count()
+    total_pages = max(1, (total_projects + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+    projects = list(queryset[offset:offset + page_size])
+    _decorate_project_directory_metrics(projects)
+
+    base_params = {
+        'q': query,
+        'sort': '' if sort == PROJECT_DEFAULT_SORT else sort,
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_projects > 0
+    has_next = current_page < total_pages and total_projects > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_page_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_page_params.pop('page', None)
+        previous_url = _projects_url(previous_page_params)
+    if has_next:
+        next_url = _projects_url({**base_params, 'page': current_page + 1})
+
+    if not projects:
+        summary = 'Brak przestrzeni'
+    else:
+        first_visible = offset + 1
+        last_visible = offset + len(projects)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_projects} przestrzeni'
+
+    return {
+        'projects': projects,
+        'query': query,
+        'sort': sort,
+        'sort_param': '' if sort == PROJECT_DEFAULT_SORT else sort,
+        'sort_label': PROJECT_SORT_OPTION_MAP[sort]['label'],
+        'sort_direction': PROJECT_SORT_OPTION_MAP[sort]['direction'],
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_projects': total_projects,
+        'page_size': page_size,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': _project_page_items(current_page, total_pages, base_params) if total_projects else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
+
+
+def _section_filter_queryset(user, query='', workplace=None):
+    queryset = _filter_workplace(
+        KanbanSection.objects.filter(project__user=user),
+        workplace,
+        field_name='project__workplace',
+    ).select_related('project')
+    query = (query or '').strip()
+    if query:
+        queryset = queryset.filter(
+            Q(title__icontains=query)
+            | Q(description__icontains=query)
+            | Q(project__name__icontains=query)
+            | Q(project__description__icontains=query)
+            | Q(project__code__icontains=query)
+        )
+    return queryset.order_by('project__name', 'project_id', 'order', 'created_at', 'id')
+
+
+def _section_window_for_request(request):
+    page_size = _project_page_size(request)
+    requested_page = _project_page_number(request)
+    query = (request.GET.get('q') or '').strip()
+    queryset = _section_filter_queryset(request.user, query=query, workplace=_active_workplace(request))
+    total_sections = queryset.count()
+    total_pages = max(1, (total_sections + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+    sections = list(queryset[offset:offset + page_size])
+
+    base_params = {
+        'view': 'all-groups',
+        'q': query,
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_sections > 0
+    has_next = current_page < total_pages and total_sections > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_page_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_page_params.pop('page', None)
+        previous_url = _projects_url(previous_page_params)
+    if has_next:
+        next_url = _projects_url({**base_params, 'page': current_page + 1})
+
+    if not sections:
+        summary = 'Brak tablic'
+    else:
+        first_visible = offset + 1
+        last_visible = offset + len(sections)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_sections} tablic'
+
+    return {
+        'sections': sections,
+        'query': query,
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_sections': total_sections,
+        'page_size': page_size,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': _project_page_items(current_page, total_pages, base_params) if total_sections else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
 
 
 def _tag_filter_queryset(
@@ -563,6 +785,10 @@ def _tasks_navigation_context(user, active_section=None, active_view=None, workp
     projects = list(_filter_workplace(KanbanProject.objects.filter(user=user), workplace).annotate(
         total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=user, sections__tasks__workplace=workplace, sections__tasks__parent__isnull=True))
     ).prefetch_related(
+        Prefetch(
+            'project_notes',
+            queryset=KanbanProjectNote.objects.select_related('author').order_by('created_at', 'id'),
+        ),
         Prefetch('sections', queryset=_filter_workplace(KanbanSection.objects.all(), workplace, field_name='project__workplace').prefetch_related(
             Prefetch('tasks', queryset=tasks_qs)
         ))
@@ -799,13 +1025,20 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się dodać przestrzeni roboczej.')
 
         if action == 'delete_project':
-            project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
-            task_count = _filter_workplace(Kanban.objects.filter(section__project=project, user=request.user), workplace).count()
-            project.delete()
-            if task_count:
-                messages.success(request, 'Przestrzeń robocza usunięta. Karty przeniesiono do sekcji „Bez przestrzeni roboczej”.')
+            project_ids = _posted_ids(request, 'project_ids', 'project_id')
+            projects_to_delete = _filter_workplace(KanbanProject.objects.filter(id__in=project_ids, user=request.user), workplace)
+            if not projects_to_delete.exists():
+                get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
+            project_count = projects_to_delete.count()
+            task_count = _filter_workplace(Kanban.objects.filter(section__project_id__in=project_ids, user=request.user), workplace).count()
+            projects_to_delete.delete()
+            if project_count == 1:
+                if task_count:
+                    messages.success(request, 'Przestrzeń robocza usunięta. Karty przeniesiono do sekcji „Bez przestrzeni roboczej”.')
+                else:
+                    messages.success(request, 'Przestrzeń robocza usunięta.')
             else:
-                messages.success(request, 'Przestrzeń robocza usunięta.')
+                messages.success(request, f'Usunięto przestrzenie ({project_count}).')
             return redirect('kanban:tasks')
 
         if action in ('edit_project', 'rename_project'):
@@ -819,6 +1052,46 @@ def _tasks_page(request, active_section=None):
             project_rename_project_id = project.id
             active_project_for_form = project
             messages.error(request, 'Nie udało się zaktualizować przestrzeni roboczej.')
+
+        if action in ('add_project_note', 'update_project_notes'):
+            project = get_object_or_404(
+                _filter_workplace(KanbanProject.objects.filter(user=request.user), workplace),
+                id=request.POST.get('project_id'),
+            )
+            message = (request.POST.get('message') or request.POST.get('description') or '').strip()
+            if message:
+                KanbanProjectNote.objects.create(project=project, author=request.user, message=message)
+                messages.success(request, 'Notatka dodana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_kanban_next_url(request))
+
+        if action == 'edit_project_note':
+            note_queryset = _filter_workplace(
+                KanbanProjectNote.objects.filter(author=request.user, project__user=request.user),
+                workplace,
+                field_name='project__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), project_id=request.POST.get('project_id'))
+            message = (request.POST.get('message') or '').strip()
+            if message:
+                note.message = message
+                note.save(update_fields=['message', 'updated_at'])
+                messages.success(request, 'Notatka zaktualizowana.')
+            else:
+                messages.error(request, 'Wpisz treść notatki.')
+            return redirect(_kanban_next_url(request))
+
+        if action == 'delete_project_note':
+            note_queryset = _filter_workplace(
+                KanbanProjectNote.objects.filter(author=request.user, project__user=request.user),
+                workplace,
+                field_name='project__workplace',
+            )
+            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), project_id=request.POST.get('project_id'))
+            note.delete()
+            messages.success(request, 'Notatka usunięta.')
+            return redirect(_kanban_next_url(request))
 
         if action == 'create_section':
             project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
@@ -1057,6 +1330,10 @@ def _tasks_page(request, active_section=None):
     projects = list(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace).annotate(
         total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=request.user, sections__tasks__workplace=workplace, sections__tasks__parent__isnull=True))
     ).prefetch_related(
+        Prefetch(
+            'project_notes',
+            queryset=KanbanProjectNote.objects.select_related('author').order_by('created_at', 'id'),
+        ),
         Prefetch('sections', queryset=_filter_workplace(KanbanSection.objects.all(), workplace, field_name='project__workplace').prefetch_related(
             Prefetch('tasks', queryset=tasks_qs)
         ))
@@ -1103,6 +1380,40 @@ def _tasks_page(request, active_section=None):
     else:
         active_view = 'projects'
 
+    project_window = _project_window_for_request(request) if active_view == 'projects' else {
+        'projects': [],
+        'query': '',
+        'sort': PROJECT_DEFAULT_SORT,
+        'sort_param': '',
+        'sort_label': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['label'],
+        'sort_direction': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['direction'],
+        'page': 1,
+        'total_pages': 1,
+        'total_projects': 0,
+        'page_size': PROJECT_DEFAULT_PAGE_SIZE,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': [],
+        'has_previous': False,
+        'has_next': False,
+        'previous_url': '',
+        'next_url': '',
+        'summary': '',
+    }
+    section_window = _section_window_for_request(request) if active_view == 'all_groups' else {
+        'sections': [],
+        'query': '',
+        'page': 1,
+        'total_pages': 1,
+        'total_sections': len(all_sections),
+        'page_size': PROJECT_DEFAULT_PAGE_SIZE,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'page_items': [],
+        'has_previous': False,
+        'has_next': False,
+        'previous_url': '',
+        'next_url': '',
+        'summary': '',
+    }
     tag_window = _tag_window_for_request(request) if active_view == 'tags' else {
         'tags': [],
         'query': '',
@@ -1142,10 +1453,20 @@ def _tasks_page(request, active_section=None):
         'orphan_tasks': orphan_tasks,
         'orphan_status_groups': orphan_status_groups,
         'all_status_groups': all_status_groups,
-        'all_sections': all_sections,
+        'all_sections': section_window['sections'] if active_view == 'all_groups' else all_sections,
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
-        'total_group_count': len(all_sections),
+        'total_group_count': section_window['total_sections'] if active_view == 'all_groups' else len(all_sections),
+        'project_window': project_window,
+        'project_query': project_window['query'],
+        'project_sort_options': PROJECT_SORT_OPTIONS,
+        'project_sort': project_window['sort'],
+        'project_sort_param': project_window['sort_param'],
+        'project_sort_label': project_window['sort_label'],
+        'project_sort_direction': project_window['sort_direction'],
+        'project_default_sort': PROJECT_DEFAULT_SORT,
+        'section_window': section_window,
+        'section_query': section_window['query'],
         'tags': tags,
         'tag_window': tag_window,
         'tag_query': tag_window['query'],

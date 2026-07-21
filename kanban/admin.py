@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Kanban, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
+from .models import Kanban, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanProjectNote, KanbanSection
 
 class KanbanAttachmentInline(admin.TabularInline):
     model = KanbanAttachment
@@ -23,11 +23,24 @@ class KanbanBoardColumnInline(admin.TabularInline):
     extra = 1
 
 
+class KanbanProjectNoteInline(admin.TabularInline):
+    model = KanbanProjectNote
+    extra = 0
+    readonly_fields = ('created_at', 'updated_at')
+
+
 @admin.register(KanbanProject)
 class KanbanProjectAdmin(admin.ModelAdmin):
     list_display = ('name', 'code', 'user', 'created_at')
     search_fields = ('name', 'code')
-    inlines = [KanbanSectionInline]
+    inlines = [KanbanSectionInline, KanbanProjectNoteInline]
+
+
+@admin.register(KanbanProjectNote)
+class KanbanProjectNoteAdmin(admin.ModelAdmin):
+    list_display = ('project', 'author', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('project__name', 'message', 'author__username', 'author__first_name', 'author__last_name')
 
 
 @admin.register(KanbanSection)

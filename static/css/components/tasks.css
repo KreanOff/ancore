@@ -12183,6 +12183,10 @@ body.is-resizing-directory-columns {
     --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
 }
 
+.tasks-directory-board.tasks-kanban-project-sheet.tasks-project-sheet--selectable {
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-status-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-responsible-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+}
+
 .tasks-directory-board.tasks-section-sheet.tasks-project-sheet--selectable {
     --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-wip-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
 }
@@ -12439,7 +12443,7 @@ body.is-resizing-directory-columns {
     color: #20242b;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     text-decoration: none;
-    transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .tasks-section-card[data-view-url] {
@@ -12449,7 +12453,6 @@ body.is-resizing-directory-columns {
 .tasks-section-card:hover {
     border-color: #cad2dd;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
-    transform: translateY(-1px);
 }
 
 .tasks-section-card:focus-visible {
@@ -12772,6 +12775,34 @@ body.is-resizing-directory-columns {
     .tasks-section-card__cover {
         min-height: 78px;
     }
+}
+
+.tasks-all-groups-board {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+}
+
+.tasks-all-groups-board > .tasks-all-groups-board__group {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border: 0;
+    border-radius: 0;
+}
+
+.tasks-all-groups-board .tasks-issue-group-header {
+    flex: 0 0 auto;
+}
+
+.tasks-all-groups-board .tasks-section-card-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-content: start;
+    overflow: auto;
 }
 
 .status-indicator.status-new::before {

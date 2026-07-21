@@ -4112,6 +4112,7 @@ function initTasksPage() {
         const isTagInfo = button.matches('[data-open-tag-info]');
         const isSectionInfo = button.matches('[data-open-section-info]');
         const row = button.closest(isTagInfo ? '.tasks-tag-sheet__row' : (isSectionInfo ? '.tasks-section-row' : '.tasks-project-row')) || button.closest('.tasks-directory-row');
+        const isKanbanProject = !isTagInfo && !isSectionInfo && ((button.dataset.projectType || row?.dataset.projectType || '') === 'kanban-space');
         const data = isTagInfo
             ? {
                 name: button.dataset.tagName || readProjectInfoCell(row, 'tag_name'),
@@ -4166,7 +4167,7 @@ function initTasksPage() {
                 progress: button.dataset.projectProgressLabel || readProjectInfoCell(row, 'progress'),
                 tasks: button.dataset.projectTasksLabel || readProjectInfoCell(row, 'tasks_count'),
                 status: button.dataset.projectStatusLabel || readProjectInfoCell(row, 'project_status'),
-                stage: button.dataset.projectStageLabel || readProjectInfoCell(row, 'stage'),
+                stage: button.dataset.projectStageLabel || readProjectInfoCell(row, isKanbanProject ? 'sections_count' : 'stage'),
                 health: button.dataset.projectHealthLabel || readProjectInfoCell(row, 'health'),
                 company: button.dataset.projectCompanyLabel || readProjectInfoCell(row, 'company'),
                 responsible: button.dataset.projectResponsibleLabel || readProjectInfoCell(row, 'responsible_user'),
@@ -4179,15 +4180,17 @@ function initTasksPage() {
                 lastActivity: button.dataset.projectLastActivityLabel || readProjectInfoCell(row, 'last_activity')
             };
 
-        if (projectInfoTitle) projectInfoTitle.textContent = isTagInfo ? 'Informacje o tagu' : (isSectionInfo ? 'Informacje o grupie' : 'Informacje o projekcie');
+        if (projectInfoTitle) projectInfoTitle.textContent = isTagInfo ? 'Informacje o tagu' : (isSectionInfo ? 'Informacje o grupie' : (isKanbanProject ? 'Informacje o przestrzeni' : 'Informacje o projekcie'));
         setProjectInfoRowsVisible(
             isTagInfo
                 ? new Set(['code', 'tasks', 'tagCategory', 'tagVisual', 'tagScope', 'tagOwner', 'tagUsage', 'tagAutomation', 'tagRelated', 'status', 'priority', 'created'])
                 : isSectionInfo
                     ? new Set(['code', 'progress', 'tasks', 'status', 'stage', 'responsible', 'priority', 'due', 'budget', 'created', 'lastActivity'])
-                    : new Set(['code', 'progress', 'tasks', 'status', 'stage', 'health', 'company', 'responsible', 'priority', 'start', 'due', 'budget', 'source', 'created', 'lastActivity'])
+                    : isKanbanProject
+                        ? new Set(['code', 'progress', 'tasks', 'status', 'stage', 'responsible', 'priority', 'created', 'lastActivity'])
+                        : new Set(['code', 'progress', 'tasks', 'status', 'stage', 'health', 'company', 'responsible', 'priority', 'start', 'due', 'budget', 'source', 'created', 'lastActivity'])
         );
-        setProjectInfoText(projectInfoName, data.name, isTagInfo ? 'Tag' : (isSectionInfo ? 'Grupa' : 'Projekt'));
+        setProjectInfoText(projectInfoName, data.name, isTagInfo ? 'Tag' : (isSectionInfo ? 'Grupa' : (isKanbanProject ? 'Przestrzeń' : 'Projekt')));
         setProjectInfoText(projectInfoCode, data.code, isSectionInfo ? 'Brak kodu grupy' : 'Brak kodu');
         setProjectInfoText(projectInfoDescription, data.description, 'Brak opisu');
         setProjectInfoProgress(data.progress);

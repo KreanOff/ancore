@@ -11,7 +11,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from tasks.models import TaskTag, TaskTagNote
-from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
+from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanProjectNote, KanbanSection
 
 
 class KanbanProjectCreationTests(TestCase):
@@ -160,19 +160,140 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(second.icon, '')
         self.assertNotEqual(first.icon_color, second.icon_color)
 
-    def test_projects_list_only_renders_added_icons_next_to_name(self):
-        KanbanProject.objects.create(user=self.user, name='Projekt z ikoną', code='PZI', icon='star')
-        KanbanProject.objects.create(user=self.user, name='Projekt bez ikony', code='PBI', icon='')
+    def test_projects_list_renders_space_directory_table(self):
+        project_with_icon = KanbanProject.objects.create(
+            user=self.user,
+            name='Projekt z ikoną',
+            code='P-ZICON001',
+            icon='star',
+        )
+        project_without_icon = KanbanProject.objects.create(
+            user=self.user,
+            name='Projekt bez ikony',
+            code='P-BICON001',
+            icon='',
+        )
+        other_user = get_user_model().objects.create_user(username='kanban-note-other', password='test-pass-123')
+        KanbanProjectNote.objects.create(project=project_with_icon, author=self.user, message='Moja notatka przestrzeni')
+        KanbanProjectNote.objects.create(project=project_with_icon, author=other_user, message='Cudza notatka przestrzeni')
 
         response = self.client.get(reverse('kanban:tasks'))
+        html = response.content.decode()
 
-        self.assertContains(
-            response,
-            '<span class="tasks-project-row-icon" aria-hidden="true"',
-            count=1,
-        )
+        self.assertNotContains(response, 'tasks-project-row-icon')
+        self.assertContains(response, 'tasks-kanban-project-sheet')
+        self.assertContains(response, 'KOD PRZESTRZENI')
+        self.assertContains(response, 'PRZESTRZEŃ')
+        self.assertContains(response, 'STATUS')
+        self.assertContains(response, 'TABLICE')
+        self.assertContains(response, 'KARTY')
+        self.assertContains(response, 'POSTĘP')
+        self.assertContains(response, 'ODPOWIEDZIALNY')
+        self.assertContains(response, 'PRIORYTET')
+        self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
+        self.assertContains(response, 'data-project-type="kanban-space"', count=6)
         self.assertContains(response, '<span>Projekt z ikoną</span>', html=True)
         self.assertContains(response, '<span>Projekt bez ikony</span>', html=True)
+        self.assertContains(response, project_with_icon.code)
+        self.assertContains(response, project_without_icon.code)
+        self.assertContains(response, 'id="notes-selected-project-menu-btn"')
+        self.assertContains(response, 'aria-label="Notatki przestrzeni Projekt z ikoną"')
+        self.assertContains(response, 'data-open-project-notes', count=4)
+        self.assertContains(response, 'id="project-notes-modal"')
+        self.assertContains(response, 'name="action" value="add_project_note"')
+        self.assertContains(response, 'name="action" value="edit_project_note"')
+        self.assertContains(response, 'name="action" value="delete_project_note"')
+        self.assertContains(response, 'data-project-notes-message')
+        self.assertContains(response, 'tasks-project-notes-list')
+        self.assertContains(response, 'tasks-project-notes-compose__input')
+        self.assertContains(response, 'tasks-project-note--owned')
+        self.assertContains(response, 'Moja notatka przestrzeni')
+        self.assertContains(response, 'Cudza notatka przestrzeni')
+
+        expected_columns = [
+            'data-column="action" aria-label="Edytuj przestrzeń"',
+            'data-column="info" aria-label="Informacje o przestrzeni"',
+            'data-column="notes" aria-label="Notatki przestrzeni"',
+            'data-column="project_code">KOD PRZESTRZENI',
+            'data-column="project">PRZESTRZEŃ',
+            'data-column="project_status">STATUS',
+            'data-column="sections_count">TABLICE',
+            'data-column="tasks_count">KARTY',
+            'data-column="description">OPIS',
+            'data-column="progress">POSTĘP',
+            'data-column="responsible_user">ODPOWIEDZIALNY',
+            'data-column="priority">PRIORYTET',
+            'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
+            'data-column="created_at">DATA',
+        ]
+        column_positions = [html.index(column) for column in expected_columns]
+        self.assertEqual(column_positions, sorted(column_positions))
+
+    def test_project_note_actions_add_edit_and_delete_own_notes(self):
+        project = KanbanProject.objects.create(
+            user=self.user,
+            name='Przestrzeń notatek',
+            description='Opis przestrzeni',
+            code='NOTE',
+        )
+        old_code = project.code
+
+        response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'add_project_note',
+            'project_id': project.id,
+            'message': '  Nowa notatka przestrzeni  ',
+        })
+
+        project.refresh_from_db()
+        self.assertRedirects(response, reverse('kanban:tasks'))
+        note = KanbanProjectNote.objects.get(project=project)
+        self.assertEqual(project.name, 'Przestrzeń notatek')
+        self.assertEqual(project.description, 'Opis przestrzeni')
+        self.assertEqual(project.code, old_code)
+        self.assertEqual(note.author, self.user)
+        self.assertEqual(note.message, 'Nowa notatka przestrzeni')
+
+        response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'edit_project_note',
+            'project_id': project.id,
+            'note_id': note.id,
+            'message': '  Poprawiona notatka przestrzeni  ',
+        })
+
+        note.refresh_from_db()
+        self.assertRedirects(response, reverse('kanban:tasks'))
+        self.assertEqual(note.message, 'Poprawiona notatka przestrzeni')
+
+        response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'delete_project_note',
+            'project_id': project.id,
+            'note_id': note.id,
+        })
+
+        self.assertRedirects(response, reverse('kanban:tasks'))
+        self.assertFalse(KanbanProjectNote.objects.filter(id=note.id).exists())
+
+    def test_project_note_actions_only_allow_author_to_change_note(self):
+        other_user = get_user_model().objects.create_user(username='kanban-note-owner', password='test-pass-123')
+        project = KanbanProject.objects.create(user=self.user, name='Przestrzeń notatek', code='NOTE')
+        note = KanbanProjectNote.objects.create(project=project, author=other_user, message='Cudza notatka')
+
+        edit_response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'edit_project_note',
+            'project_id': project.id,
+            'note_id': note.id,
+            'message': 'Nie moje',
+        })
+        delete_response = self.client.post(reverse('kanban:tasks'), {
+            'action': 'delete_project_note',
+            'project_id': project.id,
+            'note_id': note.id,
+        })
+
+        note.refresh_from_db()
+        self.assertEqual(edit_response.status_code, 404)
+        self.assertEqual(delete_response.status_code, 404)
+        self.assertEqual(note.message, 'Cudza notatka')
 
     def test_workspace_and_board_icon_pickers_are_not_rendered(self):
         response = self.client.get(reverse('kanban:tasks'))
@@ -196,6 +317,8 @@ class KanbanProjectCreationTests(TestCase):
         self.assertIn('Wszystkie przestrzenie', topbar_html)
         self.assertIn('tasks-titlebar-search', topbar_html)
         self.assertIn('id="filter-search"', topbar_html)
+        self.assertIn('data-project-search-form', topbar_html)
+        self.assertNotIn('name="view" value="all-groups"', topbar_html)
         self.assertNotIn('data-task-sort', topbar_html)
         self.assertNotIn('data-section-actions', topbar_html)
         self.assertIn('tasks-filterbar--task-directory', filterbar_html)
@@ -203,7 +326,9 @@ class KanbanProjectCreationTests(TestCase):
         self.assertIn('data-section-actions', filterbar_html)
         self.assertNotIn('id="filter-search"', filterbar_html)
         self.assertNotIn('data-filter-search-submit', filterbar_html)
-        self.assertNotIn('Dodaj przestrzeń', filterbar_html)
+        self.assertIn('Dodaj przestrzeń', filterbar_html)
+        self.assertIn('id="edit-selected-project-bar-btn"', filterbar_html)
+        self.assertIn('id="info-selected-project-menu-btn"', filterbar_html)
 
     def test_all_groups_view_bars_match_all_tasks_layout(self):
         project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
@@ -251,6 +376,10 @@ class KanbanProjectCreationTests(TestCase):
         response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
 
         self.assertContains(response, 'Wszystkie tablice')
+        self.assertContains(response, 'tasks-all-groups-board')
+        self.assertContains(response, 'data-server-pagination="true"')
+        self.assertContains(response, 'Na stronie')
+        self.assertContains(response, 'tablic')
         self.assertContains(response, 'Frontend')
         self.assertContains(response, 'Prace po stronie UI')
         self.assertContains(response, 'Backend')
@@ -258,6 +387,56 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, 'Druga przestrzeń')
         self.assertContains(response, first_project.code)
         self.assertContains(response, second_project.code)
+
+    def test_all_groups_view_renders_only_server_side_window(self):
+        project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa', code='SPACE')
+        for index in range(60):
+            KanbanSection.objects.create(
+                project=project,
+                title=f'Tablica {index:03d}',
+                description=f'Opis tablicy {index:03d}',
+            )
+
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-section-card-grid"')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-server-pagination="true"')
+        self.assertEqual(table_html.count('data-section-id="'), 50)
+        self.assertIn('Tablica 000', table_html)
+        self.assertIn('Tablica 049', table_html)
+        self.assertNotIn('Tablica 050', table_html)
+        self.assertContains(response, 'Pokazano 1-50 z 60 tablic')
+        self.assertIn('data-project-page-url="/kanban/?view=all-groups&amp;page_size=50&amp;page=2"', html)
+        self.assertIn('aria-current="page">1</button>', html)
+
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&page_size=50&page=2")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-section-card-grid"')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertEqual(table_html.count('data-section-id="'), 10)
+        self.assertIn('Tablica 050', table_html)
+        self.assertIn('Tablica 059', table_html)
+        self.assertNotIn('Tablica 049', table_html)
+        self.assertContains(response, 'Pokazano 51-60 z 60 tablic')
+        self.assertIn('aria-current="page">2</button>', html)
+        self.assertIn('data-project-page-url="/kanban/?view=all-groups&amp;page_size=50"', html)
+
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&q=059&page_size=10")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-section-card-grid"')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertEqual(table_html.count('data-section-id="'), 1)
+        self.assertIn('Tablica 059', table_html)
+        self.assertNotIn('Tablica 058', table_html)
+        self.assertContains(response, 'Pokazano 1-1 z 1 tablic')
 
     def test_projects_link_hides_workspace_count(self):
         KanbanProject.objects.create(user=self.user, name='Pierwsza przestrzeń', code='ONE')
