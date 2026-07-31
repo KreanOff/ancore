@@ -141,7 +141,7 @@
     <section class="tasks-workspace" aria-label="Lista kart">
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
-                {% if active_view != 'tags' and active_view != 'projects' and active_view != 'all_groups' %}
+                {% if active_view != 'tags' and active_view != 'projects' and active_view != 'project' and active_view != 'all_groups' %}
                 <button type="button" class="tasks-icon-button is-active" aria-label="Widok listy" title="Widok listy">
                     <i data-lucide="list" aria-hidden="true"></i>
                 </button>
@@ -216,13 +216,20 @@
                 <input type="hidden" name="view" value="all-groups">
                 <input type="hidden" name="page_size" value="{{ section_window.page_size }}" data-project-search-page-size>
             </form>
+            {% elif active_view == 'project' %}
+            <div class="tasks-titlebar-search tasks-search-actions">
+                <label class="tasks-search-field" for="filter-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
+                </label>
+            </div>
             {% endif %}
-            {% if active_view != 'projects' and active_view != 'all_groups' and active_view != 'tags' %}
+            {% if active_view != 'projects' and active_view != 'project' and active_view != 'all_groups' and active_view != 'tags' %}
             {% include 'kanban/includes/tasks_section_actions.html' %}
             {% endif %}
         </header>
 
-        <div class="tasks-filterbar{% if active_view == 'projects' or active_view == 'all_groups' %} tasks-filterbar--task-directory{% endif %}">
+        <div class="tasks-filterbar{% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' %} tasks-filterbar--task-directory{% endif %}">
             <div class="tasks-filterbar-left">
                 {% if active_view == 'tags' %}
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ tag_default_sort }}">
@@ -382,7 +389,7 @@
                     </div>
                 </div>
                 {% else %}
-                {% if active_view == 'all_groups' %}
+                {% if active_view == 'all_groups' or active_view == 'project' %}
                 <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
                     <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
                 </button>
@@ -448,7 +455,7 @@
                 </div>
                 {% endif %}
             </div>
-            {% if active_view == 'tags' or active_view == 'projects' or active_view == 'all_groups' %}
+            {% if active_view == 'tags' or active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' %}
             <div class="tasks-filterbar-center"></div>
             {% else %}
             <div class="tasks-filterbar-center tasks-search-actions">
@@ -472,10 +479,7 @@
                 {% elif active_view == 'all_groups' %}
                 {% include 'kanban/includes/tasks_section_actions.html' %}
                 {% elif active_project and not active_section %}
-                <button type="button" class="tasks-tag-topbar-button" title="Dodaj tablicę" aria-label="Dodaj tablicę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}">
-                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
-                    <span>Dodaj tablicę</span>
-                </button>
+                {% include 'kanban/includes/tasks_section_actions.html' %}
                 {% elif active_section %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj kartę" aria-label="Dodaj kartę" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue data-issue-section-id="{{ active_section.id }}" {% if not can_create_issue %}disabled{% endif %}>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>

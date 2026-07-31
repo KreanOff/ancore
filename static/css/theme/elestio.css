@@ -85,6 +85,26 @@ body {
     color: var(--text-strong);
 }
 
+.sidebar .nav-link:hover,
+.sidebar .nav-link:focus-visible,
+.sidebar .nav-link.active,
+.sidebar .sidebar-sticker-toggle[aria-expanded="true"],
+.sidebar .sidebar-sticker-toggle.is-open {
+    background: #e9ebef;
+    border-color: transparent;
+    color: var(--text-main);
+}
+
+.sidebar .nav-link:hover .nav-icon,
+.sidebar .nav-link:focus-visible .nav-icon,
+.sidebar .nav-link.active .nav-icon,
+.sidebar .nav-link:active .nav-icon,
+.sidebar .sidebar-sticker-toggle[aria-expanded="true"] .nav-icon,
+.sidebar .sidebar-sticker-toggle.is-open .nav-icon {
+    color: var(--text-main);
+    stroke: currentColor;
+}
+
 .tasks-rail-count,
 .tasks-rail-section-title,
 .tasks-topbar-title,
@@ -143,6 +163,17 @@ body {
     background: var(--accent-peach-hover);
     color: var(--accent-on-peach-hover);
     box-shadow: 0 4px 12px rgba(92, 95, 193, 0.22);
+}
+
+.tasks-new-button {
+    background: rgb(30, 191, 191);
+    border-color: rgb(30, 191, 191);
+}
+
+.tasks-new-button:hover {
+    background: rgb(30, 191, 191);
+    color: var(--accent-on-peach);
+    box-shadow: 0 4px 12px rgba(30, 191, 191, 0.22);
 }
 
 .tasks-icon-button,
@@ -213,6 +244,11 @@ body {
     box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
 }
 
+.tasks-search-field:focus-within {
+    border-color: #8b8f98;
+    box-shadow: 0 0 0 3px rgba(139, 143, 152, 0.18);
+}
+
 .form-input::placeholder,
 .tasks-search-field input::placeholder {
     color: #aaa6a0;
@@ -265,7 +301,7 @@ body {
 }
 
 .task-checkbox {
-    accent-color: var(--accent-brown);
+    accent-color: var(--checkbox-checked-color);
 }
 
 .task-row.checked {
@@ -748,4 +784,58 @@ body.auth-page,
 .secondary-menu .tasks-rail-nav,
 .secondary-menu .tasks-rail-section {
     background: transparent;
+}
+
+.tasks-new-button,
+.contacts-new-button--secondary,
+.tasks-tag-topbar-button,
+.tasks-directory-column-save,
+.tasks-project-modal__submit,
+.tasks-modal__submit,
+.contacts-photo-editor-primary,
+.workplaces-primary-button,
+.workplace-settings__save,
+.auth-submit,
+.btn-primary {
+    background: rgb(30, 191, 191);
+    border-color: rgb(30, 191, 191);
+    color: var(--accent-on-peach);
+}
+
+.tasks-new-button:hover,
+.tasks-new-button:focus-visible,
+.contacts-new-button--secondary:hover,
+.contacts-new-button--secondary:focus-visible,
+.tasks-tag-topbar-button:hover,
+.tasks-tag-topbar-button:focus-visible,
+.tasks-directory-column-save:hover,
+.tasks-directory-column-save:focus-visible,
+.tasks-project-modal__submit:hover:not(:disabled),
+.tasks-project-modal__submit:focus-visible,
+.tasks-modal__submit:hover:not(:disabled),
+.tasks-modal__submit:focus-visible,
+.contacts-photo-editor-primary:hover,
+.contacts-photo-editor-primary:focus-visible,
+.workplaces-primary-button:hover,
+.workplaces-primary-button:focus-visible,
+.workplace-settings__save:hover,
+.workplace-settings__save:focus-visible,
+.auth-submit:hover,
+.auth-submit:focus-visible,
+.btn-primary:hover:not(:disabled),
+.btn-primary:focus-visible {
+    background: rgb(30, 191, 191);
+    border-color: rgb(30, 191, 191);
+    color: var(--accent-on-peach);
+    box-shadow: 0 4px 12px rgba(30, 191, 191, 0.22);
+}
+
+.tasks-inline-submit:hover,
+.tasks-inline-submit:focus-visible,
+.tasks-issue-save:hover,
+.tasks-issue-save:focus-visible,
+.contacts-actions-menu.is-open .contacts-actions-menu__toggle {
+    background: rgb(30, 191, 191);
+    border-color: rgb(30, 191, 191);
+    color: var(--accent-on-peach);
 }

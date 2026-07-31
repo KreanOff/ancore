@@ -802,7 +802,7 @@ class TaskProjectCreationTests(TestCase):
             'data-column="tasks_count">ZADANIA',
             'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
-            'data-column="created_at">DATA',
+            'data-column="created_at">DATA UTWORZENIA',
         ]
         column_positions = [content.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
@@ -821,7 +821,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-project-due-at="2026-07-15"')
         self.assertContains(response, f'data-project-company-id="{company.id}"')
         self.assertContains(response, f'data-project-responsible-user-id="{self.user.id}"')
-        self.assertContains(response, 'DATA')
+        self.assertContains(response, 'DATA UTWORZENIA')
         self.assertContains(response, '07.06.2026')
         self.assertNotContains(response, '7 cze')
         self.assertContains(response, 'Brak osoby')
@@ -1470,7 +1470,7 @@ class TaskProjectCreationTests(TestCase):
             'data-column="tasks_count">ZADANIA',
             'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
-            'data-column="created_at">DATA',
+            'data-column="created_at">DATA UTWORZENIA',
         ]
         column_positions = [content.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
@@ -1614,7 +1614,7 @@ class TaskProjectCreationTests(TestCase):
             'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
             'data-column="project_name">PROJEKT',
-            'data-column="created_at">DATA',
+            'data-column="created_at">DATA UTWORZENIA',
         ]
         column_positions = [content.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
@@ -1622,7 +1622,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-column="progress"', count=3)
         self.assertContains(response, 'data-column="project_name"', count=3)
         self.assertContains(response, 'ODPOWIEDZIALNY ZA GRUPĘ')
-        self.assertContains(response, 'DATA')
+        self.assertContains(response, 'DATA UTWORZENIA')
         self.assertContains(response, 'Frontend')
         self.assertContains(response, frontend.full_code)
         self.assertContains(response, 'Prace po stronie UI')
@@ -1725,7 +1725,7 @@ class TaskProjectCreationTests(TestCase):
             'data-column="automation">AUTOMATYKA',
             'data-column="related_tags">POWIĄZANE',
             'data-column="task_count">ZADANIA',
-            'data-column="created_at">DATA',
+            'data-column="created_at">DATA UTWORZENIA',
         ]
         column_positions = [html.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))

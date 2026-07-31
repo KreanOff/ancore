@@ -585,7 +585,7 @@ class ContactCollaborationTests(TestCase):
         response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="company-detail-form"')
-        self.assertContains(response, 'style.css?v=20260721-kanban-card-no-transform')
+        self.assertContains(response, 'style.css?v=20260731-pagination-highlight-gray')
         self.assertContains(response, 'profile.js?v=20260614-app-wide-navigation')
         self.assertContains(response, 'contacts-company-modal-title')
         self.assertContains(response, 'contacts-edit-modal is-open')

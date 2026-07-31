@@ -14,6 +14,7 @@
 }
 
 .tasks-tracker-rail {
+    --nav-selected-bg: #e9ebef;
     width: 100%;
     min-height: 0;
     flex: 1 1 auto;
@@ -47,7 +48,7 @@
     height: 40px;
     padding: 0 0.875rem;
     border-radius: 5px;
-    background: var(--accent-peach);
+    background: rgb(30, 191, 191);
     color: var(--accent-on-peach);
     text-decoration: none;
     border: 0;
@@ -58,12 +59,12 @@
 }
 
 .tasks-new-button:hover {
-    background: var(--accent-peach-hover);
+    background: rgb(30, 191, 191);
     color: var(--accent-on-peach);
 }
 
 .tasks-new-button:disabled {
-    opacity: 0.55;
+    opacity: 1;
     cursor: not-allowed;
 }
 
@@ -393,6 +394,16 @@
     justify-content: space-between;
     flex-shrink: 0;
     box-sizing: border-box;
+}
+
+.tasks-filterbar {
+    --nav-selected-bg: #e9ebef;
+}
+
+.tasks-filterbar .tasks-filter-button:focus,
+.tasks-filterbar .tasks-icon-button:focus {
+    outline: 2px solid #cfd4dc;
+    outline-offset: 0;
 }
 
 .tasks-topbar {
@@ -1408,7 +1419,7 @@
 .task-checkbox {
     width: var(--checkbox-size);
     height: var(--checkbox-size);
-    accent-color: var(--accent-peach);
+    accent-color: var(--checkbox-checked-color);
 }
 
 .task-row.checked td {
@@ -7292,8 +7303,8 @@ body.modal-open::before {
 }
 
 .tasks-kanban-card .task-checkbox:checked {
-    border-color: var(--accent-blue);
-    background-color: var(--accent-blue);
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
     background-image: var(--checkbox-check-icon);
     background-position: center;
     background-repeat: no-repeat;
@@ -7301,7 +7312,7 @@ body.modal-open::before {
 }
 
 .tasks-kanban-card .task-checkbox:focus-visible {
-    outline: 2px solid rgba(92, 95, 193, 0.35);
+    outline: 2px solid rgba(30, 191, 191, 0.35);
     outline-offset: 2px;
 }
 
@@ -7762,7 +7773,7 @@ body.modal-open::before {
     flex: 0 0 16px;
     appearance: none;
     -webkit-appearance: none;
-    border: 1px solid var(--accent-peach);
+    border: 1px solid var(--checkbox-border-color);
     border-radius: 4px;
     background-color: #ffffff;
     background-image: none;
@@ -7775,8 +7786,8 @@ body.modal-open::before {
 
 .tasks-issue-checkbox-field input[type="checkbox"]:checked,
 .tasks-inline-checkbox:checked {
-    border-color: var(--accent-peach);
-    background-color: var(--accent-peach);
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
     background-image: var(--checkbox-check-icon);
 }
 
@@ -7867,8 +7878,8 @@ body.modal-open::before {
 
 .tasks-issue-row .task-checkbox:checked,
 .tasks-issue-row .tasks-row-checkbox:checked {
-    border-color: var(--accent-peach);
-    background-color: var(--accent-peach);
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
     background-image: var(--checkbox-check-icon);
     background-position: center;
     background-repeat: no-repeat;
@@ -8793,11 +8804,18 @@ body.modal-open::before {
     width: 30px;
     height: 30px;
     border-radius: 6px;
+    flex: 0 0 30px;
+}
+
+.tasks-issue-send:focus-visible {
+    outline: 2px solid #8b8f98;
+    outline-offset: 2px;
 }
 
 .tasks-issue-send svg {
     width: 19px;
     height: 19px;
+    stroke-width: 1.9;
 }
 
 .tasks-issue-feed {
@@ -9420,8 +9438,8 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-issue-dropdown-menu button[role="menuitemcheckbox"].is-active::before {
-    border-color: var(--accent-peach);
-    background: var(--accent-peach);
+    border-color: var(--checkbox-checked-color);
+    background: var(--checkbox-checked-color);
     background-image: var(--checkbox-check-icon);
     background-position: center;
     background-repeat: no-repeat;
@@ -10612,10 +10630,10 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-project-pagination__button.is-active {
-    --app-text-color: #ffffff;
-    border-color: var(--accent-peach);
-    background: var(--accent-peach);
-    color: #ffffff;
+    --app-text-color: var(--text-main);
+    border-color: transparent;
+    background: #e9ebef;
+    color: var(--text-main);
 }
 
 .tasks-project-pagination__button:disabled {
@@ -10796,7 +10814,7 @@ body.is-resizing-directory-columns {
     --tasks-project-activity-width: 210px;
     --tasks-project-name-width: 220px;
     --tasks-directory-assignee-width: 230px;
-    --tasks-directory-date-width: 130px;
+    --tasks-directory-date-width: 170px;
     --tasks-directory-grid: var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-budget-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
 }
 
@@ -11349,8 +11367,8 @@ body.is-resizing-directory-columns {
 
 .tasks-directory-select-all:checked,
 .tasks-directory-select-all:indeterminate {
-    border-color: var(--accent-peach);
-    background-color: var(--accent-peach);
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
     background-image: var(--checkbox-check-icon);
     background-position: center;
     background-repeat: no-repeat;
@@ -12271,6 +12289,19 @@ body.is-resizing-directory-columns {
     display: none;
 }
 
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet) .tasks-directory-list .tasks-directory-row,
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet) .tasks-directory-list .tasks-directory-row::before,
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet) .tasks-directory-list .tasks-directory-row > [data-column]:not([data-column="select"]) {
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet) .tasks-directory-list .tasks-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover,
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet) .tasks-directory-list .tasks-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover::before,
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet) .tasks-directory-list .tasks-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover > [data-column]:not([data-column="select"]) {
+    background: #f7f8fb;
+    border-color: #dde2ea;
+}
+
 .tasks-directory-board.tasks-all-groups-sheet .tasks-directory-list .tasks-directory-row > [data-column="section_status"],
 .tasks-directory-board.tasks-all-groups-sheet .tasks-directory-list .tasks-directory-row > [data-column="section_kind"],
 .tasks-directory-board.tasks-all-groups-sheet .tasks-directory-list .tasks-directory-row > [data-column="wip_limit"] {
@@ -12421,6 +12452,17 @@ body.is-resizing-directory-columns {
     gap: 0.75rem;
     justify-content: start;
     padding: 0.85rem;
+}
+
+.tasks-table-wrap.tasks-board:has(> .tasks-issue-group > .tasks-section-card-grid) {
+    padding: 0;
+}
+
+.tasks-board > .tasks-issue-group:has(> .tasks-section-card-grid) {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
 }
 
 .tasks-section-card,
@@ -12598,8 +12640,8 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-section-card .tasks-row-checkbox:checked {
-    border-color: var(--accent-peach);
-    background-color: var(--accent-peach);
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
     background-image: var(--checkbox-check-icon);
     background-position: center;
     background-repeat: no-repeat;
