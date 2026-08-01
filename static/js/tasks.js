@@ -1032,6 +1032,7 @@ function initTasksPage() {
     const projectRenameIdInput = projectRenameForm ? projectRenameForm.querySelector('[name="project_id"]') : null;
     const sectionCreateTitleInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="title"]') : null;
     const sectionCreateDescriptionInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="description"]') : null;
+    const sectionCreateCodeInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="code"]') : null;
     const sectionCreateProjectInput = sectionCreateForm ? sectionCreateForm.querySelector('input[name="project_id"]') : null;
     const sectionCreateProjectSelect = sectionCreateForm ? sectionCreateForm.querySelector('[data-section-create-project-select]') : null;
     const sectionCreateKindInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="kind"]') : null;
@@ -1043,6 +1044,7 @@ function initTasksPage() {
     const sectionCreateIconInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="icon"]') : null;
     const sectionRenameTitleInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="title"]') : null;
     const sectionRenameDescriptionInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="description"]') : null;
+    const sectionRenameCodeInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="code"]') : null;
     const sectionRenameKindInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="kind"]') : null;
     const sectionRenameStatusInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="status"]') : null;
     const sectionRenameOwnerInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="owner"]') : null;
@@ -3862,7 +3864,11 @@ function initTasksPage() {
 
     function setFieldValue(input, value) {
         if (!input) return;
-        input.value = value || '';
+        if ('value' in input) {
+            input.value = value || '';
+            return;
+        }
+        input.textContent = value || '';
     }
 
     function setProjectRenameFieldsFromDataset(dataset = {}) {
@@ -3881,7 +3887,7 @@ function initTasksPage() {
         setFieldValue(projectRenameBudgetInput, dataset.projectBudgetAmount);
         setFieldValue(projectRenameCurrencyInput, dataset.projectCurrency || 'PLN');
         setFieldValue(projectRenameSourceInput, dataset.projectSource);
-        if (projectRenameCodeValue) projectRenameCodeValue.textContent = dataset.projectCode || '';
+        setFieldValue(projectRenameCodeValue, dataset.projectCode);
         setFieldValue(projectRenameIconInput, dataset.projectIcon);
     }
 
@@ -4244,6 +4250,7 @@ function initTasksPage() {
             if (sectionCreateProjectSelect) sectionCreateProjectSelect.value = button.dataset.projectId || '';
             if (sectionCreateTitleInput) sectionCreateTitleInput.value = '';
             if (sectionCreateDescriptionInput) sectionCreateDescriptionInput.value = '';
+            setFieldValue(sectionCreateCodeInput, '');
             setFieldValue(sectionCreateKindInput, 'issues');
             setFieldValue(sectionCreateStatusInput, 'open');
             setFieldValue(sectionCreateOwnerInput, '');
@@ -5293,6 +5300,7 @@ function initTasksPage() {
         setFieldValue(sectionRenameIdInput, sectionDataset.sectionId);
         setFieldValue(sectionRenameTitleInput, sectionDataset.sectionTitle);
         setFieldValue(sectionRenameDescriptionInput, sectionDataset.sectionDescription);
+        setFieldValue(sectionRenameCodeInput, sectionDataset.sectionCode);
         setFieldValue(sectionRenameKindInput, sectionDataset.sectionKind || 'issues');
         setFieldValue(sectionRenameStatusInput, sectionDataset.sectionStatus || 'open');
         setFieldValue(sectionRenameOwnerInput, sectionDataset.sectionOwnerId);
@@ -5897,7 +5905,8 @@ function initTasksPage() {
             const visibleRows = Array.from(group.querySelectorAll('.task-row, .tasks-project-row, .tasks-section-row, .contacts-directory-row')).filter(row => row.style.display !== 'none');
             const hasEmptyState = group.querySelector('.tasks-empty-section, .tasks-empty-state') !== null;
             const groupMatchesSearch = rowMatchesSearch(group, searchVal);
-            group.style.display = (visibleRows.length || (hasEmptyState && groupMatchesSearch)) ? '' : 'none';
+            const isEmptyDirectoryBoard = group.closest('.tasks-project-board--empty, .tasks-group-board--empty, .tasks-tag-board--empty') !== null;
+            group.style.display = (isEmptyDirectoryBoard || visibleRows.length || (hasEmptyState && groupMatchesSearch)) ? '' : 'none';
         });
 
         document.querySelectorAll('.tasks-kanban-column').forEach(column => {

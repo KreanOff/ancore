@@ -125,7 +125,7 @@ class TaskProject(models.Model):
     class Meta:
         ordering = ['name']
         constraints = [
-            models.UniqueConstraint(fields=['code'], name='unique_task_project_code'),
+            models.UniqueConstraint(fields=['code'], condition=~Q(code=''), name='unique_task_project_code'),
         ]
         indexes = [
             models.Index(fields=['user', 'name', 'id'], name='taskproj_user_name_id_idx'),
@@ -163,9 +163,7 @@ class TaskProject(models.Model):
                 return candidate
 
     def save(self, *args, **kwargs):
-        if not self.pk or not self.code:
-            self.code = self._generate_unique_code()
-        self.code = self.code.upper()
+        self.code = (self.code or '').strip().upper()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -225,6 +223,7 @@ class TaskSection(models.Model):
     project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='sections')
     title = models.CharField(max_length=120)
     description = models.TextField(blank=True)
+    code = models.CharField(max_length=20, blank=True)
     code_number = models.PositiveIntegerField(default=0, editable=False)
     next_task_code_number = models.PositiveIntegerField(default=1, editable=False)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
@@ -242,12 +241,18 @@ class TaskSection(models.Model):
         indexes = [
             models.Index(fields=['project', 'order', 'created_at'], name='tasksec_project_order_idx'),
             models.Index(fields=['project', 'code_number'], name='tasksec_project_code_idx'),
+            models.Index(fields=['project', 'code'], name='tasksec_project_code_txt_idx'),
         ]
         constraints = [
             models.UniqueConstraint(
                 fields=['project', 'code_number'],
                 condition=Q(code_number__gt=0),
                 name='unique_task_section_code_per_project',
+            ),
+            models.UniqueConstraint(
+                fields=['project', 'code'],
+                condition=~Q(code=''),
+                name='unique_task_section_manual_code',
             ),
         ]
 
@@ -265,21 +270,19 @@ class TaskSection(models.Model):
         if self.pk:
             original_project_id = TaskSection.objects.filter(pk=self.pk).values_list('project_id', flat=True).first()
 
+        self.code = (self.code or '').strip().upper()
         if self.project_id and (not self.pk or not self.code_number or original_project_id != self.project_id):
             self.code_number = self._claim_next_code_number()
             _add_update_field(kwargs, 'code_number')
         super().save(*args, **kwargs)
 
     @property
-    def code(self):
-        suffix = format_base36(self.code_number, self.CODE_WIDTH)
-        return f'{self.CODE_PREFIX}-{suffix}' if suffix else ''
-
-    @property
     def full_code(self):
         if not self.project_id or not self.code:
             return ''
-        return f'{self.project.code}/{self.code}'
+        if self.project.code:
+            return f'{self.project.code}/{self.code}'
+        return self.code
 
     def __str__(self):
         return f'{self.project.name} / {self.title}'
@@ -439,9 +442,6 @@ class TaskTagNote(models.Model):
 
 
 class Task(models.Model):
-    CODE_PREFIX = 'T'
-    CODE_WIDTH = 5
-
     PRIORITY_CHOICES = [
         ('none', 'Brak priorytetu'),
         ('low', 'Niski'),
@@ -606,14 +606,11 @@ class Task(models.Model):
 
     @property
     def code(self):
-        suffix = format_base36(self.code_number, self.CODE_WIDTH)
-        return f'{self.CODE_PREFIX}-{suffix}' if suffix else ''
+        return str(self.task_id) if self.task_id else ''
 
     @property
     def full_code(self):
-        if not self.section_id or not self.code:
-            return ''
-        return f'{self.section.full_code}/{self.code}' if self.section.full_code else self.code
+        return self.code
 
     def _activity_datetime(self, value):
         if not value:

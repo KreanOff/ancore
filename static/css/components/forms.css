@@ -24,8 +24,8 @@
 
 .form-input:focus {
     outline: none;
-    border-color: var(--accent-red);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.1);
+    border-color: #c3cad4;
+    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.12);
 }
 
 .form-input::placeholder {
@@ -93,14 +93,14 @@ select.form-select {
 
 .ancore-custom-select__button:hover,
 .ancore-custom-select.is-open .ancore-custom-select__button {
-    border-color: var(--accent-peach-border);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.08);
+    border-color: #cfd6df;
+    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
 }
 
 .ancore-custom-select__button:focus-visible {
     outline: none;
-    border-color: var(--accent-peach-border);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
+    border-color: #c3cad4;
+    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.14);
 }
 
 .ancore-custom-select__button:disabled {

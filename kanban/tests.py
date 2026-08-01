@@ -380,6 +380,35 @@ class KanbanProjectCreationTests(TestCase):
         self.assertNotIn('data-filter-search-submit', filterbar_html)
         self.assertNotIn('Dodaj tablicę', filterbar_html)
 
+    def test_board_view_bars_match_all_spaces_layout(self):
+        project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
+        section = KanbanSection.objects.create(project=project, title='Tablica testowa')
+
+        response = self.client.get(reverse('kanban:task_group', args=[section.id]))
+        html = response.content.decode()
+        topbar_start = html.index('class="tasks-topbar"')
+        topbar_end = html.index('</header>', topbar_start)
+        topbar_html = html[topbar_start:topbar_end]
+        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
+        filterbar_end = html.index('<div class="tasks-kanban-wallpaper-panel"', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+
+        self.assertIn('Przestrzeń testowa', topbar_html)
+        self.assertIn('Tablica testowa', topbar_html)
+        self.assertIn('tasks-titlebar-search', topbar_html)
+        self.assertIn('id="filter-search"', topbar_html)
+        self.assertNotIn('data-task-sort', topbar_html)
+        self.assertNotIn('data-section-actions', topbar_html)
+        self.assertIn('aria-label="Widok listy"', filterbar_html)
+        self.assertIn('data-task-sort', filterbar_html)
+        self.assertIn('data-status-filter-menu', filterbar_html)
+        self.assertIn('data-priority-filter-menu', filterbar_html)
+        self.assertIn('Dodaj kartę', filterbar_html)
+        self.assertIn('data-section-actions', filterbar_html)
+        self.assertLess(filterbar_html.index('Dodaj kartę'), filterbar_html.index('data-section-actions'))
+        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertNotIn('data-filter-search-submit', filterbar_html)
+
     def test_project_group_rows_do_not_render_group_type_label(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         KanbanSection.objects.create(project=project, title='Frontend')

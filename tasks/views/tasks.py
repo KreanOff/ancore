@@ -896,6 +896,7 @@ def _group_filter_queryset(
         query_filter = (
             Q(title__icontains=query)
             | Q(description__icontains=query)
+            | Q(code__icontains=query)
             | Q(project__name__icontains=query)
             | Q(project__code__icontains=query)
             | Q(status__icontains=query)
@@ -942,7 +943,7 @@ def _group_sort_queryset(queryset, sort_value):
     if sort_value == 'title_desc':
         return queryset.order_by('-title', 'id')
     if sort_value == 'code_asc':
-        return queryset.order_by('project__code', 'code_number', 'title', 'id')
+        return queryset.order_by('project__code', 'code', 'title', 'id')
     if sort_value == 'status_asc':
         return queryset.annotate(
             status_sort_rank=_choice_rank_case('status', TaskSection.STATUS_CHOICES)
@@ -1051,7 +1052,6 @@ def _task_filter_queryset(
 ):
     query = (query or '').strip()
     if query:
-        task_code_number = parse_hierarchy_code_number(query, Task.CODE_PREFIX)
         section_code_number = parse_hierarchy_code_number(query, TaskSection.CODE_PREFIX)
         task_id = _integer_filter_value(query)
         priority_matches = _choice_values_matching_query(Task.PRIORITY_CHOICES, query)
@@ -1063,6 +1063,7 @@ def _task_filter_queryset(
             | Q(description__icontains=query)
             | Q(section__title__icontains=query)
             | Q(section__description__icontains=query)
+            | Q(section__code__icontains=query)
             | Q(section__project__name__icontains=query)
             | Q(section__project__code__icontains=query)
             | Q(company__name__icontains=query)
@@ -1081,8 +1082,6 @@ def _task_filter_queryset(
         )
         if task_id:
             query_filter |= Q(task_id=task_id)
-        if task_code_number:
-            query_filter |= Q(code_number=task_code_number)
         if section_code_number:
             query_filter |= Q(section__code_number=section_code_number)
         if priority_matches:
@@ -1707,6 +1706,7 @@ def _project_section_window_for_request(request, project):
         query_filter = (
             Q(title__icontains=query)
             | Q(description__icontains=query)
+            | Q(code__icontains=query)
             | Q(project__name__icontains=query)
             | Q(project__code__icontains=query)
         )
@@ -2823,9 +2823,11 @@ def _tasks_page(request, active_section=None):
                     project.workplace = workplace
                     project.save()
                     section_title = project_form.cleaned_data.get('section_title') or 'Nowa Grupa'
+                    section_code = project_form.cleaned_data.get('section_code') or ''
                     TaskSection.objects.create(
                         project=project,
                         title=section_title,
+                        code=section_code,
                         kind='custom',
                         order=0,
                     )
@@ -2949,7 +2951,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'create_section':
             project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
-            section_form = TaskSectionForm(request.POST, user=request.user)
+            section_form = TaskSectionForm(request.POST, user=request.user, project=project)
             if section_form.is_valid():
                 section = section_form.save(commit=False)
                 section.project = project
@@ -3052,7 +3054,7 @@ def _tasks_page(request, active_section=None):
                 _filter_workplace(TaskSection.objects.filter(project__user=request.user), workplace, field_name='project__workplace'),
                 id=request.POST.get('section_id'),
             )
-            section_rename_form = TaskSectionRenameForm(request.POST, instance=section, user=request.user)
+            section_rename_form = TaskSectionRenameForm(request.POST, instance=section, user=request.user, project=section.project)
             if section_rename_form.is_valid():
                 section_rename_form.save()
                 messages.success(request, 'Grupa zaktualizowana.')

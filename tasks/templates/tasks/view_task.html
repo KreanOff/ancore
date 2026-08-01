@@ -332,16 +332,13 @@
                         </div>
                         <div class="tasks-issue-field">
                             <span class="tasks-issue-field-label">
-                                <span>Kod zadania</span>
+                                <span>ID zadania</span>
                             </span>
                             {% if task.code %}
-                            <strong class="tasks-issue-code" data-task-code-control data-task-code-short="{{ task.code|escape }}" data-task-code-full="{{ task.full_code|default:task.code|escape }}">
+                            <strong class="tasks-issue-code" data-task-code-control>
                                 <span class="tasks-issue-code__value" data-task-code-value>{{ task.code }}</span>
                                 <span class="tasks-issue-code__actions">
-                                    <button type="button" class="tasks-issue-code__button" data-task-code-toggle aria-label="Pokaż pełny kod zadania" title="Pokaż pełny kod zadania" aria-pressed="false">
-                                        <i data-lucide="eye-off" aria-hidden="true"></i>
-                                    </button>
-                                    <button type="button" class="tasks-issue-code__button" data-task-code-copy="{{ task.full_code|default:task.code|escape }}" aria-label="Kopiuj pełny kod zadania" title="Kopiuj pełny kod zadania">
+                                    <button type="button" class="tasks-issue-code__button" data-task-code-copy="{{ task.code|escape }}" aria-label="Kopiuj ID zadania" title="Kopiuj ID zadania">
                                         <i data-lucide="copy" aria-hidden="true"></i>
                                     </button>
                                 </span>
@@ -794,49 +791,17 @@ function initTaskCodeControl() {
     const control = document.querySelector('[data-task-code-control]');
     if (!control) return;
 
-    const value = control.querySelector('[data-task-code-value]');
-    const toggle = control.querySelector('[data-task-code-toggle]');
     const copyButton = control.querySelector('[data-task-code-copy]');
-    const shortCode = control.dataset.taskCodeShort || '';
-    const fullCode = control.dataset.taskCodeFull || shortCode;
-    let expanded = false;
-
-    function renderCodeToggleIcon() {
-        if (!toggle) return;
-        const iconName = expanded ? 'eye' : 'eye-off';
-        toggle.innerHTML = window.AncoreIcons
-            ? window.AncoreIcons.html(iconName)
-            : `<i data-lucide="${iconName}" aria-hidden="true"></i>`;
-        window.AncoreIcons?.render(toggle);
-    }
-
-    function syncCodeDisplay() {
-        if (value) value.textContent = expanded ? fullCode : shortCode;
-        control.classList.toggle('is-expanded', expanded);
-        if (toggle) {
-            toggle.setAttribute('aria-pressed', expanded ? 'true' : 'false');
-            toggle.setAttribute('aria-label', expanded ? 'Pokaż krótki kod zadania' : 'Pokaż pełny kod zadania');
-            toggle.title = expanded ? 'Pokaż krótki kod zadania' : 'Pokaż pełny kod zadania';
-            renderCodeToggleIcon();
-        }
-    }
-
-    toggle?.addEventListener('click', () => {
-        expanded = !expanded;
-        syncCodeDisplay();
-    });
 
     copyButton?.addEventListener('click', async () => {
-        const codeToCopy = copyButton.dataset.taskCodeCopy || fullCode;
+        const codeToCopy = copyButton.dataset.taskCodeCopy || '';
         try {
             await copyTextToClipboard(codeToCopy);
-            window.showNotification?.('Skopiowano kod zadania.', 'success', { dedupeKey: 'task-code-copy' });
+            window.showNotification?.('Skopiowano ID zadania.', 'success', { dedupeKey: 'task-code-copy' });
         } catch (error) {
             window.showNotification?.('Nie udało się skopiować kodu.', 'error', { dedupeKey: 'task-code-copy-error' });
         }
     });
-
-    syncCodeDisplay();
 }
 
 initTaskCodeControl();

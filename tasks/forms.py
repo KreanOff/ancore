@@ -128,6 +128,10 @@ def _replace_optional_model_choice(form, field_name, queryset, empty_label):
     )
 
 
+def _normalize_optional_code(value):
+    return (value or '').strip().upper()
+
+
 class TaskForm(forms.ModelForm):
     project = forms.ModelChoiceField(
         queryset=TaskProject.objects.none(),
@@ -340,6 +344,20 @@ class TaskProjectBaseForm(forms.ModelForm):
             if field_name in self.fields:
                 self.fields[field_name].required = False
 
+    def clean_code(self):
+        code = _normalize_optional_code(self.cleaned_data.get('code'))
+        if not code:
+            return ''
+
+        instance = self.instance or self._meta.model()
+        for model in instance._code_scope_models():
+            queryset = model.objects.filter(code=code)
+            if model is self._meta.model and self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                raise forms.ValidationError('Taki kod projektu już istnieje.')
+        return code
+
     def clean_priority(self):
         return self.cleaned_data.get('priority') or 'none'
 
@@ -366,15 +384,31 @@ class TaskProjectForm(TaskProjectBaseForm):
             'class': 'tasks-inline-input',
         }),
     )
+    section_code = forms.CharField(
+        required=False,
+        label='Kod pierwszej grupy',
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'id': 'project-create-section-code',
+            'placeholder': 'Kod grupy',
+            'class': 'tasks-inline-input',
+            'maxlength': 20,
+        }),
+    )
 
     def clean_section_title(self):
         return (self.cleaned_data.get('section_title') or '').strip()
+
+    def clean_section_code(self):
+        return _normalize_optional_code(self.cleaned_data.get('section_code'))
 
     class Meta:
         model = TaskProject
         fields = [
             'name',
+            'code',
             'section_title',
+            'section_code',
             'description',
             'company',
             'responsible_user',
@@ -398,6 +432,12 @@ class TaskProjectForm(TaskProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'code': forms.TextInput(attrs={
+                'id': 'project-create-code',
+                'placeholder': 'Kod projektu',
+                'class': 'tasks-inline-input',
+                'maxlength': 20,
+            }),
             'priority': forms.Select(attrs={
                 'class': 'tasks-inline-select',
             }),
@@ -441,6 +481,7 @@ class TaskProjectForm(TaskProjectBaseForm):
             }),
         }
         labels = {
+            'code': 'Kod projektu',
             'company': 'Firma',
             'responsible_user': 'Odpowiedzialny',
             'status': 'Status projektu',
@@ -460,6 +501,7 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
         model = TaskProject
         fields = [
             'name',
+            'code',
             'description',
             'company',
             'responsible_user',
@@ -483,6 +525,12 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'code': forms.TextInput(attrs={
+                'id': 'project-rename-code-field',
+                'placeholder': 'Kod projektu',
+                'class': 'tasks-inline-input',
+                'maxlength': 20,
+            }),
             'priority': forms.Select(attrs={
                 'class': 'tasks-inline-select',
             }),
@@ -526,6 +574,7 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
             }),
         }
         labels = {
+            'code': 'Kod projektu',
             'company': 'Firma',
             'responsible_user': 'Odpowiedzialny',
             'status': 'Status projektu',
@@ -543,12 +592,29 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
 class TaskSectionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        self.project_for_validation = kwargs.pop('project', None)
         super().__init__(*args, **kwargs)
+        if self.project_for_validation is None:
+            self.project_for_validation = getattr(self.instance, 'project', None)
         _replace_optional_model_choice(self, 'owner', _crm_user_queryset(user), 'Brak osoby')
         self.fields['owner'].widget.attrs['data-ancore-custom-select-search'] = 'true'
         self.fields['owner'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         self.fields['kind'].required = False
         self.fields['status'].required = False
+
+    def clean_code(self):
+        code = _normalize_optional_code(self.cleaned_data.get('code'))
+        if not code:
+            return ''
+
+        project = self.project_for_validation
+        if project:
+            queryset = TaskSection.objects.filter(project=project, code=code)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                raise forms.ValidationError('Taki kod grupy już istnieje w tym projekcie.')
+        return code
 
     def clean_priority(self):
         return self.cleaned_data.get('priority') or 'none'
@@ -561,11 +627,17 @@ class TaskSectionForm(forms.ModelForm):
 
     class Meta:
         model = TaskSection
-        fields = ['title', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']
+        fields = ['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
                 'class': 'tasks-inline-input',
+            }),
+            'code': forms.TextInput(attrs={
+                'id': 'section-create-code',
+                'placeholder': 'Kod grupy',
+                'class': 'tasks-inline-input',
+                'maxlength': 20,
             }),
             'description': forms.Textarea(attrs={
                 'placeholder': 'Dodaj opis...',
@@ -595,6 +667,7 @@ class TaskSectionForm(forms.ModelForm):
             }),
         }
         labels = {
+            'code': 'Kod grupy',
             'kind': 'Typ grupy',
             'status': 'Status grupy',
             'owner': 'Odpowiedzialny',
@@ -607,12 +680,29 @@ class TaskSectionForm(forms.ModelForm):
 class TaskSectionRenameForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        self.project_for_validation = kwargs.pop('project', None)
         super().__init__(*args, **kwargs)
+        if self.project_for_validation is None:
+            self.project_for_validation = getattr(self.instance, 'project', None)
         _replace_optional_model_choice(self, 'owner', _crm_user_queryset(user), 'Brak osoby')
         self.fields['owner'].widget.attrs['data-ancore-custom-select-search'] = 'true'
         self.fields['owner'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         self.fields['kind'].required = False
         self.fields['status'].required = False
+
+    def clean_code(self):
+        code = _normalize_optional_code(self.cleaned_data.get('code'))
+        if not code:
+            return ''
+
+        project = self.project_for_validation
+        if project:
+            queryset = TaskSection.objects.filter(project=project, code=code)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                raise forms.ValidationError('Taki kod grupy już istnieje w tym projekcie.')
+        return code
 
     def clean_priority(self):
         return self.cleaned_data.get('priority') or 'none'
@@ -625,11 +715,17 @@ class TaskSectionRenameForm(forms.ModelForm):
 
     class Meta:
         model = TaskSection
-        fields = ['title', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']
+        fields = ['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
                 'class': 'tasks-inline-input',
+            }),
+            'code': forms.TextInput(attrs={
+                'id': 'section-rename-code-field',
+                'placeholder': 'Kod grupy',
+                'class': 'tasks-inline-input',
+                'maxlength': 20,
             }),
             'description': forms.Textarea(attrs={
                 'placeholder': 'Dodaj opis...',
@@ -659,6 +755,7 @@ class TaskSectionRenameForm(forms.ModelForm):
             }),
         }
         labels = {
+            'code': 'Kod grupy',
             'kind': 'Typ grupy',
             'status': 'Status grupy',
             'owner': 'Odpowiedzialny',

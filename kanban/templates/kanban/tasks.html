@@ -141,14 +141,6 @@
     <section class="tasks-workspace" aria-label="Lista kart">
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
-                {% if active_view != 'tags' and active_view != 'projects' and active_view != 'project' and active_view != 'all_groups' %}
-                <button type="button" class="tasks-icon-button is-active" aria-label="Widok listy" title="Widok listy">
-                    <i data-lucide="list" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
-                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true"></i>
-                </button>
-                {% endif %}
                 <span class="tasks-topbar-title">
                     {% if active_project %}
                     <span class="tasks-topbar-title-item">
@@ -223,9 +215,13 @@
                     <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
                 </label>
             </div>
-            {% endif %}
-            {% if active_view != 'projects' and active_view != 'project' and active_view != 'all_groups' and active_view != 'tags' %}
-            {% include 'kanban/includes/tasks_section_actions.html' %}
+            {% else %}
+            <div class="tasks-titlebar-search tasks-search-actions">
+                <label class="tasks-search-field" for="filter-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
+                </label>
+            </div>
             {% endif %}
         </header>
 
@@ -389,7 +385,16 @@
                     </div>
                 </div>
                 {% else %}
+                {% if active_view != 'project' and active_view != 'all_groups' %}
+                <button type="button" class="tasks-icon-button is-active" aria-label="Widok listy" title="Widok listy">
+                    <i data-lucide="list" aria-hidden="true"></i>
+                </button>
+                {% endif %}
                 {% if active_view == 'all_groups' or active_view == 'project' %}
+                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
+                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
+                </button>
+                {% elif active_view != 'tags' and active_view != 'projects' %}
                 <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
                     <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
                 </button>
@@ -455,17 +460,7 @@
                 </div>
                 {% endif %}
             </div>
-            {% if active_view == 'tags' or active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' %}
             <div class="tasks-filterbar-center"></div>
-            {% else %}
-            <div class="tasks-filterbar-center tasks-search-actions">
-                <label class="tasks-search-field" for="filter-search">
-                    <i data-lucide="search" aria-hidden="true"></i>
-                    <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
-                </label>
-                <button type="button" class="tasks-tag-topbar-button" data-filter-search-submit>Szukaj</button>
-            </div>
-            {% endif %}
             <div class="tasks-filterbar-right">
                 {% if active_view == 'projects' %}
                 <button type="button" class="tasks-icon-button" id="edit-selected-project-bar-btn" title="Edytuj przestrzeń" aria-label="Edytuj przestrzeń" aria-haspopup="dialog" aria-controls="project-rename-modal" disabled>
@@ -485,6 +480,9 @@
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj kartę</span>
                 </button>
+                {% include 'kanban/includes/tasks_section_actions.html' %}
+                {% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}
+                {% include 'kanban/includes/tasks_section_actions.html' %}
                 {% elif active_view == 'tags' %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj tag" aria-label="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
@@ -657,7 +655,7 @@
             {% endif %}
         </div>
         {% elif active_view == 'all_groups' %}
-        <div class="tasks-table-wrap tasks-board tasks-all-groups-board">
+        <div class="tasks-table-wrap tasks-board tasks-all-groups-board{% if not all_sections %} tasks-group-board--empty{% endif %}">
             <section class="tasks-issue-group tasks-all-groups-board__group" data-section-status="" data-search-index="{{ section_window.query|default:''|striptags }}">
                 <div class="tasks-issue-list tasks-section-list tasks-section-card-grid" aria-label="Lista tablic">
                 {% for section in all_sections %}
@@ -677,14 +675,20 @@
                     </div>
                 </article>
                 {% empty %}
-                <div class="tasks-empty-state">
-                    <p>Nie ma jeszcze tablic.</p>
+                <div class="tasks-empty-state tasks-empty-state--centered tasks-group-empty-state" role="status" aria-live="polite">
+                    <span class="tasks-empty-state__icon" aria-hidden="true">
+                        <i data-lucide="kanban" aria-hidden="true"></i>
+                    </span>
+                    <div class="tasks-empty-state__copy">
+                        <h2>{% if section_query %}Nie znaleziono tablic.{% else %}Nie ma jeszcze tablic.{% endif %}</h2>
+                        <p>{% if section_query %}Zmień wyszukiwanie, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą tablicę, aby uporządkować karty.{% endif %}</p>
+                    </div>
                 </div>
                 {% endfor %}
                 </div>
             </section>
         </div>
-        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ section_window.page }}" data-project-total-pages="{{ section_window.total_pages }}">
+        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ section_window.page }}" data-project-total-pages="{{ section_window.total_pages }}"{% if not all_sections %} hidden{% endif %}>
             <div class="tasks-project-pagination__size">
                 <span>Na stronie</span>
                 <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact" data-project-page-size-dropdown>
@@ -724,7 +728,7 @@
             </nav>
         </div>
         {% elif active_view == 'tags' %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet{% if not tags %} tasks-tag-board--empty{% endif %}">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select">
@@ -799,15 +803,20 @@
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
-                <div class="tasks-empty-state">
-                    <p>Nie ma jeszcze tagów.</p>
-                    <button type="button" class="tasks-modal__submit tasks-empty-action" data-open-tag>Utwórz tag</button>
+                <div class="tasks-empty-state tasks-empty-state--centered tasks-tag-empty-state" role="status" aria-live="polite">
+                    <span class="tasks-empty-state__icon" aria-hidden="true">
+                        <i data-lucide="tag" aria-hidden="true"></i>
+                    </span>
+                    <div class="tasks-empty-state__copy">
+                        <h2>{% if tag_query or tag_priority_filter or tag_status_filter or tag_category_filter or tag_scope_filter or tag_owner_filter %}Nie znaleziono tagów.{% else %}Nie ma jeszcze tagów.{% endif %}</h2>
+                        <p>{% if tag_query or tag_priority_filter or tag_status_filter or tag_category_filter or tag_scope_filter or tag_owner_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszy tag, aby łatwiej porządkować karty.{% endif %}</p>
+                    </div>
                 </div>
                 {% endfor %}
                 </div>
             </section>
         </div>
-        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ tag_window.page }}" data-project-total-pages="{{ tag_window.total_pages }}">
+        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ tag_window.page }}" data-project-total-pages="{{ tag_window.total_pages }}"{% if not tags %} hidden{% endif %}>
             <div class="tasks-project-pagination__size">
                 <span>Na stronie</span>
                 <div class="tasks-filter-dropdown tasks-project-pagination__size-control" data-project-page-size-dropdown>
@@ -848,7 +857,7 @@
             </nav>
         </div>
         {% elif active_view == 'projects' %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-kanban-project-sheet">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-kanban-project-sheet{% if not project_window.projects %} tasks-project-board--empty{% endif %}">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
@@ -930,14 +939,20 @@
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
-                <div class="tasks-empty-state">
-                    <p>Nie znaleziono przestrzeni.</p>
+                <div class="tasks-empty-state tasks-empty-state--centered tasks-project-empty-state" role="status" aria-live="polite">
+                    <span class="tasks-empty-state__icon" aria-hidden="true">
+                        <i data-lucide="folders" aria-hidden="true"></i>
+                    </span>
+                    <div class="tasks-empty-state__copy">
+                        <h2>{% if project_query %}Nie znaleziono przestrzeni.{% else %}Nie ma jeszcze przestrzeni.{% endif %}</h2>
+                        <p>{% if project_query %}Zmień wyszukiwanie, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą przestrzeń, aby rozpocząć pracę.{% endif %}</p>
+                    </div>
                 </div>
                 {% endfor %}
                 </div>
             </section>
         </div>
-        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ project_window.page }}" data-project-total-pages="{{ project_window.total_pages }}">
+        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ project_window.page }}" data-project-total-pages="{{ project_window.total_pages }}"{% if not project_window.projects %} hidden{% endif %}>
             <div class="tasks-project-pagination__size">
                 <span>Na stronie</span>
                 <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact" data-project-page-size-dropdown>
