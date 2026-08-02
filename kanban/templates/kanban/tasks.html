@@ -196,6 +196,12 @@
                     <i data-lucide="search" aria-hidden="true"></i>
                     <input id="filter-search" type="search" name="q" value="{{ project_query }}" placeholder="Szukaj" autocomplete="off">
                 </label>
+                <input type="hidden" id="filter-priority" name="priority" value="{{ project_priority_filter }}" data-project-filter-input="priority">
+                <input type="hidden" name="status" value="{{ project_status_filter }}" data-project-filter-input="status">
+                <input type="hidden" name="stage" value="{{ project_stage_filter }}" data-project-filter-input="stage">
+                <input type="hidden" name="health" value="{{ project_health_filter }}" data-project-filter-input="health">
+                <input type="hidden" name="company" value="{{ project_company_filter }}" data-project-filter-input="company">
+                <input type="hidden" name="responsible" value="{{ project_responsible_filter }}" data-project-filter-input="responsible">
                 <input type="hidden" name="sort" value="{{ project_sort_param }}" data-project-sort-input>
                 <input type="hidden" name="page_size" value="{{ project_window.page_size }}" data-project-search-page-size>
             </form>
@@ -382,6 +388,138 @@
                                 <button type="button" class="tasks-directory-column-save" data-directory-column-manager-save>Zapisz</button>
                             </span>
                         </div>
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="status">
+                    <button type="button" class="tasks-filter-button{% if project_status_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="status">
+                        <i data-lucide="circle-dot" aria-hidden="true"></i>
+                        <span data-project-filter-label="status">Status{% for option in project_filter_options.statuses %}{% if option.value == project_status_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr statusu przestrzeni">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not project_status_filter %}true{% else %}false{% endif %}" {% if not project_status_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="status" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in project_filter_options.statuses %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if project_status_filter == option.value %}true{% else %}false{% endif %}" {% if project_status_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="status" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="stage">
+                    <button type="button" class="tasks-filter-button{% if project_stage_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="stage">
+                        <i data-lucide="milestone" aria-hidden="true"></i>
+                        <span data-project-filter-label="stage">Etap{% for option in project_filter_options.stages %}{% if option.value == project_stage_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr etapu przestrzeni">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not project_stage_filter %}true{% else %}false{% endif %}" {% if not project_stage_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="stage" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in project_filter_options.stages %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if project_stage_filter == option.value %}true{% else %}false{% endif %}" {% if project_stage_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="stage" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="health">
+                    <button type="button" class="tasks-filter-button{% if project_health_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="health">
+                        <i data-lucide="heart-pulse" aria-hidden="true"></i>
+                        <span data-project-filter-label="health">Kondycja{% for option in project_filter_options.healths %}{% if option.value == project_health_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr kondycji przestrzeni">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not project_health_filter %}true{% else %}false{% endif %}" {% if not project_health_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="health" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in project_filter_options.healths %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if project_health_filter == option.value %}true{% else %}false{% endif %}" {% if project_health_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="health" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="company">
+                    <button type="button" class="tasks-filter-button{% if project_company_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="company">
+                        <i data-lucide="building-2" aria-hidden="true"></i>
+                        <span data-project-filter-label="company">Firma{% for option in project_filter_options.companies %}{% if option.value == project_company_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu tasks-filter-menu--wide" role="menu" aria-label="Filtr firmy przestrzeni">
+                        <label class="tasks-filter-menu-search">
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            <input type="search" placeholder="Szukaj firmy" autocomplete="off" data-project-filter-search>
+                        </label>
+                        <button type="button" role="menuitemradio" aria-checked="{% if not project_company_filter %}true{% else %}false{% endif %}" {% if not project_company_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="company" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in project_filter_options.companies %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if project_company_filter == option.value %}true{% else %}false{% endif %}" {% if project_company_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="company" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                        <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="responsible">
+                    <button type="button" class="tasks-filter-button{% if project_responsible_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="responsible">
+                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
+                        <span data-project-filter-label="responsible">Odpowiedzialny{% for option in project_filter_options.responsible_users %}{% if option.value == project_responsible_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu tasks-filter-menu--wide" role="menu" aria-label="Filtr osoby odpowiedzialnej za przestrzeń">
+                        <label class="tasks-filter-menu-search">
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            <input type="search" placeholder="Szukaj osoby" autocomplete="off" data-project-filter-search>
+                        </label>
+                        <button type="button" role="menuitemradio" aria-checked="{% if not project_responsible_filter %}true{% else %}false{% endif %}" {% if not project_responsible_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="responsible" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in project_filter_options.responsible_users %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if project_responsible_filter == option.value %}true{% else %}false{% endif %}" {% if project_responsible_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="responsible" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                        <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-priority-filter-menu>
+                    <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-priority-filter-toggle>
+                        <i data-lucide="chart-no-axes-column-increasing" aria-hidden="true"></i>
+                        <span class="tasks-filter-priority-icon" aria-hidden="true" data-priority-filter-icon></span>
+                        <span data-priority-filter-label>Priorytet</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr priorytetu">
+                        <button type="button" class="is-active" role="menuitem" data-priority-filter="">
+                            <span>Wszystko</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="none">
+                            <span class="tasks-row-priority priority-none" aria-hidden="true">
+                                {% include 'core/includes/priority_icon.html' with priority='none' only %}
+                            </span>
+                            <span>Brak</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="low">
+                            <span class="tasks-row-priority priority-low" aria-hidden="true">
+                                {% include 'core/includes/priority_icon.html' with priority='low' only %}
+                            </span>
+                            <span>Niski</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="medium">
+                            <span class="tasks-row-priority priority-medium" aria-hidden="true">
+                                {% include 'core/includes/priority_icon.html' with priority='medium' only %}
+                            </span>
+                            <span>Średni</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="high">
+                            <span class="tasks-row-priority priority-high" aria-hidden="true">
+                                {% include 'core/includes/priority_icon.html' with priority='high' only %}
+                            </span>
+                            <span>Wysoki</span>
+                        </button>
+                        <button type="button" role="menuitem" data-priority-filter="urgent">
+                            <span class="tasks-row-priority priority-urgent" aria-hidden="true">
+                                {% include 'core/includes/priority_icon.html' with priority='urgent' only %}
+                            </span>
+                            <span>Pilny</span>
+                        </button>
                     </div>
                 </div>
                 {% else %}
@@ -876,12 +1014,19 @@
                     </span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PRZESTRZENI</span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project">PRZESTRZEŃ</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">FIRMA</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">ODPOWIEDZIALNY</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_status">STATUS</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">TABLICE</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">KARTY</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="stage">ETAP</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="health">KONDYCJA</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">OPIS</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress">POSTĘP</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">ODPOWIEDZIALNY</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="start_at">START</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">TERMIN</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="budget">BUDŻET</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">ŹRÓDŁO</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">TABLICE</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">KARTY</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">PRIORYTET</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">OSTATNIA AKTYWNOŚĆ</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at">DATA</span>
@@ -889,15 +1034,15 @@
                 </div>
                 <div class="tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista przestrzeni Kanban">
                 {% for project in project_window.projects %}
-                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} Aktywna {{ project.sections_count_label }} {{ project.cards_count_label }}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} Aktywna Przestrzeń Kanban {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.user %}{{ project.user.get_full_name }} {{ project.user.username }} {{ project.user.email }}{% endif %}" data-view-url="{% url 'kanban:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-type="kanban-space" data-project-priority="none" data-project-status="active" data-can-manage="true">
-                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz przestrzeń {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-type="kanban-space" data-project-priority="none" data-project-status="active" data-can-manage="true">
+                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} Przestrzeń Kanban {{ project.get_priority_display|default:'' }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-view-url="{% url 'kanban:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz przestrzeń {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
-                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj przestrzeń" aria-label="Edytuj przestrzeń {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}">
+                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj przestrzeń" aria-label="Edytuj przestrzeń {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}">
                             <i data-lucide="pencil" aria-hidden="true"></i>
                         </button>
                     </span>
                     <span class="tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="info">
-                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o przestrzeni" aria-label="Informacje o przestrzeni {{ project.name }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-project-info data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-progress-label="{{ project.progress_percent }}%" data-project-tasks-label="{{ project.cards_count_label }}" data-project-status-label="Aktywna" data-project-stage-label="{{ project.sections_count_label }}" data-project-responsible-label="{% if project.user %}{{ project.user.get_full_name|default:project.user.username }}{% else %}Brak osoby{% endif %}" data-project-priority-label="Brak" data-project-created-label="{{ project.created_at|date:'d.m.Y' }}" data-project-last-activity-label="{% if project.last_activity_display_at %}{{ project.last_activity_display_at|date:'d.m.Y H:i' }}{% else %}Brak aktywności{% endif %}">
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o przestrzeni" aria-label="Informacje o przestrzeni {{ project.name }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-project-info data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-progress-label="{{ project.progress_percent }}%" data-project-tasks-label="{{ project.cards_count_label }}" data-project-status-label="{{ project.get_status_display }}" data-project-stage-label="{{ project.get_stage_display }}" data-project-health-label="{{ project.get_health_display }}" data-project-company-label="{% if project.company %}{{ project.company.name }}{% else %}Brak firmy{% endif %}" data-project-responsible-label="{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}" data-project-priority-label="{{ project.get_priority_display }}" data-project-start-label="{% if project.start_at %}{{ project.start_at|date:'d.m.Y' }}{% else %}Brak startu{% endif %}" data-project-due-label="{% if project.due_at %}{{ project.due_at|date:'d.m.Y' }}{% else %}Brak terminu{% endif %}" data-project-budget-label="{% if project.budget_amount %}{{ project.budget_amount }} {{ project.currency }}{% else %}Brak budżetu{% endif %}" data-project-source-label="{% if project.source %}{{ project.source }}{% else %}Brak źródła{% endif %}" data-project-created-label="{{ project.created_at|date:'d.m.Y' }}" data-project-last-activity-label="{% if project.last_activity_display_at %}{{ project.last_activity_display_at|date:'d.m.Y H:i' }}{% else %}Brak aktywności{% endif %}">
                             <i data-lucide="info" aria-hidden="true"></i>
                         </button>
                     </span>
@@ -912,9 +1057,14 @@
                             <span class="tasks-row-title-text">{{ project.name }}</span>
                         </span>
                     </span>
-                    <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_status">Aktywna</span>
-                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">{{ project.sections_count_label }}</span>
-                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ project.cards_count_label }}</span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">{% if project.company %}{{ project.company.name }}{% else %}<span class="tasks-project-sheet__muted">Brak firmy</span>{% endif %}</span>
+                    <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">
+                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
+                        <span>{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}</span>
+                    </span>
+                    <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_status">{{ project.get_status_display }}</span>
+                    <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="stage">{{ project.get_stage_display }}</span>
+                    <span class="tasks-project-sheet__status tasks-project-sheet__status--{{ project.health }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="health">{{ project.get_health_display }}</span>
                     <span class="tasks-project-row-description tasks-project-sheet__description tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">{{ project.description|default:"Brak opisu" }}</span>
                     <span class="tasks-project-sheet__progress tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress" title="Zamknięte karty: {{ project.cards_closed_count }} z {{ project.cards_total_count }}">
                         <span class="tasks-project-progress-track" aria-hidden="true">
@@ -922,15 +1072,21 @@
                         </span>
                         <span>{{ project.progress_percent }}%</span>
                     </span>
-                    <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">
-                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
-                        <span>{% if project.user %}{{ project.user.get_full_name|default:project.user.username }}{% else %}Brak osoby{% endif %}</span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="start_at">
+                        {% if project.start_at %}{{ project.start_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak startu</span>{% endif %}
                     </span>
-                    <span class="tasks-project-sheet__priority tasks-project-sheet__priority--none tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">
-                        <span class="tasks-row-priority priority-none" aria-hidden="true">
-                            {% include 'core/includes/priority_icon.html' with priority='none' only %}
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">
+                        {% if project.due_at %}{{ project.due_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="budget">{% if project.budget_amount %}{{ project.budget_amount }} {{ project.currency }}{% else %}<span class="tasks-project-sheet__muted">Brak budżetu</span>{% endif %}</span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">{% if project.source %}{{ project.source }}{% else %}<span class="tasks-project-sheet__muted">Brak źródła</span>{% endif %}</span>
+                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">{{ project.sections_count_label }}</span>
+                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ project.cards_count_label }}</span>
+                    <span class="tasks-project-sheet__priority tasks-project-sheet__priority--{{ project.priority|default:'none' }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">
+                        <span class="tasks-row-priority priority-{{ project.priority|default:'none' }}" aria-hidden="true">
+                            {% include 'core/includes/priority_icon.html' with priority=project.priority|default:'none' only %}
                         </span>
-                        <span>Brak</span>
+                        <span>{{ project.get_priority_display }}</span>
                     </span>
                     <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
                         {% if project.last_activity_display_at %}{{ project.last_activity_display_at|date:"d.m.Y H:i" }}{% else %}<span class="tasks-project-sheet__muted">Brak aktywności</span>{% endif %}
@@ -944,8 +1100,8 @@
                         <i data-lucide="folders" aria-hidden="true"></i>
                     </span>
                     <div class="tasks-empty-state__copy">
-                        <h2>{% if project_query %}Nie znaleziono przestrzeni.{% else %}Nie ma jeszcze przestrzeni.{% endif %}</h2>
-                        <p>{% if project_query %}Zmień wyszukiwanie, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą przestrzeń, aby rozpocząć pracę.{% endif %}</p>
+                        <h2>{% if project_query or project_priority_filter or project_status_filter or project_stage_filter or project_health_filter or project_company_filter or project_responsible_filter %}Nie znaleziono przestrzeni.{% else %}Nie ma jeszcze przestrzeni.{% endif %}</h2>
+                        <p>{% if project_query or project_priority_filter or project_status_filter or project_stage_filter or project_health_filter or project_company_filter or project_responsible_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą przestrzeń, aby rozpocząć pracę.{% endif %}</p>
                     </div>
                 </div>
                 {% endfor %}
@@ -1277,6 +1433,74 @@
                     <label for="{{ project_form.description.id_for_label }}">Opis</label>
                     {{ project_form.description }}
                 </div>
+
+                <section class="tasks-project-parameters" aria-labelledby="project-create-parameters-title">
+                    <h3 class="u-sr-only" id="project-create-parameters-title">Parametry przestrzeni</h3>
+                    <div class="tasks-project-create-fields tasks-issue-fields">
+                        <label class="tasks-project-create-field--company">
+                            <span>Firma</span>
+                            {{ project_form.company }}
+                        </label>
+                        <label class="tasks-project-create-field--responsible">
+                            <span>Odpowiedzialny</span>
+                            {{ project_form.responsible_user }}
+                        </label>
+                        <label class="tasks-project-create-field--status">
+                            <span>Status przestrzeni</span>
+                            {{ project_form.status }}
+                        </label>
+                        <label class="tasks-project-create-field--stage">
+                            <span>Etap</span>
+                            {{ project_form.stage }}
+                        </label>
+                        <label class="tasks-project-create-field--health">
+                            <span>Kondycja</span>
+                            {{ project_form.health }}
+                        </label>
+                        <label class="tasks-project-create-field--priority">
+                            <span>Priorytet</span>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ project_form.priority }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                        <span class="tasks-filter-priority-icon" aria-hidden="true" data-inline-priority-icon></span>
+                                        <span data-inline-select-label>Priorytet</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet przestrzeni">
+                                        {% for value, label in project_form.priority.field.choices %}
+                                        <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
+                                            <span class="tasks-row-priority priority-{{ value }}" aria-hidden="true">
+                                                {% include 'core/includes/priority_icon.html' with priority=value only %}
+                                            </span>
+                                            <span>{{ label }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                        <label class="tasks-project-create-field--source">
+                            <span>Źródło</span>
+                            {{ project_form.source }}
+                        </label>
+                        <label class="tasks-project-create-field--start">
+                            <span>Start</span>
+                            {{ project_form.start_at }}
+                        </label>
+                        <label class="tasks-project-create-field--due">
+                            <span>Termin</span>
+                            {{ project_form.due_at }}
+                        </label>
+                        <label class="tasks-project-create-field--budget">
+                            <span>Budżet</span>
+                            {{ project_form.budget_amount }}
+                        </label>
+                        <label class="tasks-project-create-field--currency">
+                            <span>Waluta</span>
+                            {{ project_form.currency }}
+                        </label>
+                    </div>
+                </section>
             </div>
 
             <footer class="tasks-modal__footer">
@@ -1323,6 +1547,74 @@
                     <span>Kod przestrzeni</span>
                     <span class="tasks-inline-input tasks-inline-code tasks-inline-code--readonly" id="project-rename-code">{{ project_rename_form.instance.code|default:'Zostanie nadany automatycznie' }}</span>
                 </div>
+
+                <section class="tasks-project-parameters" aria-labelledby="project-rename-parameters-title">
+                    <h3 id="project-rename-parameters-title">Parametry przestrzeni</h3>
+                    <div class="tasks-project-create-fields tasks-issue-fields">
+                        <label>
+                            <span>Firma</span>
+                            {{ project_rename_form.company }}
+                        </label>
+                        <label>
+                            <span>Odpowiedzialny</span>
+                            {{ project_rename_form.responsible_user }}
+                        </label>
+                        <label>
+                            <span>Status przestrzeni</span>
+                            {{ project_rename_form.status }}
+                        </label>
+                        <label>
+                            <span>Etap</span>
+                            {{ project_rename_form.stage }}
+                        </label>
+                        <label>
+                            <span>Kondycja</span>
+                            {{ project_rename_form.health }}
+                        </label>
+                        <label>
+                            <span>Priorytet</span>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ project_rename_form.priority }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                        <span class="tasks-filter-priority-icon" aria-hidden="true" data-inline-priority-icon></span>
+                                        <span data-inline-select-label>Priorytet</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet przestrzeni">
+                                        {% for value, label in project_rename_form.priority.field.choices %}
+                                        <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
+                                            <span class="tasks-row-priority priority-{{ value }}" aria-hidden="true">
+                                                {% include 'core/includes/priority_icon.html' with priority=value only %}
+                                            </span>
+                                            <span>{{ label }}</span>
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                        <label>
+                            <span>Start</span>
+                            {{ project_rename_form.start_at }}
+                        </label>
+                        <label>
+                            <span>Termin</span>
+                            {{ project_rename_form.due_at }}
+                        </label>
+                        <label>
+                            <span>Budżet</span>
+                            {{ project_rename_form.budget_amount }}
+                        </label>
+                        <label>
+                            <span>Waluta</span>
+                            {{ project_rename_form.currency }}
+                        </label>
+                        <label>
+                            <span>Źródło</span>
+                            {{ project_rename_form.source }}
+                        </label>
+                    </div>
+                </section>
             </div>
 
             <footer class="tasks-modal__footer">

@@ -10,6 +10,7 @@ from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
+from contacts.models import Company
 from tasks.models import TaskTag, TaskTagNote
 from .models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanProjectNote, KanbanSection
 
@@ -184,11 +185,18 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-kanban-project-sheet')
         self.assertContains(response, 'KOD PRZESTRZENI')
         self.assertContains(response, 'PRZESTRZEŃ')
+        self.assertContains(response, 'FIRMA')
+        self.assertContains(response, 'ODPOWIEDZIALNY')
         self.assertContains(response, 'STATUS')
+        self.assertContains(response, 'ETAP')
+        self.assertContains(response, 'KONDYCJA')
         self.assertContains(response, 'TABLICE')
         self.assertContains(response, 'KARTY')
         self.assertContains(response, 'POSTĘP')
-        self.assertContains(response, 'ODPOWIEDZIALNY')
+        self.assertContains(response, 'START')
+        self.assertContains(response, 'TERMIN')
+        self.assertContains(response, 'BUDŻET')
+        self.assertContains(response, 'ŹRÓDŁO')
         self.assertContains(response, 'PRIORYTET')
         self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
         self.assertContains(response, 'data-project-type="kanban-space"', count=6)
@@ -216,12 +224,19 @@ class KanbanProjectCreationTests(TestCase):
             'data-column="notes" aria-label="Notatki przestrzeni"',
             'data-column="project_code">KOD PRZESTRZENI',
             'data-column="project">PRZESTRZEŃ',
+            'data-column="company">FIRMA',
+            'data-column="responsible_user">ODPOWIEDZIALNY',
             'data-column="project_status">STATUS',
-            'data-column="sections_count">TABLICE',
-            'data-column="tasks_count">KARTY',
+            'data-column="stage">ETAP',
+            'data-column="health">KONDYCJA',
             'data-column="description">OPIS',
             'data-column="progress">POSTĘP',
-            'data-column="responsible_user">ODPOWIEDZIALNY',
+            'data-column="start_at">START',
+            'data-column="due_at">TERMIN',
+            'data-column="budget">BUDŻET',
+            'data-column="source">ŹRÓDŁO',
+            'data-column="sections_count">TABLICE',
+            'data-column="tasks_count">KARTY',
             'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
             'data-column="created_at">DATA',
@@ -329,6 +344,72 @@ class KanbanProjectCreationTests(TestCase):
         self.assertIn('Dodaj przestrzeń', filterbar_html)
         self.assertIn('id="edit-selected-project-bar-btn"', filterbar_html)
         self.assertIn('id="info-selected-project-menu-btn"', filterbar_html)
+
+    def test_projects_view_uses_tasks_project_filter_toolbar(self):
+        company = Company.objects.create(owner=self.user, name='ACME')
+        responsible = get_user_model().objects.create_user(
+            username='kanban-owner',
+            first_name='Anna',
+            last_name='Kowalska',
+            password='test-pass-123',
+        )
+        KanbanProject.objects.create(
+            user=self.user,
+            name='Widoczna przestrzeń',
+            code='VISIBLE',
+            company=company,
+            responsible_user=responsible,
+            status='active',
+            stage='implementation',
+            health='ok',
+            priority='high',
+            source='CRM',
+        )
+        KanbanProject.objects.create(
+            user=self.user,
+            name='Ukryta przestrzeń',
+            code='HIDDEN',
+            status='planned',
+            stage='lead',
+            health='delayed',
+            priority='none',
+        )
+
+        response = self.client.get(
+            f"{reverse('kanban:tasks')}?status=active&stage=implementation&health=ok"
+            f"&company={company.id}&responsible={responsible.id}&priority=high&sort=company_asc"
+        )
+        html = response.content.decode()
+        filterbar_start = html.index('class="tasks-filterbar')
+        filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+        table_start = html.index('class="tasks-issue-list tasks-project-list tasks-directory-list"')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-project-sort-menu')
+        self.assertContains(response, 'data-project-default-sort="name_asc"')
+        self.assertIn('name="sort" value="company_asc" data-project-sort-input', html)
+        self.assertIn('id="filter-priority" name="priority" value="high"', html)
+        self.assertIn('name="status" value="active" data-project-filter-input="status"', html)
+        self.assertIn('name="stage" value="implementation" data-project-filter-input="stage"', html)
+        self.assertIn('name="health" value="ok" data-project-filter-input="health"', html)
+        self.assertIn(f'name="company" value="{company.id}" data-project-filter-input="company"', html)
+        self.assertIn(f'name="responsible" value="{responsible.id}" data-project-filter-input="responsible"', html)
+        for filter_name in ('status', 'stage', 'health', 'company', 'responsible'):
+            self.assertContains(response, f'data-project-filter-menu="{filter_name}"')
+        self.assertIn('data-priority-filter-menu', filterbar_html)
+        self.assertContains(response, 'Status: Aktywny')
+        self.assertContains(response, 'Etap: Realizacja')
+        self.assertContains(response, 'Kondycja: OK')
+        self.assertContains(response, 'Firma: ACME')
+        self.assertContains(response, 'Odpowiedzialny: Anna Kowalska')
+        self.assertIn('Widoczna przestrzeń', table_html)
+        self.assertIn('ACME', table_html)
+        self.assertIn('Anna Kowalska', table_html)
+        self.assertIn('Wysoki', table_html)
+        self.assertNotIn('Ukryta przestrzeń', table_html)
 
     def test_all_groups_view_bars_match_all_tasks_layout(self):
         project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
@@ -1464,6 +1545,8 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, 'Moje zadanie testowe')
 
     def test_edit_project_updates_details_without_changing_code_or_icon(self):
+        company = Company.objects.create(owner=self.user, name='Firma Kanban')
+        responsible = get_user_model().objects.create_user(username='kanban-responsible', password='test-pass-123')
         project = KanbanProject.objects.create(user=self.user, name='Stara nazwa', description='Stary opis', code='OLD')
         old_code = project.code
 
@@ -1472,6 +1555,17 @@ class KanbanProjectCreationTests(TestCase):
             'project_id': project.id,
             'name': 'Nowa nazwa',
             'description': 'Nowy opis',
+            'company': company.id,
+            'responsible_user': responsible.id,
+            'status': 'on_hold',
+            'stage': 'support',
+            'health': 'at_risk',
+            'priority': 'urgent',
+            'start_at': '2026-08-01',
+            'due_at': '2026-08-31',
+            'budget_amount': '12500.00',
+            'currency': 'eur',
+            'source': 'Rekomendacja',
             'code': 'new',
             'icon': 'rocket',
         })
@@ -1483,6 +1577,14 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(project.description, 'Nowy opis')
         self.assertEqual(project.icon, '')
         self.assertEqual(project.code, old_code)
+        self.assertEqual(project.company, company)
+        self.assertEqual(project.responsible_user, responsible)
+        self.assertEqual(project.status, 'on_hold')
+        self.assertEqual(project.stage, 'support')
+        self.assertEqual(project.health, 'at_risk')
+        self.assertEqual(project.priority, 'urgent')
+        self.assertEqual(project.currency, 'EUR')
+        self.assertEqual(project.source, 'Rekomendacja')
 
     def test_edit_project_ignores_icon_field(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ', icon='rocket')

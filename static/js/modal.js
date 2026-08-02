@@ -12,13 +12,19 @@ window.showConfirmModal = function (options) {
         confirmText = 'Potwierdź',
         cancelText = 'Anuluj',
         confirmClass = 'btn-danger',
+        icon = null,
         onConfirm = () => {}
     } = options;
+    const isDestructive = String(confirmClass).split(/\s+/).includes('btn-danger');
+    const iconName = String(icon || (isDestructive ? 'trash-2' : 'triangle-alert')).replace(/[^a-z0-9-]/gi, '');
 
     const overlay = document.createElement('div');
     overlay.className = 'confirm-modal-overlay';
     if (document.querySelector('.tasks-page')) {
         overlay.classList.add('confirm-modal-overlay--tasks');
+    }
+    if (isDestructive) {
+        overlay.classList.add('confirm-modal-overlay--destructive');
     }
 
     const modal = document.createElement('div');
@@ -26,10 +32,15 @@ window.showConfirmModal = function (options) {
     if (overlay.classList.contains('confirm-modal-overlay--tasks')) {
         modal.classList.add('confirm-modal--tasks');
     }
+    if (isDestructive) {
+        modal.classList.add('confirm-modal--destructive');
+    }
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
     modal.innerHTML = `
         <div class="confirm-modal__body">
             <div class="confirm-modal__icon">
-                <i data-lucide="triangle-alert" aria-hidden="true" stroke-width="2.5"></i>
+                <i data-lucide="${iconName}" aria-hidden="true" stroke-width="2.5"></i>
             </div>
             <div class="confirm-modal__content">
                 <h3 class="confirm-modal__title">${title}</h3>

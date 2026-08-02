@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}ancore{% endblock %}</title>
-    <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'img/favicon-ancore-large.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     {% include 'core/includes/bootstrap.html' %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260801-kanban-add-column-size">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260801-auth-label-teal">
 </head>
 <body class="auth-page">
     <a class="auth-skip-link" href="#auth-form-title">Przejdź do formularza</a>
@@ -19,7 +19,7 @@
         <section class="auth-visual" aria-labelledby="auth-page-title">
             <a href="{% url 'home' %}" class="auth-brand" aria-label="Ancore">
                 <span class="auth-brand-mark">
-                    <img src="{% static 'img/logo.png' %}" alt="">
+                    <img src="{% static 'img/logo-ancore.png' %}" alt="">
                 </span>
                 <span class="auth-brand-copy">
                     <strong>ANCORE</strong>

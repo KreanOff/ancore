@@ -119,6 +119,7 @@
     color: var(--text-muted);
     line-height: 1.5;
     font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
 }
 
 .confirm-modal__footer {

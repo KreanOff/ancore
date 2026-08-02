@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}ancore{% endblock %}</title>
-    <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'img/favicon-ancore-large.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -39,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260801-kanban-board-empty-state">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260801-ancore-logo-size">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -176,8 +176,8 @@
     <script src="{% static 'js/layout.js' %}?v=20260709-scoped-icon-render"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
-    <script src="{% static 'js/modal.js' %}"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260801-tag-empty-state"></script>
+    <script src="{% static 'js/modal.js' %}?v=20260801-delete-confirm-redesign"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260801-kanban-column-delete-confirm-v3"></script>
     <script src="{% static 'js/profile.js' %}?v=20260614-app-wide-navigation"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260709-project-company-search"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>

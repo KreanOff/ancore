@@ -248,6 +248,83 @@ class ContactCollaborationTests(TestCase):
         self.assertNotContains(response, 'href="/contacts/companies/new/"')
         self.assertNotIn('status', response.context['contact_modal_form'].fields)
 
+    def test_contacts_view_bars_match_all_spaces_layout(self):
+        Contact.objects.create(
+            user=self.owner,
+            first_name='Ewa',
+            last_name='Lis',
+            email='ewa@example.com',
+            status='active',
+        )
+
+        response = self.client.get(reverse('contacts:contacts'))
+        html = response.content.decode()
+        topbar_start = html.index('class="tasks-topbar"')
+        topbar_end = html.index('</header>', topbar_start)
+        topbar_html = html[topbar_start:topbar_end]
+        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
+        filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+
+        self.assertIn('Kontakty', topbar_html)
+        self.assertIn('tasks-titlebar-search', topbar_html)
+        self.assertIn('id="filter-search"', topbar_html)
+        self.assertIn('name="q"', topbar_html)
+        self.assertNotIn('data-task-sort', topbar_html)
+        self.assertNotIn('data-open-contact', topbar_html)
+        self.assertIn('tasks-filterbar--task-directory', filterbar_html)
+        self.assertIn('data-task-sort', filterbar_html)
+        self.assertIn('Nowa firma', filterbar_html)
+        self.assertIn('Nowy kontakt', filterbar_html)
+        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertNotIn('data-filter-search-submit', filterbar_html)
+
+    def test_companies_view_bars_match_all_spaces_layout(self):
+        Company.objects.create(owner=self.owner, name='Netology')
+
+        response = self.client.get(reverse('contacts:companies'))
+        html = response.content.decode()
+        topbar_start = html.index('class="tasks-topbar"')
+        topbar_end = html.index('</header>', topbar_start)
+        topbar_html = html[topbar_start:topbar_end]
+        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
+        filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+
+        self.assertIn('Firmy', topbar_html)
+        self.assertIn('tasks-titlebar-search', topbar_html)
+        self.assertIn('id="filter-search"', topbar_html)
+        self.assertNotIn('data-task-sort', topbar_html)
+        self.assertNotIn('data-open-company', topbar_html)
+        self.assertIn('tasks-filterbar--task-directory', filterbar_html)
+        self.assertIn('data-task-sort', filterbar_html)
+        self.assertIn('Nowa firma', filterbar_html)
+        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertNotIn('data-filter-search-submit', filterbar_html)
+
+    def test_user_directory_view_bars_match_contacts_layout(self):
+        response = self.client.get(reverse('contacts:user-directory'), {'q': 'Marek'})
+        html = response.content.decode()
+        topbar_start = html.index('class="tasks-topbar"')
+        topbar_end = html.index('</header>', topbar_start)
+        topbar_html = html[topbar_start:topbar_end]
+        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
+        filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
+        filterbar_html = html[filterbar_start:filterbar_end]
+
+        self.assertIn('Szukaj osób', topbar_html)
+        self.assertIn('tasks-titlebar-search', topbar_html)
+        self.assertIn('id="filter-search"', topbar_html)
+        self.assertIn('name="q"', topbar_html)
+        self.assertNotIn('data-task-sort', topbar_html)
+        self.assertNotIn('data-open-contact', topbar_html)
+        self.assertIn('tasks-filterbar--task-directory', filterbar_html)
+        self.assertIn('data-task-sort', filterbar_html)
+        self.assertIn('Nowa firma', filterbar_html)
+        self.assertIn('Nowy kontakt', filterbar_html)
+        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertNotIn('data-filter-search-submit', filterbar_html)
+
     def test_old_create_contact_route_is_removed(self):
         response = self.client.get('/contacts/new/')
 
@@ -414,7 +491,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'data-lucide="ellipsis"')
         self.assertContains(response, 'Opcje kontaktu')
         self.assertContains(response, 'Usuń')
-        self.assertContains(response, 'tasks.js?v=20260801-tag-empty-state')
+        self.assertContains(response, 'tasks.js?v=20260801-kanban-column-delete-confirm-v3')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -545,7 +622,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'tasks-icon-button contacts-actions-menu__toggle')
         self.assertContains(response, 'Opcje firmy')
         self.assertContains(response, 'Usuń')
-        self.assertContains(response, 'tasks.js?v=20260801-tag-empty-state')
+        self.assertContains(response, 'tasks.js?v=20260801-kanban-column-delete-confirm-v3')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -585,7 +662,7 @@ class ContactCollaborationTests(TestCase):
         response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="company-detail-form"')
-        self.assertContains(response, 'style.css?v=20260801-kanban-board-empty-state')
+        self.assertContains(response, 'style.css?v=20260801-ancore-logo-size')
         self.assertContains(response, 'profile.js?v=20260614-app-wide-navigation')
         self.assertContains(response, 'contacts-company-modal-title')
         self.assertContains(response, 'contacts-edit-modal is-open')

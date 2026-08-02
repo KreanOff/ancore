@@ -19,6 +19,37 @@ KanbanTagNote = TaskTagNote
 
 
 class KanbanProject(models.Model):
+    PRIORITY_CHOICES = [
+        ('none', 'Brak'),
+        ('low', 'Niski'),
+        ('medium', 'Średni'),
+        ('high', 'Wysoki'),
+        ('urgent', 'Pilny'),
+    ]
+
+    STATUS_CHOICES = [
+        ('planned', 'Planowany'),
+        ('active', 'Aktywny'),
+        ('on_hold', 'Wstrzymany'),
+        ('completed', 'Zakończony'),
+        ('cancelled', 'Anulowany'),
+    ]
+
+    STAGE_CHOICES = [
+        ('lead', 'Lead'),
+        ('offer', 'Oferta'),
+        ('contract', 'Umowa'),
+        ('implementation', 'Realizacja'),
+        ('support', 'Utrzymanie'),
+        ('internal', 'Wewnętrzny'),
+    ]
+
+    HEALTH_CHOICES = [
+        ('ok', 'OK'),
+        ('at_risk', 'Zagrożony'),
+        ('delayed', 'Opóźniony'),
+    ]
+
     CODE_PREFIX = 'P'
     CODE_LENGTH = 8
     CODE_ALPHABET = BASE36_ALPHABET
@@ -38,6 +69,17 @@ class KanbanProject(models.Model):
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
     icon = models.CharField(max_length=64, blank=True, default='')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    stage = models.CharField(max_length=20, choices=STAGE_CHOICES, default='implementation')
+    health = models.CharField(max_length=20, choices=HEALTH_CHOICES, default='ok')
+    start_at = models.DateField(null=True, blank=True)
+    due_at = models.DateField(null=True, blank=True)
+    budget_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, default='PLN', blank=True)
+    source = models.CharField(max_length=120, blank=True)
+    company = models.ForeignKey('contacts.Company', on_delete=models.SET_NULL, related_name='kanban_projects', null=True, blank=True)
+    responsible_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='responsible_kanban_projects', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_projects')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='kanban_projects', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

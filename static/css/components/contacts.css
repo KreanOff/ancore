@@ -482,6 +482,18 @@
     grid-template-columns: minmax(240px, auto) minmax(0, 1fr) auto;
 }
 
+.contacts-titlebar-search .tasks-search-field {
+    width: 100%;
+}
+
+.contacts-toolbar-filterbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.contacts-toolbar-filterbar .tasks-filterbar-right {
+    justify-content: flex-end;
+}
+
 .contacts-search-filterbar {
     grid-template-columns: minmax(240px, auto) minmax(0, 1fr);
 }
@@ -579,6 +591,41 @@
     margin: 0;
     color: #6c7484;
     font-size: var(--font-size-sm);
+}
+
+.contacts-directory-board--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.contacts-empty-state--directory {
+    margin: 0;
+    padding: 1.5rem !important;
+}
+
+body .contacts-empty-state--directory .tasks-empty-state__icon {
+    margin: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-primary);
+}
+
+body .contacts-empty-state--directory .tasks-empty-state__icon svg {
+    width: 40px;
+    height: 40px;
+    stroke-width: 1.7;
+}
+
+.contacts-empty-state--directory h2,
+.contacts-empty-state--directory p {
+    margin: 0;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.contacts-empty-state--directory h2 {
+    font-weight: 600;
 }
 
 .contacts-issue-main {
@@ -1617,6 +1664,22 @@
 
     .contacts-filterbar {
         grid-template-columns: 1fr;
+    }
+
+    .contacts-toolbar-filterbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+}
+
+@media (max-width: 960px) {
+    .contacts-toolbar-filterbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .contacts-toolbar-filterbar .tasks-filterbar-right {
+        grid-column: 1;
+        justify-self: start;
+        justify-content: flex-start;
     }
 }
 

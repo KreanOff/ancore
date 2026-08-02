@@ -282,6 +282,7 @@ function initTasksPage() {
         projectPaginationPage = 1;
     }
 
+    initKanbanColumnDeleteConfirmation();
     initKanbanColumnCreateForms();
     initKanbanColumnReorder();
     initKanbanWallpapers();
@@ -760,6 +761,37 @@ function initTasksPage() {
         document.addEventListener('click', event => {
             document.querySelectorAll('.tasks-kanban-column--new.is-creating').forEach(column => {
                 if (!column.contains(event.target)) closeColumnCreateForm(column);
+            });
+        });
+    }
+
+    function initKanbanColumnDeleteConfirmation() {
+        if (window.ancoreKanbanColumnDeleteConfirmInitialized) return;
+        window.ancoreKanbanColumnDeleteConfirmInitialized = true;
+
+        document.addEventListener('submit', event => {
+            const form = event.target.closest('.tasks-kanban-column__delete-form');
+            if (!form) return;
+
+            event.preventDefault();
+
+            const confirmMessage = 'Czy na pewno chcesz usunąć tę kolumnę?';
+            const submitForm = () => HTMLFormElement.prototype.submit.call(form);
+
+            if (typeof window.showConfirmModal !== 'function') {
+                if (window.confirm(confirmMessage)) {
+                    submitForm();
+                }
+                return;
+            }
+
+            window.showConfirmModal({
+                title: 'Usuń kolumnę',
+                message: confirmMessage,
+                confirmText: 'Usuń',
+                cancelText: 'Anuluj',
+                confirmClass: 'btn-danger',
+                onConfirm: submitForm
             });
         });
     }
@@ -4173,7 +4205,7 @@ function initTasksPage() {
                 progress: button.dataset.projectProgressLabel || readProjectInfoCell(row, 'progress'),
                 tasks: button.dataset.projectTasksLabel || readProjectInfoCell(row, 'tasks_count'),
                 status: button.dataset.projectStatusLabel || readProjectInfoCell(row, 'project_status'),
-                stage: button.dataset.projectStageLabel || readProjectInfoCell(row, isKanbanProject ? 'sections_count' : 'stage'),
+                stage: button.dataset.projectStageLabel || readProjectInfoCell(row, 'stage'),
                 health: button.dataset.projectHealthLabel || readProjectInfoCell(row, 'health'),
                 company: button.dataset.projectCompanyLabel || readProjectInfoCell(row, 'company'),
                 responsible: button.dataset.projectResponsibleLabel || readProjectInfoCell(row, 'responsible_user'),
@@ -4193,7 +4225,7 @@ function initTasksPage() {
                 : isSectionInfo
                     ? new Set(['code', 'progress', 'tasks', 'status', 'stage', 'responsible', 'priority', 'due', 'budget', 'created', 'lastActivity'])
                     : isKanbanProject
-                        ? new Set(['code', 'progress', 'tasks', 'status', 'stage', 'responsible', 'priority', 'created', 'lastActivity'])
+                        ? new Set(['code', 'progress', 'tasks', 'status', 'stage', 'health', 'company', 'responsible', 'priority', 'start', 'due', 'budget', 'source', 'created', 'lastActivity'])
                         : new Set(['code', 'progress', 'tasks', 'status', 'stage', 'health', 'company', 'responsible', 'priority', 'start', 'due', 'budget', 'source', 'created', 'lastActivity'])
         );
         setProjectInfoText(projectInfoName, data.name, isTagInfo ? 'Tag' : (isSectionInfo ? 'Grupa' : (isKanbanProject ? 'Przestrzeń' : 'Projekt')));
@@ -7461,7 +7493,7 @@ function getTaskSortRowValue(row) {
         return row.dataset.created || row.dataset.taskId || '';
     }
 
-    const title = row.querySelector('.tasks-row-title-text, .tasks-row-title, .tasks-project-row-title, .tasks-section-row-title');
+    const title = row.querySelector('.tasks-row-title-text, .tasks-row-title, .tasks-project-row-title, .tasks-section-row-title, .contacts-directory-name-text strong');
     return (title ? title.textContent : row.textContent).trim().toLowerCase();
 }
 
@@ -7470,7 +7502,8 @@ function sortCurrentTaskLists(direction) {
         const rows = Array.from(list.children).filter(child => (
             child.classList.contains('task-row') ||
             child.classList.contains('tasks-project-row') ||
-            child.classList.contains('tasks-section-row')
+            child.classList.contains('tasks-section-row') ||
+            child.classList.contains('contacts-directory-row')
         ));
 
         if (rows.length < 2) return;

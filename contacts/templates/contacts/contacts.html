@@ -27,23 +27,28 @@
                     <span>{{ contacts_page_title|default:'Kontakty' }}</span>
                 </span>
             </div>
-            <div class="tasks-section-actions">
+            <form class="tasks-titlebar-search tasks-search-actions contacts-titlebar-search" method="get">
+                <label class="tasks-search-field" for="filter-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" name="q" value="{{ query }}" placeholder="{{ contacts_search_placeholder|default:'Szukaj kontaktu' }}" autocomplete="off">
+                </label>
+            </form>
+        </header>
+
+        <div class="tasks-filterbar tasks-filterbar--task-directory contacts-filterbar contacts-toolbar-filterbar">
+            <div class="tasks-filterbar-left">
+                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
+                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
+                </button>
+            </div>
+            <div class="tasks-filterbar-center"></div>
+            <div class="tasks-filterbar-right">
                 <button type="button" class="tasks-tag-topbar-button" aria-haspopup="dialog" aria-controls="company-create-modal" data-open-company>Nowa firma</button>
                 <button type="button" class="tasks-tag-topbar-button" aria-haspopup="dialog" aria-controls="contact-create-modal" data-open-contact>Nowy kontakt</button>
             </div>
-        </header>
+        </div>
 
-        <form class="tasks-filterbar contacts-filterbar contacts-search-filterbar" method="get">
-            <div class="tasks-filterbar-left">
-                <label class="tasks-search-field">
-                    <i data-lucide="search" aria-hidden="true"></i>
-                    <input type="search" name="q" value="{{ query }}" placeholder="{{ contacts_search_placeholder|default:'Szukaj kontaktu' }}">
-                </label>
-                <button type="submit" class="tasks-tag-topbar-button">Szukaj</button>
-            </div>
-        </form>
-
-        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet{% if not contacts %} contacts-directory-board--empty{% endif %}">
             {% if contacts %}
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
@@ -104,13 +109,14 @@
                 </div>
             </section>
             {% else %}
-            <section class="tasks-empty-state contacts-empty-state">
+            <section class="tasks-empty-state tasks-empty-state--centered contacts-empty-state contacts-empty-state--directory" role="status" aria-live="polite">
                 <div class="tasks-empty-state__icon" aria-hidden="true">
                     <i data-lucide="users" aria-hidden="true"></i>
                 </div>
-                <h2>{{ contacts_empty_heading|default:'Brak kontaktów' }}</h2>
-                <p>{{ contacts_empty_copy|default:'Dodaj pierwszy kontakt i trzymaj notatki z rozmów w jednym miejscu.' }}</p>
-                <button type="button" class="tasks-modal__submit contacts-empty-action" aria-haspopup="dialog" aria-controls="contact-create-modal" data-open-contact>Nowy kontakt</button>
+                <div class="tasks-empty-state__copy">
+                    <h2>{% if query %}Nie znaleziono kontaktów.{% else %}{{ contacts_empty_heading|default:'Nie ma jeszcze kontaktów.' }}{% endif %}</h2>
+                    <p>{% if query %}Zmień wyszukiwanie, aby zobaczyć inne wyniki.{% else %}{{ contacts_empty_copy|default:'Dodaj pierwszy kontakt, aby przechowywać dane i notatki w jednym miejscu.' }}{% endif %}</p>
+                </div>
             </section>
             {% endif %}
         </div>

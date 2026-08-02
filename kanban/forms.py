@@ -1,6 +1,19 @@
 from django import forms
+from django.contrib.auth import get_user_model
+
+from contacts.models import Company
 from tasks.models import TaskTag
 from .models import Kanban, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
+
+
+class LenientModelChoiceField(forms.ModelChoiceField):
+    def clean(self, value):
+        if value in self.empty_values:
+            return None
+        try:
+            return super().clean(value)
+        except forms.ValidationError:
+            return None
 
 
 class TwoDigitNumberInput(forms.NumberInput):
@@ -21,6 +34,35 @@ def _filter_workplace(queryset, workplace):
     if workplace is None:
         return queryset
     return queryset.filter(workplace=workplace)
+
+
+def _crm_user_queryset(user):
+    if not user:
+        return get_user_model().objects.none()
+    return (
+        get_user_model().objects.filter(is_active=True)
+        .distinct()
+        .order_by('first_name', 'middle_name', 'last_name', 'email', 'username')
+    )
+
+
+def _company_queryset(user, workplace=None):
+    if not user:
+        return Company.objects.none()
+    return _filter_workplace(Company.objects.filter(owner=user), workplace).order_by('name')
+
+
+def _replace_optional_model_choice(form, field_name, queryset, empty_label):
+    if field_name not in form.fields:
+        return
+    current = form.fields[field_name]
+    form.fields[field_name] = LenientModelChoiceField(
+        queryset=queryset,
+        required=False,
+        label=current.label,
+        widget=current.widget,
+        empty_label=empty_label,
+    )
 
 
 class DynamicStatusFormMixin:
@@ -158,8 +200,36 @@ class KanbanForm(DynamicStatusFormMixin, forms.ModelForm):
 
 class KanbanProjectBaseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        kwargs.pop('user', None)
+        user = kwargs.pop('user', None)
+        workplace = kwargs.pop('workplace', None)
         super().__init__(*args, **kwargs)
+        if 'company' in self.fields:
+            _replace_optional_model_choice(self, 'company', _company_queryset(user, workplace), 'Brak firmy')
+            self.fields['company'].widget.attrs['data-ancore-custom-select-search'] = 'true'
+            self.fields['company'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj firmy'
+        if 'responsible_user' in self.fields:
+            _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user), 'Brak osoby')
+            self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search'] = 'true'
+            self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
+        for field_name in ('status', 'stage', 'health', 'currency'):
+            if field_name in self.fields:
+                self.fields[field_name].required = False
+
+    def clean_priority(self):
+        return self.cleaned_data.get('priority') or 'none'
+
+    def clean_status(self):
+        return self.cleaned_data.get('status') or 'active'
+
+    def clean_stage(self):
+        return self.cleaned_data.get('stage') or 'implementation'
+
+    def clean_health(self):
+        return self.cleaned_data.get('health') or 'ok'
+
+    def clean_currency(self):
+        currency = (self.cleaned_data.get('currency') or '').strip().upper()[:3]
+        return currency or 'PLN'
 
 
 class KanbanProjectForm(KanbanProjectBaseForm):
@@ -177,7 +247,22 @@ class KanbanProjectForm(KanbanProjectBaseForm):
 
     class Meta:
         model = KanbanProject
-        fields = ['name', 'section_title', 'description']
+        fields = [
+            'name',
+            'section_title',
+            'description',
+            'company',
+            'responsible_user',
+            'status',
+            'stage',
+            'health',
+            'priority',
+            'start_at',
+            'due_at',
+            'budget_amount',
+            'currency',
+            'source',
+        ]
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nowa przestrzeń robocza',
@@ -188,13 +273,81 @@ class KanbanProjectForm(KanbanProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'priority': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'company': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'responsible_user': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'status': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'stage': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'health': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'start_at': forms.DateInput(format='%Y-%m-%d', attrs={
+                'type': 'date',
+                'class': 'tasks-inline-input',
+            }),
+            'due_at': forms.DateInput(format='%Y-%m-%d', attrs={
+                'type': 'date',
+                'class': 'tasks-inline-input',
+            }),
+            'budget_amount': forms.NumberInput(attrs={
+                'class': 'tasks-inline-input',
+                'min': 0,
+                'step': '0.01',
+                'placeholder': 'Budżet',
+            }),
+            'currency': forms.TextInput(attrs={
+                'class': 'tasks-inline-input',
+                'maxlength': 3,
+                'placeholder': 'PLN',
+            }),
+            'source': forms.TextInput(attrs={
+                'class': 'tasks-inline-input',
+                'placeholder': 'Źródło przestrzeni',
+            }),
+        }
+        labels = {
+            'company': 'Firma',
+            'responsible_user': 'Odpowiedzialny',
+            'status': 'Status przestrzeni',
+            'stage': 'Etap',
+            'health': 'Kondycja',
+            'priority': 'Priorytet',
+            'start_at': 'Start',
+            'due_at': 'Termin',
+            'budget_amount': 'Budżet',
+            'currency': 'Waluta',
+            'source': 'Źródło',
         }
 
 
 class KanbanProjectRenameForm(KanbanProjectBaseForm):
     class Meta:
         model = KanbanProject
-        fields = ['name', 'description']
+        fields = [
+            'name',
+            'description',
+            'company',
+            'responsible_user',
+            'status',
+            'stage',
+            'health',
+            'priority',
+            'start_at',
+            'due_at',
+            'budget_amount',
+            'currency',
+            'source',
+        ]
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa przestrzeni roboczej',
@@ -205,6 +358,60 @@ class KanbanProjectRenameForm(KanbanProjectBaseForm):
                 'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
+            'priority': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'company': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'responsible_user': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'status': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'stage': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'health': forms.Select(attrs={
+                'class': 'tasks-inline-select',
+            }),
+            'start_at': forms.DateInput(format='%Y-%m-%d', attrs={
+                'type': 'date',
+                'class': 'tasks-inline-input',
+            }),
+            'due_at': forms.DateInput(format='%Y-%m-%d', attrs={
+                'type': 'date',
+                'class': 'tasks-inline-input',
+            }),
+            'budget_amount': forms.NumberInput(attrs={
+                'class': 'tasks-inline-input',
+                'min': 0,
+                'step': '0.01',
+                'placeholder': 'Budżet',
+            }),
+            'currency': forms.TextInput(attrs={
+                'class': 'tasks-inline-input',
+                'maxlength': 3,
+                'placeholder': 'PLN',
+            }),
+            'source': forms.TextInput(attrs={
+                'class': 'tasks-inline-input',
+                'placeholder': 'Źródło przestrzeni',
+            }),
+        }
+        labels = {
+            'company': 'Firma',
+            'responsible_user': 'Odpowiedzialny',
+            'status': 'Status przestrzeni',
+            'stage': 'Etap',
+            'health': 'Kondycja',
+            'priority': 'Priorytet',
+            'start_at': 'Start',
+            'due_at': 'Termin',
+            'budget_amount': 'Budżet',
+            'currency': 'Waluta',
+            'source': 'Źródło',
         }
 
 

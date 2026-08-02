@@ -390,21 +390,21 @@ body.secondary-menu-resizing .secondary-menu-resizer::after {
 
 body.auth-page,
 .auth-panel {
-    background: var(--panel-bg);
+    background: #f7f8fb;
     color: var(--text-main);
 }
 
 .auth-visual {
-    background: var(--chrome-bg);
+    background: #fbfcfd;
     color: var(--text-main);
-    border-right: 1px solid var(--chrome-border);
+    border-right: 1px solid #e7ebf0;
 }
 
 .auth-visual::before {
-    opacity: 0.55;
+    opacity: 0.65;
     background-image:
-        linear-gradient(rgba(92, 95, 193, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(92, 95, 193, 0.06) 1px, transparent 1px);
+        linear-gradient(rgba(30, 191, 191, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(92, 95, 193, 0.055) 1px, transparent 1px);
 }
 
 .auth-brand,
@@ -427,15 +427,15 @@ body.auth-page,
 
 .auth-section-label,
 .auth-card-label {
-    border-color: var(--accent-peach-border);
-    background: var(--accent-peach);
+    border-color: rgba(30, 191, 191, 0.42);
+    background: rgb(30, 191, 191);
     color: var(--accent-on-peach);
 }
 
 .auth-workspace-preview {
-    border-color: var(--border-color);
-    background: rgba(255, 255, 255, 0.64);
-    box-shadow: 0 16px 38px rgba(63, 59, 56, 0.08);
+    border-color: #e5e9ef;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 18px 46px rgba(31, 36, 43, 0.08);
 }
 
 .auth-preview-header,
@@ -458,21 +458,21 @@ body.auth-page,
 .auth-back-link,
 .auth-switch-link,
 .auth-card {
-    border-color: var(--border-color);
+    border-color: #dfe5ec;
     background: var(--card-bg);
     color: var(--text-main);
 }
 
 .auth-back-link:hover,
 .auth-switch-link:hover {
-    border-color: var(--accent-peach-border);
-    background: #fbf6f3;
+    border-color: rgba(30, 191, 191, 0.55);
+    background: #f8fbfb;
     color: var(--text-strong);
-    box-shadow: 0 6px 18px rgba(63, 59, 56, 0.08);
+    box-shadow: 0 6px 18px rgba(31, 36, 43, 0.08);
 }
 
 .auth-card {
-    box-shadow: 0 18px 45px rgba(63, 59, 56, 0.08);
+    box-shadow: 0 22px 54px rgba(31, 36, 43, 0.1);
 }
 
 .auth-header,

@@ -24,14 +24,18 @@ PROJECT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
 PROJECT_DEFAULT_PAGE_SIZE = 50
 PROJECT_DEFAULT_SORT = 'name_asc'
 PROJECT_SORT_OPTIONS = (
-    {'value': 'name_asc', 'label': 'Nazwa A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
-    {'value': 'name_desc', 'label': 'Nazwa Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
-    {'value': 'code_asc', 'label': 'Kod A-Z', 'icon': 'hash', 'direction': 'asc'},
-    {'value': 'code_desc', 'label': 'Kod Z-A', 'icon': 'hash', 'direction': 'desc'},
+    {'value': 'name_asc', 'label': 'Przestrzeń A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'name_desc', 'label': 'Przestrzeń Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'code_asc', 'label': 'Kod A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'company_asc', 'label': 'Firma A-Z', 'icon': 'building-2', 'direction': 'asc'},
+    {'value': 'responsible_asc', 'label': 'Odpowiedzialny', 'icon': 'circle-user-round', 'direction': 'asc'},
+    {'value': 'status_asc', 'label': 'Status', 'icon': 'circle-dot', 'direction': 'asc'},
+    {'value': 'priority_desc', 'label': 'Priorytet', 'icon': 'chart-no-axes-column-increasing', 'direction': 'desc'},
+    {'value': 'due_at_asc', 'label': 'Najbliższy termin', 'icon': 'calendar-clock', 'direction': 'asc'},
     {'value': 'sections_desc', 'label': 'Najwięcej tablic', 'icon': 'kanban', 'direction': 'desc'},
     {'value': 'cards_desc', 'label': 'Najwięcej kart', 'icon': 'list-checks', 'direction': 'desc'},
-    {'value': 'activity_desc', 'label': 'Ostatnia aktywność', 'icon': 'clock-3', 'direction': 'desc'},
     {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'calendar-plus', 'direction': 'desc'},
+    {'value': 'activity_desc', 'label': 'Ostatnia aktywność', 'icon': 'activity', 'direction': 'desc'},
 )
 PROJECT_SORT_OPTION_MAP = {option['value']: option for option in PROJECT_SORT_OPTIONS}
 TAG_DEFAULT_SORT = 'name_asc'
@@ -86,6 +90,14 @@ def _choice_values_matching_query(choices, query):
         if normalized_query in _normalize_query_label(value)
         or normalized_query in _normalize_query_label(label)
     ]
+
+
+def _integer_filter_value(value):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
 
 
 def _tag_sort_value(value):
@@ -324,7 +336,7 @@ def _project_card_filter(user, workplace):
 
 def _project_directory_queryset(user, workplace=None):
     card_filter = _project_card_filter(user, workplace)
-    return _filter_workplace(KanbanProject.objects.filter(user=user), workplace).annotate(
+    return _filter_workplace(KanbanProject.objects.filter(user=user), workplace).select_related('company', 'responsible_user').annotate(
         sections_count=Count('sections', distinct=True),
         cards_total_count=Count('sections__tasks', filter=card_filter, distinct=True),
         cards_closed_count=Count('sections__tasks', filter=card_filter & Q(sections__tasks__status='closed'), distinct=True),
@@ -338,15 +350,64 @@ def _project_directory_queryset(user, workplace=None):
     )
 
 
-def _project_filter_queryset(user, query='', workplace=None):
+def _project_filter_queryset(
+    user,
+    query='',
+    priority='',
+    status='',
+    stage='',
+    health='',
+    company='',
+    responsible='',
+    workplace=None,
+):
     queryset = _project_directory_queryset(user, workplace=workplace)
     query = (query or '').strip()
     if query:
-        queryset = queryset.filter(
+        priority_matches = _choice_values_matching_query(KanbanProject.PRIORITY_CHOICES, query)
+        status_matches = _choice_values_matching_query(KanbanProject.STATUS_CHOICES, query)
+        stage_matches = _choice_values_matching_query(KanbanProject.STAGE_CHOICES, query)
+        health_matches = _choice_values_matching_query(KanbanProject.HEALTH_CHOICES, query)
+        query_filter = (
             Q(name__icontains=query)
             | Q(description__icontains=query)
             | Q(code__icontains=query)
+            | Q(status__icontains=query)
+            | Q(stage__icontains=query)
+            | Q(health__icontains=query)
+            | Q(source__icontains=query)
+            | Q(company__name__icontains=query)
+            | Q(responsible_user__first_name__icontains=query)
+            | Q(responsible_user__middle_name__icontains=query)
+            | Q(responsible_user__last_name__icontains=query)
+            | Q(responsible_user__email__icontains=query)
+            | Q(responsible_user__username__icontains=query)
         )
+        if priority_matches:
+            query_filter |= Q(priority__in=priority_matches)
+        if status_matches:
+            query_filter |= Q(status__in=status_matches)
+        if stage_matches:
+            query_filter |= Q(stage__in=stage_matches)
+        if health_matches:
+            query_filter |= Q(health__in=health_matches)
+        queryset = queryset.filter(query_filter)
+    if priority in {value for value, _label in KanbanProject.PRIORITY_CHOICES}:
+        queryset = queryset.filter(priority=priority)
+    if status in {value for value, _label in KanbanProject.STATUS_CHOICES}:
+        queryset = queryset.filter(status=status)
+    if stage in {value for value, _label in KanbanProject.STAGE_CHOICES}:
+        queryset = queryset.filter(stage=stage)
+    if health in {value for value, _label in KanbanProject.HEALTH_CHOICES}:
+        queryset = queryset.filter(health=health)
+    if company == 'none':
+        queryset = queryset.filter(company__isnull=True)
+    elif company_id := _integer_filter_value(company):
+        queryset = queryset.filter(company_id=company_id)
+    if responsible == 'none':
+        queryset = queryset.filter(responsible_user__isnull=True)
+    elif responsible_id := _integer_filter_value(responsible):
+        queryset = queryset.filter(responsible_user_id=responsible_id)
     return queryset
 
 
@@ -356,8 +417,45 @@ def _project_sort_queryset(queryset, sort_value):
         return queryset.order_by('-name', 'id')
     if sort_value == 'code_asc':
         return queryset.order_by('code', 'name', 'id')
-    if sort_value == 'code_desc':
-        return queryset.order_by('-code', 'name', 'id')
+    if sort_value == 'company_asc':
+        return queryset.annotate(
+            company_empty_sort=Case(
+                When(company__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('company_empty_sort', 'company__name', 'name', 'id')
+    if sort_value == 'responsible_asc':
+        return queryset.annotate(
+            responsible_empty_sort=Case(
+                When(responsible_user__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by(
+            'responsible_empty_sort',
+            'responsible_user__last_name',
+            'responsible_user__first_name',
+            'responsible_user__username',
+            'name',
+            'id',
+        )
+    if sort_value == 'status_asc':
+        return queryset.annotate(
+            status_sort_rank=_choice_rank_case('status', KanbanProject.STATUS_CHOICES)
+        ).order_by('status_sort_rank', 'name', 'id')
+    if sort_value == 'priority_desc':
+        return queryset.annotate(
+            priority_sort_rank=_choice_rank_case('priority', KanbanProject.PRIORITY_CHOICES)
+        ).order_by('-priority_sort_rank', 'name', 'id')
+    if sort_value == 'due_at_asc':
+        return queryset.annotate(
+            due_empty_sort=Case(
+                When(due_at__isnull=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('due_empty_sort', 'due_at', 'name', 'id')
     if sort_value == 'sections_desc':
         return queryset.order_by('-sections_count', 'name', 'id')
     if sort_value == 'cards_desc':
@@ -367,6 +465,66 @@ def _project_sort_queryset(queryset, sort_value):
     if sort_value == 'created_desc':
         return queryset.order_by('-created_at', 'name', 'id')
     return queryset.order_by('name', 'id')
+
+
+def _project_filter_options(user, workplace=None):
+    queryset = _filter_workplace(
+        KanbanProject.objects.filter(user=user),
+        workplace,
+    ).select_related('company', 'responsible_user')
+    companies = [
+        {'value': str(row['company_id']), 'label': row['company__name']}
+        for row in queryset.filter(company__isnull=False)
+        .values('company_id', 'company__name')
+        .distinct()
+        .order_by('company__name', 'company_id')
+    ]
+    responsible_users = []
+    for row in (
+        queryset.filter(responsible_user__isnull=False)
+        .values(
+            'responsible_user_id',
+            'responsible_user__first_name',
+            'responsible_user__last_name',
+            'responsible_user__username',
+        )
+        .distinct()
+        .order_by('responsible_user__last_name', 'responsible_user__first_name', 'responsible_user__username')
+    ):
+        full_name = ' '.join(
+            part for part in (
+                row['responsible_user__first_name'],
+                row['responsible_user__last_name'],
+            )
+            if part
+        ).strip()
+        responsible_users.append({
+            'value': str(row['responsible_user_id']),
+            'label': full_name or row['responsible_user__username'],
+        })
+
+    if queryset.filter(company__isnull=True).exists():
+        companies.insert(0, {'value': 'none', 'label': 'Brak firmy'})
+    if queryset.filter(responsible_user__isnull=True).exists():
+        responsible_users.insert(0, {'value': 'none', 'label': 'Brak osoby'})
+
+    return {
+        'statuses': _choice_options(KanbanProject.STATUS_CHOICES),
+        'stages': _choice_options(KanbanProject.STAGE_CHOICES),
+        'healths': _choice_options(KanbanProject.HEALTH_CHOICES),
+        'companies': companies,
+        'responsible_users': responsible_users,
+    }
+
+
+def _empty_project_filter_options():
+    return {
+        'statuses': _choice_options(KanbanProject.STATUS_CHOICES),
+        'stages': _choice_options(KanbanProject.STAGE_CHOICES),
+        'healths': _choice_options(KanbanProject.HEALTH_CHOICES),
+        'companies': [],
+        'responsible_users': [],
+    }
 
 
 def _kanban_project_count_label(value, singular, plural):
@@ -392,9 +550,25 @@ def _project_window_for_request(request):
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
+    priority = (request.GET.get('priority') or '').strip()
+    status = (request.GET.get('status') or '').strip()
+    stage = (request.GET.get('stage') or '').strip()
+    health = (request.GET.get('health') or '').strip()
+    company = (request.GET.get('company') or '').strip()
+    responsible = (request.GET.get('responsible') or '').strip()
     sort = _project_sort_value((request.GET.get('sort') or '').strip())
     queryset = _project_sort_queryset(
-        _project_filter_queryset(request.user, query=query, workplace=workplace),
+        _project_filter_queryset(
+            request.user,
+            query=query,
+            priority=priority,
+            status=status,
+            stage=stage,
+            health=health,
+            company=company,
+            responsible=responsible,
+            workplace=workplace,
+        ),
         sort,
     )
     total_projects = queryset.count()
@@ -406,6 +580,12 @@ def _project_window_for_request(request):
 
     base_params = {
         'q': query,
+        'priority': priority,
+        'status': status,
+        'stage': stage,
+        'health': health,
+        'company': company,
+        'responsible': responsible,
         'sort': '' if sort == PROJECT_DEFAULT_SORT else sort,
         'page_size': page_size,
     }
@@ -431,10 +611,17 @@ def _project_window_for_request(request):
     return {
         'projects': projects,
         'query': query,
+        'priority': priority,
+        'status': status,
+        'stage': stage,
+        'health': health,
+        'company': company,
+        'responsible': responsible,
         'sort': sort,
         'sort_param': '' if sort == PROJECT_DEFAULT_SORT else sort,
         'sort_label': PROJECT_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[sort]['direction'],
+        'filters': _project_filter_options(request.user, workplace=workplace),
         'page': current_page,
         'total_pages': total_pages,
         'total_projects': total_projects,
@@ -958,7 +1145,7 @@ def task_group(request, section_id):
 
 def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
-    project_form = KanbanProjectForm(user=request.user)
+    project_form = KanbanProjectForm(user=request.user, workplace=workplace)
     section_form = KanbanSectionForm()
     tag_form = KanbanTagForm(user=request.user, workplace=workplace)
     board_column_form = KanbanBoardColumnForm()
@@ -977,7 +1164,7 @@ def _tasks_page(request, active_section=None):
     task_modal_form = KanbanModalForm(user=request.user, workplace=workplace, project=active_project_for_form, section=active_section)
     project_modal_open = False
     project_rename_modal_open = False
-    project_rename_form = KanbanProjectRenameForm(user=request.user)
+    project_rename_form = KanbanProjectRenameForm(user=request.user, workplace=workplace)
     project_rename_project_id = ''
     section_create_modal_open = False
     section_create_project_id = active_project_id or ''
@@ -1005,7 +1192,7 @@ def _tasks_page(request, active_section=None):
             return redirect('kanban:tasks')
 
         if action == 'create_project':
-            project_form = KanbanProjectForm(request.POST, user=request.user)
+            project_form = KanbanProjectForm(request.POST, user=request.user, workplace=workplace)
             if project_form.is_valid():
                 with transaction.atomic():
                     project = project_form.save(commit=False)
@@ -1043,7 +1230,7 @@ def _tasks_page(request, active_section=None):
 
         if action in ('edit_project', 'rename_project'):
             project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
-            project_rename_form = KanbanProjectRenameForm(request.POST, instance=project, user=request.user)
+            project_rename_form = KanbanProjectRenameForm(request.POST, instance=project, user=request.user, workplace=workplace)
             if project_rename_form.is_valid():
                 project_rename_form.save()
                 messages.success(request, 'Przestrzeń robocza zaktualizowana.')
@@ -1383,10 +1570,17 @@ def _tasks_page(request, active_section=None):
     project_window = _project_window_for_request(request) if active_view == 'projects' else {
         'projects': [],
         'query': '',
+        'priority': '',
+        'status': '',
+        'stage': '',
+        'health': '',
+        'company': '',
+        'responsible': '',
         'sort': PROJECT_DEFAULT_SORT,
         'sort_param': '',
         'sort_label': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['direction'],
+        'filters': _empty_project_filter_options(),
         'page': 1,
         'total_pages': 1,
         'total_projects': 0,
@@ -1459,6 +1653,13 @@ def _tasks_page(request, active_section=None):
         'total_group_count': section_window['total_sections'] if active_view == 'all_groups' else len(all_sections),
         'project_window': project_window,
         'project_query': project_window['query'],
+        'project_priority_filter': project_window['priority'],
+        'project_status_filter': project_window['status'],
+        'project_stage_filter': project_window['stage'],
+        'project_health_filter': project_window['health'],
+        'project_company_filter': project_window['company'],
+        'project_responsible_filter': project_window['responsible'],
+        'project_filter_options': project_window['filters'],
         'project_sort_options': PROJECT_SORT_OPTIONS,
         'project_sort': project_window['sort'],
         'project_sort_param': project_window['sort_param'],

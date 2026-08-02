@@ -22,22 +22,27 @@
                     <span>Firmy</span>
                 </span>
             </div>
-            <div class="tasks-section-actions">
-                <button type="button" class="tasks-tag-topbar-button" aria-haspopup="dialog" aria-controls="company-create-modal" data-open-company>Nowa firma</button>
-            </div>
+            <form class="tasks-titlebar-search tasks-search-actions contacts-titlebar-search" method="get">
+                <label class="tasks-search-field" for="filter-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" name="q" value="{{ query }}" placeholder="Szukaj firmy" autocomplete="off">
+                </label>
+            </form>
         </header>
 
-        <form class="tasks-filterbar contacts-filterbar contacts-search-filterbar" method="get">
+        <div class="tasks-filterbar tasks-filterbar--task-directory contacts-filterbar contacts-toolbar-filterbar">
             <div class="tasks-filterbar-left">
-                <label class="tasks-search-field">
-                    <i data-lucide="search" aria-hidden="true"></i>
-                    <input type="search" name="q" value="{{ query }}" placeholder="Szukaj firmy">
-                </label>
-                <button type="submit" class="tasks-tag-topbar-button">Szukaj</button>
+                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
+                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
+                </button>
             </div>
-        </form>
+            <div class="tasks-filterbar-center"></div>
+            <div class="tasks-filterbar-right">
+                <button type="button" class="tasks-tag-topbar-button" aria-haspopup="dialog" aria-controls="company-create-modal" data-open-company>Nowa firma</button>
+            </div>
+        </div>
 
-        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet{% if not companies %} contacts-directory-board--empty{% endif %}">
             {% if companies %}
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
@@ -89,13 +94,14 @@
                 </div>
             </section>
             {% else %}
-            <section class="tasks-empty-state contacts-empty-state">
+            <section class="tasks-empty-state tasks-empty-state--centered contacts-empty-state contacts-empty-state--directory" role="status" aria-live="polite">
                 <div class="tasks-empty-state__icon" aria-hidden="true">
                     <i data-lucide="building-2" aria-hidden="true"></i>
                 </div>
-                <h2>Brak firm</h2>
-                <p>Utwórz firmę i podpinaj do niej kontakty.</p>
-                <button type="button" class="tasks-modal__submit contacts-empty-action" aria-haspopup="dialog" aria-controls="company-create-modal" data-open-company>Nowa firma</button>
+                <div class="tasks-empty-state__copy">
+                    <h2>{% if query %}Nie znaleziono firm.{% else %}Nie ma jeszcze firm.{% endif %}</h2>
+                    <p>{% if query %}Zmień wyszukiwanie, aby zobaczyć inne wyniki.{% else %}Dodaj pierwszą firmę, aby przechowywać dane i kontakty w jednym miejscu.{% endif %}</p>
+                </div>
             </section>
             {% endif %}
         </div>
