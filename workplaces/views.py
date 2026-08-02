@@ -12,15 +12,21 @@ from .services import enable_workspace_url_scope, scoped_workplace_app_path, set
 def workplaces(request):
     enable_workspace_url_scope(request)
     form = WorkplaceForm()
+    workplace_create_modal_open = False
 
     if request.method == 'POST':
+        workplace_create_modal_open = True
         form = WorkplaceForm(request.POST, request.FILES)
         if form.is_valid():
             name = form.cleaned_data['name']
             if workplaces_for_user(request.user).filter(name__iexact=name).exists():
                 form.add_error('name', 'Masz już miejsce pracy o takiej nazwie.')
             else:
-                workplace = create_workplace_for_user(request.user, name)
+                workplace = create_workplace_for_user(
+                    request.user,
+                    name,
+                    form.cleaned_data.get('workplace_photo'),
+                )
                 set_active_workplace(request, workplace)
                 messages.success(request, 'Miejsce pracy utworzone.')
                 return redirect(scoped_workplace_app_path(workplace, 'tasks'))
@@ -31,6 +37,7 @@ def workplaces(request):
         'workplaces': user_workplaces,
         'form': form,
         'active_workplace': getattr(request, 'workplace', None),
+        'workplace_create_modal_open': workplace_create_modal_open,
     })
 
 

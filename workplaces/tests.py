@@ -44,11 +44,42 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.get(reverse('workplaces:workplaces'))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'workplaces-page workplaces-settings-page')
+        self.assertContains(response, 'tasks-topbar workplaces-task-topbar')
+        self.assertContains(response, 'tasks-titlebar-search tasks-search-actions')
+        self.assertContains(response, 'tasks-filterbar workplaces-task-filterbar')
+        self.assertContains(response, 'data-workplace-create-open')
+        self.assertContains(response, 'id="workplace-create-modal"')
+        self.assertContains(response, 'Nawigacja ustawień')
+        self.assertContains(response, 'Miejsca pracy')
+        self.assertContains(response, reverse('settings'))
+        self.assertNotContains(response, 'workplaces-shell-header')
+        self.assertNotContains(response, 'workplaces-console__toolbar')
+        self.assertNotContains(response, 'dashboard-header workplaces-settings-header')
+        self.assertNotContains(response, 'workplace-inspector')
+        self.assertNotContains(response, 'data-workplace-inspector')
+        self.assertNotContains(response, 'data-workplace-inspector-status')
+        self.assertNotContains(response, 'is-inspected')
         self.assertContains(response, 'data-workplaces-select-all')
         self.assertContains(response, 'data-workplace-id=', count=2)
+        self.assertNotContains(response, 'data-column="logo"')
+        self.assertContains(response, 'workplace-row__avatar', count=2)
         self.assertContains(response, 'Pierwszy Workplace')
         self.assertContains(response, 'Drugi Workplace')
         self.assertNotContains(response, 'Nie moj Workplace')
+
+    def test_workplace_create_renders_in_tasks_project_modal_shell(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('workplaces:workplaces'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-workplace-create-open')
+        self.assertContains(response, 'tasks-modal tasks-project-modal tasks-project-create-modal tasks-issue-modal workplace-create-modal')
+        self.assertContains(response, 'tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form workplace-create-modal__form')
+        self.assertContains(response, 'Nowe miejsce pracy')
+        self.assertContains(response, 'Utwórz miejsce pracy')
+        self.assertNotContains(response, 'workplaces-create-form--filterbar')
 
     def test_workplace_avatar_uses_workplace_specific_background_color(self):
         first_avatar = workplace_avatar(self.first_workplace)
@@ -146,6 +177,16 @@ class WorkplaceSelectionTests(TestCase):
             scoped_workplace_app_path(workplace, 'tasks'),
             fetch_redirect_response=False,
         )
+
+    def test_duplicate_create_reopens_workplace_create_modal(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('workplaces:workplaces'), {'name': self.first_workplace.name})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'workplace-create-modal is-open')
+        self.assertContains(response, 'aria-hidden="false" data-workplace-create-modal')
+        self.assertContains(response, 'Masz już miejsce pracy o takiej nazwie.')
 
     def test_scoped_tasks_url_sets_active_workplace_from_slug(self):
         self.client.force_login(self.user)

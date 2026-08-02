@@ -11,6 +11,12 @@
                 </span>
                 Profil użytkownika
             </a>
+            <a href="{% url 'workplaces:workplaces' %}" class="tasks-rail-link {% if request.resolver_match.app_name == 'workplaces' %}is-active{% endif %}">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <i data-lucide="building-2" aria-hidden="true"></i>
+                </span>
+                Miejsca pracy
+            </a>
         </div>
 
         <div class="tasks-rail-nav-group">

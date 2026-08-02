@@ -25,7 +25,7 @@ class WorkplaceForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Nazwa miejsca pracy',
-                'class': 'form-input',
+                'class': 'tasks-inline-input',
                 'autocomplete': 'off',
             }),
         }

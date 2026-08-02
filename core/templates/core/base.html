@@ -39,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260801-ancore-logo-size">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260802-workplaces-identity-column">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -108,7 +108,7 @@
                 <i class="nav-icon nav-icon--notes" data-lucide="sticky-note" aria-hidden="true"></i>
                 <span class="nav-label">Sticker</span>
             </button>
-            <a href="{% url 'settings' %}" class="nav-link {% if request.resolver_match.view_name == 'settings' %}active{% endif %}" aria-label="Ustawienia Ancore" title="Ustawienia Ancore">
+            <a href="{% url 'settings' %}" class="nav-link {% if request.resolver_match.view_name == 'settings' or request.resolver_match.app_name == 'workplaces' %}active{% endif %}" aria-label="Ustawienia Ancore" title="Ustawienia Ancore">
                 <i class="nav-icon nav-icon--admin" data-lucide="settings" aria-hidden="true"></i>
                 <span class="nav-label">Ustawienia</span>
             </a>
@@ -177,7 +177,7 @@
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}?v=20260801-delete-confirm-redesign"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260801-kanban-column-delete-confirm-v3"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260802-workplaces-table-sheet"></script>
     <script src="{% static 'js/profile.js' %}?v=20260614-app-wide-navigation"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260709-project-company-search"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>

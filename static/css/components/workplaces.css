@@ -2165,6 +2165,39 @@
     box-shadow: 0 12px 32px rgba(19, 28, 44, 0.045);
 }
 
+.workplaces-settings-page {
+    min-height: 0;
+}
+
+.workplaces-settings-main {
+    min-width: 0;
+    min-height: 0;
+    flex: 1 1 auto;
+    display: flex;
+    background: #ffffff;
+}
+
+.workplaces-settings-page .workplaces-console {
+    border: 0;
+    box-shadow: none;
+}
+
+.workplaces-settings-page .workplaces-task-topbar,
+.workplaces-settings-page .workplaces-task-filterbar {
+    border-color: #edf0f3;
+}
+
+.workplaces-settings-page .workplaces-task-topbar .tasks-topbar-title {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.workplaces-create-actions--filterbar {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+}
+
 .workplaces-console svg {
     display: block;
     width: 16px;
@@ -2182,11 +2215,7 @@
 .workplace-row__identity,
 .workplace-row__members,
 .workplace-row__status,
-.workplace-row__actions,
-.workplace-inspector__header,
-.workplace-inspector__status,
-.workplace-inspector__actions button,
-.workplace-inspector__secondary {
+.workplace-row__actions {
     min-width: 0;
 }
 
@@ -2225,10 +2254,7 @@
 .workplaces-directory__bar strong,
 .workplaces-directory__bar span,
 .workplace-row h2,
-.workplace-row small,
-.workplace-inspector h2,
-.workplace-inspector dt,
-.workplace-inspector dd {
+.workplace-row small {
     margin: 0;
 }
 
@@ -2312,7 +2338,7 @@
 .workplaces-console__body {
     flex: 1 1 auto;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+    grid-template-columns: minmax(0, 1fr);
     min-height: 0;
     overflow: hidden;
     background: #ffffff;
@@ -2323,7 +2349,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--wp-line);
+    border-right: 0;
     background: #ffffff;
 }
 
@@ -2497,8 +2523,7 @@
     gap: 0.55rem;
 }
 
-.workplace-row__avatar,
-.workplace-inspector__avatar {
+.workplace-row__avatar {
     --app-text-color: var(--profile-avatar-fg, var(--accent-on-peach));
 
     display: inline-flex;
@@ -2520,8 +2545,7 @@
     font-weight: 400;
 }
 
-.workplace-row__avatar .profile-avatar-icon,
-.workplace-inspector__avatar .profile-avatar-icon {
+.workplace-row__avatar .profile-avatar-icon {
     width: 64%;
     height: 64%;
 }
@@ -2594,8 +2618,7 @@
     font-weight: 600;
 }
 
-.workplace-row__status span,
-.workplace-inspector__status span {
+.workplace-row__status span {
     width: 7px;
     height: 7px;
     flex: 0 0 7px;
@@ -2609,8 +2632,7 @@
     color: #255f42;
 }
 
-.workplace-row__status.is-active span,
-.workplace-inspector__status.is-active span {
+.workplace-row__status.is-active span {
     background: var(--wp-green);
 }
 
@@ -2668,9 +2690,7 @@
     margin: 0;
 }
 
-.workplaces-console .workplace-open-button,
-.workplace-inspector__secondary,
-.workplace-inspector__danger {
+.workplaces-console .workplace-open-button {
     min-height: 34px;
     display: inline-flex;
     align-items: center;
@@ -2744,165 +2764,18 @@
     left: 16px;
 }
 
-.workplace-inspector {
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 1.25rem;
-    overflow-y: auto;
-    background: #ffffff;
-}
-
-.workplace-inspector__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--wp-soft-line);
-}
-
-.workplace-inspector__header div {
-    min-width: 0;
-    display: grid;
-    gap: 0.45rem;
-}
-
-.workplace-inspector h2 {
-    --app-text-color: var(--wp-ink);
-
-    overflow: hidden;
-    color: var(--wp-ink);
-    font-size: 1rem;
-    font-weight: 750;
-    line-height: 1.25;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.workplace-inspector__avatar {
-    width: 42px;
-    height: 42px;
-    flex: 0 0 42px;
-    font-size: 0.86rem;
-}
-
-.workplace-inspector__status {
-    --app-text-color: #555d69;
-
-    width: max-content;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.42rem;
-    color: #555d69;
-    font-size: 0.82rem;
-    font-weight: 700;
-}
-
-.workplace-inspector__status.is-active {
-    --app-text-color: #255f42;
-
-    color: #255f42;
-}
-
-.workplace-inspector__details {
-    display: grid;
-    gap: 0;
-    margin: 1rem 0 0;
-}
-
-.workplace-inspector__details div {
-    min-height: 44px;
-    display: grid;
-    grid-template-columns: minmax(96px, 0.55fr) minmax(0, 1fr);
-    align-items: center;
-    gap: 0.75rem;
-    border-bottom: 1px solid var(--wp-soft-line);
-}
-
-.workplace-inspector dt {
-    --app-text-color: var(--wp-muted);
-
-    color: var(--wp-muted);
-    font-size: 0.78rem;
-    font-weight: 650;
-}
-
-.workplace-inspector dd {
-    --app-text-color: var(--wp-text);
-
-    min-width: 0;
-    overflow: hidden;
-    color: var(--wp-text);
-    font-size: 0.84rem;
-    font-weight: 650;
-    text-align: right;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.workplace-inspector__actions {
-    display: grid;
-    gap: 0.65rem;
-    margin-top: 1.2rem;
-}
-
-.workplace-inspector__actions form,
-.workplace-inspector__actions button,
-.workplace-inspector__actions details {
-    width: 100%;
-}
-
-.workplace-inspector__open {
-    width: 100%;
-}
-
-.workplace-inspector__secondary {
-    list-style: none;
-}
-
-.workplace-inspector__secondary::-webkit-details-marker {
-    display: none;
-}
-
-.workplace-inspector__secondary:hover {
-    border-color: rgba(var(--workplaces-accent-rgb), 0.45);
-    color: var(--wp-accent);
-}
-
-.workplace-settings--inspector .workplace-settings__panel {
-    position: static;
-    width: 100%;
-    margin-top: 0.65rem;
-    border-radius: 7px;
-    box-shadow: none;
-}
-
-.workplace-settings--inspector .workplace-settings__panel::before {
-    display: none;
-}
-
-.workplace-inspector__danger {
-    --app-text-color: var(--wp-danger);
-
-    border-color: rgba(217, 45, 58, 0.35);
-    color: var(--wp-danger);
-}
-
-.workplace-inspector__danger:hover {
-    border-color: var(--wp-danger);
-    background: #fff5f6;
-}
-
-.workplaces-standalone-page .workplace-edit-modal {
+.workplaces-standalone-page .workplace-create-modal,
+.workplaces-standalone-page .workplace-edit-modal,
+.workplaces-settings-page .workplace-create-modal,
+.workplaces-settings-page .workplace-edit-modal {
     --tasks-modal-shell-width: 40vw;
     --tasks-modal-shell-height: var(--app-viewport-height);
     --tasks-modal-max-height: var(--tasks-modal-shell-height);
     --tasks-modal-x-padding: 28px;
 }
 
-.workplaces-standalone-page .workplace-edit-modal__title-chip {
+.workplaces-standalone-page .workplace-edit-modal__title-chip,
+.workplaces-settings-page .workplace-edit-modal__title-chip {
     max-width: min(420px, 70vw);
     padding: 0;
     border: 0;
@@ -2912,6 +2785,30 @@
 
 .workplace-edit-modal__body {
     overflow-x: hidden;
+}
+
+.workplace-create-modal__body {
+    overflow-x: hidden;
+}
+
+.workplace-create-modal__fields,
+.workplace-create-modal__fields.tasks-issue-fields {
+    grid-template-columns: 1fr;
+    max-width: 1180px;
+}
+
+.workplace-create-modal__photo-field {
+    min-width: 0;
+    align-items: stretch;
+    color: #727987;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
+    text-align: left;
+}
+
+.workplace-create-modal__photo-field > span {
+    align-self: flex-start;
+    text-align: left;
 }
 
 .workplace-edit-modal__fields {
@@ -3084,25 +2981,14 @@
     border-bottom: 1px solid var(--wp-soft-line);
 }
 
-@media (max-width: 1120px) {
-    .workplaces-console__body {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .workplaces-directory {
-        border-right: 0;
-        border-bottom: 1px solid var(--wp-line);
-    }
-
-    .workplace-inspector {
-        min-height: 0;
-    }
-}
-
 @media (max-width: 860px) {
     .workplaces-console__toolbar {
         grid-template-columns: minmax(0, 1fr);
         align-items: stretch;
+    }
+
+    .workplaces-task-filterbar .tasks-filterbar-right {
+        width: 100%;
     }
 
     .workplaces-directory__table {
@@ -3127,8 +3013,7 @@
     }
 
     .workplaces-console__toolbar,
-    .workplaces-directory__bar,
-    .workplace-inspector {
+    .workplaces-directory__bar {
         padding-right: 0.85rem;
         padding-left: 0.85rem;
     }
@@ -3146,6 +3031,10 @@
         width: 100%;
     }
 
+    .workplaces-create-actions--filterbar .workplaces-create-button {
+        width: 100%;
+    }
+
     .workplaces-directory__bar {
         align-items: flex-start;
         flex-direction: column;
@@ -3154,18 +3043,10 @@
         padding-bottom: 0.75rem;
     }
 
-    .workplace-inspector__details div {
-        grid-template-columns: minmax(0, 1fr);
-        align-items: start;
-        gap: 0.25rem;
-        padding: 0.65rem 0;
-    }
-
-    .workplace-inspector dd {
-        text-align: left;
-    }
-
-    .workplaces-standalone-page .workplace-edit-modal {
+    .workplaces-standalone-page .workplace-create-modal,
+    .workplaces-standalone-page .workplace-edit-modal,
+    .workplaces-settings-page .workplace-create-modal,
+    .workplaces-settings-page .workplace-edit-modal {
         --tasks-modal-shell-width: 100%;
         --tasks-modal-max-height: var(--app-viewport-height);
         --tasks-modal-x-padding: 1.25rem;
@@ -3186,27 +3067,31 @@
     --tasks-project-row-height: 38px;
     --tasks-project-action-width: 40px;
     --tasks-project-info-width: 40px;
-    --workplaces-logo-width: 72px;
-    --workplaces-name-width: 320px;
+    --workplaces-name-width: 392px;
     --workplaces-slug-width: 320px;
     --workplaces-members-width: 220px;
     --workplaces-context-width: 260px;
     --workplaces-status-width: 170px;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--workplaces-logo-width) var(--workplaces-name-width) var(--workplaces-slug-width) var(--workplaces-members-width) var(--workplaces-context-width) var(--workplaces-status-width);
+    --workplaces-table-min-width: calc(var(--tasks-directory-select-width) + var(--tasks-project-action-width) + var(--tasks-project-info-width) + var(--workplaces-name-width) + var(--workplaces-slug-width) + var(--workplaces-members-width) + var(--workplaces-context-width) + var(--workplaces-status-width));
+    --workplaces-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) minmax(var(--workplaces-name-width), 1.1fr) minmax(var(--workplaces-slug-width), 1fr) minmax(var(--workplaces-members-width), 0.75fr) minmax(var(--workplaces-context-width), 0.9fr) minmax(var(--workplaces-status-width), 0.55fr);
+    --tasks-directory-grid: var(--workplaces-directory-grid);
 
+    width: 100%;
+    min-width: 0;
     overflow: auto;
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-group {
-    min-width: max-content;
+    width: 100%;
+    min-width: var(--workplaces-table-min-width);
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header,
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row {
     display: grid;
     grid-template-columns: var(--tasks-directory-grid);
-    width: max-content;
-    min-width: max-content;
+    width: 100%;
+    min-width: var(--workplaces-table-min-width);
     column-gap: 0;
     padding: 0;
 }
@@ -3304,15 +3189,9 @@
     border-left: 1px solid var(--tasks-directory-column-separator);
 }
 
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > [data-column="logo"],
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="logo"] {
-    justify-content: center;
-    padding: 0;
-    text-align: center;
-}
-
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="name"] {
     border-left: 1px solid var(--tasks-directory-column-separator);
+    gap: 0.75rem;
     padding-left: 0.75rem;
 }
 
@@ -3339,18 +3218,17 @@
     outline: 0;
 }
 
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .workplace-row.is-inspected:not(.checked):not(:has(.tasks-row-checkbox:checked)) {
-    box-shadow: inset 2px 0 0 rgba(var(--workplaces-accent-rgb), 0.36);
-}
-
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .workplace-row.is-inspected:not(.checked):not(:has(.tasks-row-checkbox:checked)) > .tasks-project-sheet__cell:not(.tasks-row-checkbox) {
-    background: #f8f9ff;
-}
-
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-row.is-active {
     box-shadow: inset 3px 0 0 var(--workplaces-accent);
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-row.is-active > .tasks-project-sheet__cell:not(.tasks-row-checkbox) {
     background: var(--workplaces-accent-selected);
+}
+
+@media (max-width: 900px) {
+    .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header,
+    .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row {
+        --tasks-directory-grid: var(--workplaces-directory-grid);
+    }
 }

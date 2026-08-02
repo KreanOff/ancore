@@ -407,6 +407,7 @@ a.settings-option:hover,
 }
 
 .settings-option--profile .dashboard-stat-icon,
+.settings-option--workplaces .dashboard-stat-icon,
 .settings-option--notifications .dashboard-stat-icon,
 .settings-option--integrations .dashboard-stat-icon {
     background: #eef6fb;

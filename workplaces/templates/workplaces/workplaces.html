@@ -1,68 +1,53 @@
-{% load static workplace_avatar %}
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Miejsca pracy | ancore</title>
-    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'img/favicon-ancore-large.png' %}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    {% include 'core/includes/bootstrap.html' %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260801-ancore-logo-size">
-</head>
-<body class="workplaces-standalone-page">
+{% extends 'core/base.html' %}
+{% load workplace_avatar %}
+
+{% block title %}Miejsca pracy | ancore{% endblock %}
+
+{% block page_container_class %}full-width{% endblock %}
+
+{% block secondary_menu_panel_attrs %}{% endblock %}
+
+{% block secondary_menu %}
+    {% include 'core/includes/settings_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="workplaces-page workplaces-settings-page">
     <a class="workplaces-skip-link" href="#workplaces-page-title">Przejdź do listy miejsc pracy</a>
 
-    <header class="workplaces-shell-header">
-        <a href="{% url 'workplaces:workplaces' %}" class="workplaces-brand" aria-label="Ancore">
-            <span class="workplaces-brand__mark">
-                <img src="{% static 'img/logo-ancore.png' %}" alt="">
-            </span>
-            <span class="workplaces-brand__copy">
-                <strong>ANCORE</strong>
-            </span>
-        </a>
-
-        <div class="workplaces-search" role="search">
-            <label class="workplaces-create-label" for="workplaces-search-input">Szukaj</label>
-            <i data-lucide="search" aria-hidden="true"></i>
-            <input id="workplaces-search-input" class="workplaces-search__input" type="search" placeholder="Szukaj" autocomplete="off" data-workplaces-search>
-        </div>
-
-        <nav class="workplaces-account-nav" aria-label="Konto">
-            <a href="{% url 'profile' %}" class="workplaces-account-link">Profil</a>
-            <form method="post" action="{% url 'logout' %}" class="workplaces-logout-form">
-                {% csrf_token %}
-                <button type="submit" class="workplaces-account-link workplaces-account-link--button">Wyloguj</button>
-            </form>
-        </nav>
-    </header>
-
-    <main class="workplaces-standalone-shell">
-        <section class="workplaces-workspace workplaces-workspace--standalone workplaces-console" aria-labelledby="workplaces-page-title">
+    <main class="workplaces-settings-main">
+        <section class="workplaces-workspace workplaces-console" aria-labelledby="workplaces-page-title">
             <h1 id="workplaces-page-title" class="u-sr-only">Miejsca pracy</h1>
-            <header class="workplaces-console__toolbar">
-                <form method="post" class="workplaces-create-form workplaces-create-form--console">
-                    {% csrf_token %}
-                    <label class="workplaces-create-label" for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>
-                    {{ form.name }}
-                    <button type="submit" class="workplaces-primary-button workplaces-create-button">
-                        <i data-lucide="plus" aria-hidden="true"></i>
-                        <span>Dodaj</span>
-                    </button>
-                    {% if form.name.errors %}
-                    <div class="workplaces-form-error" role="alert">
-                        {{ form.name.errors.0 }}
-                    </div>
-                    {% endif %}
-                </form>
+            <header class="tasks-topbar workplaces-task-topbar">
+                <div class="tasks-titlebar-left">
+                    <span class="tasks-topbar-title">
+                        <span>Miejsca pracy</span>
+                    </span>
+                </div>
+                <div class="tasks-titlebar-search tasks-search-actions" role="search">
+                    <label class="tasks-search-field" for="workplaces-search-input">
+                        <i data-lucide="search" aria-hidden="true"></i>
+                        <input id="workplaces-search-input" type="search" placeholder="Szukaj" autocomplete="off" data-workplaces-search>
+                    </label>
+                </div>
             </header>
+
+            <div class="tasks-filterbar workplaces-task-filterbar">
+                <div class="tasks-filterbar-left"></div>
+                <div class="tasks-filterbar-center"></div>
+                <div class="tasks-filterbar-right">
+                    <div class="workplaces-create-actions workplaces-create-actions--filterbar">
+                        <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--project-add workplaces-create-button" aria-haspopup="dialog" aria-expanded="{% if workplace_create_modal_open %}true{% else %}false{% endif %}" aria-controls="workplace-create-modal" data-workplace-create-open>
+                            <span aria-hidden="true"><i data-lucide="plus"></i></span>
+                            <span>Dodaj</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div class="workplaces-console__body">
                 <section class="workplaces-directory" aria-label="Lista miejsc pracy">
-                    <div class="workplaces-directory__table tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet workplaces-project-sheet">
+                    <div class="workplaces-directory__table tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplaces-project-sheet">
                         <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                             <div class="workplaces-directory__head tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
                                 <span class="workplaces-directory__cell tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
@@ -76,7 +61,6 @@
                                     <i data-lucide="settings" aria-hidden="true"></i>
                                     <span class="u-sr-only">Ustawienia</span>
                                 </span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="logo">Logo</span>
                                 <span class="workplaces-directory__cell tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name">Nazwa</span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="slug">Slug</span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members">Członkowie</span>
@@ -87,7 +71,7 @@
                             <div class="workplaces-directory__body tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista miejsc pracy">
                                 {% for workplace in workplaces %}
                                 {% with member_count=workplace.memberships.count %}
-                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-inspected{% endif %}" role="row" data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-slug="{{ workplace.slug }}" data-workplace-members="{{ member_count }}" data-workplace-context="{% if active_workplace and workplace.id == active_workplace.id %}Bieżące miejsce pracy{% else %}Dostępne miejsce pracy{% endif %}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-edit-modal="workplace-edit-modal-{{ workplace.id }}">
+                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" role="row" data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-slug="{{ workplace.slug }}" data-workplace-members="{{ member_count }}" data-workplace-context="{% if active_workplace and workplace.id == active_workplace.id %}Bieżące miejsce pracy{% else %}Dostępne miejsce pracy{% endif %}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-edit-modal="workplace-edit-modal-{{ workplace.id }}">
                                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz miejsce pracy {{ workplace.name }}" data-workplace-id="{{ workplace.id }}" data-workplace-checkbox>
                                     <div class="workplaces-directory__cell workplace-row__open tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                                         <form method="post" action="{% url 'workplaces:switch' workplace.id %}">
@@ -103,7 +87,7 @@
                                         </button>
                                     </div>
                                     {% workplace_avatar workplace as workplace_logo %}
-                                    <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="logo" role="cell">
+                                    <span class="workplaces-directory__cell workplace-row__name tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell">
                                         <span class="profile-avatar workplace-row__avatar {{ workplace_logo.color_class }} {% if workplace_logo.photo_url %}has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
                                             {% if workplace_logo.photo_url %}
                                             <img src="{{ workplace_logo.photo_url }}" alt="">
@@ -111,8 +95,6 @@
                                             <i class="profile-avatar-icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>
                                             {% endif %}
                                         </span>
-                                    </span>
-                                    <span class="workplaces-directory__cell workplace-row__name tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell">
                                         <span class="tasks-row-title-main">
                                             <span class="tasks-row-title-text">{{ workplace.name }}</span>
                                         </span>
@@ -139,82 +121,68 @@
                         </section>
                     </div>
                 </section>
-
-                <aside class="workplace-inspector" aria-label="Szczegóły miejsca pracy" data-workplace-inspector>
-                    {% if active_workplace %}
-                    {% with workplace=active_workplace member_count=active_workplace.memberships.count %}
-                    {% workplace_avatar workplace as workplace_logo %}
-                    <header class="workplace-inspector__header">
-                        <div>
-                            <h2 data-workplace-inspector-title>{{ workplace.name }}</h2>
-                            <span class="workplace-inspector__status is-active" data-workplace-inspector-status>
-                                <span aria-hidden="true"></span>
-                                <span data-workplace-inspector-status-label>Aktywny</span>
-                            </span>
-                        </div>
-                        <span class="profile-avatar workplace-inspector__avatar {{ workplace_logo.color_class }} {% if workplace_logo.photo_url %}has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true" data-workplace-inspector-avatar>
-                            {% if workplace_logo.photo_url %}
-                            <img src="{{ workplace_logo.photo_url }}" alt="">
-                            {% else %}
-                            <i class="profile-avatar-icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>
-                            {% endif %}
-                        </span>
-                    </header>
-
-                    <dl class="workplace-inspector__details">
-                        <div>
-                            <dt>Nazwa</dt>
-                            <dd data-workplace-inspector-name>{{ workplace.name }}</dd>
-                        </div>
-                        <div>
-                            <dt>Slug</dt>
-                            <dd data-workplace-inspector-slug>{{ workplace.slug }}</dd>
-                        </div>
-                        <div>
-                            <dt>Członkowie</dt>
-                            <dd data-workplace-inspector-members>{{ member_count }}</dd>
-                        </div>
-                        <div>
-                            <dt>Kontekst</dt>
-                            <dd data-workplace-inspector-context>Bieżące miejsce pracy</dd>
-                        </div>
-                        <div>
-                            <dt>Użytkownik</dt>
-                            <dd>{% firstof request.user.get_full_name request.user.username %}</dd>
-                        </div>
-                    </dl>
-
-                    <div class="workplace-inspector__actions">
-                        <form method="post" action="{% url 'workplaces:switch' workplace.id %}" data-workplace-inspector-open-form>
-                            {% csrf_token %}
-                            <button type="submit" class="workplaces-primary-button workplace-inspector__open">
-                                <i data-lucide="arrow-up-right" aria-hidden="true"></i>
-                                <span>Otwórz miejsce pracy</span>
-                            </button>
-                        </form>
-                        <button type="button" class="workplace-inspector__secondary" aria-haspopup="dialog" aria-expanded="false" aria-controls="workplace-edit-modal-{{ workplace.id }}" data-workplace-edit-open="workplace-edit-modal-{{ workplace.id }}" data-workplace-inspector-edit>
-                            <i data-lucide="pencil" aria-hidden="true"></i>
-                            <span>Edytuj miejsce pracy</span>
-                        </button>
-                        <form method="post" action="{% url 'workplaces:delete' workplace.id %}" data-workplace-inspector-delete-form>
-                            {% csrf_token %}
-                            <button type="submit" class="workplace-inspector__danger">
-                                <i data-lucide="trash-2" aria-hidden="true"></i>
-                                <span>Usuń miejsce pracy</span>
-                            </button>
-                        </form>
-                    </div>
-                    {% endwith %}
-                    {% else %}
-                    <div class="workplaces-empty workplaces-empty--console">
-                        <h2>Brak aktywnego miejsca pracy.</h2>
-                        <p>Otwórz jedno z dostępnych miejsc pracy.</p>
-                    </div>
-                    {% endif %}
-                </aside>
             </div>
         </section>
     </main>
+
+    <div class="tasks-modal tasks-project-modal tasks-project-create-modal tasks-issue-modal workplace-create-modal{% if workplace_create_modal_open %} is-open{% endif %}" id="workplace-create-modal" role="dialog" aria-modal="true" aria-labelledby="workplace-create-modal-title" aria-hidden="{% if workplace_create_modal_open %}false{% else %}true{% endif %}" data-workplace-create-modal>
+        <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-create-modal__dialog tasks-issue-modal__dialog workplace-create-modal__dialog">
+            <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form workplace-create-modal__form" id="workplace-create-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                <header class="tasks-modal__header tasks-project-create-modal__header tasks-issue-modal__header workplace-create-modal__header">
+                    <div class="tasks-issue-modal__crumbs">
+                        <button type="button" class="tasks-issue-close" data-close-workplace-create-modal aria-label="Wróć" title="Wróć">
+                            <i data-lucide="arrow-left" aria-hidden="true"></i>
+                        </button>
+                        <span class="tasks-issue-divider" aria-hidden="true"></span>
+                        <strong id="workplace-create-modal-title">Nowe miejsce pracy</strong>
+                    </div>
+                </header>
+
+                <div class="tasks-modal__body tasks-project-modal__body tasks-project-create-modal__body tasks-issue-modal__body workplace-create-modal__body">
+                    {% if form.errors %}
+                    <div class="tasks-modal__errors">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>
+                    {{ form.name }}
+
+                    <section class="tasks-project-parameters workplace-create-modal__parameters" aria-labelledby="workplace-create-parameters-title">
+                        <h3 class="u-sr-only" id="workplace-create-parameters-title">Parametry miejsca pracy</h3>
+                        <div class="tasks-project-create-fields tasks-issue-fields workplace-create-modal__fields">
+                            <div class="tasks-issue-field workplace-edit-modal__photo-field workplace-create-modal__photo-field">
+                                <span>Logo</span>
+                                <label class="workplace-edit-modal__photo-control workplace-create-modal__photo-control" for="{{ form.workplace_photo.id_for_label }}">
+                                    <span class="profile-avatar profile-avatar--teal workplace-edit-modal__avatar workplace-create-modal__avatar" aria-hidden="true">
+                                        <i class="profile-avatar-icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>
+                                    </span>
+                                    <span class="workplace-edit-modal__photo-copy">
+                                        <strong>Dodaj zdjęcie</strong>
+                                        <small data-workplace-create-photo-name>PNG, JPG lub WebP</small>
+                                    </span>
+                                    <i data-lucide="upload" aria-hidden="true"></i>
+                                </label>
+                                <input id="{{ form.workplace_photo.id_for_label }}" type="file" name="workplace_photo" accept="image/*" class="workplace-edit-modal__file-input" data-workplace-create-photo-input>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <footer class="tasks-modal__footer tasks-project-create-modal__footer tasks-issue-modal__footer workplace-create-modal__footer">
+                    <button type="submit" class="tasks-modal__submit" id="workplace-create-submit">Utwórz miejsce pracy</button>
+                </footer>
+            </form>
+        </div>
+    </div>
 
     {% for workplace in workplaces %}
     {% workplace_avatar workplace as workplace_logo %}
@@ -284,49 +252,14 @@
     </div>
     {% endfor %}
 
-    {% if messages %}
-    <div class="notifications-container">
-        {% for message in messages %}
-        <div class="notification {{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
-    <script src="{% static 'js/lucide-icons.js' %}?v=20260609-lucide-icons"></script>
-    <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>
     <script>
         (function() {
             const selectAll = document.querySelector('[data-workplaces-select-all]');
             const searchInput = document.querySelector('[data-workplaces-search]');
             const checkboxes = Array.from(document.querySelectorAll('[data-workplace-checkbox]'));
             const rows = Array.from(document.querySelectorAll('.workplace-row'));
-            const inspector = document.querySelector('[data-workplace-inspector]');
-            const inspectorFields = inspector ? {
-                title: inspector.querySelector('[data-workplace-inspector-title]'),
-                status: inspector.querySelector('[data-workplace-inspector-status]'),
-                statusLabel: inspector.querySelector('[data-workplace-inspector-status-label]'),
-                avatar: inspector.querySelector('[data-workplace-inspector-avatar]'),
-                name: inspector.querySelector('[data-workplace-inspector-name]'),
-                slug: inspector.querySelector('[data-workplace-inspector-slug]'),
-                members: inspector.querySelector('[data-workplace-inspector-members]'),
-                context: inspector.querySelector('[data-workplace-inspector-context]'),
-                openForm: inspector.querySelector('[data-workplace-inspector-open-form]'),
-                editButton: inspector.querySelector('[data-workplace-inspector-edit]'),
-                deleteForm: inspector.querySelector('[data-workplace-inspector-delete-form]'),
-            } : null;
 
             if (!selectAll) return;
-
-            function isInteractiveClick(event) {
-                return Boolean(event.target.closest('input, button, a, select, textarea, label, summary'));
-            }
-
-            function setText(element, value) {
-                if (element) {
-                    element.textContent = value || '';
-                }
-            }
 
             function normalizeSearchValue(value) {
                 return (value || '').toString().trim().toLocaleLowerCase('pl-PL');
@@ -341,46 +274,6 @@
                     data.workplaceContext,
                     data.workplaceStatus,
                 ].join(' '));
-            }
-
-            function updateInspector(row) {
-                if (!inspectorFields) return;
-
-                const data = row.dataset;
-                const isActive = data.workplaceIsActive === 'true';
-                const sourceAvatar = row.querySelector('[data-column="logo"] .profile-avatar');
-
-                setText(inspectorFields.title, data.workplaceName);
-                setText(inspectorFields.statusLabel, data.workplaceStatus);
-                setText(inspectorFields.name, data.workplaceName);
-                setText(inspectorFields.slug, data.workplaceSlug);
-                setText(inspectorFields.members, data.workplaceMembers);
-                setText(inspectorFields.context, data.workplaceContext);
-
-                inspectorFields.status?.classList.toggle('is-active', isActive);
-
-                if (sourceAvatar && inspectorFields.avatar) {
-                    inspectorFields.avatar.className = sourceAvatar.className.replace(/\bworkplace-row__avatar\b/g, 'workplace-inspector__avatar');
-                    inspectorFields.avatar.setAttribute('style', sourceAvatar.getAttribute('style') || '');
-                    inspectorFields.avatar.innerHTML = sourceAvatar.innerHTML;
-                    window.AncoreIcons?.render?.(inspectorFields.avatar);
-                }
-
-                if (inspectorFields.openForm && data.workplaceSwitchUrl) {
-                    inspectorFields.openForm.action = data.workplaceSwitchUrl;
-                }
-
-                if (inspectorFields.deleteForm && data.workplaceDeleteUrl) {
-                    inspectorFields.deleteForm.action = data.workplaceDeleteUrl;
-                }
-
-                if (inspectorFields.editButton && data.workplaceEditModal) {
-                    inspectorFields.editButton.dataset.workplaceEditOpen = data.workplaceEditModal;
-                    inspectorFields.editButton.setAttribute('aria-controls', data.workplaceEditModal);
-                    inspectorFields.editButton.setAttribute('aria-expanded', 'false');
-                }
-
-                rows.forEach(item => item.classList.toggle('is-inspected', item === row));
             }
 
             function syncSelectionState() {
@@ -403,23 +296,12 @@
                 if (!searchInput) return;
 
                 const query = normalizeSearchValue(searchInput.value);
-                let firstVisibleRow = null;
-                let inspectedRowVisible = false;
 
                 rows.forEach(row => {
                     const isVisible = !query || rowSearchText(row).includes(query);
                     row.hidden = !isVisible;
                     row.setAttribute('aria-hidden', String(!isVisible));
-
-                    if (isVisible) {
-                        firstVisibleRow = firstVisibleRow || row;
-                        inspectedRowVisible = inspectedRowVisible || row.classList.contains('is-inspected');
-                    }
                 });
-
-                if (firstVisibleRow && !inspectedRowVisible) {
-                    updateInspector(firstVisibleRow);
-                }
 
                 syncSelectionState();
             }
@@ -438,17 +320,77 @@
                 checkbox.addEventListener('change', syncSelectionState);
             });
 
-            rows.forEach(row => {
-                row.addEventListener('click', event => {
-                    if (isInteractiveClick(event)) return;
-
-                    event.preventDefault();
-                    updateInspector(row);
-                });
-            });
-
             searchInput?.addEventListener('input', applyWorkplaceSearch);
             syncSelectionState();
+        })();
+
+        (function() {
+            const openButton = document.querySelector('[data-workplace-create-open]');
+            const modal = document.querySelector('[data-workplace-create-modal]');
+            const form = document.getElementById('workplace-create-form');
+            const nameInput = form?.querySelector('[name="name"]');
+            const submitButton = document.getElementById('workplace-create-submit');
+            const photoInput = modal?.querySelector('[data-workplace-create-photo-input]');
+            const photoName = modal?.querySelector('[data-workplace-create-photo-name]');
+
+            if (!openButton || !modal) return;
+
+            function updateSubmitState() {
+                if (!submitButton || !nameInput) return;
+                submitButton.disabled = nameInput.value.trim().length === 0;
+            }
+
+            function closeModal() {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+                openButton.setAttribute('aria-expanded', 'false');
+
+                if (!document.querySelector('.tasks-modal.is-open')) {
+                    document.body.classList.remove('modal-open');
+                }
+            }
+
+            function openModal() {
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+                openButton.setAttribute('aria-expanded', 'true');
+                document.body.classList.add('modal-open');
+                updateSubmitState();
+                window.setTimeout(() => nameInput?.focus(), 50);
+            }
+
+            openButton.addEventListener('click', openModal);
+            nameInput?.addEventListener('input', updateSubmitState);
+
+            modal.querySelectorAll('[data-close-workplace-create-modal]').forEach(button => {
+                button.addEventListener('click', closeModal);
+            });
+
+            modal.addEventListener('click', event => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            photoInput?.addEventListener('change', function() {
+                if (!photoName) return;
+                photoName.textContent = this.files && this.files.length ? this.files[0].name : 'PNG, JPG lub WebP';
+            });
+
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+                    closeModal();
+                }
+            });
+
+            if (modal.classList.contains('is-open')) {
+                document.body.classList.add('modal-open');
+                openButton.setAttribute('aria-expanded', 'true');
+                updateSubmitState();
+                window.setTimeout(() => nameInput?.focus(), 50);
+            } else {
+                updateSubmitState();
+            }
         })();
 
         (function() {
@@ -529,5 +471,5 @@
             });
         })();
     </script>
-</body>
-</html>
+</div>
+{% endblock %}

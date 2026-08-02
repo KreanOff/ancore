@@ -6529,6 +6529,14 @@ function initTasksPage() {
             related_tags: 220,
             task_count: 250
         };
+        const workplaceColumnDefaultWidths = {
+            logo: 72,
+            name: 320,
+            slug: 320,
+            members: 220,
+            context: 260,
+            status: 170
+        };
         const columnMinimums = {
             select: 18,
             action: 40,
@@ -6562,6 +6570,14 @@ function initTasksPage() {
             automation: 160,
             related_tags: 150,
             task_count: 120
+        };
+        const workplaceColumnMinimums = {
+            logo: 64,
+            name: 180,
+            slug: 180,
+            members: 150,
+            context: 170,
+            status: 120
         };
         const fixedColumns = new Set(['spacer']);
         const nonResizableColumns = new Set(['action', 'info', 'notes', 'spacer']);
@@ -6744,13 +6760,17 @@ function initTasksPage() {
             const cells = getDirectoryHeaderCells(board, header);
             const storedWidths = readStoredDirectoryWidths(cells);
             if (!Object.keys(storedWidths).length) {
+                if (isWorkplaceDirectoryBoard(board)) {
+                    board.style.removeProperty('--tasks-directory-grid');
+                    return;
+                }
                 if (isUniformDirectoryBoard(board)) {
                     setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
                 }
                 return;
             }
 
-            const widths = isUniformDirectoryBoard(board)
+            const widths = isUniformDirectoryBoard(board) && !isWorkplaceDirectoryBoard(board)
                 ? getDefaultDirectoryTrackWidths(cells)
                 : getDirectoryTrackWidths(header, cells);
             let hasStoredColumn = false;
@@ -6814,6 +6834,10 @@ function initTasksPage() {
 
             const cells = getDirectoryHeaderCells(board, header);
             removeStoredDirectoryWidths(cells);
+            if (isWorkplaceDirectoryBoard(board)) {
+                board.style.removeProperty('--tasks-directory-grid');
+                return;
+            }
             setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
         }
 
@@ -6837,6 +6861,9 @@ function initTasksPage() {
                 if (column === 'select') return getDirectorySelectColumnWidth(cell);
                 if (isTagDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(tagColumnDefaultWidths, column)) {
                     return tagColumnDefaultWidths[column];
+                }
+                if (isWorkplaceDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(workplaceColumnDefaultWidths, column)) {
+                    return workplaceColumnDefaultWidths[column];
                 }
                 if (Object.prototype.hasOwnProperty.call(columnDefaultWidths, column)) {
                     return columnDefaultWidths[column];
@@ -6863,6 +6890,9 @@ function initTasksPage() {
             if (isTagDirectoryCell(sourceCell) && Object.prototype.hasOwnProperty.call(tagColumnMinimums, column)) {
                 return tagColumnMinimums[column];
             }
+            if (isWorkplaceDirectoryCell(sourceCell) && Object.prototype.hasOwnProperty.call(workplaceColumnMinimums, column)) {
+                return workplaceColumnMinimums[column];
+            }
             if (Object.prototype.hasOwnProperty.call(columnMinimums, column)) {
                 return columnMinimums[column];
             }
@@ -6873,6 +6903,10 @@ function initTasksPage() {
             return Boolean(cell?.closest('.tasks-tag-sheet'));
         }
 
+        function isWorkplaceDirectoryCell(cell) {
+            return Boolean(cell?.closest('.workplaces-project-sheet'));
+        }
+
         function getDirectoryStorageColumn(column) {
             return column || '';
         }
@@ -6881,6 +6915,7 @@ function initTasksPage() {
             const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
 
             if (pathSegment === 'contacts') return 'contacts';
+            if (pathSegment === 'workplaces') return 'workplaces';
             if (pathSegment === 'kanban') return 'kanban';
             return taskAppSegment;
         }
@@ -6909,6 +6944,10 @@ function initTasksPage() {
         function isManagedDirectoryBoard(board) {
             return board.classList.contains('tasks-project-sheet--selectable')
                 || board.classList.contains('tasks-tag-sheet');
+        }
+
+        function isWorkplaceDirectoryBoard(board) {
+            return board.classList.contains('workplaces-project-sheet');
         }
 
         function getDirectoryColumnLabel(cell) {

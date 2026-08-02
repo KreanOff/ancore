@@ -94,8 +94,11 @@ class WorkplaceMembership(models.Model):
         return f'{self.user} - {self.workplace}'
 
 
-def create_workplace_for_user(user, name):
+def create_workplace_for_user(user, name, workplace_photo=None):
     with transaction.atomic():
-        workplace = Workplace.objects.create(owner=user, name=name)
+        workplace_data = {'owner': user, 'name': name}
+        if workplace_photo:
+            workplace_data['workplace_photo'] = workplace_photo
+        workplace = Workplace.objects.create(**workplace_data)
         workplace.ensure_owner_membership()
     return workplace

@@ -41,6 +41,8 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'Sesja')
         self.assertContains(response, f'action="{reverse("logout")}"')
         self.assertContains(response, 'Wyloguj się')
+        self.assertContains(response, reverse('workplaces:workplaces'))
+        self.assertContains(response, 'Miejsca pracy')
         self.assertContains(response, 'Bezpieczeństwo')
         self.assertContains(response, 'Powiadomienia')
         self.assertContains(response, 'Wygląd')
