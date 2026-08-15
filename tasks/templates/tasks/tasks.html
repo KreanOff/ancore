@@ -261,6 +261,7 @@
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ project_default_sort }}">
                     <button type="button" class="tasks-icon-button tasks-sort-button{% if project_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ project_sort_label }}" title="Sortowanie: {{ project_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if project_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ project_sort_direction }}">
                         <i data-lucide="{% if project_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+                        {% if project_sort_param %}<span class="tasks-sort-button__label">{{ project_sort_label }}</span>{% endif %}
                     </button>
                     <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie projektów">
                         {% for option in project_sort_options %}
@@ -275,6 +276,7 @@
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ group_default_sort }}">
                     <button type="button" class="tasks-icon-button tasks-sort-button{% if group_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ group_sort_label }}" title="Sortowanie: {{ group_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if group_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ group_sort_direction }}">
                         <i data-lucide="{% if group_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+                        {% if group_sort_param %}<span class="tasks-sort-button__label">{{ group_sort_label }}</span>{% endif %}
                     </button>
                     <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie grup">
                         {% for option in group_sort_options %}
@@ -289,6 +291,7 @@
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ task_default_sort }}">
                     <button type="button" class="tasks-icon-button tasks-sort-button{% if task_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ task_sort_label }}" title="Sortowanie: {{ task_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if task_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ task_sort_direction }}">
                         <i data-lucide="{% if task_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+                        {% if task_sort_param %}<span class="tasks-sort-button__label">{{ task_sort_label }}</span>{% endif %}
                     </button>
                     <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie zadań">
                         {% for option in task_sort_options %}
@@ -303,6 +306,7 @@
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ tag_default_sort }}">
                     <button type="button" class="tasks-icon-button tasks-sort-button{% if tag_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ tag_sort_label }}" title="Sortowanie: {{ tag_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if tag_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ tag_sort_direction }}">
                         <i data-lucide="{% if tag_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+                        {% if tag_sort_param %}<span class="tasks-sort-button__label">{{ tag_sort_label }}</span>{% endif %}
                     </button>
                     <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie tagów">
                         {% for option in tag_sort_options %}
@@ -1697,6 +1701,7 @@
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
                                         <span class="tasks-filter-priority-icon" aria-hidden="true" data-inline-priority-icon></span>
                                         <span data-inline-select-label>Priorytet</span>
+                                        <i data-lucide="chevron-down" data-project-priority-caret aria-hidden="true"></i>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet projektu">
                                         {% for value, label in project_form.priority.field.choices %}
@@ -1781,33 +1786,33 @@
                 <textarea id="project-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ project_rename_form.description.value|default_if_none:'' }}</textarea>
 
                 <section class="tasks-project-parameters" aria-labelledby="project-rename-parameters-title">
-                    <h3 id="project-rename-parameters-title">Parametry projektu</h3>
+                    <h3 class="u-sr-only" id="project-rename-parameters-title">Parametry projektu</h3>
                     <div class="tasks-project-create-fields tasks-issue-fields">
-                        <label>
+                        <label class="tasks-project-create-field--code">
                             <span>Kod projektu</span>
                             <input type="text" id="project-rename-code" name="code" class="tasks-inline-input" placeholder="Kod projektu" value="{{ project_rename_form.code.value|default_if_none:'' }}" maxlength="20">
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--company">
                             <span>Firma</span>
                             {{ project_rename_form.company }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--responsible">
                             <span>Odpowiedzialny</span>
                             {{ project_rename_form.responsible_user }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--status">
                             <span>Status projektu</span>
                             {{ project_rename_form.status }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--stage">
                             <span>Etap</span>
                             {{ project_rename_form.stage }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--health">
                             <span>Kondycja</span>
                             {{ project_rename_form.health }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--priority">
                             <span>Priorytet</span>
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ project_rename_form.priority }}
@@ -1815,6 +1820,7 @@
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
                                         <span class="tasks-filter-priority-icon" aria-hidden="true" data-inline-priority-icon></span>
                                         <span data-inline-select-label>Priorytet</span>
+                                        <i data-lucide="chevron-down" data-project-priority-caret aria-hidden="true"></i>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet projektu">
                                         {% for value, label in project_rename_form.priority.field.choices %}
@@ -1829,25 +1835,25 @@
                                 </div>
                             </div>
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--source">
+                            <span>Źródło</span>
+                            {{ project_rename_form.source }}
+                        </label>
+                        <label class="tasks-project-create-field--start">
                             <span>Start</span>
                             {{ project_rename_form.start_at }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--due">
                             <span>Termin</span>
                             {{ project_rename_form.due_at }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--budget">
                             <span>Budżet</span>
                             {{ project_rename_form.budget_amount }}
                         </label>
-                        <label>
+                        <label class="tasks-project-create-field--currency">
                             <span>Waluta</span>
                             {{ project_rename_form.currency }}
-                        </label>
-                        <label>
-                            <span>Źródło</span>
-                            {{ project_rename_form.source }}
                         </label>
                     </div>
                 </section>

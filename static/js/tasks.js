@@ -6588,6 +6588,7 @@ function initTasksPage() {
         const taskDirectoryBoards = Array.from(boards).filter(isUniformDirectoryBoard);
         const managedDirectoryBoards = taskDirectoryBoards.filter(isManagedDirectoryBoard);
         const columnManagerDrafts = new WeakMap();
+        const directoryColumnLayoutStates = new WeakMap();
 
         managedDirectoryBoards.forEach(ensureDirectoryDefaultColumnOrder);
         initDirectoryColumnManagers();
@@ -7040,7 +7041,7 @@ function initTasksPage() {
                 }, pageListenerOptions);
 
                 search?.addEventListener('input', () => {
-                    renderDirectoryColumnManager(manager, board);
+                    filterDirectoryColumnManager(manager);
                 }, pageListenerOptions);
 
                 search?.addEventListener('keydown', event => {
@@ -7077,8 +7078,7 @@ function initTasksPage() {
 
             const draft = getDirectoryColumnManagerDraft(manager, board);
             const hiddenColumns = new Set(draft.hidden);
-            const searchTerm = getDirectoryColumnManagerSearchTerm(manager);
-            let visibleCount = 0;
+            const fragment = document.createDocumentFragment();
 
             list.innerHTML = '';
 
@@ -7090,15 +7090,10 @@ function initTasksPage() {
                 const drag = document.createElement('span');
                 const displayLabel = getDirectoryColumnDisplayLabel(cell);
 
-                if (searchTerm && !displayLabel.toLowerCase().includes(searchTerm)) {
-                    return;
-                }
-
-                visibleCount += 1;
-
                 item.className = 'tasks-directory-column-item';
                 item.draggable = true;
                 item.dataset.directoryColumnItem = column;
+                item.dataset.directoryColumnSearch = displayLabel.toLowerCase();
 
                 checkbox.type = 'checkbox';
                 checkbox.checked = !hiddenColumns.has(column);
@@ -7113,11 +7108,12 @@ function initTasksPage() {
                 item.appendChild(checkbox);
                 item.appendChild(label);
                 item.appendChild(drag);
-                list.appendChild(item);
+                fragment.appendChild(item);
 
                 checkbox.addEventListener('change', () => {
                     updateDirectoryColumnDraftVisibility(manager, board, column, checkbox.checked);
-                    renderDirectoryColumnManager(manager, board);
+                    const nextDraft = getDirectoryColumnManagerDraft(manager, board);
+                    checkbox.checked = !nextDraft.hidden.includes(column);
                 }, pageListenerOptions);
 
                 item.addEventListener('dragstart', event => {
@@ -7131,12 +7127,13 @@ function initTasksPage() {
                 }, pageListenerOptions);
             });
 
-            if (!visibleCount) {
-                const empty = document.createElement('div');
-                empty.className = 'tasks-directory-column-empty';
-                empty.textContent = 'Brak kolumn';
-                list.appendChild(empty);
-            }
+            const empty = document.createElement('div');
+            empty.className = 'tasks-directory-column-empty';
+            empty.textContent = 'Brak kolumn';
+            empty.hidden = true;
+            fragment.appendChild(empty);
+            list.appendChild(fragment);
+            filterDirectoryColumnManager(manager);
 
             list.ondragover = event => {
                 const draggingItem = list.querySelector('.tasks-directory-column-item.is-dragging');
@@ -7152,7 +7149,7 @@ function initTasksPage() {
             };
 
             list.ondrop = event => {
-                const filteredOrder = Array.from(list.querySelectorAll('[data-directory-column-item]'))
+                const filteredOrder = Array.from(list.querySelectorAll('[data-directory-column-item]:not([hidden])'))
                     .map(item => item.dataset.directoryColumnItem)
                     .filter(Boolean);
 
@@ -7166,6 +7163,23 @@ function initTasksPage() {
             } else if (window.lucide?.createIcons) {
                 window.lucide.createIcons();
             }
+        }
+
+        function filterDirectoryColumnManager(manager) {
+            const list = manager.querySelector('[data-directory-column-manager-list]');
+            if (!list) return;
+
+            const searchTerm = getDirectoryColumnManagerSearchTerm(manager);
+            let visibleCount = 0;
+
+            list.querySelectorAll('[data-directory-column-item]').forEach(item => {
+                const matches = !searchTerm || (item.dataset.directoryColumnSearch || '').includes(searchTerm);
+                item.hidden = !matches;
+                if (matches) visibleCount += 1;
+            });
+
+            const empty = list.querySelector('.tasks-directory-column-empty');
+            if (empty) empty.hidden = visibleCount > 0;
         }
 
         function openDirectoryColumnManager(manager, board) {
@@ -7295,36 +7309,101 @@ function initTasksPage() {
             const fixedOrderedColumns = getDirectoryDefaultColumnOrder(board)
                 .filter(column => column && isDirectoryColumnLayoutFixed(column) && column !== 'select' && column !== 'spacer');
             const orderedColumns = ['select', ...fixedOrderedColumns, ...columns, 'spacer'];
+            const cachedState = directoryColumnLayoutStates.get(board);
+            const previousState = cachedState || readDirectoryColumnLayoutStateFromDom(board);
+            const orderChanged = !directoryColumnArraysEqual(previousState.order, columns);
+            const previousHiddenColumns = new Set(previousState.hidden);
+            const visibilityChangedColumns = new Set([
+                ...Array.from(previousHiddenColumns).filter(column => !hiddenColumns.has(column)),
+                ...Array.from(hiddenColumns).filter(column => !previousHiddenColumns.has(column))
+            ]);
+
+            if (!orderChanged && !visibilityChangedColumns.size) {
+                if (!cachedState) {
+                    [header, ...board.querySelectorAll('.tasks-directory-list .tasks-directory-row')]
+                        .forEach(markDirectoryLastVisibleColumn);
+                }
+                directoryColumnLayoutStates.set(board, { order: [...columns], hidden: Array.from(hiddenColumns) });
+                return;
+            }
 
             [header, ...board.querySelectorAll('.tasks-directory-list .tasks-directory-row')].forEach(row => {
                 const cells = Array.from(row.querySelectorAll(':scope > [data-column]'));
-                const cellsByColumn = new Map(cells.map(cell => [cell.dataset.column || '', cell]));
 
-                orderedColumns.forEach(column => {
-                    const cell = cellsByColumn.get(column);
-                    if (cell) row.appendChild(cell);
-                });
+                if (orderChanged) {
+                    reorderDirectoryRowCells(row, cells, orderedColumns);
+                }
 
-                cells.forEach(cell => {
-                    const column = cell.dataset.column || '';
-                    if (!orderedColumns.includes(column)) row.appendChild(cell);
-                    cell.hidden = hiddenColumns.has(column) && !isDirectoryColumnLayoutFixed(column);
-                });
+                if (visibilityChangedColumns.size) {
+                    cells.forEach(cell => {
+                        const column = cell.dataset.column || '';
+                        if (!visibilityChangedColumns.has(column)) return;
+                        cell.hidden = hiddenColumns.has(column) && !isDirectoryColumnLayoutFixed(column);
+                    });
+                }
 
                 markDirectoryLastVisibleColumn(row);
             });
+
+            directoryColumnLayoutStates.set(board, { order: [...columns], hidden: Array.from(hiddenColumns) });
+        }
+
+        function readDirectoryColumnLayoutStateFromDom(board) {
+            const header = board.querySelector('.tasks-directory-header');
+            if (!header) return { order: [], hidden: [] };
+
+            const cells = Array.from(header.querySelectorAll(':scope > [data-column]'));
+            return {
+                order: cells
+                    .map(cell => cell.dataset.column || '')
+                    .filter(column => column && !isDirectoryColumnLayoutFixed(column) && !shouldIgnoreDirectoryColumn(board, column)),
+                hidden: cells
+                    .filter(cell => cell.hidden)
+                    .map(cell => cell.dataset.column || '')
+                    .filter(Boolean)
+            };
+        }
+
+        function reorderDirectoryRowCells(row, cells, orderedColumns) {
+            const cellsByColumn = new Map(cells.map(cell => [cell.dataset.column || '', cell]));
+            const orderedSet = new Set(orderedColumns);
+            const targetCells = orderedColumns
+                .map(column => cellsByColumn.get(column))
+                .filter(Boolean);
+
+            cells.forEach(cell => {
+                if (!orderedSet.has(cell.dataset.column || '')) targetCells.push(cell);
+            });
+
+            if (cells.length === targetCells.length && cells.every((cell, index) => cell === targetCells[index])) {
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            targetCells.forEach(cell => fragment.appendChild(cell));
+            row.appendChild(fragment);
+        }
+
+        function directoryColumnArraysEqual(first, second) {
+            return first.length === second.length && first.every((value, index) => value === second[index]);
         }
 
         function markDirectoryLastVisibleColumn(row) {
             const cells = Array.from(row.querySelectorAll(':scope > [data-column]'));
+            let lastVisibleCell = null;
 
-            cells.forEach(cell => cell.classList.remove('is-directory-last-visible'));
+            for (let index = cells.length - 1; index >= 0; index -= 1) {
+                const column = cells[index].dataset.column || '';
+                if (column !== 'select' && column !== 'spacer' && !cells[index].hidden) {
+                    lastVisibleCell = cells[index];
+                    break;
+                }
+            }
 
-            const lastVisibleCell = cells.filter(cell => {
-                const column = cell.dataset.column || '';
-                return column !== 'select' && column !== 'spacer' && !cell.hidden;
-            }).pop();
+            const previousLastVisibleCell = row.querySelector(':scope > .is-directory-last-visible');
 
+            if (previousLastVisibleCell === lastVisibleCell) return;
+            previousLastVisibleCell?.classList.remove('is-directory-last-visible');
             lastVisibleCell?.classList.add('is-directory-last-visible');
         }
 
@@ -7368,7 +7447,7 @@ function initTasksPage() {
         }
 
         function getDirectoryColumnManagerItemAfterPointer(list, pointerY) {
-            const items = Array.from(list.querySelectorAll('.tasks-directory-column-item:not(.is-dragging)'));
+            const items = Array.from(list.querySelectorAll('.tasks-directory-column-item:not(.is-dragging):not([hidden])'));
 
             return items.reduce((closest, item) => {
                 const box = item.getBoundingClientRect();

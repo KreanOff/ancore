@@ -7,16 +7,125 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.staticfiles import finders
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.db.models import Case, Count, IntegerField, Value, When
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from django.urls import reverse
 
 from contacts.models import Company, SharedItem
 from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag, TaskTagNote
+
+
+class TaskProjectControlStyleTests(SimpleTestCase):
+    def test_project_modal_custom_selects_keep_visible_control_styles(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        project_fields_rule = re.search(
+            r'#project-create-form \.tasks-project-create-fields,[^{]*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(project_fields_rule)
+        self.assertIn('--tasks-detail-control-border: #dfe3e8;', project_fields_rule.group('body'))
+        self.assertIn('--tasks-detail-control-height: 38px;', project_fields_rule.group('body'))
+        self.assertIn('--tasks-detail-control-highlight-border: #b8bec8;', project_fields_rule.group('body'))
+        self.assertIn(
+            '--tasks-detail-control-highlight-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);',
+            project_fields_rule.group('body'),
+        )
+        self.assertIn(
+            '#project-create-form .tasks-project-create-fields .ancore-custom-select__caret',
+            css,
+        )
+        self.assertIn('#project-create-form [data-project-priority-caret]', css)
+        self.assertIn(
+            '#project-create-form [data-inline-select-dropdown].is-open [data-project-priority-caret]',
+            css,
+        )
+
+        visible_caret_selectors = [
+            '#section-create-form .tasks-project-create-fields .ancore-custom-select__caret,',
+            '#tag-create-form .tasks-tag-fields .ancore-custom-select__caret',
+            '#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-lucide="chevron-down"],',
+            '#issue-create-form .tasks-issue-dropdown-button::after',
+        ]
+        for selector in visible_caret_selectors:
+            rule = re.search(
+                rf'{re.escape(selector)}[^{{]*\{{(?P<body>[^}}]*)\}}',
+                css,
+                re.DOTALL,
+            )
+            self.assertIsNotNone(rule, selector)
+            self.assertIn('display: block;', rule.group('body'), selector)
+
+        project_priority_highlight_rule = re.search(
+            r'#project-create-form \.tasks-project-create-fields '
+            r'\.tasks-issue-dropdown-button:hover,[^{]*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(project_priority_highlight_rule)
+        self.assertIn(
+            'border-color: var(--tasks-detail-control-highlight-border);',
+            project_priority_highlight_rule.group('body'),
+        )
+        self.assertIn(
+            'box-shadow: var(--tasks-detail-control-highlight-shadow);',
+            project_priority_highlight_rule.group('body'),
+        )
+
+        scoped_control_rules = {
+            'section-create-form': (
+                r'#section-create-form \.tasks-project-create-fields,[^{]*'
+                r'\{(?P<body>[^}]*)\}'
+            ),
+            'tag-create-form': (
+                r'#tag-create-form \.tasks-tag-fields '
+                r'\{\s*(?P<body>--issue-create-control-height:[^}]*)\}'
+            ),
+            'issue-create-form': (
+                r'#issue-create-form \.tasks-issue-fields '
+                r'\{\s*(?P<body>--issue-create-control-height:[^}]*)\}'
+            ),
+        }
+        for form_selector, pattern in scoped_control_rules.items():
+            form_rule = re.search(
+                pattern,
+                css,
+                re.DOTALL,
+            )
+            self.assertIsNotNone(form_rule, form_selector)
+            self.assertIn(
+                '--tasks-detail-control-highlight-border: #b8bec8;',
+                form_rule.group('body'),
+                form_selector,
+            )
+            self.assertIn(
+                '--tasks-detail-control-highlight-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);',
+                form_rule.group('body'),
+                form_selector,
+            )
+
+        tag_select_highlight_rule = re.search(
+            r'#tag-create-form \.tasks-tag-fields '
+            r'\.ancore-custom-select__button:hover,[^{]*'
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(tag_select_highlight_rule)
+        self.assertIn(
+            'box-shadow: var(--tasks-detail-control-highlight-shadow);',
+            tag_select_highlight_rule.group('body'),
+        )
 
 
 class TaskProjectCreationTests(TestCase):
@@ -91,6 +200,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Pierwsza grupa')
         self.assertContains(response, 'aria-label="Wybierz priorytet projektu"')
         self.assertContains(response, 'data-inline-priority-icon')
+        self.assertContains(response, 'data-project-priority-caret')
         self.assertContains(response, 'data-inline-select-value="urgent"')
         self.assertContains(response, 'Pilny')
         self.assertContains(response, 'Firma')
@@ -275,6 +385,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertLess(table_html.index(urgent.name), table_html.index(low.name))
         self.assertContains(response, 'Sortowanie: Priorytet')
+        self.assertContains(response, '<span class="tasks-sort-button__label">Priorytet</span>', html=True)
         self.assertContains(response, 'data-project-page-url="/tasks/?sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_task_create_modal_billable_checkbox_is_checked_by_default(self):
@@ -402,6 +513,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertLess(table_html.index(urgent.title), table_html.index(low.title))
         self.assertContains(response, 'Sortowanie: Priorytet')
+        self.assertContains(response, '<span class="tasks-sort-button__label">Priorytet</span>', html=True)
         self.assertContains(response, 'data-project-page-url="/tasks/?view=all-groups&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_tags_view_renders_server_filter_controls(self):
@@ -501,6 +613,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertLess(table_html.index(urgent.name), table_html.index(low.name))
         self.assertContains(response, 'Sortowanie: Priorytet')
+        self.assertContains(response, '<span class="tasks-sort-button__label">Priorytet</span>', html=True)
         self.assertContains(response, 'data-project-page-url="/tasks/?view=tags&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_tags_view_sorts_by_task_count(self):
@@ -584,7 +697,38 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('Parametry projektu', modal_html)
         self.assertIn('aria-label="Wybierz priorytet projektu"', modal_html)
         self.assertIn('data-inline-priority-icon', modal_html)
+        self.assertIn('data-project-priority-caret', modal_html)
         self.assertIn('class="u-sr-only" for="project-rename-name"', modal_html)
+
+    def test_edit_project_modal_matches_create_project_field_layout(self):
+        response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
+        modal_start = html.index('id="project-rename-modal"')
+        modal_end = html.index('id="section-create-modal"', modal_start)
+        modal_html = html[modal_start:modal_end]
+
+        self.assertIn(
+            'class="u-sr-only" id="project-rename-parameters-title"',
+            modal_html,
+        )
+
+        field_classes = [
+            'tasks-project-create-field--code',
+            'tasks-project-create-field--company',
+            'tasks-project-create-field--responsible',
+            'tasks-project-create-field--status',
+            'tasks-project-create-field--stage',
+            'tasks-project-create-field--health',
+            'tasks-project-create-field--priority',
+            'tasks-project-create-field--source',
+            'tasks-project-create-field--start',
+            'tasks-project-create-field--due',
+            'tasks-project-create-field--budget',
+            'tasks-project-create-field--currency',
+        ]
+        field_positions = [modal_html.index(field_class) for field_class in field_classes]
+
+        self.assertEqual(field_positions, sorted(field_positions))
 
     def test_create_project_uses_default_group_name_when_group_name_is_empty(self):
         response = self.client.post(reverse('tasks:tasks'), {
@@ -1158,6 +1302,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-project-sort-menu')
         self.assertContains(response, 'data-project-default-sort="task_id_asc"')
         self.assertContains(response, 'aria-label="Sortowanie zadań"')
+        self.assertNotContains(response, 'tasks-sort-button__label')
         self.assertContains(response, 'id="filter-status"')
         self.assertContains(response, 'name="task_project"')
         self.assertContains(response, 'name="task_section"')
@@ -1253,6 +1398,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('task_type=call', html)
         self.assertIn('task_due=overdue', html)
         self.assertIn('sort=title_desc', html)
+        self.assertContains(response, '<span class="tasks-sort-button__label">Zadanie Z-A</span>', html=True)
         self.assertContains(response, 'Projekt: Projekt Alpha')
         self.assertContains(response, 'Grupa: Wdrożenie (Projekt Alpha)')
         self.assertContains(response, 'Odpowiedzialny: Adam Nowak')

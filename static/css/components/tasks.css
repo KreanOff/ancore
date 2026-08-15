@@ -440,6 +440,19 @@
     display: flex;
 }
 
+.tasks-sort-button.is-active {
+    width: auto;
+    min-width: 36px;
+    gap: 0.4rem;
+    padding: 0 0.65rem;
+    white-space: nowrap;
+}
+
+.tasks-sort-button__label {
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
 .tasks-icon-button:hover,
 .tasks-icon-button.is-active {
     background: var(--nav-selected-bg);
@@ -567,6 +580,11 @@
     font-size: var(--dropdown-menu-font-size);
     font-weight: 600;
     cursor: grab;
+}
+
+.tasks-directory-column-item[hidden],
+.tasks-directory-column-empty[hidden] {
+    display: none;
 }
 
 .tasks-directory-column-item:hover,
@@ -2662,8 +2680,8 @@ body.modal-open::before {
 
 .tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-input:focus,
 .tasks-project-create-modal__body .tasks-project-create-fields .tasks-inline-select:focus {
-    border-color: #c3cad4;
-    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.12);
+    border-color: var(--tasks-detail-control-highlight-border, #c3cad4);
+    box-shadow: var(--tasks-detail-control-highlight-shadow, 0 0 0 3px rgba(107, 114, 128, 0.12));
 }
 
 @media (max-width: 1080px) {
@@ -2680,24 +2698,55 @@ body.modal-open::before {
     }
 }
 
-#project-create-form .tasks-project-parameters {
+#project-create-form .tasks-project-parameters,
+#project-rename-form .tasks-project-parameters {
     margin-top: 1.15rem;
 }
 
 #project-create-form .tasks-project-create-fields,
-#project-create-form .tasks-project-create-fields.tasks-issue-fields {
+#project-create-form .tasks-project-create-fields.tasks-issue-fields,
+#project-rename-form .tasks-project-create-fields,
+#project-rename-form .tasks-project-create-fields.tasks-issue-fields {
+    --tasks-detail-control-height: 38px;
+    --tasks-detail-control-radius: 7px;
+    --tasks-detail-control-border: #dfe3e8;
+    --tasks-detail-control-bg: #ffffff;
+    --tasks-detail-control-text: #23272f;
+    --tasks-detail-control-highlight-border: #b8bec8;
+    --tasks-detail-control-highlight-bg: #ffffff;
+    --tasks-detail-control-highlight-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.7rem 0.75rem;
     margin-top: 0;
 }
 
-#project-create-form .tasks-project-create-fields > label {
+#project-create-form .tasks-project-create-fields > label,
+#project-rename-form .tasks-project-create-fields > label {
     align-items: stretch;
 }
 
-#project-create-form .tasks-project-create-fields > label > span:first-child {
+#project-create-form .tasks-project-create-fields > label > span:first-child,
+#project-rename-form .tasks-project-create-fields > label > span:first-child {
     align-self: flex-start;
     text-align: left;
+}
+
+#project-create-form .tasks-project-create-fields .ancore-custom-select__caret,
+#project-rename-form .tasks-project-create-fields .ancore-custom-select__caret {
+    display: block;
+}
+
+#project-create-form [data-project-priority-caret],
+#project-rename-form [data-project-priority-caret] {
+    margin-left: auto;
+    flex: 0 0 auto;
+    color: #6c7484;
+    transition: transform 0.1s;
+}
+
+#project-create-form [data-inline-select-dropdown].is-open [data-project-priority-caret],
+#project-rename-form [data-inline-select-dropdown].is-open [data-project-priority-caret] {
+    transform: rotate(180deg);
 }
 
 #section-create-form > .tasks-issue-modal__body > .tasks-inline-input[name="title"],
@@ -2717,26 +2766,47 @@ body.modal-open::before {
 }
 
 #section-create-form .tasks-project-create-fields,
-#section-create-form .tasks-project-create-fields.tasks-issue-fields {
+#section-create-form .tasks-project-create-fields.tasks-issue-fields,
+#section-rename-form .tasks-project-create-fields,
+#section-rename-form .tasks-project-create-fields.tasks-issue-fields {
+    --tasks-detail-control-height: 38px;
+    --tasks-detail-control-radius: 7px;
+    --tasks-detail-control-border: #dfe3e8;
+    --tasks-detail-control-bg: #ffffff;
+    --tasks-detail-control-text: #23272f;
+    --tasks-detail-control-highlight-border: #b8bec8;
+    --tasks-detail-control-highlight-bg: #ffffff;
+    --tasks-detail-control-highlight-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.7rem 0.75rem;
     margin-top: 0;
 }
 
-#section-create-form .tasks-project-create-fields > label {
+#section-create-form .tasks-project-create-fields > label,
+#section-rename-form .tasks-project-create-fields > label {
     align-items: stretch;
 }
 
-#section-create-form .tasks-project-create-fields > label > span:first-child {
+#section-create-form .tasks-project-create-fields > label > span:first-child,
+#section-rename-form .tasks-project-create-fields > label > span:first-child {
     align-self: flex-start;
     text-align: left;
 }
 
+#section-create-form .tasks-project-create-fields .ancore-custom-select__caret,
+#section-rename-form .tasks-project-create-fields .ancore-custom-select__caret {
+    display: block;
+}
+
 @media (max-width: 720px) {
     #project-create-form .tasks-project-create-fields,
+    #project-rename-form .tasks-project-create-fields,
     #section-create-form .tasks-project-create-fields,
+    #section-rename-form .tasks-project-create-fields,
     #project-create-form .tasks-project-create-fields.tasks-issue-fields,
-    #section-create-form .tasks-project-create-fields.tasks-issue-fields {
+    #project-rename-form .tasks-project-create-fields.tasks-issue-fields,
+    #section-create-form .tasks-project-create-fields.tasks-issue-fields,
+    #section-rename-form .tasks-project-create-fields.tasks-issue-fields {
         grid-template-columns: 1fr;
     }
 }
@@ -2770,9 +2840,9 @@ body.modal-open::before {
     --tasks-detail-control-bg: #ffffff;
     --tasks-detail-control-hover-bg: #f7f8fb;
     --tasks-detail-control-text: #4e535d;
-    --tasks-detail-control-highlight-border: #cfd6df;
-    --tasks-detail-control-highlight-bg: #f7f8fb;
-    --tasks-detail-control-highlight-shadow: 0 0 0 3px rgba(107, 114, 128, 0.12);
+    --tasks-detail-control-highlight-border: #b8bec8;
+    --tasks-detail-control-highlight-bg: #ffffff;
+    --tasks-detail-control-highlight-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -2848,7 +2918,16 @@ body.modal-open::before {
 }
 
 #tag-create-form .tasks-tag-fields .ancore-custom-select__caret {
-    display: none;
+    display: block;
+}
+
+#tag-create-form .tasks-tag-fields .ancore-custom-select__button:hover,
+#tag-create-form .tasks-tag-fields .ancore-custom-select__button:focus-visible,
+#tag-create-form .tasks-tag-fields .ancore-custom-select.is-open .ancore-custom-select__button {
+    outline: none;
+    border-color: var(--tasks-detail-control-highlight-border);
+    background: var(--tasks-detail-control-highlight-bg);
+    box-shadow: var(--tasks-detail-control-highlight-shadow);
 }
 
 #tag-create-form .tasks-tag-fields .tasks-inline-select {
@@ -2981,8 +3060,8 @@ body.modal-open::before {
 
 .tasks-project-edit-modal__body .tasks-project-create-fields .tasks-inline-input:focus,
 .tasks-project-edit-modal__body .tasks-project-create-fields .tasks-inline-select:focus {
-    border-color: #c3cad4;
-    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.12);
+    border-color: var(--tasks-detail-control-highlight-border, #c3cad4);
+    box-shadow: var(--tasks-detail-control-highlight-shadow, 0 0 0 3px rgba(107, 114, 128, 0.12));
 }
 
 .tasks-project-edit-modal__footer {
@@ -5557,9 +5636,9 @@ body.modal-open::before {
     --tasks-detail-control-bg: #ffffff;
     --tasks-detail-control-hover-bg: #f7f8fb;
     --tasks-detail-control-text: #4e535d;
-    --tasks-detail-control-highlight-border: #cfd6df;
-    --tasks-detail-control-highlight-bg: #f7f8fb;
-    --tasks-detail-control-highlight-shadow: 0 0 0 3px rgba(107, 114, 128, 0.12);
+    --tasks-detail-control-highlight-border: #b8bec8;
+    --tasks-detail-control-highlight-bg: #ffffff;
+    --tasks-detail-control-highlight-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -5758,7 +5837,27 @@ body.modal-open::before {
 #issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-lucide="chevron-down"],
 #issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > svg:last-child,
 #issue-create-form .ancore-custom-select__caret {
-    display: none;
+    display: block;
+}
+
+#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-lucide="chevron-down"],
+#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > svg:last-child {
+    margin-left: auto;
+    transition: transform 0.1s;
+}
+
+#issue-create-form .tasks-issue-chip-picker.is-open .tasks-picker-chip > i[data-lucide="chevron-down"],
+#issue-create-form .tasks-issue-chip-picker.is-open .tasks-picker-chip > svg:last-child {
+    transform: rotate(180deg);
+}
+
+#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip:hover,
+#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip:focus-visible,
+#issue-create-form .tasks-issue-chip-picker.is-open .tasks-picker-chip {
+    outline: none;
+    border-color: var(--tasks-detail-control-highlight-border);
+    background: var(--tasks-detail-control-highlight-bg);
+    box-shadow: var(--tasks-detail-control-highlight-shadow);
 }
 
 .tasks-issue-fields .tasks-issue-chip-picker .tasks-chip-picker__menu {
@@ -5797,6 +5896,24 @@ body.modal-open::before {
     color: var(--tasks-detail-control-text, #4e535d);
     font-size: var(--font-size-sm);
     font-weight: 500;
+}
+
+#issue-create-form .tasks-issue-dropdown-button::after {
+    content: "";
+    width: 16px;
+    height: 16px;
+    display: block;
+    flex: 0 0 16px;
+    margin-left: auto;
+    background-image: var(--lucide-chevron-down-gray);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 16px 16px;
+    transition: transform 0.1s;
+}
+
+#issue-create-form .tasks-issue-dropdown.is-open .tasks-issue-dropdown-button::after {
+    transform: rotate(180deg);
 }
 
 #issue-create-form .tasks-issue-fields .ancore-custom-select {
@@ -9597,6 +9714,17 @@ body.is-resizing-directory-columns {
     border-color: transparent;
     background: var(--tasks-detail-control-highlight-bg);
     color: #2f3440;
+    box-shadow: var(--tasks-detail-control-highlight-shadow);
+}
+
+#project-create-form .tasks-project-create-fields .tasks-issue-dropdown-button:hover,
+#project-create-form .tasks-project-create-fields .tasks-issue-dropdown-button:focus-visible,
+#project-create-form .tasks-project-create-fields .tasks-issue-dropdown.is-open .tasks-issue-dropdown-button,
+#project-rename-form .tasks-project-create-fields .tasks-issue-dropdown-button:hover,
+#project-rename-form .tasks-project-create-fields .tasks-issue-dropdown-button:focus-visible,
+#project-rename-form .tasks-project-create-fields .tasks-issue-dropdown.is-open .tasks-issue-dropdown-button {
+    border-color: var(--tasks-detail-control-highlight-border);
+    background: var(--tasks-detail-control-highlight-bg);
     box-shadow: var(--tasks-detail-control-highlight-shadow);
 }
 
