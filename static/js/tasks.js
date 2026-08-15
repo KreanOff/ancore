@@ -219,7 +219,6 @@ function initTasksPage() {
     const projectNotesIdInput = projectNotesForm ? projectNotesForm.querySelector('[data-project-notes-id]') : null;
     const projectNotesNameInput = projectNotesModal ? projectNotesModal.querySelector('[data-project-notes-name]') : null;
     const projectNotesMessageInput = projectNotesForm ? projectNotesForm.querySelector('[data-project-notes-message]') : null;
-    const projectNotesThreads = projectNotesModal ? projectNotesModal.querySelectorAll('[data-project-notes-thread]') : [];
     const sectionNotesIdInput = sectionNotesForm ? sectionNotesForm.querySelector('[data-section-notes-id]') : null;
     const sectionNotesNameInput = sectionNotesModal ? sectionNotesModal.querySelector('[data-section-notes-name]') : null;
     const sectionNotesMessageInput = sectionNotesForm ? sectionNotesForm.querySelector('[data-section-notes-message]') : null;
@@ -3942,7 +3941,7 @@ function initTasksPage() {
         if (projectNotesIdInput) projectNotesIdInput.value = projectId;
         if (projectNotesNameInput) projectNotesNameInput.textContent = projectName || 'Projekt';
         if (projectNotesMessageInput) projectNotesMessageInput.value = '';
-        projectNotesThreads.forEach(thread => {
+        projectNotesModal.querySelectorAll('[data-project-notes-thread]').forEach(thread => {
             thread.hidden = thread.dataset.projectId !== projectId;
         });
         closeProjectActionMenus();
@@ -3957,10 +3956,118 @@ function initTasksPage() {
         });
     });
 
-    projectNotesModal?.querySelectorAll('[data-project-note-edit-toggle]').forEach(button => {
-        button.addEventListener('click', event => {
+    function projectNotesThreadSelector(projectId) {
+        const escapedProjectId = window.CSS?.escape
+            ? window.CSS.escape(String(projectId))
+            : String(projectId).replace(/["\\]/g, '\\$&');
+        return `[data-project-notes-thread][data-project-id="${escapedProjectId}"]`;
+    }
+
+    function setProjectNotesSubmitLoading(isLoading) {
+        if (!projectNotesForm) return;
+        const submitButton = projectNotesForm.querySelector('[type="submit"]');
+        projectNotesForm.toggleAttribute('aria-busy', isLoading);
+        if (!submitButton) return;
+
+        const label = submitButton.querySelector('span');
+        if (label && !submitButton.dataset.defaultLabel) {
+            submitButton.dataset.defaultLabel = label.textContent;
+        }
+        if (label) {
+            label.textContent = isLoading ? 'Dodawanie…' : submitButton.dataset.defaultLabel;
+        }
+        submitButton.disabled = isLoading;
+    }
+
+    function syncProjectNotesIndicator(projectId) {
+        const escapedProjectId = window.CSS?.escape
+            ? window.CSS.escape(String(projectId))
+            : String(projectId).replace(/["\\]/g, '\\$&');
+        document.querySelectorAll(`.tasks-project-sheet__notes-button[data-project-id="${escapedProjectId}"]`).forEach(button => {
+            button.classList.add('has-notes');
+            const baseTitle = (button.getAttribute('title') || '').split(' — ')[0];
+            if (baseTitle) button.setAttribute('title', `${baseTitle} — zawiera notatkę`);
+            const ariaLabel = (button.getAttribute('aria-label') || '').replace(/, zawiera notatkę$/, '');
+            if (ariaLabel) button.setAttribute('aria-label', `${ariaLabel}, zawiera notatkę`);
+        });
+    }
+
+    function appendProjectNote(noteHtml, projectId) {
+        if (!projectNotesModal) return null;
+        const selector = projectNotesThreadSelector(projectId);
+        const thread = projectNotesModal.querySelector(selector);
+        if (!thread || !noteHtml) return null;
+
+        const template = document.createElement('template');
+        template.innerHTML = noteHtml.trim();
+        const noteItem = template.content.firstElementChild;
+        if (!noteItem) return null;
+
+        thread.querySelector('[data-project-notes-empty]')?.remove();
+        thread.appendChild(noteItem);
+        thread.hidden = false;
+        if (window.AncoreIcons?.render) {
+            window.AncoreIcons.render(noteItem);
+        } else if (window.lucide?.createIcons) {
+            window.lucide.createIcons();
+        }
+        return noteItem;
+    }
+
+    if (projectNotesForm && projectNotesForm.dataset.asyncSubmitInitialized !== 'true') {
+        projectNotesForm.dataset.asyncSubmitInitialized = 'true';
+        projectNotesForm.addEventListener('submit', async event => {
             event.preventDefault();
-            const item = button.closest('[data-project-note-item]');
+            const projectId = projectNotesIdInput?.value || '';
+            const message = projectNotesMessageInput?.value.trim() || '';
+            if (!projectId) {
+                showMessage('Nie wybrano projektu.', 'error');
+                return;
+            }
+            if (!message) {
+                showMessage('Wpisz treść notatki.', 'error');
+                projectNotesMessageInput?.focus();
+                return;
+            }
+
+            setProjectNotesSubmitLoading(true);
+            try {
+                const submitUrl = projectNotesForm.getAttribute('action') || window.location.href;
+                const response = await fetch(submitUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: new FormData(projectNotesForm)
+                });
+                const payload = await response.json().catch(() => null);
+                if (!response.ok || payload?.status !== 'success') {
+                    throw new Error(payload?.message || 'Nie udało się dodać notatki.');
+                }
+
+                if (!appendProjectNote(payload.note_html, projectId)) {
+                    throw new Error('Nie udało się wyświetlić dodanej notatki.');
+                }
+
+                syncProjectNotesIndicator(projectId);
+                projectNotesMessageInput.value = '';
+                showMessage(payload.message || 'Notatka dodana.', 'success');
+                projectNotesMessageInput.focus();
+            } catch (error) {
+                showMessage(error.message || 'Nie udało się dodać notatki.', 'error');
+            } finally {
+                setProjectNotesSubmitLoading(false);
+            }
+        });
+    }
+
+    projectNotesModal?.addEventListener('click', event => {
+        const editButton = event.target.closest?.('[data-project-note-edit-toggle]');
+        if (editButton) {
+            event.preventDefault();
+            const item = editButton.closest('[data-project-note-item]');
             const form = item?.querySelector('[data-project-note-edit-form]');
             const input = form?.querySelector('[data-project-note-edit-input]');
             if (!form) return;
@@ -3970,28 +4077,29 @@ function initTasksPage() {
                 input?.focus();
                 input?.setSelectionRange?.(input.value.length, input.value.length);
             }, 30);
-        });
-    });
+            return;
+        }
 
-    projectNotesModal?.querySelectorAll('[data-project-note-edit-cancel]').forEach(button => {
-        button.addEventListener('click', event => {
+        const cancelButton = event.target.closest?.('[data-project-note-edit-cancel]');
+        if (cancelButton) {
             event.preventDefault();
-            const item = button.closest('[data-project-note-item]');
+            const item = cancelButton.closest('[data-project-note-item]');
             const form = item?.querySelector('[data-project-note-edit-form]');
             if (!form) return;
             const input = form.querySelector('[data-project-note-edit-input]');
             if (input) input.value = input.defaultValue || '';
             form.hidden = true;
             item?.classList.remove('is-editing');
-        });
+        }
     });
 
-    projectNotesModal?.querySelectorAll('[data-project-note-delete-form]').forEach(form => {
-        form.addEventListener('submit', event => {
+    projectNotesModal?.addEventListener('submit', event => {
+        const form = event.target.closest?.('[data-project-note-delete-form]');
+        if (form) {
             if (!window.confirm('Usunąć tę notatkę?')) {
                 event.preventDefault();
             }
-        });
+        }
     });
 
     function openSectionNotesModal(button) {

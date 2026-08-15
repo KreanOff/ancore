@@ -9,7 +9,9 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Case, Count, IntegerField, Max, Prefetch, Q, Value, When
 from django.http import JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from core.upload_validation import attachment_download_response, validate_attachment_upload
@@ -534,7 +536,23 @@ def _kanban_project_count_label(value, singular, plural):
 
 
 def _decorate_project_directory_metrics(projects):
+    today = timezone.localdate()
     for project in projects:
+        if not project.due_at:
+            project.due_highlight = 'none'
+        elif project.status == 'completed':
+            project.due_highlight = 'completed'
+        elif project.status == 'cancelled':
+            project.due_highlight = 'inactive'
+        else:
+            days_until_due = (project.due_at - today).days
+            if days_until_due < 0:
+                project.due_highlight = 'overdue'
+            elif days_until_due <= 7:
+                project.due_highlight = 'soon'
+            else:
+                project.due_highlight = 'scheduled'
+
         total_cards = int(getattr(project, 'cards_total_count', 0) or 0)
         closed_cards = int(getattr(project, 'cards_closed_count', 0) or 0)
         progress_percent = round((closed_cards / total_cards) * 100) if total_cards else 0
@@ -1246,10 +1264,27 @@ def _tasks_page(request, active_section=None):
                 id=request.POST.get('project_id'),
             )
             message = (request.POST.get('message') or request.POST.get('description') or '').strip()
+            is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if message:
-                KanbanProjectNote.objects.create(project=project, author=request.user, message=message)
+                note = KanbanProjectNote.objects.create(project=project, author=request.user, message=message)
+                if is_ajax_request:
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Notatka dodana.',
+                        'note_html': render_to_string(
+                            'tasks/includes/project_note_item.html',
+                            {
+                                'note': note,
+                                'project': project,
+                                'next_url': _kanban_next_url(request),
+                            },
+                            request=request,
+                        ),
+                    })
                 messages.success(request, 'Notatka dodana.')
             else:
+                if is_ajax_request:
+                    return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
                 messages.error(request, 'Wpisz treść notatki.')
             return redirect(_kanban_next_url(request))
 

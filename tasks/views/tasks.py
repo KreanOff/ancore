@@ -1917,6 +1917,7 @@ def _decorate_project_directory_metrics(projects):
     if not projects:
         return
 
+    today = timezone.localdate()
     section_ids = []
     for project in projects:
         for section in project.sections.all():
@@ -1943,6 +1944,21 @@ def _decorate_project_directory_metrics(projects):
         }
 
     for project in projects:
+        if not project.due_at:
+            project.due_highlight = 'none'
+        elif project.status == 'completed':
+            project.due_highlight = 'completed'
+        elif project.status == 'cancelled':
+            project.due_highlight = 'inactive'
+        else:
+            days_until_due = (project.due_at - today).days
+            if days_until_due < 0:
+                project.due_highlight = 'overdue'
+            elif days_until_due <= 7:
+                project.due_highlight = 'soon'
+            else:
+                project.due_highlight = 'scheduled'
+
         last_activity_candidates = [project.created_at]
         project_total_tasks = 0
         project_completed_tasks = 0
@@ -1993,6 +2009,7 @@ def _decorate_group_directory_rows(sections, current_user=None):
     if not sections:
         return
 
+    today = timezone.localdate()
     section_ids = [section.id for section in sections]
     metrics_by_section = {
         row['section_id']: row
@@ -2013,6 +2030,19 @@ def _decorate_group_directory_rows(sections, current_user=None):
     }
 
     for section in sections:
+        if not section.due_at:
+            section.due_highlight = 'none'
+        elif section.status == 'closed':
+            section.due_highlight = 'completed'
+        else:
+            days_until_due = (section.due_at - today).days
+            if days_until_due < 0:
+                section.due_highlight = 'overdue'
+            elif days_until_due <= 7:
+                section.due_highlight = 'soon'
+            else:
+                section.due_highlight = 'scheduled'
+
         project = section.project
         can_manage_project = project.user_id == getattr(current_user, 'id', None)
         project.can_manage = can_manage_project
@@ -2871,10 +2901,27 @@ def _tasks_page(request, active_section=None):
         if action in ('add_project_note', 'update_project_notes'):
             project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
             message = (request.POST.get('message') or request.POST.get('description') or '').strip()
+            is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if message:
-                TaskProjectNote.objects.create(project=project, author=request.user, message=message)
+                note = TaskProjectNote.objects.create(project=project, author=request.user, message=message)
+                if is_ajax_request:
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Notatka dodana.',
+                        'note_html': render_to_string(
+                            'tasks/includes/project_note_item.html',
+                            {
+                                'note': note,
+                                'project': project,
+                                'next_url': _tasks_next_url(request),
+                            },
+                            request=request,
+                        ),
+                    })
                 messages.success(request, 'Notatka dodana.')
             else:
+                if is_ajax_request:
+                    return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
                 messages.error(request, 'Wpisz treść notatki.')
             return redirect(_tasks_next_url(request))
 

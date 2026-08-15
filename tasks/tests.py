@@ -21,6 +21,57 @@ from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProject
 
 
 class TaskProjectControlStyleTests(SimpleTestCase):
+    def test_project_note_create_updates_only_notes_thread(self):
+        js_path = finders.find('js/tasks.js')
+
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding='utf-8') as js_file:
+            javascript = js_file.read()
+
+        submit_handler = re.search(
+            r"projectNotesForm\.addEventListener\('submit', async event => \{"
+            r"(?P<body>.*?)"
+            r"\n        \}\);\n    \}\n\n    projectNotesModal\?\.addEventListener\('click'",
+            javascript,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(submit_handler)
+        handler_body = submit_handler.group('body')
+        self.assertIn('event.preventDefault();', handler_body)
+        self.assertIn("projectNotesForm.getAttribute('action') || window.location.href", handler_body)
+        self.assertNotIn('projectNotesForm.action', handler_body)
+        self.assertIn('await fetch(', handler_body)
+        self.assertIn("'Accept': 'application/json'", handler_body)
+        self.assertIn('await response.json()', handler_body)
+        self.assertIn('appendProjectNote(payload.note_html, projectId)', handler_body)
+        self.assertIn('syncProjectNotesIndicator(projectId)', handler_body)
+        self.assertNotIn('location.reload', handler_body)
+
+    def test_project_notes_icon_is_yellow_when_notes_exist(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        populated_notes_rule = re.search(
+            r'\.tasks-project-sheet__notes-button\.has-notes\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(populated_notes_rule)
+        self.assertIn('--app-text-color: #b77900;', populated_notes_rule.group('body'))
+        self.assertIn('color: #b77900 !important;', populated_notes_rule.group('body'))
+
+        populated_notes_icon_rule = re.search(
+            r'\.tasks-project-sheet__notes-button\.has-notes svg\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(populated_notes_icon_rule)
+        self.assertIn('color: #b77900;', populated_notes_icon_rule.group('body'))
+        self.assertIn('stroke-width: 2.5;', populated_notes_icon_rule.group('body'))
+
     def test_project_modal_custom_selects_keep_visible_control_styles(self):
         css_path = finders.find('css/components/tasks.css')
 
@@ -311,6 +362,12 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-project-filter-value="none"')
         self.assertContains(response, 'Acme CRM')
         self.assertContains(response, 'Task User')
+        self.assertContains(response, 'tasks-project-value-badge--status-planned')
+        self.assertContains(response, 'tasks-project-value-badge--status-active')
+        self.assertContains(response, 'tasks-project-value-badge--stage-offer')
+        self.assertContains(response, 'tasks-project-value-badge--stage-implementation')
+        self.assertContains(response, 'tasks-project-value-badge--health-at_risk')
+        self.assertContains(response, 'tasks-project-value-badge--health-ok')
 
     def test_projects_view_filters_searches_and_sorts_on_server(self):
         company = Company.objects.create(owner=self.user, name='Acme CRM')
@@ -649,6 +706,130 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('data-lucide="circle-alert"', row_html)
         self.assertNotIn('tasks-project-priority-dot', row_html)
 
+    @patch('tasks.views.tasks.timezone.localdate', return_value=date(2026, 7, 10))
+    def test_projects_list_highlights_priority_due_date_and_source(self, _localdate):
+        overdue = TaskProject.objects.create(
+            user=self.user,
+            name='Projekt po terminie',
+            priority='urgent',
+            due_at=date(2026, 7, 9),
+            source='Polecenie',
+        )
+        soon = TaskProject.objects.create(
+            user=self.user,
+            name='Projekt z bliskim terminem',
+            priority='medium',
+            due_at=date(2026, 7, 17),
+        )
+        scheduled = TaskProject.objects.create(
+            user=self.user,
+            name='Projekt zaplanowany',
+            priority='low',
+            due_at=date(2026, 7, 18),
+        )
+        completed = TaskProject.objects.create(
+            user=self.user,
+            name='Projekt zakończony',
+            status='completed',
+            due_at=date(2026, 7, 1),
+        )
+        cancelled = TaskProject.objects.create(
+            user=self.user,
+            name='Projekt anulowany',
+            status='cancelled',
+            due_at=date(2026, 7, 1),
+        )
+
+        response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-project-list tasks-directory-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        def project_row(project):
+            row_start = table_html.index(f'data-project-id="{project.id}"')
+            row_end = table_html.index('</article>', row_start)
+            return table_html[row_start:row_end]
+
+        overdue_row = project_row(overdue)
+        self.assertIn('tasks-project-value-badge--priority-urgent', overdue_row)
+        self.assertIn('tasks-project-value-badge--due-overdue', overdue_row)
+        self.assertIn('tasks-project-value-badge--source', overdue_row)
+        self.assertIn('Polecenie', overdue_row)
+        self.assertIn('tasks-project-value-badge--due-soon', project_row(soon))
+        self.assertIn('tasks-project-value-badge--due-scheduled', project_row(scheduled))
+        self.assertIn('tasks-project-value-badge--due-completed', project_row(completed))
+        self.assertIn('tasks-project-value-badge--due-inactive', project_row(cancelled))
+
+    @patch('tasks.views.tasks.timezone.localdate', return_value=date(2026, 7, 10))
+    def test_groups_list_highlights_status_kind_priority_and_due_date(self, _localdate):
+        project = TaskProject.objects.create(user=self.user, name='Projekt grup')
+        blocked = TaskSection.objects.create(
+            project=project,
+            title='Grupa zablokowana',
+            status='blocked',
+            kind='milestones',
+            priority='urgent',
+            due_at=date(2026, 7, 9),
+        )
+        closed = TaskSection.objects.create(
+            project=project,
+            title='Grupa zamknięta',
+            status='closed',
+            due_at=date(2026, 7, 1),
+        )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        def group_row(section):
+            row_value = f'data-section-id="{section.id}"'
+            row_marker = table_html.index(row_value)
+            row_start = table_html.rfind('<article', 0, row_marker)
+            row_end = table_html.index('</article>', row_marker)
+            return table_html[row_start:row_end]
+
+        blocked_row = group_row(blocked)
+        self.assertIn('tasks-project-value-badge--group-status-blocked', blocked_row)
+        self.assertIn('tasks-project-value-badge--group-kind-milestones', blocked_row)
+        self.assertIn('tasks-project-value-badge--priority-urgent', blocked_row)
+        self.assertIn('tasks-project-value-badge--due-overdue', blocked_row)
+        self.assertIn('tasks-project-value-badge--due-completed', group_row(closed))
+
+    def test_tags_list_highlights_category_priority_scope_and_status(self):
+        tag = TaskTag.objects.create(
+            user=self.user,
+            name='Tag ryzyka',
+            category='risk',
+            color='#3b82f6',
+            icon='layers',
+            priority='high',
+            scope='projects',
+            status='archived',
+        )
+
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+        row_marker = table_html.index(f'data-tag-id="{tag.id}"')
+        row_start = table_html.rfind('<article', 0, row_marker)
+        row_end = table_html.index('</article>', row_marker)
+        row_html = table_html[row_start:row_end]
+
+        self.assertIn('tasks-project-value-badge--tag-category-risk', row_html)
+        self.assertIn('tasks-project-value-badge--tag-visual', row_html)
+        self.assertIn('style="--tag-color: #3b82f6;"', row_html)
+        self.assertIn('data-lucide="layers"', row_html)
+        self.assertIn('tasks-project-value-badge--priority-high', row_html)
+        self.assertIn('tasks-project-value-badge--tag-scope-projects', row_html)
+        self.assertIn('tasks-project-value-badge--tag-status-archived', row_html)
+        self.assertNotIn('tasks-tag-color-swatch', row_html)
+
     def test_group_priority_is_rendered_independently_from_project_priority(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt pilny', priority='urgent')
         section = TaskSection.objects.create(project=project, title='Grupa bez priorytetu', priority='none')
@@ -900,6 +1081,14 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-open-project-info', count=4)
         self.assertContains(response, 'data-lucide="file-text"')
         self.assertContains(response, 'data-open-project-notes', count=4)
+        self.assertContains(
+            response,
+            f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button has-notes" title="Notatki projektu — zawiera notatkę" aria-label="Notatki projektu {project.name}, zawiera notatkę"',
+        )
+        self.assertContains(
+            response,
+            'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button" title="Notatki projektu" aria-label="Notatki projektu Projekt bez ikony"',
+        )
         self.assertContains(response, 'id="project-info-modal"')
         self.assertContains(response, 'id="project-notes-modal"')
         self.assertContains(response, 'name="action" value="add_project_note"')
@@ -2802,6 +2991,29 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertFalse(TaskProjectNote.objects.filter(id=note.id).exists())
+
+    def test_project_note_ajax_create_returns_rendered_note_without_redirect(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt AJAX')
+
+        response = self.client.post(
+            reverse('tasks:tasks'),
+            {
+                'action': 'add_project_note',
+                'project_id': project.id,
+                'message': 'Notatka bez przeładowania',
+                'next': f"{reverse('tasks:tasks')}?view=projects",
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['status'], 'success')
+        self.assertIn('data-project-note-item', payload['note_html'])
+        self.assertIn('Notatka bez przeładowania', payload['note_html'])
+        self.assertIn('data-project-note-edit-form', payload['note_html'])
+        self.assertEqual(TaskProjectNote.objects.filter(project=project).count(), 1)
 
     def test_project_note_actions_only_allow_author_to_change_note(self):
         other_user = get_user_model().objects.create_user(username='note-owner', password='test-pass-123')

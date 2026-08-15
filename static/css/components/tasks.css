@@ -3533,9 +3533,16 @@ body.modal-open::before {
 
 .tasks-project-note__primary {
     --app-text-color: #ffffff;
-    border: 1px solid var(--accent-peach);
-    background: var(--accent-peach);
+    border: 1px solid rgb(30, 191, 191);
+    background: rgb(30, 191, 191);
     color: #ffffff !important;
+}
+
+.tasks-project-note__primary:hover,
+.tasks-project-note__primary:focus-visible {
+    border-color: rgb(30, 191, 191);
+    background: rgb(30, 191, 191);
+    box-shadow: 0 4px 12px rgba(30, 191, 191, 0.22);
 }
 
 .tasks-project-note__primary svg {
@@ -11329,6 +11336,17 @@ body.is-resizing-directory-columns {
     stroke-width: 2.3;
 }
 
+.tasks-project-sheet__notes-button.has-notes {
+    --app-text-color: #b77900;
+    color: #b77900 !important;
+}
+
+.tasks-project-sheet__notes-button.has-notes svg {
+    color: #b77900;
+    stroke: currentColor;
+    stroke-width: 2.5;
+}
+
 .tasks-project-sheet__progress,
 .tasks-project-sheet__count,
 .tasks-project-sheet__status,
@@ -11434,6 +11452,185 @@ body.is-resizing-directory-columns {
     color: #4f545e;
 }
 
+.tasks-project-value-badge {
+    --tasks-project-highlight-bg: #eef0f3;
+    --app-text-color: #252830;
+    display: inline-block;
+    min-width: 0;
+    max-width: calc(100% - 0.75rem);
+    padding: 0.38rem 0.7rem;
+    overflow: hidden;
+    border-radius: 5px;
+    background: var(--tasks-project-highlight-bg);
+    color: var(--app-text-color);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-project-value-badge--status-planned {
+    --tasks-project-highlight-bg: #eee8ff;
+}
+
+.tasks-project-value-badge--status-active {
+    --tasks-project-highlight-bg: #dfefff;
+}
+
+.tasks-project-value-badge--status-on_hold {
+    --tasks-project-highlight-bg: #ffebc9;
+}
+
+.tasks-project-value-badge--status-completed {
+    --tasks-project-highlight-bg: #dff1e7;
+}
+
+.tasks-project-value-badge--status-cancelled {
+    --tasks-project-highlight-bg: #e9ecf0;
+}
+
+.tasks-project-value-badge--stage-lead {
+    --tasks-project-highlight-bg: #f5e3f7;
+}
+
+.tasks-project-value-badge--stage-offer {
+    --tasks-project-highlight-bg: #ffe5d1;
+}
+
+.tasks-project-value-badge--stage-contract {
+    --tasks-project-highlight-bg: #e6e4ff;
+}
+
+.tasks-project-value-badge--stage-implementation {
+    --tasks-project-highlight-bg: #dff2f4;
+}
+
+.tasks-project-value-badge--stage-support {
+    --tasks-project-highlight-bg: #dff1e7;
+}
+
+.tasks-project-value-badge--stage-internal {
+    --tasks-project-highlight-bg: #e7ebf1;
+}
+
+.tasks-project-value-badge--health-ok {
+    --tasks-project-highlight-bg: #dff1e7;
+}
+
+.tasks-project-value-badge--health-at_risk {
+    --tasks-project-highlight-bg: #ffebc9;
+}
+
+.tasks-project-value-badge--health-delayed {
+    --tasks-project-highlight-bg: #ffe0dc;
+}
+
+.tasks-project-value-badge--group-status-open,
+.tasks-project-value-badge--tag-scope-tasks {
+    --tasks-project-highlight-bg: #dfefff;
+}
+
+.tasks-project-value-badge--group-status-in_progress,
+.tasks-project-value-badge--tag-scope-projects {
+    --tasks-project-highlight-bg: #eee8ff;
+}
+
+.tasks-project-value-badge--group-status-ready,
+.tasks-project-value-badge--tag-status-active,
+.tasks-project-value-badge--tag-scope-all {
+    --tasks-project-highlight-bg: #dff1e7;
+}
+
+.tasks-project-value-badge--group-status-blocked {
+    --tasks-project-highlight-bg: #ffe0dc;
+}
+
+.tasks-project-value-badge--group-status-closed,
+.tasks-project-value-badge--tag-status-archived,
+.tasks-project-value-badge--tag-category-general {
+    --tasks-project-highlight-bg: #e9ecf0;
+}
+
+.tasks-project-value-badge--group-kind-issues,
+.tasks-project-value-badge--tag-category-area {
+    --tasks-project-highlight-bg: #dfefff;
+}
+
+.tasks-project-value-badge--group-kind-components,
+.tasks-project-value-badge--tag-category-client {
+    --tasks-project-highlight-bg: #e6e4ff;
+}
+
+.tasks-project-value-badge--group-kind-milestones,
+.tasks-project-value-badge--tag-category-priority {
+    --tasks-project-highlight-bg: #ffefc9;
+}
+
+.tasks-project-value-badge--group-kind-templates,
+.tasks-project-value-badge--tag-category-stage,
+.tasks-project-value-badge--tag-scope-documents {
+    --tasks-project-highlight-bg: #dff2f4;
+}
+
+.tasks-project-value-badge--group-kind-custom {
+    --tasks-project-highlight-bg: #f5e3f7;
+}
+
+.tasks-project-value-badge--tag-category-risk {
+    --tasks-project-highlight-bg: #ffe0dc;
+}
+
+.tasks-project-value-badge--tag-category-work_type,
+.tasks-project-value-badge--tag-scope-clients {
+    --tasks-project-highlight-bg: #ffe5d1;
+}
+
+.tasks-project-value-badge--with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.tasks-project-value-badge--priority-none,
+.tasks-project-value-badge--due-inactive {
+    --tasks-project-highlight-bg: #e9ecf0;
+}
+
+.tasks-project-value-badge--priority-low,
+.tasks-project-value-badge--due-completed {
+    --tasks-project-highlight-bg: #dff1e7;
+}
+
+.tasks-project-value-badge--priority-medium,
+.tasks-project-value-badge--due-soon {
+    --tasks-project-highlight-bg: #ffefc9;
+}
+
+.tasks-project-value-badge--priority-high {
+    --tasks-project-highlight-bg: #ffe5d1;
+}
+
+.tasks-project-value-badge--priority-urgent,
+.tasks-project-value-badge--due-overdue {
+    --tasks-project-highlight-bg: #ffe0dc;
+}
+
+.tasks-project-value-badge--due-scheduled {
+    --tasks-project-highlight-bg: #dfefff;
+}
+
+.tasks-project-value-badge--source {
+    --tasks-project-highlight-bg: #ece8ff;
+}
+
+.tasks-project-value-badge--tag-visual {
+    background: #eef0f3;
+    background: color-mix(in srgb, var(--tag-color, #64748b) 16%, #ffffff);
+}
+
 .tasks-project-sheet__status--at_risk {
     color: #9a6a12;
 }
@@ -11451,6 +11648,13 @@ body.is-resizing-directory-columns {
 
 .tasks-project-sheet__priority .tasks-row-priority {
     flex: 0 0 22px;
+}
+
+.tasks-project-sheet__priority .tasks-project-value-badge .tasks-row-priority,
+.tasks-tag-sheet__meta .tasks-project-value-badge .tasks-row-priority {
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
 }
 
 .tasks-project-priority-dot {
@@ -11549,15 +11753,6 @@ body.is-resizing-directory-columns {
 
 .tasks-tag-sheet__visual {
     gap: 0.45rem;
-}
-
-.tasks-tag-color-swatch {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 14px;
-    border: 1px solid rgba(31, 35, 40, 0.16);
-    border-radius: 50%;
-    background: var(--tag-color, #64748b);
 }
 
 .tasks-tag-sheet__visual svg {

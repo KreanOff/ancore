@@ -1,6 +1,7 @@
 import json
 import re
 import tempfile
+from datetime import date
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -205,8 +206,15 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, project_with_icon.code)
         self.assertContains(response, project_without_icon.code)
         self.assertContains(response, 'id="notes-selected-project-menu-btn"')
-        self.assertContains(response, 'aria-label="Notatki przestrzeni Projekt z ikoną"')
         self.assertContains(response, 'data-open-project-notes', count=4)
+        self.assertContains(
+            response,
+            f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button has-notes" title="Notatki przestrzeni — zawiera notatkę" aria-label="Notatki przestrzeni {project_with_icon.name}, zawiera notatkę"',
+        )
+        self.assertContains(
+            response,
+            f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button" title="Notatki przestrzeni" aria-label="Notatki przestrzeni {project_without_icon.name}"',
+        )
         self.assertContains(response, 'id="project-notes-modal"')
         self.assertContains(response, 'name="action" value="add_project_note"')
         self.assertContains(response, 'name="action" value="edit_project_note"')
@@ -243,6 +251,36 @@ class KanbanProjectCreationTests(TestCase):
         ]
         column_positions = [html.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
+
+    @patch('kanban.views.tasks.timezone.localdate', return_value=date(2026, 7, 10))
+    def test_spaces_list_highlights_project_metadata(self, _localdate):
+        project = KanbanProject.objects.create(
+            user=self.user,
+            name='Przestrzeń wyróżniona',
+            status='on_hold',
+            stage='offer',
+            health='at_risk',
+            priority='urgent',
+            due_at=date(2026, 7, 9),
+            source='Polecenie',
+        )
+
+        response = self.client.get(reverse('kanban:tasks'))
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-project-list tasks-directory-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+        row_marker = table_html.index(f'data-project-id="{project.id}"')
+        row_start = table_html.rfind('<article', 0, row_marker)
+        row_end = table_html.index('</article>', row_marker)
+        row_html = table_html[row_start:row_end]
+
+        self.assertIn('tasks-project-value-badge--status-on_hold', row_html)
+        self.assertIn('tasks-project-value-badge--stage-offer', row_html)
+        self.assertIn('tasks-project-value-badge--health-at_risk', row_html)
+        self.assertIn('tasks-project-value-badge--priority-urgent', row_html)
+        self.assertIn('tasks-project-value-badge--due-overdue', row_html)
+        self.assertIn('tasks-project-value-badge--source', row_html)
 
     def test_project_note_actions_add_edit_and_delete_own_notes(self):
         project = KanbanProject.objects.create(
@@ -287,6 +325,29 @@ class KanbanProjectCreationTests(TestCase):
 
         self.assertRedirects(response, reverse('kanban:tasks'))
         self.assertFalse(KanbanProjectNote.objects.filter(id=note.id).exists())
+
+    def test_project_note_ajax_create_returns_rendered_note_without_redirect(self):
+        project = KanbanProject.objects.create(user=self.user, name='Przestrzeń AJAX')
+
+        response = self.client.post(
+            reverse('kanban:tasks'),
+            {
+                'action': 'add_project_note',
+                'project_id': project.id,
+                'message': 'Notatka bez przeładowania',
+                'next': reverse('kanban:tasks'),
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['status'], 'success')
+        self.assertIn('data-project-note-item', payload['note_html'])
+        self.assertIn('Notatka bez przeładowania', payload['note_html'])
+        self.assertIn('data-project-note-edit-form', payload['note_html'])
+        self.assertEqual(KanbanProjectNote.objects.filter(project=project).count(), 1)
 
     def test_project_note_actions_only_allow_author_to_change_note(self):
         other_user = get_user_model().objects.create_user(username='kanban-note-owner', password='test-pass-123')
@@ -727,6 +788,8 @@ class KanbanProjectCreationTests(TestCase):
             user=self.user,
             name='Widoczny tag',
             category='area',
+            color='#22c55e',
+            icon='workflow',
             priority='high',
             scope='projects',
             owner_label='IT',
@@ -778,6 +841,14 @@ class KanbanProjectCreationTests(TestCase):
         table_html = html[table_start:table_end]
         self.assertIn('Widoczny tag', table_html)
         self.assertNotIn('Ukryty tag', table_html)
+        self.assertIn('tasks-project-value-badge--tag-category-area', table_html)
+        self.assertIn('tasks-project-value-badge--tag-visual', table_html)
+        self.assertIn('style="--tag-color: #22c55e;"', table_html)
+        self.assertIn('data-lucide="workflow"', table_html)
+        self.assertIn('tasks-project-value-badge--priority-high', table_html)
+        self.assertIn('tasks-project-value-badge--tag-scope-projects', table_html)
+        self.assertIn('tasks-project-value-badge--tag-status-active', table_html)
+        self.assertNotIn('tasks-tag-color-swatch', table_html)
 
     def test_tags_view_renders_only_server_side_window(self):
         for index in range(60):
