@@ -47,7 +47,44 @@ class TaskProjectControlStyleTests(SimpleTestCase):
         self.assertIn('syncProjectNotesIndicator(projectId)', handler_body)
         self.assertNotIn('location.reload', handler_body)
 
-    def test_project_notes_icon_is_yellow_when_notes_exist(self):
+        indicator_sync = re.search(
+            r'function syncProjectNotesIndicator\(projectId\) \{(?P<body>.*?)\n    \}',
+            javascript,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(indicator_sync)
+        self.assertIn("window.AncoreIcons.create('file-text')", indicator_sync.group('body'))
+        self.assertIn("currentIcon.replaceWith(populatedIcon)", indicator_sync.group('body'))
+
+    def test_note_edit_updates_modal_without_page_reload(self):
+        js_path = finders.find('js/tasks.js')
+
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding='utf-8') as js_file:
+            javascript = js_file.read()
+
+        edit_handler = re.search(
+            r'async function submitNoteEdit\(form, config\) \{(?P<body>.*?)\n    \}',
+            javascript,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(edit_handler)
+        handler_body = edit_handler.group('body')
+        self.assertIn("form.getAttribute('action') || window.location.href", handler_body)
+        self.assertIn("'X-Requested-With': 'XMLHttpRequest'", handler_body)
+        self.assertIn("'Accept': 'application/json'", handler_body)
+        self.assertIn('body: new FormData(form)', handler_body)
+        self.assertIn('updateEditedNote(item, form, payload, config.messageSelector)', handler_body)
+        self.assertNotIn('location.reload', handler_body)
+
+        for selector in (
+            "formSelector: '[data-project-note-edit-form]'",
+            "formSelector: '[data-section-note-edit-form]'",
+            "formSelector: '[data-tag-note-edit-form]'",
+        ):
+            self.assertIn(selector, javascript)
+
+    def test_project_notes_icon_is_teal_when_notes_exist(self):
         css_path = finders.find('css/components/tasks.css')
 
         self.assertIsNotNone(css_path)
@@ -60,8 +97,8 @@ class TaskProjectControlStyleTests(SimpleTestCase):
             re.DOTALL,
         )
         self.assertIsNotNone(populated_notes_rule)
-        self.assertIn('--app-text-color: #b77900;', populated_notes_rule.group('body'))
-        self.assertIn('color: #b77900 !important;', populated_notes_rule.group('body'))
+        self.assertIn('--app-text-color: #0f8f8f;', populated_notes_rule.group('body'))
+        self.assertIn('color: #0f8f8f !important;', populated_notes_rule.group('body'))
 
         populated_notes_icon_rule = re.search(
             r'\.tasks-project-sheet__notes-button\.has-notes svg\s*\{(?P<body>[^}]*)\}',
@@ -69,8 +106,52 @@ class TaskProjectControlStyleTests(SimpleTestCase):
             re.DOTALL,
         )
         self.assertIsNotNone(populated_notes_icon_rule)
-        self.assertIn('color: #b77900;', populated_notes_icon_rule.group('body'))
+        self.assertIn('color: #0f8f8f;', populated_notes_icon_rule.group('body'))
         self.assertIn('stroke-width: 2.5;', populated_notes_icon_rule.group('body'))
+
+    def test_note_author_name_is_bold_despite_global_weight_reset(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+        author_name_rule = re.search(
+            r'\.tasks-project-note__meta strong\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(author_name_rule)
+        self.assertIn('font-weight: 700 !important;', author_name_rule.group('body'))
+
+    def test_project_note_edit_input_has_no_border(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+        edit_input_rule = re.search(
+            r'\.tasks-project-note__edit-input\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(edit_input_rule)
+        self.assertIn('border: 0;', edit_input_rule.group('body'))
+
+    def test_task_detail_header_is_exactly_45_pixels_tall(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        header_rule = re.search(
+            r'\.tasks-issue-header\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(header_rule)
+        self.assertIn('height: 45px;', header_rule.group('body'))
+        self.assertIn('min-height: 45px;', header_rule.group('body'))
 
     def test_project_modal_custom_selects_keep_visible_control_styles(self):
         css_path = finders.find('css/components/tasks.css')
@@ -1079,7 +1160,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'id="info-selected-project-menu-btn"')
         self.assertContains(response, 'id="notes-selected-project-menu-btn"')
         self.assertContains(response, 'data-open-project-info', count=4)
-        self.assertContains(response, 'data-lucide="file-text"')
+        self.assertContains(response, 'data-project-notes-icon data-lucide="file-text"')
+        self.assertContains(response, 'data-project-notes-icon data-lucide="file-plus-2"')
         self.assertContains(response, 'data-open-project-notes', count=4)
         self.assertContains(
             response,
@@ -1746,6 +1828,14 @@ class TaskProjectCreationTests(TestCase):
             '<span class="status-indicator status-label-plain">Grupa</span>',
             html=True,
         )
+        self.assertContains(
+            response,
+            f'<a href="{reverse("tasks:tasks")}" class="tasks-issue-close" title="Wróć do wszystkich projektów" aria-label="Wróć do wszystkich projektów" data-projects-back-link>',
+        )
+        self.assertContains(response, 'tasks-titlebar-left tasks-issue-breadcrumb tasks-project-breadcrumb')
+        self.assertContains(response, '<span class="tasks-issue-divider" aria-hidden="true"></span>')
+        self.assertContains(response, 'class="tasks-issue-crumb-icon"')
+        self.assertContains(response, 'data-lucide="briefcase-business" data-lucide-fallback="folder"')
         self.assertContains(response, 'tasks-project-sheet--selectable')
         self.assertContains(response, 'tasks-section-sheet')
         self.assertContains(response, 'data-directory-column-manager')
@@ -2270,6 +2360,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(tag.code, old_code)
         self.assertEqual(note.author, self.user)
         self.assertEqual(note.message, 'Nowa notatka tagu')
+        self.assertIsNone(note.edited_at)
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'edit_tag_note',
@@ -2281,6 +2372,7 @@ class TaskProjectCreationTests(TestCase):
         note.refresh_from_db()
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertEqual(note.message, 'Poprawiona notatka tagu')
+        self.assertIsNotNone(note.edited_at)
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'delete_tag_note',
@@ -2747,18 +2839,21 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(activity.metadata['changes'][1]['to_label'], 'Wysoki')
         self.assertEqual(activity.metadata['changes'][4]['to_label'], '15.06.2026 09:45')
 
-    def test_task_detail_uses_autosave_without_manual_save_button(self):
+    def test_task_detail_uses_manual_save_button_without_autosave(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Backend')
         task = Task.objects.create(user=self.user, section=section, title='Zadanie')
 
         response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
 
-        self.assertContains(response, 'data-task-autosave-status')
-        self.assertNotContains(response, 'class="tasks-issue-save"')
-        self.assertNotContains(response, 'tasks-issue-autosave-section')
+        self.assertContains(response, 'class="tasks-issue-save"')
+        self.assertContains(response, 'data-task-save')
+        self.assertContains(response, 'saveTaskDetail()')
+        self.assertNotContains(response, 'data-task-autosave-status')
+        self.assertNotContains(response, "formData.set('autosave', '1')")
+        self.assertNotContains(response, 'queueTaskDetailAutosave')
 
-    def test_detail_autosave_returns_json_and_records_activity(self):
+    def test_detail_manual_save_returns_json_and_records_activity(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Backend')
         task = Task.objects.create(user=self.user, section=section, title='Zadanie')
@@ -2766,11 +2861,10 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.post(
             reverse('tasks:view-task', args=[task.task_id]),
             {
-                'autosave': '1',
-                'title': 'Zadanie po autosave',
+                'title': 'Zadanie po zapisaniu',
                 'parent': '',
                 'section': section.id,
-                'description': 'Opis zapisany automatycznie',
+                'description': 'Opis zapisany ręcznie',
                 'priority': 'high',
                 'status': 'in_progress',
                 'due_at': '',
@@ -2787,14 +2881,15 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(payload['status'], 'success')
-        self.assertEqual(payload['task']['title'], 'Zadanie po autosave')
+        self.assertEqual(payload['message'], 'Zapisano.')
+        self.assertEqual(payload['task']['title'], 'Zadanie po zapisaniu')
         self.assertIn('data-activity-kind="history"', payload['activity_html'])
         self.assertIn('zaktualizował zadanie', payload['activity_html'])
-        self.assertEqual(task.title, 'Zadanie po autosave')
+        self.assertEqual(task.title, 'Zadanie po zapisaniu')
         self.assertEqual(task.priority, 'high')
         self.assertEqual(activity.action, 'updated')
 
-    def test_detail_autosave_returns_validation_errors_as_json(self):
+    def test_detail_manual_save_returns_validation_errors_as_json(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Backend')
         task = Task.objects.create(user=self.user, section=section, title='Zadanie')
@@ -2802,7 +2897,6 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.post(
             reverse('tasks:view-task', args=[task.task_id]),
             {
-                'autosave': '1',
                 'title': '',
                 'parent': '',
                 'section': section.id,
@@ -2823,7 +2917,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('Tytuł', response.json()['message'])
         self.assertEqual(task.title, 'Zadanie')
 
-    def test_detail_shows_saved_time_spent_with_delete_action(self):
+    def test_detail_shows_saved_time_spent_with_staged_delete_button(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Backend')
         task = Task.objects.create(
@@ -2837,7 +2931,8 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
 
         self.assertContains(response, '02:05')
-        self.assertContains(response, 'name="action" value="clear_time_spent"')
+        self.assertContains(response, 'type="button" title="Usuń czas pracy"')
+        self.assertContains(response, 'data-task-clear-time')
 
     def test_clear_time_spent_action_removes_time_and_records_activity(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
@@ -2971,6 +3066,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(project.code, old_code)
         self.assertEqual(note.author, self.user)
         self.assertEqual(note.message, 'Nowa notatka projektu')
+        self.assertIsNone(note.edited_at)
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'edit_project_note',
@@ -2982,6 +3078,14 @@ class TaskProjectCreationTests(TestCase):
         note.refresh_from_db()
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertEqual(note.message, 'Poprawiona notatka')
+        self.assertIsNotNone(note.edited_at)
+
+        page_response = self.client.get(reverse('tasks:tasks'))
+        self.assertContains(page_response, '| Edytowano:')
+        self.assertContains(
+            page_response,
+            timezone.localtime(note.edited_at).strftime('%d.%m.%Y, %H:%M'),
+        )
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'delete_project_note',
@@ -3013,7 +3117,54 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('data-project-note-item', payload['note_html'])
         self.assertIn('Notatka bez przeładowania', payload['note_html'])
         self.assertIn('data-project-note-edit-form', payload['note_html'])
+        self.assertNotIn('Edytowano:', payload['note_html'])
         self.assertEqual(TaskProjectNote.objects.filter(project=project).count(), 1)
+
+    def test_note_ajax_edits_return_updated_data_without_redirect(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt AJAX')
+        section = TaskSection.objects.create(project=project, title='Grupa AJAX')
+        tag = TaskTag.objects.create(user=self.user, name='Tag AJAX')
+        cases = (
+            (
+                'edit_project_note',
+                {'project_id': project.id},
+                TaskProjectNote.objects.create(project=project, author=self.user, message='Stara treść'),
+            ),
+            (
+                'edit_section_note',
+                {'section_id': section.id},
+                TaskSectionNote.objects.create(section=section, author=self.user, message='Stara treść'),
+            ),
+            (
+                'edit_tag_note',
+                {'tag_id': tag.id},
+                TaskTagNote.objects.create(tag=tag, author=self.user, message='Stara treść'),
+            ),
+        )
+
+        for action, parent_data, note in cases:
+            with self.subTest(action=action):
+                response = self.client.post(
+                    reverse('tasks:tasks'),
+                    {
+                        'action': action,
+                        'note_id': note.id,
+                        'message': '  Nowa treść bez przeładowania  ',
+                        **parent_data,
+                    },
+                    HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+                    HTTP_ACCEPT='application/json',
+                )
+
+                self.assertEqual(response.status_code, 200)
+                payload = response.json()
+                self.assertEqual(payload['status'], 'success')
+                self.assertEqual(payload['note']['message'], 'Nowa treść bez przeładowania')
+                self.assertRegex(payload['note']['edited_at_label'], r'^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$')
+                self.assertIn('T', payload['note']['edited_at'])
+                note.refresh_from_db()
+                self.assertEqual(note.message, 'Nowa treść bez przeładowania')
+                self.assertIsNotNone(note.edited_at)
 
     def test_project_note_actions_only_allow_author_to_change_note(self):
         other_user = get_user_model().objects.create_user(username='note-owner', password='test-pass-123')
@@ -3062,6 +3213,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(section.code, old_code)
         self.assertEqual(note.author, self.user)
         self.assertEqual(note.message, 'Nowa notatka grupy')
+        self.assertIsNone(note.edited_at)
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'edit_section_note',
@@ -3073,6 +3225,7 @@ class TaskProjectCreationTests(TestCase):
         note.refresh_from_db()
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertEqual(note.message, 'Poprawiona notatka grupy')
+        self.assertIsNotNone(note.edited_at)
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'delete_section_note',

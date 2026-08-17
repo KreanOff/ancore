@@ -3985,6 +3985,23 @@ function initTasksPage() {
             : String(projectId).replace(/["\\]/g, '\\$&');
         document.querySelectorAll(`.tasks-project-sheet__notes-button[data-project-id="${escapedProjectId}"]`).forEach(button => {
             button.classList.add('has-notes');
+            const currentIcon = button.querySelector('[data-project-notes-icon]');
+            const populatedIcon = window.AncoreIcons?.create
+                ? window.AncoreIcons.create('file-text')
+                : document.createElement('i');
+            populatedIcon.setAttribute('data-project-notes-icon', '');
+            populatedIcon.setAttribute('data-lucide', 'file-text');
+            populatedIcon.setAttribute('aria-hidden', 'true');
+            if (currentIcon) {
+                currentIcon.replaceWith(populatedIcon);
+            } else {
+                button.appendChild(populatedIcon);
+            }
+            if (window.AncoreIcons?.render) {
+                window.AncoreIcons.render(populatedIcon);
+            } else if (window.lucide?.createIcons) {
+                window.lucide.createIcons();
+            }
             const baseTitle = (button.getAttribute('title') || '').split(' — ')[0];
             if (baseTitle) button.setAttribute('title', `${baseTitle} — zawiera notatkę`);
             const ariaLabel = (button.getAttribute('aria-label') || '').replace(/, zawiera notatkę$/, '');
@@ -4013,6 +4030,127 @@ function initTasksPage() {
         }
         return noteItem;
     }
+
+    function setNoteEditLoading(form, isLoading) {
+        if (!form) return;
+        const submitButton = form.querySelector('[type="submit"]');
+        form.toggleAttribute('aria-busy', isLoading);
+        if (!submitButton) return;
+
+        if (!submitButton.dataset.defaultLabel) {
+            submitButton.dataset.defaultLabel = submitButton.textContent;
+        }
+        submitButton.textContent = isLoading ? 'Zapisywanie…' : submitButton.dataset.defaultLabel;
+        submitButton.disabled = isLoading;
+    }
+
+    function renderNoteMessage(element, message) {
+        if (!element) return;
+        const lines = String(message || '').split('\n');
+        const fragment = document.createDocumentFragment();
+        lines.forEach((line, index) => {
+            if (index > 0) fragment.appendChild(document.createElement('br'));
+            fragment.appendChild(document.createTextNode(line));
+        });
+        element.replaceChildren(fragment);
+    }
+
+    function updateEditedNote(item, form, payload, messageSelector) {
+        const note = payload?.note;
+        if (!item || !note) return false;
+
+        renderNoteMessage(item.querySelector(messageSelector), note.message);
+
+        const meta = item.querySelector('.tasks-project-note__meta');
+        let edited = item.querySelector('.tasks-project-note__edited');
+        if (meta && !edited) {
+            edited = document.createElement('span');
+            edited.className = 'tasks-project-note__edited';
+            meta.appendChild(edited);
+        }
+        if (edited) {
+            const editedTime = document.createElement('time');
+            editedTime.dateTime = note.edited_at || '';
+            editedTime.textContent = note.edited_at_label || '';
+            edited.replaceChildren(document.createTextNode('| Edytowano: '), editedTime);
+        }
+
+        const input = form.querySelector('textarea[name="message"]');
+        if (input) {
+            input.value = note.message;
+            input.defaultValue = note.message;
+        }
+        form.hidden = true;
+        item.classList.remove('is-editing');
+        return true;
+    }
+
+    async function submitNoteEdit(form, config) {
+        const item = form.closest(config.itemSelector);
+        const input = form.querySelector('textarea[name="message"]');
+        const message = input?.value.trim() || '';
+        if (!message) {
+            showMessage('Wpisz treść notatki.', 'error');
+            input?.focus();
+            return;
+        }
+
+        setNoteEditLoading(form, true);
+        try {
+            const submitUrl = form.getAttribute('action') || window.location.href;
+            const response = await fetch(submitUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin',
+                body: new FormData(form)
+            });
+            const payload = await response.json().catch(() => null);
+            if (!response.ok || payload?.status !== 'success') {
+                throw new Error(payload?.message || 'Nie udało się zapisać notatki.');
+            }
+            if (!updateEditedNote(item, form, payload, config.messageSelector)) {
+                throw new Error('Nie udało się wyświetlić zapisanej notatki.');
+            }
+            showMessage(payload.message || 'Notatka zaktualizowana.', 'success');
+        } catch (error) {
+            showMessage(error.message || 'Nie udało się zapisać notatki.', 'error');
+        } finally {
+            setNoteEditLoading(form, false);
+        }
+    }
+
+    [
+        {
+            modal: projectNotesModal,
+            formSelector: '[data-project-note-edit-form]',
+            itemSelector: '[data-project-note-item]',
+            messageSelector: '[data-project-note-message]'
+        },
+        {
+            modal: sectionNotesModal,
+            formSelector: '[data-section-note-edit-form]',
+            itemSelector: '[data-section-note-item]',
+            messageSelector: '[data-section-note-message]'
+        },
+        {
+            modal: tagNotesModal,
+            formSelector: '[data-tag-note-edit-form]',
+            itemSelector: '[data-tag-note-item]',
+            messageSelector: '[data-tag-note-message]'
+        }
+    ].forEach(config => {
+        if (!config.modal || config.modal.dataset.asyncNoteEditInitialized === 'true') return;
+        config.modal.dataset.asyncNoteEditInitialized = 'true';
+        config.modal.addEventListener('submit', event => {
+            const form = event.target.closest?.(config.formSelector);
+            if (!form) return;
+            event.preventDefault();
+            submitNoteEdit(form, config);
+        });
+    });
 
     if (projectNotesForm && projectNotesForm.dataset.asyncSubmitInitialized !== 'true') {
         projectNotesForm.dataset.asyncSubmitInitialized = 'true';
@@ -6591,6 +6729,9 @@ function initTasksPage() {
         }
 
         syncDescriptionInput(editor);
+        document.dispatchEvent(new CustomEvent('ancore:task-description-ready', {
+            detail: { form },
+        }));
         return editor;
     }
 

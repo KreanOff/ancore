@@ -5,7 +5,10 @@
         </span>
         <div class="tasks-project-note__meta">
             <strong>{{ note.author.get_full_name|default:note.author.username|default:"System" }}</strong>
-            <time>{{ note.created_at|date:"d.m.Y, H:i" }}</time>
+            <time datetime="{{ note.created_at|date:'c' }}">{{ note.created_at|date:"d.m.Y, H:i" }}</time>
+            {% if note.edited_at %}
+            <span class="tasks-project-note__edited">| Edytowano: <time datetime="{{ note.edited_at|date:'c' }}">{{ note.edited_at|date:"d.m.Y, H:i" }}</time></span>
+            {% endif %}
         </div>
         {% if note.author_id == request.user.id %}
         <div class="tasks-project-note__actions">

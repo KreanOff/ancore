@@ -187,6 +187,7 @@ class TaskProjectNote(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['created_at', 'id']
@@ -300,6 +301,7 @@ class TaskSectionNote(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['created_at', 'id']
@@ -429,6 +431,7 @@ class TaskTagNote(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['created_at', 'id']

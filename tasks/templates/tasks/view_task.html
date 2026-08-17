@@ -58,10 +58,11 @@
             </div>
 
             <div class="tasks-issue-actions">
-                <span class="tasks-issue-autosave" data-task-autosave-status data-state="saved" role="status" aria-live="polite">
-                    <span class="tasks-issue-autosave-dot" aria-hidden="true"></span>
-                    <span data-task-autosave-text>Zapisano</span>
-                </span>
+                {% if can_edit_task %}
+                <button type="submit" form="task-detail-form" class="tasks-issue-save" data-task-save data-state="idle" disabled>
+                    Zapisz
+                </button>
+                {% endif %}
             </div>
         </header>
 
@@ -441,7 +442,7 @@
                                     <div class="tasks-issue-time-entry">
                                         <span>{{ task.time_spent_label }}</span>
                                         {% if can_edit_task %}
-                                        <button type="submit" name="action" value="clear_time_spent" title="Usuń czas pracy" aria-label="Usuń czas pracy" formnovalidate data-task-clear-time>
+                                        <button type="button" title="Usuń czas pracy" aria-label="Usuń czas pracy" data-task-clear-time>
                                             <i data-lucide="x" aria-hidden="true"></i>
                                         </button>
                                         {% endif %}
@@ -1006,16 +1007,11 @@ syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdow
 document.addEventListener('click', () => closeTaskDetailDropdowns());
 
 const taskDetailForm = document.getElementById('task-detail-form');
-const taskAutosaveStatus = document.querySelector('[data-task-autosave-status]');
-const taskAutosaveText = document.querySelector('[data-task-autosave-text]');
-const taskAutosaveSidebar = document.querySelector('[data-task-autosave-sidebar]');
-const taskAutosaveTime = document.querySelector('[data-task-autosave-time]');
-let taskAutosaveTimer = null;
-let taskAutosaveIsSaving = false;
-let taskAutosaveNeedsRun = false;
-let taskAutosaveShouldReload = false;
-let taskAutosaveIsReloading = false;
-let taskAutosaveSavedSnapshot = '';
+const taskSaveButton = document.querySelector('[data-task-save]');
+let taskSaveFeedbackTimer = null;
+let taskSaveIsSaving = false;
+let taskSaveIsReloading = false;
+let taskSavedSnapshot = '';
 
 function isTaskDetailEmptyFile(value) {
     return value instanceof File && !value.name && value.size === 0;
@@ -1042,25 +1038,26 @@ function getTaskDetailSnapshot() {
     }).filter(Boolean));
 }
 
-function setTaskAutosaveState(state, text) {
-    const label = text || {
-        dirty: 'Niezapisane zmiany',
+function setTaskSaveState(state) {
+    if (!taskSaveButton) return;
+
+    const labels = {
+        idle: 'Zapisz',
+        dirty: 'Zapisz',
         saving: 'Zapisywanie...',
         saved: 'Zapisano',
-        error: 'Nie zapisano',
-    }[state] || 'Zapisano';
-
-    if (taskAutosaveStatus) taskAutosaveStatus.dataset.state = state;
-    if (taskAutosaveText) taskAutosaveText.textContent = label;
-    if (taskAutosaveSidebar) taskAutosaveSidebar.textContent = label;
+        error: 'Spróbuj ponownie',
+    };
+    taskSaveButton.dataset.state = state;
+    taskSaveButton.textContent = labels[state] || labels.idle;
+    taskSaveButton.disabled = state === 'idle' || state === 'saving' || state === 'saved';
 }
 
-function setTaskAutosaveSavedTime(date = new Date()) {
-    if (!taskAutosaveTime) return;
-    taskAutosaveTime.textContent = date.toLocaleTimeString('pl-PL', {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+function markTaskDetailDirty() {
+    clearTimeout(taskSaveFeedbackTimer);
+    if (taskSaveIsSaving) return;
+    const hasChanges = getTaskDetailSnapshot() !== taskSavedSnapshot;
+    setTaskSaveState(hasChanges ? 'dirty' : 'idle');
 }
 
 function updateTaskDetailLiveValues(payload) {
@@ -1090,34 +1087,28 @@ function updateTaskDetailLiveValues(payload) {
 function clearTaskDetailTimeSpent() {
     taskDetailForm?.querySelectorAll('[name="time_spent_hours"], [name="time_spent_minutes"]').forEach((input) => {
         input.value = '';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
     });
+    document.querySelector('.tasks-issue-time-entries')?.remove();
+    markTaskDetailDirty();
 }
 
-async function saveTaskDetailNow() {
-    if (!taskDetailForm || taskAutosaveIsReloading) return;
-
-    clearTimeout(taskAutosaveTimer);
-    taskAutosaveTimer = null;
-
-    if (taskAutosaveIsSaving) {
-        taskAutosaveNeedsRun = true;
-        return;
-    }
+async function saveTaskDetail() {
+    if (!taskDetailForm || taskSaveIsSaving || taskSaveIsReloading) return;
 
     const requestSnapshot = getTaskDetailSnapshot();
-    const shouldReloadAfterSave = taskAutosaveShouldReload;
-    if (requestSnapshot === taskAutosaveSavedSnapshot && !shouldReloadAfterSave) {
-        setTaskAutosaveState('saved');
+    if (requestSnapshot === taskSavedSnapshot) {
+        setTaskSaveState('idle');
         return;
     }
 
-    taskAutosaveIsSaving = true;
-    taskAutosaveShouldReload = false;
-    setTaskAutosaveState('saving');
+    taskSaveIsSaving = true;
+    setTaskSaveState('saving');
 
     const formData = getTaskDetailFormData();
-    formData.set('autosave', '1');
+    const shouldReloadAfterSave = Boolean(
+        formData.get('deleted_attachments')
+        || Array.from(formData.getAll('attachments')).some((file) => !isTaskDetailEmptyFile(file))
+    );
 
     try {
         const response = await fetch(taskDetailForm.action || window.location.href, {
@@ -1126,6 +1117,7 @@ async function saveTaskDetailNow() {
             credentials: 'same-origin',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
             },
         });
         const payload = await response.json();
@@ -1138,53 +1130,35 @@ async function saveTaskDetailNow() {
         prependTaskDetailActivityItems(payload.activity_html);
 
         if (shouldReloadAfterSave && (payload.attachments_added || payload.attachments_deleted)) {
-            taskAutosaveIsReloading = true;
-            setTaskAutosaveState('saved');
-            window.showNotification?.('Zapisano załączniki.', 'success', { dedupeKey: 'task-autosave-attachments' });
+            taskSaveIsReloading = true;
+            setTaskSaveState('saved');
+            window.showNotification?.('Zapisano załączniki.', 'success', { dedupeKey: 'task-save-attachments' });
             window.location.reload();
             return;
         }
 
-        taskAutosaveSavedSnapshot = requestSnapshot;
-        setTaskAutosaveSavedTime();
+        taskSavedSnapshot = requestSnapshot;
 
         if (getTaskDetailSnapshot() !== requestSnapshot) {
-            taskAutosaveNeedsRun = true;
-            setTaskAutosaveState('dirty');
+            setTaskSaveState('dirty');
         } else {
-            setTaskAutosaveState('saved');
+            setTaskSaveState('saved');
+            taskSaveFeedbackTimer = setTimeout(() => {
+                if (getTaskDetailSnapshot() === taskSavedSnapshot) setTaskSaveState('idle');
+            }, 1200);
         }
     } catch (error) {
         const message = error.message || 'Nie udało się zapisać zmian.';
-        setTaskAutosaveState('error', message);
-        window.showNotification?.(message, 'error', { dedupeKey: 'task-autosave-error' });
+        setTaskSaveState('error');
+        window.showNotification?.(message, 'error', { dedupeKey: 'task-save-error' });
     } finally {
-        taskAutosaveIsSaving = false;
-        if (taskAutosaveNeedsRun && !taskAutosaveIsReloading) {
-            taskAutosaveNeedsRun = false;
-            saveTaskDetailNow();
-        }
+        taskSaveIsSaving = false;
     }
-}
-
-function queueTaskDetailAutosave(options = {}) {
-    if (!taskDetailForm || taskAutosaveIsReloading) return;
-
-    taskAutosaveShouldReload = taskAutosaveShouldReload || Boolean(options.reloadOnSuccess);
-    setTaskAutosaveState('dirty');
-    clearTimeout(taskAutosaveTimer);
-
-    if (options.immediate) {
-        saveTaskDetailNow();
-        return;
-    }
-
-    taskAutosaveTimer = setTimeout(saveTaskDetailNow, options.delay || 900);
 }
 
 if (taskDetailForm) {
-    taskAutosaveSavedSnapshot = getTaskDetailSnapshot();
-    setTaskAutosaveSavedTime();
+    taskSavedSnapshot = getTaskDetailSnapshot();
+    setTaskSaveState('idle');
 
     taskDetailForm.addEventListener('input', (event) => {
         if (event.target.matches('[type="file"]')) return;
@@ -1192,53 +1166,43 @@ if (taskDetailForm) {
             const currentTitle = document.querySelector('[data-task-title-current] span');
             if (currentTitle) currentTitle.textContent = event.target.value.trim() || 'Bez tytułu';
         }
-        queueTaskDetailAutosave();
+        markTaskDetailDirty();
     });
 
     taskDetailForm.addEventListener('change', (event) => {
         if (event.target.matches('[type="file"]')) return;
-        queueTaskDetailAutosave({ delay: 450 });
+        markTaskDetailDirty();
     });
 
     taskDetailForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        if (event.submitter?.matches('[data-task-clear-time]')) {
-            clearTaskDetailTimeSpent();
-        }
-        queueTaskDetailAutosave({ immediate: true });
-    });
-
-    taskDetailForm.addEventListener('focusout', () => {
-        if (getTaskDetailSnapshot() !== taskAutosaveSavedSnapshot) {
-            queueTaskDetailAutosave({ immediate: true });
-        }
+        saveTaskDetail();
     });
 
     document.addEventListener('ancore:file-upload-updated', (event) => {
         if (event.detail?.form !== taskDetailForm) return;
-        queueTaskDetailAutosave({
-            delay: 250,
-            reloadOnSuccess: Number(event.detail.fileCount || 0) > 0,
-        });
+        markTaskDetailDirty();
     });
 
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden' && getTaskDetailSnapshot() !== taskAutosaveSavedSnapshot) {
-            saveTaskDetailNow();
-        }
-    });
+    document.addEventListener('ancore:task-description-ready', (event) => {
+        if (event.detail?.form !== taskDetailForm) return;
+        taskSavedSnapshot = getTaskDetailSnapshot();
+        setTaskSaveState('idle');
+    }, { once: true });
 
     window.addEventListener('beforeunload', (event) => {
-        if (taskAutosaveIsReloading || getTaskDetailSnapshot() === taskAutosaveSavedSnapshot) return;
+        if (taskSaveIsReloading || getTaskDetailSnapshot() === taskSavedSnapshot) return;
         event.preventDefault();
         event.returnValue = '';
     });
+
+    taskDetailForm.querySelector('[data-task-clear-time]')?.addEventListener('click', clearTaskDetailTimeSpent);
 }
 
 function deleteAttachment(attachmentId) {
     window.showConfirmModal({
         title: 'Potwierdź usunięcie',
-        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana automatycznie.',
+        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zastosowana po kliknięciu „Zapisz”.',
         confirmText: 'Usuń',
         cancelText: 'Anuluj',
         confirmClass: 'btn-danger',
@@ -1254,17 +1218,40 @@ function deleteAttachment(attachmentId) {
                 el.classList.add('marked-for-deletion');
                 const btn = el.querySelector('.tasks-delete-attach-btn');
                 if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i data-lucide="loader-circle" aria-hidden="true"></i>';
+                    btn.dataset.originalHtml = btn.innerHTML;
+                    btn.innerHTML = '<i data-lucide="rotate-ccw" aria-hidden="true"></i>';
                     window.AncoreIcons?.render(btn);
-                    btn.title = 'Usuwanie załącznika';
-                    btn.setAttribute('aria-label', 'Usuwanie załącznika');
-                    btn.onclick = null;
+                    btn.title = 'Cofnij usunięcie';
+                    btn.setAttribute('aria-label', 'Cofnij usunięcie załącznika');
+                    btn.onclick = (event) => {
+                        event.preventDefault();
+                        undoDeleteAttachment(attachmentId);
+                    };
                 }
             }
-            queueTaskDetailAutosave({ immediate: true, reloadOnSuccess: true });
+            markTaskDetailDirty();
         }
     });
+}
+
+function undoDeleteAttachment(attachmentId) {
+    const deletedInput = document.getElementById('deleted-attachments');
+    const deletedIds = deletedInput.value ? deletedInput.value.split(',') : [];
+    deletedInput.value = deletedIds.filter((id) => id !== attachmentId.toString()).join(',');
+
+    const el = document.getElementById(`attachment-${attachmentId}`);
+    if (el) {
+        el.classList.remove('marked-for-deletion');
+        const btn = el.querySelector('.tasks-delete-attach-btn');
+        if (btn) {
+            btn.innerHTML = btn.dataset.originalHtml || '<i data-lucide="trash-2" aria-hidden="true"></i>';
+            window.AncoreIcons?.render(btn);
+            btn.title = 'Usuń załącznik';
+            btn.setAttribute('aria-label', 'Usuń załącznik');
+            btn.onclick = () => deleteAttachment(attachmentId);
+        }
+    }
+    markTaskDetailDirty();
 }
 
 function updateTaskStatus(isCompleted) {

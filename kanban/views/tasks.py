@@ -1296,11 +1296,26 @@ def _tasks_page(request, active_section=None):
             )
             note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), project_id=request.POST.get('project_id'))
             message = (request.POST.get('message') or '').strip()
+            is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if message:
                 note.message = message
-                note.save(update_fields=['message', 'updated_at'])
+                note.edited_at = timezone.now()
+                note.save(update_fields=['message', 'updated_at', 'edited_at'])
+                if is_ajax_request:
+                    edited_at = timezone.localtime(note.edited_at)
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Notatka zaktualizowana.',
+                        'note': {
+                            'message': note.message,
+                            'edited_at': edited_at.isoformat(),
+                            'edited_at_label': edited_at.strftime('%d.%m.%Y, %H:%M'),
+                        },
+                    })
                 messages.success(request, 'Notatka zaktualizowana.')
             else:
+                if is_ajax_request:
+                    return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
                 messages.error(request, 'Wpisz treść notatki.')
             return redirect(_kanban_next_url(request))
 
@@ -1383,11 +1398,26 @@ def _tasks_page(request, active_section=None):
             )
             note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), tag_id=request.POST.get('tag_id'))
             message = (request.POST.get('message') or '').strip()
+            is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if message:
                 note.message = message
-                note.save(update_fields=['message', 'updated_at'])
+                note.edited_at = timezone.now()
+                note.save(update_fields=['message', 'updated_at', 'edited_at'])
+                if is_ajax_request:
+                    edited_at = timezone.localtime(note.edited_at)
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Notatka zaktualizowana.',
+                        'note': {
+                            'message': note.message,
+                            'edited_at': edited_at.isoformat(),
+                            'edited_at_label': edited_at.strftime('%d.%m.%Y, %H:%M'),
+                        },
+                    })
                 messages.success(request, 'Notatka zaktualizowana.')
             else:
+                if is_ajax_request:
+                    return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
                 messages.error(request, 'Wpisz treść notatki.')
             return redirect(_kanban_next_url(request))
 

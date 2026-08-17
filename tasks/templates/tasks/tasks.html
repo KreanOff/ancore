@@ -153,7 +153,19 @@
 <div class="tasks-page tasks-list-page">
     <section class="tasks-workspace" aria-label="Lista zadań">
         <header class="tasks-topbar">
-            <div class="tasks-titlebar-left">
+            <div class="tasks-titlebar-left{% if active_view == 'project' %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
+                {% if active_view == 'project' and active_project %}
+                <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" title="Wróć do wszystkich projektów" aria-label="Wróć do wszystkich projektów" data-projects-back-link>
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                </a>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-crumb">
+                    <span class="tasks-issue-crumb-icon" aria-hidden="true" style="--project-icon-fg: {{ active_project.icon_color.foreground }};">
+                        <i data-lucide="{{ active_project.icon|default:'briefcase-business' }}" data-lucide-fallback="folder" aria-hidden="true"></i>
+                    </span>
+                    <span>{{ active_project.name }}</span>
+                </span>
+                {% else %}
                 <span class="tasks-topbar-title">
                     {% if active_project %}
                     <span class="tasks-topbar-title-item">
@@ -189,6 +201,7 @@
                     {% endif %}
                     {% endif %}
                 </span>
+                {% endif %}
             </div>
             {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' or active_view == 'all_tasks' or active_view == 'my_tasks' %}
             <form class="tasks-titlebar-search tasks-search-actions" method="get" action="{% url 'tasks:tasks' %}" data-project-search-form{% if active_view == 'all_tasks' or active_view == 'my_tasks' %} data-server-directory-filters="true"{% endif %}>
@@ -1437,7 +1450,7 @@
                     </span>
                     <span class="tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="notes">
                         <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button{% if project.project_notes.all %} has-notes{% endif %}" title="Notatki projektu{% if project.project_notes.all %} — zawiera notatkę{% endif %}" aria-label="Notatki projektu {{ project.name }}{% if project.project_notes.all %}, zawiera notatkę{% endif %}" aria-haspopup="dialog" aria-controls="project-notes-modal" data-open-project-notes data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}">
-                            <i data-lucide="file-text" aria-hidden="true"></i>
+                            <i data-project-notes-icon data-lucide="{% if project.project_notes.all %}file-text{% else %}file-plus-2{% endif %}" aria-hidden="true"></i>
                         </button>
                     </span>
                     <span class="tasks-project-sheet__code tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">{{ project.code }}</span>
@@ -1939,7 +1952,10 @@
                                 </span>
                                 <div class="tasks-project-note__meta">
                                     <strong>{{ note.author.get_full_name|default:note.author.username|default:"System" }}</strong>
-                                    <time>{{ note.created_at|date:"d.m.Y, H:i" }}</time>
+                                    <time datetime="{{ note.created_at|date:'c' }}">{{ note.created_at|date:"d.m.Y, H:i" }}</time>
+                                    {% if note.edited_at %}
+                                    <span class="tasks-project-note__edited">| Edytowano: <time datetime="{{ note.edited_at|date:'c' }}">{{ note.edited_at|date:"d.m.Y, H:i" }}</time></span>
+                                    {% endif %}
                                 </div>
                                 {% if note.author_id == request.user.id %}
                                 <div class="tasks-project-note__actions">

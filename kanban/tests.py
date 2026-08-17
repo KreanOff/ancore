@@ -207,6 +207,8 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, project_without_icon.code)
         self.assertContains(response, 'id="notes-selected-project-menu-btn"')
         self.assertContains(response, 'data-open-project-notes', count=4)
+        self.assertContains(response, 'data-project-notes-icon data-lucide="file-text"')
+        self.assertContains(response, 'data-project-notes-icon data-lucide="file-plus-2"')
         self.assertContains(
             response,
             f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button has-notes" title="Notatki przestrzeni — zawiera notatkę" aria-label="Notatki przestrzeni {project_with_icon.name}, zawiera notatkę"',
@@ -305,6 +307,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(project.code, old_code)
         self.assertEqual(note.author, self.user)
         self.assertEqual(note.message, 'Nowa notatka przestrzeni')
+        self.assertIsNone(note.edited_at)
 
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'edit_project_note',
@@ -316,6 +319,10 @@ class KanbanProjectCreationTests(TestCase):
         note.refresh_from_db()
         self.assertRedirects(response, reverse('kanban:tasks'))
         self.assertEqual(note.message, 'Poprawiona notatka przestrzeni')
+        self.assertIsNotNone(note.edited_at)
+
+        page_response = self.client.get(reverse('kanban:tasks'))
+        self.assertContains(page_response, '| Edytowano:')
 
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'delete_project_note',
@@ -347,7 +354,48 @@ class KanbanProjectCreationTests(TestCase):
         self.assertIn('data-project-note-item', payload['note_html'])
         self.assertIn('Notatka bez przeładowania', payload['note_html'])
         self.assertIn('data-project-note-edit-form', payload['note_html'])
+        self.assertNotIn('Edytowano:', payload['note_html'])
         self.assertEqual(KanbanProjectNote.objects.filter(project=project).count(), 1)
+
+    def test_note_ajax_edits_return_updated_data_without_redirect(self):
+        project = KanbanProject.objects.create(user=self.user, name='Przestrzeń AJAX')
+        tag = TaskTag.objects.create(user=self.user, name='Tag AJAX')
+        cases = (
+            (
+                'edit_project_note',
+                {'project_id': project.id},
+                KanbanProjectNote.objects.create(project=project, author=self.user, message='Stara treść'),
+            ),
+            (
+                'edit_tag_note',
+                {'tag_id': tag.id},
+                TaskTagNote.objects.create(tag=tag, author=self.user, message='Stara treść'),
+            ),
+        )
+
+        for action, parent_data, note in cases:
+            with self.subTest(action=action):
+                response = self.client.post(
+                    reverse('kanban:tasks'),
+                    {
+                        'action': action,
+                        'note_id': note.id,
+                        'message': '  Nowa treść bez przeładowania  ',
+                        **parent_data,
+                    },
+                    HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+                    HTTP_ACCEPT='application/json',
+                )
+
+                self.assertEqual(response.status_code, 200)
+                payload = response.json()
+                self.assertEqual(payload['status'], 'success')
+                self.assertEqual(payload['note']['message'], 'Nowa treść bez przeładowania')
+                self.assertRegex(payload['note']['edited_at_label'], r'^\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$')
+                self.assertIn('T', payload['note']['edited_at'])
+                note.refresh_from_db()
+                self.assertEqual(note.message, 'Nowa treść bez przeładowania')
+                self.assertIsNotNone(note.edited_at)
 
     def test_project_note_actions_only_allow_author_to_change_note(self):
         other_user = get_user_model().objects.create_user(username='kanban-note-owner', password='test-pass-123')
@@ -1026,6 +1074,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(tag.code, old_code)
         self.assertEqual(note.author, self.user)
         self.assertEqual(note.message, 'Nowa notatka tagu')
+        self.assertIsNone(note.edited_at)
 
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'edit_tag_note',
@@ -1037,6 +1086,7 @@ class KanbanProjectCreationTests(TestCase):
         note.refresh_from_db()
         self.assertRedirects(response, reverse('kanban:tasks'))
         self.assertEqual(note.message, 'Poprawiona notatka tagu')
+        self.assertIsNotNone(note.edited_at)
 
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'delete_tag_note',

@@ -2723,7 +2723,7 @@ def _task_change_activities(task, before):
 
 
 def _is_ajax_request(request):
-    return request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('autosave') == '1'
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
 
 
 def _form_error_messages(form):
@@ -2933,11 +2933,26 @@ def _tasks_page(request, active_section=None):
             )
             note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), project_id=request.POST.get('project_id'))
             message = (request.POST.get('message') or '').strip()
+            is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if message:
                 note.message = message
-                note.save(update_fields=['message', 'updated_at'])
+                note.edited_at = timezone.now()
+                note.save(update_fields=['message', 'updated_at', 'edited_at'])
+                if is_ajax_request:
+                    edited_at = timezone.localtime(note.edited_at)
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Notatka zaktualizowana.',
+                        'note': {
+                            'message': note.message,
+                            'edited_at': edited_at.isoformat(),
+                            'edited_at_label': edited_at.strftime('%d.%m.%Y, %H:%M'),
+                        },
+                    })
                 messages.success(request, 'Notatka zaktualizowana.')
             else:
+                if is_ajax_request:
+                    return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
                 messages.error(request, 'Wpisz treść notatki.')
             return redirect(_tasks_next_url(request))
 
@@ -2977,11 +2992,26 @@ def _tasks_page(request, active_section=None):
             )
             note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), section_id=request.POST.get('section_id'))
             message = (request.POST.get('message') or '').strip()
+            is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if message:
                 note.message = message
-                note.save(update_fields=['message', 'updated_at'])
+                note.edited_at = timezone.now()
+                note.save(update_fields=['message', 'updated_at', 'edited_at'])
+                if is_ajax_request:
+                    edited_at = timezone.localtime(note.edited_at)
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Notatka zaktualizowana.',
+                        'note': {
+                            'message': note.message,
+                            'edited_at': edited_at.isoformat(),
+                            'edited_at_label': edited_at.strftime('%d.%m.%Y, %H:%M'),
+                        },
+                    })
                 messages.success(request, 'Notatka zaktualizowana.')
             else:
+                if is_ajax_request:
+                    return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
                 messages.error(request, 'Wpisz treść notatki.')
             return redirect(_tasks_next_url(request))
 
@@ -3064,11 +3094,26 @@ def _tasks_page(request, active_section=None):
             )
             note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), tag_id=request.POST.get('tag_id'))
             message = (request.POST.get('message') or '').strip()
+            is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if message:
                 note.message = message
-                note.save(update_fields=['message', 'updated_at'])
+                note.edited_at = timezone.now()
+                note.save(update_fields=['message', 'updated_at', 'edited_at'])
+                if is_ajax_request:
+                    edited_at = timezone.localtime(note.edited_at)
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Notatka zaktualizowana.',
+                        'note': {
+                            'message': note.message,
+                            'edited_at': edited_at.isoformat(),
+                            'edited_at_label': edited_at.strftime('%d.%m.%Y, %H:%M'),
+                        },
+                    })
                 messages.success(request, 'Notatka zaktualizowana.')
             else:
+                if is_ajax_request:
+                    return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
                 messages.error(request, 'Wpisz treść notatki.')
             return redirect(_tasks_next_url(request))
 
@@ -3974,7 +4019,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                     task.refresh_from_db()
                     return JsonResponse({
                         'status': 'success',
-                        'message': 'Zapisano automatycznie.',
+                        'message': 'Zapisano.',
                         'task': _task_detail_payload(task),
                         'changed_fields': [
                             field

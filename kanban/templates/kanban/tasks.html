@@ -1062,7 +1062,7 @@
                     </span>
                     <span class="tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="notes">
                         <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button{% if project.project_notes.all %} has-notes{% endif %}" title="Notatki przestrzeni{% if project.project_notes.all %} — zawiera notatkę{% endif %}" aria-label="Notatki przestrzeni {{ project.name }}{% if project.project_notes.all %}, zawiera notatkę{% endif %}" aria-haspopup="dialog" aria-controls="project-notes-modal" data-open-project-notes data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}">
-                            <i data-lucide="file-text" aria-hidden="true"></i>
+                            <i data-project-notes-icon data-lucide="{% if project.project_notes.all %}file-text{% else %}file-plus-2{% endif %}" aria-hidden="true"></i>
                         </button>
                     </span>
                     <span class="tasks-project-sheet__code tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">{{ project.code }}</span>
@@ -1323,7 +1323,10 @@
                                 </span>
                                 <div class="tasks-project-note__meta">
                                     <strong>{{ note.author.get_full_name|default:note.author.username|default:"System" }}</strong>
-                                    <time>{{ note.created_at|date:"d.m.Y, H:i" }}</time>
+                                    <time datetime="{{ note.created_at|date:'c' }}">{{ note.created_at|date:"d.m.Y, H:i" }}</time>
+                                    {% if note.edited_at %}
+                                    <span class="tasks-project-note__edited">| Edytowano: <time datetime="{{ note.edited_at|date:'c' }}">{{ note.edited_at|date:"d.m.Y, H:i" }}</time></span>
+                                    {% endif %}
                                 </div>
                                 {% if note.author_id == request.user.id %}
                                 <div class="tasks-project-note__actions">

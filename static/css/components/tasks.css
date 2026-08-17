@@ -422,6 +422,18 @@
     min-width: 0;
 }
 
+.tasks-project-breadcrumb .tasks-issue-close {
+    flex: 0 0 30px;
+}
+
+.tasks-project-breadcrumb .tasks-issue-divider {
+    flex: 0 0 1px;
+}
+
+.tasks-project-breadcrumb .tasks-issue-crumb {
+    flex: 1 1 auto;
+}
+
 .tasks-icon-button {
     width: 36px;
     height: 36px;
@@ -3420,7 +3432,7 @@ body.modal-open::before {
 .tasks-project-note__meta strong {
     max-width: 100%;
     color: #20242b;
-    font-weight: 650;
+    font-weight: 700 !important;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -3428,6 +3440,11 @@ body.modal-open::before {
 
 .tasks-project-note__meta time {
     color: #7b8494;
+}
+
+.tasks-project-note__edited {
+    color: #5f6672;
+    font-weight: 600;
 }
 
 .tasks-project-note__actions {
@@ -3496,7 +3513,7 @@ body.modal-open::before {
     width: 100%;
     min-height: 92px;
     padding: 0.55rem 0.65rem;
-    border: 1px solid #cfd5dd;
+    border: 0;
     border-radius: 7px;
     background: #ffffff;
     color: #242830;
@@ -8554,7 +8571,8 @@ body.modal-open::before {
 }
 
 .tasks-issue-header {
-    min-height: 56px;
+    height: 45px;
+    min-height: 45px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -8648,63 +8666,42 @@ body.modal-open::before {
 
 .tasks-issue-save {
     min-height: 32px;
-    padding: 0 0.75rem;
-    border: 1px solid #dfe3e8;
+    min-width: 84px;
+    padding: 0 0.9rem;
+    border: 1px solid #149c9d;
     border-radius: 6px;
-    background: #f7f8fa;
-    color: #242830;
+    background: #1eadae;
+    color: #ffffff;
     font: inherit;
     font-size: var(--font-size-sm);
     font-weight: 650;
     cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
-.tasks-issue-save:hover {
-    background: var(--accent-peach);
-    border-color: var(--accent-peach);
-    color: var(--accent-on-peach);
+.tasks-issue-save:hover:not(:disabled) {
+    background: #178f90;
+    border-color: #178f90;
 }
 
-.tasks-issue-autosave {
-    min-width: 132px;
-    min-height: 30px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.45rem;
-    padding: 0 0.15rem;
-    color: #6d7481;
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    white-space: nowrap;
+.tasks-issue-save:focus-visible {
+    outline: 2px solid rgba(30, 173, 174, 0.3);
+    outline-offset: 2px;
 }
 
-.tasks-issue-autosave-dot {
-    width: 0.55rem;
-    height: 0.55rem;
-    flex: 0 0 0.55rem;
-    border-radius: 50%;
-    background: #6f9d4d;
-    box-shadow: 0 0 0 3px rgba(111, 157, 77, 0.14);
+.tasks-issue-save:disabled {
+    cursor: default;
+    opacity: 0.55;
 }
 
-.tasks-issue-autosave[data-state="dirty"] .tasks-issue-autosave-dot {
-    background: #c18a34;
-    box-shadow: 0 0 0 3px rgba(193, 138, 52, 0.14);
+.tasks-issue-save[data-state="saved"] {
+    background: #5d9141;
+    border-color: #5d9141;
 }
 
-.tasks-issue-autosave[data-state="saving"] .tasks-issue-autosave-dot {
-    background: #4f7fc9;
-    box-shadow: 0 0 0 3px rgba(79, 127, 201, 0.14);
-}
-
-.tasks-issue-autosave[data-state="error"] {
-    color: #b42318;
-}
-
-.tasks-issue-autosave[data-state="error"] .tasks-issue-autosave-dot {
-    background: #c94f45;
-    box-shadow: 0 0 0 3px rgba(201, 79, 69, 0.14);
+.tasks-issue-save[data-state="error"] {
+    background: #b42318;
+    border-color: #b42318;
 }
 
 .tasks-issue-main {
@@ -10245,6 +10242,8 @@ body.is-resizing-directory-columns {
     }
 
     .tasks-issue-header {
+        height: auto;
+        min-height: 0;
         align-items: flex-start;
         flex-direction: column;
         padding: 0.85rem;
@@ -11337,12 +11336,12 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-project-sheet__notes-button.has-notes {
-    --app-text-color: #b77900;
-    color: #b77900 !important;
+    --app-text-color: #0f8f8f;
+    color: #0f8f8f !important;
 }
 
 .tasks-project-sheet__notes-button.has-notes svg {
-    color: #b77900;
+    color: #0f8f8f;
     stroke: currentColor;
     stroke-width: 2.5;
 }
