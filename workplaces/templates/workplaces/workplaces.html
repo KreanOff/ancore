@@ -88,11 +88,11 @@
                                     </div>
                                     {% workplace_avatar workplace as workplace_logo %}
                                     <span class="workplaces-directory__cell workplace-row__name tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell">
-                                        <span class="profile-avatar workplace-row__avatar {{ workplace_logo.color_class }} {% if workplace_logo.photo_url %}has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
+                                        <span class="profile-avatar profile-avatar--workplace workplace-row__avatar {{ workplace_logo.color_class }} {% if workplace_logo.photo_url %}has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
                                             {% if workplace_logo.photo_url %}
                                             <img src="{{ workplace_logo.photo_url }}" alt="">
                                             {% else %}
-                                            <i class="profile-avatar-icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>
+                                            <i class="profile-avatar-icon" data-lucide="briefcase" aria-hidden="true" focusable="false"></i>
                                             {% endif %}
                                         </span>
                                         <span class="tasks-row-title-main">
@@ -162,8 +162,8 @@
                             <div class="tasks-issue-field workplace-edit-modal__photo-field workplace-create-modal__photo-field">
                                 <span>Logo</span>
                                 <label class="workplace-edit-modal__photo-control workplace-create-modal__photo-control" for="{{ form.workplace_photo.id_for_label }}">
-                                    <span class="profile-avatar profile-avatar--teal workplace-edit-modal__avatar workplace-create-modal__avatar" aria-hidden="true">
-                                        <i class="profile-avatar-icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>
+                                    <span class="profile-avatar profile-avatar--workplace profile-avatar--teal workplace-edit-modal__avatar workplace-create-modal__avatar" aria-hidden="true">
+                                        <i class="profile-avatar-icon" data-lucide="briefcase" aria-hidden="true" focusable="false"></i>
                                     </span>
                                     <span class="workplace-edit-modal__photo-copy">
                                         <strong>Dodaj zdjęcie</strong>
@@ -212,11 +212,11 @@
                                 <div class="tasks-issue-field workplace-edit-modal__photo-field">
                                     <span>Logo</span>
                                     <label class="workplace-edit-modal__photo-control" for="workplace-edit-photo-{{ workplace.id }}">
-                                        <span class="profile-avatar workplace-edit-modal__avatar {{ workplace_logo.color_class }} {% if workplace_logo.photo_url %}has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
+                                        <span class="profile-avatar profile-avatar--workplace workplace-edit-modal__avatar {{ workplace_logo.color_class }} {% if workplace_logo.photo_url %}has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
                                             {% if workplace_logo.photo_url %}
                                             <img src="{{ workplace_logo.photo_url }}" alt="">
                                             {% else %}
-                                            <i class="profile-avatar-icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>
+                                            <i class="profile-avatar-icon" data-lucide="briefcase" aria-hidden="true" focusable="false"></i>
                                             {% endif %}
                                         </span>
                                         <span class="workplace-edit-modal__photo-copy">

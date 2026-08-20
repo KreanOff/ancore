@@ -106,6 +106,14 @@
     font-size: var(--font-size-lg);
 }
 
+.profile-avatar.profile-avatar--user {
+    border-radius: 50%;
+}
+
+.profile-avatar.profile-avatar--workplace {
+    border-radius: 50%;
+}
+
 .profile-avatar--blue { --profile-avatar-bg: var(--accent-peach); --profile-avatar-fg: var(--accent-on-peach); }
 .profile-avatar--teal { --profile-avatar-bg: #16807a; --profile-avatar-fg: #ffffff; }
 .profile-avatar--green { --profile-avatar-bg: #2f7d4f; --profile-avatar-fg: #ffffff; }

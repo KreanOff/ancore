@@ -1,4 +1,4 @@
-{% load static workplace_avatar %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -39,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260817-project-note-edit-borderless-task-header-45">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260820-round-user-workplace-avatars">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -54,6 +54,14 @@
             }
         })();
     </script>
+    <div class="app-topbar">
+        {% if current_workplace %}
+        <span class="app-topbar__workplace" title="Bieżące miejsce pracy: {{ current_workplace.name }}">
+            <span class="app-topbar__workplace-label">Miejsce pracy:</span>
+            <strong>{{ current_workplace.name }}</strong>
+        </span>
+        {% endif %}
+    </div>
     <div class="app-loading-overlay" id="app-loading-overlay" role="status" aria-live="polite" aria-hidden="true">
         <div class="app-loading-dialog">
             <span class="app-loading-spinner" aria-hidden="true"></span>
@@ -62,30 +70,22 @@
     </div>
     <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
     <aside class="sidebar" id="app-sidebar">
-        {% if request.user.is_authenticated %}
-        <a href="{% url 'workplaces:workplaces' %}" class="sidebar-workplace {% if request.resolver_match.app_name == 'workplaces' %}active{% endif %}" title="Miejsce pracy">
-            {% if current_workplace %}
-                {% workplace_avatar current_workplace as current_workplace_avatar %}
-            {% endif %}
-            <span class="sidebar-workplace__avatar{% if current_workplace_avatar.photo_url %} has-photo{% endif %}" {% if current_workplace %}style="{{ current_workplace_avatar.color_style }}"{% endif %} aria-hidden="true">
-                {% if current_workplace_avatar.photo_url %}
-                    <img src="{{ current_workplace_avatar.photo_url }}" alt="">
-                {% else %}
-                    <i class="profile-avatar-icon sidebar-workplace__icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>
-                {% endif %}
-            </span>
-            <span class="sidebar-workplace__label">
-                <span class="sidebar-workplace__eyebrow">Miejsce pracy</span>
-                <span class="sidebar-workplace__name">{% if current_workplace %}{{ current_workplace.name }}{% else %}Wybierz{% endif %}</span>
-            </span>
-        </a>
-        {% endif %}
-        <nav class="nav-section">
+        <div class="sidebar-header">
+            <a href="{% url 'home' %}" class="logo" aria-label="Ancore" title="Ancore">
+                <img src="{% static 'img/logo-ancore.png' %}" alt="">
+            </a>
+        </div>
+        <nav class="nav-section sidebar-icon-stack">
             <button type="button" class="nav-link secondary-menu-toggle" id="secondary-menu-toggle" aria-label="Zwiń drugie menu" aria-controls="secondary-menu" aria-expanded="true" title="Zwiń drugie menu">
                 <i class="nav-icon nav-icon--toggle secondary-menu-toggle-icon" data-lucide="equal" data-lucide-fallback="minus" aria-hidden="true" focusable="false"></i>
                 <span class="nav-label">Drugie menu</span>
             </button>
-            <div class="nav-separator" aria-hidden="true"></div>
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'workplaces:workplaces' %}" class="nav-link nav-link--workplace {% if request.resolver_match.app_name == 'workplaces' %}active{% endif %}" aria-label="Miejsce pracy" title="Miejsce pracy">
+                <i class="nav-icon nav-icon--workplace" data-lucide="briefcase" aria-hidden="true"></i>
+                <span class="nav-label">Miejsce pracy</span>
+            </a>
+            {% endif %}
             <a href="{% if workplace_app_urls.tasks %}{{ workplace_app_urls.tasks }}{% else %}{% url 'tasks:tasks' %}{% endif %}" class="nav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}active{% endif %}" aria-label="Zadania" title="Zadania">
                 <i class="nav-icon nav-icon--tasks" data-lucide="list-todo" aria-hidden="true"></i>
                 <span class="nav-label">Zadania</span>
@@ -103,7 +103,7 @@
                 <span class="nav-label">Kalendarz</span>
             </a>
         </nav>
-        <div class="sidebar-footer">
+        <div class="sidebar-footer sidebar-icon-stack">
             <button type="button" class="nav-link sidebar-sticker-toggle" aria-label="Sticker" title="Sticker" aria-controls="app-sticky-note" aria-expanded="false" data-sticky-note-toggle>
                 <i class="nav-icon nav-icon--notes" data-lucide="sticky-note" aria-hidden="true"></i>
                 <span class="nav-label">Sticker</span>

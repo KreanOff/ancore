@@ -93,6 +93,12 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertContains(response, first_avatar['color_style'])
         self.assertContains(response, second_avatar['color_style'])
+        self.assertContains(
+            response,
+            'class="profile-avatar-icon" data-lucide="briefcase"',
+            count=5,
+        )
+        self.assertNotContains(response, 'data-lucide="landmark"')
 
     def test_workplace_edit_renders_in_tasks_modal_shell(self):
         self.client.force_login(self.user)
@@ -108,7 +114,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'class="workplace-settings workplace-settings--inspector"')
         self.assertNotContains(response, 'class="workplace-settings__form"')
 
-    def test_sidebar_workplace_avatar_uses_active_workplace_photo(self):
+    def test_sidebar_workplace_button_is_fixed_when_workplace_has_photo(self):
         self.first_workplace.workplace_photo = 'workplace_photos/moje-miejsce.webp'
         self.first_workplace.save(update_fields=['workplace_photo'])
         self.client.force_login(self.user)
@@ -117,23 +123,51 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'sidebar-workplace__avatar has-photo')
-        self.assertContains(response, '/media/workplace_photos/moje-miejsce.webp')
-        self.assertContains(response, '<img src="/media/workplace_photos/moje-miejsce.webp" alt="">', html=True)
+        self.assertContains(response, 'class="nav-link nav-link--workplace ')
+        self.assertContains(response, 'data-lucide="briefcase"')
+        self.assertNotContains(response, 'sidebar-workplace__avatar')
+        self.assertNotContains(response, '/media/workplace_photos/moje-miejsce.webp')
 
-    def test_sidebar_workplace_avatar_uses_workplace_logo_icon_without_photo(self):
+    def test_sidebar_displays_workplace_between_toggle_and_tasks_without_separator(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('tasks:tasks'))
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="sidebar-header"')
+        self.assertContains(response, 'href="/" class="logo" aria-label="Ancore"')
+        self.assertContains(response, '/static/img/logo-ancore.png')
+        self.assertNotContains(response, 'class="nav-separator"')
+        self.assertLess(content.index('class="sidebar-header"'), content.index('class="nav-link nav-link--workplace '))
+        self.assertLess(content.index('id="secondary-menu-toggle"'), content.index('class="nav-link nav-link--workplace '))
+        self.assertLess(content.index('class="nav-link nav-link--workplace '), content.index('aria-label="Zadania"'))
+
+    def test_sidebar_workplace_button_uses_standard_nav_link_without_photo(self):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'sidebar-workplace__avatar')
+        self.assertContains(response, 'class="nav-link nav-link--workplace ')
         self.assertContains(
             response,
-            '<i class="profile-avatar-icon sidebar-workplace__icon" data-lucide="building-2" aria-hidden="true" focusable="false"></i>',
+            '<i class="nav-icon nav-icon--workplace" data-lucide="briefcase" aria-hidden="true"></i>',
             html=True,
         )
+
+    def test_topbar_displays_active_workplace_name(self):
+        self.client.force_login(self.user)
+        self._activate(self.second_workplace)
+
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="app-topbar"')
+        self.assertContains(response, 'Miejsce pracy:')
+        self.assertContains(response, '<strong>Drugi Workplace</strong>', html=True)
+        self.assertContains(response, 'title="Bieżące miejsce pracy: Drugi Workplace"')
 
     def test_tasks_projects_are_scoped_to_active_workplace(self):
         self.client.force_login(self.user)

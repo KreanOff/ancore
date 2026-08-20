@@ -1,4 +1,4 @@
-<span class="profile-avatar {{ avatar_class }} {{ avatar.color_class }} {% if avatar.photo_url %}has-photo{% endif %}" style="{{ avatar.color_style }}" aria-hidden="true">
+<span class="profile-avatar profile-avatar--user {{ avatar_class }} {{ avatar.color_class }} {% if avatar.photo_url %}has-photo{% endif %}" style="{{ avatar.color_style }}" aria-hidden="true">
     {% if avatar.photo_url %}
     <img src="{{ avatar.photo_url }}" alt="">
     {% else %}

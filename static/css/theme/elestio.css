@@ -39,9 +39,7 @@ body {
     background: transparent;
 }
 
-.sidebar-header::after,
 .sidebar-footer::after,
-.nav-separator,
 .tasks-rail-nav,
 .tasks-rail-nav-group + .tasks-rail-nav-group,
 .tasks-topbar,
