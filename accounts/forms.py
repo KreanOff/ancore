@@ -23,15 +23,15 @@ class UserRegistrationForm(UserCreationForm):
     _input_attrs = {'class': 'form-input'}
 
     first_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
-        **{'placeholder': 'Imię', 'id': 'first-name', 'autocomplete': 'given-name'},
+        **{'placeholder': 'Anna', 'id': 'first-name', 'autocomplete': 'given-name'},
         **_input_attrs,
     }))
     middle_name = forms.CharField(max_length=150, required=False, widget=forms.TextInput(attrs={
-        **{'placeholder': 'Drugie imię', 'id': 'middle-name', 'autocomplete': 'additional-name'},
+        **{'placeholder': 'Maria (opcjonalnie)', 'id': 'middle-name', 'autocomplete': 'additional-name'},
         **_input_attrs,
     }))
     last_name = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={
-        **{'placeholder': 'Nazwisko', 'id': 'last-name', 'autocomplete': 'family-name'},
+        **{'placeholder': 'Kowalska', 'id': 'last-name', 'autocomplete': 'family-name'},
         **_input_attrs,
     }))
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={

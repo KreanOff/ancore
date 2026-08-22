@@ -3,8 +3,8 @@
 .page-container.full-width:has(.app-page),
 .page-container.full-width:has(.tasks-page),
 .page-container.full-width:has(.calendar-page) {
-    min-height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
-    height: calc(var(--app-dynamic-viewport-height) - var(--topbar-height) - (var(--page-container-gap) * 2));
+    min-height: calc(var(--app-dynamic-viewport-height) - (var(--page-container-gap) * 2));
+    height: calc(var(--app-dynamic-viewport-height) - (var(--page-container-gap) * 2));
     overflow: hidden;
     background: var(--bg-main);
 }

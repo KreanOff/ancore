@@ -55,6 +55,32 @@ class UserRegistrationFormTests(TestCase):
         self.assertEqual(user.username, '@anna.kowalska2')
 
 
+class AuthPageViewTests(TestCase):
+    def test_login_page_uses_editorial_auth_layout(self):
+        response = self.client.get(reverse('login'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Wszystko<br>na swoim<br>miejscu.')
+        self.assertContains(response, 'Przejdź do Ancore')
+        self.assertContains(response, 'data-password-toggle')
+        self.assertContains(response, 'class="auth-page auth-page--login"')
+
+    def test_registration_keeps_name_fields_in_one_desktop_row(self):
+        response = self.client.get(reverse('register'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="auth-field-row auth-field-row--names"')
+        self.assertContains(response, 'Zacznij w Ancore')
+        self.assertContains(response, 'placeholder="Maria (opcjonalnie)"')
+
+        content = response.content.decode()
+        names_row_start = content.index('auth-field-row auth-field-row--names')
+        email_field_start = content.index('for="email"', names_row_start)
+        names_row = content[names_row_start:email_field_start]
+        self.assertLess(names_row.index('id="first-name"'), names_row.index('id="middle-name"'))
+        self.assertLess(names_row.index('id="middle-name"'), names_row.index('id="last-name"'))
+
+
 class ProfileViewTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(

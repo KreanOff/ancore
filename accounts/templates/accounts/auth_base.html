@@ -8,81 +8,66 @@
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'img/favicon-ancore-large.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     {% include 'core/includes/bootstrap.html' %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260801-auth-label-teal">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260821-auth-gray-focus">
 </head>
-<body class="auth-page">
+<body class="auth-page {% block auth_page_class %}auth-page--login{% endblock %}">
     <a class="auth-skip-link" href="#auth-form-title">Przejdź do formularza</a>
 
     <main class="auth-shell">
-        <section class="auth-visual" aria-labelledby="auth-page-title">
-            <a href="{% url 'home' %}" class="auth-brand" aria-label="Ancore">
-                <span class="auth-brand-mark">
-                    <img src="{% static 'img/logo-ancore.png' %}" alt="">
-                </span>
-                <span class="auth-brand-copy">
-                    <strong>ANCORE</strong>
-                    <small>{% block auth_kicker %}Workspace{% endblock %}</small>
-                </span>
+        <header class="auth-topbar">
+            <a href="{% url 'home' %}" class="auth-brand" aria-label="Ancore — strona główna">
+                <img src="{% static 'img/logo-ancore.png' %}" alt="" class="auth-brand-mark">
+                <span class="auth-brand-name">ANCORE</span>
             </a>
 
-            <div class="auth-visual-copy">
-                <span class="auth-section-label">{% block auth_panel_label %}Konto{% endblock %}</span>
-                <h1 id="auth-page-title">{% block auth_heading %}Panel gotowy do pracy{% endblock %}</h1>
-                <p>{% block auth_lead %}Zarządzaj zadaniami, kontaktami i pracą zespołu w jednym miejscu.{% endblock %}</p>
-            </div>
-
-            <div class="auth-workspace-preview" aria-hidden="true">
-                <div class="auth-preview-header">
-                    <span>Workspace</span>
-                    <strong>ANCORE</strong>
-                </div>
-                <div class="auth-preview-meter">
-                    <span></span>
-                </div>
-                <div class="auth-preview-list">
-                    <span class="auth-preview-row">
-                        <span class="auth-dot auth-dot--red"></span>
-                        <small>Inbox</small>
-                        <strong>6 nowych</strong>
-                    </span>
-                    <span class="auth-preview-row">
-                        <span class="auth-dot auth-dot--green"></span>
-                        <small>Kontakty</small>
-                        <strong>Aktywne</strong>
-                    </span>
-                    <span class="auth-preview-row">
-                        <span class="auth-dot auth-dot--blue"></span>
-                        <small>Zadania</small>
-                        <strong>18 w toku</strong>
-                    </span>
-                </div>
-            </div>
-        </section>
-
-        <section class="auth-panel" aria-labelledby="auth-form-title">
-            {% block auth_panel_top %}
-            <div class="auth-panel-top">
-                <a href="{% url 'home' %}" class="auth-back-link">
-                    <i data-lucide="arrow-left" aria-hidden="true"></i>
-                    <span>Panel</span>
-                </a>
-                <div class="auth-panel-action">
+            <div class="auth-topbar-switch">
+                <span class="auth-switch-prompt">{% block auth_switch_prompt %}{% endblock %}</span>
+                <div class="auth-topbar-action">
                     {% block auth_header_action %}{% endblock %}
                 </div>
             </div>
-            {% endblock %}
+        </header>
 
-            <section class="auth-card" aria-labelledby="auth-form-title">
-                <div class="auth-header">
-                    <span class="auth-card-label">{% block auth_card_label %}Dostęp{% endblock %}</span>
-                    <h2 id="auth-form-title">{% block auth_card_title %}Zaloguj się{% endblock %}</h2>
-                    <p class="auth-subtitle">{% block auth_subtitle %}{% endblock %}</p>
+        <div class="auth-content">
+            <section class="auth-story" aria-labelledby="auth-page-title">
+                <div class="auth-story-copy">
+                    <h1 id="auth-page-title" class="auth-story-title">{% block auth_heading %}Dodaj konto{% endblock %}</h1>
+                    <p class="auth-story-lead">{% block auth_lead %}Podłącz drugi profil do bieżącej sesji.{% endblock %}</p>
+                    <div class="auth-steps" aria-label="Etapy pracy">
+                        {% block auth_steps %}
+                        <span class="auth-step"><strong>01</strong><span>Profil</span></span>
+                        <span class="auth-step"><strong>02</strong><span>Kontakty</span></span>
+                        <span class="auth-step"><strong>03</strong><span>Plan dnia</span></span>
+                        {% endblock %}
+                    </div>
                 </div>
-                {% block auth_content %}{% endblock %}
+
+                <svg class="auth-watermark" viewBox="0 0 1254 1254" aria-hidden="true" focusable="false">
+                    <defs>
+                        <filter id="auth-logo-outline" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+                            <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="outline-outer"></feMorphology>
+                            <feMorphology in="SourceAlpha" operator="erode" radius="4" result="outline-inner"></feMorphology>
+                            <feComposite in="outline-outer" in2="outline-inner" operator="out" result="outline"></feComposite>
+                            <feFlood flood-color="#5bbcbe" flood-opacity="0.52" result="outline-color"></feFlood>
+                            <feComposite in="outline-color" in2="outline" operator="in"></feComposite>
+                        </filter>
+                    </defs>
+                    <image href="{% static 'img/logo-ancore.png' %}" width="1254" height="1254" filter="url(#auth-logo-outline)"></image>
+                </svg>
             </section>
-        </section>
+
+            <section class="auth-form-panel" aria-labelledby="auth-form-title">
+                <div class="auth-form-inner">
+                    <header class="auth-form-header">
+                        <h2 id="auth-form-title">{% block auth_card_title %}Dodaj konto{% endblock %}</h2>
+                        <p class="auth-form-subtitle">{% block auth_subtitle %}Wpisz dane swojego konta.{% endblock %}</p>
+                    </header>
+                    {% block auth_content %}{% endblock %}
+                </div>
+            </section>
+        </div>
     </main>
 
     {% if messages %}
@@ -95,7 +80,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/lucide-icons.js' %}?v=20260609-lucide-icons"></script>
-    <script src="{% static 'js/custom-select.js' %}?v=20260702-custom-selects"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
+    <script src="{% static 'js/auth.js' %}?v=20260821-password-toggle"></script>
 </body>
 </html>

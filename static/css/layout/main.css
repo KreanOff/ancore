@@ -1,44 +1,12 @@
-.app-topbar {
-    position: fixed;
-    inset: 0 0 auto;
-    z-index: 200;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: var(--topbar-height);
-    padding: 0 calc(var(--sidebar-width) + 0.75rem);
-    background: var(--topbar-bg);
-    color: var(--text-main);
-    pointer-events: none;
-}
-
-.app-topbar__workplace {
-    min-width: 0;
-    overflow: hidden;
-    font-size: 11px;
-    font-weight: 500;
-    line-height: 1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.app-topbar__workplace-label {
-    color: color-mix(in srgb, currentColor 72%, transparent);
-}
-
-.app-topbar__workplace strong {
-    font-weight: 700;
-}
-
 .main-content {
     margin-left: var(--app-sidebar-total-width);
-    margin-top: var(--topbar-height);
+    margin-top: 0;
     width: calc(100% - var(--app-sidebar-total-width));
     min-width: 0;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    height: calc(var(--app-viewport-height) - var(--topbar-height));
+    height: var(--app-viewport-height);
     min-height: 0;
     overflow: auto;
     background: #FBFBFC;

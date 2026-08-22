@@ -2404,13 +2404,13 @@ body.modal-open::before {
 
 .confirm-modal--destructive .confirm-modal__icon,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .confirm-modal__icon {
-    --app-text-color: #7a3428;
+    --app-text-color: #000;
     width: 28px;
     height: 28px;
-    border: 1px solid #e8ebef;
+    border: 0;
     border-radius: 7px;
     background: #ffffff;
-    color: #7a3428 !important;
+    color: #000 !important;
 }
 
 .confirm-modal--destructive .confirm-modal__icon svg,
@@ -2424,7 +2424,7 @@ body.modal-open::before {
 .confirm-modal-overlay--tasks .confirm-modal--destructive .confirm-modal__title {
     margin: 0 0 0.35rem;
     color: var(--text-primary);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-lg);
     font-weight: 600;
     line-height: 1.25;
 }
@@ -2446,8 +2446,8 @@ body.modal-open::before {
     gap: 0.55rem;
     margin-top: 0;
     padding: 0 1rem;
-    border-top: 1px solid #e8ebef;
-    background: #fbfcfe;
+    border-top: 0;
+    background: #fff;
 }
 
 .confirm-modal--destructive .btn,
@@ -2465,34 +2465,36 @@ body.modal-open::before {
 
 .confirm-modal--destructive .btn-cancel,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-cancel {
-    border-color: #dfe3e8;
-    background: #ffffff;
-    color: var(--text-primary);
+    --app-text-color: #7a3428;
+    border-color: #efc7ba;
+    background: #f5d7cb;
+    color: #7a3428 !important;
 }
 
 .confirm-modal--destructive .btn-cancel:hover,
 .confirm-modal--destructive .btn-cancel:focus-visible,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-cancel:hover,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-cancel:focus-visible {
-    border-color: #cfd5dd;
-    background: #f5f6f8;
+    border-color: #e9baa9;
+    background: #edc5b5;
+    color: #7a3428 !important;
 }
 
 .confirm-modal--destructive .btn-danger,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-danger {
-    --app-text-color: #7a3428;
-    border: 1px solid #efc7ba;
-    background: #f5d7cb;
-    color: #7a3428 !important;
+    --app-text-color: var(--text-primary);
+    border: 1px solid #dfe3e8;
+    background: #fff;
+    color: var(--text-primary) !important;
 }
 
 .confirm-modal--destructive .btn-danger:hover:not(:disabled),
 .confirm-modal--destructive .btn-danger:focus-visible,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-danger:hover:not(:disabled),
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-danger:focus-visible {
-    border-color: #e9baa9;
-    background: #edc5b5;
-    color: #7a3428 !important;
+    border-color: #cfd5dd;
+    background: #fff;
+    color: var(--text-primary) !important;
 }
 
 .confirm-modal--destructive .btn:focus-visible,
@@ -2504,12 +2506,12 @@ body.modal-open::before {
 
 .confirm-modal--destructive .btn-danger:focus-visible,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-danger:focus-visible {
-    box-shadow: 0 0 0 3px rgba(122, 52, 40, 0.12);
+    box-shadow: 0 0 0 3px rgba(64, 68, 76, 0.1);
 }
 
 .confirm-modal--destructive .btn-cancel:focus-visible,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-cancel:focus-visible {
-    box-shadow: 0 0 0 3px rgba(64, 68, 76, 0.1);
+    box-shadow: 0 0 0 3px rgba(122, 52, 40, 0.12);
 }
 
 .tasks-project-modal__dialog {
@@ -7579,7 +7581,7 @@ body.modal-open::before {
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
-    max-height: calc(var(--app-viewport-height) - var(--topbar-height) - 218px);
+    max-height: calc(var(--app-viewport-height) - 218px);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
@@ -8483,7 +8485,7 @@ body.modal-open::before {
     width: 32px;
     height: 32px;
     border-radius: 6px;
-    font-size: var(--font-size-sm);
+    font-size: 20px;
 }
 
 .tasks-attachment-details {
@@ -8880,7 +8882,7 @@ body.modal-open::before {
 .tasks-issue-content > .tasks-file-list .tasks-attachment-card .attachment-icon {
     width: 28px;
     height: 28px;
-    font-size: var(--font-size-sm);
+    font-size: 20px;
 }
 
 .tasks-attachment-card--pending {
@@ -9158,7 +9160,23 @@ body.modal-open::before {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    max-height: clamp(260px, 45vh, 560px);
     margin-top: 1.6rem;
+    padding-right: 0.65rem;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #c5cbd5 transparent;
+}
+
+.tasks-issue-feed::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tasks-issue-feed::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #c5cbd5;
 }
 
 .tasks-issue-feed-item {

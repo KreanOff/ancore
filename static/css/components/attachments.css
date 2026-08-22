@@ -53,31 +53,31 @@
 .tasks-file-icon.image,
 .file-icon.image,
 .attach-icon.image,
-.file-icon-mini.image { background-color: var(--accent-peach); color: var(--accent-on-peach); }
-
+.file-icon-mini.image,
 .attachment-icon.pdf,
 .tasks-file-icon.pdf,
 .file-icon.pdf,
 .attach-icon.pdf,
-.file-icon-mini.pdf { background-color: #fce4ec; color: #c2185b; }
-
+.file-icon-mini.pdf,
 .attachment-icon.document,
 .tasks-file-icon.document,
 .file-icon.document,
 .attach-icon.document,
-.file-icon-mini.document { background-color: #e8f5e8; color: #388e3c; }
-
+.file-icon-mini.document,
 .attachment-icon.archive,
 .tasks-file-icon.archive,
 .file-icon.archive,
 .attach-icon.archive,
-.file-icon-mini.archive { background-color: #fff3e0; color: #f57c00; }
-
+.file-icon-mini.archive,
 .attachment-icon.default,
 .tasks-file-icon.default,
 .file-icon.default,
 .attach-icon.default,
-.file-icon-mini.default { background-color: #f5f5f5; color: #616161; }
+.file-icon-mini.default {
+    background-color: transparent;
+    border: 0;
+    color: inherit;
+}
 
 .attachment-upload-icon {
     color: var(--text-muted);

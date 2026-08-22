@@ -1,51 +1,78 @@
 {% extends 'accounts/auth_base.html' %}
 
 {% block title %}Logowanie | ancore{% endblock %}
-{% block auth_kicker %}Logowanie{% endblock %}
-{% block auth_panel_label %}Bezpieczny dostęp{% endblock %}
-{% block auth_heading %}Wróć do swojego workspace'u{% endblock %}
-{% block auth_lead %}Otwórz bieżące zadania, kontakty i kalendarz bez opuszczania przepływu pracy.{% endblock %}
-{% block auth_card_label %}Logowanie{% endblock %}
-{% block auth_card_title %}Zaloguj się{% endblock %}
-{% block auth_subtitle %}Podaj dane konta Ancore.{% endblock %}
+{% block auth_page_class %}auth-page--login{% endblock %}
+{% block auth_switch_prompt %}Nie masz konta?{% endblock %}
 {% block auth_header_action %}
-<a href="{% url 'register' %}" class="auth-switch-link">
-    <i data-lucide="user-plus" aria-hidden="true"></i>
-    <span>Utwórz konto</span>
-</a>
+<a href="{% url 'register' %}" class="auth-switch-link">Utwórz konto</a>
 {% endblock %}
+{% block auth_heading %}Wszystko<br>na swoim<br>miejscu.{% endblock %}
+{% block auth_lead %}Wracaj do projektów, ludzi i terminów<br>bez szukania.{% endblock %}
+{% block auth_steps %}
+<span class="auth-step"><strong>01</strong><span>Priorytety</span></span>
+<span class="auth-step"><strong>02</strong><span>Rozmowy</span></span>
+<span class="auth-step"><strong>03</strong><span>Plan dnia</span></span>
+{% endblock %}
+{% block auth_card_title %}Zaloguj się{% endblock %}
+{% block auth_subtitle %}Wpisz dane swojego konta.{% endblock %}
 
 {% block auth_content %}
-<form method="post" class="auth-form">
+<form method="post" class="auth-form" novalidate>
     {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
     {% if form.errors %}
     <div class="auth-alert" role="alert">
-        Nieprawidłowy email lub hasło.
+        Email lub hasło są nieprawidłowe. Spróbuj ponownie.
     </div>
     {% endif %}
 
-    <div class="form-group auth-field">
-        <label class="form-label" for="email">Adres email</label>
-        <div class="auth-input-shell">
-            <i data-lucide="mail" aria-hidden="true"></i>
-            <input type="email" name="username" id="email" class="form-input" autocomplete="username" placeholder="email@firma.pl" required autofocus>
+    <div class="auth-field{% if form.username.errors %} auth-field--invalid{% endif %}">
+        <label class="auth-label" for="email">Adres email</label>
+        <input
+            type="email"
+            name="username"
+            id="email"
+            class="auth-input"
+            value="{{ form.username.value|default:'' }}"
+            autocomplete="username"
+            placeholder="email@firma.pl"
+            {% if form.username.errors %}aria-invalid="true"{% endif %}
+            required
+            autofocus
+        >
+    </div>
+
+    <div class="auth-field{% if form.password.errors %} auth-field--invalid{% endif %}">
+        <label class="auth-label" for="password">Hasło</label>
+        <div class="auth-password-control">
+            <input
+                type="password"
+                name="password"
+                id="password"
+                class="auth-input"
+                autocomplete="current-password"
+                placeholder="Wpisz hasło"
+                {% if form.password.errors %}aria-invalid="true"{% endif %}
+                required
+            >
+            <button type="button" class="auth-password-toggle" data-password-toggle aria-controls="password" aria-label="Pokaż hasło" aria-pressed="false">
+                <svg class="auth-eye auth-eye--show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg>
+                <svg class="auth-eye auth-eye--hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18"></path><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-2.2 3"></path><path d="M6.6 6.6C3.6 8.4 2 12 2 12s3.5 6 10 6c1 0 2-.2 2.8-.5"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>
+            </button>
         </div>
     </div>
-    <div class="form-group auth-field">
-        <label class="form-label" for="password">Hasło</label>
-        <div class="auth-input-shell">
-            <i data-lucide="lock" aria-hidden="true"></i>
-            <input type="password" name="password" id="password" class="form-input" autocomplete="current-password" placeholder="Wpisz hasło" required>
-        </div>
-    </div>
+
     <button type="submit" class="auth-submit">
-        <span>Zaloguj się</span>
-        <i data-lucide="arrow-right" aria-hidden="true"></i>
+        <span class="auth-submit-label">Przejdź do Ancore</span>
+        <span class="auth-submit-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+        </span>
     </button>
 </form>
 
-<p class="auth-footer">
-    Nie masz konta? <a href="{% url 'register' %}">Zarejestruj się</a>
-</p>
+<a href="{% url 'home' %}" class="auth-home-link">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"></path><path d="m11 18-6-6 6-6"></path></svg>
+    <span>Wróć do strony głównej</span>
+</a>
 {% endblock %}

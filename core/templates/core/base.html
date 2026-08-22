@@ -39,7 +39,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260820-round-user-workplace-avatars">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260822-remove-app-topbar-confirm-modal-title-15-v7">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -54,14 +54,6 @@
             }
         })();
     </script>
-    <div class="app-topbar">
-        {% if current_workplace %}
-        <span class="app-topbar__workplace" title="Bieżące miejsce pracy: {{ current_workplace.name }}">
-            <span class="app-topbar__workplace-label">Miejsce pracy:</span>
-            <strong>{{ current_workplace.name }}</strong>
-        </span>
-        {% endif %}
-    </div>
     <div class="app-loading-overlay" id="app-loading-overlay" role="status" aria-live="polite" aria-hidden="true">
         <div class="app-loading-dialog">
             <span class="app-loading-spinner" aria-hidden="true"></span>
@@ -176,7 +168,7 @@
     <script src="{% static 'js/layout.js' %}?v=20260709-scoped-icon-render"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
-    <script src="{% static 'js/modal.js' %}?v=20260801-delete-confirm-redesign"></script>
+    <script src="{% static 'js/modal.js' %}?v=20260822-attachment-name-confirmation"></script>
     <script src="{% static 'js/tasks.js' %}?v=20260817-project-note-icon-states-manual-save"></script>
     <script src="{% static 'js/profile.js' %}?v=20260614-app-wide-navigation"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260709-project-company-search"></script>

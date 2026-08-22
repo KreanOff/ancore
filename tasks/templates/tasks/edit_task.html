@@ -117,9 +117,12 @@
 const ATTACHMENT_TRASH_ICON_HTML = `{% include 'core/includes/trash_icon.html' %}`;
 
 function deleteAttachment(attachmentId) {
+    const attachmentName = document.getElementById(`attachment-${attachmentId}`)
+        ?.querySelector('.tasks-attachment-name')?.textContent?.trim() || 'bez nazwy';
+    const safeAttachmentName = window.escapeHtmlForModal(attachmentName);
     window.showConfirmModal({
-        title: 'Potwierdź usunięcie',
-        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana po kliknięciu „Zapisz zmiany”.',
+        title: 'Usuń załącznik',
+        message: `Czy na pewno chcesz usunąć załącznik „${safeAttachmentName}”? Zmiana zostanie zapisana po kliknięciu „Zapisz zmiany”.`,
         confirmText: 'Usuń',
         cancelText: 'Anuluj',
         confirmClass: 'btn-danger',

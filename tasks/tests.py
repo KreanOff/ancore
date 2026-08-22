@@ -2,6 +2,7 @@ import json
 import re
 import tempfile
 from datetime import date, datetime, timedelta, timezone as datetime_timezone
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -21,6 +22,25 @@ from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProject
 
 
 class TaskProjectControlStyleTests(SimpleTestCase):
+    def test_task_detail_header_template_shows_only_current_task_title(self):
+        template_path = Path(__file__).resolve().parent / 'templates/tasks/view_task.html'
+        with template_path.open(encoding='utf-8') as template_file:
+            template = template_file.read()
+
+        breadcrumb = re.search(
+            r'<div class="tasks-issue-breadcrumb">(?P<body>.*?)'
+            r'\n\s*</div>\n\n\s*<div class="tasks-issue-actions">',
+            template,
+            re.DOTALL,
+        )
+
+        self.assertIsNotNone(breadcrumb)
+        breadcrumb_html = breadcrumb.group('body')
+        self.assertIn('{{ task.title }}', breadcrumb_html)
+        self.assertNotIn('task.section', breadcrumb_html)
+        self.assertNotIn('task.parent.title', breadcrumb_html)
+        self.assertNotIn('tasks-issue-chevron', breadcrumb_html)
+
     def test_project_note_create_updates_only_notes_thread(self):
         js_path = finders.find('js/tasks.js')
 
@@ -1710,6 +1730,26 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('<span>Netology</span>', row_html)
         self.assertNotIn('<span>Adam Mickiewicz</span>', row_html)
         self.assertNotIn('<span>Fakturowalne</span>', row_html)
+
+    def test_group_view_header_links_back_to_project(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt nadrzędny', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Nazwa grupy')
+
+        response = self.client.get(reverse('tasks:task_group', args=[section.id]))
+        html = response.content.decode()
+        header_start = html.index('<header class="tasks-topbar">')
+        header_end = html.index('</header>', header_start)
+        header_html = html[header_start:header_end]
+
+        self.assertIn('<span>Nazwa grupy</span>', header_html)
+        self.assertIn(
+            f'href="{reverse("tasks:tasks")}?project={project.id}" class="tasks-issue-close"',
+            header_html,
+        )
+        self.assertIn('aria-label="Wróć do projektu"', header_html)
+        self.assertIn('data-lucide="arrow-left"', header_html)
+        self.assertNotIn('Projekt nadrzędny', header_html)
+        self.assertNotIn('tasks-topbar-title-separator', header_html)
 
     def test_group_task_view_uses_group_url_for_status_pagination(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt grupy', code='GRP')

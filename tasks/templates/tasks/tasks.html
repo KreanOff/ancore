@@ -153,7 +153,7 @@
 <div class="tasks-page tasks-list-page">
     <section class="tasks-workspace" aria-label="Lista zadań">
         <header class="tasks-topbar">
-            <div class="tasks-titlebar-left{% if active_view == 'project' %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
+            <div class="tasks-titlebar-left{% if active_view == 'project' or active_view == 'section' %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
                 {% if active_view == 'project' and active_project %}
                 <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" title="Wróć do wszystkich projektów" aria-label="Wróć do wszystkich projektów" data-projects-back-link>
                     <i data-lucide="arrow-left" aria-hidden="true"></i>
@@ -165,9 +165,21 @@
                     </span>
                     <span>{{ active_project.name }}</span>
                 </span>
+                {% elif active_view == 'section' and active_project and active_section %}
+                <a href="{% url 'tasks:tasks' %}?project={{ active_project.id }}" class="tasks-issue-close" title="Wróć do projektu" aria-label="Wróć do projektu" data-project-back-link>
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                </a>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-crumb tasks-issue-crumb--current">
+                    <span>{{ active_section.title }}</span>
+                </span>
                 {% else %}
                 <span class="tasks-topbar-title">
-                    {% if active_project %}
+                    {% if active_section %}
+                    <span class="tasks-topbar-title-item">
+                        <span>{{ active_section.title }}</span>
+                    </span>
+                    {% elif active_project %}
                     <span class="tasks-topbar-title-item">
                         {% if active_project.icon %}
                         <span class="tasks-topbar-title-icon" aria-hidden="true" style="--project-icon-fg: {{ active_project.icon_color.foreground }};">
@@ -176,17 +188,6 @@
                         {% endif %}
                         <span>{{ active_project.name }}</span>
                     </span>
-                    {% if active_section %}
-                    <span class="tasks-topbar-title-separator" aria-hidden="true">&gt;</span>
-                    <span class="tasks-topbar-title-item">
-                        {% if active_section.icon %}
-                        <span class="tasks-topbar-title-icon" aria-hidden="true">
-                            <i data-lucide="{{ active_section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                        </span>
-                        {% endif %}
-                        <span>{{ active_section.title }}</span>
-                    </span>
-                    {% endif %}
                     {% else %}
                     {% if active_view == 'all_tasks' %}
                     <span>Wszystkie zadania</span>

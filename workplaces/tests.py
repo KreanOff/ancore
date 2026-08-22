@@ -157,17 +157,16 @@ class WorkplaceSelectionTests(TestCase):
             html=True,
         )
 
-    def test_topbar_displays_active_workplace_name(self):
+    def test_base_layout_does_not_render_workplace_identity_strip(self):
         self.client.force_login(self.user)
         self._activate(self.second_workplace)
 
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="app-topbar"')
-        self.assertContains(response, 'Miejsce pracy:')
-        self.assertContains(response, '<strong>Drugi Workplace</strong>', html=True)
-        self.assertContains(response, 'title="Bieżące miejsce pracy: Drugi Workplace"')
+        self.assertNotContains(response, 'class="app-topbar"')
+        self.assertNotContains(response, 'class="secondary-menu-workplace"')
+        self.assertNotContains(response, 'title="Bieżące miejsce pracy: Drugi Workplace"')
 
     def test_tasks_projects_are_scoped_to_active_workplace(self):
         self.client.force_login(self.user)

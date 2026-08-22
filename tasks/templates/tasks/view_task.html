@@ -28,30 +28,6 @@
                     <i data-lucide="arrow-left" aria-hidden="true"></i>
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
-                <span class="tasks-issue-crumb">
-                    {% if task.section and task.section.project.icon %}
-                    <span class="tasks-issue-crumb-icon" aria-hidden="true" style="--project-icon-fg: {{ task.section.project.icon_color.foreground }};">
-                        <i data-lucide="{{ task.section.project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                    </span>
-                    {% endif %}
-                    <span>{% if task.section %}{{ task.section.project.name }}{% else %}Bez projektu{% endif %}</span>
-                </span>
-                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
-                <span class="tasks-issue-crumb">
-                    {% if task.section and task.section.icon %}
-                    <span class="tasks-issue-crumb-icon" aria-hidden="true">
-                        <i data-lucide="{{ task.section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                    </span>
-                    {% endif %}
-                    <span>{% if task.section %}{{ task.section.title }}{% else %}Bez kategorii{% endif %}</span>
-                </span>
-                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
-                {% if task.parent %}
-                <a href="{% url 'tasks:view-task' task.parent.task_id %}" class="tasks-issue-crumb">
-                    <span>{{ task.parent.title }}</span>
-                </a>
-                <span class="tasks-issue-chevron" aria-hidden="true">›</span>
-                {% endif %}
                 <span class="tasks-issue-crumb tasks-issue-crumb--current" data-task-title-current>
                     <span>{{ task.title }}</span>
                 </span>
@@ -217,7 +193,7 @@
                             </div>
                         </div>
 
-                        <div class="tasks-issue-feed" data-activity-feed>
+                        <div class="tasks-issue-feed" data-activity-feed tabindex="0" aria-label="Historia i czat zadania">
                             {% for item in activity_items %}
                             {% include 'tasks/includes/task_activity_item.html' with item=item only %}
                             {% empty %}
@@ -1200,9 +1176,12 @@ if (taskDetailForm) {
 }
 
 function deleteAttachment(attachmentId) {
+    const attachmentName = document.getElementById(`attachment-${attachmentId}`)
+        ?.querySelector('.tasks-attachment-name')?.textContent?.trim() || 'bez nazwy';
+    const safeAttachmentName = window.escapeHtmlForModal(attachmentName);
     window.showConfirmModal({
-        title: 'Potwierdź usunięcie',
-        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zastosowana po kliknięciu „Zapisz”.',
+        title: 'Usuń załącznik',
+        message: `Czy na pewno chcesz usunąć załącznik „${safeAttachmentName}”? Zmiana zostanie zastosowana po kliknięciu „Zapisz”.`,
         confirmText: 'Usuń',
         cancelText: 'Anuluj',
         confirmClass: 'btn-danger',

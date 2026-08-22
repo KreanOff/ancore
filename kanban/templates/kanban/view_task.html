@@ -192,7 +192,7 @@
                             </div>
                         </div>
 
-                        <div class="tasks-issue-feed" data-activity-feed>
+                        <div class="tasks-issue-feed" data-activity-feed tabindex="0" aria-label="Historia i czat zadania">
                             {% for item in activity_items %}
                             <article class="tasks-issue-feed-item {% if item.kind == 'comment' %}tasks-issue-feed-item--comment{% endif %}" data-activity-kind="{% if item.kind == 'comment' %}comment{% else %}history{% endif %}">
                                 {% user_avatar item.actor as actor_avatar %}
@@ -815,9 +815,12 @@ syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdow
 document.addEventListener('click', () => closeTaskDetailDropdowns());
 
 function deleteAttachment(attachmentId) {
+    const attachmentName = document.getElementById(`attachment-${attachmentId}`)
+        ?.querySelector('.tasks-attachment-name')?.textContent?.trim() || 'bez nazwy';
+    const safeAttachmentName = window.escapeHtmlForModal(attachmentName);
     window.showConfirmModal({
-        title: 'Potwierdź usunięcie',
-        message: 'Czy na pewno chcesz usunąć ten załącznik? Zmiana zostanie zapisana po kliknięciu „Zapisz”.',
+        title: 'Usuń załącznik',
+        message: `Czy na pewno chcesz usunąć załącznik „${safeAttachmentName}”? Zmiana zostanie zapisana po kliknięciu „Zapisz”.`,
         confirmText: 'Usuń',
         cancelText: 'Anuluj',
         confirmClass: 'btn-danger',
