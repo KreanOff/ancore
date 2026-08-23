@@ -20,11 +20,10 @@
     <div class="tasks-issue-shell">
         <header class="tasks-issue-header">
             <div class="tasks-issue-breadcrumb">
-                <a href="{% if task.parent %}{% url 'kanban:view-task' task.parent.task_id %}{% else %}{% url 'kanban:tasks' %}{% endif %}"
+                <a href="{% if task.parent %}{% url 'kanban:view-task' task.parent.task_id %}{% elif task.section %}{% url 'kanban:task_group' task.section.id %}{% else %}{% url 'kanban:tasks' %}{% endif %}"
                    class="tasks-issue-close"
-                   aria-label="{% if task.parent %}Wróć do karty{% else %}Wróć do poprzedniej strony{% endif %}"
-                   title="{% if task.parent %}Wróć do karty{% else %}Wróć do poprzedniej strony{% endif %}"
-                   {% if not task.parent %}data-history-back{% endif %}>
+                   aria-label="{% if task.parent %}Wróć do karty{% elif task.section %}Wróć do tablicy {{ task.section.title }}{% else %}Wróć do kart{% endif %}"
+                   title="{% if task.parent %}Wróć do karty{% elif task.section %}Wróć do tablicy {{ task.section.title }}{% else %}Wróć do kart{% endif %}">
                     <i data-lucide="arrow-left" aria-hidden="true"></i>
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
@@ -527,34 +526,6 @@
 
 <script>
 const ATTACHMENT_TRASH_ICON_HTML = `{% include 'core/includes/trash_icon.html' %}`;
-
-document.querySelectorAll('[data-history-back]').forEach((link) => {
-    link.addEventListener('click', (event) => {
-        const storedReturnPoint = sessionStorage.getItem('kanban:lastTaskReturn');
-        if (storedReturnPoint) {
-            try {
-                const returnPoint = JSON.parse(storedReturnPoint);
-                const savedViewPath = returnPoint.viewUrl ? new URL(returnPoint.viewUrl, window.location.origin).pathname : '';
-                const isCurrentTask = savedViewPath === window.location.pathname;
-                const isFresh = Date.now() - Number(returnPoint.savedAt || 0) < 30 * 60 * 1000;
-
-                if (returnPoint.returnUrl && isCurrentTask && isFresh) {
-                    event.preventDefault();
-                    sessionStorage.setItem('kanban:restoreTaskReturn', storedReturnPoint);
-                    window.location.href = returnPoint.returnUrl;
-                    return;
-                }
-            } catch (error) {
-                sessionStorage.removeItem('kanban:lastTaskReturn');
-            }
-        }
-
-        if (window.history.length <= 1) return;
-
-        event.preventDefault();
-        window.history.back();
-    });
-});
 
 document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
     const activitySection = feed.closest('.tasks-issue-activity');

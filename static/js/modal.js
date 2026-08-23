@@ -27,6 +27,11 @@ window.showConfirmModal = function (options) {
     } = options;
     const isDestructive = String(confirmClass).split(/\s+/).includes('btn-danger');
     const iconName = String(icon || (isDestructive ? 'trash-2' : 'triangle-alert')).replace(/[^a-z0-9-]/gi, '');
+    const previouslyFocused = document.activeElement;
+    const modalSequence = (window.__ancoreConfirmModalSequence || 0) + 1;
+    const titleId = `confirm-modal-title-${modalSequence}`;
+    const messageId = `confirm-modal-message-${modalSequence}`;
+    window.__ancoreConfirmModalSequence = modalSequence;
 
     const overlay = document.createElement('div');
     overlay.className = 'confirm-modal-overlay';
@@ -47,19 +52,21 @@ window.showConfirmModal = function (options) {
     }
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', titleId);
+    modal.setAttribute('aria-describedby', messageId);
     modal.innerHTML = `
         <div class="confirm-modal__body">
             <div class="confirm-modal__icon">
                 <i data-lucide="${iconName}" aria-hidden="true" stroke-width="2.5"></i>
             </div>
             <div class="confirm-modal__content">
-                <h3 class="confirm-modal__title">${title}</h3>
-                <p class="confirm-modal__message">${message}</p>
+                <h3 class="confirm-modal__title" id="${titleId}">${title}</h3>
+                <p class="confirm-modal__message" id="${messageId}">${message}</p>
             </div>
         </div>
         <div class="confirm-modal__footer">
-            <button type="button" id="modal-cancel-btn" class="btn-cancel">${cancelText}</button>
-            <button type="button" id="modal-confirm-btn" class="btn ${confirmClass}">${confirmText}</button>
+            <button type="button" class="btn-cancel" data-confirm-modal-cancel>${cancelText}</button>
+            <button type="button" class="btn ${confirmClass}" data-confirm-modal-confirm>${confirmText}</button>
         </div>
     `;
 
@@ -67,22 +74,30 @@ window.showConfirmModal = function (options) {
     document.body.appendChild(overlay);
     window.AncoreIcons?.render(modal);
 
+    const cancelButton = modal.querySelector('[data-confirm-modal-cancel]');
+    const confirmButton = modal.querySelector('[data-confirm-modal-confirm]');
+
     requestAnimationFrame(() => {
         overlay.classList.add('is-visible');
         modal.classList.add('is-visible');
-        document.getElementById('modal-confirm-btn')?.focus();
+        confirmButton?.focus();
     });
 
     const closeModal = () => {
         document.removeEventListener('keydown', handleKeyDown);
         overlay.classList.remove('is-visible');
         modal.classList.remove('is-visible');
-        setTimeout(() => overlay.remove(), 150);
+        setTimeout(() => {
+            overlay.remove();
+            if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+                previouslyFocused.focus({ preventScroll: true });
+            }
+        }, 150);
     };
 
-    document.getElementById('modal-cancel-btn')?.addEventListener('click', closeModal);
+    cancelButton?.addEventListener('click', closeModal);
 
-    document.getElementById('modal-confirm-btn')?.addEventListener('click', () => {
+    confirmButton?.addEventListener('click', () => {
         closeModal();
         onConfirm();
     });
@@ -90,10 +105,21 @@ window.showConfirmModal = function (options) {
     const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
             closeModal();
-        } else if (e.key === 'Enter') {
+        } else if (e.key === 'Enter' && document.activeElement === cancelButton) {
+            e.preventDefault();
+            closeModal();
+        } else if (e.key === 'Enter' && document.activeElement === confirmButton) {
             e.preventDefault();
             closeModal();
             onConfirm();
+        } else if (e.key === 'Tab' && cancelButton && confirmButton) {
+            if (e.shiftKey && document.activeElement === cancelButton) {
+                e.preventDefault();
+                confirmButton.focus();
+            } else if (!e.shiftKey && document.activeElement === confirmButton) {
+                e.preventDefault();
+                cancelButton.focus();
+            }
         }
     };
     document.addEventListener('keydown', handleKeyDown);

@@ -1,0 +1,550 @@
+/*
+ * App-wide modal shell.
+ *
+ * The "Nowe miejsce pracy" dialog is the visual source of truth for every
+ * application window: centered surface, dimmed/softened context, compact
+ * header and a persistent action footer. Feature styles keep control of their
+ * form layouts while this layer owns the window itself.
+ */
+
+:root {
+    --app-modal-scrim: rgba(21, 27, 38, 0.38);
+    --app-modal-scrim-filter: blur(2px);
+    --app-modal-surface: #ffffff;
+    --app-modal-border: rgba(111, 121, 137, 0.18);
+    --app-modal-radius: 14px;
+    --app-modal-shadow: 0 24px 64px rgba(20, 27, 40, 0.24);
+    --app-modal-width: min(760px, calc(100vw - 2rem));
+    --app-modal-max-height: min(840px, calc(var(--app-viewport-height, 100dvh) - 2rem));
+    --app-modal-padding-x: 24px;
+    --app-modal-icon-color: #4f5865;
+    --app-modal-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='white' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='7' width='16' height='13' rx='2'/%3E%3Cpath d='M9 7V5a3 3 0 0 1 6 0v2M4 12h16M9 10v4M15 10v4'/%3E%3C/svg%3E");
+    --app-modal-close-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");
+}
+
+/* Shared task, project, contact, workplace and calendar windows. */
+.tasks-modal,
+.page-container.full-width .tasks-modal {
+    --tasks-modal-shell-width: var(--app-modal-width);
+    --tasks-modal-shell-height: auto;
+    --tasks-modal-max-height: var(--app-modal-max-height);
+    --tasks-modal-x-padding: var(--app-modal-padding-x);
+
+    position: fixed;
+    inset: 0;
+    width: auto;
+    height: auto;
+    max-height: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow: hidden;
+    background: var(--app-modal-scrim);
+    -webkit-backdrop-filter: var(--app-modal-scrim-filter);
+    backdrop-filter: var(--app-modal-scrim-filter);
+    box-sizing: border-box;
+}
+
+.tasks-modal.tasks-issue-modal:not(.contacts-create-modal),
+.tasks-project-modal,
+.tasks-project-create-modal,
+.tasks-project-edit-modal,
+.tasks-project-info-modal,
+.tasks-project-notes-modal,
+.tasks-directory-share-modal,
+.workplaces-standalone-page .workplace-edit-modal,
+.workplaces-settings-page .workplace-edit-modal {
+    --tasks-modal-shell-width: var(--app-modal-width);
+    --tasks-modal-shell-height: auto;
+    --tasks-modal-max-height: var(--app-modal-max-height);
+}
+
+.workplace-create-modal,
+.page-container.full-width .workplace-create-modal,
+.workplaces-standalone-page .workplace-create-modal {
+    --tasks-modal-shell-width: min(560px, calc(100vw - 2rem));
+}
+
+.calendar-modal {
+    --tasks-modal-shell-width: min(680px, calc(100vw - 2rem));
+}
+
+.tasks-directory-share-modal,
+.contacts-create-modal,
+.contacts-edit-modal,
+.workplace-edit-modal {
+    --tasks-modal-shell-width: min(820px, calc(100vw - 2rem));
+}
+
+.tasks-modal .tasks-modal__dialog,
+.page-container.full-width .tasks-modal .tasks-modal__dialog,
+.tasks-modal .tasks-project-modal__dialog,
+.tasks-modal .tasks-project-create-modal__dialog,
+.tasks-modal .tasks-project-edit-modal__dialog,
+.tasks-modal .tasks-project-info-modal__dialog,
+.tasks-modal .tasks-issue-modal__dialog,
+.tasks-project-notes-modal .tasks-modal__dialog,
+.page-container.full-width .tasks-project-notes-modal .tasks-modal__dialog,
+.tasks-directory-share-modal__dialog,
+#issue-modal .tasks-issue-modal__dialog {
+    width: var(--tasks-modal-shell-width);
+    max-width: var(--tasks-modal-shell-width);
+    height: auto;
+    max-height: var(--tasks-modal-max-height);
+    overflow: hidden;
+    border: 1px solid var(--app-modal-border);
+    border-radius: var(--app-modal-radius);
+    background: var(--app-modal-surface);
+    box-shadow: var(--app-modal-shadow);
+    animation: app-modal-enter 0.18s ease-out;
+}
+
+.tasks-modal .tasks-modal__form,
+.page-container.full-width .tasks-modal .tasks-modal__form,
+.tasks-project-info-modal__form,
+.page-container.full-width .tasks-project-info-modal .tasks-modal__form,
+.tasks-project-notes-modal .tasks-modal__form,
+.tasks-directory-share-modal__form,
+.calendar-dialog-form {
+    width: 100%;
+    height: auto;
+    max-height: var(--tasks-modal-max-height);
+    min-height: 0;
+}
+
+@keyframes app-modal-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tasks-modal .tasks-modal__header,
+.page-container.full-width .tasks-modal .tasks-modal__header {
+    min-height: 76px;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 14px var(--tasks-modal-x-padding);
+    border-bottom: 1px solid #e8ebef;
+    background: #ffffff;
+}
+
+.tasks-modal .tasks-modal__header:not(.workplace-create-modal__header)::before {
+    content: "";
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    background: var(--app-modal-icon-color);
+    -webkit-mask: var(--app-modal-icon) center / 22px 22px no-repeat;
+    mask: var(--app-modal-icon) center / 22px 22px no-repeat;
+}
+
+.tasks-modal .tasks-modal__header h2,
+.page-container.full-width .tasks-modal .tasks-modal__header h2,
+.tasks-modal .tasks-issue-modal__crumbs > strong,
+.page-container.full-width .tasks-modal .tasks-issue-modal__crumbs > strong,
+.tasks-modal .tasks-project-edit-modal__title-chip,
+.page-container.full-width .tasks-modal .tasks-project-edit-modal__title-chip {
+    --app-text-color: #252a33;
+
+    width: auto;
+    max-width: min(520px, 70vw);
+    height: auto;
+    min-height: 0;
+    display: block;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #252a33;
+    font-size: 16px;
+    font-weight: 650;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-modal .tasks-issue-modal__crumbs,
+.page-container.full-width .tasks-modal .tasks-issue-modal__crumbs {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-left: 0;
+}
+
+.tasks-modal .tasks-issue-divider,
+.tasks-modal .tasks-project-modal__chevron {
+    display: none;
+}
+
+/* Every standard modal uses the close affordance from the reference dialog. */
+.tasks-modal .tasks-modal__close,
+.page-container.full-width .tasks-modal .tasks-modal__close,
+.tasks-modal .tasks-issue-close,
+.page-container.full-width .tasks-modal .tasks-issue-close {
+    order: 99;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #5f6671;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.tasks-modal .tasks-modal__close:hover,
+.tasks-modal .tasks-modal__close:focus-visible,
+.page-container.full-width .tasks-modal .tasks-modal__close:hover,
+.page-container.full-width .tasks-modal .tasks-modal__close:focus-visible,
+.tasks-modal .tasks-issue-close:hover,
+.tasks-modal .tasks-issue-close:focus-visible {
+    background: #f0f2f5;
+    color: #252a33;
+    outline: none;
+}
+
+.tasks-modal .tasks-modal__close svg,
+.page-container.full-width .tasks-modal .tasks-modal__close svg,
+.tasks-modal .tasks-issue-close svg,
+.page-container.full-width .tasks-modal .tasks-issue-close svg {
+    display: none;
+}
+
+.tasks-modal .tasks-modal__close::before,
+.page-container.full-width .tasks-modal .tasks-modal__close::before,
+.tasks-modal .tasks-issue-close::before,
+.page-container.full-width .tasks-modal .tasks-issue-close::before {
+    content: "";
+    width: 19px;
+    height: 19px;
+    display: block;
+    background: currentColor;
+    -webkit-mask: var(--app-modal-close-icon) center / contain no-repeat;
+    mask: var(--app-modal-close-icon) center / contain no-repeat;
+}
+
+.tasks-modal .calendar-dialog-header .tasks-issue-close {
+    margin-left: 0;
+}
+
+.tasks-modal .calendar-dialog-actions {
+    margin-left: auto;
+}
+
+.tasks-modal .tasks-modal__body,
+.page-container.full-width .tasks-modal .tasks-modal__body,
+.tasks-modal .tasks-project-modal__body,
+.tasks-modal .tasks-project-create-modal__body,
+.tasks-modal .tasks-project-edit-modal__body,
+.tasks-modal .tasks-issue-modal__body,
+.tasks-modal .tasks-project-info-modal__body,
+.tasks-project-notes-modal .tasks-modal__body,
+.calendar-dialog-body {
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 24px var(--tasks-modal-x-padding);
+}
+
+.tasks-modal .tasks-modal__footer,
+.page-container.full-width .tasks-modal .tasks-modal__footer {
+    min-height: 64px;
+    height: auto;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding: 12px var(--tasks-modal-x-padding);
+    border-top: 1px solid #e8ebef;
+    background: #ffffff;
+}
+
+.tasks-modal .tasks-modal__submit,
+.tasks-modal .tasks-project-modal__submit {
+    min-height: 36px;
+    height: 36px;
+    border-radius: 7px;
+}
+
+/* Profile editing used to become an embedded full-page view on wide layouts. */
+.profile-edit-overlay,
+.page-container.full-width .profile-edit-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2200;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: var(--app-modal-scrim);
+    -webkit-backdrop-filter: var(--app-modal-scrim-filter);
+    backdrop-filter: var(--app-modal-scrim-filter);
+}
+
+.profile-edit-dialog,
+.page-container.full-width .profile-edit-dialog {
+    width: min(820px, calc(100vw - 2rem));
+    height: auto;
+    max-height: var(--app-modal-max-height);
+    border: 1px solid var(--app-modal-border);
+    border-radius: var(--app-modal-radius);
+    background: var(--app-modal-surface);
+    box-shadow: var(--app-modal-shadow);
+    animation: app-modal-enter 0.18s ease-out;
+}
+
+.profile-edit-header,
+.page-container.full-width .profile-edit-header {
+    min-height: 76px;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 14px var(--app-modal-padding-x);
+}
+
+.profile-edit-header::before {
+    content: "";
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    background: var(--app-modal-icon-color);
+    -webkit-mask: var(--app-modal-icon) center / 22px 22px no-repeat;
+    mask: var(--app-modal-icon) center / 22px 22px no-repeat;
+}
+
+.workplace-create-modal__heading-icon {
+    --app-text-color: var(--app-modal-icon-color);
+
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border-radius: 0;
+    background: transparent;
+    color: var(--app-modal-icon-color);
+}
+
+.workplace-create-modal__heading-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+}
+
+.profile-edit-header h2,
+.page-container.full-width .profile-edit-header h2 {
+    color: #252a33;
+    font-size: 16px;
+    font-weight: 650;
+}
+
+.profile-edit-header p,
+.page-container.full-width .profile-edit-header p {
+    display: block;
+    color: #747b87;
+    font-size: 0.78rem;
+    font-weight: 450;
+}
+
+.profile-edit-close,
+.page-container.full-width .profile-edit-close {
+    order: initial;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    box-sizing: border-box;
+}
+
+.profile-edit-close::before,
+.page-container.full-width .profile-edit-close::before {
+    display: none;
+}
+
+.profile-edit-close svg,
+.page-container.full-width .profile-edit-close svg {
+    display: block;
+}
+
+.profile-edit-body,
+.page-container.full-width .profile-edit-body {
+    padding: 24px var(--app-modal-padding-x);
+}
+
+.profile-edit-footer,
+.page-container.full-width .profile-edit-footer {
+    min-height: 64px;
+    padding: 12px var(--app-modal-padding-x);
+    background: #ffffff;
+}
+
+/* Secondary dialogs inherit the same surface and scrim treatment. */
+.dialog-overlay,
+.confirm-modal-overlay,
+.contacts-photo-editor-overlay {
+    background: var(--app-modal-scrim);
+    -webkit-backdrop-filter: var(--app-modal-scrim-filter);
+    backdrop-filter: var(--app-modal-scrim-filter);
+}
+
+.dialog,
+.confirm-modal,
+.confirm-modal--destructive,
+.confirm-modal-overlay--tasks .confirm-modal--destructive,
+.contacts-photo-editor-dialog {
+    border: 1px solid var(--app-modal-border);
+    border-radius: var(--app-modal-radius);
+    background: var(--app-modal-surface);
+    box-shadow: var(--app-modal-shadow);
+}
+
+.contacts-photo-editor-header {
+    min-height: 64px;
+    padding: 12px var(--app-modal-padding-x);
+}
+
+.contacts-photo-editor-footer {
+    min-height: 64px;
+    padding: 12px var(--app-modal-padding-x);
+}
+
+@media (max-width: 720px) {
+    :root {
+        --app-modal-width: calc(100vw - 1.5rem);
+        --app-modal-max-height: calc(var(--app-viewport-height, 100dvh) - 1.5rem);
+        --app-modal-padding-x: 18px;
+    }
+
+    .tasks-modal,
+    .page-container.full-width .tasks-modal,
+    .profile-edit-overlay,
+    .page-container.full-width .profile-edit-overlay {
+        align-items: center;
+        padding: 0.75rem;
+    }
+
+    .tasks-modal,
+    .tasks-modal.tasks-issue-modal:not(.contacts-create-modal),
+    .tasks-project-modal,
+    .tasks-project-create-modal,
+    .tasks-project-edit-modal,
+    .tasks-project-info-modal,
+    .tasks-project-notes-modal,
+    .tasks-directory-share-modal,
+    .contacts-create-modal,
+    .contacts-edit-modal,
+    .workplace-create-modal,
+    .workplace-edit-modal,
+    .calendar-modal,
+    .page-container.full-width .workplace-create-modal,
+    .workplaces-standalone-page .workplace-create-modal {
+        --tasks-modal-shell-width: calc(100vw - 1.5rem);
+        --tasks-modal-shell-height: auto;
+        --tasks-modal-max-height: var(--app-modal-max-height);
+    }
+
+    .tasks-modal .tasks-modal__dialog,
+    .page-container.full-width .tasks-modal .tasks-modal__dialog,
+    .tasks-modal .tasks-modal__form,
+    .page-container.full-width .tasks-modal .tasks-modal__form,
+    .tasks-project-info-modal__form,
+    .tasks-project-notes-modal .tasks-modal__form,
+    #issue-modal .tasks-issue-modal__dialog,
+    .profile-edit-dialog,
+    .page-container.full-width .profile-edit-dialog {
+        width: 100%;
+        height: auto;
+        max-height: var(--app-modal-max-height);
+        border-radius: var(--app-modal-radius);
+    }
+
+    .tasks-modal .tasks-modal__header,
+    .page-container.full-width .tasks-modal .tasks-modal__header,
+    .profile-edit-header,
+    .page-container.full-width .profile-edit-header {
+        min-height: 70px;
+        padding: 12px var(--app-modal-padding-x);
+    }
+
+    .tasks-modal .tasks-modal__header:not(.workplace-create-modal__header)::before,
+    .profile-edit-header::before {
+        width: 24px;
+        height: 24px;
+        flex-basis: 24px;
+        -webkit-mask-size: 20px 20px;
+        mask-size: 20px 20px;
+    }
+
+    .tasks-modal .tasks-modal__body,
+    .page-container.full-width .tasks-modal .tasks-modal__body,
+    .tasks-modal .tasks-project-modal__body,
+    .tasks-modal .tasks-project-create-modal__body,
+    .tasks-modal .tasks-project-edit-modal__body,
+    .tasks-modal .tasks-issue-modal__body,
+    .tasks-modal .tasks-project-info-modal__body,
+    .calendar-dialog-body,
+    .profile-edit-body,
+    .page-container.full-width .profile-edit-body {
+        padding: 20px var(--app-modal-padding-x);
+    }
+
+    .tasks-modal .tasks-modal__footer,
+    .page-container.full-width .tasks-modal .tasks-modal__footer,
+    .profile-edit-footer,
+    .page-container.full-width .profile-edit-footer {
+        min-height: 64px;
+        padding: 12px var(--app-modal-padding-x);
+    }
+}
+
+@media (max-width: 480px) {
+    .tasks-modal .tasks-modal__header h2,
+    .tasks-modal .tasks-issue-modal__crumbs > strong,
+    .tasks-modal .tasks-project-edit-modal__title-chip {
+        max-width: min(55vw, 280px);
+    }
+
+    .profile-edit-body,
+    .page-container.full-width .profile-edit-body {
+        grid-template-columns: 1fr;
+    }
+
+    .dialog-overlay {
+        align-items: center;
+    }
+
+    .dialog--sm {
+        width: 100%;
+        max-width: 420px;
+        border-radius: var(--app-modal-radius);
+    }
+
+    .confirm-modal {
+        margin: 0 0.75rem;
+        border-radius: var(--app-modal-radius);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tasks-modal .tasks-modal__dialog,
+    .page-container.full-width .tasks-modal .tasks-modal__dialog,
+    .profile-edit-dialog,
+    .page-container.full-width .profile-edit-dialog {
+        animation: none;
+    }
+}

@@ -1,4 +1,7 @@
+import tempfile
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -79,6 +82,13 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form workplace-create-modal__form')
         self.assertContains(response, 'Nowe miejsce pracy')
         self.assertContains(response, 'Utwórz miejsce pracy')
+        self.assertContains(response, 'Nazwa miejsca pracy')
+        self.assertContains(response, 'np. Studio projektowe')
+        self.assertContains(response, 'data-workplace-create-dropzone')
+        self.assertContains(response, 'PNG, JPG lub WebP · maks. 5 MB')
+        self.assertContains(response, 'data-workplace-create-photo-preview')
+        self.assertContains(response, 'data-workplace-create-photo-remove')
+        self.assertContains(response, 'Po utworzeniu przełączymy Cię do nowego miejsca pracy.')
         self.assertNotContains(response, 'workplaces-create-form--filterbar')
 
     def test_workplace_avatar_uses_workplace_specific_background_color(self):
@@ -128,7 +138,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'sidebar-workplace__avatar')
         self.assertNotContains(response, '/media/workplace_photos/moje-miejsce.webp')
 
-    def test_sidebar_displays_workplace_between_toggle_and_tasks_without_separator(self):
+    def test_sidebar_displays_workplace_below_notes_and_above_settings_without_separator(self):
         self.client.force_login(self.user)
 
         response = self.client.get(reverse('tasks:tasks'))
@@ -140,8 +150,8 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, '/static/img/logo-ancore.png')
         self.assertNotContains(response, 'class="nav-separator"')
         self.assertLess(content.index('class="sidebar-header"'), content.index('class="nav-link nav-link--workplace '))
-        self.assertLess(content.index('id="secondary-menu-toggle"'), content.index('class="nav-link nav-link--workplace '))
-        self.assertLess(content.index('class="nav-link nav-link--workplace '), content.index('aria-label="Zadania"'))
+        self.assertLess(content.index('data-sticky-note-toggle'), content.index('class="nav-link nav-link--workplace '))
+        self.assertLess(content.index('class="nav-link nav-link--workplace '), content.index('aria-label="Ustawienia Ancore"'))
 
     def test_sidebar_workplace_button_uses_standard_nav_link_without_photo(self):
         self.client.force_login(self.user)
@@ -210,6 +220,55 @@ class WorkplaceSelectionTests(TestCase):
             scoped_workplace_app_path(workplace, 'tasks'),
             fetch_redirect_response=False,
         )
+        self.assertEqual(self.client.session['active_workplace_id'], workplace.pk)
+        membership = workplace.memberships.get(user=self.user)
+        self.assertEqual(membership.role, WorkplaceMembership.Role.OWNER)
+
+    def test_create_workplace_normalizes_whitespace_in_name(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('workplaces:workplaces'), {'name': '  Zespół   wdrożeniowy  '})
+
+        workplace = type(self.first_workplace).objects.get(owner=self.user, name='Zespół wdrożeniowy')
+        self.assertRedirects(
+            response,
+            scoped_workplace_app_path(workplace, 'tasks'),
+            fetch_redirect_response=False,
+        )
+
+    def test_create_workplace_accepts_valid_logo(self):
+        self.client.force_login(self.user)
+        logo = SimpleUploadedFile(
+            'logo.png',
+            b'\x89PNG\r\n\x1a\n' + (b'0' * 32),
+            content_type='image/png',
+        )
+
+        with tempfile.TemporaryDirectory() as media_root, self.settings(MEDIA_ROOT=media_root):
+            response = self.client.post(
+                reverse('workplaces:workplaces'),
+                {'name': 'Zespół z logo', 'workplace_photo': logo},
+            )
+
+            workplace = type(self.first_workplace).objects.get(owner=self.user, name='Zespół z logo')
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(workplace.workplace_photo.name.startswith('workplace_photos/logo'))
+
+    def test_create_workplace_rejects_file_with_invalid_image_content(self):
+        self.client.force_login(self.user)
+        fake_logo = SimpleUploadedFile('logo.png', b'not-an-image', content_type='image/png')
+
+        response = self.client.post(
+            reverse('workplaces:workplaces'),
+            {'name': 'Nie powinno powstać', 'workplace_photo': fake_logo},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'workplace-create-modal is-open')
+        self.assertContains(response, 'Plik obrazu ma nieprawidłową zawartość.')
+        self.assertFalse(
+            type(self.first_workplace).objects.filter(owner=self.user, name='Nie powinno powstać').exists()
+        )
 
     def test_duplicate_create_reopens_workplace_create_modal(self):
         self.client.force_login(self.user)
@@ -220,6 +279,18 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'workplace-create-modal is-open')
         self.assertContains(response, 'aria-hidden="false" data-workplace-create-modal')
         self.assertContains(response, 'Masz już miejsce pracy o takiej nazwie.')
+
+    def test_duplicate_create_is_case_insensitive(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('workplaces:workplaces'),
+            {'name': self.first_workplace.name.swapcase()},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Masz już miejsce pracy o takiej nazwie.')
+        self.assertEqual(type(self.first_workplace).objects.filter(owner=self.user).count(), 2)
 
     def test_scoped_tasks_url_sets_active_workplace_from_slug(self):
         self.client.force_login(self.user)

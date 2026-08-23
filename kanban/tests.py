@@ -583,8 +583,17 @@ class KanbanProjectCreationTests(TestCase):
         filterbar_end = html.index('<div class="tasks-kanban-wallpaper-panel"', filterbar_start)
         filterbar_html = html[filterbar_start:filterbar_end]
 
-        self.assertIn('Przestrzeń testowa', topbar_html)
-        self.assertIn('Tablica testowa', topbar_html)
+        self.assertContains(
+            response,
+            '<span class="tasks-topbar-title-item"><span>Tablica testowa</span></span>',
+            html=True,
+        )
+        self.assertNotContains(
+            response,
+            '<span class="tasks-topbar-title-item"><span>Przestrzeń testowa</span></span>',
+            html=True,
+        )
+        self.assertNotIn('tasks-topbar-title-separator', topbar_html)
         self.assertIn('tasks-titlebar-search', topbar_html)
         self.assertIn('id="filter-search"', topbar_html)
         self.assertNotIn('data-task-sort', topbar_html)
@@ -598,6 +607,38 @@ class KanbanProjectCreationTests(TestCase):
         self.assertLess(filterbar_html.index('Dodaj kartę'), filterbar_html.index('data-section-actions'))
         self.assertNotIn('id="filter-search"', filterbar_html)
         self.assertNotIn('data-filter-search-submit', filterbar_html)
+
+    def test_board_view_has_back_link_to_current_space_boards(self):
+        project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
+        section = KanbanSection.objects.create(project=project, title='Tablica testowa')
+
+        response = self.client.get(reverse('kanban:task_group', args=[section.id]))
+
+        self.assertContains(response, f'href="{reverse("kanban:tasks")}?project={project.id}"')
+        self.assertContains(response, 'aria-label="Wróć do tablic przestrzeni Przestrzeń testowa"')
+
+        project_response = self.client.get(f'{reverse("kanban:tasks")}?project={project.id}')
+        self.assertNotContains(project_response, 'aria-label="Wróć do tablic przestrzeni')
+
+    def test_project_view_has_back_link_to_all_spaces(self):
+        project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
+
+        response = self.client.get(f'{reverse("kanban:tasks")}?project={project.id}')
+
+        self.assertContains(response, f'href="{reverse("kanban:tasks")}"')
+        self.assertContains(response, 'aria-label="Wróć do wszystkich przestrzeni"')
+        self.assertContains(response, 'class="tasks-issue-close"')
+        self.assertContains(response, 'class="tasks-issue-divider"')
+        self.assertContains(response, 'data-spaces-back-link')
+
+        spaces_response = self.client.get(reverse('kanban:tasks'))
+        spaces_html = spaces_response.content.decode()
+        spaces_topbar_start = spaces_html.index('<header class="tasks-topbar">')
+        spaces_topbar_end = spaces_html.index('</header>', spaces_topbar_start)
+        spaces_topbar_html = spaces_html[spaces_topbar_start:spaces_topbar_end]
+
+        self.assertNotContains(spaces_response, 'data-spaces-back-link')
+        self.assertNotIn('class="tasks-issue-divider"', spaces_topbar_html)
 
     def test_project_group_rows_do_not_render_group_type_label(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
@@ -1362,6 +1403,22 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(task.status, 'new')
         self.assertEqual(task.column, column)
+
+    def test_task_detail_back_link_returns_to_assigned_board(self):
+        project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = KanbanSection.objects.create(project=project, title='Główna tablica')
+        task = Kanban.objects.create(user=self.user, section=section, title='Zadanie')
+
+        response = self.client.get(reverse('kanban:view-task', args=[task.task_id]))
+        detail_html = response.content.decode()
+        board_url = reverse('kanban:task_group', args=[section.id])
+
+        self.assertContains(response, f'href="{board_url}"')
+        self.assertContains(response, 'aria-label="Wróć do tablicy Główna tablica"')
+        self.assertNotRegex(
+            detail_html,
+            rf'<a\s+href="{re.escape(board_url)}"[^>]*data-history-back',
+        )
 
     def test_create_subtask_from_task_detail(self):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')

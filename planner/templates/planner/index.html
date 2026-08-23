@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260628-unified-modal-shell">
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260823-gray-calendar-accent">
 <script src="{% static 'js/calendar.js' %}?v=20260614-app-wide-navigation-v2" defer></script>
 {% endblock %}
 
@@ -155,7 +155,7 @@
     <div class="tasks-modal__dialog calendar-dialog-panel" role="dialog" aria-labelledby="event-dialog-title">
         <form id="event-form" class="tasks-modal__form calendar-dialog-form" novalidate>
             <header class="tasks-modal__header calendar-dialog-header">
-                <button type="button" class="tasks-issue-close cancel-event-btn" title="Wróć" aria-label="Wróć">
+                <button type="button" class="tasks-issue-close cancel-event-btn" title="Zamknij" aria-label="Zamknij">
                     <i data-lucide="arrow-left" aria-hidden="true"></i>
                 </button>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>

@@ -11,25 +11,21 @@ from .services import enable_workspace_url_scope, scoped_workplace_app_path, set
 @login_required
 def workplaces(request):
     enable_workspace_url_scope(request)
-    form = WorkplaceForm()
+    form = WorkplaceForm(user=request.user)
     workplace_create_modal_open = False
 
     if request.method == 'POST':
         workplace_create_modal_open = True
-        form = WorkplaceForm(request.POST, request.FILES)
+        form = WorkplaceForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            name = form.cleaned_data['name']
-            if workplaces_for_user(request.user).filter(name__iexact=name).exists():
-                form.add_error('name', 'Masz już miejsce pracy o takiej nazwie.')
-            else:
-                workplace = create_workplace_for_user(
-                    request.user,
-                    name,
-                    form.cleaned_data.get('workplace_photo'),
-                )
-                set_active_workplace(request, workplace)
-                messages.success(request, 'Miejsce pracy utworzone.')
-                return redirect(scoped_workplace_app_path(workplace, 'tasks'))
+            workplace = create_workplace_for_user(
+                request.user,
+                form.cleaned_data['name'],
+                form.cleaned_data.get('workplace_photo'),
+            )
+            set_active_workplace(request, workplace)
+            messages.success(request, 'Miejsce pracy utworzone.')
+            return redirect(scoped_workplace_app_path(workplace, 'tasks'))
         messages.error(request, 'Nie udało się utworzyć miejsca pracy.')
 
     user_workplaces = workplaces_for_user(request.user)
@@ -64,22 +60,16 @@ def workplace_home(request, workplace_slug):
 @require_POST
 def update_workplace(request, workplace_id):
     workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
-    form = WorkplaceForm(request.POST, request.FILES, instance=workplace)
+    form = WorkplaceForm(request.POST, request.FILES, instance=workplace, user=request.user)
     if form.is_valid():
-        name = form.cleaned_data['name']
-        duplicate_exists = (
-            workplaces_for_user(request.user)
-            .filter(name__iexact=name)
-            .exclude(pk=workplace.pk)
-            .exists()
-        )
-        if duplicate_exists:
-            messages.error(request, 'Masz już miejsce pracy o takiej nazwie.')
-        else:
-            form.save()
-            messages.success(request, 'Ustawienia miejsca pracy zapisane.')
+        form.save()
+        messages.success(request, 'Ustawienia miejsca pracy zapisane.')
     else:
-        messages.error(request, 'Nie udało się zapisać ustawień miejsca pracy.')
+        name_errors = form.errors.get('name')
+        messages.error(
+            request,
+            str(name_errors[0]) if name_errors else 'Nie udało się zapisać ustawień miejsca pracy.',
+        )
     return redirect('workplaces:workplaces')
 
 

@@ -1,3 +1,11 @@
+:root {
+    --calendar-selection: #7b8493;
+    --calendar-selection-border: #687180;
+    --calendar-selection-text: #ffffff;
+    --calendar-hover: #f1f3f6;
+    --calendar-blue: #4f7edb;
+}
+
 .calendar-page {
     width: 100%;
     height: 100%;
@@ -55,7 +63,7 @@
 }
 
 .calendar-color-dot--red { color: #e04f63; }
-.calendar-color-dot--blue { color: var(--accent-peach); }
+.calendar-color-dot--blue { color: var(--calendar-blue); }
 .calendar-color-dot--green { color: #43a36a; }
 .calendar-color-dot--amber { color: #d79a35; }
 .calendar-color-dot--slate { color: #7b8493; }
@@ -100,8 +108,8 @@
 
 .calendar-mini-nav__button:hover,
 .calendar-mini-nav__button.is-active {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--calendar-selection);
+    color: var(--calendar-selection-text);
 }
 
 .calendar-filter-summary {
@@ -205,8 +213,8 @@
 }
 
 .calendar-day:hover {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--calendar-hover);
+    color: var(--text-primary);
 }
 
 .calendar-day--other {
@@ -218,16 +226,16 @@
 }
 
 .calendar-day--today {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
-    box-shadow: inset 0 0 0 1px var(--accent-peach);
+    background: var(--calendar-selection);
+    color: var(--calendar-selection-text);
+    box-shadow: inset 0 0 0 1px var(--calendar-selection-border);
 }
 
 .calendar-day--today .calendar-day-number,
 .calendar-week-day-head--today .calendar-week-day-num,
 .calendar-year-day--today {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--calendar-selection);
+    color: var(--calendar-selection-text);
 }
 
 .calendar-day-number {
@@ -329,13 +337,13 @@
 }
 
 .calendar-week-col:hover {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--calendar-hover);
+    color: var(--text-primary);
 }
 
 .calendar-week-col--today {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--calendar-selection);
+    color: var(--calendar-selection-text);
 }
 
 .calendar-view--day {
@@ -387,8 +395,8 @@
 }
 
 .calendar-day-slot-body:hover {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--calendar-hover);
+    color: var(--text-primary);
 }
 
 .calendar-day-empty-slot {
@@ -429,7 +437,7 @@
 }
 
 .calendar-year-month-title:hover {
-    color: var(--accent-peach);
+    color: var(--calendar-selection-border);
 }
 
 .calendar-year-weekdays,
@@ -476,8 +484,8 @@
 }
 
 .calendar-year-day--has-events:not(.calendar-year-day--today) {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--calendar-selection);
+    color: var(--calendar-selection-text);
 }
 
 .calendar-year-day:not(:disabled):hover {
@@ -535,12 +543,12 @@
 }
 
 .calendar-list-item:hover {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--calendar-hover);
+    color: var(--text-primary);
 }
 
 .calendar-list-item--red { border-left-color: #e04f63; }
-.calendar-list-item--blue { border-left-color: var(--accent-peach); }
+.calendar-list-item--blue { border-left-color: var(--calendar-blue); }
 .calendar-list-item--green { border-left-color: #43a36a; }
 .calendar-list-item--amber { border-left-color: #d79a35; }
 .calendar-list-item--slate { border-left-color: #7b8493; }
@@ -612,9 +620,9 @@
 }
 
 .calendar-event--blue {
-    border-left-color: var(--accent-peach);
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    border-left-color: var(--calendar-blue);
+    background: #edf3ff;
+    color: #2f5da8;
 }
 
 .calendar-event--green {
@@ -758,8 +766,8 @@
 
 .calendar-color-select__button:focus-visible {
     outline: none;
-    border-color: var(--accent-peach-border);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
+    border-color: var(--calendar-selection-border);
+    box-shadow: 0 0 0 3px rgba(123, 132, 147, 0.18);
 }
 
 .calendar-color-select__button [data-calendar-color-label] {

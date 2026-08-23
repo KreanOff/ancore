@@ -9,10 +9,14 @@ WORKPLACE_PHOTO_MAX_SIZE = getattr(settings, 'MAX_WORKPLACE_PHOTO_SIZE', 5 * 102
 
 
 class WorkplaceForm(forms.ModelForm):
-    workplace_photo = forms.FileField(label='Zdjęcie miejsca pracy', required=False, widget=forms.FileInput(attrs={
-        'accept': 'image/*',
-        'class': 'form-input workplace-settings__photo-input',
-    }))
+    workplace_photo = forms.FileField(
+        label='Logo miejsca pracy',
+        required=False,
+        widget=forms.FileInput(attrs={
+            'accept': '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
+            'class': 'workplace-edit-modal__file-input',
+        }),
+    )
     workplace_photo_remove = forms.CharField(
         label='Usuń zdjęcie',
         required=False,
@@ -22,16 +26,39 @@ class WorkplaceForm(forms.ModelForm):
     class Meta:
         model = Workplace
         fields = ['workplace_photo', 'name']
+        error_messages = {
+            'name': {
+                'required': 'Wpisz nazwę miejsca pracy.',
+                'max_length': 'Nazwa miejsca pracy może mieć maksymalnie 140 znaków.',
+            },
+        }
         widgets = {
             'name': forms.TextInput(attrs={
-                'placeholder': 'Nazwa miejsca pracy',
-                'class': 'tasks-inline-input',
+                'placeholder': 'np. Studio projektowe',
+                'class': 'workplace-create-modal__name-input',
                 'autocomplete': 'off',
+                'data-workplace-name-input': True,
+                'aria-describedby': 'workplace-create-name-hint workplace-create-name-counter',
             }),
         }
 
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
     def clean_name(self):
-        return (self.cleaned_data.get('name') or '').strip()
+        name = ' '.join((self.cleaned_data.get('name') or '').split())
+        if not name:
+            raise forms.ValidationError('Wpisz nazwę miejsca pracy.')
+
+        if self.user is not None:
+            duplicate_workplaces = Workplace.objects.filter(owner=self.user, name__iexact=name)
+            if self.instance.pk:
+                duplicate_workplaces = duplicate_workplaces.exclude(pk=self.instance.pk)
+            if duplicate_workplaces.exists():
+                raise forms.ValidationError('Masz już miejsce pracy o takiej nazwie.')
+
+        return name
 
     def clean_workplace_photo(self):
         workplace_photo = self.cleaned_data.get('workplace_photo')

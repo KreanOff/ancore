@@ -96,6 +96,7 @@
     padding: 0 1.25rem;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     font-weight: 600;
     border-radius: var(--radius);
     font-size: var(--font-size-base);

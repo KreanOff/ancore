@@ -347,6 +347,10 @@ class TaskProjectCreationTests(TestCase):
 
     def test_create_project_modal_shows_project_parameters(self):
         response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
+        modal_start = html.index('id="project-modal"')
+        modal_end = html.index('id="project-rename-modal"', modal_start)
+        modal_html = html[modal_start:modal_end]
 
         self.assertContains(response, 'Parametry projektu')
         self.assertContains(response, 'Pierwsza grupa')
@@ -363,7 +367,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Status projektu')
         self.assertContains(response, 'Etap')
         self.assertContains(response, 'Kondycja')
-        self.assertContains(response, 'Budżet')
+        self.assertNotIn('Budżet', modal_html)
+        self.assertNotIn('Waluta', modal_html)
+        self.assertNotIn('name="budget_amount"', modal_html)
+        self.assertNotIn('name="currency"', modal_html)
         self.assertNotContains(response, 'Klient / firma')
         self.assertContains(response, 'Kod projektu')
         self.assertContains(response, 'name="code"')
@@ -968,7 +975,7 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(reverse('tasks:tasks'))
         html = response.content.decode()
         modal_start = html.index('id="project-rename-modal"')
-        modal_end = html.index('id="section-create-modal"', modal_start)
+        modal_end = html.index('id="project-notes-modal"', modal_start)
         modal_html = html[modal_start:modal_end]
 
         self.assertIn('tasks-project-edit-modal', modal_html)
@@ -986,7 +993,7 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(reverse('tasks:tasks'))
         html = response.content.decode()
         modal_start = html.index('id="project-rename-modal"')
-        modal_end = html.index('id="section-create-modal"', modal_start)
+        modal_end = html.index('id="project-notes-modal"', modal_start)
         modal_html = html[modal_start:modal_end]
 
         self.assertIn(
@@ -1005,12 +1012,14 @@ class TaskProjectCreationTests(TestCase):
             'tasks-project-create-field--source',
             'tasks-project-create-field--start',
             'tasks-project-create-field--due',
-            'tasks-project-create-field--budget',
-            'tasks-project-create-field--currency',
         ]
         field_positions = [modal_html.index(field_class) for field_class in field_classes]
 
         self.assertEqual(field_positions, sorted(field_positions))
+        self.assertNotIn('Budżet', modal_html)
+        self.assertNotIn('Waluta', modal_html)
+        self.assertNotIn('name="budget_amount"', modal_html)
+        self.assertNotIn('name="currency"', modal_html)
 
     def test_create_project_uses_default_group_name_when_group_name_is_empty(self):
         response = self.client.post(reverse('tasks:tasks'), {

@@ -340,7 +340,7 @@ class TaskProjectBaseForm(forms.ModelForm):
             _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user), 'Brak osoby')
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search'] = 'true'
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
-        for field_name in ('status', 'stage', 'health', 'currency'):
+        for field_name in ('status', 'stage', 'health'):
             if field_name in self.fields:
                 self.fields[field_name].required = False
 
@@ -369,10 +369,6 @@ class TaskProjectBaseForm(forms.ModelForm):
 
     def clean_health(self):
         return self.cleaned_data.get('health') or 'ok'
-
-    def clean_currency(self):
-        currency = (self.cleaned_data.get('currency') or '').strip().upper()[:3]
-        return currency or 'PLN'
 
 
 class TaskProjectForm(TaskProjectBaseForm):
@@ -418,8 +414,6 @@ class TaskProjectForm(TaskProjectBaseForm):
             'priority',
             'start_at',
             'due_at',
-            'budget_amount',
-            'currency',
             'source',
         ]
         widgets = {
@@ -464,17 +458,6 @@ class TaskProjectForm(TaskProjectBaseForm):
                 'type': 'date',
                 'class': 'tasks-inline-input',
             }),
-            'budget_amount': forms.NumberInput(attrs={
-                'class': 'tasks-inline-input',
-                'min': 0,
-                'step': '0.01',
-                'placeholder': 'Budżet',
-            }),
-            'currency': forms.TextInput(attrs={
-                'class': 'tasks-inline-input',
-                'maxlength': 3,
-                'placeholder': 'PLN',
-            }),
             'source': forms.TextInput(attrs={
                 'class': 'tasks-inline-input',
                 'placeholder': 'Źródło projektu',
@@ -490,8 +473,6 @@ class TaskProjectForm(TaskProjectBaseForm):
             'priority': 'Priorytet',
             'start_at': 'Start',
             'due_at': 'Termin',
-            'budget_amount': 'Budżet',
-            'currency': 'Waluta',
             'source': 'Źródło',
         }
 
@@ -511,8 +492,6 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
             'priority',
             'start_at',
             'due_at',
-            'budget_amount',
-            'currency',
             'source',
         ]
         widgets = {
@@ -557,17 +536,6 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
                 'type': 'date',
                 'class': 'tasks-inline-input',
             }),
-            'budget_amount': forms.NumberInput(attrs={
-                'class': 'tasks-inline-input',
-                'min': 0,
-                'step': '0.01',
-                'placeholder': 'Budżet',
-            }),
-            'currency': forms.TextInput(attrs={
-                'class': 'tasks-inline-input',
-                'maxlength': 3,
-                'placeholder': 'PLN',
-            }),
             'source': forms.TextInput(attrs={
                 'class': 'tasks-inline-input',
                 'placeholder': 'Źródło projektu',
@@ -583,8 +551,6 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
             'priority': 'Priorytet',
             'start_at': 'Start',
             'due_at': 'Termin',
-            'budget_amount': 'Budżet',
-            'currency': 'Waluta',
             'source': 'Źródło',
         }
 

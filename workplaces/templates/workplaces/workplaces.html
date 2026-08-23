@@ -125,60 +125,81 @@
         </section>
     </main>
 
-    <div class="tasks-modal tasks-project-modal tasks-project-create-modal tasks-issue-modal workplace-create-modal{% if workplace_create_modal_open %} is-open{% endif %}" id="workplace-create-modal" role="dialog" aria-modal="true" aria-labelledby="workplace-create-modal-title" aria-hidden="{% if workplace_create_modal_open %}false{% else %}true{% endif %}" data-workplace-create-modal>
+    <div class="tasks-modal tasks-project-modal tasks-project-create-modal tasks-issue-modal workplace-create-modal{% if workplace_create_modal_open %} is-open{% endif %}" id="workplace-create-modal" role="dialog" aria-modal="true" aria-labelledby="workplace-create-modal-title" aria-describedby="workplace-create-modal-description" aria-hidden="{% if workplace_create_modal_open %}false{% else %}true{% endif %}" data-workplace-create-modal>
         <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-create-modal__dialog tasks-issue-modal__dialog workplace-create-modal__dialog">
             <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form workplace-create-modal__form" id="workplace-create-form" enctype="multipart/form-data">
                 {% csrf_token %}
                 <header class="tasks-modal__header tasks-project-create-modal__header tasks-issue-modal__header workplace-create-modal__header">
-                    <div class="tasks-issue-modal__crumbs">
-                        <button type="button" class="tasks-issue-close" data-close-workplace-create-modal aria-label="Wróć" title="Wróć">
-                            <i data-lucide="arrow-left" aria-hidden="true"></i>
-                        </button>
-                        <span class="tasks-issue-divider" aria-hidden="true"></span>
-                        <strong id="workplace-create-modal-title">Nowe miejsce pracy</strong>
+                    <div class="workplace-create-modal__heading">
+                        <span class="workplace-create-modal__heading-icon" aria-hidden="true">
+                            <i data-lucide="briefcase"></i>
+                        </span>
+                        <div>
+                            <h2 id="workplace-create-modal-title">Nowe miejsce pracy</h2>
+                            <p id="workplace-create-modal-description">Utwórz osobną przestrzeń dla zespołu, klientów i projektów.</p>
+                        </div>
                     </div>
+                    <button type="button" class="workplace-create-modal__close" data-close-workplace-create-modal aria-label="Zamknij okno tworzenia miejsca pracy" title="Zamknij">
+                        <i data-lucide="x" aria-hidden="true"></i>
+                    </button>
                 </header>
 
                 <div class="tasks-modal__body tasks-project-modal__body tasks-project-create-modal__body tasks-issue-modal__body workplace-create-modal__body">
-                    {% if form.errors %}
-                    <div class="tasks-modal__errors">
-                        {% for field in form %}
-                            {% for error in field.errors %}
-                                <p>{{ error }}</p>
-                            {% endfor %}
-                        {% endfor %}
-                        {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
+                    {% if form.non_field_errors %}
+                    <div class="tasks-modal__errors workplace-create-modal__form-errors" role="alert">
+                        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
                     </div>
                     {% endif %}
 
-                    <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>
-                    {{ form.name }}
-
-                    <section class="tasks-project-parameters workplace-create-modal__parameters" aria-labelledby="workplace-create-parameters-title">
-                        <h3 class="u-sr-only" id="workplace-create-parameters-title">Parametry miejsca pracy</h3>
-                        <div class="tasks-project-create-fields tasks-issue-fields workplace-create-modal__fields">
-                            <div class="tasks-issue-field workplace-edit-modal__photo-field workplace-create-modal__photo-field">
-                                <span>Logo</span>
-                                <label class="workplace-edit-modal__photo-control workplace-create-modal__photo-control" for="{{ form.workplace_photo.id_for_label }}">
-                                    <span class="profile-avatar profile-avatar--workplace profile-avatar--teal workplace-edit-modal__avatar workplace-create-modal__avatar" aria-hidden="true">
-                                        <i class="profile-avatar-icon" data-lucide="briefcase" aria-hidden="true" focusable="false"></i>
-                                    </span>
-                                    <span class="workplace-edit-modal__photo-copy">
-                                        <strong>Dodaj zdjęcie</strong>
-                                        <small data-workplace-create-photo-name>PNG, JPG lub WebP</small>
-                                    </span>
-                                    <i data-lucide="upload" aria-hidden="true"></i>
-                                </label>
-                                <input id="{{ form.workplace_photo.id_for_label }}" type="file" name="workplace_photo" accept="image/*" class="workplace-edit-modal__file-input" data-workplace-create-photo-input>
-                            </div>
+                    <div class="workplace-create-modal__field{% if form.name.errors %} has-error{% endif %}">
+                        <div class="workplace-create-modal__label-row">
+                            <label for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>
+                            <span>Wymagane</span>
                         </div>
-                    </section>
+                        {{ form.name }}
+                        <div class="workplace-create-modal__field-meta">
+                            <small id="workplace-create-name-hint">Będzie widoczna dla wszystkich członków miejsca pracy.</small>
+                            <small id="workplace-create-name-counter" aria-live="polite"><span data-workplace-name-count>{{ form.name.value|default:''|length }}</span>/140</small>
+                        </div>
+                        {% for error in form.name.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
+                    </div>
+
+                    <fieldset class="workplace-create-modal__field workplace-create-modal__logo-field{% if form.workplace_photo.errors %} has-error{% endif %}">
+                        <legend class="u-sr-only">Logo miejsca pracy</legend>
+                        <div class="workplace-create-modal__label-row">
+                            <span class="workplace-create-modal__field-label">Logo</span>
+                            <span>Opcjonalne</span>
+                        </div>
+                        <input id="{{ form.workplace_photo.id_for_label }}" type="file" name="workplace_photo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" class="workplace-edit-modal__file-input" data-workplace-create-photo-input>
+                        <label class="workplace-create-modal__dropzone" for="{{ form.workplace_photo.id_for_label }}" data-workplace-create-dropzone>
+                            <span class="profile-avatar profile-avatar--workplace profile-avatar--teal workplace-create-modal__avatar" aria-hidden="true">
+                                <img src="" alt="" hidden data-workplace-create-photo-preview>
+                                <i class="profile-avatar-icon" data-lucide="briefcase" aria-hidden="true" focusable="false" data-workplace-create-photo-icon></i>
+                            </span>
+                            <span class="workplace-create-modal__photo-copy">
+                                <strong data-workplace-create-photo-title>Dodaj logo</strong>
+                                <small data-workplace-create-photo-name>Kliknij lub przeciągnij plik tutaj</small>
+                            </span>
+                            <span class="workplace-create-modal__upload-icon" aria-hidden="true">
+                                <i data-lucide="upload"></i>
+                            </span>
+                        </label>
+                        <div class="workplace-create-modal__file-meta">
+                            <small>PNG, JPG lub WebP · maks. 5 MB</small>
+                            <button type="button" data-workplace-create-photo-remove hidden>Usuń wybrany plik</button>
+                        </div>
+                        <p class="workplace-create-modal__field-error" role="alert" aria-live="polite" data-workplace-create-photo-error{% if not form.workplace_photo.errors %} hidden{% endif %}>{% for error in form.workplace_photo.errors %}{{ error }}{% if not forloop.last %} {% endif %}{% endfor %}</p>
+                    </fieldset>
+
+                    <div class="workplace-create-modal__notice">
+                        <i data-lucide="info" aria-hidden="true"></i>
+                        <p><strong>Po utworzeniu przełączymy Cię do nowego miejsca pracy.</strong> Adres i członkostwo właściciela ustawimy automatycznie.</p>
+                    </div>
                 </div>
 
                 <footer class="tasks-modal__footer tasks-project-create-modal__footer tasks-issue-modal__footer workplace-create-modal__footer">
-                    <button type="submit" class="tasks-modal__submit" id="workplace-create-submit">Utwórz miejsce pracy</button>
+                    <button type="button" class="workplace-create-modal__cancel" data-close-workplace-create-modal>Anuluj</button>
+                    <button type="submit" class="tasks-modal__submit workplace-create-modal__submit" id="workplace-create-submit" data-default-label="Utwórz miejsce pracy">Utwórz miejsce pracy</button>
                 </footer>
             </form>
         </div>
@@ -192,7 +213,7 @@
                 {% csrf_token %}
                 <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header workplace-edit-modal__header">
                     <div class="tasks-issue-modal__crumbs">
-                        <button type="button" class="tasks-issue-close" data-close-workplace-modal aria-label="Wróć" title="Wróć">
+                        <button type="button" class="tasks-issue-close" data-close-workplace-modal aria-label="Zamknij" title="Zamknij">
                             <i data-lucide="arrow-left" aria-hidden="true"></i>
                         </button>
                         <span class="tasks-issue-divider" aria-hidden="true"></span>
@@ -332,12 +353,87 @@
             const submitButton = document.getElementById('workplace-create-submit');
             const photoInput = modal?.querySelector('[data-workplace-create-photo-input]');
             const photoName = modal?.querySelector('[data-workplace-create-photo-name]');
+            const photoTitle = modal?.querySelector('[data-workplace-create-photo-title]');
+            const photoPreview = modal?.querySelector('[data-workplace-create-photo-preview]');
+            const photoRemove = modal?.querySelector('[data-workplace-create-photo-remove]');
+            const photoError = modal?.querySelector('[data-workplace-create-photo-error]');
+            const dropzone = modal?.querySelector('[data-workplace-create-dropzone]');
+            const nameCount = modal?.querySelector('[data-workplace-name-count]');
+            let previewUrl = '';
+            let lastFocusedElement = null;
 
             if (!openButton || !modal) return;
 
             function updateSubmitState() {
                 if (!submitButton || !nameInput) return;
                 submitButton.disabled = nameInput.value.trim().length === 0;
+                if (nameCount) {
+                    nameCount.textContent = nameInput.value.length;
+                }
+            }
+
+            function clearPreviewUrl() {
+                if (!previewUrl) return;
+                URL.revokeObjectURL(previewUrl);
+                previewUrl = '';
+            }
+
+            function showPhotoError(message) {
+                if (!photoError) return;
+                photoError.textContent = message || '';
+                photoError.hidden = !message;
+                photoInput?.setAttribute('aria-invalid', message ? 'true' : 'false');
+            }
+
+            function setPhotoIconHidden(isHidden) {
+                const currentPhotoIcon = modal.querySelector('.workplace-create-modal__avatar .profile-avatar-icon');
+                if (currentPhotoIcon) currentPhotoIcon.toggleAttribute('hidden', isHidden);
+            }
+
+            function resetPhoto() {
+                clearPreviewUrl();
+                if (photoInput) photoInput.value = '';
+                if (photoPreview) {
+                    photoPreview.src = '';
+                    photoPreview.hidden = true;
+                }
+                setPhotoIconHidden(false);
+                if (photoTitle) photoTitle.textContent = 'Dodaj logo';
+                if (photoName) photoName.textContent = 'Kliknij lub przeciągnij plik tutaj';
+                if (photoRemove) photoRemove.hidden = true;
+                showPhotoError('');
+            }
+
+            function updatePhoto(file) {
+                if (!file) {
+                    resetPhoto();
+                    return;
+                }
+
+                const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+                const allowedExtension = /\.(png|jpe?g|webp)$/i.test(file.name || '');
+                if (!allowedTypes.includes(file.type) || !allowedExtension) {
+                    resetPhoto();
+                    showPhotoError('Wybierz plik PNG, JPG lub WebP.');
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    resetPhoto();
+                    showPhotoError('Logo może mieć maksymalnie 5 MB.');
+                    return;
+                }
+
+                clearPreviewUrl();
+                previewUrl = URL.createObjectURL(file);
+                if (photoPreview) {
+                    photoPreview.src = previewUrl;
+                    photoPreview.hidden = false;
+                }
+                setPhotoIconHidden(true);
+                if (photoTitle) photoTitle.textContent = 'Logo gotowe';
+                if (photoName) photoName.textContent = file.name;
+                if (photoRemove) photoRemove.hidden = false;
+                showPhotoError('');
             }
 
             function closeModal() {
@@ -348,9 +444,14 @@
                 if (!document.querySelector('.tasks-modal.is-open')) {
                     document.body.classList.remove('modal-open');
                 }
+
+                if (lastFocusedElement instanceof HTMLElement) {
+                    lastFocusedElement.focus();
+                }
             }
 
             function openModal() {
+                lastFocusedElement = document.activeElement;
                 modal.classList.add('is-open');
                 modal.setAttribute('aria-hidden', 'false');
                 openButton.setAttribute('aria-expanded', 'true');
@@ -373,13 +474,65 @@
             });
 
             photoInput?.addEventListener('change', function() {
-                if (!photoName) return;
-                photoName.textContent = this.files && this.files.length ? this.files[0].name : 'PNG, JPG lub WebP';
+                updatePhoto(this.files && this.files.length ? this.files[0] : null);
+            });
+
+            photoRemove?.addEventListener('click', resetPhoto);
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone?.addEventListener(eventName, event => {
+                    event.preventDefault();
+                    dropzone.classList.add('is-dragging');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone?.addEventListener(eventName, event => {
+                    event.preventDefault();
+                    dropzone.classList.remove('is-dragging');
+                });
+            });
+
+            dropzone?.addEventListener('drop', event => {
+                const file = event.dataTransfer?.files?.[0];
+                if (!file || !photoInput) return;
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                photoInput.files = transfer.files;
+                updatePhoto(file);
+            });
+
+            form?.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    form.reportValidity();
+                    return;
+                }
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Tworzenie…';
+                    submitButton.setAttribute('aria-busy', 'true');
+                }
             });
 
             document.addEventListener('keydown', event => {
                 if (event.key === 'Escape' && modal.classList.contains('is-open')) {
                     closeModal();
+                }
+                if (event.key !== 'Tab' || !modal.classList.contains('is-open')) return;
+
+                const focusableElements = Array.from(modal.querySelectorAll('button:not([disabled]):not([hidden]), input:not([disabled]):not([type="hidden"]), [href], [tabindex]:not([tabindex="-1"])'))
+                    .filter(element => !element.hidden && element.offsetParent !== null);
+                if (!focusableElements.length) return;
+
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+                if (event.shiftKey && document.activeElement === firstElement) {
+                    event.preventDefault();
+                    lastElement.focus();
+                } else if (!event.shiftKey && document.activeElement === lastElement) {
+                    event.preventDefault();
+                    firstElement.focus();
                 }
             });
 

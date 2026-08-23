@@ -140,19 +140,22 @@
      data-section-delete-message-template="Czy na pewno chcesz usunąć tablicę „{title}”? Karty z tablicy zostaną przeniesione do sekcji „Bez przestrzeni roboczej”.">
     <section class="tasks-workspace" aria-label="Lista kart">
         <header class="tasks-topbar">
-            <div class="tasks-titlebar-left">
+            <div class="tasks-titlebar-left{% if active_project %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
+                {% if active_section %}
+                <a href="{% url 'kanban:tasks' %}?project={{ active_project.id }}" class="tasks-issue-close" title="Wróć do tablic przestrzeni {{ active_project.name }}" aria-label="Wróć do tablic przestrzeni {{ active_project.name }}">
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                </a>
+                {% elif active_project %}
+                <a href="{% url 'kanban:tasks' %}" class="tasks-issue-close" title="Wróć do wszystkich przestrzeni" aria-label="Wróć do wszystkich przestrzeni" data-spaces-back-link>
+                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                </a>
+                {% endif %}
+                {% if active_project %}
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                {% endif %}
                 <span class="tasks-topbar-title">
                     {% if active_project %}
-                    <span class="tasks-topbar-title-item">
-                        {% if active_project.icon %}
-                        <span class="tasks-topbar-title-icon" aria-hidden="true" style="--project-icon-fg: {{ active_project.icon_color.foreground }};">
-                            <i data-lucide="{{ active_project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                        </span>
-                        {% endif %}
-                        <span>{{ active_project.name }}</span>
-                    </span>
                     {% if active_section %}
-                    <span class="tasks-topbar-title-separator" aria-hidden="true">&gt;</span>
                     <span class="tasks-topbar-title-item">
                         {% if active_section.icon %}
                         <span class="tasks-topbar-title-icon" aria-hidden="true">
@@ -160,6 +163,15 @@
                         </span>
                         {% endif %}
                         <span>{{ active_section.title }}</span>
+                    </span>
+                    {% else %}
+                    <span class="tasks-topbar-title-item">
+                        {% if active_project.icon %}
+                        <span class="tasks-topbar-title-icon" aria-hidden="true" style="--project-icon-fg: {{ active_project.icon_color.foreground }};">
+                            <i data-lucide="{{ active_project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
+                        </span>
+                        {% endif %}
+                        <span>{{ active_project.name }}</span>
                     </span>
                     {% endif %}
                     {% else %}
@@ -1185,7 +1197,7 @@
             <input type="hidden" name="tag_id" value="{{ tag_edit_tag_id }}">
             <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
-                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
                         <i data-lucide="arrow-left" aria-hidden="true"></i>
                     </button>
                     <span class="tasks-issue-divider" aria-hidden="true"></span>
@@ -1283,7 +1295,7 @@
         <div class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form">
             <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
-                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
                         <i data-lucide="arrow-left" aria-hidden="true"></i>
                     </button>
                     <span class="tasks-issue-divider" aria-hidden="true"></span>
@@ -1381,7 +1393,7 @@
         <div class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form">
             <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
-                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Wróć" title="Wróć">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
                         <i data-lucide="arrow-left" aria-hidden="true"></i>
                     </button>
                     <span class="tasks-issue-divider" aria-hidden="true"></span>
