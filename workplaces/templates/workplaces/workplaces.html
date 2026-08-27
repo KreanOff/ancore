@@ -62,7 +62,8 @@
                                     <span class="u-sr-only">Ustawienia</span>
                                 </span>
                                 <span class="workplaces-directory__cell tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name">Nazwa</span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="slug">Slug</span>
+                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code">Kod miejsca pracy</span>
+                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">Opis</span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members">Członkowie</span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context">Kontekst</span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="status">Status</span>
@@ -71,7 +72,7 @@
                             <div class="workplaces-directory__body tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista miejsc pracy">
                                 {% for workplace in workplaces %}
                                 {% with member_count=workplace.memberships.count %}
-                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" role="row" data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-slug="{{ workplace.slug }}" data-workplace-members="{{ member_count }}" data-workplace-context="{% if active_workplace and workplace.id == active_workplace.id %}Bieżące miejsce pracy{% else %}Dostępne miejsce pracy{% endif %}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-edit-modal="workplace-edit-modal-{{ workplace.id }}">
+                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" role="row" data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-code="{{ workplace.code }}" data-workplace-description="{{ workplace.description }}" data-workplace-members="{{ member_count }}" data-workplace-context="{% if active_workplace and workplace.id == active_workplace.id %}Bieżące miejsce pracy{% else %}Dostępne miejsce pracy{% endif %}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-edit-modal="workplace-edit-modal-{{ workplace.id }}">
                                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz miejsce pracy {{ workplace.name }}" data-workplace-id="{{ workplace.id }}" data-workplace-checkbox>
                                     <div class="workplaces-directory__cell workplace-row__open tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                                         <form method="post" action="{% url 'workplaces:switch' workplace.id %}">
@@ -99,7 +100,8 @@
                                             <span class="tasks-row-title-text">{{ workplace.name }}</span>
                                         </span>
                                     </span>
-                                    <span class="workplaces-directory__cell workplace-row__slug tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="slug" role="cell">{{ workplace.slug }}</span>
+                                    <span class="workplaces-directory__cell workplace-row__code tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code" role="cell">{{ workplace.code|default:"—" }}</span>
+                                    <span class="workplaces-directory__cell workplace-row__description tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="cell">{{ workplace.description|default:"—" }}</span>
                                     <span class="workplaces-directory__cell workplace-row__members tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" role="cell">
                                         <i data-lucide="users" aria-hidden="true"></i>
                                         {{ member_count }} {% if member_count == 1 %}członek{% else %}członków{% endif %}
@@ -162,6 +164,27 @@
                             <small id="workplace-create-name-counter" aria-live="polite"><span data-workplace-name-count>{{ form.name.value|default:''|length }}</span>/140</small>
                         </div>
                         {% for error in form.name.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
+                    </div>
+
+                    <div class="workplace-create-modal__field{% if form.code.errors %} has-error{% endif %}">
+                        <div class="workplace-create-modal__label-row">
+                            <label for="{{ form.code.id_for_label }}">Kod miejsca pracy</label>
+                            <span>Automatyczne</span>
+                        </div>
+                        {{ form.code }}
+                        <div class="workplace-create-modal__field-meta">
+                            <small id="workplace-create-code-hint">Zostaw puste, aby wygenerować unikalny kod z nazwy. Możesz go później zmienić.</small>
+                        </div>
+                        {% for error in form.code.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
+                    </div>
+
+                    <div class="workplace-create-modal__field{% if form.description.errors %} has-error{% endif %}">
+                        <div class="workplace-create-modal__label-row">
+                            <label for="{{ form.description.id_for_label }}">Opis</label>
+                            <span>Opcjonalne</span>
+                        </div>
+                        {{ form.description }}
+                        {% for error in form.description.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
                     </div>
 
                     <fieldset class="workplace-create-modal__field workplace-create-modal__logo-field{% if form.workplace_photo.errors %} has-error{% endif %}">
@@ -230,6 +253,16 @@
                     <div class="tasks-issue-fields workplace-edit-modal__fields">
                         <div class="tasks-issue-field-group workplace-edit-modal__field-group">
                             <div class="tasks-issue-field-grid workplace-edit-modal__field-grid">
+                                <label class="tasks-issue-field workplace-edit-modal__code-field" for="workplace-edit-code-{{ workplace.id }}">
+                                    <span>Kod miejsca pracy</span>
+                                    <input id="workplace-edit-code-{{ workplace.id }}" type="text" name="code" value="{{ workplace.code }}" class="tasks-inline-input" placeholder="np. STUDIO-01" maxlength="20" autocomplete="off">
+                                </label>
+
+                                <label class="tasks-issue-field workplace-edit-modal__description-field" for="workplace-edit-description-{{ workplace.id }}">
+                                    <span>Opis</span>
+                                    <textarea id="workplace-edit-description-{{ workplace.id }}" name="description" class="tasks-inline-input tasks-modal-textarea" rows="3" placeholder="Dodaj krótki opis miejsca pracy…">{{ workplace.description }}</textarea>
+                                </label>
+
                                 <div class="tasks-issue-field workplace-edit-modal__photo-field">
                                     <span>Logo</span>
                                     <label class="workplace-edit-modal__photo-control" for="workplace-edit-photo-{{ workplace.id }}">
@@ -247,11 +280,6 @@
                                         <i data-lucide="upload" aria-hidden="true"></i>
                                     </label>
                                     <input id="workplace-edit-photo-{{ workplace.id }}" type="file" name="workplace_photo" accept="image/*" class="workplace-edit-modal__file-input" data-workplace-photo-input>
-                                </div>
-
-                                <div class="tasks-issue-field workplace-edit-modal__readonly-field">
-                                    <span>Slug</span>
-                                    <output>{{ workplace.slug }}</output>
                                 </div>
 
                                 {% if workplace.workplace_photo %}
@@ -290,7 +318,8 @@
                 const data = row.dataset;
                 return normalizeSearchValue([
                     data.workplaceName,
-                    data.workplaceSlug,
+                    data.workplaceCode,
+                    data.workplaceDescription,
                     data.workplaceMembers,
                     data.workplaceContext,
                     data.workplaceStatus,

@@ -810,6 +810,9 @@
             <div class="tasks-filterbar-center"></div>
             <div class="tasks-filterbar-right">
                 {% if active_view == 'projects' %}
+                <button type="button" class="tasks-icon-button tasks-project-field-settings-button" title="Zarządzaj statusem, etapem i kondycją" aria-label="Zarządzaj statusem, etapem i kondycją" aria-haspopup="dialog" aria-controls="project-field-settings-modal" data-open-project-field-settings>
+                    <i data-lucide="palette" aria-hidden="true"></i>
+                </button>
                 <button type="button" class="tasks-icon-button" id="edit-selected-project-bar-btn" title="Edytuj projekt" aria-label="Edytuj projekt" aria-haspopup="dialog" aria-controls="project-rename-modal" disabled>
                     <i data-lucide="pencil" aria-hidden="true"></i>
                 </button>
@@ -951,8 +954,8 @@
                         </button>
                     </span>
                     <span class="tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="notes">
-                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button" title="Notatki grupy" aria-label="Notatki grupy {{ section.title }}" aria-haspopup="dialog" aria-controls="section-notes-modal" data-open-section-notes data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
-                            <i data-lucide="file-text" aria-hidden="true"></i>
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button{% if section.section_notes.all %} has-notes{% endif %}" title="Notatki grupy{% if section.section_notes.all %} — zawiera notatkę{% endif %}" aria-label="Notatki grupy {{ section.title }}{% if section.section_notes.all %}, zawiera notatkę{% endif %}" aria-haspopup="dialog" aria-controls="section-notes-modal" data-open-section-notes data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
+                            <i data-section-notes-icon data-lucide="{% if section.section_notes.all %}file-text{% else %}file-plus-2{% endif %}" aria-hidden="true"></i>
                         </button>
                     </span>
                     <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">
@@ -985,7 +988,7 @@
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>Pracownik</span>
                     </span>
-                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ section.created_at|date:"d.m.Y" }}</span>
+                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ section.created_at|date:"d.m.Y H:i" }}</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
@@ -1154,8 +1157,8 @@
                         </button>
                     </span>
                     <span class="tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="notes">
-                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button" title="Notatki grupy" aria-label="Notatki grupy {{ section.title }}" aria-haspopup="dialog" aria-controls="section-notes-modal" data-open-section-notes data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
-                            <i data-lucide="file-text" aria-hidden="true"></i>
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button{% if section.section_notes.all %} has-notes{% endif %}" title="Notatki grupy{% if section.section_notes.all %} — zawiera notatkę{% endif %}" aria-label="Notatki grupy {{ section.title }}{% if section.section_notes.all %}, zawiera notatkę{% endif %}" aria-haspopup="dialog" aria-controls="section-notes-modal" data-open-section-notes data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
+                            <i data-section-notes-icon data-lucide="{% if section.section_notes.all %}file-text{% else %}file-plus-2{% endif %}" aria-hidden="true"></i>
                         </button>
                     </span>
                     <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="section">
@@ -1198,7 +1201,7 @@
                         <i data-lucide="circle-user-round" aria-hidden="true"></i>
                         <span>{% if section.owner %}{{ section.owner.get_full_name|default:section.owner.username }}{% else %}Pracownik{% endif %}</span>
                     </span>
-                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ section.created_at|date:"d.m.Y" }}</span>
+                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ section.created_at|date:"d.m.Y H:i" }}</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
@@ -1341,7 +1344,7 @@
                     <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="automation">{{ tag.automation_rules|default:"Brak reguł" }}</span>
                     <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="related_tags">{{ tag.related_tags_label }}</span>
                     <span class="tasks-row-time tasks-tag-sheet__count tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">{{ tag.total_tasks }} zadań</span>
-                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at" title="Data utworzenia">{{ tag.created_at|date:"d.m.Y" }}</span>
+                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at" title="Data utworzenia">{{ tag.created_at|date:"d.m.Y H:i" }}</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
@@ -1418,19 +1421,19 @@
                     </span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PROJEKTU</span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project">PROJEKT</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">OPIS</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">PRIORYTET</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="start_at">START</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">TERMIN</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">FIRMA</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">ODPOWIEDZIALNY</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_status">STATUS</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="stage">ETAP</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="health">KONDYCJA</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">OPIS</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress">POSTĘP</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="start_at">START</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">TERMIN</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="budget">BUDŻET</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">ŹRÓDŁO</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">GRUPY</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">ZADANIA</span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">PRIORYTET</span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">OSTATNIA AKTYWNOŚĆ</span>
                     <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at">DATA UTWORZENIA</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
@@ -1460,36 +1463,7 @@
                             <span class="tasks-row-title-text">{{ project.name }}</span>
                         </span>
                     </span>
-                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">{% if project.company %}{{ project.company.name }}{% else %}<span class="tasks-project-sheet__muted">Brak firmy</span>{% endif %}</span>
-                    <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">
-                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
-                        <span>{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}</span>
-                    </span>
-                    <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_status">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--status-{{ project.status }}">{{ project.get_status_display }}</span>
-                    </span>
-                    <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="stage">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--stage-{{ project.stage }}">{{ project.get_stage_display }}</span>
-                    </span>
-                    <span class="tasks-project-sheet__status tasks-project-sheet__status--{{ project.health }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="health">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--health-{{ project.health }}">{{ project.get_health_display }}</span>
-                    </span>
                     <span class="tasks-project-row-description tasks-project-sheet__description tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">{{ project.description|default:"Brak opisu" }}</span>
-                    <span class="tasks-project-sheet__progress tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress" title="Ukończone zadania: {{ project.tasks_completed_count }} z {{ project.tasks_total_count }}">
-                        <span class="tasks-project-progress-track" aria-hidden="true">
-                            <span class="tasks-project-progress-fill" style="--tasks-project-progress: {{ project.progress_percent }}%;"></span>
-                        </span>
-                        <span>{{ project.progress_percent }}%</span>
-                    </span>
-                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="start_at">
-                        {% if project.start_at %}{{ project.start_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak startu</span>{% endif %}
-                    </span>
-                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">
-                        {% if project.due_at %}<span class="tasks-project-value-badge tasks-project-value-badge--due-{{ project.due_highlight }}">{{ project.due_at|date:"d.m.Y" }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
-                    </span>
-                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="budget">{% if project.budget_amount %}{{ project.budget_amount }} {{ project.currency }}{% else %}<span class="tasks-project-sheet__muted">Brak budżetu</span>{% endif %}</span>
-                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">{% if project.source %}<span class="tasks-project-value-badge tasks-project-value-badge--source">{{ project.source }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak źródła</span>{% endif %}</span>
-                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ project.tasks_count_label }}</span>
                     <span class="tasks-project-sheet__priority tasks-project-sheet__priority--{{ project.priority|default:'none' }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="priority">
                         <span class="tasks-project-value-badge tasks-project-value-badge--with-icon tasks-project-value-badge--priority-{{ project.priority|default:'none' }}">
                             <span class="tasks-row-priority priority-{{ project.priority|default:'none' }}" aria-hidden="true">
@@ -1498,10 +1472,39 @@
                             <span>{{ project.get_priority_display }}</span>
                         </span>
                     </span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="start_at">
+                        {% if project.start_at %}{{ project.start_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak startu</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">
+                        {% if project.due_at %}<span class="tasks-project-value-badge tasks-project-value-badge--due-{{ project.due_highlight }}">{{ project.due_at|date:"d.m.Y" }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">{% if project.company %}{{ project.company.name }}{% else %}<span class="tasks-project-sheet__muted">Brak firmy</span>{% endif %}</span>
+                    <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">
+                        <i data-lucide="circle-user-round" aria-hidden="true"></i>
+                        <span>{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}</span>
+                    </span>
+                    <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_status">
+                        <span class="tasks-project-value-badge tasks-project-value-badge--status-{{ project.status }}" style="--tasks-project-highlight-bg: {{ project.status_color }};">{{ project.get_status_display }}</span>
+                    </span>
+                    <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="stage">
+                        <span class="tasks-project-value-badge tasks-project-value-badge--stage-{{ project.stage }}" style="--tasks-project-highlight-bg: {{ project.stage_color }};">{{ project.get_stage_display }}</span>
+                    </span>
+                    <span class="tasks-project-sheet__status tasks-project-sheet__status--{{ project.health }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="health">
+                        <span class="tasks-project-value-badge tasks-project-value-badge--health-{{ project.health }}" style="--tasks-project-highlight-bg: {{ project.health_color }};">{{ project.get_health_display }}</span>
+                    </span>
+                    <span class="tasks-project-sheet__progress tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress" title="Ukończone zadania: {{ project.tasks_completed_count }} z {{ project.tasks_total_count }}">
+                        <span class="tasks-project-progress-track" aria-hidden="true">
+                            <span class="tasks-project-progress-fill" style="--tasks-project-progress: {{ project.progress_percent }}%;"></span>
+                        </span>
+                        <span>{{ project.progress_percent }}%</span>
+                    </span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">{% if project.source %}<span class="tasks-project-value-badge tasks-project-value-badge--source">{{ project.source }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak źródła</span>{% endif %}</span>
+                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">{{ project.groups_count_label }}</span>
+                    <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ project.tasks_total_count_label }}</span>
                     <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
                         {% if project.last_activity_at %}{{ project.last_activity_at|date:"d.m.Y H:i" }}{% else %}<span class="tasks-project-sheet__muted">Brak aktywności</span>{% endif %}
                     </span>
-                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ project.created_at|date:"d.m.Y" }}</span>
+                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="created_at" title="Data utworzenia">{{ project.created_at|date:"d.m.Y H:i" }}</span>
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
@@ -1663,6 +1666,78 @@
                 <button type="submit" class="tasks-modal__submit" id="tag-create-submit">{% if tag_edit_mode %}Zapisz zmiany{% else %}Utwórz tag{% endif %}</button>
             </footer>
         </form>
+    </div>
+</div>
+
+<div class="tasks-modal tasks-project-modal tasks-project-field-settings-modal {% if project_field_settings_modal_open %}is-open{% endif %}" id="project-field-settings-modal" role="dialog" aria-modal="true" aria-labelledby="project-field-settings-modal-title" aria-hidden="{% if project_field_settings_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-field-settings-modal__dialog tasks-issue-modal__dialog">
+        <div class="tasks-modal__form tasks-project-modal__form tasks-project-field-settings-modal__content tasks-issue-modal__form">
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                        <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong id="project-field-settings-modal-title">Wartości pól projektu</strong>
+                </div>
+            </header>
+
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-field-settings-modal__body tasks-issue-modal__body">
+                <p class="tasks-project-field-settings-modal__intro">Dodawaj własne wartości i wybieraj kolor ich podświetlenia. Wartości używane przez projekty możesz edytować, ale nie usuniesz ich do czasu zmiany projektów.</p>
+                <div class="tasks-project-field-settings-grid">
+                    {% for group in project_field_groups %}
+                    <section class="tasks-project-field-settings-group" aria-labelledby="project-field-group-{{ group.field_type }}">
+                        <header class="tasks-project-field-settings-group__header">
+                            <div>
+                                <h3 id="project-field-group-{{ group.field_type }}">{{ group.label }}</h3>
+                                <p>{{ group.description }}</p>
+                            </div>
+                            <span>{{ group.options|length }}</span>
+                        </header>
+
+                        <div class="tasks-project-field-option-list">
+                            {% for option in group.options %}
+                            <form method="post" class="tasks-project-field-option-row" data-project-field-option-form>
+                                {% csrf_token %}
+                                <input type="hidden" name="option_id" value="{{ option.id }}">
+                                <span class="tasks-project-field-option-preview" style="--tasks-project-highlight-bg: {{ option.color }};" aria-hidden="true"></span>
+                                <label class="u-sr-only" for="project-field-option-label-{{ option.id }}">Nazwa wartości</label>
+                                <input type="text" id="project-field-option-label-{{ option.id }}" name="label" value="{{ option.label }}" class="tasks-project-option-name" maxlength="60" autocomplete="off" required>
+                                <label class="tasks-project-option-color-wrap" title="Kolor podświetlenia">
+                                    <span class="u-sr-only">Kolor podświetlenia</span>
+                                    <input type="color" name="color" value="{{ option.color }}" class="tasks-project-option-color" aria-label="Kolor wartości {{ option.label }}" data-project-option-color>
+                                </label>
+                                <button type="submit" name="action" value="update_project_field_option" class="tasks-project-field-option-action" title="Zapisz" aria-label="Zapisz wartość {{ option.label }}">
+                                    <i data-lucide="check" aria-hidden="true"></i>
+                                </button>
+                                <button type="submit" name="action" value="delete_project_field_option" class="tasks-project-field-option-action tasks-project-field-option-action--delete" title="{% if option.in_use %}Wartość jest używana przez projekt{% else %}Usuń{% endif %}" aria-label="Usuń wartość {{ option.label }}" {% if option.in_use %}disabled{% endif %}>
+                                    <i data-lucide="trash-2" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                            {% endfor %}
+                        </div>
+
+                        <form method="post" class="tasks-project-field-option-row tasks-project-field-option-row--new" data-project-field-option-form>
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="create_project_field_option">
+                            <input type="hidden" name="field_type" value="{{ group.field_type }}">
+                            <span class="tasks-project-field-option-preview" style="--tasks-project-highlight-bg: #DFEFFF;" aria-hidden="true"></span>
+                            <label class="u-sr-only" for="project-field-option-new-{{ group.field_type }}">Nowa wartość</label>
+                            <input type="text" id="project-field-option-new-{{ group.field_type }}" name="label" class="tasks-project-option-name" maxlength="60" placeholder="Nowa wartość" autocomplete="off" required>
+                            <label class="tasks-project-option-color-wrap" title="Kolor podświetlenia">
+                                <span class="u-sr-only">Kolor podświetlenia</span>
+                                <input type="color" name="color" value="#DFEFFF" class="tasks-project-option-color" aria-label="Kolor nowej wartości" data-project-option-color>
+                            </label>
+                            <button type="submit" class="tasks-project-field-option-add" aria-label="Dodaj wartość do pola {{ group.label }}">
+                                <i data-lucide="plus" aria-hidden="true"></i>
+                                <span>Dodaj</span>
+                            </button>
+                        </form>
+                    </section>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

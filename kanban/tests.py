@@ -196,7 +196,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, 'POSTĘP')
         self.assertContains(response, 'START')
         self.assertContains(response, 'TERMIN')
-        self.assertContains(response, 'BUDŻET')
+        self.assertNotContains(response, 'data-column="budget"')
         self.assertContains(response, 'ŹRÓDŁO')
         self.assertContains(response, 'PRIORYTET')
         self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
@@ -243,7 +243,6 @@ class KanbanProjectCreationTests(TestCase):
             'data-column="progress">POSTĘP',
             'data-column="start_at">START',
             'data-column="due_at">TERMIN',
-            'data-column="budget">BUDŻET',
             'data-column="source">ŹRÓDŁO',
             'data-column="sections_count">TABLICE',
             'data-column="tasks_count">KARTY',
@@ -598,7 +597,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertIn('id="filter-search"', topbar_html)
         self.assertNotIn('data-task-sort', topbar_html)
         self.assertNotIn('data-section-actions', topbar_html)
-        self.assertIn('aria-label="Widok listy"', filterbar_html)
+        self.assertNotIn('aria-label="Widok listy"', filterbar_html)
         self.assertIn('data-task-sort', filterbar_html)
         self.assertIn('data-status-filter-menu', filterbar_html)
         self.assertIn('data-priority-filter-menu', filterbar_html)

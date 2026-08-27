@@ -108,6 +108,7 @@ function initTasksPage() {
     const railNavGroups = document.querySelectorAll('[data-rail-nav-group]');
     const projectNodes = document.querySelectorAll('[data-project-node]');
     const openProjectButtons = document.querySelectorAll('[data-open-project]');
+    const openProjectFieldSettingsButtons = document.querySelectorAll('[data-open-project-field-settings]');
     const openTagButtons = document.querySelectorAll('[data-open-tag]');
     const openTagEditButtons = document.querySelectorAll('[data-open-tag-edit]');
     const openTagInfoButtons = document.querySelectorAll('[data-open-tag-info]');
@@ -123,6 +124,7 @@ function initTasksPage() {
     const openContactButtons = document.querySelectorAll('[data-open-contact]');
     const openCompanyButtons = document.querySelectorAll('[data-open-company]');
     const projectModal = document.getElementById('project-modal');
+    const projectFieldSettingsModal = document.getElementById('project-field-settings-modal');
     const tagModal = document.getElementById('tag-modal');
     const projectRenameModal = document.getElementById('project-rename-modal');
     const projectNotesModal = document.getElementById('project-notes-modal');
@@ -3848,6 +3850,25 @@ function initTasksPage() {
         });
     });
 
+    openProjectFieldSettingsButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            openModal(
+                projectFieldSettingsModal,
+                projectFieldSettingsModal?.querySelector('.tasks-project-option-name')
+            );
+        });
+    });
+
+    document.querySelectorAll('[data-project-option-color]').forEach(input => {
+        const syncPreview = () => {
+            const preview = input.closest('[data-project-field-option-form]')
+                ?.querySelector('.tasks-project-field-option-preview');
+            preview?.style.setProperty('--tasks-project-highlight-bg', input.value);
+        };
+        input.addEventListener('input', syncPreview);
+        input.addEventListener('change', syncPreview);
+    });
+
     function setMultiSelectValues(select, value) {
         if (!select) return;
         const selectedValues = new Set(String(value || '').split(',').map(item => item.trim()).filter(Boolean));
@@ -6753,6 +6774,7 @@ function initTasksPage() {
             description: 320,
             progress: 220,
             due_at: 170,
+            sections_count: 130,
             tasks_count: 130,
             priority: 170,
             last_activity: 210,
@@ -6763,6 +6785,53 @@ function initTasksPage() {
             created_at: 130,
             spacer: 0
         };
+        const projectColumnDefaultWidths = {
+            select: 40,
+            action: 40,
+            info: 40,
+            notes: 40,
+            project_code: 150,
+            project: 250,
+            description: 250,
+            priority: 135,
+            start_at: 200,
+            due_at: 140,
+            company: 180,
+            responsible_user: 245,
+            project_status: 155,
+            stage: 200,
+            health: 200,
+            progress: 175,
+            source: 200,
+            sections_count: 105,
+            tasks_count: 105,
+            last_activity: 170,
+            created_at: 125
+        };
+        const legacyProjectDirectoryColumnOrder = [
+            'select',
+            'action',
+            'info',
+            'notes',
+            'project_code',
+            'project',
+            'company',
+            'responsible_user',
+            'project_status',
+            'stage',
+            'health',
+            'description',
+            'progress',
+            'start_at',
+            'due_at',
+            'source',
+            'sections_count',
+            'tasks_count',
+            'priority',
+            'last_activity',
+            'created_at',
+            'spacer'
+        ];
         const tagColumnDefaultWidths = {
             notes: 40,
             tag_name: 250,
@@ -6779,12 +6848,12 @@ function initTasksPage() {
             task_count: 250
         };
         const workplaceColumnDefaultWidths = {
-            logo: 72,
-            name: 320,
-            slug: 320,
-            members: 220,
-            context: 260,
-            status: 170
+            name: 300,
+            code: 180,
+            description: 360,
+            members: 180,
+            context: 220,
+            status: 140
         };
         const columnMinimums = {
             select: 18,
@@ -6797,6 +6866,7 @@ function initTasksPage() {
             description: 150,
             progress: 120,
             due_at: 112,
+            sections_count: 92,
             tasks_count: 92,
             priority: 112,
             last_activity: 140,
@@ -6821,9 +6891,9 @@ function initTasksPage() {
             task_count: 120
         };
         const workplaceColumnMinimums = {
-            logo: 64,
             name: 180,
-            slug: 180,
+            code: 140,
+            description: 180,
             members: 150,
             context: 170,
             status: 120
@@ -7108,12 +7178,18 @@ function initTasksPage() {
         function getDefaultDirectoryTrackWidths(cells) {
             return cells.map(cell => {
                 const column = cell.dataset.column || '';
-                if (column === 'select') return getDirectorySelectColumnWidth(cell);
+                if (column === 'select') {
+                    if (isProjectDirectoryCell(cell)) return projectColumnDefaultWidths.select;
+                    return getDirectorySelectColumnWidth(cell);
+                }
                 if (isTagDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(tagColumnDefaultWidths, column)) {
                     return tagColumnDefaultWidths[column];
                 }
                 if (isWorkplaceDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(workplaceColumnDefaultWidths, column)) {
                     return workplaceColumnDefaultWidths[column];
+                }
+                if (isProjectDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(projectColumnDefaultWidths, column)) {
+                    return projectColumnDefaultWidths[column];
                 }
                 if (Object.prototype.hasOwnProperty.call(columnDefaultWidths, column)) {
                     return columnDefaultWidths[column];
@@ -7155,6 +7231,15 @@ function initTasksPage() {
 
         function isWorkplaceDirectoryCell(cell) {
             return Boolean(cell?.closest('.workplaces-project-sheet'));
+        }
+
+        function isProjectDirectoryCell(cell) {
+            const board = cell?.closest('.tasks-project-sheet--selectable');
+            return isProjectDirectoryBoard(board);
+        }
+
+        function isProjectDirectoryBoard(board) {
+            return Boolean(board?.querySelector('.tasks-directory-header > [data-column="project"]'));
         }
 
         function getDirectoryStorageColumn(column) {
@@ -7212,7 +7297,36 @@ function initTasksPage() {
 
         function readStoredDirectoryWidths(cells) {
             const storageKey = getDirectoryStorageKey(cells);
-            return readStoredDirectoryWidthsByKey(storageKey);
+            const legacyStorageKey = getLegacyProjectDirectoryWidthStorageKey(cells);
+            const keys = [storageKey, legacyStorageKey].filter(Boolean);
+
+            for (const key of keys) {
+                const storedWidths = readStoredDirectoryWidthsByKey(key);
+                if (!Object.keys(storedWidths).length) continue;
+
+                if (key !== storageKey) {
+                    try {
+                        window.localStorage.setItem(storageKey, JSON.stringify(storedWidths));
+                    } catch (error) {
+                        // localStorage may be unavailable in private or restricted contexts.
+                    }
+                }
+
+                return storedWidths;
+            }
+
+            return {};
+        }
+
+        function getLegacyProjectDirectoryWidthStorageKey(cells) {
+            if (!cells.some(isProjectDirectoryCell)) return '';
+
+            const schema = legacyProjectDirectoryColumnOrder
+                .filter(column => column !== 'spacer')
+                .map(getDirectoryStorageColumn)
+                .join('-');
+
+            return `${getDirectoryStorageSegment()}:directoryColumnWidths:v4:${schema}`;
         }
 
         function readStoredDirectoryWidthsByKey(storageKey) {
@@ -7250,13 +7364,16 @@ function initTasksPage() {
             const segment = getDirectoryStorageSegment();
             const keys = new Set([
                 getDirectoryStorageKey(cells),
+                getLegacyProjectDirectoryWidthStorageKey(cells),
                 `${segment}:directoryColumnWidths:v3:${schema}`,
                 `${segment}:directoryColumnWidths:${schema}`,
                 `${taskAppSegment}:directoryColumnWidths`
             ]);
 
             try {
-                keys.forEach(key => window.localStorage.removeItem(key));
+                keys.forEach(key => {
+                    if (key) window.localStorage.removeItem(key);
+                });
             } catch (error) {
                 // localStorage may be unavailable in private or restricted contexts.
             }
@@ -7721,6 +7838,17 @@ function initTasksPage() {
             return `${getDirectoryStorageSegment()}:directoryColumnLayout:v2:${schema}`;
         }
 
+        function getLegacyProjectDirectoryColumnLayoutStorageKey(board) {
+            if (!isProjectDirectoryBoard(board)) return '';
+
+            const schema = legacyProjectDirectoryColumnOrder
+                .map(column => getDirectoryStorageColumn(column))
+                .filter(Boolean)
+                .join('-');
+
+            return `${getDirectoryStorageSegment()}:directoryColumnLayout:v2:${schema}`;
+        }
+
         function ensureDirectoryDefaultColumnOrder(board) {
             if (board.dataset.directoryDefaultColumnOrder) return;
 
@@ -7744,15 +7872,31 @@ function initTasksPage() {
         }
 
         function readStoredDirectoryColumnLayout(board) {
-            try {
-                const value = JSON.parse(window.localStorage.getItem(getDirectoryColumnLayoutStorageKey(board)) || '{}');
-                return {
-                    order: Array.isArray(value.order) ? value.order.filter(Boolean) : [],
-                    hidden: Array.isArray(value.hidden) ? value.hidden.filter(Boolean) : []
-                };
-            } catch (error) {
-                return { order: [], hidden: [] };
+            const storageKey = getDirectoryColumnLayoutStorageKey(board);
+            const keys = [storageKey, getLegacyProjectDirectoryColumnLayoutStorageKey(board)].filter(Boolean);
+
+            for (const key of keys) {
+                try {
+                    const storedValue = window.localStorage.getItem(key);
+                    if (!storedValue) continue;
+
+                    const value = JSON.parse(storedValue);
+                    const layout = {
+                        order: Array.isArray(value.order) ? value.order.filter(Boolean) : [],
+                        hidden: Array.isArray(value.hidden) ? value.hidden.filter(Boolean) : []
+                    };
+
+                    if (key !== storageKey) {
+                        window.localStorage.setItem(storageKey, JSON.stringify(layout));
+                    }
+
+                    return layout;
+                } catch (error) {
+                    // Ignore invalid or unavailable localStorage values and try the next key.
+                }
             }
+
+            return { order: [], hidden: [] };
         }
 
         function writeStoredDirectoryColumnLayout(board, layout) {
@@ -7765,7 +7909,13 @@ function initTasksPage() {
 
         function removeStoredDirectoryColumnLayout(board) {
             try {
-                window.localStorage.removeItem(getDirectoryColumnLayoutStorageKey(board));
+                const keys = new Set([
+                    getDirectoryColumnLayoutStorageKey(board),
+                    getLegacyProjectDirectoryColumnLayoutStorageKey(board)
+                ]);
+                keys.forEach(key => {
+                    if (key) window.localStorage.removeItem(key);
+                });
             } catch (error) {
                 // localStorage may be unavailable in private or restricted contexts.
             }

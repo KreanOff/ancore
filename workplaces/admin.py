@@ -10,8 +10,8 @@ class WorkplaceMembershipInline(admin.TabularInline):
 
 @admin.register(Workplace)
 class WorkplaceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owner', 'created_at')
-    search_fields = ('name', 'owner__email', 'owner__username')
+    list_display = ('name', 'code', 'owner', 'created_at')
+    search_fields = ('name', 'code', 'description', 'owner__email', 'owner__username')
     inlines = [WorkplaceMembershipInline]
 
 

@@ -2401,11 +2401,12 @@
     --wp-table-icon-width: 42px;
     --wp-table-avatar-width: 70px;
     --wp-table-name-width: minmax(240px, 1.35fr);
-    --wp-table-slug-width: minmax(160px, 0.85fr);
+    --wp-table-code-width: minmax(160px, 0.7fr);
+    --wp-table-description-width: minmax(220px, 1fr);
     --wp-table-members-width: minmax(138px, 0.6fr);
     --wp-table-context-width: minmax(160px, 0.7fr);
     --wp-table-status-width: minmax(118px, 0.48fr);
-    --wp-table-grid: var(--wp-table-icon-width) var(--wp-table-icon-width) var(--wp-table-avatar-width) var(--wp-table-name-width) var(--wp-table-slug-width) var(--wp-table-members-width) var(--wp-table-context-width) var(--wp-table-status-width);
+    --wp-table-grid: var(--wp-table-icon-width) var(--wp-table-icon-width) var(--wp-table-avatar-width) var(--wp-table-name-width) var(--wp-table-code-width) var(--wp-table-description-width) var(--wp-table-members-width) var(--wp-table-context-width) var(--wp-table-status-width);
 
     min-height: 0;
     display: flex;
@@ -2570,7 +2571,8 @@
 
 .workplace-row__name,
 .workplace-row small,
-.workplace-row__slug,
+.workplace-row__code,
+.workplace-row__description,
 .workplace-row__members,
 .workplace-row__context {
     --app-text-color: var(--wp-muted);
@@ -2977,7 +2979,7 @@
     font-weight: 500;
 }
 
-.workplace-create-modal__body .workplace-create-modal__name-input[name="name"] {
+.workplace-create-modal__body .workplace-create-modal__text-input {
     width: 100%;
     height: 42px;
     padding: 0 0.75rem;
@@ -2992,20 +2994,29 @@
     box-shadow: none;
 }
 
-.workplace-create-modal__body .workplace-create-modal__name-input[name="name"]::placeholder {
+.workplace-create-modal__body .workplace-create-modal__textarea {
+    height: auto;
+    min-height: 82px;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+    line-height: 1.45;
+    resize: vertical;
+}
+
+.workplace-create-modal__body .workplace-create-modal__text-input::placeholder {
     color: #9ba1aa;
 }
 
-.workplace-create-modal__body .workplace-create-modal__name-input[name="name"]:hover {
+.workplace-create-modal__body .workplace-create-modal__text-input:hover {
     border-color: #c4cad3;
 }
 
-.workplace-create-modal__body .workplace-create-modal__name-input[name="name"]:focus {
+.workplace-create-modal__body .workplace-create-modal__text-input:focus {
     border-color: var(--workplaces-accent);
     box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.12);
 }
 
-.workplace-create-modal__field.has-error .workplace-create-modal__name-input[name="name"] {
+.workplace-create-modal__field.has-error .workplace-create-modal__text-input {
     border-color: #d9485f;
     box-shadow: 0 0 0 3px rgba(217, 72, 95, 0.1);
 }
@@ -3287,6 +3298,41 @@
     grid-column: 1 / -1;
 }
 
+.workplace-edit-modal__description-field {
+    grid-column: 1 / -1;
+}
+
+.tasks-project-modal__body .workplace-edit-modal__code-field .tasks-inline-input,
+.tasks-project-modal__body .workplace-edit-modal__description-field .tasks-modal-textarea {
+    width: 100%;
+    border: 1px solid var(--tasks-detail-control-border, #dfe3e8);
+    border-radius: var(--tasks-detail-control-radius, 7px);
+    background: var(--tasks-detail-control-bg, #ffffff);
+    color: var(--tasks-detail-control-text, #4e535d);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    outline: none;
+}
+
+.tasks-project-modal__body .workplace-edit-modal__code-field .tasks-inline-input {
+    height: var(--issue-create-control-height, 38px);
+    padding: 0 0.75rem;
+}
+
+.workplace-edit-modal__description-field .tasks-modal-textarea {
+    margin-top: 0;
+    min-height: 82px;
+    padding: 0.65rem 0.75rem;
+    line-height: 1.45;
+    resize: vertical;
+}
+
+.tasks-project-modal__body .workplace-edit-modal__code-field .tasks-inline-input:focus,
+.tasks-project-modal__body .workplace-edit-modal__description-field .tasks-modal-textarea:focus {
+    border-color: var(--workplaces-accent);
+    box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.1);
+}
+
 .workplace-edit-modal__photo-control {
     min-height: 58px;
     display: grid;
@@ -3356,22 +3402,6 @@
     overflow: hidden;
     opacity: 0;
     pointer-events: none;
-}
-
-.workplace-edit-modal__readonly-field output {
-    min-height: var(--issue-create-control-height, 38px);
-    display: flex;
-    align-items: center;
-    padding: 0 0.75rem;
-    overflow: hidden;
-    border: 1px solid #dfe3e8;
-    border-radius: var(--dropdown-control-radius, 7px);
-    background: #ffffff;
-    color: #4e535d;
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .workplace-edit-modal__remove-field {
@@ -3540,7 +3570,6 @@
         grid-template-columns: 1fr;
     }
 
-    .workplace-edit-modal__readonly-field,
     .workplace-edit-modal__remove-field {
         grid-column: 1 / -1;
     }
@@ -3551,13 +3580,14 @@
     --tasks-project-row-height: 38px;
     --tasks-project-action-width: 40px;
     --tasks-project-info-width: 40px;
-    --workplaces-name-width: 392px;
-    --workplaces-slug-width: 320px;
-    --workplaces-members-width: 220px;
-    --workplaces-context-width: 260px;
-    --workplaces-status-width: 170px;
-    --workplaces-table-min-width: calc(var(--tasks-directory-select-width) + var(--tasks-project-action-width) + var(--tasks-project-info-width) + var(--workplaces-name-width) + var(--workplaces-slug-width) + var(--workplaces-members-width) + var(--workplaces-context-width) + var(--workplaces-status-width));
-    --workplaces-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) minmax(var(--workplaces-name-width), 1.1fr) minmax(var(--workplaces-slug-width), 1fr) minmax(var(--workplaces-members-width), 0.75fr) minmax(var(--workplaces-context-width), 0.9fr) minmax(var(--workplaces-status-width), 0.55fr);
+    --workplaces-name-width: 300px;
+    --workplaces-code-width: 180px;
+    --workplaces-description-width: 360px;
+    --workplaces-members-width: 180px;
+    --workplaces-context-width: 220px;
+    --workplaces-status-width: 140px;
+    --workplaces-table-min-width: calc(var(--tasks-directory-select-width) + var(--tasks-project-action-width) + var(--tasks-project-info-width) + var(--workplaces-name-width) + var(--workplaces-code-width) + var(--workplaces-description-width) + var(--workplaces-members-width) + var(--workplaces-context-width) + var(--workplaces-status-width));
+    --workplaces-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) minmax(var(--workplaces-name-width), 1.1fr) minmax(var(--workplaces-code-width), 0.65fr) minmax(var(--workplaces-description-width), 1.25fr) minmax(var(--workplaces-members-width), 0.65fr) minmax(var(--workplaces-context-width), 0.8fr) minmax(var(--workplaces-status-width), 0.5fr);
     --tasks-directory-grid: var(--workplaces-directory-grid);
 
     width: 100%;
@@ -3650,8 +3680,8 @@
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"]:checked {
-    border-color: var(--workplaces-accent);
-    background-color: var(--workplaces-accent);
+    border-color: var(--checkbox-checked-color);
+    background-color: var(--checkbox-checked-color);
     background-image: var(--checkbox-check-icon);
     background-position: center;
     background-repeat: no-repeat;

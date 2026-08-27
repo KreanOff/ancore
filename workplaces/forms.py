@@ -25,20 +25,35 @@ class WorkplaceForm(forms.ModelForm):
 
     class Meta:
         model = Workplace
-        fields = ['workplace_photo', 'name']
+        fields = ['workplace_photo', 'name', 'code', 'description']
         error_messages = {
             'name': {
                 'required': 'Wpisz nazwę miejsca pracy.',
                 'max_length': 'Nazwa miejsca pracy może mieć maksymalnie 140 znaków.',
             },
+            'code': {
+                'max_length': 'Kod miejsca pracy może mieć maksymalnie 20 znaków.',
+            },
         }
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'np. Studio projektowe',
-                'class': 'workplace-create-modal__name-input',
+                'class': 'workplace-create-modal__name-input workplace-create-modal__text-input',
                 'autocomplete': 'off',
                 'data-workplace-name-input': True,
                 'aria-describedby': 'workplace-create-name-hint workplace-create-name-counter',
+            }),
+            'code': forms.TextInput(attrs={
+                'placeholder': 'np. STUDIO-01',
+                'class': 'workplace-create-modal__text-input',
+                'autocomplete': 'off',
+                'maxlength': 20,
+                'aria-describedby': 'workplace-create-code-hint',
+            }),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Dodaj krótki opis miejsca pracy…',
+                'class': 'workplace-create-modal__text-input workplace-create-modal__textarea',
+                'rows': 3,
             }),
         }
 
@@ -59,6 +74,24 @@ class WorkplaceForm(forms.ModelForm):
                 raise forms.ValidationError('Masz już miejsce pracy o takiej nazwie.')
 
         return name
+
+    def clean_code(self):
+        code = (self.cleaned_data.get('code') or '').strip().upper()
+        if self.instance.pk and 'code' not in self.data:
+            return self.instance.code
+        if not code or self.user is None:
+            return code
+
+        duplicate_workplaces = Workplace.objects.filter(owner=self.user, code__iexact=code)
+        if self.instance.pk:
+            duplicate_workplaces = duplicate_workplaces.exclude(pk=self.instance.pk)
+        if duplicate_workplaces.exists():
+            raise forms.ValidationError('Masz już miejsce pracy o takim kodzie.')
+
+        return code
+
+    def clean_description(self):
+        return (self.cleaned_data.get('description') or '').strip()
 
     def clean_workplace_photo(self):
         workplace_photo = self.cleaned_data.get('workplace_photo')

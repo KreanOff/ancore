@@ -18,10 +18,26 @@ from django.utils import timezone
 from django.urls import reverse
 
 from contacts.models import Company, SharedItem
-from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag, TaskTagNote
+from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectFieldOption, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag, TaskTagNote
 
 
 class TaskProjectControlStyleTests(SimpleTestCase):
+    def test_project_utility_column_tracks_match_fixed_css_width(self):
+        js_path = finders.find('js/tasks.js')
+
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding='utf-8') as js_file:
+            javascript = js_file.read()
+
+        project_widths = re.search(
+            r'const projectColumnDefaultWidths = \{(?P<body>.*?)\n\s*\};',
+            javascript,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(project_widths)
+        for column in ('select', 'action', 'info', 'notes'):
+            self.assertRegex(project_widths.group('body'), rf'\b{column}:\s*40,')
+
     def test_task_detail_header_template_shows_only_current_task_title(self):
         template_path = Path(__file__).resolve().parent / 'templates/tasks/view_task.html'
         with template_path.open(encoding='utf-8') as template_file:
@@ -142,6 +158,21 @@ class TaskProjectControlStyleTests(SimpleTestCase):
         )
         self.assertIsNotNone(author_name_rule)
         self.assertIn('font-weight: 700 !important;', author_name_rule.group('body'))
+
+    def test_project_note_icon_has_no_border_or_background(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+        note_icon_rule = re.search(
+            r'\.tasks-project-note__icon\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(note_icon_rule)
+        self.assertIn('border: 0;', note_icon_rule.group('body'))
+        self.assertIn('background: transparent;', note_icon_rule.group('body'))
 
     def test_project_note_edit_input_has_no_border(self):
         css_path = finders.find('css/components/tasks.css')
@@ -379,6 +410,116 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'Automatyczny')
         self.assertNotContains(response, 'data-responsible-select-url')
         self.assertNotContains(response, 'Szukaj lub wpisz ID Ancore')
+
+    def test_project_field_settings_seed_defaults_and_render_management_modal(self):
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertEqual(TaskProjectFieldOption.objects.filter(owner=self.user, is_active=True).count(), 14)
+        self.assertContains(response, 'data-open-project-field-settings')
+        self.assertContains(response, 'id="project-field-settings-modal"')
+        self.assertContains(response, 'Wartości pól projektu')
+        self.assertContains(response, 'Status projektu')
+        self.assertContains(response, 'Etap')
+        self.assertContains(response, 'Kondycja')
+        self.assertContains(response, 'name="action" value="create_project_field_option"', count=3)
+        self.assertContains(response, 'type="color"')
+
+    def test_custom_project_field_option_can_be_created_and_used_by_project(self):
+        create_option_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_project_field_option',
+            'field_type': 'status',
+            'label': 'W trakcie QA',
+            'color': '#123456',
+        })
+
+        option = TaskProjectFieldOption.objects.get(
+            owner=self.user,
+            field_type='status',
+            label='W trakcie QA',
+        )
+        self.assertRedirects(
+            create_option_response,
+            f'{reverse("tasks:tasks")}?field_settings=1',
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(option.color, '#123456')
+
+        create_project_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'create_project',
+            'name': 'Projekt jakości',
+            'section_title': 'Testy',
+            'status': option.value,
+            'stage': 'implementation',
+            'health': 'ok',
+        })
+        project = TaskProject.objects.get(user=self.user, name='Projekt jakości')
+
+        self.assertRedirects(
+            create_project_response,
+            f'{reverse("tasks:tasks")}?project={project.id}',
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(project.status, option.value)
+
+        projects_response = self.client.get(reverse('tasks:tasks'))
+        self.assertContains(projects_response, 'W trakcie QA')
+        self.assertContains(projects_response, '--tasks-project-highlight-bg: #123456;')
+
+    def test_project_field_option_can_be_renamed_and_recolored(self):
+        self.client.get(reverse('tasks:tasks'))
+        option = TaskProjectFieldOption.objects.get(owner=self.user, field_type='health', value='at_risk')
+
+        response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'update_project_field_option',
+            'option_id': option.id,
+            'label': 'Wymaga uwagi',
+            'color': '#AABBCC',
+        })
+
+        option.refresh_from_db()
+        self.assertRedirects(
+            response,
+            f'{reverse("tasks:tasks")}?field_settings=1',
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(option.label, 'Wymaga uwagi')
+        self.assertEqual(option.color, '#AABBCC')
+
+    def test_project_field_option_deletion_is_blocked_while_in_use(self):
+        self.client.get(reverse('tasks:tasks'))
+        used_option = TaskProjectFieldOption.objects.get(owner=self.user, field_type='status', value='active')
+        unused_option = TaskProjectFieldOption.objects.get(owner=self.user, field_type='status', value='cancelled')
+        TaskProject.objects.create(user=self.user, name='Aktywny projekt', status=used_option.value)
+
+        blocked_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_project_field_option',
+            'option_id': used_option.id,
+            'label': used_option.label,
+            'color': used_option.color,
+        })
+        used_option.refresh_from_db()
+
+        self.assertRedirects(
+            blocked_response,
+            f'{reverse("tasks:tasks")}?field_settings=1',
+            fetch_redirect_response=False,
+        )
+        self.assertTrue(used_option.is_active)
+
+        delete_response = self.client.post(reverse('tasks:tasks'), {
+            'action': 'delete_project_field_option',
+            'option_id': unused_option.id,
+            'label': unused_option.label,
+            'color': unused_option.color,
+        })
+        unused_option.refresh_from_db()
+
+        self.assertRedirects(
+            delete_response,
+            f'{reverse("tasks:tasks")}?field_settings=1',
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(unused_option.is_active)
 
     def test_edit_project_updates_responsible_field(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', responsible_user=self.user)
@@ -1175,8 +1316,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'POSTĘP')
         self.assertContains(response, 'START')
         self.assertContains(response, 'TERMIN')
-        self.assertContains(response, 'BUDŻET')
+        self.assertNotContains(response, 'data-column="budget"')
         self.assertContains(response, 'ŹRÓDŁO')
+        self.assertContains(response, 'GRUPY')
         self.assertContains(response, 'ZADANIA')
         self.assertContains(response, 'PRIORYTET')
         self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
@@ -1226,19 +1368,19 @@ class TaskProjectCreationTests(TestCase):
             'data-column="notes" aria-label="Notatki projektu"',
             'data-column="project_code">KOD PROJEKTU',
             'data-column="project">PROJEKT',
+            'data-column="description">OPIS',
+            'data-column="priority">PRIORYTET',
+            'data-column="start_at">START',
+            'data-column="due_at">TERMIN',
             'data-column="company">FIRMA',
             'data-column="responsible_user">ODPOWIEDZIALNY',
             'data-column="project_status">STATUS',
             'data-column="stage">ETAP',
             'data-column="health">KONDYCJA',
-            'data-column="description">OPIS',
             'data-column="progress">POSTĘP',
-            'data-column="start_at">START',
-            'data-column="due_at">TERMIN',
-            'data-column="budget">BUDŻET',
             'data-column="source">ŹRÓDŁO',
+            'data-column="sections_count">GRUPY',
             'data-column="tasks_count">ZADANIA',
-            'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
             'data-column="created_at">DATA UTWORZENIA',
         ]
@@ -1260,9 +1402,43 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, f'data-project-company-id="{company.id}"')
         self.assertContains(response, f'data-project-responsible-user-id="{self.user.id}"')
         self.assertContains(response, 'DATA UTWORZENIA')
-        self.assertContains(response, '07.06.2026')
+        self.assertContains(
+            response,
+            'data-column="created_at" title="Data utworzenia">07.06.2026 14:00</span>',
+        )
         self.assertNotContains(response, '7 cze')
         self.assertContains(response, 'Brak osoby')
+
+    def test_projects_list_shows_group_and_task_totals(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt z licznikami')
+        first_section = TaskSection.objects.create(project=project, title='Planowanie')
+        second_section = TaskSection.objects.create(project=project, title='Realizacja')
+        third_section = TaskSection.objects.create(project=project, title='Odbiór')
+        Task.objects.create(user=self.user, section=first_section, title='Analiza')
+        Task.objects.create(user=self.user, section=first_section, title='Makiety')
+        Task.objects.create(user=self.user, section=second_section, title='Wdrożenie')
+        Task.objects.create(user=self.user, section=third_section, title='Akceptacja')
+
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertContains(
+            response,
+            '<span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">3 grupy</span>',
+            html=True,
+        )
+        self.assertContains(
+            response,
+            '<span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">4 zadania</span>',
+            html=True,
+        )
+
+    def test_project_count_labels_use_polish_plural_forms(self):
+        from tasks.views.tasks import _polish_count_label
+
+        self.assertEqual(_polish_count_label(1, 'grupa', 'grupy', 'grup'), '1 grupa')
+        self.assertEqual(_polish_count_label(5, 'grupa', 'grupy', 'grup'), '5 grup')
+        self.assertEqual(_polish_count_label(12, 'zadanie', 'zadania', 'zadań'), '12 zadań')
+        self.assertEqual(_polish_count_label(22, 'zadanie', 'zadania', 'zadań'), '22 zadania')
 
     def test_projects_view_query_count_does_not_grow_with_task_volume(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt')
@@ -1869,6 +2045,9 @@ class TaskProjectCreationTests(TestCase):
         TaskSectionNote.objects.create(section=section, author=self.user, message='Moja notatka grupy')
         Task.objects.create(user=self.user, section=section, title='Zadanie ukończone', status='closed')
         Task.objects.create(user=self.user, section=section, title='Zadanie otwarte')
+        TaskSection.objects.filter(pk=section.pk).update(
+            created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
+        )
 
         response = self.client.get(f"{reverse('tasks:tasks')}?project={project.id}")
 
@@ -1913,7 +2092,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-open-section-rename')
         self.assertContains(response, 'aria-label="Edytuj grupę Frontend"')
         self.assertContains(response, 'aria-label="Informacje o grupie Frontend"')
-        self.assertContains(response, 'aria-label="Notatki grupy Frontend"')
+        self.assertContains(response, 'aria-label="Notatki grupy Frontend, zawiera notatkę"')
         self.assertContains(response, 'id="section-notes-modal"')
         self.assertContains(response, 'name="action" value="add_section_note"')
         self.assertContains(response, 'name="action" value="edit_section_note"')
@@ -1951,6 +2130,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Wysoki')
         self.assertContains(response, '15.07.2026')
         self.assertContains(response, 'Acme CRM')
+        self.assertContains(
+            response,
+            'data-column="created_at" title="Data utworzenia">07.06.2026 14:00</span>',
+        )
         self.assertNotContains(
             response,
             '<div class="tasks-directory-members-menu tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" data-directory-members-menu>',
@@ -2028,7 +2211,7 @@ class TaskProjectCreationTests(TestCase):
         second_project = TaskProject.objects.create(user=self.user, name='Drugi projekt', code='TWO')
         frontend = TaskSection.objects.create(project=first_project, title='Frontend', description='Prace po stronie UI', code='FE')
         TaskSectionNote.objects.create(section=frontend, author=self.user, message='Notatka Frontendu')
-        TaskSection.objects.create(project=second_project, title='Backend', code='BE')
+        backend = TaskSection.objects.create(project=second_project, title='Backend', code='BE')
         Task.objects.create(user=self.user, section=frontend, title='Zadanie frontendowe')
         TaskSection.objects.filter(pk=frontend.pk).update(
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
@@ -2059,6 +2242,16 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-open-section-info', count=2)
         self.assertContains(response, 'data-open-section-notes', count=2)
         self.assertContains(response, 'data-open-section-rename', count=2)
+        self.assertContains(response, 'data-section-notes-icon data-lucide="file-text"')
+        self.assertContains(response, 'data-section-notes-icon data-lucide="file-plus-2"')
+        self.assertContains(
+            response,
+            f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button has-notes" title="Notatki grupy — zawiera notatkę" aria-label="Notatki grupy {frontend.title}, zawiera notatkę"',
+        )
+        self.assertContains(
+            response,
+            f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button" title="Notatki grupy" aria-label="Notatki grupy {backend.title}"',
+        )
         self.assertContains(response, 'id="section-notes-modal"')
         self.assertContains(response, 'name="action" value="add_section_note"')
         self.assertContains(response, 'name="action" value="edit_section_note"')
@@ -2109,7 +2302,10 @@ class TaskProjectCreationTests(TestCase):
             '<div class="tasks-directory-members-menu tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" data-directory-members-menu>',
         )
         self.assertContains(response, 'data-select-all-target="sections"')
-        self.assertContains(response, '07.06.2026')
+        self.assertContains(
+            response,
+            'data-column="created_at" title="Data utworzenia">07.06.2026 14:00</span>',
+        )
         self.assertNotContains(response, '7 cze')
         self.assertNotContains(response, 'tasks-section-row-icon')
         self.assertNotContains(response, 'MEMBERS')
@@ -2258,7 +2454,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, backend.code)
         self.assertContains(response, '1 zadań')
         self.assertContains(response, '0 zadań')
-        self.assertContains(response, '07.06.2026')
+        self.assertContains(
+            response,
+            'data-column="created_at" title="Data utworzenia">07.06.2026 14:00</span>',
+        )
         self.assertNotContains(response, '7 cze')
 
     def test_tags_view_renders_only_server_side_window(self):

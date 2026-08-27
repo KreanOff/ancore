@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
+from .models import Task, TaskAttachment, TaskProject, TaskProjectFieldOption, TaskSection, TaskTag
 
 class TaskAttachmentInline(admin.TabularInline):
     model = TaskAttachment
@@ -24,6 +24,13 @@ class TaskProjectAdmin(admin.ModelAdmin):
     list_filter = ('priority', 'due_at', 'created_at')
     search_fields = ('name', 'code', 'company__name')
     inlines = [TaskSectionInline]
+
+
+@admin.register(TaskProjectFieldOption)
+class TaskProjectFieldOptionAdmin(admin.ModelAdmin):
+    list_display = ('label', 'field_type', 'color', 'owner', 'workplace', 'is_active', 'position')
+    list_filter = ('field_type', 'is_active', 'workplace')
+    search_fields = ('label', 'owner__username', 'owner__email')
 
 
 @admin.register(TaskSection)

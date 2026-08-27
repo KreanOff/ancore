@@ -22,8 +22,32 @@ from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
 from core.upload_validation import attachment_download_response, validate_attachment_upload
-from ..models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag, TaskTagNote, parse_hierarchy_code_number
-from ..forms import QuickTaskForm, SubTaskModalForm, TaskForm, TaskModalForm, TaskProjectForm, TaskProjectRenameForm, TaskSectionForm, TaskSectionRenameForm, TaskTagForm
+from ..models import (
+    PROJECT_FIELD_OPTION_DEFAULTS,
+    Task,
+    TaskActivity,
+    TaskAttachment,
+    TaskProject,
+    TaskProjectFieldOption,
+    TaskProjectNote,
+    TaskSection,
+    TaskSectionNote,
+    TaskTag,
+    TaskTagNote,
+    parse_hierarchy_code_number,
+)
+from ..forms import (
+    QuickTaskForm,
+    SubTaskModalForm,
+    TaskForm,
+    TaskModalForm,
+    TaskProjectFieldOptionForm,
+    TaskProjectForm,
+    TaskProjectRenameForm,
+    TaskSectionForm,
+    TaskSectionRenameForm,
+    TaskTagForm,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -655,6 +679,68 @@ def _choice_options(choices):
     return [{'value': value, 'label': label} for value, label in choices]
 
 
+def _project_field_configuration(user, workplace=None):
+    options = list(TaskProjectFieldOption.active_for_scope(user, workplace))
+    choices = {field_type: [] for field_type, _label in TaskProjectFieldOption.FIELD_CHOICES}
+    labels = {field_type: {} for field_type in choices}
+    colors = {field_type: {} for field_type in choices}
+    for option in options:
+        choices[option.field_type].append((option.value, option.label))
+        labels[option.field_type][option.value] = option.label
+        colors[option.field_type][option.value] = option.color
+
+    scoped_projects = TaskProject.objects.filter(user=user, workplace=workplace)
+    used_values = {
+        field_type: set(scoped_projects.values_list(field_type, flat=True).distinct())
+        for field_type in choices
+    }
+    for option in options:
+        option.in_use = option.value in used_values[option.field_type]
+
+    group_copy = {
+        'status': ('Status projektu', 'Określa bieżący stan projektu.'),
+        'stage': ('Etap', 'Opisuje fazę realizacji projektu.'),
+        'health': ('Kondycja', 'Sygnalizuje ryzyko i ogólną kondycję projektu.'),
+    }
+    groups = []
+    for field_type, _field_label in TaskProjectFieldOption.FIELD_CHOICES:
+        label, description = group_copy[field_type]
+        groups.append({
+            'field_type': field_type,
+            'label': label,
+            'description': description,
+            'options': [option for option in options if option.field_type == field_type],
+        })
+
+    return {
+        'options': options,
+        'choices': choices,
+        'labels': labels,
+        'colors': colors,
+        'groups': groups,
+    }
+
+
+def _decorate_project_field_values(projects, field_configuration):
+    if not projects:
+        return
+    labels = field_configuration['labels']
+    colors = field_configuration['colors']
+    default_colors = {
+        field_type: {value: color for value, _label, color in defaults}
+        for field_type, defaults in PROJECT_FIELD_OPTION_DEFAULTS.items()
+    }
+    for project in projects:
+        project._project_field_option_labels = labels
+        for field_type in ('status', 'stage', 'health'):
+            value = getattr(project, field_type, '')
+            setattr(
+                project,
+                f'{field_type}_color',
+                colors.get(field_type, {}).get(value, default_colors.get(field_type, {}).get(value, '#E9ECF0')),
+            )
+
+
 def _choice_values_matching_query(choices, query):
     normalized_query = _normalize_query_label(query)
     if not normalized_query:
@@ -709,14 +795,20 @@ def _project_filter_queryset(
     company='',
     responsible='',
     workplace=None,
+    project_choices=None,
 ):
+    project_choices = project_choices or {
+        'status': TaskProject.STATUS_CHOICES,
+        'stage': TaskProject.STAGE_CHOICES,
+        'health': TaskProject.HEALTH_CHOICES,
+    }
     queryset = _filter_workplace(TaskProject.objects.filter(user=user), workplace)
     query = (query or '').strip()
     if query:
         priority_matches = _choice_values_matching_query(TaskProject.PRIORITY_CHOICES, query)
-        status_matches = _choice_values_matching_query(TaskProject.STATUS_CHOICES, query)
-        stage_matches = _choice_values_matching_query(TaskProject.STAGE_CHOICES, query)
-        health_matches = _choice_values_matching_query(TaskProject.HEALTH_CHOICES, query)
+        status_matches = _choice_values_matching_query(project_choices['status'], query)
+        stage_matches = _choice_values_matching_query(project_choices['stage'], query)
+        health_matches = _choice_values_matching_query(project_choices['health'], query)
         query_filter = (
             Q(name__icontains=query)
             | Q(description__icontains=query)
@@ -743,11 +835,11 @@ def _project_filter_queryset(
         queryset = queryset.filter(query_filter)
     if priority in {value for value, _label in TaskProject.PRIORITY_CHOICES}:
         queryset = queryset.filter(priority=priority)
-    if status in {value for value, _label in TaskProject.STATUS_CHOICES}:
+    if status in {value for value, _label in project_choices['status']}:
         queryset = queryset.filter(status=status)
-    if stage in {value for value, _label in TaskProject.STAGE_CHOICES}:
+    if stage in {value for value, _label in project_choices['stage']}:
         queryset = queryset.filter(stage=stage)
-    if health in {value for value, _label in TaskProject.HEALTH_CHOICES}:
+    if health in {value for value, _label in project_choices['health']}:
         queryset = queryset.filter(health=health)
     if company == 'none':
         queryset = queryset.filter(company__isnull=True)
@@ -760,7 +852,7 @@ def _project_filter_queryset(
     return queryset
 
 
-def _project_sort_queryset(queryset, sort_value):
+def _project_sort_queryset(queryset, sort_value, status_choices=None):
     sort_value = _project_sort_value(sort_value)
     if sort_value == 'name_desc':
         return queryset.order_by('-name', 'id')
@@ -791,7 +883,7 @@ def _project_sort_queryset(queryset, sort_value):
         )
     if sort_value == 'status_asc':
         return queryset.annotate(
-            status_sort_rank=_choice_rank_case('status', TaskProject.STATUS_CHOICES)
+            status_sort_rank=_choice_rank_case('status', status_choices or TaskProject.STATUS_CHOICES)
         ).order_by('status_sort_rank', 'name', 'id')
     if sort_value == 'priority_desc':
         return queryset.annotate(
@@ -815,7 +907,12 @@ def _project_sort_queryset(queryset, sort_value):
     return queryset.order_by('name', 'id')
 
 
-def _project_filter_options(user, workplace=None):
+def _project_filter_options(user, workplace=None, project_choices=None):
+    project_choices = project_choices or {
+        'status': TaskProject.STATUS_CHOICES,
+        'stage': TaskProject.STAGE_CHOICES,
+        'health': TaskProject.HEALTH_CHOICES,
+    }
     queryset = _filter_workplace(
         TaskProject.objects.filter(user=user),
         workplace,
@@ -857,19 +954,24 @@ def _project_filter_options(user, workplace=None):
         responsible_users.insert(0, {'value': 'none', 'label': 'Brak osoby'})
 
     return {
-        'statuses': _choice_options(TaskProject.STATUS_CHOICES),
-        'stages': _choice_options(TaskProject.STAGE_CHOICES),
-        'healths': _choice_options(TaskProject.HEALTH_CHOICES),
+        'statuses': _choice_options(project_choices['status']),
+        'stages': _choice_options(project_choices['stage']),
+        'healths': _choice_options(project_choices['health']),
         'companies': companies,
         'responsible_users': responsible_users,
     }
 
 
-def _empty_project_filter_options():
+def _empty_project_filter_options(project_choices=None):
+    project_choices = project_choices or {
+        'status': TaskProject.STATUS_CHOICES,
+        'stage': TaskProject.STAGE_CHOICES,
+        'health': TaskProject.HEALTH_CHOICES,
+    }
     return {
-        'statuses': _choice_options(TaskProject.STATUS_CHOICES),
-        'stages': _choice_options(TaskProject.STAGE_CHOICES),
-        'healths': _choice_options(TaskProject.HEALTH_CHOICES),
+        'statuses': _choice_options(project_choices['status']),
+        'stages': _choice_options(project_choices['stage']),
+        'healths': _choice_options(project_choices['health']),
         'companies': [],
         'responsible_users': [],
     }
@@ -1500,8 +1602,10 @@ def _project_for_user(user, project_id, workplace=None):
     return projects[0] if projects else None
 
 
-def _project_window_for_request(request):
+def _project_window_for_request(request, field_configuration=None):
     workplace = _active_workplace(request)
+    field_configuration = field_configuration or _project_field_configuration(request.user, workplace)
+    project_choices = field_configuration['choices']
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
@@ -1522,8 +1626,9 @@ def _project_window_for_request(request):
         company=company,
         responsible=responsible,
         workplace=workplace,
+        project_choices=project_choices,
     )
-    queryset = _project_sort_queryset(queryset, sort)
+    queryset = _project_sort_queryset(queryset, sort, status_choices=project_choices['status'])
     total_projects = queryset.count()
     total_pages = max(1, (total_projects + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
@@ -1539,6 +1644,7 @@ def _project_window_for_request(request):
     )
 
     _decorate_project_directory_metrics(projects)
+    _decorate_project_field_values(projects, field_configuration)
     _decorate_directory_members(projects, current_user=request.user)
 
     base_params = {
@@ -1584,7 +1690,11 @@ def _project_window_for_request(request):
         'sort_param': '' if sort == PROJECT_DEFAULT_SORT else sort,
         'sort_label': PROJECT_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[sort]['direction'],
-        'filters': _project_filter_options(request.user, workplace=workplace),
+        'filters': _project_filter_options(
+            request.user,
+            workplace=workplace,
+            project_choices=project_choices,
+        ),
         'page': current_page,
         'total_pages': total_pages,
         'total_projects': total_projects,
@@ -1913,6 +2023,19 @@ def _task_modal_picker_options(projects):
     return options
 
 
+def _polish_count_label(value, singular, paucal, plural):
+    count = int(value or 0)
+    last_digit = count % 10
+    last_two_digits = count % 100
+    if count == 1:
+        label = singular
+    elif 2 <= last_digit <= 4 and not 12 <= last_two_digits <= 14:
+        label = paucal
+    else:
+        label = plural
+    return f'{count} {label}'
+
+
 def _decorate_project_directory_metrics(projects):
     if not projects:
         return
@@ -1944,6 +2067,8 @@ def _decorate_project_directory_metrics(projects):
         }
 
     for project in projects:
+        project.groups_total_count = len(project.sections.all())
+        project.groups_count_label = _polish_count_label(project.groups_total_count, 'grupa', 'grupy', 'grup')
         if not project.due_at:
             project.due_highlight = 'none'
         elif project.status == 'completed':
@@ -1998,6 +2123,7 @@ def _decorate_project_directory_metrics(projects):
         project.tasks_total_count = project_total_tasks
         project.tasks_completed_count = project_completed_tasks
         project.tasks_count_label = f'{project_completed_tasks}/{project_total_tasks}'
+        project.tasks_total_count_label = _polish_count_label(project_total_tasks, 'zadanie', 'zadania', 'zadań')
         project.progress_percent = project_progress_percent
         project.last_activity_at = max(
             (value for value in last_activity_candidates if value),
@@ -2785,7 +2911,12 @@ def task_group(request, section_id):
 
 def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
-    project_form = TaskProjectForm(user=request.user, workplace=workplace)
+    project_field_configuration = _project_field_configuration(request.user, workplace)
+    project_form = TaskProjectForm(
+        user=request.user,
+        workplace=workplace,
+        field_options=project_field_configuration['options'],
+    )
     section_form = TaskSectionForm(user=request.user)
     tag_form = TaskTagForm(user=request.user, workplace=workplace)
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
@@ -2828,7 +2959,11 @@ def _tasks_page(request, active_section=None):
     )
     project_modal_open = False
     project_rename_modal_open = False
-    project_rename_form = TaskProjectRenameForm(user=request.user, workplace=workplace)
+    project_rename_form = TaskProjectRenameForm(
+        user=request.user,
+        workplace=workplace,
+        field_options=project_field_configuration['options'],
+    )
     project_rename_project_id = ''
     section_create_modal_open = False
     section_create_project_id = active_project_id or ''
@@ -2839,13 +2974,104 @@ def _tasks_page(request, active_section=None):
     tag_modal_open = False
     tag_edit_mode = False
     tag_edit_tag_id = ''
+    project_field_settings_modal_open = request.GET.get('field_settings') == '1'
 
     if request.method == 'POST':
         action = request.POST.get('action')
         is_ajax = _is_ajax_request(request)
 
+        if action == 'create_project_field_option':
+            field_type = (request.POST.get('field_type') or '').strip()
+            if field_type not in dict(TaskProjectFieldOption.FIELD_CHOICES):
+                raise PermissionDenied
+            option = TaskProjectFieldOption(
+                owner=request.user,
+                workplace=workplace,
+                field_type=field_type,
+            )
+            option_form = TaskProjectFieldOptionForm(
+                request.POST,
+                instance=option,
+                owner=request.user,
+                workplace=workplace,
+            )
+            if option_form.is_valid():
+                option = option_form.save(commit=False)
+                option.value = TaskProjectFieldOption.unique_value_for_label(
+                    request.user,
+                    workplace,
+                    field_type,
+                    option.label,
+                )
+                option.position = (
+                    TaskProjectFieldOption.for_scope(request.user, workplace)
+                    .filter(field_type=field_type)
+                    .aggregate(last_position=Max('position'))['last_position']
+                    or 0
+                ) + 1
+                option.save()
+                messages.success(request, f'Dodano wartość „{option.label}”.')
+            else:
+                error_text = ' '.join(
+                    str(error)
+                    for errors in option_form.errors.values()
+                    for error in errors
+                )
+                messages.error(request, error_text or 'Nie udało się dodać wartości.')
+            return redirect(f'{request.path}?field_settings=1')
+
+        if action == 'update_project_field_option':
+            option = get_object_or_404(
+                TaskProjectFieldOption.for_scope(request.user, workplace).filter(is_active=True),
+                id=request.POST.get('option_id'),
+            )
+            option_form = TaskProjectFieldOptionForm(
+                request.POST,
+                instance=option,
+                owner=request.user,
+                workplace=workplace,
+            )
+            if option_form.is_valid():
+                option_form.save()
+                messages.success(request, f'Zapisano wartość „{option.label}”.')
+            else:
+                error_text = ' '.join(
+                    str(error)
+                    for errors in option_form.errors.values()
+                    for error in errors
+                )
+                messages.error(request, error_text or 'Nie udało się zapisać wartości.')
+            return redirect(f'{request.path}?field_settings=1')
+
+        if action == 'delete_project_field_option':
+            option = get_object_or_404(
+                TaskProjectFieldOption.for_scope(request.user, workplace).filter(is_active=True),
+                id=request.POST.get('option_id'),
+            )
+            active_count = TaskProjectFieldOption.for_scope(request.user, workplace).filter(
+                field_type=option.field_type,
+                is_active=True,
+            ).count()
+            if option.is_used:
+                messages.error(
+                    request,
+                    f'Nie można usunąć wartości „{option.label}”, ponieważ jest używana przez projekt.',
+                )
+            elif active_count <= 1:
+                messages.error(request, 'Każde pole musi mieć co najmniej jedną wartość.')
+            else:
+                option.is_active = False
+                option.save(update_fields=['is_active'])
+                messages.success(request, f'Usunięto wartość „{option.label}”.')
+            return redirect(f'{request.path}?field_settings=1')
+
         if action == 'create_project':
-            project_form = TaskProjectForm(request.POST, user=request.user, workplace=workplace)
+            project_form = TaskProjectForm(
+                request.POST,
+                user=request.user,
+                workplace=workplace,
+                field_options=project_field_configuration['options'],
+            )
             if project_form.is_valid():
                 with transaction.atomic():
                     project = project_form.save(commit=False)
@@ -2888,7 +3114,13 @@ def _tasks_page(request, active_section=None):
 
         if action in ('edit_project', 'rename_project'):
             project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
-            project_rename_form = TaskProjectRenameForm(request.POST, instance=project, user=request.user, workplace=workplace)
+            project_rename_form = TaskProjectRenameForm(
+                request.POST,
+                instance=project,
+                user=request.user,
+                workplace=workplace,
+                field_options=project_field_configuration['options'],
+            )
             if project_rename_form.is_valid():
                 project_rename_form.save()
                 messages.success(request, 'Projekt zaktualizowany.')
@@ -3276,7 +3508,10 @@ def _tasks_page(request, active_section=None):
     else:
         active_view = 'projects'
 
-    project_window = _project_window_for_request(request) if active_view == 'projects' else {
+    project_window = _project_window_for_request(
+        request,
+        field_configuration=project_field_configuration,
+    ) if active_view == 'projects' else {
         'projects': [],
         'query': '',
         'priority': '',
@@ -3289,7 +3524,7 @@ def _tasks_page(request, active_section=None):
         'sort_param': '',
         'sort_label': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['direction'],
-        'filters': _empty_project_filter_options(),
+        'filters': _empty_project_filter_options(project_field_configuration['choices']),
         'page': 1,
         'total_pages': 1,
         'total_projects': 0,
@@ -3413,9 +3648,11 @@ def _tasks_page(request, active_section=None):
     else:
         project_options = navigation_projects
     _decorate_project_directory_metrics(navigation_projects)
+    _decorate_project_field_values(navigation_projects, project_field_configuration)
     _decorate_directory_members(navigation_projects, current_user=request.user)
     if project_options is not navigation_projects:
         _decorate_project_directory_metrics(project_options)
+        _decorate_project_field_values(project_options, project_field_configuration)
         _decorate_directory_members(project_options, current_user=request.user)
 
     orphan_tasks = []
@@ -3569,6 +3806,8 @@ def _tasks_page(request, active_section=None):
         'quick_task_form': QuickTaskForm(),
         'project_modal_open': project_modal_open,
         'project_rename_modal_open': project_rename_modal_open,
+        'project_field_settings_modal_open': project_field_settings_modal_open,
+        'project_field_groups': project_field_configuration['groups'],
         'task_modal_open': task_modal_open,
         'tag_modal_open': tag_modal_open,
         'tag_edit_mode': tag_edit_mode,

@@ -1,5 +1,7 @@
 import tempfile
+from importlib import import_module
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -20,7 +22,12 @@ class WorkplaceSelectionTests(TestCase):
             first_name='Work',
             last_name='Place',
         )
-        self.first_workplace = create_workplace_for_user(self.user, 'Pierwszy Workplace')
+        self.first_workplace = create_workplace_for_user(
+            self.user,
+            'Pierwszy Workplace',
+            description='Miejsce pracy zespołu wdrożeniowego',
+            code='first-01',
+        )
         self.second_workplace = create_workplace_for_user(self.user, 'Drugi Workplace')
 
     def _activate(self, workplace):
@@ -67,6 +74,15 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-workplace-id=', count=2)
         self.assertNotContains(response, 'data-column="logo"')
         self.assertContains(response, 'workplace-row__avatar', count=2)
+        self.assertContains(response, 'Kod miejsca pracy')
+        self.assertContains(response, 'Opis')
+        self.assertContains(response, 'FIRST-01')
+        self.assertContains(response, 'Miejsce pracy zespołu wdrożeniowego')
+        self.assertContains(response, 'data-workplace-code="FIRST-01"')
+        self.assertContains(response, 'data-workplace-description="Miejsce pracy zespołu wdrożeniowego"')
+        self.assertContains(response, 'data-workplace-code="DRUGI-WORKPLACE"')
+        self.assertNotContains(response, 'data-column="slug"')
+        self.assertNotContains(response, 'data-workplace-slug=')
         self.assertContains(response, 'Pierwszy Workplace')
         self.assertContains(response, 'Drugi Workplace')
         self.assertNotContains(response, 'Nie moj Workplace')
@@ -83,6 +99,9 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'Nowe miejsce pracy')
         self.assertContains(response, 'Utwórz miejsce pracy')
         self.assertContains(response, 'Nazwa miejsca pracy')
+        self.assertContains(response, 'Kod miejsca pracy')
+        self.assertContains(response, 'Zostaw puste, aby wygenerować unikalny kod z nazwy.')
+        self.assertContains(response, 'Dodaj krótki opis miejsca pracy…')
         self.assertContains(response, 'np. Studio projektowe')
         self.assertContains(response, 'data-workplace-create-dropzone')
         self.assertContains(response, 'PNG, JPG lub WebP · maks. 5 MB')
@@ -121,6 +140,9 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'tasks-modal tasks-project-modal tasks-project-edit-modal tasks-issue-modal workplace-edit-modal')
         self.assertContains(response, 'tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form workplace-edit-modal__form')
         self.assertContains(response, 'Edytuj miejsce pracy')
+        self.assertContains(response, 'name="code" value="FIRST-01"')
+        self.assertContains(response, 'name="description"')
+        self.assertNotContains(response, '<span>Slug</span>', html=True)
         self.assertNotContains(response, 'class="workplace-settings workplace-settings--inspector"')
         self.assertNotContains(response, 'class="workplace-settings__form"')
 
@@ -236,6 +258,48 @@ class WorkplaceSelectionTests(TestCase):
             fetch_redirect_response=False,
         )
 
+    def test_create_workplace_saves_description_and_normalized_code(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('workplaces:workplaces'), {
+            'name': 'Zespół produktowy',
+            'code': '  product-01  ',
+            'description': '  Rozwój głównego produktu  ',
+        })
+
+        workplace = type(self.first_workplace).objects.get(owner=self.user, name='Zespół produktowy')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(workplace.code, 'PRODUCT-01')
+        self.assertEqual(workplace.description, 'Rozwój głównego produktu')
+
+    def test_create_workplace_generates_code_from_name_when_code_is_empty(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('workplaces:workplaces'), {
+            'name': 'Zespół operacyjny 01',
+            'code': '',
+        })
+
+        workplace = type(self.first_workplace).objects.get(owner=self.user, name='Zespół operacyjny 01')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(workplace.code, 'ZESPOL-OPERACYJNY-01')
+
+    def test_generated_workplace_code_gets_unique_numeric_suffix(self):
+        first = create_workplace_for_user(self.user, 'Zespół A')
+        second = create_workplace_for_user(self.user, 'Zespol A')
+
+        self.assertEqual(first.code, 'ZESPOL-A')
+        self.assertEqual(second.code, 'ZESPOL-A-2')
+
+    def test_workplace_code_migration_backfills_existing_empty_code(self):
+        type(self.second_workplace).objects.filter(pk=self.second_workplace.pk).update(code='')
+        migration = import_module('workplaces.migrations.0005_backfill_workplace_codes')
+
+        migration.backfill_workplace_codes(apps, None)
+
+        self.second_workplace.refresh_from_db()
+        self.assertEqual(self.second_workplace.code, 'DRUGI-WORKPLACE')
+
     def test_create_workplace_accepts_valid_logo(self):
         self.client.force_login(self.user)
         logo = SimpleUploadedFile(
@@ -290,6 +354,18 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Masz już miejsce pracy o takiej nazwie.')
+        self.assertEqual(type(self.first_workplace).objects.filter(owner=self.user).count(), 2)
+
+    def test_duplicate_workplace_code_is_case_insensitive(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('workplaces:workplaces'), {
+            'name': 'Nowa nazwa',
+            'code': 'first-01',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Masz już miejsce pracy o takim kodzie.')
         self.assertEqual(type(self.first_workplace).objects.filter(owner=self.user).count(), 2)
 
     def test_scoped_tasks_url_sets_active_workplace_from_slug(self):
@@ -351,6 +427,39 @@ class WorkplaceSelectionTests(TestCase):
         self.assertRedirects(response, reverse('workplaces:workplaces'))
         self.first_workplace.refresh_from_db()
         self.assertEqual(self.first_workplace.name, 'Nowa nazwa')
+
+    def test_owner_can_update_workplace_description_and_code(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('workplaces:update', args=[self.first_workplace.pk]),
+            {
+                'name': self.first_workplace.name,
+                'code': '  delivery-02 ',
+                'description': '  Obsługa wdrożeń klientów  ',
+            },
+        )
+
+        self.assertRedirects(response, reverse('workplaces:workplaces'))
+        self.first_workplace.refresh_from_db()
+        self.assertEqual(self.first_workplace.code, 'DELIVERY-02')
+        self.assertEqual(self.first_workplace.description, 'Obsługa wdrożeń klientów')
+
+    def test_owner_can_clear_workplace_code_to_generate_it_again(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('workplaces:update', args=[self.first_workplace.pk]),
+            {
+                'name': self.first_workplace.name,
+                'code': '',
+                'description': self.first_workplace.description,
+            },
+        )
+
+        self.assertRedirects(response, reverse('workplaces:workplaces'))
+        self.first_workplace.refresh_from_db()
+        self.assertEqual(self.first_workplace.code, 'PIERWSZY-WORKPLACE')
 
     def test_owner_cannot_rename_workplace_to_duplicate_name(self):
         self.client.force_login(self.user)

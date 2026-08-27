@@ -21,7 +21,9 @@ def workplaces(request):
             workplace = create_workplace_for_user(
                 request.user,
                 form.cleaned_data['name'],
-                form.cleaned_data.get('workplace_photo'),
+                workplace_photo=form.cleaned_data.get('workplace_photo'),
+                description=form.cleaned_data.get('description', ''),
+                code=form.cleaned_data.get('code', ''),
             )
             set_active_workplace(request, workplace)
             messages.success(request, 'Miejsce pracy utworzone.')

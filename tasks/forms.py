@@ -4,7 +4,15 @@ from django import forms
 from django.contrib.auth import get_user_model
 
 from contacts.models import Company, Contact
-from .models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
+from .models import (
+    PROJECT_FIELD_OPTION_DEFAULTS,
+    Task,
+    TaskAttachment,
+    TaskProject,
+    TaskProjectFieldOption,
+    TaskSection,
+    TaskTag,
+)
 
 
 class LenientModelChoiceField(forms.ModelChoiceField):
@@ -328,9 +336,26 @@ class TaskForm(forms.ModelForm):
 
 
 class TaskProjectBaseForm(forms.ModelForm):
+    status = forms.ChoiceField(
+        required=False,
+        label='Status projektu',
+        widget=forms.Select(attrs={'class': 'tasks-inline-select'}),
+    )
+    stage = forms.ChoiceField(
+        required=False,
+        label='Etap',
+        widget=forms.Select(attrs={'class': 'tasks-inline-select'}),
+    )
+    health = forms.ChoiceField(
+        required=False,
+        label='Kondycja',
+        widget=forms.Select(attrs={'class': 'tasks-inline-select'}),
+    )
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         workplace = kwargs.pop('workplace', None)
+        field_options = kwargs.pop('field_options', None)
         super().__init__(*args, **kwargs)
         if 'company' in self.fields:
             _replace_optional_model_choice(self, 'company', _company_queryset(user, workplace), 'Brak firmy')
@@ -340,9 +365,28 @@ class TaskProjectBaseForm(forms.ModelForm):
             _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user), 'Brak osoby')
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search'] = 'true'
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
+        if field_options is None and user:
+            field_options = list(TaskProjectFieldOption.active_for_scope(user, workplace))
+        option_choices = {
+            field_type: [(value, label) for value, label, _color in defaults]
+            for field_type, defaults in PROJECT_FIELD_OPTION_DEFAULTS.items()
+        }
+        if field_options is not None:
+            option_choices = {field_type: [] for field_type in PROJECT_FIELD_OPTION_DEFAULTS}
+            for option in field_options:
+                option_choices.setdefault(option.field_type, []).append((option.value, option.label))
+        self._project_field_defaults = {}
         for field_name in ('status', 'stage', 'health'):
             if field_name in self.fields:
                 self.fields[field_name].required = False
+                self.fields[field_name].choices = option_choices.get(field_name, [])
+                self.fields[field_name].widget.choices = self.fields[field_name].choices
+                available_values = [value for value, _label in self.fields[field_name].choices]
+                model_default = TaskProject._meta.get_field(field_name).default
+                field_default = model_default if model_default in available_values else (available_values[0] if available_values else '')
+                self._project_field_defaults[field_name] = field_default
+                if not self.is_bound and not getattr(self.instance, 'pk', None):
+                    self.initial[field_name] = field_default
 
     def clean_code(self):
         code = _normalize_optional_code(self.cleaned_data.get('code'))
@@ -362,13 +406,50 @@ class TaskProjectBaseForm(forms.ModelForm):
         return self.cleaned_data.get('priority') or 'none'
 
     def clean_status(self):
-        return self.cleaned_data.get('status') or 'active'
+        return self.cleaned_data.get('status') or self._project_field_defaults.get('status') or 'active'
 
     def clean_stage(self):
-        return self.cleaned_data.get('stage') or 'implementation'
+        return self.cleaned_data.get('stage') or self._project_field_defaults.get('stage') or 'implementation'
 
     def clean_health(self):
-        return self.cleaned_data.get('health') or 'ok'
+        return self.cleaned_data.get('health') or self._project_field_defaults.get('health') or 'ok'
+
+
+class TaskProjectFieldOptionForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.owner = kwargs.pop('owner')
+        self.workplace = kwargs.pop('workplace', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_label(self):
+        label = (self.cleaned_data.get('label') or '').strip()
+        if not label:
+            raise forms.ValidationError('Podaj nazwę wartości.')
+        queryset = TaskProjectFieldOption.for_scope(self.owner, self.workplace).filter(
+            field_type=self.instance.field_type,
+            is_active=True,
+            label__iexact=label,
+        )
+        if self.instance.pk:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise forms.ValidationError('Taka nazwa już istnieje w tym polu.')
+        return label
+
+    class Meta:
+        model = TaskProjectFieldOption
+        fields = ['label', 'color']
+        widgets = {
+            'label': forms.TextInput(attrs={
+                'class': 'tasks-project-option-name',
+                'maxlength': 60,
+                'autocomplete': 'off',
+            }),
+            'color': forms.TextInput(attrs={
+                'type': 'color',
+                'class': 'tasks-project-option-color',
+            }),
+        }
 
 
 class TaskProjectForm(TaskProjectBaseForm):
