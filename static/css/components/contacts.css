@@ -1786,7 +1786,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .contacts-name-grid,
     .contacts-primary-fields,
     .contacts-modal-title-grid {

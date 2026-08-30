@@ -1188,7 +1188,7 @@
     min-height: 36px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .profile-name-fields {
         grid-template-columns: 1fr;
         gap: 0.2rem;

@@ -3,28 +3,28 @@
 @import 'base/reset.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'layout/sidebar.css?v=20260821-remove-app-topbar';
 @import 'layout/main.css?v=20260826-loading-progress-fill';
-@import 'layout/responsive.css?v=20260821-remove-app-topbar';
+@import 'layout/responsive.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/cards.css?v=20260821-remove-app-topbar';
 @import 'components/buttons.css?v=20260822-center-cancel-button-label';
 @import 'components/toolbar.css?v=20260821-remove-app-topbar';
 @import 'components/alerts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/forms.css?v=20260801-gray-custom-select-focus';
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
-@import 'components/modals.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/tables.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/tasks.css?v=20260826-project-field-options';
-@import 'components/contacts.css?v=20260801-contacts-toolbar-v1';
-@import 'components/notifications.css?v=20260616-task-autosave';
+@import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
+@import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
+@import 'components/tasks.css?v=20260830-tags-grid-v6';
+@import 'components/contacts.css?v=20260829-pc-tablet-layout-v4';
+@import 'components/notifications.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
-@import 'components/file-upload.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
+@import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/auth.css?v=20260821-auth-gray-focus';
 @import 'components/workplaces.css?v=20260826-workplace-code-no-slug';
 @import 'calendar.css?v=20260702-unified-modal-window';
 @import 'components/sticky-note.css?v=20260707-resizable-sticker';
 @import 'components/checkboxes.css?v=20260625-contacts-project-table-match';
 @import 'theme/elestio.css?v=20260820-sidebar-without-separators';
-@import 'components/profile.css?v=20260820-round-user-workplace-avatars';
-@import 'components/modal-system.css?v=20260826-equal-header-footer-bars-60px-v2';
+@import 'components/profile.css?v=20260829-pc-tablet-layout-v4';
+@import 'components/modal-system.css?v=20260830-close-button-hover-v1';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
 body :where(

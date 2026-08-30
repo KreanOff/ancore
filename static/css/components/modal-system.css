@@ -219,7 +219,9 @@
 .page-container.full-width .tasks-modal .tasks-modal__close:hover,
 .page-container.full-width .tasks-modal .tasks-modal__close:focus-visible,
 .tasks-modal .tasks-issue-close:hover,
-.tasks-modal .tasks-issue-close:focus-visible {
+.tasks-modal .tasks-issue-close:focus-visible,
+.page-container.full-width .tasks-modal .tasks-issue-close:hover,
+.page-container.full-width .tasks-modal .tasks-issue-close:focus-visible {
     background: #f0f2f5;
     color: #252a33;
     outline: none;

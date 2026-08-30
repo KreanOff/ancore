@@ -6780,6 +6780,11 @@ function initTasksPage() {
             last_activity: 210,
             company: 220,
             project_name: 220,
+            start_at: 150,
+            project_status: 150,
+            stage: 160,
+            health: 150,
+            source: 190,
             members: 210,
             default_assignee: 230,
             created_at: 130,
@@ -6871,6 +6876,11 @@ function initTasksPage() {
             priority: 112,
             last_activity: 140,
             company: 140,
+            start_at: 112,
+            project_status: 112,
+            stage: 112,
+            health: 112,
+            source: 120,
             default_assignee: 150,
             created_at: 112,
             spacer: 0
@@ -6900,8 +6910,11 @@ function initTasksPage() {
         };
         const fixedColumns = new Set(['spacer']);
         const nonResizableColumns = new Set(['action', 'info', 'notes', 'spacer']);
+        // Persisted column widths belong to the wide desktop layout. On tablets
+        // the CSS owns a compact grid so desktop preferences cannot stretch the
+        // first columns beyond the visible workspace.
         const resizeMediaQuery = typeof window.matchMedia === 'function'
-            ? window.matchMedia('(min-width: 901px)')
+            ? window.matchMedia('(min-width: 1181px)')
             : { matches: true };
         let activeResize = null;
         const taskDirectoryBoards = Array.from(boards).filter(isUniformDirectoryBoard);

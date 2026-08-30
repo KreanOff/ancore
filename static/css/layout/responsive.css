@@ -86,8 +86,8 @@ body.sidebar-open .sidebar-backdrop {
     }
 }
 
-/* Telefon */
-@media (max-width: 768px) {
+/* Widoki węższe niż tablet (poza zakresem adaptacji PC/tablet). */
+@media (max-width: 767px) {
     .page-container {
         padding: 1rem;
     }
@@ -164,7 +164,7 @@ body.sidebar-open .sidebar-backdrop {
     }
 }
 
-@media (min-width: 769px) and (max-width: 1180px) {
+@media (min-width: 768px) and (max-width: 1180px) {
     .main-content:has(.page-container.full-width) {
         overflow: hidden;
     }
@@ -174,7 +174,7 @@ body.sidebar-open .sidebar-backdrop {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .control-panel,
     .tasks-control-panel,
     .tasks-page .control-panel,
@@ -268,7 +268,7 @@ body.sidebar-open .sidebar-backdrop {
         padding-right: 0;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
         .page-container {
             padding-left: max(1rem, env(safe-area-inset-left));
             padding-right: max(1rem, env(safe-area-inset-right));

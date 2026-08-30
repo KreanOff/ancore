@@ -180,7 +180,7 @@
     background-color: #a855f7;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .data-table th {
         padding: 0.75rem 0.875rem;
         font-size: var(--font-size-sm);

@@ -111,7 +111,7 @@ body:has(.tasks-page) .notification.info,
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .notifications-container {
         left: max(1rem, env(safe-area-inset-left));
         right: max(1rem, env(safe-area-inset-right));

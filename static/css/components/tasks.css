@@ -1367,7 +1367,7 @@
     text-align: right;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .tasks-project-row,
     .tasks-section-row,
     .tasks-all-groups-row {
@@ -10273,7 +10273,7 @@ body.is-resizing-directory-columns {
 
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .tasks-topbar,
     .tasks-filterbar {
         display: flex;
@@ -10429,7 +10429,7 @@ body.is-resizing-directory-columns {
     }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 /* Compact desktop scale inspired by tracker-style issue lists. */
 .tasks-tracker-rail {
     gap: 0.65rem;
@@ -10537,7 +10537,7 @@ body.is-resizing-directory-columns {
     height: 36px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .tasks-search-field {
         width: 100%;
     }
@@ -10601,12 +10601,13 @@ body.is-resizing-directory-columns {
     padding: 0.7rem 0.95rem 1.25rem;
 }
 
-@media (min-width: 769px) and (max-width: 1180px) {
+@media (min-width: 768px) and (max-width: 1180px) {
     .tasks-workspace {
         min-width: 0;
     }
 
     .tasks-topbar {
+        height: auto;
         min-height: 0;
         flex-wrap: wrap;
         align-items: flex-start;
@@ -10694,7 +10695,7 @@ body.is-resizing-directory-columns {
     }
 }
 
-@media (min-width: 769px) and (max-width: 960px) {
+@media (min-width: 768px) and (max-width: 960px) {
     .tasks-filterbar {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -11130,7 +11131,7 @@ body.is-resizing-directory-columns {
     text-align: center;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .tasks-project-pagination {
         justify-content: flex-start;
         flex-wrap: wrap;
@@ -11319,18 +11320,30 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-project-sheet .tasks-directory-header {
-    min-height: 42px;
+    min-height: 35px;
     background: #ffffff;
 }
 
 .tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell {
-    min-height: 42px;
-    background: #e7e8eb;
+    min-height: 35px;
+    background: #ffffff;
 }
 
 .tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="spacer"]) {
     justify-content: flex-start;
     text-align: left;
+}
+
+.tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="info"]):not([data-column="notes"]):not([data-column="spacer"]) {
+    gap: 0.4rem;
+}
+
+.tasks-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="info"]):not([data-column="notes"]):not([data-column="spacer"]) > svg {
+    order: -1;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    stroke-width: 2;
 }
 
 .tasks-directory-board.tasks-project-sheet--selectable .tasks-directory-header > .tasks-directory-header-select {
@@ -12101,12 +12114,12 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-spreadsheet-sheet .tasks-directory-header > .tasks-directory-sheet__cell {
-    min-height: 42px;
-    background: #e7e8eb;
+    min-height: 35px;
+    background: #ffffff;
 }
 
 .tasks-spreadsheet-sheet .tasks-directory-list .tasks-directory-row {
-    min-height: 40px;
+    min-height: 35px;
 }
 
 .tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-header,
@@ -12128,6 +12141,18 @@ body.is-resizing-directory-columns {
 .tasks-spreadsheet-sheet .tasks-directory-header > .tasks-directory-sheet__cell:not([data-column="select"]):not([data-column="spacer"]) {
     justify-content: flex-start;
     text-align: left;
+}
+
+.tasks-tag-sheet .tasks-directory-header > .tasks-tag-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="info"]):not([data-column="notes"]):not([data-column="spacer"]) {
+    gap: 0.4rem;
+}
+
+.tasks-tag-sheet .tasks-directory-header > .tasks-tag-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="info"]):not([data-column="notes"]):not([data-column="spacer"]) > svg {
+    order: -1;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    stroke-width: 2;
 }
 
 .tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-header > [data-column="tag_code"],
@@ -12752,9 +12777,13 @@ body.is-resizing-directory-columns {
         --tasks-directory-assignee-width: 168px;
         --tasks-directory-date-width: 112px;
     }
+
+    .tasks-directory-column-resizer {
+        display: none;
+    }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 767px) {
     .tasks-directory-board {
         --tasks-directory-checkbox-offset: -0.35rem;
         --tasks-directory-default-column-width: 178px;
@@ -12790,7 +12819,7 @@ body.is-resizing-directory-columns {
 
     .tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
     }
 
     .tasks-project-sheet .tasks-directory-header > [data-column="action"],
@@ -13046,7 +13075,8 @@ body.is-resizing-directory-columns {
 
 /* Keep project directory rows and columns fixed; the wrapper owns responsive overflow. */
 .tasks-directory-board.tasks-project-sheet {
-    --tasks-project-row-height: 38px;
+    --tasks-directory-column-separator: #edf0f3;
+    --tasks-project-row-height: 35px;
     --tasks-project-code-width: 190px;
     --tasks-project-action-width: var(--tasks-directory-select-width, 40px);
     --tasks-project-info-width: var(--tasks-directory-select-width, 40px);
@@ -13075,7 +13105,7 @@ body.is-resizing-directory-columns {
 .tasks-directory-board.tasks-project-sheet--selectable {
     --tasks-directory-select-width: 40px;
     --tasks-directory-checkbox-offset: 0;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-priority-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-progress-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
 }
 
 .tasks-directory-board.tasks-kanban-project-sheet.tasks-project-sheet--selectable {
@@ -13087,7 +13117,7 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-directory-board.tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable {
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
 }
 
 .tasks-directory-board.tasks-project-sheet .tasks-directory-header,
@@ -13105,7 +13135,8 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-directory-board.tasks-project-sheet .tasks-directory-header {
-    min-height: 42px;
+    min-height: 35px;
+    border-bottom-color: var(--tasks-directory-column-separator);
 }
 
 .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row,
@@ -13114,6 +13145,7 @@ body.is-resizing-directory-columns {
     height: var(--tasks-project-row-height);
     min-height: var(--tasks-project-row-height);
     max-height: var(--tasks-project-row-height);
+    border-bottom-color: var(--tasks-directory-column-separator);
 }
 
 .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column] {
@@ -13186,7 +13218,8 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-directory-board.tasks-tag-sheet {
-    --tasks-project-row-height: 38px;
+    --tasks-directory-column-separator: #edf0f3;
+    --tasks-project-row-height: 35px;
     --tasks-directory-select-width: 40px;
     --tasks-project-action-width: var(--tasks-directory-select-width);
     --tasks-directory-tag-action-width: var(--tasks-project-action-width);
@@ -13210,7 +13243,8 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-directory-board.tasks-tag-sheet .tasks-directory-header {
-    min-height: 42px;
+    min-height: 35px;
+    border-bottom-color: var(--tasks-directory-column-separator);
 }
 
 .tasks-directory-board.tasks-tag-sheet .tasks-directory-header > .tasks-directory-header-select {
@@ -13225,6 +13259,7 @@ body.is-resizing-directory-columns {
     height: var(--tasks-project-row-height);
     min-height: var(--tasks-project-row-height);
     max-height: var(--tasks-project-row-height);
+    border-bottom-color: var(--tasks-directory-column-separator);
 }
 
 .tasks-directory-board.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > [data-column] {
@@ -13284,6 +13319,41 @@ body.is-resizing-directory-columns {
     display: none;
 }
 
+/* Tablet keeps the spreadsheet model, but uses compact tracks and horizontal
+   overflow. This block intentionally follows the fixed desktop grid above. */
+@media (min-width: 768px) and (max-width: 1180px) {
+    .tasks-directory-board.tasks-project-sheet {
+        --tasks-project-code-width: 132px;
+        --tasks-directory-name-width: 220px;
+        --tasks-project-description-width: 230px;
+        --tasks-project-progress-width: 160px;
+        --tasks-project-due-width: 126px;
+        --tasks-project-count-width: 102px;
+        --tasks-project-priority-width: 124px;
+        --tasks-project-activity-width: 150px;
+        --tasks-project-name-width: 170px;
+        --tasks-directory-assignee-width: 168px;
+        --tasks-directory-date-width: 112px;
+    }
+
+    .tasks-directory-board.tasks-tag-sheet {
+        --tasks-directory-tag-name-width: 220px;
+        --tasks-directory-tag-code-width: 132px;
+        --tasks-directory-tag-type-width: 112px;
+        --tasks-directory-tag-visual-width: 140px;
+        --tasks-directory-tag-priority-width: 124px;
+        --tasks-directory-tag-scope-width: 124px;
+        --tasks-directory-tag-owner-width: 168px;
+        --tasks-directory-tag-status-width: 124px;
+        --tasks-directory-description-width: 230px;
+        --tasks-directory-tag-usage-width: 230px;
+        --tasks-directory-tag-automation-width: 230px;
+        --tasks-directory-tag-related-width: 190px;
+        --tasks-directory-task-count-width: 102px;
+        --tasks-directory-date-width: 112px;
+    }
+}
+
 @media (max-width: 640px) {
     .tasks-directory-board.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > [data-column="action"],
     .tasks-directory-board.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > [data-column="info"],
@@ -13292,34 +13362,25 @@ body.is-resizing-directory-columns {
     }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 767px) {
     .tasks-directory-board.tasks-project-sheet .tasks-directory-header,
     .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-priority-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-progress-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
     }
 
     .tasks-directory-board.tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-directory-board.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-priority-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-progress-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
     }
 
     .tasks-directory-board.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-directory-board.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-wip-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-wip-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
     }
 
     .tasks-directory-board.tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-directory-board.tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
-    }
-
-    .tasks-directory-board.tasks-project-sheet .tasks-directory-header > [data-column="action"],
-    .tasks-directory-board.tasks-project-sheet .tasks-directory-header > [data-column="info"],
-    .tasks-directory-board.tasks-project-sheet .tasks-directory-header > [data-column="notes"],
-    .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="action"],
-    .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="info"],
-    .tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row > [data-column="notes"] {
-        display: none;
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
     }
 }
 
@@ -13681,7 +13742,7 @@ body.is-resizing-directory-columns {
     text-align: left;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .tasks-section-card-grid {
         grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 250px));
         padding: 0.65rem;

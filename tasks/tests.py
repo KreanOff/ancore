@@ -38,6 +38,164 @@ class TaskProjectControlStyleTests(SimpleTestCase):
         for column in ('select', 'action', 'info', 'notes'):
             self.assertRegex(project_widths.group('body'), rf'\b{column}:\s*40,')
 
+    def test_saved_directory_widths_are_limited_to_wide_desktop(self):
+        js_path = finders.find('js/tasks.js')
+
+        self.assertIsNotNone(js_path)
+        with open(js_path, encoding='utf-8') as js_file:
+            javascript = js_file.read()
+
+        self.assertIn("window.matchMedia('(min-width: 1181px)')", javascript)
+        self.assertNotIn("window.matchMedia('(min-width: 901px)')", javascript)
+
+    def test_tablet_breakpoints_keep_desktop_table_structure(self):
+        tasks_css_path = finders.find('css/components/tasks.css')
+        responsive_css_path = finders.find('css/layout/responsive.css')
+
+        self.assertIsNotNone(tasks_css_path)
+        self.assertIsNotNone(responsive_css_path)
+
+        with open(tasks_css_path, encoding='utf-8') as css_file:
+            tasks_css = css_file.read()
+        with open(responsive_css_path, encoding='utf-8') as css_file:
+            responsive_css = css_file.read()
+
+        self.assertIn('@media (min-width: 768px) and (max-width: 1180px)', tasks_css)
+        self.assertNotIn('@media (max-width: 900px)', tasks_css)
+        self.assertRegex(
+            tasks_css,
+            r'(?s)@media \(min-width: 768px\) and \(max-width: 1180px\) \{'
+            r'.*?\.tasks-topbar \{\s*height: auto;',
+        )
+        fixed_grid_position = tasks_css.index('/* Keep project directory rows and columns fixed;')
+        tablet_grid_position = tasks_css.index('/* Tablet keeps the spreadsheet model,')
+        self.assertGreater(tablet_grid_position, fixed_grid_position)
+        fixed_grid_css = tasks_css[fixed_grid_position:tablet_grid_position]
+        project_grid = re.search(
+            r'\.tasks-directory-board\.tasks-project-sheet--selectable \{'
+            r'(?P<body>.*?)\n\}',
+            fixed_grid_css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(project_grid)
+        expected_tracks = (
+            '--tasks-project-code-width',
+            '--tasks-directory-name-width',
+            '--tasks-project-description-width',
+            '--tasks-project-priority-width',
+            '--tasks-project-start-width',
+            '--tasks-project-due-width',
+            '--tasks-project-company-width',
+            '--tasks-project-responsible-width',
+        )
+        track_positions = [project_grid.group('body').index(track) for track in expected_tracks]
+        self.assertEqual(track_positions, sorted(track_positions))
+
+        all_groups_grid = re.search(
+            r'\.tasks-directory-board\.tasks-all-groups-sheet'
+            r'\.tasks-section-sheet\.tasks-project-sheet--selectable \{'
+            r'(?P<body>.*?)\n\}',
+            fixed_grid_css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(all_groups_grid)
+        all_groups_tracks = re.findall(r'var\((--[^)]+)\)', all_groups_grid.group('body'))
+        self.assertEqual(len(all_groups_tracks), 20)
+        self.assertEqual(
+            all_groups_tracks[-7:],
+            [
+                '--tasks-project-start-width',
+                '--tasks-project-status-width',
+                '--tasks-project-stage-width',
+                '--tasks-project-health-width',
+                '--tasks-project-source-width',
+                '--tasks-directory-assignee-width',
+                '--tasks-directory-date-width',
+            ],
+        )
+        self.assertIn('@media (min-width: 768px) and (max-width: 1180px)', responsive_css)
+        self.assertNotIn('@media (min-width: 769px)', responsive_css)
+
+    def test_narrow_project_grid_keeps_utility_columns_aligned(self):
+        tasks_css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(tasks_css_path)
+        with open(tasks_css_path, encoding='utf-8') as css_file:
+            tasks_css = css_file.read()
+
+        fixed_grid_position = tasks_css.index('/* Keep project directory rows and columns fixed;')
+        tablet_grid_position = tasks_css.index('/* Tablet keeps the spreadsheet model,', fixed_grid_position)
+        narrow_grid_position = tasks_css.index('@media (max-width: 767px)', tablet_grid_position)
+        narrow_grid_css = tasks_css[narrow_grid_position:tasks_css.index('.tasks-section-card-grid', narrow_grid_position)]
+        project_grid = re.search(
+            r'\.tasks-directory-board\.tasks-project-sheet--selectable \.tasks-directory-header,'
+            r'\s*\.tasks-directory-board\.tasks-project-sheet--selectable '
+            r'\.tasks-directory-list \.tasks-directory-row \{'
+            r'(?P<body>.*?)\n\s*\}',
+            narrow_grid_css,
+            re.DOTALL,
+        )
+
+        self.assertIsNotNone(project_grid)
+        self.assertEqual(
+            re.findall(r'var\((--[^)]+)\)', project_grid.group('body')),
+            [
+                '--tasks-directory-select-width',
+                '--tasks-project-action-width',
+                '--tasks-project-info-width',
+                '--tasks-project-notes-width',
+                '--tasks-project-code-width',
+                '--tasks-directory-name-width',
+                '--tasks-project-description-width',
+                '--tasks-project-priority-width',
+                '--tasks-project-start-width',
+                '--tasks-project-due-width',
+                '--tasks-project-company-width',
+                '--tasks-project-responsible-width',
+                '--tasks-project-status-width',
+                '--tasks-project-stage-width',
+                '--tasks-project-health-width',
+                '--tasks-project-progress-width',
+                '--tasks-project-source-width',
+                '--tasks-project-count-width',
+                '--tasks-project-count-width',
+                '--tasks-project-activity-width',
+                '--tasks-directory-date-width',
+            ],
+        )
+        self.assertNotIn('> [data-column="action"]', narrow_grid_css)
+        self.assertNotIn('> [data-column="info"]', narrow_grid_css)
+        self.assertNotIn('> [data-column="notes"]', narrow_grid_css)
+
+    def test_tags_directory_uses_the_same_compact_grid_as_projects(self):
+        tasks_css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(tasks_css_path)
+        with open(tasks_css_path, encoding='utf-8') as css_file:
+            tasks_css = css_file.read()
+
+        tag_grid_position = tasks_css.index('.tasks-directory-board.tasks-tag-sheet {', tasks_css.index('/* Keep project directory rows'))
+        tag_grid_css = tasks_css[tag_grid_position:]
+        self.assertRegex(
+            tag_grid_css,
+            r'(?s)\.tasks-directory-board\.tasks-tag-sheet \{'
+            r'.*?--tasks-directory-column-separator:\s*#edf0f3;'
+            r'.*?--tasks-project-row-height:\s*35px;',
+        )
+        self.assertRegex(
+            tag_grid_css,
+            r'(?s)\.tasks-directory-board\.tasks-tag-sheet \.tasks-directory-header \{'
+            r'.*?min-height:\s*35px;'
+            r'.*?border-bottom-color:\s*var\(--tasks-directory-column-separator\);',
+        )
+        self.assertRegex(
+            tag_grid_css,
+            r'(?s)@media \(min-width: 768px\) and \(max-width: 1180px\) \{'
+            r'.*?\.tasks-directory-board\.tasks-tag-sheet \{'
+            r'.*?--tasks-directory-tag-name-width:\s*220px;'
+            r'.*?--tasks-directory-tag-code-width:\s*132px;',
+        )
+
     def test_task_detail_header_template_shows_only_current_task_title(self):
         template_path = Path(__file__).resolve().parent / 'templates/tasks/view_task.html'
         with template_path.open(encoding='utf-8') as template_file:
@@ -1384,6 +1542,30 @@ class TaskProjectCreationTests(TestCase):
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
             'data-column="created_at">DATA UTWORZENIA',
         ]
+        expected_header_icons = [
+            ('project_code', 'KOD PROJEKTU', 'hash'),
+            ('project', 'PROJEKT', 'briefcase-business'),
+            ('description', 'OPIS', 'align-left'),
+            ('priority', 'PRIORYTET', 'flag'),
+            ('start_at', 'START', 'calendar-range'),
+            ('due_at', 'TERMIN', 'calendar-clock'),
+            ('company', 'FIRMA', 'building-2'),
+            ('responsible_user', 'ODPOWIEDZIALNY', 'user-round'),
+            ('project_status', 'STATUS', 'circle-dot'),
+            ('stage', 'ETAP', 'milestone'),
+            ('health', 'KONDYCJA', 'heart-pulse'),
+            ('progress', 'POSTĘP', 'chart-no-axes-column-increasing'),
+            ('source', 'ŹRÓDŁO', 'route'),
+            ('sections_count', 'GRUPY', 'layers-3'),
+            ('tasks_count', 'ZADANIA', 'list-checks'),
+            ('last_activity', 'OSTATNIA AKTYWNOŚĆ', 'activity'),
+            ('created_at', 'DATA UTWORZENIA', 'calendar-days'),
+        ]
+        for column, label, icon in expected_header_icons:
+            self.assertContains(
+                response,
+                f'data-column="{column}">{label}<i data-lucide="{icon}" aria-hidden="true"></i>',
+            )
         column_positions = [content.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
         self.assertEqual(content.count('data-project-note-edit-toggle'), 1)
@@ -2207,7 +2389,16 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(messages, ['Usunięto 2 projekty razem z zadaniami.'])
 
     def test_all_groups_view_lists_sections(self):
-        first_project = TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
+        first_project = TaskProject.objects.create(
+            user=self.user,
+            name='Pierwszy projekt',
+            code='ONE',
+            start_at=date(2026, 5, 4),
+            status='planned',
+            stage='offer',
+            health='at_risk',
+            source='Polecenie klienta',
+        )
         second_project = TaskProject.objects.create(user=self.user, name='Drugi projekt', code='TWO')
         frontend = TaskSection.objects.create(project=first_project, title='Frontend', description='Prace po stronie UI', code='FE')
         TaskSectionNote.objects.create(section=frontend, author=self.user, message='Notatka Frontendu')
@@ -2275,6 +2466,11 @@ class TaskProjectCreationTests(TestCase):
             'data-column="priority">PRIORYTET',
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
             'data-column="project_name">PROJEKT',
+            'data-column="start_at">START',
+            'data-column="project_status">STATUS',
+            'data-column="stage">ETAP',
+            'data-column="health">KONDYCJA',
+            'data-column="source">ŹRÓDŁO',
             'data-column="created_at">DATA UTWORZENIA',
         ]
         column_positions = [content.index(column) for column in expected_columns]
@@ -2282,6 +2478,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-column="project_code"', count=3)
         self.assertContains(response, 'data-column="progress"', count=3)
         self.assertContains(response, 'data-column="project_name"', count=3)
+        self.assertContains(response, 'data-column="start_at"', count=3)
+        self.assertContains(response, 'data-column="project_status"', count=3)
+        self.assertContains(response, 'data-column="stage"', count=3)
+        self.assertContains(response, 'data-column="health"', count=3)
+        self.assertContains(response, 'data-column="source"', count=3)
         self.assertContains(response, 'ODPOWIEDZIALNY ZA GRUPĘ')
         self.assertContains(response, 'DATA UTWORZENIA')
         self.assertContains(response, 'Frontend')
@@ -2291,6 +2492,13 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Drugi projekt')
         self.assertContains(response, first_project.code)
         self.assertContains(response, second_project.code)
+        self.assertContains(response, '04.05.2026')
+        self.assertContains(response, 'Planowany')
+        self.assertContains(response, 'Oferta')
+        self.assertContains(response, 'Zagrożony')
+        self.assertContains(response, 'Polecenie klienta')
+        self.assertContains(response, 'Brak startu')
+        self.assertContains(response, 'Brak źródła')
         self.assertContains(response, '0/1')
         self.assertContains(response, '0/0')
         self.assertContains(response, '0%')

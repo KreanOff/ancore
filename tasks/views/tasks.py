@@ -1709,7 +1709,7 @@ def _project_window_for_request(request, field_configuration=None):
     }
 
 
-def _group_window_for_request(request):
+def _group_window_for_request(request, field_configuration=None):
     workplace = _active_workplace(request)
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
@@ -1738,6 +1738,11 @@ def _group_window_for_request(request):
 
     sections = list(queryset[offset:offset + page_size])
     _decorate_group_directory_rows(sections, current_user=request.user)
+    if field_configuration:
+        _decorate_project_field_values(
+            [section.project for section in sections],
+            field_configuration,
+        )
 
     base_params = {
         'view': 'all-groups',
@@ -3537,7 +3542,10 @@ def _tasks_page(request, active_section=None):
         'next_url': '',
         'summary': '',
     }
-    group_window = _group_window_for_request(request) if active_view == 'all_groups' else {
+    group_window = _group_window_for_request(
+        request,
+        field_configuration=project_field_configuration,
+    ) if active_view == 'all_groups' else {
         'sections': [],
         'query': '',
         'priority': '',

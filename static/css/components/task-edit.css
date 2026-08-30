@@ -87,7 +87,7 @@
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .task-edit-layout {
         padding: 1rem;
         gap: 1rem;
