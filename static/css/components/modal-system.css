@@ -1,7 +1,7 @@
 /*
  * App-wide modal shell.
  *
- * The "Nowe miejsce pracy" dialog is the visual source of truth for every
+ * Project and task dialogs are the visual source of truth for every standard
  * application window: centered surface, dimmed/softened context, compact
  * header and a persistent action footer. Feature styles keep control of their
  * form layouts while this layer owns the window itself.
@@ -64,7 +64,7 @@
 .workplace-create-modal,
 .page-container.full-width .workplace-create-modal,
 .workplaces-standalone-page .workplace-create-modal {
-    --tasks-modal-shell-width: min(560px, calc(100vw - 2rem));
+    --tasks-modal-shell-width: var(--app-modal-width);
 }
 
 .calendar-modal {
@@ -73,8 +73,7 @@
 
 .tasks-directory-share-modal,
 .contacts-create-modal,
-.contacts-edit-modal,
-.workplace-edit-modal {
+.contacts-edit-modal {
     --tasks-modal-shell-width: min(820px, calc(100vw - 2rem));
 }
 
@@ -139,7 +138,7 @@
     box-sizing: border-box;
 }
 
-.tasks-modal .tasks-modal__header:not(.workplace-create-modal__header)::before {
+.tasks-modal .tasks-modal__header::before {
     content: "";
     width: 24px;
     height: 24px;
@@ -499,7 +498,7 @@
         padding: var(--app-modal-bar-padding-y) var(--app-modal-padding-x);
     }
 
-    .tasks-modal .tasks-modal__header:not(.workplace-create-modal__header)::before,
+    .tasks-modal .tasks-modal__header::before,
     .profile-edit-header::before {
         width: 24px;
         height: 24px;

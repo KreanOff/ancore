@@ -1,7 +1,12 @@
+import base64
+import binascii
+import uuid
+
 from django import forms
 from django.conf import settings
+from django.core.files.base import ContentFile
 
-from core.upload_validation import validate_image_upload
+from core.upload_validation import validate_image_bytes, validate_image_upload
 from .models import Workplace
 
 
@@ -14,13 +19,24 @@ class WorkplaceForm(forms.ModelForm):
         required=False,
         widget=forms.FileInput(attrs={
             'accept': '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
-            'class': 'workplace-edit-modal__file-input',
+            'class': 'profile-photo-input',
+            'hidden': True,
+        }),
+    )
+    workplace_photo_crop = forms.CharField(
+        label='Przycięte logo',
+        required=False,
+        widget=forms.HiddenInput(attrs={
+            'class': 'profile-photo-crop-input',
+            'data-profile-photo-crop-input': True,
         }),
     )
     workplace_photo_remove = forms.CharField(
         label='Usuń zdjęcie',
         required=False,
-        widget=forms.HiddenInput(),
+        widget=forms.HiddenInput(attrs={
+            'data-profile-photo-remove-input': True,
+        }),
     )
 
     class Meta:
@@ -37,22 +53,22 @@ class WorkplaceForm(forms.ModelForm):
         }
         widgets = {
             'name': forms.TextInput(attrs={
-                'placeholder': 'np. Studio projektowe',
-                'class': 'workplace-create-modal__name-input workplace-create-modal__text-input',
+                'placeholder': 'Nazwa miejsca pracy',
+                'class': 'tasks-inline-input workplace-create-modal__name-input workplace-create-modal__text-input',
                 'autocomplete': 'off',
                 'data-workplace-name-input': True,
                 'aria-describedby': 'workplace-create-name-hint workplace-create-name-counter',
             }),
             'code': forms.TextInput(attrs={
                 'placeholder': 'np. STUDIO-01',
-                'class': 'workplace-create-modal__text-input',
+                'class': 'tasks-inline-input workplace-create-modal__text-input',
                 'autocomplete': 'off',
                 'maxlength': 20,
                 'aria-describedby': 'workplace-create-code-hint',
             }),
             'description': forms.Textarea(attrs={
                 'placeholder': 'Dodaj krótki opis miejsca pracy…',
-                'class': 'workplace-create-modal__text-input workplace-create-modal__textarea',
+                'class': 'tasks-inline-input tasks-modal-textarea workplace-create-modal__text-input workplace-create-modal__textarea',
                 'rows': 3,
             }),
         }
@@ -101,14 +117,50 @@ class WorkplaceForm(forms.ModelForm):
 
         return validate_image_upload(workplace_photo, WORKPLACE_PHOTO_MAX_SIZE)
 
+    def clean_workplace_photo_crop(self):
+        crop_data = (self.cleaned_data.get('workplace_photo_crop') or '').strip()
+
+        if not crop_data:
+            return None
+
+        header, separator, encoded = crop_data.partition(',')
+        if not separator or not header.startswith('data:') or not header.endswith(';base64'):
+            raise forms.ValidationError('Nie udało się odczytać przyciętego logo.')
+
+        try:
+            content = base64.b64decode(encoded, validate=True)
+        except (binascii.Error, ValueError):
+            raise forms.ValidationError('Nie udało się odczytać przyciętego logo.')
+
+        content_type = header[5:-7].lower()
+        extension = validate_image_bytes(content, content_type, WORKPLACE_PHOTO_MAX_SIZE)
+
+        return {
+            'content': content,
+            'extension': extension,
+        }
+
     def clean_workplace_photo_remove(self):
         return (self.cleaned_data.get('workplace_photo_remove') or '').strip() == '1'
 
     def save(self, commit=True):
         workplace = super().save(commit=False)
+        self.apply_photo(workplace, commit=False)
 
-        if self.cleaned_data.get('workplace_photo_remove') and not self.cleaned_data.get('workplace_photo'):
+        if commit:
+            workplace.save()
+
+        return workplace
+
+    def apply_photo(self, workplace, commit=True):
+        photo_crop = self.cleaned_data.get('workplace_photo_crop')
+
+        if self.cleaned_data.get('workplace_photo_remove') and not photo_crop:
             workplace.workplace_photo.delete(save=False)
+
+        if photo_crop:
+            filename = f'workplace_{workplace.pk or "new"}_{uuid.uuid4().hex}.{photo_crop["extension"]}'
+            workplace.workplace_photo.save(filename, ContentFile(photo_crop['content']), save=False)
 
         if commit:
             workplace.save()

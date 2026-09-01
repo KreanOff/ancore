@@ -7,8 +7,8 @@
          data-priority="{{ task.priority }}"
          data-created="{{ task.created_at|date:'c' }}"
          data-due-at="{{ task.due_at|date:'c' }}"
-         data-search-primary="{{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {{ task.due_at|date:'d.m.Y H:i' }} {{ task.get_task_type_display }} {{ task.get_contact_channel_display }} {% if task.company %}{{ task.company.name }}{% endif %} {% if task.contact %}{{ task.contact.display_name }}{% endif %} {% if task.assignee %}{{ task.assignee.get_full_name }} {{ task.assignee.username }}{% endif %} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
-         data-search-index="{{ task.task_id }} {{ task.code|default:'' }} {{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.get_status_display }} {{ task.get_priority_display }} {{ task.get_task_type_display }} {{ task.get_contact_channel_display }} {{ task.due_at|date:'d.m.Y H:i' }} {{ task.reminder_at|date:'d.m.Y H:i' }} {{ task.section.title|default:'' }} {{ task.section.full_code|default:'' }} {{ task.section.project.name|default:'' }} {{ task.section.project.code|default:project_code }} {% if task.company %}{{ task.company.name }}{% endif %} {% if task.contact %}{{ task.contact.display_name }}{% endif %} {% if task.assignee %}{{ task.assignee.get_full_name }} {{ task.assignee.username }}{% endif %} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
+         data-search-primary="{{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {{ task.due_at|date:'d.m.Y H:i' }} {{ task.get_task_type_display }} {% if task.assignee %}{{ task.assignee.get_full_name }} {{ task.assignee.username }}{% endif %} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
+         data-search-index="{{ task.task_id }} {{ task.code|default:'' }} {{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.get_status_display }} {{ task.get_priority_display }} {{ task.get_task_type_display }} {{ task.due_at|date:'d.m.Y H:i' }} {{ task.reminder_at|date:'d.m.Y H:i' }} {{ task.section.title|default:'' }} {{ task.section.full_code|default:'' }} {{ task.section.project.name|default:'' }} {{ task.section.project.code|default:project_code }} {% if task.assignee %}{{ task.assignee.get_full_name }} {{ task.assignee.username }}{% endif %} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
          data-view-url="{% if compact %}{% url 'tasks:view-subtask' task.task_id %}{% else %}{% url 'tasks:view-task' task.task_id %}{% endif %}">
     {% if compact %}
     <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" data-can-edit="{% if task.can_edit %}true{% else %}false{% endif %}" data-can-manage="{% if task.can_manage %}true{% else %}false{% endif %}" aria-label="Zaznacz {{ task.title }}">
@@ -23,10 +23,9 @@
             <span class="tasks-row-title-main">
                 <span class="tasks-row-title-text">{{ task.title }}</span>
             </span>
-            {% if task.company or task.assignee %}
-            <span class="tasks-row-crm-meta">
-                {% if task.company %}<span>{{ task.company.name }}</span>{% endif %}
-                {% if task.assignee %}<span>{{ task.assignee.get_full_name|default:task.assignee.username }}</span>{% endif %}
+            {% if task.assignee %}
+            <span class="tasks-row-assignee-meta">
+                <span>{{ task.assignee.get_full_name|default:task.assignee.username }}</span>
             </span>
             {% endif %}
             {% if task.description %}

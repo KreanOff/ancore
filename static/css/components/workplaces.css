@@ -2339,6 +2339,7 @@
     flex: 1 1 auto;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
     min-height: 0;
     overflow: hidden;
     background: #ffffff;
@@ -3575,9 +3576,106 @@
     }
 }
 
+/* Workplace logo editing mirrors the user profile photo control and cropper. */
+.workplace-modal__content {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr);
+    align-items: start;
+    gap: 1.2rem;
+}
+
+.workplace-modal__details {
+    min-width: 0;
+}
+
+.workplace-modal__content .workplace-photo-control {
+    align-self: start;
+    align-content: start;
+}
+
+.workplace-modal__content .workplace-photo-control .profile-photo-button {
+    height: 28px;
+    min-height: 28px;
+    align-self: start;
+    justify-self: center;
+}
+
+.workplace-photo-control__error {
+    max-width: 100%;
+    color: #b3263c;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    text-align: center;
+}
+
+#workplace-create-form .workplace-modal__details > .workplace-create-modal__name-input,
+.workplace-edit-modal__form .workplace-modal__details > input[name="name"] {
+    width: 100%;
+    height: 50px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #23272f;
+    font-size: var(--font-size-lg);
+    font-weight: 500;
+    box-shadow: none;
+}
+
+#workplace-create-form .workplace-modal__details > .workplace-create-modal__textarea,
+.workplace-edit-modal__form .workplace-modal__details > textarea[name="description"] {
+    width: 100%;
+    min-height: 58px;
+    height: auto;
+    margin-top: 0.85rem;
+    padding: 0.5rem 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #23272f;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    line-height: 1.45;
+    box-shadow: none;
+}
+
+#workplace-create-form .workplace-modal__details > .workplace-create-modal__name-input:focus,
+#workplace-create-form .workplace-modal__details > .workplace-create-modal__textarea:focus,
+.workplace-edit-modal__form .workplace-modal__details > input[name="name"]:focus,
+.workplace-edit-modal__form .workplace-modal__details > textarea[name="description"]:focus {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+}
+
+.workplace-modal__details .workplace-modal__fields,
+.workplace-modal__details .workplace-modal__fields.tasks-issue-fields,
+.workplace-modal__details .workplace-edit-modal__fields {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 620px) {
+    .workplace-modal__content {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .workplace-modal__content .workplace-photo-control {
+        justify-items: start;
+    }
+
+    .workplace-modal__content .workplace-photo-control .profile-photo-button {
+        justify-self: start;
+    }
+
+    .workplace-photo-control__error {
+        text-align: left;
+    }
+}
+
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet {
     --tasks-directory-select-width: 40px;
-    --tasks-project-row-height: 38px;
+    --tasks-project-row-height: 35px;
     --tasks-project-action-width: 40px;
     --tasks-project-info-width: 40px;
     --workplaces-name-width: 300px;
@@ -3611,7 +3709,7 @@
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header {
-    min-height: 42px;
+    min-height: 35px;
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list {
@@ -3639,7 +3737,8 @@
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell {
     display: flex;
     align-items: center;
-    background: #e7e8eb;
+    min-height: 35px;
+    background: #ffffff;
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="info"]) {
@@ -3713,6 +3812,11 @@
     gap: 0.42rem;
 }
 
+.workplaces-directory__pagination {
+    width: 100%;
+    flex: 0 0 45px;
+}
+
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button,
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-row__settings .workplace-settings__toggle {
     width: 100%;
@@ -3732,10 +3836,6 @@
     outline: 0;
 }
 
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-row.is-active {
-    box-shadow: inset 3px 0 0 var(--workplaces-accent);
-}
-
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-row.is-active > .tasks-project-sheet__cell:not(.tasks-row-checkbox) {
     background: var(--workplaces-accent-selected);
 }
@@ -3744,5 +3844,265 @@
     .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header,
     .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row {
         --tasks-directory-grid: var(--workplaces-directory-grid);
+    }
+}
+
+/* Workplace create/edit dialogs follow the project/task form layout. */
+.page-container.full-width .workplace-create-modal,
+.workplaces-standalone-page .workplace-create-modal,
+.workplaces-standalone-page .workplace-edit-modal,
+.workplaces-settings-page .workplace-edit-modal {
+    --tasks-modal-shell-width: var(--app-modal-width, min(760px, calc(100vw - 2rem)));
+    --tasks-modal-shell-height: auto;
+    --tasks-modal-max-height: var(--app-modal-max-height, calc(var(--app-viewport-height) - 2rem));
+    --tasks-modal-x-padding: var(--app-modal-padding-x, 24px);
+
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.page-container.full-width .workplace-create-modal .workplace-create-modal__dialog,
+.workplaces-standalone-page .workplace-create-modal .workplace-create-modal__dialog,
+.workplaces-standalone-page .workplace-edit-modal .workplace-edit-modal__dialog,
+.workplaces-settings-page .workplace-edit-modal .workplace-edit-modal__dialog {
+    width: var(--tasks-modal-shell-width);
+    max-width: var(--tasks-modal-shell-width);
+    height: auto;
+    max-height: var(--tasks-modal-max-height);
+}
+
+.workplace-create-modal__form,
+.workplace-edit-modal__form {
+    height: auto;
+    min-height: 0;
+    max-height: var(--tasks-modal-max-height);
+}
+
+.page-container.full-width .workplace-create-modal__header,
+.workplaces-standalone-page .workplace-create-modal__header,
+.workplace-edit-modal__header {
+    min-height: var(--app-modal-bar-min-height, 60px);
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: var(--app-modal-bar-padding-y, 11.5px) var(--tasks-modal-x-padding);
+}
+
+.page-container.full-width .workplace-create-modal__body,
+.workplaces-standalone-page .workplace-create-modal__body,
+.workplace-edit-modal__body {
+    display: block;
+    padding: 1.45rem var(--tasks-modal-x-padding) 2.5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#workplace-create-form > .workplace-create-modal__body > .workplace-create-modal__name-input {
+    width: 100%;
+    height: 50px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #23272f;
+    font-size: var(--font-size-lg);
+    font-weight: 500;
+    box-shadow: none;
+}
+
+#workplace-create-form > .workplace-create-modal__body > .workplace-create-modal__textarea {
+    width: 100%;
+    min-height: 58px;
+    height: auto;
+    margin-top: 0.85rem;
+    padding: 0.5rem 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #23272f;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    line-height: 1.45;
+    box-shadow: none;
+}
+
+#workplace-create-form > .workplace-create-modal__body > .workplace-create-modal__name-input:focus,
+#workplace-create-form > .workplace-create-modal__body > .workplace-create-modal__textarea:focus {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+}
+
+.workplace-modal__parameters,
+.workplace-edit-modal__fields {
+    margin-top: 1.15rem;
+}
+
+.workplace-modal__fields,
+.workplace-modal__fields.tasks-issue-fields,
+.workplace-edit-modal__fields {
+    --tasks-detail-control-height: 38px;
+    --tasks-detail-control-radius: 7px;
+    --tasks-detail-control-border: #dfe3e8;
+    --tasks-detail-control-bg: #ffffff;
+    --tasks-detail-control-text: #23272f;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem 0.75rem;
+    max-width: 1180px;
+    margin-top: 0;
+    overflow: visible;
+}
+
+.workplace-modal__fields > label,
+.workplace-modal__fields > .tasks-issue-field {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    color: #727987;
+    font-size: var(--font-size-sm);
+    font-weight: 650;
+}
+
+.workplace-modal__fields > label > span:first-child,
+.workplace-modal__fields > .tasks-issue-field > span:first-child {
+    align-self: flex-start;
+    text-align: left;
+}
+
+.tasks-project-create-modal__body .workplace-modal__fields .workplace-create-modal__text-input,
+.tasks-project-edit-modal__body .workplace-modal__fields .tasks-inline-input {
+    width: 100%;
+    height: var(--tasks-detail-control-height);
+    padding: 0 0.75rem;
+    border: 1px solid var(--tasks-detail-control-border);
+    border-radius: var(--tasks-detail-control-radius);
+    background: var(--tasks-detail-control-bg);
+    color: var(--tasks-detail-control-text);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    box-shadow: none;
+}
+
+.tasks-project-create-modal__body .workplace-modal__fields .workplace-create-modal__text-input:focus,
+.tasks-project-edit-modal__body .workplace-modal__fields .tasks-inline-input:focus {
+    border-color: #b8bec8;
+    outline: 0;
+    box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+}
+
+.workplace-modal__fields label.workplace-create-modal__dropzone,
+.workplace-modal__fields label.workplace-edit-modal__photo-control {
+    width: 100%;
+    min-height: var(--tasks-detail-control-height, 38px);
+    height: var(--tasks-detail-control-height, 38px);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0 0.65rem;
+    border: 1px solid var(--tasks-detail-control-border, #dfe3e8);
+    border-radius: var(--tasks-detail-control-radius, 7px);
+    background: #ffffff;
+    box-shadow: none;
+}
+
+.workplace-modal__fields label.workplace-create-modal__dropzone:hover,
+.workplace-modal__fields label.workplace-create-modal__dropzone.is-dragging,
+.workplace-modal__fields label.workplace-edit-modal__photo-control:hover,
+.workplace-edit-modal__file-input:focus-visible + .workplace-create-modal__dropzone {
+    border-color: #b8bec8;
+    background: #ffffff;
+    outline: 0;
+    box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+}
+
+.workplace-create-modal__avatar,
+.workplace-edit-modal__avatar {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border-radius: 6px;
+}
+
+.workplace-create-modal__photo-copy,
+.workplace-edit-modal__photo-copy {
+    display: block;
+    line-height: 1;
+}
+
+.workplace-create-modal__photo-copy strong,
+.workplace-edit-modal__photo-copy strong {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.workplace-create-modal__photo-copy small,
+.workplace-edit-modal__photo-copy small {
+    display: none;
+}
+
+.workplace-create-modal__upload-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.workplace-create-modal__upload-icon svg,
+.workplace-edit-modal__photo-control > svg {
+    width: 16px;
+    height: 16px;
+}
+
+.workplace-create-modal__photo-remove {
+    align-self: flex-start;
+    margin-top: 0.25rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--workplaces-accent-dark);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.workplace-create-modal__photo-remove[hidden] {
+    display: none;
+}
+
+.workplace-edit-modal__photo-field {
+    grid-column: auto;
+}
+
+.workplace-edit-modal__remove-field {
+    grid-column: 1 / -1;
+    margin-top: 0;
+}
+
+.page-container.full-width .workplace-create-modal__footer,
+.workplaces-standalone-page .workplace-create-modal__footer,
+.workplace-edit-modal__footer {
+    min-height: var(--app-modal-bar-min-height, 60px);
+    height: auto;
+    padding: var(--app-modal-bar-padding-y, 11.5px) var(--tasks-modal-x-padding);
+}
+
+@media (max-width: 620px) {
+    .workplace-modal__fields,
+    .workplace-modal__fields.tasks-issue-fields,
+    .workplace-edit-modal__fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .workplace-edit-modal__photo-field,
+    .workplace-edit-modal__remove-field {
+        grid-column: 1 / -1;
     }
 }

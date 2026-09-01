@@ -96,7 +96,6 @@ TASK_SORT_OPTIONS = (
     {'value': 'project_asc', 'label': 'Projekt A-Z', 'icon': 'folder-kanban', 'direction': 'asc'},
     {'value': 'section_asc', 'label': 'Grupa A-Z', 'icon': 'layers-3', 'direction': 'asc'},
     {'value': 'assignee_asc', 'label': 'Odpowiedzialny', 'icon': 'circle-user-round', 'direction': 'asc'},
-    {'value': 'company_asc', 'label': 'Firma A-Z', 'icon': 'building-2', 'direction': 'asc'},
     {'value': 'type_asc', 'label': 'Typ', 'icon': 'list-filter', 'direction': 'asc'},
     {'value': 'due_at_asc', 'label': 'Najbliższy termin', 'icon': 'calendar-clock', 'direction': 'asc'},
     {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'clock-3', 'direction': 'desc'},
@@ -1148,7 +1147,6 @@ def _task_filter_queryset(
     project_filter='',
     section='',
     assignee='',
-    company='',
     task_type='',
     due='',
 ):
@@ -1159,7 +1157,6 @@ def _task_filter_queryset(
         priority_matches = _choice_values_matching_query(Task.PRIORITY_CHOICES, query)
         status_matches = _choice_values_matching_query(Task.STATUS_CHOICES, query)
         type_matches = _choice_values_matching_query(Task.TASK_TYPE_CHOICES, query)
-        channel_matches = _choice_values_matching_query(Task.CONTACT_CHANNEL_CHOICES, query)
         query_filter = (
             Q(title__icontains=query)
             | Q(description__icontains=query)
@@ -1168,12 +1165,6 @@ def _task_filter_queryset(
             | Q(section__code__icontains=query)
             | Q(section__project__name__icontains=query)
             | Q(section__project__code__icontains=query)
-            | Q(company__name__icontains=query)
-            | Q(contact__first_name__icontains=query)
-            | Q(contact__middle_name__icontains=query)
-            | Q(contact__last_name__icontains=query)
-            | Q(contact__company__icontains=query)
-            | Q(contact__email__icontains=query)
             | Q(assignee__first_name__icontains=query)
             | Q(assignee__middle_name__icontains=query)
             | Q(assignee__last_name__icontains=query)
@@ -1192,8 +1183,6 @@ def _task_filter_queryset(
             query_filter |= Q(status__in=status_matches)
         if type_matches:
             query_filter |= Q(task_type__in=type_matches)
-        if channel_matches:
-            query_filter |= Q(contact_channel__in=channel_matches)
         queryset = queryset.filter(query_filter).distinct()
     if priority in {value for value, _label in Task.PRIORITY_CHOICES}:
         queryset = queryset.filter(priority=priority)
@@ -1207,10 +1196,6 @@ def _task_filter_queryset(
         queryset = queryset.filter(assignee__isnull=True)
     elif assignee_id := _integer_filter_value(assignee):
         queryset = queryset.filter(assignee_id=assignee_id)
-    if company == 'none':
-        queryset = queryset.filter(company__isnull=True)
-    elif company_id := _integer_filter_value(company):
-        queryset = queryset.filter(company_id=company_id)
     if task_type in {value for value, _label in Task.TASK_TYPE_CHOICES}:
         queryset = queryset.filter(task_type=task_type)
     today = timezone.localdate()
@@ -1256,14 +1241,6 @@ def _task_sort_queryset(queryset, sort_value):
             'task_id',
             'id',
         )
-    if sort_value == 'company_asc':
-        return queryset.annotate(
-            task_company_empty_sort=Case(
-                When(company__isnull=True, then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField(),
-            )
-        ).order_by('task_company_empty_sort', 'company__name', 'task_id', 'id')
     if sort_value == 'type_asc':
         return queryset.annotate(
             task_type_sort_rank=_choice_rank_case('task_type', Task.TASK_TYPE_CHOICES)
@@ -1289,7 +1266,7 @@ def _task_filter_options(user, workplace=None):
     queryset = _filter_workplace(
         Task.objects.filter(user=user, parent__isnull=True),
         workplace,
-    ).select_related('section', 'section__project', 'assignee', 'company')
+    ).select_related('section', 'section__project', 'assignee')
     projects = [
         {'value': str(row['section__project_id']), 'label': row['section__project__name']}
         for row in queryset.filter(section__project__isnull=False)
@@ -1325,18 +1302,8 @@ def _task_filter_options(user, workplace=None):
             'value': str(row['assignee_id']),
             'label': full_name or row['assignee__username'],
         })
-    companies = [
-        {'value': str(row['company_id']), 'label': row['company__name']}
-        for row in queryset.filter(company__isnull=False)
-        .values('company_id', 'company__name')
-        .distinct()
-        .order_by('company__name', 'company_id')
-    ]
-
     if queryset.filter(assignee__isnull=True).exists():
         assignees.insert(0, {'value': 'none', 'label': 'Brak osoby'})
-    if queryset.filter(company__isnull=True).exists():
-        companies.insert(0, {'value': 'none', 'label': 'Brak firmy'})
 
     return {
         'statuses': _choice_options(Task.STATUS_CHOICES),
@@ -1346,7 +1313,6 @@ def _task_filter_options(user, workplace=None):
         'projects': projects,
         'sections': sections,
         'assignees': assignees,
-        'companies': companies,
     }
 
 
@@ -1358,7 +1324,6 @@ def _task_window_for_request(request, queryset):
     project_filter = (request.GET.get('task_project') or '').strip()
     section = (request.GET.get('task_section') or '').strip()
     assignee = (request.GET.get('task_assignee') or '').strip()
-    company = (request.GET.get('task_company') or '').strip()
     task_type = (request.GET.get('task_type') or '').strip()
     due = (request.GET.get('task_due') or '').strip()
     sort = _task_sort_value((request.GET.get('sort') or '').strip())
@@ -1370,7 +1335,6 @@ def _task_window_for_request(request, queryset):
         project_filter=project_filter,
         section=section,
         assignee=assignee,
-        company=company,
         task_type=task_type,
         due=due,
     )
@@ -1382,7 +1346,6 @@ def _task_window_for_request(request, queryset):
         project_filter,
         section,
         assignee,
-        company,
         task_type,
         due,
         sort != TASK_DEFAULT_SORT,
@@ -1395,7 +1358,6 @@ def _task_window_for_request(request, queryset):
         'project_filter': project_filter,
         'section': section,
         'assignee': assignee,
-        'company': company,
         'task_type': task_type,
         'due': due,
         'sort': sort,
@@ -2669,7 +2631,7 @@ def _tasks_navigation_context(user, active_section=None, active_view=None, workp
     tasks_qs = _filter_workplace(
         Task.objects.filter(user=user, parent__isnull=True),
         workplace,
-    ).select_related('section', 'section__project', 'assignee', 'company', 'contact').prefetch_related('tags').annotate(
+    ).select_related('section', 'section__project', 'assignee').prefetch_related('tags').annotate(
         is_closed_sort=Case(
             When(status='closed', then=Value(1)),
             default=Value(0),
@@ -2747,7 +2709,6 @@ def _task_activity_snapshot(task):
         'status': task.status,
         'priority': task.priority,
         'task_type': task.task_type,
-        'contact_channel': task.contact_channel,
         'section_id': task.section_id,
         'section_label': section.title if section else '',
         'project_id': project.id if project else None,
@@ -2755,14 +2716,9 @@ def _task_activity_snapshot(task):
         'parent_id': task.parent_id,
         'assignee_id': task.assignee_id,
         'assignee_label': _user_display_name(task.assignee) if task.assignee_id else '',
-        'company_id': task.company_id,
-        'company_label': task.company.name if task.company_id else '',
-        'contact_id': task.contact_id,
-        'contact_label': task.contact.display_name if task.contact_id else '',
         'due_at': task.due_at,
         'reminder_at': task.reminder_at,
         'estimated_minutes': task.estimated_minutes,
-        'is_billable': task.is_billable,
         'blocked_reason': task.blocked_reason,
         'time_spent_hours': task.time_spent_hours,
         'time_spent_minutes': task.time_spent_minutes,
@@ -2776,7 +2732,6 @@ def _task_change_activities(task, before):
     status_labels = dict(Task.STATUS_CHOICES)
     priority_labels = dict(Task.PRIORITY_CHOICES)
     task_type_labels = dict(Task.TASK_TYPE_CHOICES)
-    contact_channel_labels = dict(Task.CONTACT_CHANNEL_CHOICES)
     changed_fields = []
     detailed_changes = []
 
@@ -2801,8 +2756,6 @@ def _task_change_activities(task, before):
         add_change('priorytet', priority_labels.get(before['priority'], before['priority']), task.get_priority_display())
     if before['task_type'] != task.task_type:
         add_change('typ zadania', task_type_labels.get(before['task_type'], before['task_type']), task.get_task_type_display())
-    if before['contact_channel'] != task.contact_channel:
-        add_change('kanał kontaktu', contact_channel_labels.get(before['contact_channel'], before['contact_channel']), task.get_contact_channel_display())
     if before['title'] != task.title:
         add_change('tytuł', before['title'], task.title)
     if before['description'] != task.description:
@@ -2815,18 +2768,12 @@ def _task_change_activities(task, before):
         add_change('zadanie nadrzędne', before['parent_id'], task.parent_id)
     if before['assignee_id'] != task.assignee_id:
         add_change('przypisane do', before['assignee_label'], _user_display_name(task.assignee) if task.assignee_id else '')
-    if before['company_id'] != task.company_id:
-        add_change('firma', before['company_label'], task.company.name if task.company_id else '')
-    if before['contact_id'] != task.contact_id:
-        add_change('kontakt', before['contact_label'], task.contact.display_name if task.contact_id else '')
     if before['due_at'] != task.due_at:
         add_change('termin wykonania', before['due_at'], task.due_at)
     if before['reminder_at'] != task.reminder_at:
         add_change('przypomnienie', before['reminder_at'], task.reminder_at)
     if before['estimated_minutes'] != task.estimated_minutes:
         add_change('szacowany czas', before['estimated_minutes'], task.estimated_minutes)
-    if before['is_billable'] != task.is_billable:
-        add_change('fakturowalne', 'Tak' if before['is_billable'] else 'Nie', 'Tak' if task.is_billable else 'Nie')
     if before['blocked_reason'] != task.blocked_reason:
         add_change('powód blokady', before['blocked_reason'], task.blocked_reason)
     if (
@@ -3483,7 +3430,7 @@ def _tasks_page(request, active_section=None):
     tasks_qs = _filter_workplace(
         Task.objects.filter(user=request.user, parent__isnull=True),
         workplace,
-    ).select_related('section', 'section__project', 'assignee', 'company', 'contact').prefetch_related('tags').annotate(
+    ).select_related('section', 'section__project', 'assignee').prefetch_related('tags').annotate(
         is_closed_sort=Case(
             When(status='closed', then=Value(1)),
             default=Value(0),
@@ -3757,7 +3704,6 @@ def _tasks_page(request, active_section=None):
         'task_project_filter': task_window['project_filter'],
         'task_section_filter': task_window['section'],
         'task_assignee_filter': task_window['assignee'],
-        'task_company_filter': task_window['company'],
         'task_type_filter': task_window['task_type'],
         'task_due_filter': task_window['due'],
         'task_filter_options': task_window['filters'],
@@ -4093,13 +4039,13 @@ def bulk_update_status(request):
 def _task_detail_response(request, task_id=None, task_pk=None):
     workplace = _active_workplace(request)
     task_queryset = _filter_workplace(
-        Task.objects.select_related('section', 'section__project', 'section__project__user', 'parent', 'assignee', 'company', 'contact'),
+        Task.objects.select_related('section', 'section__project', 'section__project__user', 'parent', 'assignee'),
         workplace,
     ).prefetch_related(
         Prefetch(
             'subtasks',
             queryset=_filter_workplace(
-                Task.objects.select_related('section', 'section__project', 'assignee', 'company', 'contact'),
+                Task.objects.select_related('section', 'section__project', 'assignee'),
                 workplace,
             ).prefetch_related('tags', 'attachments').order_by('task_id'),
         ),

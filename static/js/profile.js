@@ -471,8 +471,8 @@
                     return;
                 }
 
-                cropInput.value = cropData;
                 fileInput.value = '';
+                cropInput.value = cropData;
                 if (removeInput) {
                     removeInput.value = '';
                 }
@@ -485,7 +485,9 @@
         }
 
         fileInput.addEventListener('change', () => {
-            loadPhoto(fileInput.files?.[0]);
+            const selectedFile = fileInput.files?.[0];
+            if (!selectedFile) return;
+            loadPhoto(selectedFile);
         });
 
         openButtons.forEach(button => {
@@ -598,8 +600,8 @@
                 return;
             }
 
-            cropInput.value = cropData;
             fileInput.value = '';
+            cropInput.value = cropData;
         });
 
         if (currentPhotoUrl) {

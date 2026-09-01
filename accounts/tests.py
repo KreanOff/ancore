@@ -64,6 +64,7 @@ class AuthPageViewTests(TestCase):
         self.assertContains(response, 'Przejdź do Ancore')
         self.assertContains(response, 'data-password-toggle')
         self.assertContains(response, 'class="auth-page auth-page--login"')
+        self.assertNotContains(response, 'Wróć do strony głównej')
 
     def test_registration_keeps_name_fields_in_one_desktop_row(self):
         response = self.client.get(reverse('register'))
@@ -137,6 +138,10 @@ class ProfileViewTests(TestCase):
         self.assertIn('data-profile-photo-change', content)
         self.assertIn('data-profile-photo-save', content)
         self.assertIn('data-profile-photo-remove-input', content)
+        self.assertIn(
+            'class="profile-avatar profile-page-avatar profile-avatar--user ',
+            content,
+        )
 
     def test_account_avatar_uses_user_specific_background_color(self):
         other_user = get_user_model().objects.create_user(

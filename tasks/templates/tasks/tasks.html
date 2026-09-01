@@ -235,7 +235,6 @@
                 <input type="hidden" name="task_project" value="{{ task_project_filter }}" data-project-filter-input="task_project">
                 <input type="hidden" name="task_section" value="{{ task_section_filter }}" data-project-filter-input="task_section">
                 <input type="hidden" name="task_assignee" value="{{ task_assignee_filter }}" data-project-filter-input="task_assignee">
-                <input type="hidden" name="task_company" value="{{ task_company_filter }}" data-project-filter-input="task_company">
                 <input type="hidden" name="task_type" value="{{ task_type_filter }}" data-project-filter-input="task_type">
                 <input type="hidden" name="task_due" value="{{ task_due_filter }}" data-project-filter-input="task_due">
                 <input type="hidden" name="sort" value="{{ task_sort_param }}" data-project-sort-input>
@@ -746,27 +745,6 @@
                         </button>
                         {% for option in task_filter_options.assignees %}
                         <button type="button" role="menuitemradio" aria-checked="{% if task_assignee_filter == option.value %}true{% else %}false{% endif %}" {% if task_assignee_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="task_assignee" data-project-filter-value="{{ option.value }}">
-                            <span>{{ option.label }}</span>
-                        </button>
-                        {% endfor %}
-                        <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
-                    </div>
-                </div>
-                <div class="tasks-filter-dropdown" data-project-filter-menu="task_company">
-                    <button type="button" class="tasks-filter-button{% if task_company_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="task_company">
-                        <i data-lucide="building-2" aria-hidden="true"></i>
-                        <span data-project-filter-label="task_company">Firma{% for option in task_filter_options.companies %}{% if option.value == task_company_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
-                    </button>
-                    <div class="tasks-filter-menu tasks-filter-menu--wide" role="menu" aria-label="Filtr firmy zadania">
-                        <label class="tasks-filter-menu-search">
-                            <i data-lucide="search" aria-hidden="true"></i>
-                            <input type="search" placeholder="Szukaj firmy" autocomplete="off" data-project-filter-search>
-                        </label>
-                        <button type="button" role="menuitemradio" aria-checked="{% if not task_company_filter %}true{% else %}false{% endif %}" {% if not task_company_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="task_company" data-project-filter-value="">
-                            <span>Wszystko</span>
-                        </button>
-                        {% for option in task_filter_options.companies %}
-                        <button type="button" role="menuitemradio" aria-checked="{% if task_company_filter == option.value %}true{% else %}false{% endif %}" {% if task_company_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="task_company" data-project-filter-value="{{ option.value }}">
                             <span>{{ option.label }}</span>
                         </button>
                         {% endfor %}
@@ -2467,23 +2445,11 @@
                                     </div>
                                 </div>
                             </label>
-                            <label class="tasks-issue-field--contact-channel">
-                                <span>Kanał kontaktu</span>
-                                {{ task_modal_form.contact_channel }}
-                            </label>
                         </div>
                     </div>
 
-                    <div class="tasks-issue-field-group tasks-issue-field-group--crm">
+                    <div class="tasks-issue-field-group tasks-issue-field-group--assignment">
                         <div class="tasks-issue-field-grid">
-                            <label class="tasks-issue-field--company">
-                                <span>Firma</span>
-                                {{ task_modal_form.company }}
-                            </label>
-                            <label class="tasks-issue-field--contact">
-                                <span>Kontakt</span>
-                                {{ task_modal_form.contact }}
-                            </label>
                             <label class="tasks-issue-field--tags">
                                 <span>Tagi</span>
                                 <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
@@ -2520,10 +2486,6 @@
                                 {{ task_modal_form.estimated_minutes }}
                                 {{ task_modal_form.estimated_duration }}
                             </div>
-                            <label class="tasks-issue-field--billable tasks-issue-checkbox-field">
-                                {{ task_modal_form.is_billable }}
-                                <span>Fakturowalne</span>
-                            </label>
                         </div>
                     </div>
 

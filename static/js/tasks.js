@@ -1091,7 +1091,6 @@ function initTasksPage() {
     const issueColumnInput = issueForm ? issueForm.querySelector('[name="column_id"]') : null;
     const issueSectionSelect = issueForm ? issueForm.querySelector('[name="section"]') : null;
     const issueStatusSelect = issueForm ? issueForm.querySelector('[name="status"]') : null;
-    const issueBillableInput = issueForm ? issueForm.querySelector('[name="is_billable"]') : null;
     const issueProjectPicker = issueForm ? issueForm.querySelector('[data-issue-project-picker]') : null;
     const issueSectionPicker = issueForm ? issueForm.querySelector('[data-issue-section-picker]') : null;
     let issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
@@ -4572,7 +4571,6 @@ function initTasksPage() {
             }
             setIssueColumn(button.dataset.issueColumnId || '');
             setIssueStatus(button.dataset.issueStatus || '');
-            if (issueBillableInput) issueBillableInput.checked = true;
             openModal(issueModal, issueTitleInput, updateIssueSubmitState);
         });
     });

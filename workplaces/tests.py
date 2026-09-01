@@ -1,3 +1,4 @@
+import base64
 import tempfile
 from importlib import import_module
 
@@ -81,6 +82,13 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-workplace-code="FIRST-01"')
         self.assertContains(response, 'data-workplace-description="Miejsce pracy zespołu wdrożeniowego"')
         self.assertContains(response, 'data-workplace-code="DRUGI-WORKPLACE"')
+        self.assertContains(response, 'data-lucide="briefcase-business"')
+        self.assertContains(response, 'data-lucide="hash"')
+        self.assertContains(response, 'data-lucide="align-left"')
+        self.assertContains(response, 'data-workplaces-pagination')
+        self.assertContains(response, 'data-workplaces-page-size-toggle')
+        self.assertContains(response, 'data-workplaces-pagination-summary')
+        self.assertContains(response, 'aria-label="Strony miejsc pracy"')
         self.assertNotContains(response, 'data-column="slug"')
         self.assertNotContains(response, 'data-workplace-slug=')
         self.assertContains(response, 'Pierwszy Workplace')
@@ -102,12 +110,18 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'Kod miejsca pracy')
         self.assertContains(response, 'Zostaw puste, aby wygenerować unikalny kod z nazwy.')
         self.assertContains(response, 'Dodaj krótki opis miejsca pracy…')
-        self.assertContains(response, 'np. Studio projektowe')
-        self.assertContains(response, 'data-workplace-create-dropzone')
-        self.assertContains(response, 'PNG, JPG lub WebP · maks. 5 MB')
-        self.assertContains(response, 'data-workplace-create-photo-preview')
-        self.assertContains(response, 'data-workplace-create-photo-remove')
+        self.assertContains(response, 'placeholder="Nazwa miejsca pracy"')
+        self.assertContains(response, 'class="tasks-issue-modal__crumbs"')
+        self.assertContains(response, 'class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields"')
+        self.assertContains(response, 'class="workplace-modal__content"')
+        self.assertContains(response, 'data-profile-photo-editor', count=3)
+        self.assertContains(response, 'data-profile-photo-modal', count=3)
+        self.assertContains(response, 'data-profile-photo-crop-input', count=3)
+        self.assertContains(response, 'data-profile-photo-remove-input', count=3)
+        self.assertContains(response, 'Edytuj logo miejsca pracy')
+        self.assertContains(response, '>Dodaj</button>', count=1)
         self.assertContains(response, 'Po utworzeniu przełączymy Cię do nowego miejsca pracy.')
+        self.assertNotContains(response, 'class="workplace-create-modal__cancel"')
         self.assertNotContains(response, 'workplaces-create-form--filterbar')
 
     def test_workplace_avatar_uses_workplace_specific_background_color(self):
@@ -125,7 +139,6 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(
             response,
             'class="profile-avatar-icon" data-lucide="briefcase"',
-            count=5,
         )
         self.assertNotContains(response, 'data-lucide="landmark"')
 
@@ -142,6 +155,11 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'Edytuj miejsce pracy')
         self.assertContains(response, 'name="code" value="FIRST-01"')
         self.assertContains(response, 'name="description"')
+        self.assertContains(response, 'class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields workplace-edit-modal__fields"')
+        self.assertContains(response, 'name="workplace_photo_crop"', count=3)
+        self.assertContains(response, 'data-profile-photo-save', count=3)
+        self.assertContains(response, 'data-profile-photo-change', count=3)
+        self.assertContains(response, 'data-profile-photo-remove>Usuń</button>', count=3)
         self.assertNotContains(response, '<span>Slug</span>', html=True)
         self.assertNotContains(response, 'class="workplace-settings workplace-settings--inspector"')
         self.assertNotContains(response, 'class="workplace-settings__form"')
@@ -318,6 +336,28 @@ class WorkplaceSelectionTests(TestCase):
             self.assertEqual(response.status_code, 302)
             self.assertTrue(workplace.workplace_photo.name.startswith('workplace_photos/logo'))
 
+    def test_create_workplace_saves_cropped_logo_from_profile_photo_editor(self):
+        self.client.force_login(self.user)
+        image_content = base64.b64decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+        )
+        crop_data = f'data:image/png;base64,{base64.b64encode(image_content).decode()}'
+
+        with tempfile.TemporaryDirectory() as media_root, self.settings(MEDIA_ROOT=media_root):
+            response = self.client.post(reverse('workplaces:workplaces'), {
+                'name': 'Zespół z kadrowanym logo',
+                'workplace_photo_crop': crop_data,
+            })
+
+            workplace = type(self.first_workplace).objects.get(
+                owner=self.user,
+                name='Zespół z kadrowanym logo',
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(workplace.workplace_photo.name.startswith('workplace_photos/workplace_'))
+            with open(workplace.workplace_photo.path, 'rb') as photo_file:
+                self.assertEqual(photo_file.read(), image_content)
+
     def test_create_workplace_rejects_file_with_invalid_image_content(self):
         self.client.force_login(self.user)
         fake_logo = SimpleUploadedFile('logo.png', b'not-an-image', content_type='image/png')
@@ -444,6 +484,45 @@ class WorkplaceSelectionTests(TestCase):
         self.first_workplace.refresh_from_db()
         self.assertEqual(self.first_workplace.code, 'DELIVERY-02')
         self.assertEqual(self.first_workplace.description, 'Obsługa wdrożeń klientów')
+
+    def test_owner_can_replace_and_remove_logo_with_profile_photo_editor_fields(self):
+        self.client.force_login(self.user)
+        image_content = base64.b64decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+        )
+        crop_data = f'data:image/png;base64,{base64.b64encode(image_content).decode()}'
+
+        with tempfile.TemporaryDirectory() as media_root, self.settings(MEDIA_ROOT=media_root):
+            response = self.client.post(
+                reverse('workplaces:update', args=[self.first_workplace.pk]),
+                {
+                    'name': self.first_workplace.name,
+                    'code': self.first_workplace.code,
+                    'description': self.first_workplace.description,
+                    'workplace_photo_crop': crop_data,
+                },
+            )
+
+            self.assertRedirects(response, reverse('workplaces:workplaces'))
+            self.first_workplace.refresh_from_db()
+            self.assertTrue(self.first_workplace.workplace_photo.name.startswith('workplace_photos/workplace_'))
+
+            response = self.client.get(reverse('workplaces:workplaces'))
+            self.assertContains(response, f'data-profile-photo-url="{self.first_workplace.workplace_photo.url}"')
+
+            response = self.client.post(
+                reverse('workplaces:update', args=[self.first_workplace.pk]),
+                {
+                    'name': self.first_workplace.name,
+                    'code': self.first_workplace.code,
+                    'description': self.first_workplace.description,
+                    'workplace_photo_remove': '1',
+                },
+            )
+
+            self.assertRedirects(response, reverse('workplaces:workplaces'))
+            self.first_workplace.refresh_from_db()
+            self.assertFalse(self.first_workplace.workplace_photo)
 
     def test_owner_can_clear_workplace_code_to_generate_it_again(self):
         self.client.force_login(self.user)

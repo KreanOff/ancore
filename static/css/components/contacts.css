@@ -1311,6 +1311,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
     width: min(640px, calc(var(--app-viewport-width) - 6rem), calc(var(--app-viewport-height) - 230px));
     height: min(640px, calc(var(--app-viewport-width) - 6rem), calc(var(--app-viewport-height) - 230px));
     border: 2px solid #6aa2ff;
+    border-radius: 50%;
     background: #eef1f4;
     box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.7),

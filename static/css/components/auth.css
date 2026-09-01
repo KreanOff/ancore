@@ -63,7 +63,6 @@ body.auth-page .auth-topbar {
     justify-content: space-between;
     gap: 2rem;
     padding: 0 clamp(1.25rem, 2.5vw, 2.5rem);
-    border-bottom: 1px solid var(--auth-border-soft);
 }
 
 body.auth-page .auth-brand {
@@ -146,6 +145,7 @@ body.auth-page .auth-home-link:focus-visible {
 }
 
 body.auth-page .auth-content {
+    position: relative;
     min-height: calc(var(--app-dynamic-viewport-height) - 70px);
     display: grid;
 }
@@ -252,14 +252,14 @@ body.auth-page.auth-page--login .auth-watermark {
 body.auth-page .auth-form-panel {
     min-width: 0;
     display: flex;
-    align-items: flex-start;
-    padding: clamp(44px, 6vh, 60px) clamp(2rem, 3.6vw, 3.25rem) 2.5rem;
-    border-left: 1px solid var(--auth-border-soft);
+    align-items: safe center;
+    justify-content: center;
+    padding: clamp(44px, 6vh, 60px) clamp(2rem, 3.6vw, 3.25rem);
 }
 
 body.auth-page .auth-form-inner {
     width: min(100%, 400px);
-    margin: 0 auto;
+    margin: 0;
 }
 
 body.auth-page.auth-page--register .auth-form-inner {
@@ -665,7 +665,7 @@ body.auth-page.auth-page--register .auth-home-link {
     body.auth-page .auth-form-panel,
     body.auth-page.auth-page--register .auth-form-panel {
         padding-top: 2.25rem;
-        padding-bottom: 2rem;
+        padding-bottom: 2.25rem;
     }
 
     body.auth-page .auth-story-title,
@@ -721,23 +721,19 @@ body.auth-page.auth-page--register .auth-home-link {
 @media (max-width: 1200px) and (min-width: 981px) {
     body.auth-page.auth-page--login .auth-content,
     body.auth-page.auth-page--register .auth-content {
-        grid-template-columns: minmax(0, 47fr) minmax(560px, 53fr);
+        grid-template-columns: minmax(0, 1fr);
     }
 
     body.auth-page .auth-story {
-        padding-right: 2rem;
-        padding-left: 2rem;
+        display: none;
     }
 
-    body.auth-page .auth-story-title,
-    body.auth-page.auth-page--register .auth-story-title {
-        font-size: clamp(3.9rem, 6vw, 5.2rem);
+    body.auth-page .auth-form-inner {
+        width: min(100%, 440px);
     }
 
-    body.auth-page .auth-step:not(:last-child)::after {
-        width: 2rem;
-        margin-right: 0.7rem;
-        margin-left: 0.7rem;
+    body.auth-page.auth-page--register .auth-form-inner {
+        width: min(100%, 620px);
     }
 }
 
@@ -767,17 +763,12 @@ body.auth-page.auth-page--register .auth-home-link {
 
     body.auth-page.auth-page--login .auth-content,
     body.auth-page.auth-page--register .auth-content {
-        min-height: auto;
-        display: flex;
-        flex-direction: column;
+        min-height: calc(var(--app-dynamic-viewport-height) - 70px);
+        display: block;
     }
 
-    body.auth-page .auth-form-panel { order: 1; }
-    body.auth-page .auth-story { order: 2; }
-
     body.auth-page .auth-story {
-        min-height: 400px;
-        padding: 3rem 2rem;
+        display: none;
     }
 
     body.auth-page .auth-story-copy {
@@ -797,17 +788,21 @@ body.auth-page.auth-page--register .auth-home-link {
     }
 
     body.auth-page .auth-form-panel {
-        min-height: auto;
-        padding: 3.25rem 2rem 4rem;
-        border-top: 1px solid var(--auth-border-soft);
-        border-left: 0;
+        position: relative;
+        inset: auto;
+        min-height: calc(var(--app-dynamic-viewport-height) - 70px);
+        justify-content: center;
+        padding: 3.25rem 2rem;
     }
 
     body.auth-page.auth-page--register .auth-form-panel {
         padding-top: 3.25rem;
     }
 
-    body.auth-page .auth-form-inner,
+    body.auth-page .auth-form-inner {
+        width: min(100%, 440px);
+    }
+
     body.auth-page.auth-page--register .auth-form-inner {
         width: min(100%, 620px);
     }
@@ -860,8 +855,9 @@ body.auth-page.auth-page--register .auth-home-link {
         display: none;
     }
 
-    body.auth-page .auth-form-panel {
-        padding: 3rem 1.25rem 3.5rem;
+    body.auth-page .auth-form-panel,
+    body.auth-page.auth-page--register .auth-form-panel {
+        padding: 3rem 1.25rem;
     }
 
     body.auth-page .auth-field-row--names,
@@ -874,6 +870,18 @@ body.auth-page.auth-page--register .auth-home-link {
     body.auth-page.auth-page--register .auth-form--register > .auth-field,
     body.auth-page.auth-page--register .auth-field-row--passwords {
         margin-bottom: 1.4rem;
+    }
+}
+
+@media (max-width: 700px) and (max-height: 820px) {
+    body.auth-page.auth-page--register .auth-content {
+        min-height: auto;
+    }
+
+    body.auth-page.auth-page--register .auth-form-panel {
+        position: relative;
+        inset: auto;
+        min-height: auto;
     }
 }
 

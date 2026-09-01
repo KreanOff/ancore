@@ -3,7 +3,7 @@ import re
 from django import forms
 from django.contrib.auth import get_user_model
 
-from contacts.models import Company, Contact
+from contacts.models import Company
 from .models import (
     PROJECT_FIELD_OPTION_DEFAULTS,
     Task,
@@ -116,12 +116,6 @@ def _company_queryset(user, workplace=None):
     return _filter_workplace(Company.objects.filter(owner=user), workplace).order_by('name')
 
 
-def _contact_queryset(user, workplace=None):
-    if not user:
-        return Contact.objects.none()
-    return _filter_workplace(Contact.objects.filter(user=user), workplace).order_by('first_name', 'middle_name', 'last_name', 'company', 'id')
-
-
 def _replace_optional_model_choice(form, field_name, queryset, empty_label):
     if field_name not in form.fields:
         return
@@ -183,12 +177,8 @@ class TaskForm(forms.ModelForm):
             self.fields['parent'].queryset = parents
             self.fields['tags'].queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
             _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user), 'Brak osoby')
-            _replace_optional_model_choice(self, 'company', _company_queryset(user, workplace), 'Brak firmy')
-            _replace_optional_model_choice(self, 'contact', _contact_queryset(user, workplace), 'Brak kontaktu')
         else:
             _replace_optional_model_choice(self, 'assignee', get_user_model().objects.none(), 'Brak osoby')
-            _replace_optional_model_choice(self, 'company', Company.objects.none(), 'Brak firmy')
-            _replace_optional_model_choice(self, 'contact', Contact.objects.none(), 'Brak kontaktu')
         current_section = section or getattr(self.instance, 'section', None)
         if current_section:
             self.fields['project'].initial = current_section.project
@@ -207,15 +197,10 @@ class TaskForm(forms.ModelForm):
         self.fields['reminder_at'].label = 'Przypomnienie'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['estimated_minutes'].label = 'Szacowany czas'
-        self.fields['is_billable'].label = 'Fakturowalne'
         self.fields['blocked_reason'].label = 'Powód blokady'
         self.fields['assignee'].label = 'Przypisane do'
-        self.fields['company'].label = 'Firma'
-        self.fields['contact'].label = 'Kontakt'
         self.fields['task_type'].label = 'Typ zadania'
-        self.fields['contact_channel'].label = 'Kanał kontaktu'
         self.fields['task_type'].required = False
-        self.fields['contact_channel'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
@@ -238,9 +223,6 @@ class TaskForm(forms.ModelForm):
     def clean_task_type(self):
         return self.cleaned_data.get('task_type') or 'general'
 
-    def clean_contact_channel(self):
-        return self.cleaned_data.get('contact_channel') or 'none'
-
     class Meta:
         model = Task
         fields = [
@@ -250,16 +232,12 @@ class TaskForm(forms.ModelForm):
             'tags',
             'description',
             'task_type',
-            'contact_channel',
-            'company',
-            'contact',
             'assignee',
             'priority',
             'status',
             'due_at',
             'reminder_at',
             'estimated_minutes',
-            'is_billable',
             'blocked_reason',
             'time_spent_hours',
             'time_spent_minutes',
@@ -284,15 +262,6 @@ class TaskForm(forms.ModelForm):
             'task_type': forms.Select(attrs={
                 'class': 'form-input'
             }),
-            'contact_channel': forms.Select(attrs={
-                'class': 'form-input'
-            }),
-            'company': forms.Select(attrs={
-                'class': 'form-input'
-            }),
-            'contact': forms.Select(attrs={
-                'class': 'form-input'
-            }),
             'assignee': forms.Select(attrs={
                 'class': 'form-input'
             }),
@@ -312,9 +281,6 @@ class TaskForm(forms.ModelForm):
                 'class': 'form-input',
                 'min': 0,
                 'placeholder': 'np. 60',
-            }),
-            'is_billable': forms.CheckboxInput(attrs={
-                'class': 'tasks-inline-checkbox',
             }),
             'blocked_reason': forms.Textarea(attrs={
                 'placeholder': 'Dlaczego zadanie jest zablokowane?',
@@ -1011,12 +977,8 @@ class TaskModalForm(forms.ModelForm):
         if user:
             self.fields['tags'].queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
             _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user), 'Brak osoby')
-            _replace_optional_model_choice(self, 'company', _company_queryset(user, workplace), 'Brak firmy')
-            _replace_optional_model_choice(self, 'contact', _contact_queryset(user, workplace), 'Brak kontaktu')
         else:
             _replace_optional_model_choice(self, 'assignee', get_user_model().objects.none(), 'Brak osoby')
-            _replace_optional_model_choice(self, 'company', Company.objects.none(), 'Brak firmy')
-            _replace_optional_model_choice(self, 'contact', Contact.objects.none(), 'Brak kontaktu')
         self.fields['section'].required = True
         self.fields['section'].label = 'Grupa projektu'
         self.fields['tags'].required = False
@@ -1026,19 +988,12 @@ class TaskModalForm(forms.ModelForm):
         self.fields['reminder_at'].label = 'Przypomnienie'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['estimated_minutes'].label = 'Szacowany czas'
-        self.fields['is_billable'].label = 'Fakturowalne'
         self.fields['blocked_reason'].label = 'Powód blokady'
         self.fields['assignee'].label = 'Przypisane do'
-        self.fields['company'].label = 'Firma'
-        self.fields['contact'].label = 'Kontakt'
         self.fields['task_type'].label = 'Typ zadania'
-        self.fields['contact_channel'].label = 'Kanał kontaktu'
         self.fields['task_type'].required = False
-        self.fields['contact_channel'].required = False
         if section:
             self.fields['section'].initial = section
-        if not self.is_bound and not getattr(self.instance, 'pk', None) and 'is_billable' not in self.initial:
-            self.fields['is_billable'].initial = True
         estimated_minutes = self.initial.get('estimated_minutes', getattr(self.instance, 'estimated_minutes', None))
         if not self.is_bound and estimated_minutes:
             self.fields['estimated_duration'].initial = _format_estimated_duration(estimated_minutes)
@@ -1047,9 +1002,6 @@ class TaskModalForm(forms.ModelForm):
 
     def clean_task_type(self):
         return self.cleaned_data.get('task_type') or 'general'
-
-    def clean_contact_channel(self):
-        return self.cleaned_data.get('contact_channel') or 'none'
 
     def clean(self):
         cleaned_data = super().clean()
@@ -1075,16 +1027,12 @@ class TaskModalForm(forms.ModelForm):
             'tags',
             'description',
             'task_type',
-            'contact_channel',
-            'company',
-            'contact',
             'assignee',
             'priority',
             'status',
             'due_at',
             'reminder_at',
             'estimated_minutes',
-            'is_billable',
             'blocked_reason',
         ]
         widgets = {
@@ -1107,15 +1055,6 @@ class TaskModalForm(forms.ModelForm):
             'task_type': forms.Select(attrs={
                 'class': 'tasks-inline-select',
             }),
-            'contact_channel': forms.Select(attrs={
-                'class': 'tasks-inline-select',
-            }),
-            'company': forms.Select(attrs={
-                'class': 'tasks-inline-select',
-            }),
-            'contact': forms.Select(attrs={
-                'class': 'tasks-inline-select',
-            }),
             'assignee': forms.Select(attrs={
                 'class': 'tasks-inline-select',
             }),
@@ -1132,9 +1071,6 @@ class TaskModalForm(forms.ModelForm):
                 'class': 'tasks-inline-input',
             }),
             'estimated_minutes': forms.HiddenInput(),
-            'is_billable': forms.CheckboxInput(attrs={
-                'class': 'tasks-inline-checkbox',
-            }),
             'blocked_reason': forms.Textarea(attrs={
                 'placeholder': 'Dlaczego zadanie jest zablokowane?',
                 'rows': 3,

@@ -5788,13 +5788,10 @@ body.modal-open::before {
 #issue-create-form .tasks-issue-field--section,
 #issue-create-form .tasks-issue-field--task-type,
 #issue-create-form .tasks-issue-field--status,
-#issue-create-form .tasks-issue-field--priority,
-#issue-create-form .tasks-issue-field--contact-channel {
+#issue-create-form .tasks-issue-field--priority {
     grid-column: span 3;
 }
 
-#issue-create-form .tasks-issue-field--company,
-#issue-create-form .tasks-issue-field--contact,
 #issue-create-form .tasks-issue-field--assignee,
 #issue-create-form .tasks-issue-field--due,
 #issue-create-form .tasks-issue-field--reminder,
@@ -5809,13 +5806,13 @@ body.modal-open::before {
 
 @media (min-width: 1081px) {
     #issue-create-form .tasks-issue-field-group--primary .tasks-issue-field-grid,
-    #issue-create-form .tasks-issue-field-group--crm .tasks-issue-field-grid,
+    #issue-create-form .tasks-issue-field-group--assignment .tasks-issue-field-grid,
     #issue-create-form .tasks-issue-field-group--schedule .tasks-issue-field-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: end;
     }
 
-    #issue-create-form .tasks-issue-field-group--crm .tasks-issue-field-grid {
+    #issue-create-form .tasks-issue-field-group--assignment .tasks-issue-field-grid {
         align-items: start;
     }
 
@@ -5826,18 +5823,13 @@ body.modal-open::before {
 
     #issue-create-form .tasks-issue-field-group--primary .tasks-issue-field-grid > label,
     #issue-create-form .tasks-issue-field-group--primary .tasks-issue-field-grid > .tasks-issue-field,
-    #issue-create-form .tasks-issue-field-group--crm .tasks-issue-field-grid > label,
+    #issue-create-form .tasks-issue-field-group--assignment .tasks-issue-field-grid > label,
     #issue-create-form .tasks-issue-field-group--schedule .tasks-issue-field-grid > label,
     #issue-create-form .tasks-issue-field-group--schedule .tasks-issue-field-grid > .tasks-issue-field,
     #issue-create-form .tasks-issue-field-group--extras .tasks-issue-field-grid > label {
         grid-column: auto;
     }
 
-    #issue-create-form .tasks-issue-field--billable {
-        width: max-content;
-        min-width: max-content;
-        padding-right: 0.2rem;
-    }
 }
 
 @container (min-width: 760px) {
@@ -5845,13 +5837,13 @@ body.modal-open::before {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    #issue-create-form .tasks-issue-field-group--crm .tasks-issue-field-grid {
+    #issue-create-form .tasks-issue-field-group--assignment .tasks-issue-field-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: start;
     }
 
     #issue-create-form .tasks-issue-field-group--schedule .tasks-issue-field-grid {
-        grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(260px, 0.9fr) max-content;
+        grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(260px, 0.9fr);
     }
 
     #issue-create-form .tasks-issue-field-group--extras .tasks-issue-field-grid {
@@ -6059,16 +6051,12 @@ body.modal-open::before {
     #issue-create-form .tasks-issue-field--project,
     #issue-create-form .tasks-issue-field--section,
     #issue-create-form .tasks-issue-field--task-type,
-    #issue-create-form .tasks-issue-field--contact-channel,
     #issue-create-form .tasks-issue-field--priority,
     #issue-create-form .tasks-issue-field--status,
-    #issue-create-form .tasks-issue-field--company,
-    #issue-create-form .tasks-issue-field--contact,
     #issue-create-form .tasks-issue-field--assignee,
     #issue-create-form .tasks-issue-field--due,
     #issue-create-form .tasks-issue-field--reminder,
     #issue-create-form .tasks-issue-field--estimate,
-    #issue-create-form .tasks-issue-field--billable,
     #issue-create-form .tasks-issue-field--blocked-reason,
     #issue-create-form .tasks-issue-field--tags {
         grid-column: span 3;
@@ -6089,16 +6077,12 @@ body.modal-open::before {
     #issue-create-form .tasks-issue-field--project,
     #issue-create-form .tasks-issue-field--section,
     #issue-create-form .tasks-issue-field--task-type,
-    #issue-create-form .tasks-issue-field--contact-channel,
     #issue-create-form .tasks-issue-field--status,
     #issue-create-form .tasks-issue-field--priority,
-    #issue-create-form .tasks-issue-field--company,
-    #issue-create-form .tasks-issue-field--contact,
     #issue-create-form .tasks-issue-field--assignee,
     #issue-create-form .tasks-issue-field--due,
     #issue-create-form .tasks-issue-field--reminder,
     #issue-create-form .tasks-issue-field--estimate,
-    #issue-create-form .tasks-issue-field--billable,
     #issue-create-form .tasks-issue-field--tags,
     #issue-create-form .tasks-issue-field--blocked-reason {
         grid-column: 1 / -1;
@@ -8098,7 +8082,7 @@ body.modal-open::before {
     flex: 0 1 auto;
 }
 
-.tasks-row-crm-meta {
+.tasks-row-assignee-meta {
     max-width: 100%;
     display: inline-flex;
     align-items: center;
@@ -8110,17 +8094,11 @@ body.modal-open::before {
     white-space: nowrap;
 }
 
-.tasks-row-crm-meta span {
+.tasks-row-assignee-meta span {
     min-width: 0;
     max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.tasks-row-crm-meta span + span::before {
-    content: "/";
-    margin-right: 0.35rem;
-    color: #b2b8c2;
 }
 
 .tasks-shared-access-badge {
@@ -8834,6 +8812,13 @@ body.modal-open::before {
     box-shadow: none;
     background: transparent;
     color: #242830;
+}
+
+.tasks-issue-title-field .form-input:focus,
+.tasks-issue-description-field .form-input:focus {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
 }
 
 .tasks-issue-title-field .form-input {

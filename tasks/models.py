@@ -634,17 +634,6 @@ class Task(models.Model):
         ('internal', 'Wewnętrzne'),
     ]
 
-    CONTACT_CHANNEL_CHOICES = [
-        ('none', 'Brak kanału'),
-        ('phone', 'Telefon'),
-        ('email', 'E-mail'),
-        ('meeting', 'Spotkanie'),
-        ('whatsapp', 'WhatsApp'),
-        ('linkedin', 'LinkedIn'),
-        ('form', 'Formularz'),
-        ('system', 'System'),
-    ]
-
     task_id = models.PositiveIntegerField(default=0)
     code_number = models.PositiveIntegerField(default=0, editable=False)
     title = models.CharField(max_length=255)
@@ -660,14 +649,10 @@ class Task(models.Model):
     time_spent_hours = models.PositiveIntegerField(null=True, blank=True)
     time_spent_minutes = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(59)])
     task_type = models.CharField(max_length=20, choices=TASK_TYPE_CHOICES, default='general')
-    contact_channel = models.CharField(max_length=20, choices=CONTACT_CHANNEL_CHOICES, default='none', blank=True)
-    is_billable = models.BooleanField(default=False)
     blocked_reason = models.TextField(blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
     assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='assigned_tasks', null=True, blank=True)
-    company = models.ForeignKey('contacts.Company', on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
-    contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
     section = models.ForeignKey(TaskSection, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
     tags = models.ManyToManyField(TaskTag, related_name='tasks', blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='subtasks', null=True, blank=True)
@@ -679,7 +664,6 @@ class Task(models.Model):
             models.Index(fields=['user', 'workplace', 'task_id'], name='task_user_workspace_id_idx'),
             models.Index(fields=['section', 'code_number'], name='task_section_code_idx'),
             models.Index(fields=['user', 'assignee', 'status'], name='task_user_assignee_status_idx'),
-            models.Index(fields=['user', 'company', 'status'], name='task_user_company_status_idx'),
             models.Index(fields=['user', 'task_type', 'status'], name='task_user_type_status_idx'),
             models.Index(fields=['user', 'reminder_at'], name='task_user_reminder_idx'),
         ]

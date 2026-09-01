@@ -21,10 +21,16 @@ def workplaces(request):
             workplace = create_workplace_for_user(
                 request.user,
                 form.cleaned_data['name'],
-                workplace_photo=form.cleaned_data.get('workplace_photo'),
+                workplace_photo=(
+                    None
+                    if form.cleaned_data.get('workplace_photo_crop')
+                    else form.cleaned_data.get('workplace_photo')
+                ),
                 description=form.cleaned_data.get('description', ''),
                 code=form.cleaned_data.get('code', ''),
             )
+            if form.cleaned_data.get('workplace_photo_crop'):
+                form.apply_photo(workplace)
             set_active_workplace(request, workplace)
             messages.success(request, 'Miejsce pracy utworzone.')
             return redirect(scoped_workplace_app_path(workplace, 'tasks'))

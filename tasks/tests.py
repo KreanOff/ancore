@@ -1,3 +1,4 @@
+import importlib
 import json
 import re
 import tempfile
@@ -5,6 +6,7 @@ from datetime import date, datetime, timedelta, timezone as datetime_timezone
 from pathlib import Path
 from unittest.mock import patch
 
+from django.apps import apps as django_apps
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.contrib.contenttypes.models import ContentType
@@ -852,16 +854,17 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '<span class="tasks-sort-button__label">Priorytet</span>', html=True)
         self.assertContains(response, 'data-project-page-url="/tasks/?sort=priority_desc&amp;page_size=50&amp;page=2"')
 
-    def test_task_create_modal_billable_checkbox_is_checked_by_default(self):
+    def test_task_create_modal_does_not_render_removed_task_fields(self):
         response = self.client.get(reverse('tasks:tasks'))
         html = response.content.decode()
-        field_index = html.index('name="is_billable"')
-        input_start = html.rfind('<input', 0, field_index)
-        input_end = html.index('>', field_index)
-        input_html = html[input_start:input_end]
+        form_start = html.index('id="issue-create-form"')
+        form_end = html.index('</form>', form_start)
+        form_html = html[form_start:form_end]
 
-        self.assertIn('class="tasks-inline-checkbox"', input_html)
-        self.assertIn('checked', input_html)
+        self.assertNotIn('name="company"', form_html)
+        self.assertNotIn('name="contact"', form_html)
+        self.assertNotIn('name="contact_channel"', form_html)
+        self.assertNotIn('name="is_billable"', form_html)
 
     def test_all_groups_view_shows_priority_filter_without_status_filter(self):
         response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
@@ -1937,7 +1940,6 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('data-task-status-page="6"', html)
 
     def test_all_tasks_view_renders_server_search_sort_and_filter_controls(self):
-        company = Company.objects.create(owner=self.user, name='Alpha CRM')
         assignee = get_user_model().objects.create_user(
             username='alpha-owner',
             first_name='Adam',
@@ -1950,7 +1952,6 @@ class TaskProjectCreationTests(TestCase):
             user=self.user,
             section=section,
             title='Zadanie Alpha',
-            company=company,
             assignee=assignee,
         )
 
@@ -1965,24 +1966,19 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'name="task_project"')
         self.assertContains(response, 'name="task_section"')
         self.assertContains(response, 'name="task_assignee"')
-        self.assertContains(response, 'name="task_company"')
         self.assertContains(response, 'name="task_type"')
         self.assertContains(response, 'name="task_due"')
         self.assertContains(response, 'data-project-filter-menu="task_project"')
         self.assertContains(response, 'data-project-filter-menu="task_section"')
         self.assertContains(response, 'data-project-filter-menu="task_assignee"')
-        self.assertContains(response, 'data-project-filter-menu="task_company"')
         self.assertContains(response, 'data-project-filter-menu="task_type"')
         self.assertContains(response, 'data-project-filter-menu="task_due"')
-        self.assertContains(response, 'data-project-filter-search', count=4)
+        self.assertContains(response, 'data-project-filter-search', count=3)
         self.assertContains(response, 'Szukaj projektu')
         self.assertContains(response, 'Szukaj grupy')
         self.assertContains(response, 'Szukaj osoby')
-        self.assertContains(response, 'Szukaj firmy')
 
     def test_all_tasks_view_filters_searches_sorts_and_preserves_status_pagination_params(self):
-        company = Company.objects.create(owner=self.user, name='Alpha CRM')
-        other_company = Company.objects.create(owner=self.user, name='Beta CRM')
         assignee = get_user_model().objects.create_user(
             username='alpha-assignee',
             first_name='Adam',
@@ -2001,7 +1997,6 @@ class TaskProjectCreationTests(TestCase):
                 priority='high',
                 task_type='call',
                 due_at=due_at,
-                company=company,
                 assignee=assignee,
             )
         Task.objects.create(
@@ -2012,7 +2007,6 @@ class TaskProjectCreationTests(TestCase):
             priority='high',
             task_type='call',
             due_at=due_at,
-            company=company,
             assignee=assignee,
         )
         Task.objects.create(
@@ -2020,17 +2014,16 @@ class TaskProjectCreationTests(TestCase):
             section=section,
             title='Beta ukryte',
             status='new',
-            priority='high',
+            priority='low',
             task_type='call',
             due_at=due_at,
-            company=other_company,
             assignee=assignee,
         )
 
         response = self.client.get(
             f"{reverse('tasks:tasks')}?view=all-tasks&q=Alpha&priority=high&status=new"
             f"&task_project={project.id}&task_section={section.id}&task_assignee={assignee.id}"
-            f"&task_company={company.id}&task_type=call&task_due=overdue&sort=title_desc"
+            f"&task_type=call&task_due=overdue&sort=title_desc"
         )
         html = response.content.decode()
         new_start = html.index('id="all-tasks-new"')
@@ -2052,7 +2045,6 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn(f'task_project={project.id}', html)
         self.assertIn(f'task_section={section.id}', html)
         self.assertIn(f'task_assignee={assignee.id}', html)
-        self.assertIn(f'task_company={company.id}', html)
         self.assertIn('task_type=call', html)
         self.assertIn('task_due=overdue', html)
         self.assertIn('sort=title_desc', html)
@@ -2060,14 +2052,12 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Projekt: Projekt Alpha')
         self.assertContains(response, 'Grupa: Wdrożenie (Projekt Alpha)')
         self.assertContains(response, 'Odpowiedzialny: Adam Nowak')
-        self.assertContains(response, 'Firma: Alpha CRM')
         self.assertContains(response, 'Typ: Telefon')
         self.assertContains(response, 'Termin: Po terminie')
 
     def test_task_rows_render_only_task_title_in_title_cell(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt zadań', code='TSK')
         section = TaskSection.objects.create(project=project, title='Plan')
-        company = Company.objects.create(owner=self.user, name='Netology')
         assignee = get_user_model().objects.create_user(
             username='assignee-user',
             first_name='Adam',
@@ -2078,9 +2068,7 @@ class TaskProjectCreationTests(TestCase):
             user=self.user,
             section=section,
             title='Zadanie bez widocznego typu',
-            company=company,
             assignee=assignee,
-            is_billable=True,
         )
 
         response = self.client.get(reverse('tasks:task_group', args=[section.id]))
@@ -2093,10 +2081,8 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertIn('Zadanie bez widocznego typu', row_html)
         self.assertNotIn('<span>Ogólne</span>', row_html)
-        self.assertNotIn('tasks-row-crm-meta', row_html)
-        self.assertNotIn('<span>Netology</span>', row_html)
+        self.assertNotIn('tasks-row-assignee-meta', row_html)
         self.assertNotIn('<span>Adam Mickiewicz</span>', row_html)
-        self.assertNotIn('<span>Fakturowalne</span>', row_html)
 
     def test_group_view_header_links_back_to_project(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt nadrzędny', code='PRJ')
@@ -2969,10 +2955,6 @@ class TaskProjectCreationTests(TestCase):
         content = response.content.decode()
 
         self.assertLess(
-            content.index('tasks-issue-field--company'),
-            content.index('tasks-issue-field--tags'),
-        )
-        self.assertLess(
             content.index('tasks-issue-field--tags'),
             content.index('tasks-issue-field--assignee'),
         )
@@ -3123,6 +3105,64 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-lucide="copy"')
         self.assertLess(content.index('<label for="id_tags">Tagi</label>'), content.index('<span>ID zadania</span>'))
         self.assertLess(content.index('<span>ID zadania</span>'), content.index('<span>Utworzył</span>'))
+
+    def test_task_model_and_detail_remove_crm_and_billable_fields(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Frontend')
+        task = Task.objects.create(
+            user=self.user,
+            section=section,
+            title='Zadanie',
+        )
+
+        detail_response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
+
+        task_field_names = {field.name for field in Task._meta.get_fields()}
+        self.assertTrue({'company', 'contact', 'contact_channel', 'is_billable'}.isdisjoint(task_field_names))
+        self.assertNotContains(detail_response, 'name="company"')
+        self.assertNotContains(detail_response, 'name="contact"')
+        self.assertNotContains(detail_response, 'name="contact_channel"')
+        self.assertNotContains(detail_response, 'name="is_billable"')
+
+    def test_removed_task_field_migration_scrubs_activity_history(self):
+        task = Task.objects.create(user=self.user, title='Zadanie')
+        mixed_activity = TaskActivity.objects.create(
+            task=task,
+            actor=self.user,
+            action='updated',
+            message='zaktualizował zadanie',
+            metadata={
+                'fields': ['firma', 'status'],
+                'changes': [
+                    {'field': 'firma', 'from_label': 'A', 'to_label': 'B'},
+                    {'field': 'status', 'from_label': 'Nowe', 'to_label': 'Zamknięte'},
+                ],
+            },
+        )
+        removed_only_activity = TaskActivity.objects.create(
+            task=task,
+            actor=self.user,
+            action='updated',
+            message='zaktualizował zadanie',
+            metadata={
+                'fields': ['fakturowalne'],
+                'changes': [
+                    {'field': 'fakturowalne', 'from_label': 'Nie', 'to_label': 'Tak'},
+                ],
+            },
+        )
+        migration = importlib.import_module(
+            'tasks.migrations.0042_remove_task_task_user_company_status_idx_and_more'
+        )
+
+        migration.scrub_removed_task_fields_from_activity(django_apps, None)
+
+        mixed_activity.refresh_from_db()
+        self.assertEqual(mixed_activity.metadata['fields'], ['status'])
+        self.assertEqual(mixed_activity.metadata['changes'], [
+            {'field': 'status', 'from_label': 'Nowe', 'to_label': 'Zamknięte'},
+        ])
+        self.assertFalse(TaskActivity.objects.filter(pk=removed_only_activity.pk).exists())
 
     def test_subtask_detail_can_change_parent_task(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
