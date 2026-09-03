@@ -1,10 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .forms import WorkplaceForm
-from .models import create_workplace_for_user
+from .models import SidebarFavorite, create_workplace_for_user
+from .navigation import SIDEBAR_FAVORITE_KEYS, sidebar_favorites_for_request
 from .services import enable_workspace_url_scope, scoped_workplace_app_path, set_active_workplace, workplaces_for_user
 
 
@@ -53,6 +57,62 @@ def switch_workplace(request, workplace_id):
     enable_workspace_url_scope(request)
     next_url = scoped_workplace_app_path(workplace, 'tasks')
     messages.success(request, f'Przełączono na {workplace.name}.')
+    return redirect(next_url)
+
+
+@login_required
+@require_POST
+def toggle_sidebar_favorite(request, workplace_id):
+    workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
+    item_key = (request.POST.get('item_key') or '').strip()
+    action = (request.POST.get('favorite_action') or '').strip()
+
+    if item_key not in SIDEBAR_FAVORITE_KEYS or action not in {'add', 'remove'}:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Nieprawidłowa pozycja Favorites.'}, status=400)
+        messages.error(request, 'Nie udało się zmienić Favorites.')
+    elif action == 'add':
+        SidebarFavorite.objects.get_or_create(
+            user=request.user,
+            workplace=workplace,
+            item_key=item_key,
+        )
+    else:
+        SidebarFavorite.objects.filter(
+            user=request.user,
+            workplace=workplace,
+            item_key=item_key,
+        ).delete()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        favorite_keys = list(
+            SidebarFavorite.objects.filter(user=request.user, workplace=workplace)
+            .values_list('item_key', flat=True)
+        )
+        favorites = sidebar_favorites_for_request(request, workplace, favorite_keys)
+        html = render_to_string(
+            'workplaces/includes/sidebar_favorites.html',
+            {
+                'current_workplace': workplace,
+                'sidebar_favorites': favorites,
+                'sidebar_next_url': request.POST.get('next') or scoped_workplace_app_path(workplace, 'tasks'),
+            },
+            request=request,
+        )
+        return JsonResponse({
+            'status': 'success',
+            'item_key': item_key,
+            'is_favorite': item_key in favorite_keys,
+            'html': html,
+        })
+
+    next_url = request.POST.get('next') or ''
+    if not url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        next_url = scoped_workplace_app_path(workplace, 'tasks')
     return redirect(next_url)
 
 

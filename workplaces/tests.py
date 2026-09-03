@@ -9,7 +9,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from tasks.models import TaskProject
-from .models import WorkplaceMembership, create_workplace_for_user
+from .models import SidebarFavorite, WorkplaceMembership, create_workplace_for_user
 from .services import scoped_workplace_app_path
 from .templatetags.workplace_avatar import workplace_avatar
 
@@ -62,7 +62,10 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-workplace-create-open')
         self.assertContains(response, 'id="workplace-create-modal"')
         self.assertContains(response, 'Nawigacja ustawień')
-        self.assertContains(response, 'Miejsca pracy')
+        self.assertContains(response, '<title>Workspace | ancore</title>', html=True)
+        self.assertContains(response, '<h1 id="workplaces-page-title" class="u-sr-only">Workspace</h1>', html=True)
+        self.assertContains(response, 'aria-label="Workspace" title="Workspace"')
+        self.assertNotContains(response, 'Miejsca pracy')
         self.assertContains(response, reverse('settings'))
         self.assertNotContains(response, 'workplaces-shell-header')
         self.assertNotContains(response, 'workplaces-console__toolbar')
@@ -164,7 +167,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'class="workplace-settings workplace-settings--inspector"')
         self.assertNotContains(response, 'class="workplace-settings__form"')
 
-    def test_sidebar_workplace_button_is_fixed_when_workplace_has_photo(self):
+    def test_sidebar_footer_button_stays_fixed_and_header_uses_workplace_photo(self):
         self.first_workplace.workplace_photo = 'workplace_photos/moje-miejsce.webp'
         self.first_workplace.save(update_fields=['workplace_photo'])
         self.client.force_login(self.user)
@@ -176,7 +179,187 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'class="nav-link nav-link--workplace ')
         self.assertContains(response, 'data-lucide="briefcase"')
         self.assertNotContains(response, 'sidebar-workplace__avatar')
-        self.assertNotContains(response, '/media/workplace_photos/moje-miejsce.webp')
+        self.assertContains(response, 'sidebar-workspace-avatar')
+        self.assertContains(response, '/media/workplace_photos/moje-miejsce.webp', count=2)
+
+    def test_sidebar_header_lists_workspaces_for_quick_switching(self):
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+
+        response = self.client.get(reverse('tasks:tasks'))
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-sidebar-workspace-switcher')
+        self.assertContains(response, 'data-sidebar-workspace-toggle')
+        self.assertContains(response, 'id="sidebar-workspace-menu"')
+        self.assertContains(response, 'data-sidebar-workspace-search')
+        self.assertContains(response, 'id="sidebar-workspace-search-input"')
+        self.assertContains(response, 'placeholder="Szukaj Workspace"')
+        self.assertContains(response, 'data-sidebar-workspace-item', count=2)
+        self.assertContains(response, reverse('workplaces:switch', args=[self.first_workplace.pk]))
+        self.assertContains(response, reverse('workplaces:switch', args=[self.second_workplace.pk]))
+        self.assertContains(response, 'class="sidebar-workspace-option is-active"')
+        self.assertLess(content.index('data-sidebar-workspace-search'), content.index('data-sidebar-workspace-item'))
+        self.assertLess(content.index('data-sidebar-workspace-switcher'), content.index('class="sidebar-navigation"'))
+
+    def test_sidebar_favorite_can_be_added_and_removed_without_page_reload(self):
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+        endpoint = reverse('workplaces:toggle-sidebar-favorite', args=[self.first_workplace.pk])
+
+        response = self.client.post(
+            endpoint,
+            {
+                'item_key': 'tasks-my',
+                'favorite_action': 'add',
+                'next': reverse('tasks:tasks'),
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['is_favorite'])
+        self.assertIn('data-sidebar-favorite-item="tasks-my"', response.json()['html'])
+        self.assertTrue(SidebarFavorite.objects.filter(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='tasks-my',
+        ).exists())
+
+        response = self.client.post(
+            endpoint,
+            {
+                'item_key': 'tasks-my',
+                'favorite_action': 'remove',
+                'next': reverse('tasks:tasks'),
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()['is_favorite'])
+        self.assertIn('data-sidebar-favorite-item="dashboard"', response.json()['html'])
+        self.assertFalse(SidebarFavorite.objects.filter(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='tasks-my',
+        ).exists())
+
+    def test_sidebar_favorite_is_idempotent_and_scoped_to_workplace(self):
+        self.client.force_login(self.user)
+        endpoint = reverse('workplaces:toggle-sidebar-favorite', args=[self.first_workplace.pk])
+        payload = {
+            'item_key': 'calendar',
+            'favorite_action': 'add',
+            'next': reverse('planner:index'),
+        }
+
+        self.client.post(endpoint, payload)
+        self.client.post(endpoint, payload)
+
+        self.assertEqual(SidebarFavorite.objects.filter(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='calendar',
+        ).count(), 1)
+
+        self._activate(self.second_workplace)
+        response = self.client.get(reverse('tasks:tasks'))
+        self.assertNotContains(response, 'data-sidebar-favorite-item="calendar"')
+
+    def test_sidebar_favorite_rejects_unknown_item_and_another_users_workplace(self):
+        self.client.force_login(self.user)
+        own_endpoint = reverse('workplaces:toggle-sidebar-favorite', args=[self.first_workplace.pk])
+
+        invalid_response = self.client.post(
+            own_endpoint,
+            {'item_key': 'admin-secret', 'favorite_action': 'add'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(invalid_response.status_code, 400)
+        self.assertFalse(SidebarFavorite.objects.filter(
+            user=self.user,
+            item_key='admin-secret',
+        ).exists())
+
+        other_user = get_user_model().objects.create_user(
+            username='@favorite.other',
+            email='favorite-other@example.com',
+            password='secret',
+            first_name='Other',
+            last_name='Owner',
+        )
+        other_workplace = create_workplace_for_user(other_user, 'Cudzy Workspace')
+        other_endpoint = reverse('workplaces:toggle-sidebar-favorite', args=[other_workplace.pk])
+
+        forbidden_response = self.client.post(
+            other_endpoint,
+            {'item_key': 'calendar', 'favorite_action': 'add'},
+        )
+
+        self.assertEqual(forbidden_response.status_code, 404)
+        self.assertFalse(SidebarFavorite.objects.filter(
+            user=self.user,
+            item_key='admin-secret',
+        ).exists())
+
+    def test_sidebar_renders_draggable_favorites_with_remove_dropzone(self):
+        SidebarFavorite.objects.create(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='tags',
+        )
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+
+        response = self.client.get(reverse('tasks:tasks') + '?view=tags')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-sidebar-favorite-item="dashboard"')
+        self.assertContains(response, 'data-sidebar-favorite-item="tags"')
+        self.assertContains(response, 'data-sidebar-source-item="tags"')
+        self.assertContains(response, 'data-sidebar-favorites-dropzone')
+        self.assertContains(response, 'data-sidebar-favorites-remove-dropzone')
+        self.assertContains(response, 'Usuń z Favorites')
+        self.assertNotContains(response, 'data-sidebar-workspace-dropzone')
+        self.assertContains(response, 'data-sidebar-favorite-item="tags" draggable="true"')
+        self.assertContains(response, 'data-sidebar-source-item="tags" draggable="true"')
+        self.assertNotContains(response, 'data-sidebar-favorite-remove')
+        self.assertContains(
+            response,
+            'class="sidebar-favorite-form sidebar-favorite-remove-form u-sr-only"',
+            count=2,
+        )
+        self.assertContains(response, '>Usuń Tagi z Favorites</button>')
+        self.assertNotContains(response, 'sidebar-pinnable-row')
+        self.assertNotContains(response, 'sidebar-favorite-toggle')
+        self.assertNotContains(response, 'data-lucide="star"')
+        self.assertGreaterEqual(
+            response.content.decode().count(f'/workplaces/{self.first_workplace.slug}/tasks/?view=tags'),
+            3,
+        )
+
+    def test_new_workplaces_have_dashboard_in_favorites_by_default(self):
+        self.assertTrue(SidebarFavorite.objects.filter(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='dashboard',
+        ).exists())
+        self.assertTrue(SidebarFavorite.objects.filter(
+            user=self.user,
+            workplace=self.second_workplace,
+            item_key='dashboard',
+        ).exists())
+
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertContains(response, 'data-sidebar-favorite-item="dashboard"')
+        self.assertContains(response, 'data-sidebar-source-item="dashboard" draggable="true"')
+        self.assertContains(response, '>Dashboard</span>', count=2)
 
     def test_sidebar_displays_workplace_below_notes_and_above_settings_without_separator(self):
         self.client.force_login(self.user)
@@ -186,8 +369,8 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="sidebar-header"')
-        self.assertContains(response, 'href="/" class="logo" aria-label="Ancore"')
-        self.assertContains(response, '/static/img/logo-ancore.png')
+        self.assertContains(response, 'data-sidebar-workspace-switcher')
+        self.assertContains(response, 'data-sidebar-workspace-toggle')
         self.assertNotContains(response, 'class="nav-separator"')
         self.assertLess(content.index('class="sidebar-header"'), content.index('class="nav-link nav-link--workplace '))
         self.assertLess(content.index('data-sticky-note-toggle'), content.index('class="nav-link nav-link--workplace '))

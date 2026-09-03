@@ -1,6 +1,7 @@
 :root {
-    --app-viewport-width: 100vw;
-    --app-viewport-height: 100vh;
+    --app-ui-scale: 0.98;
+    --app-viewport-width: calc(100vw / var(--app-ui-scale));
+    --app-viewport-height: calc(100vh / var(--app-ui-scale));
     --app-dynamic-viewport-height: var(--app-viewport-height);
     --bg-main: #ffffff;
     --chrome-bg: #f7f6f4;
@@ -11,11 +12,18 @@
     --text-primary: #40444C;
     --text-secondary: var(--text-primary);
     --text-inverse: #FFFFFF;
+    --system-accent: rgb(30, 191, 191);
+    --system-accent-rgb: 30, 191, 191;
+    --system-interaction: #6f7580;
+    --system-interaction-rgb: 111, 117, 128;
+    --system-interaction-soft: rgba(var(--system-interaction-rgb), 0.1);
+    --system-accent-hover: var(--system-interaction);
+    --system-accent-soft: var(--system-interaction-soft);
     --sidebar-text: var(--text-primary);
-    --sidebar-active: #5c5fc1;
-    --accent-peach: #5c5fc1;
-    --accent-peach-hover: #4f52ad;
-    --accent-peach-border: #5c5fc1;
+    --sidebar-active: var(--system-interaction);
+    --accent-peach: var(--system-accent);
+    --accent-peach-hover: var(--system-accent-hover);
+    --accent-peach-border: var(--system-accent);
     --accent-on-peach: var(--text-inverse);
     --accent-on-peach-hover: var(--text-inverse);
     --accent-brown: var(--accent-peach);
@@ -33,18 +41,19 @@
     --panel-bg: #f7f6f4;
     --surface-hover: #f2efeb;
     --surface-selected: #e9e7e4;
-    --nav-selected-bg: #ececf8;
+    --nav-selected-bg: var(--system-accent-soft);
     --radius-max: 8px;
     --radius: var(--radius-max);
     --toolbar-height: 52px;
-    --sidebar-width: 56px;
+    --sidebar-width: 272px;
+    --sidebar-collapsed-width: 64px;
     --secondary-menu-min-width: 230px;
     --secondary-menu-resize-max-width: 500px;
     --secondary-menu-content-min-width: 240px;
     --secondary-menu-max-width: min(var(--secondary-menu-resize-max-width), max(var(--secondary-menu-min-width), calc(var(--app-viewport-width) - var(--sidebar-width) - var(--secondary-menu-content-min-width))));
     --secondary-menu-width: 252px;
     --secondary-menu-constrained-width: clamp(var(--secondary-menu-min-width), var(--secondary-menu-width), var(--secondary-menu-max-width));
-    --app-sidebar-total-width: calc(var(--sidebar-width) + var(--secondary-menu-constrained-width));
+    --app-sidebar-total-width: var(--sidebar-width);
     --page-max-width: 1200px;
     --bp-sm: 480px;
     --bp-md: 768px;
@@ -56,8 +65,8 @@
     --checkbox-bg: #ffffff;
     --checkbox-border-color: #cfcac4;
     --checkbox-hover-border-color: #a99f97;
-    --checkbox-checked-color: rgb(30, 191, 191);
-    --checkbox-focus-ring: 0 0 0 3px rgba(30, 191, 191, 0.18);
+    --checkbox-checked-color: var(--system-accent);
+    --checkbox-focus-ring: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.18);
     --lucide-check-white: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
     --lucide-minus-white: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
     --lucide-chevron-down-gray: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
@@ -88,12 +97,12 @@
     --shadow-sm: 0 1px 2px rgba(63, 59, 56, 0.08);
     --shadow-md: 0 8px 18px rgba(63, 59, 56, 0.08);
     --shadow-lg: 0 18px 40px rgba(63, 59, 56, 0.12);
-    --focus-ring: 0 0 0 3px rgba(92, 95, 193, 0.1);
+    --focus-ring: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.1);
 
     /* Semantic aliases (legacy file-upload.css) */
     --primary-color: var(--accent-red);
     --primary-color-dark: var(--accent-red-hover);
-    --primary-color-light: #f0f0fb;
+    --primary-color-light: rgba(var(--system-interaction-rgb), 0.12);
     --error-color: var(--accent-red);
     --error-color-light: #fff6f1;
     --background-secondary: #faf9f7;

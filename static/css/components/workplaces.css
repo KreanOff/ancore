@@ -4,13 +4,13 @@
     --workplaces-brand-rgb: 255, 49, 49;
     --workplaces-brand-soft: #fff1f1;
     --workplaces-brand-border-soft: #ffd8d8;
-    --workplaces-accent: #5c5fc1;
-    --workplaces-accent-dark: #4f52ad;
-    --workplaces-accent-rgb: 92, 95, 193;
-    --workplaces-accent-soft: var(--nav-selected-bg, #ececf8);
-    --workplaces-accent-selected: #f4f6ff;
-    --workplaces-accent-hover-surface: #fbfbff;
-    --workplaces-accent-border-soft: #dfe4ff;
+    --workplaces-accent: var(--system-accent);
+    --workplaces-accent-dark: var(--system-accent-hover);
+    --workplaces-accent-rgb: var(--system-interaction-rgb);
+    --workplaces-accent-soft: var(--nav-selected-bg, rgba(111, 117, 128, 0.1));
+    --workplaces-accent-selected: rgba(var(--workplaces-accent-rgb), 0.08);
+    --workplaces-accent-hover-surface: rgba(var(--workplaces-accent-rgb), 0.03);
+    --workplaces-accent-border-soft: rgba(var(--workplaces-accent-rgb), 0.2);
     --workplaces-accent-ring: rgba(var(--workplaces-accent-rgb), 0.12);
 }
 
@@ -45,10 +45,10 @@
 
 .sidebar-workplace:hover,
 .sidebar-workplace.active {
-    --app-text-color: var(--workplaces-accent);
+    --app-text-color: var(--workplaces-accent-dark);
 
     background: rgba(var(--workplaces-accent-rgb), 0.1);
-    color: var(--workplaces-accent);
+    color: var(--workplaces-accent-dark);
 }
 
 .sidebar-workplace__avatar {
@@ -297,8 +297,8 @@
 }
 
 .workplaces-account-link:hover {
-    border-color: var(--accent-peach);
-    color: var(--accent-peach);
+    border-color: var(--accent-peach-hover);
+    color: var(--accent-peach-hover);
 }
 
 .workplaces-standalone-shell {
@@ -716,7 +716,7 @@
 
 .workplace-card.is-active {
     background: var(--workplaces-accent-hover-surface);
-    box-shadow: inset 3px 0 0 var(--accent-peach);
+    box-shadow: inset 3px 0 0 var(--workplaces-accent-dark);
 }
 
 .workplace-card__main {
@@ -810,8 +810,8 @@
 .workplace-open-button.is-active {
     --app-text-color: #ffffff;
 
-    border-color: var(--accent-peach);
-    background: var(--accent-peach);
+    border-color: var(--accent-peach-hover);
+    background: var(--accent-peach-hover);
     color: #ffffff;
 }
 
@@ -839,8 +839,8 @@
 
 .workplace-settings__toggle:hover,
 .workplace-settings[open] .workplace-settings__toggle {
-    border-color: var(--accent-peach);
-    color: var(--accent-peach);
+    border-color: var(--accent-peach-hover);
+    color: var(--accent-peach-hover);
 }
 
 .workplace-settings__toggle svg {
@@ -1218,7 +1218,7 @@
 
 .workplace-card.is-active {
     background: var(--workplaces-accent-selected);
-    box-shadow: inset 3px 0 0 var(--workplaces-accent);
+    box-shadow: inset 3px 0 0 var(--workplaces-accent-dark);
 }
 
 .workplace-card__avatar {
@@ -1845,7 +1845,7 @@
 }
 
 .workplace-tile.is-active {
-    box-shadow: inset 3px 0 0 var(--workplaces-accent);
+    box-shadow: inset 3px 0 0 var(--workplaces-accent-dark);
 }
 
 .workplace-tile__avatar {
@@ -1939,8 +1939,8 @@
 .workplace-open-button.is-active {
     --app-text-color: #ffffff;
 
-    border-color: var(--workplaces-accent);
-    background: var(--workplaces-accent);
+    border-color: var(--workplaces-accent-dark);
+    background: var(--workplaces-accent-dark);
     color: #ffffff;
     box-shadow: 0 10px 20px rgba(var(--workplaces-accent-rgb), 0.2);
 }
@@ -3013,7 +3013,7 @@
 }
 
 .workplace-create-modal__body .workplace-create-modal__text-input:focus {
-    border-color: var(--workplaces-accent);
+    border-color: var(--workplaces-accent-dark);
     box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.12);
 }
 
@@ -3073,7 +3073,7 @@
 .workplace-create-modal__dropzone:hover,
 .workplace-create-modal__dropzone.is-dragging,
 .workplace-edit-modal__file-input:focus-visible + .workplace-create-modal__dropzone {
-    border-color: var(--workplaces-accent);
+    border-color: var(--workplaces-accent-dark);
     background: rgba(var(--workplaces-accent-rgb), 0.045);
     box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.1);
     outline: none;
@@ -3330,7 +3330,7 @@
 
 .tasks-project-modal__body .workplace-edit-modal__code-field .tasks-inline-input:focus,
 .tasks-project-modal__body .workplace-edit-modal__description-field .tasks-modal-textarea:focus {
-    border-color: var(--workplaces-accent);
+    border-color: var(--workplaces-accent-dark);
     box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.1);
 }
 

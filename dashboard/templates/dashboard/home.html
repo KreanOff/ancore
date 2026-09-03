@@ -1,13 +1,13 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Panel Główny | ancore{% endblock %}
+{% block title %}Powiadomienia | ancore{% endblock %}
 
 {% block page_container_class %}full-width{% endblock %}
 
 {% block secondary_menu_panel_attrs %}{% endblock %}
 
-{% block secondary_menu %}
-    <aside class="dashboard-rail" aria-label="Powiadomienia systemowe">
+{% block content %}
+    <section class="dashboard-rail dashboard-home-notifications" aria-label="Powiadomienia systemowe">
         <header class="dashboard-rail-header">
             <div>
                 <h1>Powiadomienia</h1>
@@ -15,31 +15,6 @@
             <span class="dashboard-rail-badge" aria-label="Liczba powiadomień">{{ dashboard_notification_count }}</span>
         </header>
 
-        <div class="dashboard-notifications-list" role="list">
-            {% for notification in dashboard_notifications %}
-            <a href="{{ notification.url }}" class="dashboard-notification dashboard-notification--{{ notification.source }}" role="listitem">
-                {% include 'accounts/includes/user_avatar.html' with avatar=notification.actor_avatar avatar_class='dashboard-notification-avatar' only %}
-                <span class="dashboard-notification-body">
-                    <span class="dashboard-notification-line">
-                        <strong>{{ notification.actor_label }}</strong>
-                        <span>{{ notification.action_message }}</span>
-                    </span>
-                    {% for detail in notification.detail_lines %}
-                    <span class="dashboard-notification-note">
-                        {{ detail.label }}:
-                        {% if detail.from_label %}<strong>{{ detail.from_label }}</strong> &rarr; {% endif %}<strong>{% if detail.to_label %}{{ detail.to_label }}{% else %}{{ detail.value }}{% endif %}</strong>
-                    </span>
-                    {% endfor %}
-                    <span class="dashboard-notification-location">Gdzie: <strong>{{ notification.location_label }}</strong></span>
-                    <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"d.m, H:i" }}</time>
-                </span>
-            </a>
-            {% empty %}
-            <p class="dashboard-empty dashboard-empty--rail">Brak nowych powiadomień.</p>
-            {% endfor %}
-        </div>
-    </aside>
-{% endblock %}
-
-{% block content %}
+        {% include 'dashboard/includes/notification_list.html' %}
+    </section>
 {% endblock %}

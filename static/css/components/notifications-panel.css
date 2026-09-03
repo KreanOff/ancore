@@ -1,0 +1,78 @@
+.notifications-panel,
+.notifications-panel .global-search-panel__header {
+    background: var(--sidebar-bg);
+}
+
+.notifications-panel {
+    border-left: 1px solid var(--border-color);
+}
+
+.notifications-panel__count {
+    min-width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+    padding-inline: 0.4rem;
+    border-radius: 6px;
+    font-size: 11px;
+}
+
+.notifications-panel__content {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0.65rem 0.75rem 1rem;
+    scrollbar-width: thin;
+}
+
+.notifications-panel .dashboard-notifications-list {
+    gap: 0;
+}
+
+.notifications-panel .dashboard-notification {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 0.7rem;
+    padding: 0.7rem 0.65rem;
+    border-radius: 6px;
+}
+
+.notifications-panel .dashboard-notification:hover {
+    border-color: transparent;
+    background: #f6f6f7;
+}
+
+.notifications-panel .dashboard-notification:focus-visible {
+    outline: 2px solid #777d87;
+    outline-offset: -1px;
+    background: #f1f2f3;
+}
+
+.notifications-panel .dashboard-notification-line,
+.notifications-panel .dashboard-notification-note,
+.notifications-panel .dashboard-notification-location,
+.notifications-panel .dashboard-notification time {
+    font-size: 12px;
+}
+
+.notifications-panel .dashboard-notification time {
+    font-weight: 500;
+}
+
+.notifications-panel__empty,
+.notifications-panel__state {
+    min-height: 360px;
+}
+
+.notifications-panel__loading {
+    padding-top: 0;
+}
+
+@media (max-width: 767px) {
+    .notifications-panel {
+        border-left: 0;
+    }
+
+    .notifications-panel__content {
+        padding-inline: 0.55rem;
+    }
+}

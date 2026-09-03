@@ -1,0 +1,27 @@
+<div class="dashboard-notifications-list" role="list">
+    {% for notification in dashboard_notifications %}
+    <a href="{{ notification.url }}" class="dashboard-notification dashboard-notification--{{ notification.source }}" role="listitem" data-notification-item>
+        {% include 'accounts/includes/user_avatar.html' with avatar=notification.actor_avatar avatar_class='dashboard-notification-avatar' only %}
+        <span class="dashboard-notification-body">
+            <span class="dashboard-notification-line">
+                <strong>{{ notification.actor_label }}</strong>
+                <span>{{ notification.action_message }}</span>
+            </span>
+            {% for detail in notification.detail_lines %}
+            <span class="dashboard-notification-note">
+                {{ detail.label }}:
+                {% if detail.from_label %}<strong>{{ detail.from_label }}</strong> &rarr; {% endif %}<strong>{% if detail.to_label %}{{ detail.to_label }}{% else %}{{ detail.value }}{% endif %}</strong>
+            </span>
+            {% endfor %}
+            <span class="dashboard-notification-location">Gdzie: <strong>{{ notification.location_label }}</strong></span>
+            <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"d.m, H:i" }}</time>
+        </span>
+    </a>
+    {% empty %}
+    <div class="global-search-state notifications-panel__empty">
+        <span class="global-search-state__icon" aria-hidden="true"><i data-lucide="bell-off"></i></span>
+        <h3>Brak nowych powiadomień.</h3>
+        <p>Gdy pojawi się nowa aktywność, zobaczysz ją w tym miejscu.</p>
+    </div>
+    {% endfor %}
+</div>

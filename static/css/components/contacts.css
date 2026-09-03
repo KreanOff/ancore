@@ -131,8 +131,8 @@
 }
 
 .contacts-row:hover {
-    border-color: var(--accent-peach);
-    background: var(--accent-peach);
+    border-color: var(--chrome-border);
+    background: var(--surface-hover);
 }
 
 .contacts-row > .status-indicator,
@@ -692,9 +692,9 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 }
 
 .contacts-actions-menu.is-open .contacts-actions-menu__toggle {
-    background: var(--accent-peach);
-    border-color: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--system-interaction);
+    border-color: var(--system-interaction);
+    color: var(--accent-on-peach-hover);
 }
 
 .contacts-actions-menu__panel {
@@ -924,8 +924,8 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 }
 
 .contacts-share-row--link:hover {
-    border-color: var(--accent-peach);
-    background: var(--accent-peach);
+    border-color: var(--chrome-border);
+    background: var(--surface-hover);
 }
 
 .contacts-company-links {
@@ -1029,8 +1029,8 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
 .contacts-custom-select__button:focus-visible {
     outline: none;
-    border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+    border-color: var(--system-interaction);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
 }
 
 .contacts-custom-select__button:disabled {
@@ -1578,8 +1578,8 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 .contacts-modal-fields .tasks-inline-input:focus,
 .contacts-modal-fields .tasks-inline-select:focus,
 .contacts-edit-modal__body .form-input:focus {
-    border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+    border-color: var(--system-interaction);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
     outline: none;
 }
 

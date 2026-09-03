@@ -73,7 +73,7 @@
 .app-sticky-note__close:hover,
 .app-sticky-note__close:focus-visible {
     outline: none;
-    border-color: rgba(92, 95, 193, 0.38);
+    border-color: rgba(var(--system-interaction-rgb), 0.38);
     background: #ffffff;
 }
 
@@ -125,7 +125,7 @@ body.app-sticky-note-resizing {
 }
 
 .app-sticky-note__resize:focus-visible {
-    outline: 2px solid rgba(92, 95, 193, 0.58);
+    outline: 2px solid rgba(var(--system-interaction-rgb), 0.58);
     outline-offset: -2px;
 }
 

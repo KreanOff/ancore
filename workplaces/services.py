@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.db import transaction
 
-from .models import Workplace, WorkplaceMembership
+from .models import SidebarFavorite, Workplace, WorkplaceMembership
 
 
 ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
@@ -39,6 +39,11 @@ def ensure_default_workplace(user):
             workplace=workplace,
             user=user,
             defaults={'role': WorkplaceMembership.Role.OWNER},
+        )
+        SidebarFavorite.objects.get_or_create(
+            workplace=workplace,
+            user=user,
+            item_key='dashboard',
         )
     return workplace
 

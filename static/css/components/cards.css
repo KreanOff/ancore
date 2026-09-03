@@ -773,10 +773,10 @@ a.settings-option:hover,
     align-items: center;
     justify-content: center;
     padding: 0 0.45rem;
-    border: 1px solid var(--accent-peach-border);
+    border: 1px solid var(--system-accent);
     border-radius: 7px;
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--system-accent);
+    color: var(--text-inverse);
     font-size: var(--font-size-sm);
     font-weight: 750;
 }

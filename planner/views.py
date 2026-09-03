@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -53,7 +53,24 @@ def index(request):
     from django.middleware.csrf import get_token
     from django.urls import reverse
 
-    now = timezone.localtime()
+    initial_event = None
+    event_id = request.GET.get('event')
+    if event_id and event_id.isdigit():
+        initial_event = _filter_workplace(
+            CalendarEvent.objects.filter(user=request.user, pk=int(event_id)),
+            _active_workplace(request),
+        ).first()
+
+    now = timezone.localtime(initial_event.start) if initial_event else timezone.localtime()
+    requested_date = request.GET.get('date')
+    if initial_event is None and requested_date:
+        try:
+            parsed_date = date.fromisoformat(requested_date)
+        except ValueError:
+            parsed_date = None
+        if parsed_date is not None:
+            now = timezone.make_aware(datetime.combine(parsed_date, datetime.min.time()))
+
     return render(request, 'planner/index.html', {
         'calendar_config': {
             'csrfToken': get_token(request),
@@ -65,6 +82,8 @@ def index(request):
             },
             'initialYear': now.year,
             'initialMonth': now.month,
+            'initialDay': now.day,
+            'initialEventId': initial_event.id if initial_event else None,
         },
     })
 

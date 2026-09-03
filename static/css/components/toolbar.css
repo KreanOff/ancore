@@ -174,7 +174,7 @@
 .error-banner,
 .tasks-error-banner {
     background: #fff5f7;
-    border: 1px solid rgba(92, 95, 193, 0.25);
+    border: 1px solid rgba(var(--system-interaction-rgb), 0.25);
     color: var(--accent-peach-hover);
     padding: 1rem 1.25rem;
     font-size: var(--font-size-base);

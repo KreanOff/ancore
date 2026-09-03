@@ -6,8 +6,8 @@ body.auth-page {
     --auth-muted: #626d7c;
     --auth-border: #bbc5d0;
     --auth-border-soft: #d6dee3;
-    --auth-teal: #5bbcbe;
-    --auth-teal-dark: #387d90;
+    --auth-teal: var(--system-accent);
+    --auth-teal-dark: var(--system-accent-hover);
     --auth-input-bg: #fcfdfd;
     --auth-focus-bg: #f3f4f6;
     --auth-focus-border: #6b7280;
@@ -133,14 +133,14 @@ body.auth-page .auth-switch-link {
 
 body.auth-page .auth-switch-link:hover {
     --app-text-color: #ffffff;
-    border-color: var(--auth-teal);
-    background: var(--auth-teal);
+    border-color: var(--system-interaction);
+    background: var(--system-interaction);
     color: #ffffff !important;
 }
 
 body.auth-page .auth-switch-link:focus-visible,
 body.auth-page .auth-home-link:focus-visible {
-    outline: 3px solid rgba(91, 188, 190, 0.28);
+    outline: 3px solid rgba(var(--system-interaction-rgb), 0.28);
     outline-offset: 3px;
 }
 
@@ -443,7 +443,7 @@ body.auth-page .auth-password-toggle:hover,
 body.auth-page .auth-password-toggle:focus-visible {
     --app-text-color: var(--auth-teal-dark);
     outline: none;
-    background: rgba(91, 188, 190, 0.1);
+    background: rgba(var(--system-interaction-rgb), 0.1);
     color: var(--auth-teal-dark) !important;
 }
 
@@ -555,12 +555,26 @@ body.auth-page .auth-submit > svg {
 }
 
 body.auth-page .auth-submit:hover {
+    background: var(--system-interaction);
     box-shadow: none;
 }
 
+body.auth-page .auth-submit:hover .auth-submit-icon,
+body.auth-page .auth-submit:hover > i,
+body.auth-page .auth-submit:hover > svg {
+    background: var(--system-interaction);
+}
+
 body.auth-page .auth-submit:focus-visible {
-    outline: 3px solid rgba(91, 188, 190, 0.32);
+    outline: 3px solid rgba(var(--system-interaction-rgb), 0.32);
     outline-offset: 3px;
+    background: var(--system-interaction);
+}
+
+body.auth-page .auth-submit:focus-visible .auth-submit-icon,
+body.auth-page .auth-submit:focus-visible > i,
+body.auth-page .auth-submit:focus-visible > svg {
+    background: var(--system-interaction);
 }
 
 body.auth-page .auth-home-link {

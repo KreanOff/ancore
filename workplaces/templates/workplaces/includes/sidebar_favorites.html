@@ -1,0 +1,21 @@
+<div class="sidebar-favorites-content" data-sidebar-favorites-content aria-live="polite">
+    <p class="u-sr-only" id="sidebar-favorites-instructions">Przeciągnij element z sekcji Workspace do Favorites, aby go dodać. Przeciągnij element z Favorites do pola Usuń z Favorites, aby go usunąć.</p>
+    <div class="sidebar-favorites-list" data-sidebar-favorites-list{% if not sidebar_favorites %} hidden{% endif %}>
+        {% for item in sidebar_favorites %}
+        <div class="sidebar-favorite-row" data-sidebar-favorite-item="{{ item.key }}" draggable="true" aria-describedby="sidebar-favorites-instructions" title="Przeciągnij do pola Usuń z Favorites">
+            <a href="{{ item.url }}" class="nav-link sidebar-favorite-link{% if item.is_active %} active{% endif %}">
+                <span class="sidebar-favorite-icon" aria-hidden="true"><i data-lucide="{{ item.icon }}"></i></span>
+                <span class="nav-label">{{ item.label }}</span>
+            </a>
+            <form method="post" action="{% url 'workplaces:toggle-sidebar-favorite' current_workplace.id %}" class="sidebar-favorite-form sidebar-favorite-remove-form u-sr-only" data-sidebar-favorite-form data-favorite-key="{{ item.key }}" data-favorite-label="{{ item.label }}" data-favorite-icon="{{ item.icon }}" data-favorite-url="{{ item.url }}" data-favorite-state="pinned">
+                {% csrf_token %}
+                <input type="hidden" name="item_key" value="{{ item.key }}">
+                <input type="hidden" name="favorite_action" value="remove" data-sidebar-favorite-action>
+                <input type="hidden" name="next" value="{% firstof sidebar_next_url request.get_full_path %}">
+                <button type="submit" data-sidebar-favorite-accessible-action>Usuń {{ item.label }} z Favorites</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    <p class="sidebar-favorites-message" data-sidebar-favorites-empty{% if sidebar_favorites %} hidden{% endif %}>Przeciągnij tutaj elementy menu</p>
+</div>

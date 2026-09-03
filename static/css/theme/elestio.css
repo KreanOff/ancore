@@ -160,18 +160,23 @@ body {
 .calendar-nav-button.is-active:hover {
     background: var(--accent-peach-hover);
     color: var(--accent-on-peach-hover);
-    box-shadow: 0 4px 12px rgba(92, 95, 193, 0.22);
+    box-shadow: 0 4px 12px rgba(var(--system-interaction-rgb), 0.22);
 }
 
 .tasks-new-button {
-    background: rgb(30, 191, 191);
-    border-color: rgb(30, 191, 191);
+    background: var(--system-accent);
+    border-color: var(--system-accent);
 }
 
 .tasks-new-button:hover {
-    background: rgb(30, 191, 191);
-    color: var(--accent-on-peach);
-    box-shadow: 0 4px 12px rgba(30, 191, 191, 0.22);
+    background: var(--system-interaction);
+    color: var(--accent-on-peach-hover);
+    box-shadow: 0 4px 12px rgba(var(--system-interaction-rgb), 0.22);
+}
+
+.calendar-nav-button.is-active {
+    background: var(--system-interaction);
+    border-color: var(--system-interaction);
 }
 
 .tasks-icon-button,
@@ -238,8 +243,8 @@ body {
 .filter-select:focus,
 .tasks-filter-select:focus,
 .form-select:focus {
-    border-color: var(--accent-peach-border);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
+    border-color: var(--system-interaction);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.12);
 }
 
 .tasks-search-field:focus-within {
@@ -294,8 +299,8 @@ body {
 .contacts-row:hover,
 .contacts-share-row--link:hover,
 .tasks-project-row:hover {
-    background: #fbf6f3;
-    border-color: var(--accent-peach-border);
+    background: var(--surface-hover);
+    border-color: var(--chrome-border);
 }
 
 .task-checkbox {
@@ -383,7 +388,7 @@ body {
 .secondary-menu-resizer:hover::after,
 .secondary-menu-resizer:focus-visible::after,
 body.secondary-menu-resizing .secondary-menu-resizer::after {
-    background: var(--accent-peach-border);
+    background: var(--system-interaction);
 }
 
 body.auth-page,
@@ -401,8 +406,8 @@ body.auth-page,
 .auth-visual::before {
     opacity: 0.65;
     background-image:
-        linear-gradient(rgba(30, 191, 191, 0.055) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(92, 95, 193, 0.055) 1px, transparent 1px);
+        linear-gradient(rgba(var(--system-interaction-rgb), 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(var(--system-interaction-rgb), 0.055) 1px, transparent 1px);
 }
 
 .auth-brand,
@@ -425,8 +430,8 @@ body.auth-page,
 
 .auth-section-label,
 .auth-card-label {
-    border-color: rgba(30, 191, 191, 0.42);
-    background: rgb(30, 191, 191);
+    border-color: rgba(var(--system-interaction-rgb), 0.42);
+    background: var(--system-accent);
     color: var(--accent-on-peach);
 }
 
@@ -463,8 +468,8 @@ body.auth-page,
 
 .auth-back-link:hover,
 .auth-switch-link:hover {
-    border-color: rgba(30, 191, 191, 0.55);
-    background: #f8fbfb;
+    border-color: rgba(var(--system-interaction-rgb), 0.55);
+    background: var(--surface-hover);
     color: var(--text-strong);
     box-shadow: 0 6px 18px rgba(31, 36, 43, 0.08);
 }
@@ -494,8 +499,8 @@ body.auth-page,
 }
 
 .auth-card .form-input:focus {
-    border-color: var(--accent-peach-border);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+    border-color: var(--system-interaction);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
 }
 
 .auth-input-shell > i,
@@ -515,11 +520,11 @@ body.auth-page,
 .auth-submit:hover {
     background: var(--accent-peach-hover);
     color: var(--accent-on-peach-hover);
-    box-shadow: 0 10px 24px rgba(92, 95, 193, 0.16);
+    box-shadow: 0 10px 24px rgba(var(--system-interaction-rgb), 0.16);
 }
 
 .auth-submit:focus-visible {
-    outline-color: var(--accent-peach-border);
+    outline-color: var(--system-interaction);
 }
 
 .dashboard-topbar-icon,
@@ -795,8 +800,8 @@ body.auth-page,
 .workplace-settings__save,
 .auth-submit,
 .btn-primary {
-    background: rgb(30, 191, 191);
-    border-color: rgb(30, 191, 191);
+    background: var(--system-accent);
+    border-color: var(--system-accent);
     color: var(--accent-on-peach);
 }
 
@@ -822,10 +827,10 @@ body.auth-page,
 .auth-submit:focus-visible,
 .btn-primary:hover:not(:disabled),
 .btn-primary:focus-visible {
-    background: rgb(30, 191, 191);
-    border-color: rgb(30, 191, 191);
-    color: var(--accent-on-peach);
-    box-shadow: 0 4px 12px rgba(30, 191, 191, 0.22);
+    background: var(--system-interaction);
+    border-color: var(--system-interaction);
+    color: var(--accent-on-peach-hover);
+    box-shadow: 0 4px 12px rgba(var(--system-interaction-rgb), 0.22);
 }
 
 .tasks-inline-submit:hover,
@@ -833,7 +838,7 @@ body.auth-page,
 .tasks-issue-save:hover,
 .tasks-issue-save:focus-visible,
 .contacts-actions-menu.is-open .contacts-actions-menu__toggle {
-    background: rgb(30, 191, 191);
-    border-color: rgb(30, 191, 191);
-    color: var(--accent-on-peach);
+    background: var(--system-interaction);
+    border-color: var(--system-interaction);
+    color: var(--accent-on-peach-hover);
 }

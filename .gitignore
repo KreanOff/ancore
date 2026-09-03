@@ -66,6 +66,7 @@ media
 !**/migrations/__init__.py
 !workplaces/migrations/0004_workplace_code_workplace_description_and_more.py
 !workplaces/migrations/0005_backfill_workplace_codes.py
+!workplaces/migrations/0006_sidebarfavorite.py
 !tasks/migrations/0042_remove_task_task_user_company_status_idx_and_more.py
 
 # Flask stuff:

@@ -1,0 +1,9 @@
+{% if show_sidebar_favorite_toggle %}
+<form method="post" action="{% url 'workplaces:toggle-sidebar-favorite' current_workplace.id %}" class="sidebar-favorite-form u-sr-only" data-sidebar-favorite-form data-favorite-key="{{ item_key }}" data-favorite-label="{{ label }}" data-favorite-icon="{{ icon }}" data-favorite-url="{{ url }}" data-favorite-state="{% if is_favorite %}pinned{% else %}unpinned{% endif %}">
+    {% csrf_token %}
+    <input type="hidden" name="item_key" value="{{ item_key }}">
+    <input type="hidden" name="favorite_action" value="{% if is_favorite %}remove{% else %}add{% endif %}" data-sidebar-favorite-action>
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <button type="submit" data-sidebar-favorite-accessible-action>{% if is_favorite %}Usuń {{ label }} z Favorites{% else %}Dodaj {{ label }} do Favorites{% endif %}</button>
+</form>
+{% endif %}

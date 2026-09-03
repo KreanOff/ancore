@@ -5,6 +5,7 @@
 }
 
 html {
+    zoom: var(--app-ui-scale);
     font-size: var(--font-size-sm);
     height: 100%;
     overflow: hidden;

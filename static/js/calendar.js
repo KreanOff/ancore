@@ -31,10 +31,15 @@ function initCalendarPage() {
     const MAX_EVENTS_PER_CELL = 3;
     const DAY_VIEW_HOURS = { start: 6, end: 22 };
 
-    let anchorDate = startOfDay(new Date());
+    let anchorDate = startOfDay(new Date(
+        Number(config.initialYear) || new Date().getFullYear(),
+        Math.max(0, (Number(config.initialMonth) || (new Date().getMonth() + 1)) - 1),
+        Number(config.initialDay) || 1
+    ));
     let currentView = 'month';
     let events = [];
     let fetchToken = 0;
+    let pendingEventId = Number(config.initialEventId) || null;
 
     const periodLabel = document.getElementById('cal-period-label');
     const eventsSubtitle = document.getElementById('cal-events-subtitle');
@@ -563,6 +568,11 @@ function initCalendarPage() {
             if (data.status === 'success') {
                 events = data.events;
                 renderCurrentView();
+                if (pendingEventId) {
+                    const requestedEvent = events.find((event) => Number(event.id) === pendingEventId);
+                    pendingEventId = null;
+                    if (requestedEvent) openDialog('edit', null, requestedEvent);
+                }
             }
         } catch (err) {
             console.error('Nie udało się pobrać wydarzeń:', err);

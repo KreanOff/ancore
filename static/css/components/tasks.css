@@ -48,7 +48,7 @@
     height: 40px;
     padding: 0 0.875rem;
     border-radius: 5px;
-    background: rgb(30, 191, 191);
+    background: var(--system-accent);
     color: var(--accent-on-peach);
     text-decoration: none;
     border: 0;
@@ -59,8 +59,8 @@
 }
 
 .tasks-new-button:hover {
-    background: rgb(30, 191, 191);
-    color: var(--accent-on-peach);
+    background: var(--system-interaction);
+    color: var(--accent-on-peach-hover);
 }
 
 .tasks-new-button:disabled {
@@ -270,7 +270,7 @@
 .tasks-rail-add-button:hover,
 .tasks-rail-add-button:focus-visible {
     background: #edf1f7;
-    color: var(--accent-peach);
+    color: var(--system-interaction);
     outline: none;
 }
 
@@ -300,8 +300,8 @@
 
 .tasks-rail-link:hover,
 .tasks-rail-link.is-active {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--system-interaction);
+    color: var(--accent-on-peach-hover);
 }
 
 .tasks-rail-nav .tasks-rail-link {
@@ -749,7 +749,7 @@
 
 .tasks-directory-column-save:hover,
 .tasks-directory-column-save:focus-visible {
-    box-shadow: 0 2px 6px rgba(92, 95, 193, 0.22);
+    box-shadow: 0 2px 6px rgba(var(--system-interaction-rgb), 0.22);
 }
 
 .tasks-tag-topbar-button {
@@ -772,8 +772,8 @@
 }
 
 .tasks-tag-topbar-button:hover {
-    background: var(--accent-peach);
-    box-shadow: 0 2px 6px rgba(92, 95, 193, 0.22);
+    background: var(--system-interaction);
+    box-shadow: 0 2px 6px rgba(var(--system-interaction-rgb), 0.22);
 }
 
 .tasks-tag-topbar-button > span[aria-hidden="true"] {
@@ -1005,8 +1005,8 @@
 
 .tasks-segments button:hover,
 .tasks-segments button.is-active {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--system-interaction);
+    color: var(--accent-on-peach-hover);
 }
 
 .tasks-filter-group {
@@ -2038,7 +2038,7 @@
 }
 
 .tasks-project-modal__submit:hover:not(:disabled) {
-    background: var(--accent-peach);
+    background: var(--system-interaction);
 }
 
 .tasks-project-modal__submit:disabled {
@@ -2339,7 +2339,7 @@ body.modal-open::before {
 }
 
 .tasks-modal__submit:hover:not(:disabled) {
-    background: var(--accent-peach);
+    background: var(--system-interaction);
 }
 
 .tasks-modal__submit:disabled {
@@ -2495,8 +2495,8 @@ body.modal-open::before {
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-danger {
     --app-text-color: var(--text-inverse);
     min-width: 132px;
-    border: 1px solid rgb(30, 191, 191);
-    background: rgb(30, 191, 191);
+    border: 1px solid var(--system-accent);
+    background: var(--system-accent);
     color: #ffffff !important;
 }
 
@@ -2504,10 +2504,10 @@ body.modal-open::before {
 .confirm-modal--destructive .btn-danger:focus-visible,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-danger:hover:not(:disabled),
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-danger:focus-visible {
-    border-color: rgb(30, 191, 191);
-    background: rgb(30, 191, 191);
+    border-color: var(--system-interaction);
+    background: var(--system-interaction);
     color: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(30, 191, 191, 0.22);
+    box-shadow: 0 4px 12px rgba(var(--system-interaction-rgb), 0.22);
 }
 
 .confirm-modal--destructive .btn:active,
@@ -2526,7 +2526,7 @@ body.modal-open::before {
 
 .confirm-modal--destructive .btn-danger:focus-visible,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .btn-danger:focus-visible {
-    box-shadow: 0 0 0 3px rgba(30, 191, 191, 0.18);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.18);
 }
 
 .confirm-modal--destructive .btn-cancel:focus-visible,
@@ -3620,16 +3620,16 @@ body.modal-open::before {
 
 .tasks-project-note__primary {
     --app-text-color: #ffffff;
-    border: 1px solid rgb(30, 191, 191);
-    background: rgb(30, 191, 191);
+    border: 1px solid var(--system-accent);
+    background: var(--system-accent);
     color: #ffffff !important;
 }
 
 .tasks-project-note__primary:hover,
 .tasks-project-note__primary:focus-visible {
-    border-color: rgb(30, 191, 191);
-    background: rgb(30, 191, 191);
-    box-shadow: 0 4px 12px rgba(30, 191, 191, 0.22);
+    border-color: var(--system-interaction);
+    background: var(--system-interaction);
+    box-shadow: 0 4px 12px rgba(var(--system-interaction-rgb), 0.22);
 }
 
 .tasks-project-note__primary svg {
@@ -3748,9 +3748,9 @@ body.modal-open::before {
 .tasks-project-create-fields .tasks-company-select.is-open .tasks-company-select__button,
 .tasks-project-create-fields .tasks-responsible-select__button:hover,
 .tasks-project-create-fields .tasks-responsible-select.is-open .tasks-responsible-select__button {
-    border-color: var(--accent-peach);
+    border-color: var(--system-interaction);
     background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
 }
 
 .tasks-company-select__current-icon,
@@ -4447,8 +4447,8 @@ body.modal-open::before {
 
 .tasks-directory-share-person-field input:focus,
 .tasks-directory-share-person-field select:focus {
-    border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+    border-color: var(--system-interaction);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
 }
 
 .tasks-directory-share-link-control {
@@ -4903,8 +4903,8 @@ body.modal-open::before {
 }
 
 .tasks-directory-share-permission-toggle:focus-visible {
-    border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+    border-color: var(--system-interaction);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
     outline: 0;
 }
 
@@ -5311,7 +5311,7 @@ body.modal-open::before {
 .tasks-icon-picker:hover,
 .tasks-icon-picker[aria-expanded="true"] {
     border-color: #bfc7d4;
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.1);
 }
 
 .tasks-icon-picker span {
@@ -5394,7 +5394,7 @@ body.modal-open::before {
 }
 
 .tasks-emoji-picker__tabs button.is-active {
-    border-bottom-color: var(--accent-peach);
+    border-bottom-color: var(--system-interaction);
     color: #1d2430;
 }
 
@@ -5432,7 +5432,7 @@ body.modal-open::before {
 .tasks-emoji-picker__search input:focus {
     outline: none;
     border-color: #aeb8ca;
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.12);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.12);
 }
 
 .tasks-emoji-picker__search input::placeholder {
@@ -6331,7 +6331,7 @@ body.modal-open::before {
 .tasks-project-tree .tasks-rail-add-button:hover,
 .tasks-project-tree .tasks-rail-add-button:focus-visible {
     background: #edf1f7;
-    color: var(--accent-peach);
+    color: var(--system-interaction);
 }
 
 .tasks-project-tree .tasks-rail-add-button span {
@@ -6963,8 +6963,8 @@ body.modal-open::before {
 }
 
 .tasks-inline-submit:hover {
-    background: var(--accent-peach);
-    color: var(--accent-on-peach);
+    background: var(--system-interaction);
+    color: var(--accent-on-peach-hover);
 }
 
 .tasks-board {
@@ -7305,8 +7305,8 @@ body.modal-open::before {
 
 .tasks-kanban-wallpaper-swatch:hover,
 .tasks-kanban-wallpaper-swatch.is-active {
-    border-color: var(--accent-peach);
-    box-shadow: 0 0 0 2px rgba(92, 95, 193, 0.14);
+    border-color: var(--system-interaction);
+    box-shadow: 0 0 0 2px rgba(var(--system-interaction-rgb), 0.14);
 }
 
 .tasks-kanban-wallpaper-swatch__preview {
@@ -7368,7 +7368,7 @@ body.modal-open::before {
 }
 
 .tasks-kanban-wallpaper-clear:hover {
-    color: var(--accent-peach);
+    color: var(--system-interaction);
 }
 
 .tasks-kanban-board::-webkit-scrollbar-track {
@@ -7415,17 +7415,17 @@ body.modal-open::before {
 
 .tasks-kanban-column.is-column-dragging .tasks-kanban-column__header {
     border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.16);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.16);
 }
 
 .tasks-kanban-column.is-column-dragging .tasks-kanban-column__list {
     border-radius: 6px;
-    background: rgba(92, 95, 193, 0.04);
+    background: rgba(var(--system-interaction-rgb), 0.04);
 }
 
 .tasks-kanban-column.is-newly-created .tasks-kanban-column__header {
     border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.16);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.16);
 }
 
 .tasks-kanban-column__header {
@@ -7559,7 +7559,7 @@ body.modal-open::before {
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    background: rgb(30, 191, 191);
+    background: var(--system-accent);
     color: var(--accent-on-peach);
     line-height: 1;
 }
@@ -7754,7 +7754,7 @@ body.modal-open::before {
 }
 
 .tasks-kanban-card .task-checkbox:focus-visible {
-    outline: 2px solid rgba(30, 191, 191, 0.35);
+    outline: 2px solid rgba(var(--system-interaction-rgb), 0.35);
     outline-offset: 2px;
 }
 
@@ -7919,14 +7919,14 @@ body.modal-open::before {
 
 .tasks-kanban-column.is-drag-over .tasks-kanban-column__header {
     border-color: var(--accent-peach);
-    box-shadow: inset 0 -2px 0 rgba(92, 95, 193, 0.28);
+    box-shadow: inset 0 -2px 0 rgba(var(--system-interaction-rgb), 0.28);
 }
 
 .tasks-kanban-column__list.is-drag-over {
     border-radius: 6px;
     outline: 1px dashed var(--accent-peach);
     outline-offset: -1px;
-    background: rgba(92, 95, 193, 0.06);
+    background: rgba(var(--system-interaction-rgb), 0.06);
 }
 
 .tasks-row-id,
@@ -8587,7 +8587,7 @@ body.modal-open::before {
 }
 
 .tasks-attachment-info:hover .tasks-attachment-name {
-    color: var(--accent-peach);
+    color: var(--system-interaction);
     text-decoration: none;
 }
 
@@ -12221,7 +12221,7 @@ body.is-resizing-directory-columns {
 .tasks-directory-column-resizer:focus-visible::before,
 .tasks-directory-column-resizer.is-active::before,
 .tasks-directory-board.is-resizing-columns .tasks-directory-column-resizer.is-active::before {
-    background: var(--accent-peach);
+    background: var(--system-interaction);
 }
 
 .tasks-directory-column-resizer:focus-visible {
@@ -12469,8 +12469,8 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-directory-member-search:focus-within {
-    border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.13);
+    border-color: var(--system-interaction);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.13);
 }
 
 .tasks-directory-member-search svg {
@@ -13421,14 +13421,14 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-section-card:focus-visible {
-    outline: 3px solid rgba(92, 95, 193, 0.26);
+    outline: 3px solid rgba(var(--system-interaction-rgb), 0.26);
     outline-offset: 2px;
 }
 
 .tasks-section-card.checked,
 .tasks-section-card:has(.tasks-row-checkbox:checked) {
     border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14), 0 10px 24px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14), 0 10px 24px rgba(15, 23, 42, 0.1);
 }
 
 .tasks-section-card--accent-teal {
@@ -13506,7 +13506,7 @@ body.is-resizing-directory-columns {
     border-radius: 999px 999px 24px 999px;
     background: var(--section-card-c);
     transform: rotate(-8deg);
-    box-shadow: inset -24px -20px 30px rgba(92, 95, 193, 0.16);
+    box-shadow: inset -24px -20px 30px rgba(var(--system-interaction-rgb), 0.16);
 }
 
 .tasks-section-card__shape--tall {
@@ -13516,7 +13516,7 @@ body.is-resizing-directory-columns {
     height: 70px;
     border-radius: 0 0 50% 50%;
     background: rgba(255, 255, 255, 0.13);
-    box-shadow: inset -18px -16px 28px rgba(92, 95, 193, 0.18);
+    box-shadow: inset -18px -16px 28px rgba(var(--system-interaction-rgb), 0.18);
 }
 
 .tasks-section-card__icon {
@@ -13588,7 +13588,7 @@ body.is-resizing-directory-columns {
 
 .tasks-project-board-group.checked {
     border-color: var(--accent-peach);
-    box-shadow: 0 0 0 3px rgba(92, 95, 193, 0.14);
+    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
 }
 
 .tasks-project-board-group__title {
@@ -13628,10 +13628,10 @@ body.is-resizing-directory-columns {
 
 .tasks-section-links .tasks-section-rail-card:hover,
 .tasks-section-links .tasks-section-rail-card.is-active {
-    border-color: var(--accent-peach);
+    border-color: var(--system-interaction);
     background: #ffffff;
     color: #20242b;
-    box-shadow: 0 0 0 2px rgba(92, 95, 193, 0.12), 0 8px 18px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 0 0 2px rgba(var(--system-interaction-rgb), 0.12), 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
 .tasks-section-links .tasks-section-rail-card__cover {

@@ -297,7 +297,7 @@
 }
 
 .profile-photo-control:focus-within .profile-photo-button {
-    border-color: var(--accent-peach);
+    border-color: var(--system-interaction);
     box-shadow: 0 0 0 3px rgba(250, 230, 220, 0.55);
 }
 
@@ -637,7 +637,7 @@
 }
 
 .profile-field-input:focus {
-    border-color: var(--accent-peach);
+    border-color: var(--system-interaction);
     box-shadow: 0 0 0 3px rgba(250, 230, 220, 0.5);
 }
 
@@ -805,7 +805,7 @@
 }
 
 .profile-inline-button:hover {
-    background: var(--accent-peach);
+    background: var(--system-interaction);
     color: var(--accent-on-peach);
 }
 
@@ -1069,7 +1069,7 @@
 .profile-edit-form .profile-name-fields .form-input:focus,
 .profile-edit-form .profile-stacked-field > .form-input:focus,
 .profile-edit-form .profile-email-field .form-input:focus {
-    border-color: var(--accent-peach);
+    border-color: var(--system-interaction);
     box-shadow: 0 0 0 3px rgba(250, 230, 220, 0.5);
 }
 

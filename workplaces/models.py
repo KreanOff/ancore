@@ -133,6 +133,33 @@ class WorkplaceMembership(models.Model):
         return f'{self.user} - {self.workplace}'
 
 
+class SidebarFavorite(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sidebar_favorites',
+    )
+    workplace = models.ForeignKey(
+        Workplace,
+        on_delete=models.CASCADE,
+        related_name='sidebar_favorites',
+    )
+    item_key = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'workplace', 'item_key'],
+                name='unique_sidebar_favorite_per_workplace',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.user} - {self.workplace} - {self.item_key}'
+
+
 def create_workplace_for_user(user, name, workplace_photo=None, description='', code=''):
     with transaction.atomic():
         workplace_data = {
@@ -145,4 +172,9 @@ def create_workplace_for_user(user, name, workplace_photo=None, description='', 
             workplace_data['workplace_photo'] = workplace_photo
         workplace = Workplace.objects.create(**workplace_data)
         workplace.ensure_owner_membership()
+        SidebarFavorite.objects.create(
+            user=user,
+            workplace=workplace,
+            item_key='dashboard',
+        )
     return workplace
