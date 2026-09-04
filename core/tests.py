@@ -468,6 +468,19 @@ class SidebarActiveStateTests(SimpleTestCase):
         )
         self.assertIn('html.sidebar-collapsed .sidebar-workspace-switcher {', css)
         self.assertIn(
+            'html.sidebar-collapsed .sidebar-workspace-toggle,\n'
+            '    html.sidebar-collapsed .sidebar .logo {\n'
+            '        gap: 0;',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-header {\n'
+            '        justify-content: flex-start;\n'
+            '        padding-inline: var(--sidebar-rail-gutter);',
+            css,
+        )
+        self.assertIn('html.sidebar-is-collapsing .sidebar-workspace-toggle {', css)
+        self.assertIn(
             'html.sidebar-collapsed .sidebar-workspace-avatar {\n'
             '        width: var(--sidebar-avatar-size);\n'
             '        height: var(--sidebar-avatar-size);\n'
@@ -503,6 +516,58 @@ class SidebarActiveStateTests(SimpleTestCase):
             css,
         )
         self.assertIn('--sidebar-avatar-size: 39px;', css)
+        self.assertIn(
+            '.sidebar-workspace-toggle {\n'
+            '    width: 100%;\n'
+            '    min-width: 0;\n'
+            '    height: 42px;',
+            css,
+        )
+        self.assertIn(
+            '    gap: 0.55rem;\n'
+            '    padding: 0 0.35rem 0 var(--sidebar-avatar-inset);\n'
+            '    border-radius: 8px;',
+            css,
+        )
+        self.assertIn('padding: 0.625rem var(--sidebar-rail-gutter);', css)
+        self.assertIn('--sidebar-rail-gutter: calc(', css)
+        self.assertIn('--sidebar-icon-inset: calc(', css)
+        self.assertIn('--sidebar-avatar-inset: calc(', css)
+        self.assertIn(
+            '.sidebar .sidebar-primary-link {\n'
+            '    min-height: var(--sidebar-compact-item-height);\n'
+            '    height: var(--sidebar-compact-item-height);',
+            css,
+        )
+        self.assertIn(
+            '.sidebar-favorite-link {\n'
+            '    min-height: var(--sidebar-compact-item-height);\n'
+            '    height: var(--sidebar-compact-item-height);',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar .sidebar-primary-link,\n'
+            '    html.sidebar-collapsed .sidebar .sidebar-footer .nav-link {\n'
+            '        width: 100%;\n'
+            '        min-width: 0;',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-is-expanding .sidebar :is(\n'
+            '        .nav-label,\n'
+            '        .sidebar-workspace-name,\n'
+            '        .sidebar-brand-name,\n'
+            '        .sidebar-workspace-chevron\n'
+            '    ) {',
+            css,
+        )
+        self.assertIn(
+            '.sidebar .sidebar-footer .nav-link--profile {\n'
+            '    min-height: var(--sidebar-compact-control-size);\n'
+            '    height: var(--sidebar-compact-control-size);',
+            css,
+        )
+        self.assertIn('margin-inline: var(--sidebar-rail-gutter);', css)
         self.assertNotIn('--sidebar-compact-avatar-size:', css)
         self.assertIn('background: #eceef1;', css)
 

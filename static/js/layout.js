@@ -7,6 +7,7 @@
     const SIDEBAR_MIN_WIDTH = 220;
     const SIDEBAR_MAX_WIDTH = 420;
     const SIDEBAR_DEFAULT_WIDTH = 272;
+    const SIDEBAR_TRANSITION_MS = 360;
     const SIDEBAR_GROUPS_STORAGE_KEY = 'ancoreSidebarCollapsedGroups';
     const SIDEBAR_COLLAPSED_STORAGE_KEY = 'ancoreSidebarCollapsed';
     const SIDEBAR_WIDTH_STORAGE_KEY = 'ancoreSidebarWidth';
@@ -42,6 +43,7 @@
     let pageLoadingFallbackTimer = null;
     let partialNavigationController = null;
     let sidebarCollapsedFlyoutTrigger = null;
+    let sidebarTransitionTimer = null;
 
     function getUrl(href) {
         try {
@@ -843,7 +845,48 @@
         }
     }
 
+    function finishSidebarTransition() {
+        if (sidebarTransitionTimer !== null) {
+            window.clearTimeout(sidebarTransitionTimer);
+            sidebarTransitionTimer = null;
+        }
+
+        root.classList.remove(
+            'sidebar-transitioning',
+            'sidebar-is-collapsing',
+            'sidebar-is-expanding'
+        );
+    }
+
+    function beginSidebarTransition(collapsed) {
+        finishSidebarTransition();
+
+        if (
+            isOverlayMode()
+            || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ) {
+            return;
+        }
+
+        root.classList.add(
+            'sidebar-transitioning',
+            collapsed ? 'sidebar-is-collapsing' : 'sidebar-is-expanding'
+        );
+        sidebarTransitionTimer = window.setTimeout(
+            finishSidebarTransition,
+            SIDEBAR_TRANSITION_MS + 80
+        );
+    }
+
     function setSidebarCollapsed(collapsed, persist) {
+        const stateChanged = root.classList.contains('sidebar-collapsed') !== collapsed;
+
+        if (persist && stateChanged) {
+            beginSidebarTransition(collapsed);
+        } else if (!persist) {
+            finishSidebarTransition();
+        }
+
         closeCollapsedSidebarFlyout();
         root.classList.toggle('sidebar-collapsed', collapsed);
         document.body.classList.toggle('sidebar-collapsed', collapsed);
@@ -871,6 +914,16 @@
             }, 180);
         }
     }
+
+    sidebar?.addEventListener('transitionend', function (event) {
+        if (
+            event.target === sidebar
+            && event.propertyName === 'width'
+            && root.classList.contains('sidebar-transitioning')
+        ) {
+            finishSidebarTransition();
+        }
+    });
 
     setSidebarCollapsed(readSidebarCollapsed(), false);
     syncSidebarWidthForViewport();
