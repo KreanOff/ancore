@@ -128,6 +128,36 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'class="workplace-create-modal__cancel"')
         self.assertNotContains(response, 'workplaces-create-form--filterbar')
 
+    def test_current_workplace_is_visually_and_semantically_distinguished(self):
+        self.client.force_login(self.user)
+        self._activate(self.second_workplace)
+
+        response = self.client.get(reverse('workplaces:workplaces'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'role="row" aria-current="true"', count=1)
+        self.assertContains(response, 'data-workplace-current-badge', count=1)
+        self.assertContains(response, '>Bieżący</span>', count=1)
+        self.assertContains(response, 'data-workplace-current-action disabled', count=1)
+        self.assertContains(response, 'data-workplace-switch-action', count=1)
+        self.assertContains(response, 'aria-label="Drugi Workplace — bieżący workspace"')
+        self.assertContains(response, 'aria-label="Przełącz na Pierwszy Workplace"')
+
+    def test_current_workplace_is_always_the_first_table_row(self):
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+
+        response = self.client.get(reverse('workplaces:workplaces'))
+
+        workplace_ids = list(response.context['workplaces'].values_list('id', flat=True))
+        self.assertEqual(workplace_ids, [self.first_workplace.pk, self.second_workplace.pk])
+
+        content = response.content.decode()
+        self.assertLess(
+            content.index('data-workplace-name="Pierwszy Workplace"'),
+            content.index('data-workplace-name="Drugi Workplace"'),
+        )
+
     def test_workplace_avatar_uses_workplace_specific_background_color(self):
         first_avatar = workplace_avatar(self.first_workplace)
         second_avatar = workplace_avatar(self.second_workplace)

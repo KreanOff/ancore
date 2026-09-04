@@ -3,7 +3,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Case, IntegerField, Max, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -44,11 +44,22 @@ def workplaces(request):
             return redirect(scoped_workplace_app_path(workplace, 'tasks'))
         messages.error(request, 'Nie udało się utworzyć miejsca pracy.')
 
+    active_workplace = getattr(request, 'workplace', None)
     user_workplaces = workplaces_for_user(request.user)
+    if active_workplace is not None:
+        user_workplaces = user_workplaces.order_by(
+            Case(
+                When(pk=active_workplace.pk, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            ),
+            'name',
+            'id',
+        )
     return render(request, 'workplaces/workplaces.html', {
         'workplaces': user_workplaces,
         'form': form,
-        'active_workplace': getattr(request, 'workplace', None),
+        'active_workplace': active_workplace,
         'workplace_create_modal_open': workplace_create_modal_open,
     })
 
