@@ -2,7 +2,7 @@
 @import 'base/variables.css?v=20260903-gray-interactions-v1';
 @import 'base/reset.css?v=20260902-app-scale-98';
 @import 'layout/sidebar.css?v=20260902-resizable-app-sidebar-v1';
-@import 'layout/main.css?v=20260903-gray-interactions-v1';
+@import 'layout/main.css?v=20260903-lightweight-loader-v1';
 @import 'layout/responsive.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/cards.css?v=20260902-system-accent-v1';
 @import 'components/buttons.css?v=20260822-center-cancel-button-label';
@@ -13,7 +13,7 @@
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tasks.css?v=20260903-gray-interactions-v1';
-@import 'components/contacts.css?v=20260903-gray-interactions-v1';
+@import 'components/contacts.css?v=20260903-contact-action-headers-v6';
 @import 'components/notifications.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
@@ -931,6 +931,7 @@ body :where(input, textarea)::placeholder {
 }
 
 .sidebar-favorites-list {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
@@ -974,6 +975,26 @@ body :where(input, textarea)::placeholder {
     width: 16px;
     height: 16px;
     stroke-width: 1.8;
+}
+
+.sidebar-favorite-row.is-reordering {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sidebar-favorite-placeholder {
+    height: 0;
+    min-height: 0;
+    margin: 2px 0;
+    border: 0;
+    border-top: 2px dashed var(--sidebar-active);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .sidebar [draggable="true"] {

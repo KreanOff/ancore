@@ -234,7 +234,7 @@
 
 .contacts-directory-sheet {
     --tasks-directory-checkbox-offset: 0;
-    --contacts-directory-column-separator: #d6dae1;
+    --contacts-directory-column-separator: #edf0f3;
 }
 
 .contacts-directory-sheet__cell {
@@ -304,12 +304,12 @@
 
 .contacts-spreadsheet-sheet .contacts-directory-header,
 .contacts-spreadsheet-sheet .contacts-directory-header > .contacts-directory-sheet__cell {
-    min-height: 42px;
-    background: #e7e8eb;
+    min-height: 35px;
+    background: #ffffff;
 }
 
 .contacts-spreadsheet-sheet .contacts-directory-list .contacts-directory-row {
-    min-height: 40px;
+    min-height: 35px;
 }
 
 .contacts-spreadsheet-sheet .contacts-directory-header,
@@ -326,9 +326,18 @@
     justify-content: center;
 }
 
-.contacts-spreadsheet-sheet .contacts-directory-header > .contacts-directory-sheet__cell:not([data-column="select"]):not([data-column="spacer"]) {
+.contacts-spreadsheet-sheet .contacts-directory-header > .contacts-directory-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="info"]):not([data-column="spacer"]) {
     justify-content: flex-start;
+    gap: 0.4rem;
     text-align: left;
+}
+
+.contacts-spreadsheet-sheet .contacts-directory-header > .contacts-directory-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="info"]):not([data-column="spacer"]) > svg {
+    order: -1;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    stroke-width: 2;
 }
 
 .contacts-spreadsheet-sheet .contacts-directory-header > [data-column="contact"],
@@ -345,6 +354,115 @@
     justify-self: center;
     align-self: center;
     margin-left: 0;
+}
+
+.tasks-directory-board.contacts-project-sheet {
+    --tasks-project-row-height: 35px;
+    --contacts-directory-action-width: var(--tasks-directory-select-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--contacts-directory-action-width) var(--contacts-directory-action-width) 280px 260px 320px 170px 170px minmax(120px, 1fr);
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header,
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row {
+    width: max-content;
+    min-width: 100%;
+    row-gap: 0;
+    box-sizing: border-box;
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header {
+    min-height: 35px;
+    border-bottom-color: var(--contacts-directory-column-separator);
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row {
+    height: var(--tasks-project-row-height);
+    min-height: var(--tasks-project-row-height);
+    max-height: var(--tasks-project-row-height);
+    border-bottom-color: var(--contacts-directory-column-separator);
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row,
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column]:not([data-column="select"]) {
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header > .contacts-directory-sheet__cell[data-column="action"],
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header > .contacts-directory-sheet__cell[data-column="info"],
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="action"],
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="info"] {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header > .contacts-directory-sheet__cell[data-column="action"],
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header > .contacts-directory-sheet__cell[data-column="info"] {
+    display: grid;
+    place-items: center;
+    align-content: center;
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="action"],
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="info"] {
+    display: flex;
+    align-items: center;
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header > [data-column="action"] svg,
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header > [data-column="info"] svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2.25;
+}
+
+.contacts-project-sheet .tasks-project-sheet__edit-button {
+    text-decoration: none;
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover,
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover > [data-column]:not([data-column="select"]) {
+    background: #f7f8fb;
+    border-color: #dde2ea;
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column]:not([data-column="select"]) {
+    height: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contacts-project-sheet .contacts-directory-name-text {
+    display: flex;
+    align-items: center;
+}
+
+.contacts-project-sheet .contacts-directory-company {
+    gap: 0.35rem;
+}
+
+.contacts-directory-company-name,
+.contacts-directory-role {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contacts-directory-company-name {
+    flex: 0 1 auto;
+}
+
+.contacts-directory-role-separator {
+    flex: 0 0 auto;
+    color: #9aa0aa;
+}
+
+.contacts-directory-role {
+    flex: 1 1 auto;
+    color: #737984;
 }
 
 .contacts-directory-row {
@@ -1698,6 +1816,33 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
             ". status status";
         row-gap: 0.2rem;
         padding: 0.65rem 0.85rem;
+    }
+
+    .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row {
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        min-height: 88px;
+        max-height: none;
+        grid-template-columns: 18px minmax(0, 1fr) 86px;
+        grid-template-areas:
+            "check contact date"
+            ". channel channel"
+            ". status status";
+        row-gap: 0.2rem;
+        padding: 0.65rem 0.85rem;
+    }
+
+    .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column]:not([data-column="select"]) {
+        height: auto;
+    }
+
+    .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="action"],
+    .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="info"],
+    .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="company_role"],
+    .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="website"],
+    .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="spacer"] {
+        display: none;
     }
 
     .contacts-directory-sheet .contacts-directory-list .contacts-directory-row > * + * {

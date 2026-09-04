@@ -145,10 +145,11 @@ class SidebarFavorite(models.Model):
         related_name='sidebar_favorites',
     )
     item_key = models.CharField(max_length=64)
+    position = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['created_at', 'id']
+        ordering = ['position', 'created_at', 'id']
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'workplace', 'item_key'],

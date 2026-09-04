@@ -7,11 +7,10 @@ SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'dashboard', 'label': 'Dashboard', 'icon': 'layout-dashboard', 'route_name': 'home'},
     {'key': 'tasks-my', 'label': 'Moje zadania', 'icon': 'user-round-check', 'app': 'tasks', 'query': 'view=my-tasks'},
     {'key': 'tasks-all', 'label': 'Wszystkie zadania', 'icon': 'list-checks', 'app': 'tasks', 'query': 'view=all-tasks'},
-    {'key': 'tasks-projects', 'label': 'Wszystkie projekty', 'icon': 'folders', 'app': 'tasks'},
-    {'key': 'tasks-groups', 'label': 'Wszystkie grupy', 'icon': 'folder-open', 'app': 'tasks', 'query': 'view=all-groups'},
-    {'key': 'kanban-spaces', 'label': 'Wszystkie przestrzenie', 'icon': 'folders', 'app': 'kanban'},
-    {'key': 'kanban-boards', 'label': 'Wszystkie tablice', 'icon': 'kanban', 'app': 'kanban', 'query': 'view=all-groups'},
-    {'key': 'contacts-people', 'label': 'Szukaj osób', 'icon': 'search', 'app': 'contacts', 'suffix': 'users/'},
+    {'key': 'tasks-projects', 'label': 'Wszystkie projekty', 'icon': 'briefcase-business', 'app': 'tasks'},
+    {'key': 'tasks-groups', 'label': 'Wszystkie grupy', 'icon': 'layers-3', 'app': 'tasks', 'query': 'view=all-groups'},
+    {'key': 'kanban-spaces', 'label': 'Przestrzenie robocze', 'icon': 'folders', 'app': 'kanban'},
+    {'key': 'kanban-boards', 'label': 'Tablice', 'icon': 'kanban', 'app': 'kanban', 'query': 'view=all-groups'},
     {'key': 'contacts-all', 'label': 'Kontakty', 'icon': 'users', 'app': 'contacts'},
     {'key': 'contacts-companies', 'label': 'Firmy', 'icon': 'building-2', 'app': 'contacts', 'suffix': 'companies/'},
     {'key': 'contacts-guests', 'label': 'Goście', 'icon': 'user-round-alert', 'app': 'contacts', 'suffix': 'guests/'},
@@ -74,7 +73,6 @@ def sidebar_favorite_is_active(item_key, request, active_view='', active_contact
         if app_name not in {'contacts', 'workplace_contacts'}:
             return False
         expected_status = {
-            'contacts-people': 'users',
             'contacts-all': 'all',
             'contacts-companies': 'companies',
             'contacts-guests': 'guests',

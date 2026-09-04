@@ -118,6 +118,12 @@ class ContactCollaborationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Goście')
         self.assertContains(response, 'contacts-spreadsheet-sheet')
+        self.assertContains(response, 'data-column-label="Edycja"')
+        self.assertContains(response, 'data-column-label="Informacja"')
+        self.assertContains(response, reverse('contacts:edit-contact', args=[guest.pk]))
+        self.assertContains(response, reverse('contacts:view-contact', args=[guest.pk]))
+        self.assertContains(response, 'aria-label="Edytuj gościa Ola Maria Gosc"')
+        self.assertContains(response, 'aria-label="Informacje o gościu Ola Maria Gosc"')
         self.assertEqual(list(response.context['contacts']), [guest])
 
         response = self.client.get(reverse('contacts:guests'), {'q': 'Maria'})
@@ -249,12 +255,17 @@ class ContactCollaborationTests(TestCase):
         self.assertNotIn('status', response.context['contact_modal_form'].fields)
 
     def test_contacts_view_bars_match_all_spaces_layout(self):
-        Contact.objects.create(
+        contact = Contact.objects.create(
             user=self.owner,
             first_name='Ewa',
             last_name='Lis',
             email='ewa@example.com',
             status='active',
+        )
+        UserContact.objects.create(
+            owner=self.owner,
+            target_user=self.other_user,
+            linked_contact=contact,
         )
 
         response = self.client.get(reverse('contacts:contacts'))
@@ -279,8 +290,75 @@ class ContactCollaborationTests(TestCase):
         self.assertNotIn('id="filter-search"', filterbar_html)
         self.assertNotIn('data-filter-search-submit', filterbar_html)
 
+        self.assertContains(response, 'contacts-project-sheet')
+        self.assertContains(response, 'data-column="action"')
+        self.assertContains(response, 'data-column-label="Edycja"')
+        self.assertContains(response, 'data-column="info"')
+        self.assertContains(response, 'data-column-label="Informacja"')
+        self.assertContains(response, reverse('contacts:edit-contact', args=[contact.pk]))
+        self.assertContains(response, reverse('contacts:view-contact', args=[contact.pk]))
+        self.assertContains(response, 'aria-label="Edytuj kontakt Ewa Lis"')
+        self.assertContains(response, 'aria-label="Informacje o kontakcie Ewa Lis"')
+        self.assertContains(response, 'data-column="contact"')
+        self.assertContains(response, 'data-lucide="user-round"')
+        self.assertContains(response, 'data-column="company_role"')
+        self.assertContains(response, 'data-lucide="building-2"')
+        self.assertContains(response, 'data-column="channel"')
+        self.assertContains(response, 'data-lucide="mail"')
+        self.assertContains(response, 'data-column="status"')
+        self.assertContains(response, 'data-lucide="circle-dot"')
+        self.assertContains(response, 'data-column="created_at"')
+        self.assertContains(response, 'data-lucide="calendar-days"')
+        self.assertContains(response, 'class="tasks-project-pagination contacts-project-pagination"')
+        self.assertContains(response, 'Na stronie')
+        self.assertContains(response, 'kontaktów')
+
+    def test_contacts_view_uses_project_style_server_pagination(self):
+        user_model = get_user_model()
+        target_users = user_model.objects.bulk_create([
+            user_model(
+                username=f'@kontakt.{index}',
+                email=f'kontakt.{index}@example.com',
+                first_name='Kontakt',
+                last_name=f'{index:02d}',
+            )
+            for index in range(11)
+        ])
+        contacts = Contact.objects.bulk_create([
+            Contact(
+                user=self.owner,
+                first_name='Kontakt',
+                last_name=f'{index:02d}',
+                email=f'kontakt.{index}@example.com',
+                status='active',
+            )
+            for index in range(11)
+        ])
+        UserContact.objects.bulk_create([
+            UserContact(owner=self.owner, target_user=target_user, linked_contact=contact)
+            for target_user, contact in zip(target_users, contacts)
+        ])
+
+        response = self.client.get(reverse('contacts:contacts'), {'page_size': 10})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['contacts']), 10)
+        self.assertEqual(response.context['contact_window']['page'], 1)
+        self.assertEqual(response.context['contact_window']['total_pages'], 2)
+        self.assertEqual(response.context['contact_window']['summary'], 'Pokazano 1-10 z 11 kontaktów')
+        self.assertContains(response, 'data-project-page-next')
+        self.assertContains(response, '?page_size=10&amp;page=2')
+
+        response = self.client.get(reverse('contacts:contacts'), {'page_size': 10, 'page': 2})
+
+        self.assertEqual(len(response.context['contacts']), 1)
+        self.assertEqual(response.context['contact_window']['page'], 2)
+        self.assertEqual(response.context['contact_window']['summary'], 'Pokazano 11-11 z 11 kontaktów')
+        self.assertContains(response, 'data-project-page-prev')
+        self.assertContains(response, '?page_size=10')
+
     def test_companies_view_bars_match_all_spaces_layout(self):
-        Company.objects.create(owner=self.owner, name='Netology')
+        company = Company.objects.create(owner=self.owner, name='Netology')
 
         response = self.client.get(reverse('contacts:companies'))
         html = response.content.decode()
@@ -301,6 +379,15 @@ class ContactCollaborationTests(TestCase):
         self.assertIn('Nowa firma', filterbar_html)
         self.assertNotIn('id="filter-search"', filterbar_html)
         self.assertNotIn('data-filter-search-submit', filterbar_html)
+        self.assertContains(response, 'contacts-project-sheet')
+        self.assertContains(response, 'data-column="action"')
+        self.assertContains(response, 'data-column-label="Edycja"')
+        self.assertContains(response, 'data-column="info"')
+        self.assertContains(response, 'data-column-label="Informacja"')
+        self.assertContains(response, reverse('contacts:edit-company', args=[company.pk]))
+        self.assertContains(response, reverse('contacts:view-company', args=[company.pk]))
+        self.assertContains(response, 'aria-label="Edytuj firmę Netology"')
+        self.assertContains(response, 'aria-label="Informacje o firmie Netology"')
 
     def test_user_directory_view_bars_match_contacts_layout(self):
         response = self.client.get(reverse('contacts:user-directory'), {'q': 'Marek'})
@@ -662,7 +749,7 @@ class ContactCollaborationTests(TestCase):
         response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="company-detail-form"')
-        self.assertContains(response, 'style.css?v=20260802-workplaces-identity-column')
+        self.assertContains(response, 'style.css?v=20260903-lightweight-loader-v1-contact-action-headers-v5')
         self.assertContains(response, 'profile.js?v=20260614-app-wide-navigation')
         self.assertContains(response, 'contacts-company-modal-title')
         self.assertContains(response, 'contacts-edit-modal is-open')

@@ -1,9 +1,17 @@
 <div class="sidebar-favorites-content" data-sidebar-favorites-content aria-live="polite">
-    <p class="u-sr-only" id="sidebar-favorites-instructions">Przeciągnij element z sekcji Workspace do Favorites, aby go dodać. Przeciągnij element z Favorites do pola Usuń z Favorites, aby go usunąć.</p>
+    <p class="u-sr-only" id="sidebar-favorites-instructions">Przeciągnij element z sekcji Workspace do Favorites, aby go dodać. Przeciągaj elementy w Favorites, aby zmienić ich kolejność. Przeciągnij element do pola Usuń z Favorites, aby go usunąć. Użyj Alt i strzałki w górę albo w dół, aby zmienić pozycję za pomocą klawiatury.</p>
+    {% if current_workplace %}
+    <form method="post" action="{% url 'workplaces:reorder-sidebar-favorites' current_workplace.id %}" class="u-sr-only" data-sidebar-favorites-reorder-form>
+        {% csrf_token %}
+        <input type="hidden" name="item_order" value="[]" data-sidebar-favorites-order>
+        <input type="hidden" name="next" value="{% firstof sidebar_next_url request.get_full_path %}">
+        <button type="submit">Zapisz kolejność Favorites</button>
+    </form>
+    {% endif %}
     <div class="sidebar-favorites-list" data-sidebar-favorites-list{% if not sidebar_favorites %} hidden{% endif %}>
         {% for item in sidebar_favorites %}
-        <div class="sidebar-favorite-row" data-sidebar-favorite-item="{{ item.key }}" draggable="true" aria-describedby="sidebar-favorites-instructions" title="Przeciągnij do pola Usuń z Favorites">
-            <a href="{{ item.url }}" class="nav-link sidebar-favorite-link{% if item.is_active %} active{% endif %}">
+        <div class="sidebar-favorite-row" data-sidebar-favorite-item="{{ item.key }}" draggable="true" aria-describedby="sidebar-favorites-instructions" title="Przeciągnij, aby zmienić kolejność">
+            <a href="{{ item.url }}" class="nav-link sidebar-favorite-link{% if item.is_active %} active{% endif %}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown">
                 <span class="sidebar-favorite-icon" aria-hidden="true"><i data-lucide="{{ item.icon }}"></i></span>
                 <span class="nav-label">{{ item.label }}</span>
             </a>
@@ -18,4 +26,5 @@
         {% endfor %}
     </div>
     <p class="sidebar-favorites-message" data-sidebar-favorites-empty{% if sidebar_favorites %} hidden{% endif %}>Przeciągnij tutaj elementy menu</p>
+    <p class="u-sr-only" role="status" data-sidebar-favorites-order-status></p>
 </div>

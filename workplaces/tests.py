@@ -1,4 +1,5 @@
 import base64
+import json
 import tempfile
 from importlib import import_module
 
@@ -268,6 +269,125 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.get(reverse('tasks:tasks'))
         self.assertNotContains(response, 'data-sidebar-favorite-item="calendar"')
 
+    def test_sidebar_favorites_can_be_reordered_and_keep_the_new_order(self):
+        SidebarFavorite.objects.create(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='tasks-all',
+            position=1,
+        )
+        SidebarFavorite.objects.create(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='contacts-companies',
+            position=2,
+        )
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+        endpoint = reverse('workplaces:reorder-sidebar-favorites', args=[self.first_workplace.pk])
+
+        response = self.client.post(
+            endpoint,
+            {'item_order': json.dumps(['contacts-companies', 'dashboard', 'tasks-all'])},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            list(
+                SidebarFavorite.objects.filter(user=self.user, workplace=self.first_workplace)
+                .values_list('item_key', flat=True)
+            ),
+            ['contacts-companies', 'dashboard', 'tasks-all'],
+        )
+        page = self.client.get(reverse('tasks:tasks')).content.decode()
+        self.assertLess(
+            page.index('data-sidebar-favorite-item="contacts-companies"'),
+            page.index('data-sidebar-favorite-item="dashboard"'),
+        )
+        self.assertLess(
+            page.index('data-sidebar-favorite-item="dashboard"'),
+            page.index('data-sidebar-favorite-item="tasks-all"'),
+        )
+
+    def test_sidebar_favorite_reorder_requires_the_complete_unique_item_set(self):
+        SidebarFavorite.objects.create(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='tasks-all',
+            position=1,
+        )
+        self.client.force_login(self.user)
+        endpoint = reverse('workplaces:reorder-sidebar-favorites', args=[self.first_workplace.pk])
+
+        missing_response = self.client.post(
+            endpoint,
+            {'item_order': json.dumps(['dashboard'])},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        duplicate_response = self.client.post(
+            endpoint,
+            {'item_order': json.dumps(['dashboard', 'dashboard'])},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(missing_response.status_code, 400)
+        self.assertEqual(duplicate_response.status_code, 400)
+        self.assertEqual(
+            list(
+                SidebarFavorite.objects.filter(user=self.user, workplace=self.first_workplace)
+                .values_list('item_key', flat=True)
+            ),
+            ['dashboard', 'tasks-all'],
+        )
+
+    def test_new_sidebar_favorite_is_appended_after_reordered_items(self):
+        SidebarFavorite.objects.create(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='tasks-all',
+            position=1,
+        )
+        self.client.force_login(self.user)
+        reorder_endpoint = reverse('workplaces:reorder-sidebar-favorites', args=[self.first_workplace.pk])
+        toggle_endpoint = reverse('workplaces:toggle-sidebar-favorite', args=[self.first_workplace.pk])
+        self.client.post(
+            reorder_endpoint,
+            {'item_order': json.dumps(['tasks-all', 'dashboard'])},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        response = self.client.post(
+            toggle_endpoint,
+            {'item_key': 'calendar', 'favorite_action': 'add'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            list(
+                SidebarFavorite.objects.filter(user=self.user, workplace=self.first_workplace)
+                .values_list('item_key', flat=True)
+            ),
+            ['tasks-all', 'dashboard', 'calendar'],
+        )
+
+    def test_removed_people_search_favorite_is_not_rendered(self):
+        SidebarFavorite.objects.create(
+            user=self.user,
+            workplace=self.first_workplace,
+            item_key='contacts-people',
+        )
+        self.client.force_login(self.user)
+        self._activate(self.first_workplace)
+
+        response = self.client.get(reverse('tasks:tasks'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'data-sidebar-favorite-item="contacts-people"')
+        self.assertNotContains(response, 'data-sidebar-source-item="contacts-people"')
+        self.assertNotContains(response, '>Szukaj osób</span>')
+
     def test_sidebar_favorite_rejects_unknown_item_and_another_users_workplace(self):
         self.client.force_login(self.user)
         own_endpoint = reverse('workplaces:toggle-sidebar-favorite', args=[self.first_workplace.pk])
@@ -321,10 +441,14 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-sidebar-favorite-item="tags"')
         self.assertContains(response, 'data-sidebar-source-item="tags"')
         self.assertContains(response, 'data-sidebar-favorites-dropzone')
+        self.assertContains(response, 'data-sidebar-favorites-reorder-form')
+        self.assertContains(response, 'data-sidebar-favorites-order')
         self.assertContains(response, 'data-sidebar-favorites-remove-dropzone')
         self.assertContains(response, 'Usuń z Favorites')
         self.assertNotContains(response, 'data-sidebar-workspace-dropzone')
         self.assertContains(response, 'data-sidebar-favorite-item="tags" draggable="true"')
+        self.assertNotContains(response, 'data-sidebar-favorite-drag-handle')
+        self.assertNotContains(response, 'data-lucide="grip-vertical"')
         self.assertContains(response, 'data-sidebar-source-item="tags" draggable="true"')
         self.assertNotContains(response, 'data-sidebar-favorite-remove')
         self.assertContains(

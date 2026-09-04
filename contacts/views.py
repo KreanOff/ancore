@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -11,6 +13,10 @@ from django.views.decorators.http import require_POST
 from accounts.models import normalize_public_username
 from .forms import CompanyForm, CompanyModalForm, ContactForm, ContactModalForm
 from .models import Company, CompanyMembership, Contact, ContactActivity, UserContact
+
+
+CONTACT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
+CONTACT_DEFAULT_PAGE_SIZE = 50
 
 
 def _active_workplace(request):
@@ -58,6 +64,107 @@ def _guest_contacts_queryset(user, workplace=None):
     return _contacts_queryset(user, workplace).annotate(
         has_ancore_login=Exists(linked_user_contact)
     ).filter(has_ancore_login=False)
+
+
+def _contact_page_size(request):
+    try:
+        page_size = int(request.GET.get('page_size') or CONTACT_DEFAULT_PAGE_SIZE)
+    except (TypeError, ValueError):
+        return CONTACT_DEFAULT_PAGE_SIZE
+    return page_size if page_size in CONTACT_PAGE_SIZE_OPTIONS else CONTACT_DEFAULT_PAGE_SIZE
+
+
+def _contact_page_number(request):
+    try:
+        page_number = int(request.GET.get('page') or 1)
+    except (TypeError, ValueError):
+        return 1
+    return max(page_number, 1)
+
+
+def _contact_list_url(base_url, params):
+    query_string = urlencode({key: value for key, value in params.items() if value not in (None, '')})
+    return f'{base_url}?{query_string}' if query_string else base_url
+
+
+def _contact_page_items(current_page, total_pages, base_url, base_params):
+    if total_pages < 1:
+        return []
+
+    if total_pages <= 7:
+        page_numbers = list(range(1, total_pages + 1))
+    elif current_page <= 4:
+        page_numbers = [1, 2, 3, 4, 5, total_pages]
+    elif current_page >= total_pages - 3:
+        page_numbers = [1, *range(total_pages - 4, total_pages + 1)]
+    else:
+        page_numbers = [1, current_page - 1, current_page, current_page + 1, total_pages]
+
+    items = []
+    previous_page = None
+    for page_number in page_numbers:
+        if previous_page and page_number - previous_page > 1:
+            items.append({'is_ellipsis': True})
+        params = {**base_params, 'page': page_number}
+        if page_number == 1:
+            params.pop('page', None)
+        items.append({
+            'page': page_number,
+            'url': _contact_list_url(base_url, params),
+            'is_current': page_number == current_page,
+        })
+        previous_page = page_number
+    return items
+
+
+def _contact_window_for_request(request, queryset, *, base_url, query='', status=''):
+    page_size = _contact_page_size(request)
+    requested_page = _contact_page_number(request)
+    total_contacts = queryset.count()
+    total_pages = max(1, (total_contacts + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+    contacts = list(queryset[offset:offset + page_size])
+    base_params = {
+        'q': query,
+        'status': status if status not in ('', 'all', 'guests') else '',
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_contacts > 0
+    has_next = current_page < total_pages and total_contacts > 0
+
+    previous_url = ''
+    if has_previous:
+        previous_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_params.pop('page', None)
+        previous_url = _contact_list_url(base_url, previous_params)
+
+    next_url = ''
+    if has_next:
+        next_url = _contact_list_url(base_url, {**base_params, 'page': current_page + 1})
+
+    if contacts:
+        first_visible = offset + 1
+        last_visible = offset + len(contacts)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_contacts} kontaktów'
+    else:
+        summary = 'Brak kontaktów'
+
+    return {
+        'contacts': contacts,
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_contacts': total_contacts,
+        'page_size': page_size,
+        'page_size_options': CONTACT_PAGE_SIZE_OPTIONS,
+        'page_items': _contact_page_items(current_page, total_pages, base_url, base_params) if total_contacts else [],
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+    }
 
 
 def _contact_users_queryset(user, workplace=None):
@@ -321,9 +428,18 @@ def contacts(request):
     if status != 'all':
         contacts_qs = contacts_qs.filter(status=status)
 
+    contact_window = _contact_window_for_request(
+        request,
+        contacts_qs,
+        base_url=reverse('contacts:contacts'),
+        query=query,
+        status=status,
+    )
+
     context = {
         **_contacts_navigation_context(request.user, active_status=status, workplace=workplace),
-        'contacts': contacts_qs,
+        'contacts': contact_window['contacts'],
+        'contact_window': contact_window,
         'query': query,
         'status': status,
         'contact_modal_form': contact_modal_form,
@@ -376,9 +492,18 @@ def guest_contacts(request):
             | Q(phone__icontains=query)
         )
 
+    contact_window = _contact_window_for_request(
+        request,
+        contacts_qs,
+        base_url=reverse('contacts:guests'),
+        query=query,
+        status='guests',
+    )
+
     context = {
         **_contacts_navigation_context(request.user, active_status='guests', workplace=workplace),
-        'contacts': contacts_qs,
+        'contacts': contact_window['contacts'],
+        'contact_window': contact_window,
         'query': query,
         'status': 'guests',
         'contacts_page_title': 'Goście',

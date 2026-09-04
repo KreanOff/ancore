@@ -1,5 +1,9 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -72,10 +76,15 @@ def toggle_sidebar_favorite(request, workplace_id):
             return JsonResponse({'status': 'error', 'message': 'Nieprawidłowa pozycja Favorites.'}, status=400)
         messages.error(request, 'Nie udało się zmienić Favorites.')
     elif action == 'add':
+        next_position = (
+            SidebarFavorite.objects.filter(user=request.user, workplace=workplace)
+            .aggregate(max_position=Max('position'))['max_position']
+        )
         SidebarFavorite.objects.get_or_create(
             user=request.user,
             workplace=workplace,
             item_key=item_key,
+            defaults={'position': (next_position if next_position is not None else -1) + 1},
         )
     else:
         SidebarFavorite.objects.filter(
@@ -114,6 +123,67 @@ def toggle_sidebar_favorite(request, workplace_id):
     ):
         next_url = scoped_workplace_app_path(workplace, 'tasks')
     return redirect(next_url)
+
+
+@login_required
+@require_POST
+def reorder_sidebar_favorites(request, workplace_id):
+    workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
+
+    try:
+        item_order = json.loads(request.POST.get('item_order') or '[]')
+    except (TypeError, json.JSONDecodeError):
+        item_order = None
+
+    if (
+        not isinstance(item_order, list)
+        or any(not isinstance(item_key, str) for item_key in item_order)
+        or len(item_order) != len(set(item_order))
+        or any(item_key not in SIDEBAR_FAVORITE_KEYS for item_key in item_order)
+    ):
+        return _sidebar_favorite_reorder_error(request, workplace)
+
+    with transaction.atomic():
+        favorites = list(
+            SidebarFavorite.objects.select_for_update().filter(
+                user=request.user,
+                workplace=workplace,
+                item_key__in=SIDEBAR_FAVORITE_KEYS,
+            )
+        )
+        favorites_by_key = {favorite.item_key: favorite for favorite in favorites}
+        if set(item_order) != set(favorites_by_key):
+            return _sidebar_favorite_reorder_error(request, workplace)
+
+        for position, item_key in enumerate(item_order):
+            favorites_by_key[item_key].position = position
+        SidebarFavorite.objects.bulk_update(favorites, ['position'])
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success', 'item_order': item_order})
+
+    return redirect(_sidebar_favorite_next_url(request, workplace))
+
+
+def _sidebar_favorite_reorder_error(request, workplace):
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse(
+            {'status': 'error', 'message': 'Nie udało się zapisać kolejności Favorites.'},
+            status=400,
+        )
+    messages.error(request, 'Nie udało się zapisać kolejności Favorites.')
+    return redirect(_sidebar_favorite_next_url(request, workplace))
+
+
+def _sidebar_favorite_next_url(request, workplace):
+    next_url = request.POST.get('next') or ''
+    if not url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return scoped_workplace_app_path(workplace, 'tasks')
+    return next_url
 
 
 @login_required

@@ -25,14 +25,12 @@ html.app-shell-booting .secondary-menu-panel {
     z-index: 5000;
     display: grid;
     place-items: center;
-    padding: 1.25rem;
-    background:
-        radial-gradient(circle at 50% 47%, rgba(var(--system-interaction-rgb), 0.08), transparent 28rem),
-        #f8f8fb;
+    padding: 1rem;
+    background: rgba(248, 248, 250, 0.96);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.18s ease, visibility 0.18s ease;
+    transition: opacity 0.12s ease, visibility 0.12s ease;
 }
 
 html.app-page-loading .app-loading-overlay,
@@ -43,107 +41,35 @@ body.app-page-loading .app-loading-overlay {
 }
 
 .app-loading-dialog {
-    width: min(100%, 324px);
-    min-height: 208px;
+    min-width: 148px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1.1rem;
-    padding: 1.75rem 2rem 1.6rem;
-    border: 1px solid rgba(var(--system-interaction-rgb), 0.14);
+    gap: 0.65rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e7e8ec;
     border-radius: 8px;
     background: #ffffff;
     color: var(--text-strong);
-    box-shadow:
-        0 26px 70px rgba(48, 52, 68, 0.15),
-        0 4px 16px rgba(48, 52, 68, 0.06);
-    animation: app-loading-dialog-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.app-loading-visual {
-    position: relative;
-    width: 64px;
-    height: 64px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: #f5f5fc;
-    box-shadow: inset 0 0 0 1px rgba(var(--system-interaction-rgb), 0.08);
-}
-
-.app-loading-mark {
-    width: 34px;
-    height: 34px;
-    display: block;
-    object-fit: contain;
-    animation: app-loading-mark-pulse 1.6s ease-in-out infinite;
+    box-shadow: 0 4px 14px rgba(48, 52, 68, 0.07);
 }
 
 .app-loading-spinner {
-    position: absolute;
-    inset: 0;
-    border: 2px solid rgba(var(--system-interaction-rgb), 0.12);
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    border: 2px solid #e2e4e8;
     border-top-color: #14b8bd;
-    border-right-color: var(--accent-peach);
     border-radius: 50%;
-    animation: app-loading-spin 1s linear infinite;
-}
-
-.app-loading-copy {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.28rem;
-    text-align: center;
+    animation: app-loading-spin 0.8s linear infinite;
 }
 
 .app-loading-title {
     --app-text-color: #363a43;
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-}
-
-.app-loading-detail {
-    --app-text-color: #777b86;
     font-size: var(--font-size-sm);
-    font-weight: 400;
-}
-
-.app-loading-progress {
-    width: 152px;
-    height: 4px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: #ececf7;
-}
-
-.app-loading-progress > span {
-    width: 100%;
-    height: 100%;
-    display: block;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #14b8bd, var(--accent-peach));
-    transform: scaleX(0.06);
-    transform-origin: left center;
-}
-
-html.app-page-loading .app-loading-progress > span,
-body.app-page-loading .app-loading-progress > span {
-    animation: app-loading-progress 8s linear forwards;
-}
-
-@keyframes app-loading-dialog-in {
-    from {
-        opacity: 0;
-        transform: translateY(6px) scale(0.985);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 @keyframes app-loading-spin {
@@ -152,43 +78,13 @@ body.app-page-loading .app-loading-progress > span {
     }
 }
 
-@keyframes app-loading-mark-pulse {
-    0%,
-    100% {
-        transform: scale(0.94);
-        opacity: 0.82;
-    }
-
-    50% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-@keyframes app-loading-progress {
-    from {
-        transform: scaleX(0.06);
-    }
-
-    to {
-        transform: scaleX(0.94);
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .app-loading-overlay {
         transition: none;
     }
 
-    .app-loading-dialog,
-    .app-loading-mark,
-    .app-loading-spinner,
-    .app-loading-progress > span {
+    .app-loading-spinner {
         animation: none;
-    }
-
-    .app-loading-progress > span {
-        transform: scaleX(0.58);
     }
 }
 

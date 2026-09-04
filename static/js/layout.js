@@ -310,6 +310,7 @@
         const navigationController = typeof AbortController === 'function' ? new AbortController() : null;
         partialNavigationController = navigationController;
         document.body.classList.add('app-partial-navigation');
+        requestPageLoading();
 
         try {
             const requestOptions = {
@@ -344,6 +345,7 @@
             if (!navigationController || partialNavigationController === navigationController) {
                 partialNavigationController = null;
                 document.body.classList.remove('app-partial-navigation');
+                hidePageLoading();
             }
         }
 
@@ -988,6 +990,113 @@
         return true;
     }
 
+    function favoriteRows() {
+        return Array.from(sidebar.querySelectorAll('[data-sidebar-favorites-list] > [data-sidebar-favorite-item]'));
+    }
+
+    function favoriteOrder() {
+        return favoriteRows().map(row => row.dataset.sidebarFavoriteItem);
+    }
+
+    function restoreFavoriteOrder(itemOrder) {
+        const list = sidebar.querySelector('[data-sidebar-favorites-list]');
+        if (!list || !Array.isArray(itemOrder)) return;
+
+        const rowsByKey = new Map(favoriteRows().map(row => [row.dataset.sidebarFavoriteItem, row]));
+        itemOrder.forEach(function (itemKey) {
+            const row = rowsByKey.get(itemKey);
+            if (row) list.appendChild(row);
+        });
+    }
+
+    let favoriteReorderPlaceholder = null;
+
+    function beginFavoriteReorder(row) {
+        const list = sidebar.querySelector('[data-sidebar-favorites-list]');
+        if (!list || !row || favoriteReorderPlaceholder) return;
+
+        favoriteReorderPlaceholder = document.createElement('div');
+        favoriteReorderPlaceholder.className = 'sidebar-favorite-placeholder';
+        favoriteReorderPlaceholder.setAttribute('aria-hidden', 'true');
+        row.after(favoriteReorderPlaceholder);
+        row.classList.add('is-reordering');
+    }
+
+    function positionFavoritePlaceholder(clientY) {
+        const list = sidebar.querySelector('[data-sidebar-favorites-list]');
+        const draggedRow = sidebar.querySelector('[data-sidebar-favorite-item].is-dragging');
+        if (!list || !draggedRow || !favoriteReorderPlaceholder) return;
+
+        const nextRow = favoriteRows()
+            .filter(row => row !== draggedRow)
+            .find(row => clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2);
+        list.insertBefore(favoriteReorderPlaceholder, nextRow || null);
+    }
+
+    function commitFavoriteReorder() {
+        const list = sidebar.querySelector('[data-sidebar-favorites-list]');
+        const draggedRow = sidebar.querySelector('[data-sidebar-favorite-item].is-dragging');
+        if (!list || !draggedRow || !favoriteReorderPlaceholder) return false;
+
+        list.insertBefore(draggedRow, favoriteReorderPlaceholder);
+        favoriteReorderPlaceholder.remove();
+        favoriteReorderPlaceholder = null;
+        draggedRow.classList.remove('is-reordering');
+        return true;
+    }
+
+    let favoriteOrderSaveQueue = Promise.resolve();
+    let favoriteOrderSaveVersion = 0;
+
+    function saveFavoriteOrder(originalOrder) {
+        const form = sidebar.querySelector('[data-sidebar-favorites-reorder-form]');
+        const orderInput = form?.querySelector('[data-sidebar-favorites-order]');
+        const orderStatus = sidebar.querySelector('[data-sidebar-favorites-order-status]');
+        if (!form || !orderInput) {
+            restoreFavoriteOrder(originalOrder);
+            return;
+        }
+
+        const nextOrder = favoriteOrder();
+        if (JSON.stringify(nextOrder) === JSON.stringify(originalOrder)) return;
+
+        orderInput.value = JSON.stringify(nextOrder);
+        if (typeof window.fetch !== 'function' || typeof window.FormData !== 'function') {
+            form.submit();
+            return;
+        }
+
+        const saveVersion = ++favoriteOrderSaveVersion;
+        const formData = new FormData(form);
+        formData.set('item_order', JSON.stringify(nextOrder));
+        favoriteOrderSaveQueue = favoriteOrderSaveQueue
+            .catch(function () {})
+            .then(async function () {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                });
+                const payload = await response.json();
+                if (!response.ok || payload.status !== 'success') {
+                    throw new Error(payload.message || 'Nie udało się zapisać kolejności Favorites.');
+                }
+                if (saveVersion === favoriteOrderSaveVersion && orderStatus) {
+                    orderStatus.textContent = 'Kolejność Favorites została zapisana.';
+                }
+            })
+            .catch(function (error) {
+                if (saveVersion === favoriteOrderSaveVersion) {
+                    restoreFavoriteOrder(originalOrder);
+                    if (orderStatus) orderStatus.textContent = error.message;
+                }
+            });
+    }
+
     sidebar.addEventListener('submit', async function (event) {
         const form = event.target.closest?.('[data-sidebar-favorite-form]');
         if (!form || typeof window.fetch !== 'function' || typeof window.FormData !== 'function') {
@@ -1097,8 +1206,14 @@
         sidebarDragPreview.style.transform = `translate3d(${left}px, ${top}px, 0)`;
     }
 
-    function clearSidebarDragState() {
+    function clearSidebarDragState(options) {
+        if (options?.restoreFavoriteOrder && draggedSidebarItem?.origin === 'favorites') {
+            restoreFavoriteOrder(draggedSidebarItem.originalOrder);
+        }
         sidebar.querySelectorAll('.is-dragging').forEach(item => item.classList.remove('is-dragging'));
+        sidebar.querySelectorAll('.is-reordering').forEach(item => item.classList.remove('is-reordering'));
+        favoriteReorderPlaceholder?.remove();
+        favoriteReorderPlaceholder = null;
         sidebarFavoritesDropzone?.classList.remove('is-drag-over');
         sidebarFavoritesRemoveDropzone?.classList.remove('is-drag-over');
         sidebar.classList.remove('is-dragging-from-workspace', 'is-dragging-from-favorites');
@@ -1152,11 +1267,11 @@
     }
 
     function restorePointerDragRow(pointerDrag) {
-        if (!pointerDrag?.row) return;
+        if (!pointerDrag?.dragElement) return;
 
-        pointerDrag.row.draggable = true;
-        if (pointerDrag.row.hasPointerCapture?.(pointerDrag.pointerId)) {
-            pointerDrag.row.releasePointerCapture(pointerDrag.pointerId);
+        pointerDrag.dragElement.draggable = true;
+        if (pointerDrag.dragElement.hasPointerCapture?.(pointerDrag.pointerId)) {
+            pointerDrag.dragElement.releasePointerCapture(pointerDrag.pointerId);
         }
     }
 
@@ -1173,12 +1288,14 @@
         draggedSidebarItem = {
             key: itemKey,
             origin: fromFavorites ? 'favorites' : 'workspace',
+            originalOrder: fromFavorites ? favoriteOrder() : null,
         };
         const preview = createSidebarDragPreview(row);
         if (preview) {
             preview.classList.add('sidebar-drag-preview--native');
             event.dataTransfer.setDragImage(preview, 18, 18);
         }
+        if (fromFavorites) beginFavoriteReorder(row);
         row.classList.add('is-dragging');
         sidebar.classList.add(fromFavorites ? 'is-dragging-from-favorites' : 'is-dragging-from-workspace');
         event.dataTransfer.effectAllowed = fromFavorites ? 'move' : 'copy';
@@ -1186,13 +1303,20 @@
     });
 
 
-    sidebar.addEventListener('dragend', clearSidebarDragState);
+    sidebar.addEventListener('dragend', function () {
+        clearSidebarDragState({restoreFavoriteOrder: true});
+    });
 
     sidebarFavoritesDropzone?.addEventListener('dragover', function (event) {
-        if (draggedSidebarItem?.origin !== 'workspace') return;
+        if (!draggedSidebarItem) return;
         event.preventDefault();
-        event.dataTransfer.dropEffect = 'copy';
-        sidebarFavoritesDropzone.classList.add('is-drag-over');
+        if (draggedSidebarItem.origin === 'favorites') {
+            event.dataTransfer.dropEffect = 'move';
+            positionFavoritePlaceholder(event.clientY);
+        } else {
+            event.dataTransfer.dropEffect = 'copy';
+            sidebarFavoritesDropzone.classList.add('is-drag-over');
+        }
     });
 
     sidebarFavoritesDropzone?.addEventListener('dragleave', function (event) {
@@ -1201,9 +1325,16 @@
     });
 
     sidebarFavoritesDropzone?.addEventListener('drop', function (event) {
-        if (draggedSidebarItem?.origin !== 'workspace') return;
+        if (!draggedSidebarItem) return;
         event.preventDefault();
-        submitDraggedFavorite('add');
+        if (draggedSidebarItem.origin === 'favorites') {
+            positionFavoritePlaceholder(event.clientY);
+            if (commitFavoriteReorder()) {
+                saveFavoriteOrder(draggedSidebarItem.originalOrder);
+            }
+        } else {
+            submitDraggedFavorite('add');
+        }
         clearSidebarDragState();
     });
 
@@ -1243,14 +1374,16 @@
             startX: event.clientX,
             startY: event.clientY,
             row: row,
+            dragElement: row,
             key: itemKey,
             origin: fromFavorites ? 'favorites' : 'workspace',
+            originalOrder: fromFavorites ? favoriteOrder() : null,
             active: false,
         };
 
         // Pointer-driven dragging works consistently for mouse, pen and touch.
         // Native dragging stays available for non-pointer input.
-        row.draggable = false;
+        pointerSidebarDrag.dragElement.draggable = false;
     });
 
     sidebar.addEventListener('pointermove', function (event) {
@@ -1268,10 +1401,12 @@
             draggedSidebarItem = {
                 key: pointerDrag.key,
                 origin: pointerDrag.origin,
+                originalOrder: pointerDrag.originalOrder,
             };
-            pointerDrag.row.classList.add('is-dragging');
-            pointerDrag.row.setPointerCapture?.(event.pointerId);
             createSidebarDragPreview(pointerDrag.row);
+            if (pointerDrag.origin === 'favorites') beginFavoriteReorder(pointerDrag.row);
+            pointerDrag.row.classList.add('is-dragging');
+            pointerDrag.dragElement.setPointerCapture?.(event.pointerId);
             sidebar.classList.add(
                 pointerDrag.origin === 'favorites'
                     ? 'is-dragging-from-favorites'
@@ -1281,7 +1416,11 @@
 
         event.preventDefault();
         moveSidebarDragPreview(event.clientX, event.clientY);
-        updateSidebarDropzoneHighlight(sidebarDropzoneAt(event.clientX, event.clientY));
+        const dropzone = sidebarDropzoneAt(event.clientX, event.clientY);
+        if (dropzone === sidebarFavoritesDropzone && pointerDrag.origin === 'favorites') {
+            positionFavoritePlaceholder(event.clientY);
+        }
+        updateSidebarDropzoneHighlight(dropzone);
     });
 
     sidebar.addEventListener('pointerup', function (event) {
@@ -1298,8 +1437,15 @@
         const dropzone = sidebarDropzoneAt(event.clientX, event.clientY);
         if (dropzone === sidebarFavoritesDropzone && pointerDrag.origin === 'workspace') {
             submitDraggedFavorite('add');
+        } else if (dropzone === sidebarFavoritesDropzone && pointerDrag.origin === 'favorites') {
+            positionFavoritePlaceholder(event.clientY);
+            if (commitFavoriteReorder()) {
+                saveFavoriteOrder(pointerDrag.originalOrder);
+            }
         } else if (dropzone === sidebarFavoritesRemoveDropzone && pointerDrag.origin === 'favorites') {
             submitDraggedFavorite('remove');
+        } else if (pointerDrag.origin === 'favorites') {
+            restoreFavoriteOrder(pointerDrag.originalOrder);
         }
 
         clearSidebarDragState();
@@ -1324,6 +1470,28 @@
         event.preventDefault();
         event.stopImmediatePropagation();
     }, true);
+
+    sidebar.addEventListener('keydown', function (event) {
+        if (!event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+
+        const link = event.target.closest?.('[data-sidebar-favorite-item] .sidebar-favorite-link');
+        const row = link?.closest('[data-sidebar-favorite-item]');
+        const list = row?.closest('[data-sidebar-favorites-list]');
+        if (!link || !row || !list) return;
+
+        const sibling = event.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
+        if (!sibling?.matches('[data-sidebar-favorite-item]')) return;
+
+        event.preventDefault();
+        const originalOrder = favoriteOrder();
+        if (event.key === 'ArrowUp') {
+            list.insertBefore(row, sibling);
+        } else {
+            list.insertBefore(sibling, row);
+        }
+        saveFavoriteOrder(originalOrder);
+        link.focus();
+    });
 
     syncFavoriteActiveStates();
 

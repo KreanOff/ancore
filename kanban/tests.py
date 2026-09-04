@@ -250,6 +250,30 @@ class KanbanProjectCreationTests(TestCase):
             'data-column="last_activity">OSTATNIA AKTYWNOŚĆ',
             'data-column="created_at">DATA',
         ]
+        expected_header_icons = [
+            ('project_code', 'KOD PRZESTRZENI', 'hash'),
+            ('project', 'PRZESTRZEŃ', 'folders'),
+            ('company', 'FIRMA', 'building-2'),
+            ('responsible_user', 'ODPOWIEDZIALNY', 'user-round'),
+            ('project_status', 'STATUS', 'circle-dot'),
+            ('stage', 'ETAP', 'milestone'),
+            ('health', 'KONDYCJA', 'heart-pulse'),
+            ('description', 'OPIS', 'align-left'),
+            ('progress', 'POSTĘP', 'chart-no-axes-column-increasing'),
+            ('start_at', 'START', 'calendar-range'),
+            ('due_at', 'TERMIN', 'calendar-clock'),
+            ('source', 'ŹRÓDŁO', 'route'),
+            ('sections_count', 'TABLICE', 'kanban'),
+            ('tasks_count', 'KARTY', 'list-checks'),
+            ('priority', 'PRIORYTET', 'flag'),
+            ('last_activity', 'OSTATNIA AKTYWNOŚĆ', 'activity'),
+            ('created_at', 'DATA', 'calendar-days'),
+        ]
+        for column, label, icon in expected_header_icons:
+            self.assertContains(
+                response,
+                f'data-column="{column}">{label}<i data-lucide="{icon}" aria-hidden="true"></i>',
+            )
         column_positions = [html.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
 
@@ -437,7 +461,7 @@ class KanbanProjectCreationTests(TestCase):
         filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
         filterbar_html = html[filterbar_start:filterbar_end]
 
-        self.assertIn('Wszystkie przestrzenie', topbar_html)
+        self.assertIn('Przestrzenie robocze', topbar_html)
         self.assertIn('tasks-titlebar-search', topbar_html)
         self.assertIn('id="filter-search"', topbar_html)
         self.assertIn('data-project-search-form', topbar_html)
@@ -532,7 +556,7 @@ class KanbanProjectCreationTests(TestCase):
         filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
         filterbar_html = html[filterbar_start:filterbar_end]
 
-        self.assertIn('Wszystkie tablice', topbar_html)
+        self.assertIn('Tablice', topbar_html)
         self.assertIn('tasks-titlebar-search', topbar_html)
         self.assertIn('id="filter-search"', topbar_html)
         self.assertNotIn('data-task-sort', topbar_html)
@@ -659,7 +683,7 @@ class KanbanProjectCreationTests(TestCase):
 
         response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
 
-        self.assertContains(response, 'Wszystkie tablice')
+        self.assertContains(response, 'Tablice')
         self.assertContains(response, 'tasks-all-groups-board')
         self.assertContains(response, 'data-server-pagination="true"')
         self.assertContains(response, 'Na stronie')
@@ -728,7 +752,7 @@ class KanbanProjectCreationTests(TestCase):
 
         response = self.client.get(reverse('kanban:tasks'))
 
-        link_html = self._rail_link_html(response, 'Wszystkie przestrzenie')
+        link_html = self._rail_link_html(response, 'Przestrzenie robocze')
         self.assertNotIn('tasks-rail-count', link_html)
 
     def test_all_groups_link_hides_board_count(self):
@@ -739,8 +763,8 @@ class KanbanProjectCreationTests(TestCase):
 
         response = self.client.get(reverse('kanban:tasks'))
 
-        self.assertContains(response, 'Wszystkie tablice')
-        link_html = self._rail_link_html(response, 'Wszystkie tablice')
+        self.assertContains(response, 'Tablice')
+        link_html = self._rail_link_html(response, 'Tablice')
         self.assertNotIn('tasks-rail-count', link_html)
 
     def test_tags_view_lists_tags(self):

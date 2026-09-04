@@ -32,6 +32,10 @@
                     <i data-lucide="search" aria-hidden="true"></i>
                     <input id="filter-search" type="search" name="q" value="{{ query }}" placeholder="{{ contacts_search_placeholder|default:'Szukaj kontaktu' }}" autocomplete="off">
                 </label>
+                <input type="hidden" name="page_size" value="{{ contact_window.page_size }}" data-project-search-page-size>
+                {% if status != 'all' and status != 'guests' %}
+                <input type="hidden" name="status" value="{{ status }}" data-project-filter-input>
+                {% endif %}
             </form>
         </header>
 
@@ -48,18 +52,25 @@
             </div>
         </div>
 
-        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet{% if not contacts %} contacts-directory-board--empty{% endif %}">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet contacts-project-sheet{% if not contacts %} contacts-directory-board--empty{% endif %}">
             {% if contacts %}
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
                     <span class="tasks-directory-header-select contacts-directory-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie kontakty" title="Zaznacz wszystkie kontakty" data-select-all-checkbox data-select-all-target="contacts">
                     </span>
-                    <span class="contacts-directory-sheet__cell" data-column="contact">KONTAKT</span>
-                    <span class="contacts-directory-sheet__cell" data-column="company_role">FIRMA / ROLA</span>
-                    <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE</span>
-                    <span class="contacts-directory-sheet__cell" data-column="status">STATUS</span>
-                    <span class="tasks-directory-header-date contacts-directory-sheet__cell" data-column="created_at">DATA</span>
+                    <span class="tasks-project-sheet__action contacts-directory-sheet__cell" data-column="action" aria-label="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" title="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" data-column-label="Edycja">
+                        <i data-lucide="pencil" aria-hidden="true"></i>
+                    </span>
+                    <span class="tasks-project-sheet__info contacts-directory-sheet__cell" data-column="info" aria-label="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %}" title="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %}" data-column-label="Informacja">
+                        <i data-lucide="info" aria-hidden="true"></i>
+                        <span class="u-sr-only">Informacja</span>
+                    </span>
+                    <span class="contacts-directory-sheet__cell" data-column="contact">KONTAKT<i data-lucide="user-round" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="company_role">FIRMA / ROLA<i data-lucide="building-2" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE<i data-lucide="mail" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="status">STATUS<i data-lucide="circle-dot" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-header-date contacts-directory-sheet__cell" data-column="created_at">DATA<i data-lucide="calendar-days" aria-hidden="true"></i></span>
                     <span class="contacts-directory-spacer-cell contacts-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="{{ contacts_page_label|default:'Lista kontaktów' }}">
@@ -72,6 +83,16 @@
                          data-search-index="{{ item.display_name|default:''|striptags }} {{ item.company|default:''|striptags }} {{ item.company_record.name|default:''|striptags }} {{ item.role|default:''|striptags }} {{ item.email|default:'' }} {{ item.phone|default:'' }} {{ item.get_status_display }} {{ item.created_at|date:'d.m.Y H:i' }}"
                          data-view-url="{% url 'contacts:view-contact' item.pk %}">
                     <input type="checkbox" class="tasks-row-checkbox contacts-directory-sheet__cell" data-column="select" aria-label="Zaznacz kontakt {{ item.display_name }}" data-contact-id="{{ item.pk }}">
+                    <span class="tasks-project-sheet__action contacts-directory-sheet__cell" data-column="action">
+                        <a href="{% url 'contacts:edit-contact' item.pk %}" class="tasks-project-sheet__edit-button" title="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" aria-label="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %} {{ item.display_name }}">
+                            <i data-lucide="pencil" aria-hidden="true"></i>
+                        </a>
+                    </span>
+                    <span class="tasks-project-sheet__info contacts-directory-sheet__cell" data-column="info">
+                        <a href="{% url 'contacts:view-contact' item.pk %}" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %}" aria-label="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %} {{ item.display_name }}">
+                            <i data-lucide="info" aria-hidden="true"></i>
+                        </a>
+                    </span>
                     <span class="tasks-directory-name contacts-directory-contact contacts-directory-sheet__cell" data-column="contact">
                         {% with linked_user_contact=item.current_user_links.0 %}
                             {% if linked_user_contact %}
@@ -85,11 +106,11 @@
                         {% endwith %}
                         <span class="contacts-directory-name-text">
                             <strong>{{ item.display_name }}</strong>
-                            <small>{% if item.role %}{{ item.role }}{% elif item.source %}{{ item.source }}{% else %}Kontakt{% endif %}</small>
                         </span>
                     </span>
                     <span class="contacts-directory-company contacts-directory-sheet__cell" data-column="company_role">
-                        {% if item.company_record %}{{ item.company_record.name }}{% elif item.company %}{{ item.company }}{% else %}Brak firmy{% endif %}
+                        <span class="contacts-directory-company-name">{% if item.company_record %}{{ item.company_record.name }}{% elif item.company %}{{ item.company }}{% else %}Brak firmy{% endif %}</span>
+                        {% if item.role %}<span class="contacts-directory-role-separator" aria-hidden="true">·</span><span class="contacts-directory-role">{{ item.role }}</span>{% endif %}
                     </span>
                     <span class="contacts-directory-channel contacts-directory-sheet__cell" data-column="channel">
                         {% if item.email %}
@@ -119,6 +140,45 @@
                 </div>
             </section>
             {% endif %}
+        </div>
+        <div class="tasks-project-pagination contacts-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ contact_window.page }}" data-project-total-pages="{{ contact_window.total_pages }}"{% if not contacts %} hidden{% endif %}>
+            <div class="tasks-project-pagination__size">
+                <span>Na stronie</span>
+                <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact" data-project-page-size-dropdown>
+                    <select aria-label="Liczba kontaktów na stronie" data-project-page-size hidden>
+                        {% for page_size in contact_window.page_size_options %}
+                        <option value="{{ page_size }}" {% if contact_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact" aria-label="Liczba kontaktów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
+                        <span data-project-page-size-label>{{ contact_window.page_size }}</span>
+                    </button>
+                    <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba kontaktów na stronie">
+                    {% for page_size in contact_window.page_size_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if contact_window.page_size == page_size %}true{% else %}false{% endif %}" {% if contact_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
+                    {% endfor %}
+                    </div>
+                </div>
+                <span>kontaktów</span>
+            </div>
+            <span class="tasks-project-pagination__summary" data-project-pagination-summary>{{ contact_window.summary }}</span>
+            <nav class="tasks-project-pagination__pages" aria-label="Strony kontaktów">
+                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie kontakty" data-project-page-prev data-project-page-url="{{ contact_window.previous_url }}" {% if not contact_window.has_previous %}disabled{% endif %}>
+                    <i data-lucide="chevron-left" aria-hidden="true"></i>
+                </button>
+                <span class="tasks-project-pagination__numbers" data-project-pagination-pages>
+                    {% for page_item in contact_window.page_items %}
+                    {% if page_item.is_ellipsis %}
+                    <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
+                    {% else %}
+                    <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-project-page="{{ page_item.page }}" {% if not page_item.is_current %}data-project-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
+                    {% endif %}
+                    {% endfor %}
+                </span>
+                <button type="button" class="tasks-project-pagination__button" aria-label="Następne kontakty" data-project-page-next data-project-page-url="{{ contact_window.next_url }}" {% if not contact_window.has_next %}disabled{% endif %}>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+            </nav>
         </div>
     </section>
 </div>

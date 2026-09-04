@@ -6,6 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.loader import render_to_string
 from django.test import SimpleTestCase
 
+from workplaces.navigation import SIDEBAR_FAVORITE_DEFINITIONS
+
 from .upload_validation import validate_attachment_upload, validate_image_upload
 
 
@@ -54,7 +56,7 @@ class SidebarActiveStateTests(SimpleTestCase):
     def test_active_subnav_does_not_activate_primary_link(self):
         cases = (
             ('tasks', 'projects', '', 'Zadania', 'Wszystkie projekty'),
-            ('kanban', 'projects', '', 'Kanban', 'Wszystkie przestrzenie'),
+            ('kanban', 'projects', '', 'Kanban', 'Przestrzenie robocze'),
             ('contacts', '', 'all', 'Kontakty', 'Kontakty'),
         )
 
@@ -111,6 +113,83 @@ class SidebarActiveStateTests(SimpleTestCase):
                 button_html = self._sidebar_button_html(html, group_name)
                 self.assertIn('sidebar-primary-link sidebar-group-toggle', button_html)
                 self.assertNotIn('href=', button_html)
+
+    def test_tasks_sidebar_links_follow_expected_order(self):
+        request = SimpleNamespace(
+            resolver_match=SimpleNamespace(app_name='tasks', view_name=''),
+            user=AnonymousUser(),
+        )
+        html = render_to_string('core/base.html', {
+            'request': request,
+            'workplace_app_urls': {},
+            'active_view': 'projects',
+            'active_contact_status': '',
+        })
+
+        subnav_start = html.index('id="sidebar-tasks-subnav"')
+        subnav_end = html.index('</div>', subnav_start)
+        subnav_html = html[subnav_start:subnav_end]
+        positions = [
+            subnav_html.index(f'<span>{label}</span>')
+            for label in (
+                'Wszystkie projekty',
+                'Wszystkie grupy',
+                'Wszystkie zadania',
+                'Moje zadania',
+            )
+        ]
+
+        self.assertEqual(positions, sorted(positions))
+
+    def test_tasks_sidebar_uses_project_and_group_directory_icons(self):
+        request = SimpleNamespace(
+            resolver_match=SimpleNamespace(app_name='tasks', view_name=''),
+            user=AnonymousUser(),
+        )
+        html = render_to_string('core/base.html', {
+            'request': request,
+            'workplace_app_urls': {},
+            'active_view': 'projects',
+            'active_contact_status': '',
+        })
+
+        subnav_start = html.index('id="sidebar-tasks-subnav"')
+        subnav_end = html.index('</div>', subnav_start)
+        subnav_html = html[subnav_start:subnav_end]
+
+        self.assertIn('data-lucide="briefcase-business"', subnav_html)
+        self.assertIn('data-lucide="layers-3"', subnav_html)
+        self.assertNotIn('data-lucide="folders"', subnav_html)
+        self.assertNotIn('data-lucide="folder-open"', subnav_html)
+
+        favorite_icons = {
+            item['key']: item['icon']
+            for item in SIDEBAR_FAVORITE_DEFINITIONS
+        }
+        self.assertEqual(favorite_icons['tasks-projects'], 'briefcase-business')
+        self.assertEqual(favorite_icons['tasks-groups'], 'layers-3')
+
+    def test_contacts_sidebar_does_not_include_people_search(self):
+        request = SimpleNamespace(
+            resolver_match=SimpleNamespace(app_name='contacts', view_name=''),
+            user=AnonymousUser(),
+        )
+        html = render_to_string('core/base.html', {
+            'request': request,
+            'workplace_app_urls': {},
+            'active_view': '',
+            'active_contact_status': 'users',
+        })
+
+        contacts_subnav_start = html.index('id="sidebar-contacts-subnav"')
+        contacts_subnav_end = html.index('</div>', contacts_subnav_start)
+        contacts_subnav_html = html[contacts_subnav_start:contacts_subnav_end]
+
+        self.assertNotIn('Szukaj osób', contacts_subnav_html)
+        self.assertNotIn('contacts-people', contacts_subnav_html)
+        self.assertIn('>Kontakty</span>', contacts_subnav_html)
+        self.assertIn('>Firmy</span>', contacts_subnav_html)
+        self.assertIn('>Goście</span>', contacts_subnav_html)
 
     def test_sidebar_has_favorites_and_workspace_sections(self):
         request = SimpleNamespace(
