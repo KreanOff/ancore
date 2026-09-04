@@ -55,7 +55,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260904-workspace-current-row-v3">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260904-turquoise-directory-highlights-v7-view-switcher-v5-collapse-group-v1-workspace-current-row-v4">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -139,19 +139,19 @@
             {% endif %}
         </div>
         <div class="sidebar-view-controls">
-            <div class="sidebar-view-switcher" role="group" aria-label="Widok domyślny i powiadomienia" data-sidebar-view-switcher>
-                <a href="{{ sidebar_dashboard_url }}" class="sidebar-view-switcher__item{% if request.resolver_match.url_name != 'notifications' %} is-active{% endif %}" aria-label="Widok domyślny"{% if request.resolver_match.url_name != 'notifications' %} aria-current="page"{% endif %} title="Widok domyślny">
+            <div class="sidebar-view-switcher" role="group" aria-label="Widok domyślny, powiadomienia i wyszukiwanie" data-sidebar-view-switcher>
+                <a href="{{ sidebar_dashboard_url }}" class="sidebar-view-switcher__item{% if request.resolver_match.url_name != 'notifications' %} is-active{% endif %}" aria-label="Widok domyślny"{% if request.resolver_match.url_name != 'notifications' %} aria-current="page"{% endif %} title="Widok domyślny" data-sidebar-default-view>
                     <i data-lucide="house" aria-hidden="true"></i>
                 </a>
                 <a href="{{ sidebar_notifications_url }}" class="sidebar-view-switcher__item{% if request.resolver_match.url_name == 'notifications' %} is-active{% endif %}" aria-label="Powiadomienia"{% if request.resolver_match.url_name == 'notifications' %} aria-current="page"{% endif %} aria-controls="notifications-panel" aria-expanded="false" title="Powiadomienia" data-notifications-toggle>
                     <i data-lucide="bell" aria-hidden="true"></i>
                 </a>
-            </div>
-            <div class="sidebar-header-actions">
-                <button type="button" class="sidebar-header-action sidebar-header-action--search" aria-label="Wyszukaj w Ancore" title="Wyszukaj w Ancore" aria-controls="global-search-panel" aria-expanded="false" data-global-search-toggle>
+                <button type="button" class="sidebar-view-switcher__item sidebar-view-switcher__item--search" aria-label="Wyszukaj w Ancore" title="Wyszukaj w Ancore" aria-controls="global-search-panel" aria-expanded="false" data-global-search-toggle>
                     <i data-lucide="search" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="sidebar-header-action sidebar-collapse-toggle" aria-label="Zwiń menu boczne" title="Zwiń menu boczne" aria-controls="app-sidebar" aria-expanded="true" data-sidebar-collapse-toggle>
+            </div>
+            <div class="sidebar-view-switcher sidebar-view-switcher--collapse" role="group" aria-label="Sterowanie paskiem bocznym">
+                <button type="button" class="sidebar-view-switcher__item sidebar-collapse-toggle" aria-label="Zwiń menu boczne" title="Zwiń menu boczne" aria-controls="app-sidebar" aria-expanded="true" data-sidebar-collapse-toggle>
                     <i class="sidebar-collapse-icon sidebar-collapse-icon--close" data-lucide="panel-left-close" aria-hidden="true"></i>
                     <i class="sidebar-collapse-icon sidebar-collapse-icon--open" data-lucide="panel-left-open" aria-hidden="true"></i>
                 </button>
@@ -351,12 +351,12 @@
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/lucide-icons.js' %}?v=20260709-scoped-icon-render"></script>
     <script src="{% static 'js/layout.js' %}?v=20260904-favorites-sort-line-v3"></script>
-    <script src="{% static 'js/global-search.js' %}?v=20260903-notifications-panel-v1"></script>
-    <script src="{% static 'js/notifications-panel.js' %}?v=20260903-notifications-panel-v1"></script>
+    <script src="{% static 'js/global-search.js' %}?v=20260904-default-view-close-v2"></script>
+    <script src="{% static 'js/notifications-panel.js' %}?v=20260904-default-view-close-v2"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260605-trash-icon"></script>
     <script src="{% static 'js/modal.js' %}?v=20260822-confirm-modal-accessibility"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260830-all-groups-grid-v5"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260904-project-filter-sort-column-sort-line-v2"></script>
     <script src="{% static 'js/profile.js' %}?v=20260901-photo-crop-input-v3"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260709-project-company-search"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>

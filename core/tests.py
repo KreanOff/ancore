@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.loader import render_to_string
@@ -233,26 +234,67 @@ class SidebarActiveStateTests(SimpleTestCase):
         controls_position = html.index('class="sidebar-view-controls"')
         switcher_position = html.index('data-sidebar-view-switcher')
         search_position = html.index('data-global-search-toggle')
+        collapse_group_position = html.index('class="sidebar-view-switcher sidebar-view-switcher--collapse"')
         collapse_position = html.index('data-sidebar-collapse-toggle')
         navigation_position = html.index('class="sidebar-navigation"')
 
         self.assertLess(header_position, controls_position)
         self.assertLess(controls_position, switcher_position)
         self.assertLess(switcher_position, search_position)
-        self.assertLess(search_position, collapse_position)
+        self.assertLess(search_position, collapse_group_position)
+        self.assertLess(collapse_group_position, collapse_position)
         self.assertLess(collapse_position, navigation_position)
-        self.assertIn('aria-label="Widok domyślny i powiadomienia"', html)
+        switcher_end = html.index('</div>', switcher_position)
+        switcher_html = html[switcher_position:switcher_end]
+        collapse_group_end = html.index('</div>', collapse_group_position)
+        collapse_group_html = html[collapse_group_position:collapse_group_end]
+
+        self.assertIn('aria-label="Widok domyślny, powiadomienia i wyszukiwanie"', html)
+        self.assertEqual(switcher_html.count('class="sidebar-view-switcher__item'), 3)
         self.assertIn('data-lucide="house"', html[switcher_position:])
         self.assertIn('data-lucide="bell"', html[switcher_position:])
+        self.assertIn('data-lucide="search"', switcher_html)
         self.assertIn('aria-label="Widok domyślny"', html[switcher_position:])
+        self.assertIn('data-sidebar-default-view', switcher_html)
         self.assertIn('aria-label="Powiadomienia"', html[switcher_position:])
+        self.assertIn('aria-label="Wyszukaj w Ancore"', switcher_html)
         self.assertIn('href="/notifications/"', html[switcher_position:])
         self.assertIn('data-notifications-toggle', html[switcher_position:])
         self.assertIn('aria-controls="notifications-panel"', html[switcher_position:])
+        self.assertIn('role="group" aria-label="Sterowanie paskiem bocznym"', collapse_group_html)
+        self.assertEqual(collapse_group_html.count('class="sidebar-view-switcher__item'), 1)
+        self.assertIn('class="sidebar-view-switcher__item sidebar-collapse-toggle"', collapse_group_html)
         self.assertIn('id="notifications-panel"', html)
         self.assertIn('data-notifications-url="/notifications/"', html)
         self.assertIn('Zamknij powiadomienia', html)
         self.assertNotIn('disabled', html[switcher_position:navigation_position])
+
+    def test_sidebar_view_switcher_uses_turquoise_active_state(self):
+        css_path = finders.find('css/style.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        self.assertIn(
+            '.sidebar-view-switcher__item.is-active {\n'
+            '    --app-text-color: var(--text-primary);\n\n'
+            '    background: rgba(var(--system-accent-rgb), 0.14);\n'
+            '    color: var(--app-text-color);\n'
+            '}',
+            css,
+        )
+        self.assertIn('.sidebar-view-switcher__item:not(.is-active):hover {', css)
+        self.assertIn('.sidebar-view-switcher {\n    width: 121px;', css)
+        self.assertIn('.sidebar-view-switcher--collapse {\n    width: 45px;', css)
+        self.assertIn(
+            '.sidebar.is-searching .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {',
+            css,
+        )
 
     def test_tags_is_a_single_standalone_link_below_calendar(self):
         request = SimpleNamespace(

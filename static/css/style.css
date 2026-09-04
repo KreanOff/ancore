@@ -12,17 +12,17 @@
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20260903-gray-interactions-v1';
-@import 'components/contacts.css?v=20260903-contact-action-headers-v6';
+@import 'components/tasks.css?v=20260904-project-row-highlight-filter-typography-column-sort-line-v6-turquoise-selection';
+@import 'components/contacts.css?v=20260904-contact-action-headers-v7-turquoise-row-highlight';
 @import 'components/notifications.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/auth.css?v=20260903-gray-interactions-v1';
-@import 'components/workplaces.css?v=20260904-workspace-current-row-v3';
+@import 'components/workplaces.css?v=20260904-workspace-current-row-v4-turquoise';
 @import 'calendar.css?v=20260702-unified-modal-window';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
 @import 'components/checkboxes.css?v=20260625-contacts-project-table-match';
-@import 'theme/elestio.css?v=20260903-gray-interactions-v1';
+@import 'theme/elestio.css?v=20260904-turquoise-directory-selection-v1';
 @import 'components/profile.css?v=20260903-gray-interactions-v1';
 @import 'components/modal-system.css?v=20260901-workplace-modal-parity-v1';
 @import 'components/global-search.css?v=20260903-global-search-panel-parity-v1';
@@ -855,12 +855,8 @@ body :where(input, textarea)::placeholder {
     margin: 0.35rem 0.75rem 0.75rem;
 }
 
-.sidebar-view-controls .sidebar-header-actions {
-    margin-left: auto;
-}
-
 .sidebar-view-switcher {
-    width: 84px;
+    width: 121px;
     height: 34px;
     display: inline-flex;
     align-items: center;
@@ -871,6 +867,11 @@ body :where(input, textarea)::placeholder {
     border: 2px solid #e9eaec;
     border-radius: 999px;
     background: #ffffff;
+}
+
+.sidebar-view-switcher--collapse {
+    width: 45px;
+    margin-left: auto;
 }
 
 .sidebar-view-switcher__item {
@@ -886,16 +887,20 @@ body :where(input, textarea)::placeholder {
     background: transparent;
     color: #92959a;
     box-shadow: none;
+    font: inherit;
     text-decoration: none;
+    cursor: pointer;
     transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .sidebar-view-switcher__item.is-active {
-    background: #f1f1f2;
-    color: #393a3c;
+    --app-text-color: var(--text-primary);
+
+    background: rgba(var(--system-accent-rgb), 0.14);
+    color: var(--app-text-color);
 }
 
-.sidebar-view-switcher__item:hover {
+.sidebar-view-switcher__item:not(.is-active):hover {
     background: #f5f5f6;
     color: #4b4d50;
 }
@@ -911,7 +916,7 @@ body :where(input, textarea)::placeholder {
     stroke-width: 2.2;
 }
 
-.sidebar.is-searching .sidebar-view-switcher {
+.sidebar.is-searching .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {
     display: none;
 }
 
@@ -1322,12 +1327,12 @@ body :where(input, textarea)::placeholder {
     html.sidebar-collapsed .sidebar-menu-section-title,
     html.sidebar-collapsed .sidebar-subnav,
     html.sidebar-collapsed .sidebar-group-chevron,
-    html.sidebar-collapsed .sidebar-view-switcher {
+    html.sidebar-collapsed .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {
         display: none !important;
     }
 
-    html.sidebar-collapsed .sidebar-header-actions {
-        margin: 0 auto;
+    html.sidebar-collapsed .sidebar-view-switcher--collapse {
+        margin-inline: auto;
     }
 
     html.sidebar-collapsed .sidebar-view-controls {

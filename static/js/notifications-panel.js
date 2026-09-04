@@ -6,10 +6,9 @@
     const content = document.querySelector('[data-notifications-content]');
     const count = document.querySelector('[data-notifications-count]');
     const status = document.querySelector('[data-notifications-status]');
-    const defaultView = document.querySelector('[data-sidebar-view-switcher] .sidebar-view-switcher__item:first-child');
+    const switcher = toggle?.closest('[data-sidebar-view-switcher]');
+    const defaultView = switcher?.querySelector('[data-sidebar-default-view]');
     const notificationsUrl = panel?.dataset.notificationsUrl || toggle?.href || '';
-    const toggleWasCurrent = toggle?.getAttribute('aria-current') === 'page';
-    const defaultViewWasCurrent = defaultView?.getAttribute('aria-current') === 'page';
     let requestController = null;
     let restoreFocusTo = null;
 
@@ -108,9 +107,14 @@
         return toggle.getAttribute('aria-expanded') === 'true';
     }
 
-    function updateSwitcher(open) {
-        toggle.classList.toggle('is-active', open || toggleWasCurrent);
-        defaultView?.classList.toggle('is-active', !open && defaultViewWasCurrent);
+    function syncSwitcher() {
+        const items = Array.from(switcher?.querySelectorAll('.sidebar-view-switcher__item') || []);
+        const expandedItem = items.find(item => item.getAttribute('aria-expanded') === 'true');
+
+        items.forEach(function (item) {
+            const isCurrentPage = item.getAttribute('aria-current') === 'page';
+            item.classList.toggle('is-active', expandedItem ? item === expandedItem : isCurrentPage);
+        });
     }
 
     function setOpen(open) {
@@ -120,7 +124,7 @@
         }
 
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        updateSwitcher(open);
+        syncSwitcher();
         document.body.classList.toggle('notifications-panel-open', open);
         panel.hidden = !open;
         backdrop.hidden = !open;
@@ -142,6 +146,11 @@
     toggle.addEventListener('click', function (event) {
         event.preventDefault();
         setOpen(!isOpen());
+    });
+    defaultView?.addEventListener('click', function (event) {
+        if (!isOpen()) return;
+        event.preventDefault();
+        setOpen(false);
     });
     closeButton?.addEventListener('click', function () {
         setOpen(false);

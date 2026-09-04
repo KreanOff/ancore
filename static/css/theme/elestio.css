@@ -711,8 +711,8 @@ body.auth-page,
 .tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-project-sheet__cell:not(.tasks-row-checkbox),
 .tasks-directory-board .tasks-directory-list .tasks-directory-row.checked > .tasks-tag-sheet__cell:not(.tasks-row-checkbox),
 .tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-tag-sheet__cell:not(.tasks-row-checkbox) {
-    background: #e9ebef;
-    border-color: #d6d9df;
+    background: rgba(var(--system-accent-rgb), 0.08);
+    border-color: rgba(var(--system-accent-rgb), 0.24);
 }
 
 .tasks-row-title,

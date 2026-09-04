@@ -8,6 +8,8 @@
     const clearButton = document.querySelector('[data-global-search-clear]');
     const results = document.querySelector('[data-global-search-results]');
     const status = document.querySelector('[data-global-search-status]');
+    const switcher = toggle?.closest('[data-sidebar-view-switcher]');
+    const defaultView = switcher?.querySelector('[data-sidebar-default-view]');
     const searchUrl = panel?.dataset.searchUrl || '';
     const minimumQueryLength = 2;
     const debounceDelay = 180;
@@ -289,6 +291,16 @@
         return toggle.getAttribute('aria-expanded') === 'true';
     }
 
+    function syncSwitcher() {
+        const items = Array.from(switcher?.querySelectorAll('.sidebar-view-switcher__item') || []);
+        const expandedItem = items.find(item => item.getAttribute('aria-expanded') === 'true');
+
+        items.forEach(function (item) {
+            const isCurrentPage = item.getAttribute('aria-current') === 'page';
+            item.classList.toggle('is-active', expandedItem ? item === expandedItem : isCurrentPage);
+        });
+    }
+
     function setOpen(open) {
         if (open === isOpen()) {
             if (open) input.focus({ preventScroll: true });
@@ -296,7 +308,7 @@
         }
 
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        toggle.classList.toggle('is-active', open);
+        syncSwitcher();
         document.body.classList.toggle('global-search-open', open);
         panel.hidden = !open;
         backdrop.hidden = !open;
@@ -318,6 +330,11 @@
 
     toggle.addEventListener('click', function () {
         setOpen(!isOpen());
+    });
+    defaultView?.addEventListener('click', function (event) {
+        if (!isOpen()) return;
+        event.preventDefault();
+        setOpen(false);
     });
     closeButton?.addEventListener('click', function () {
         setOpen(false);

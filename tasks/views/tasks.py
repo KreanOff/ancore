@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Case, Count, IntegerField, Max, Prefetch, Q, Value, When
+from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Q, Value, When
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -58,19 +58,63 @@ PROJECT_NAVIGATION_LIMIT = 50
 TASK_PAGE_SIZE_OPTIONS = PROJECT_PAGE_SIZE_OPTIONS
 TASK_DEFAULT_PAGE_SIZE = 25
 PROJECT_DEFAULT_SORT = 'name_asc'
+PROJECT_SORT_FIELDS = (
+    {'value': 'name', 'label': 'Nazwa projektu', 'icon': 'briefcase-business'},
+    {'value': 'code', 'label': 'Kod projektu', 'icon': 'hash'},
+    {'value': 'description', 'label': 'Opis', 'icon': 'align-left'},
+    {'value': 'priority', 'label': 'Priorytet', 'icon': 'chart-no-axes-column-increasing'},
+    {'value': 'start_at', 'label': 'Data rozpoczęcia', 'icon': 'calendar-range'},
+    {'value': 'due_at', 'label': 'Termin', 'icon': 'calendar-clock'},
+    {'value': 'company', 'label': 'Firma', 'icon': 'building-2'},
+    {'value': 'responsible', 'label': 'Odpowiedzialny', 'icon': 'circle-user-round'},
+    {'value': 'status', 'label': 'Status', 'icon': 'circle-dot'},
+    {'value': 'stage', 'label': 'Etap', 'icon': 'milestone'},
+    {'value': 'health', 'label': 'Kondycja', 'icon': 'heart-pulse'},
+    {'value': 'source', 'label': 'Źródło', 'icon': 'waypoints'},
+    {'value': 'created', 'label': 'Data utworzenia', 'icon': 'calendar-plus-2'},
+    {'value': 'activity', 'label': 'Ostatnia aktywność', 'icon': 'activity'},
+)
 PROJECT_SORT_OPTIONS = (
-    {'value': 'name_asc', 'label': 'Projekt A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
-    {'value': 'name_desc', 'label': 'Projekt Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'name_asc', 'label': 'Projekt A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc', 'field': 'name'},
+    {'value': 'name_desc', 'label': 'Projekt Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc', 'field': 'name'},
     {'value': 'code_asc', 'label': 'Kod A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'code_desc', 'label': 'Kod Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'description_asc', 'label': 'Opis A-Z', 'icon': 'align-left', 'direction': 'asc'},
+    {'value': 'description_desc', 'label': 'Opis Z-A', 'icon': 'align-left', 'direction': 'desc'},
     {'value': 'company_asc', 'label': 'Firma A-Z', 'icon': 'building-2', 'direction': 'asc'},
-    {'value': 'responsible_asc', 'label': 'Odpowiedzialny', 'icon': 'circle-user-round', 'direction': 'asc'},
-    {'value': 'status_asc', 'label': 'Status', 'icon': 'circle-dot', 'direction': 'asc'},
+    {'value': 'company_desc', 'label': 'Firma Z-A', 'icon': 'building-2', 'direction': 'desc'},
+    {'value': 'responsible_asc', 'label': 'Odpowiedzialny A-Z', 'icon': 'circle-user-round', 'direction': 'asc'},
+    {'value': 'responsible_desc', 'label': 'Odpowiedzialny Z-A', 'icon': 'circle-user-round', 'direction': 'desc'},
+    {'value': 'status_asc', 'label': 'Status rosnąco', 'icon': 'circle-dot', 'direction': 'asc'},
+    {'value': 'status_desc', 'label': 'Status malejąco', 'icon': 'circle-dot', 'direction': 'desc'},
+    {'value': 'stage_asc', 'label': 'Etap rosnąco', 'icon': 'milestone', 'direction': 'asc'},
+    {'value': 'stage_desc', 'label': 'Etap malejąco', 'icon': 'milestone', 'direction': 'desc'},
+    {'value': 'health_asc', 'label': 'Kondycja rosnąco', 'icon': 'heart-pulse', 'direction': 'asc'},
+    {'value': 'health_desc', 'label': 'Kondycja malejąco', 'icon': 'heart-pulse', 'direction': 'desc'},
+    {'value': 'priority_asc', 'label': 'Priorytet rosnąco', 'icon': 'chart-no-axes-column-increasing', 'direction': 'asc'},
     {'value': 'priority_desc', 'label': 'Priorytet', 'icon': 'chart-no-axes-column-increasing', 'direction': 'desc'},
+    {'value': 'start_at_asc', 'label': 'Najwcześniejszy start', 'icon': 'calendar-range', 'direction': 'asc'},
+    {'value': 'start_at_desc', 'label': 'Najpóźniejszy start', 'icon': 'calendar-range', 'direction': 'desc'},
     {'value': 'due_at_asc', 'label': 'Najbliższy termin', 'icon': 'calendar-clock', 'direction': 'asc'},
+    {'value': 'due_at_desc', 'label': 'Najdalszy termin', 'icon': 'calendar-clock', 'direction': 'desc'},
+    {'value': 'source_asc', 'label': 'Źródło A-Z', 'icon': 'waypoints', 'direction': 'asc'},
+    {'value': 'source_desc', 'label': 'Źródło Z-A', 'icon': 'waypoints', 'direction': 'desc'},
+    {'value': 'created_asc', 'label': 'Najstarsze', 'icon': 'clock-3', 'direction': 'asc'},
     {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'clock-3', 'direction': 'desc'},
+    {'value': 'activity_asc', 'label': 'Najdawniejsza aktywność', 'icon': 'activity', 'direction': 'asc'},
     {'value': 'activity_desc', 'label': 'Ostatnia aktywność', 'icon': 'activity', 'direction': 'desc'},
 )
 PROJECT_SORT_OPTION_MAP = {option['value']: option for option in PROJECT_SORT_OPTIONS}
+PROJECT_TEXT_FILTER_OPERATORS = (
+    {'value': 'contains', 'label': 'zawiera'},
+    {'value': 'not_contains', 'label': 'nie zawiera'},
+    {'value': 'is_empty', 'label': 'jest puste'},
+    {'value': 'is_not_empty', 'label': 'nie jest puste'},
+)
+PROJECT_TEXT_FILTER_OPERATOR_MAP = {
+    option['value']: option['label']
+    for option in PROJECT_TEXT_FILTER_OPERATORS
+}
 GROUP_DEFAULT_SORT = 'project_asc'
 GROUP_SORT_OPTIONS = (
     {'value': 'project_asc', 'label': 'Projekt A-Z', 'icon': 'folder-kanban', 'direction': 'asc'},
@@ -764,6 +808,27 @@ def _project_sort_value(value):
     return value if value in PROJECT_SORT_OPTION_MAP else PROJECT_DEFAULT_SORT
 
 
+def _project_text_filter_operator(value):
+    return value if value in PROJECT_TEXT_FILTER_OPERATOR_MAP else 'contains'
+
+
+def _project_text_filter_is_active(value, operator):
+    return bool((value or '').strip()) or operator in {'is_empty', 'is_not_empty'}
+
+
+def _apply_project_text_filter(queryset, field_name, value, operator):
+    operator = _project_text_filter_operator(operator)
+    value = (value or '').strip()
+    if operator == 'is_empty':
+        return queryset.filter(Q(**{field_name: ''}) | Q(**{f'{field_name}__isnull': True}))
+    if operator == 'is_not_empty':
+        return queryset.exclude(Q(**{field_name: ''}) | Q(**{f'{field_name}__isnull': True}))
+    if not value:
+        return queryset
+    lookup = {f'{field_name}__icontains': value}
+    return queryset.exclude(**lookup) if operator == 'not_contains' else queryset.filter(**lookup)
+
+
 def _group_sort_value(value):
     return value if value in GROUP_SORT_OPTION_MAP else GROUP_DEFAULT_SORT
 
@@ -787,6 +852,14 @@ def _choice_rank_case(field_name, choices):
 def _project_filter_queryset(
     user,
     query='',
+    name='',
+    name_operator='contains',
+    code='',
+    code_operator='contains',
+    description='',
+    description_operator='contains',
+    source='',
+    source_operator='contains',
     priority='',
     status='',
     stage='',
@@ -832,6 +905,10 @@ def _project_filter_queryset(
         if health_matches:
             query_filter |= Q(health__in=health_matches)
         queryset = queryset.filter(query_filter)
+    queryset = _apply_project_text_filter(queryset, 'name', name, name_operator)
+    queryset = _apply_project_text_filter(queryset, 'code', code, code_operator)
+    queryset = _apply_project_text_filter(queryset, 'description', description, description_operator)
+    queryset = _apply_project_text_filter(queryset, 'source', source, source_operator)
     if priority in {value for value, _label in TaskProject.PRIORITY_CHOICES}:
         queryset = queryset.filter(priority=priority)
     if status in {value for value, _label in project_choices['status']}:
@@ -851,58 +928,90 @@ def _project_filter_queryset(
     return queryset
 
 
-def _project_sort_queryset(queryset, sort_value, status_choices=None):
+def _project_sort_queryset(queryset, sort_value, project_choices=None):
     sort_value = _project_sort_value(sort_value)
-    if sort_value == 'name_desc':
-        return queryset.order_by('-name', 'id')
-    if sort_value == 'code_asc':
-        return queryset.order_by('code', 'name', 'id')
-    if sort_value == 'company_asc':
+    project_choices = project_choices or {
+        'status': TaskProject.STATUS_CHOICES,
+        'stage': TaskProject.STAGE_CHOICES,
+        'health': TaskProject.HEALTH_CHOICES,
+    }
+    field_name, direction = sort_value.rsplit('_', 1)
+    descending = direction == 'desc'
+    prefix = '-' if descending else ''
+
+    if field_name == 'name':
+        return queryset.order_by(f'{prefix}name', 'id')
+    if field_name in {'code', 'description', 'source'}:
+        empty_alias = f'project_{field_name}_empty_sort'
         return queryset.annotate(
-            company_empty_sort=Case(
+            **{
+                empty_alias: Case(
+                    When(**{field_name: ''}, then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                )
+            }
+        ).order_by(empty_alias, f'{prefix}{field_name}', f'{prefix}name', 'id')
+    if field_name == 'company':
+        return queryset.annotate(
+            project_company_empty_sort=Case(
                 When(company__isnull=True, then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField(),
             )
-        ).order_by('company_empty_sort', 'company__name', 'name', 'id')
-    if sort_value == 'responsible_asc':
+        ).order_by('project_company_empty_sort', f'{prefix}company__name', f'{prefix}name', 'id')
+    if field_name == 'responsible':
         return queryset.annotate(
-            responsible_empty_sort=Case(
+            project_responsible_empty_sort=Case(
                 When(responsible_user__isnull=True, then=Value(1)),
                 default=Value(0),
                 output_field=IntegerField(),
             )
         ).order_by(
-            'responsible_empty_sort',
-            'responsible_user__last_name',
-            'responsible_user__first_name',
-            'responsible_user__username',
-            'name',
+            'project_responsible_empty_sort',
+            f'{prefix}responsible_user__last_name',
+            f'{prefix}responsible_user__first_name',
+            f'{prefix}responsible_user__username',
+            f'{prefix}name',
             'id',
         )
-    if sort_value == 'status_asc':
+    if field_name in {'status', 'stage', 'health'}:
+        rank_alias = f'project_{field_name}_sort_rank'
         return queryset.annotate(
-            status_sort_rank=_choice_rank_case('status', status_choices or TaskProject.STATUS_CHOICES)
-        ).order_by('status_sort_rank', 'name', 'id')
-    if sort_value == 'priority_desc':
+            **{rank_alias: _choice_rank_case(field_name, project_choices[field_name])}
+        ).order_by(f'{prefix}{rank_alias}', 'name', 'id')
+    if field_name == 'priority':
         return queryset.annotate(
-            priority_sort_rank=_choice_rank_case('priority', TaskProject.PRIORITY_CHOICES)
-        ).order_by('-priority_sort_rank', 'name', 'id')
-    if sort_value == 'due_at_asc':
+            project_priority_sort_rank=_choice_rank_case('priority', TaskProject.PRIORITY_CHOICES)
+        ).order_by(f'{prefix}project_priority_sort_rank', 'name', 'id')
+    if field_name in {'start_at', 'due_at'}:
+        empty_alias = f'project_{field_name}_empty_sort'
         return queryset.annotate(
-            due_empty_sort=Case(
-                When(due_at__isnull=True, then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField(),
-            )
-        ).order_by('due_empty_sort', 'due_at', 'name', 'id')
-    if sort_value == 'created_desc':
-        return queryset.order_by('-created_at', 'name', 'id')
-    if sort_value == 'activity_desc':
+            **{
+                empty_alias: Case(
+                    When(**{f'{field_name}__isnull': True}, then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                )
+            }
+        ).order_by(empty_alias, f'{prefix}{field_name}', 'name', 'id')
+    if field_name == 'created':
+        return queryset.order_by(f'{prefix}created_at', f'{prefix}name', 'id')
+    if field_name == 'activity':
+        activity_order = (
+            F('project_last_activity_sort').desc(nulls_last=True)
+            if descending
+            else F('project_last_activity_sort').asc(nulls_last=True)
+        )
+        task_created_order = (
+            F('project_last_task_created_sort').desc(nulls_last=True)
+            if descending
+            else F('project_last_task_created_sort').asc(nulls_last=True)
+        )
         return queryset.annotate(
-            last_task_created_sort=Max('sections__tasks__created_at'),
-            last_activity_sort=Max('sections__tasks__activities__created_at'),
-        ).order_by('-last_activity_sort', '-last_task_created_sort', '-created_at', 'name', 'id')
+            project_last_task_created_sort=Max('sections__tasks__created_at'),
+            project_last_activity_sort=Max('sections__tasks__activities__created_at'),
+        ).order_by(activity_order, task_created_order, f'{prefix}created_at', 'name', 'id')
     return queryset.order_by('name', 'id')
 
 
@@ -974,6 +1083,69 @@ def _empty_project_filter_options(project_choices=None):
         'companies': [],
         'responsible_users': [],
     }
+
+
+def _project_active_filters(
+    *,
+    name,
+    name_operator,
+    code,
+    code_operator,
+    description,
+    description_operator,
+    source,
+    source_operator,
+    priority,
+    status,
+    stage,
+    health,
+    company,
+    responsible,
+    project_choices,
+    filter_options,
+):
+    active_filters = []
+    text_filters = (
+        ('name', 'name_op', 'Nazwa', 'briefcase-business', name, name_operator),
+        ('code', 'code_op', 'Kod', 'hash', code, code_operator),
+        ('description', 'description_op', 'Opis', 'align-left', description, description_operator),
+        ('source', 'source_op', 'Źródło', 'waypoints', source, source_operator),
+    )
+    for param, operator_param, label, icon, value, operator in text_filters:
+        if not _project_text_filter_is_active(value, operator):
+            continue
+        operator_label = PROJECT_TEXT_FILTER_OPERATOR_MAP[operator]
+        value_label = operator_label
+        if operator not in {'is_empty', 'is_not_empty'}:
+            value_label = f'{operator_label} „{value}”'
+        active_filters.append({
+            'param': param,
+            'operator_param': operator_param,
+            'label': label,
+            'value_label': value_label,
+            'icon': icon,
+        })
+
+    exact_filters = (
+        ('priority', 'Priorytet', 'chart-no-axes-column-increasing', priority, _choice_options(TaskProject.PRIORITY_CHOICES)),
+        ('status', 'Status', 'circle-dot', status, _choice_options(project_choices['status'])),
+        ('stage', 'Etap', 'milestone', stage, _choice_options(project_choices['stage'])),
+        ('health', 'Kondycja', 'heart-pulse', health, _choice_options(project_choices['health'])),
+        ('company', 'Firma', 'building-2', company, filter_options['companies']),
+        ('responsible', 'Odpowiedzialny', 'circle-user-round', responsible, filter_options['responsible_users']),
+    )
+    for param, label, icon, value, options in exact_filters:
+        if not value:
+            continue
+        option_label = next((option['label'] for option in options if option['value'] == value), value)
+        active_filters.append({
+            'param': param,
+            'operator_param': '',
+            'label': label,
+            'value_label': option_label,
+            'icon': icon,
+        })
+    return active_filters
 
 
 def _group_filter_queryset(
@@ -1571,6 +1743,14 @@ def _project_window_for_request(request, field_configuration=None):
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
+    name = (request.GET.get('name') or '').strip()
+    name_operator = _project_text_filter_operator((request.GET.get('name_op') or '').strip())
+    code = (request.GET.get('code') or '').strip()
+    code_operator = _project_text_filter_operator((request.GET.get('code_op') or '').strip())
+    description = (request.GET.get('description') or '').strip()
+    description_operator = _project_text_filter_operator((request.GET.get('description_op') or '').strip())
+    source = (request.GET.get('source') or '').strip()
+    source_operator = _project_text_filter_operator((request.GET.get('source_op') or '').strip())
     priority = (request.GET.get('priority') or '').strip()
     status = (request.GET.get('status') or '').strip()
     stage = (request.GET.get('stage') or '').strip()
@@ -1581,6 +1761,14 @@ def _project_window_for_request(request, field_configuration=None):
     queryset = _project_filter_queryset(
         request.user,
         query=query,
+        name=name,
+        name_operator=name_operator,
+        code=code,
+        code_operator=code_operator,
+        description=description,
+        description_operator=description_operator,
+        source=source,
+        source_operator=source_operator,
         priority=priority,
         status=status,
         stage=stage,
@@ -1590,7 +1778,7 @@ def _project_window_for_request(request, field_configuration=None):
         workplace=workplace,
         project_choices=project_choices,
     )
-    queryset = _project_sort_queryset(queryset, sort, status_choices=project_choices['status'])
+    queryset = _project_sort_queryset(queryset, sort, project_choices=project_choices)
     total_projects = queryset.count()
     total_pages = max(1, (total_projects + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
@@ -1609,8 +1797,40 @@ def _project_window_for_request(request, field_configuration=None):
     _decorate_project_field_values(projects, field_configuration)
     _decorate_directory_members(projects, current_user=request.user)
 
+    filter_options = _project_filter_options(
+        request.user,
+        workplace=workplace,
+        project_choices=project_choices,
+    )
+    active_filters = _project_active_filters(
+        name=name,
+        name_operator=name_operator,
+        code=code,
+        code_operator=code_operator,
+        description=description,
+        description_operator=description_operator,
+        source=source,
+        source_operator=source_operator,
+        priority=priority,
+        status=status,
+        stage=stage,
+        health=health,
+        company=company,
+        responsible=responsible,
+        project_choices=project_choices,
+        filter_options=filter_options,
+    )
+
     base_params = {
         'q': query,
+        'name': name,
+        'name_op': name_operator if _project_text_filter_is_active(name, name_operator) and name_operator != 'contains' else '',
+        'code': code,
+        'code_op': code_operator if _project_text_filter_is_active(code, code_operator) and code_operator != 'contains' else '',
+        'description': description,
+        'description_op': description_operator if _project_text_filter_is_active(description, description_operator) and description_operator != 'contains' else '',
+        'source': source,
+        'source_op': source_operator if _project_text_filter_is_active(source, source_operator) and source_operator != 'contains' else '',
         'priority': priority,
         'status': status,
         'stage': stage,
@@ -1642,6 +1862,18 @@ def _project_window_for_request(request, field_configuration=None):
     return {
         'projects': projects,
         'query': query,
+        'name': name,
+        'name_operator': name_operator,
+        'name_operator_param': base_params['name_op'],
+        'code': code,
+        'code_operator': code_operator,
+        'code_operator_param': base_params['code_op'],
+        'description': description,
+        'description_operator': description_operator,
+        'description_operator_param': base_params['description_op'],
+        'source': source,
+        'source_operator': source_operator,
+        'source_operator_param': base_params['source_op'],
         'priority': priority,
         'status': status,
         'stage': stage,
@@ -1652,11 +1884,11 @@ def _project_window_for_request(request, field_configuration=None):
         'sort_param': '' if sort == PROJECT_DEFAULT_SORT else sort,
         'sort_label': PROJECT_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[sort]['direction'],
-        'filters': _project_filter_options(
-            request.user,
-            workplace=workplace,
-            project_choices=project_choices,
-        ),
+        'sort_field': sort.rsplit('_', 1)[0],
+        'filters': filter_options,
+        'active_filters': active_filters,
+        'active_filter_count': len(active_filters),
+        'has_active_filters': bool(active_filters),
         'page': current_page,
         'total_pages': total_pages,
         'total_projects': total_projects,
@@ -3466,6 +3698,18 @@ def _tasks_page(request, active_section=None):
     ) if active_view == 'projects' else {
         'projects': [],
         'query': '',
+        'name': '',
+        'name_operator': 'contains',
+        'name_operator_param': '',
+        'code': '',
+        'code_operator': 'contains',
+        'code_operator_param': '',
+        'description': '',
+        'description_operator': 'contains',
+        'description_operator_param': '',
+        'source': '',
+        'source_operator': 'contains',
+        'source_operator_param': '',
         'priority': '',
         'status': '',
         'stage': '',
@@ -3476,7 +3720,11 @@ def _tasks_page(request, active_section=None):
         'sort_param': '',
         'sort_label': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['direction'],
+        'sort_field': 'name',
         'filters': _empty_project_filter_options(project_field_configuration['choices']),
+        'active_filters': [],
+        'active_filter_count': 0,
+        'has_active_filters': False,
         'page': 1,
         'total_pages': 1,
         'total_projects': 0,
@@ -3652,6 +3900,18 @@ def _tasks_page(request, active_section=None):
         'issue_picker_options': _task_modal_picker_options(project_options),
         'project_window': project_window,
         'project_query': project_window['query'],
+        'project_name_filter': project_window['name'],
+        'project_name_operator': project_window['name_operator'],
+        'project_name_operator_param': project_window['name_operator_param'],
+        'project_code_filter': project_window['code'],
+        'project_code_operator': project_window['code_operator'],
+        'project_code_operator_param': project_window['code_operator_param'],
+        'project_description_filter': project_window['description'],
+        'project_description_operator': project_window['description_operator'],
+        'project_description_operator_param': project_window['description_operator_param'],
+        'project_source_filter': project_window['source'],
+        'project_source_operator': project_window['source_operator'],
+        'project_source_operator_param': project_window['source_operator_param'],
         'project_priority_filter': project_window['priority'],
         'project_status_filter': project_window['status'],
         'project_stage_filter': project_window['stage'],
@@ -3659,8 +3919,15 @@ def _tasks_page(request, active_section=None):
         'project_company_filter': project_window['company'],
         'project_responsible_filter': project_window['responsible'],
         'project_filter_options': project_window['filters'],
+        'project_priority_options': _choice_options(TaskProject.PRIORITY_CHOICES),
+        'project_active_filters': project_window['active_filters'],
+        'project_active_filter_count': project_window['active_filter_count'],
+        'project_has_active_filters': project_window['has_active_filters'],
+        'project_text_filter_operators': PROJECT_TEXT_FILTER_OPERATORS,
+        'project_sort_fields': PROJECT_SORT_FIELDS,
         'project_sort_options': PROJECT_SORT_OPTIONS,
         'project_sort': project_window['sort'],
+        'project_sort_field': project_window['sort_field'],
         'project_sort_param': project_window['sort_param'],
         'project_sort_label': project_window['sort_label'],
         'project_sort_direction': project_window['sort_direction'],

@@ -1,0 +1,136 @@
+<div class="tasks-project-filter-builder" data-project-filter-builder>
+    <button type="button" class="tasks-filter-button tasks-project-query-trigger{% if project_has_active_filters %} is-active{% endif %}" aria-haspopup="dialog" aria-expanded="false" data-project-filter-builder-toggle>
+        <i data-lucide="list-filter" aria-hidden="true"></i>
+        <span>Filtruj</span>
+        {% if project_active_filter_count %}<span class="tasks-project-query-count" aria-label="Aktywne filtry: {{ project_active_filter_count }}">{{ project_active_filter_count }}</span>{% endif %}
+        <i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+    </button>
+    <div class="tasks-project-query-panel tasks-project-filter-panel" role="dialog" aria-label="Filtrowanie projektów" data-project-filter-builder-panel>
+        <section data-project-filter-fields-view>
+            <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main">
+                <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="list-filter"></i></span>
+                <span>
+                    <strong>Filtry projektów</strong>
+                </span>
+                {% if project_has_active_filters %}<button type="button" class="tasks-project-query-panel__clear" data-project-filters-clear>Wyczyść</button>{% endif %}
+            </header>
+            <label class="tasks-project-query-search">
+                <i data-lucide="search" aria-hidden="true"></i>
+                <input type="search" placeholder="Szukaj pola" autocomplete="off" data-project-filter-field-search>
+            </label>
+            <div class="tasks-project-filter-field-list">
+                <button type="button" data-project-filter-field="name" data-project-filter-field-search-text="nazwa projektu">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="briefcase-business" aria-hidden="true"></i></span>
+                    <span><strong>Nazwa projektu</strong>{% if project_name_filter or project_name_operator_param %}<small>{% if project_name_operator == 'is_empty' %}Jest puste{% elif project_name_operator == 'is_not_empty' %}Nie jest puste{% elif project_name_operator == 'not_contains' %}Nie zawiera „{{ project_name_filter }}”{% else %}Zawiera „{{ project_name_filter }}”{% endif %}</small>{% endif %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="code" data-project-filter-field-search-text="kod projektu identyfikator">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="hash" aria-hidden="true"></i></span>
+                    <span><strong>Kod projektu</strong>{% if project_code_filter or project_code_operator_param %}<small>{% if project_code_operator == 'is_empty' %}Jest pusty{% elif project_code_operator == 'is_not_empty' %}Nie jest pusty{% elif project_code_operator == 'not_contains' %}Nie zawiera „{{ project_code_filter }}”{% else %}Zawiera „{{ project_code_filter }}”{% endif %}</small>{% endif %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="description" data-project-filter-field-search-text="opis">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="align-left" aria-hidden="true"></i></span>
+                    <span><strong>Opis</strong>{% if project_description_filter or project_description_operator_param %}<small>{% if project_description_operator == 'is_empty' %}Jest pusty{% elif project_description_operator == 'is_not_empty' %}Nie jest pusty{% elif project_description_operator == 'not_contains' %}Nie zawiera „{{ project_description_filter }}”{% else %}Zawiera „{{ project_description_filter }}”{% endif %}</small>{% endif %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="priority" data-project-filter-field-search-text="priorytet">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="chart-no-axes-column-increasing" aria-hidden="true"></i></span>
+                    <span><strong>Priorytet</strong>{% for option in project_priority_options %}{% if option.value == project_priority_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="status" data-project-filter-field-search-text="status stan">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="circle-dot" aria-hidden="true"></i></span>
+                    <span><strong>Status</strong>{% for option in project_filter_options.statuses %}{% if option.value == project_status_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="stage" data-project-filter-field-search-text="etap faza">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="milestone" aria-hidden="true"></i></span>
+                    <span><strong>Etap</strong>{% for option in project_filter_options.stages %}{% if option.value == project_stage_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="health" data-project-filter-field-search-text="kondycja ryzyko">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="heart-pulse" aria-hidden="true"></i></span>
+                    <span><strong>Kondycja</strong>{% for option in project_filter_options.healths %}{% if option.value == project_health_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="company" data-project-filter-field-search-text="firma klient">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="building-2" aria-hidden="true"></i></span>
+                    <span><strong>Firma</strong>{% for option in project_filter_options.companies %}{% if option.value == project_company_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="responsible" data-project-filter-field-search-text="odpowiedzialny osoba właściciel">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="circle-user-round" aria-hidden="true"></i></span>
+                    <span><strong>Odpowiedzialny</strong>{% for option in project_filter_options.responsible_users %}{% if option.value == project_responsible_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-project-filter-field="source" data-project-filter-field-search-text="źródło pochodzenie">
+                    <span class="tasks-project-query-field-icon"><i data-lucide="waypoints" aria-hidden="true"></i></span>
+                    <span><strong>Źródło</strong>{% if project_source_filter or project_source_operator_param %}<small>{% if project_source_operator == 'is_empty' %}Jest puste{% elif project_source_operator == 'is_not_empty' %}Nie jest puste{% elif project_source_operator == 'not_contains' %}Nie zawiera „{{ project_source_filter }}”{% else %}Zawiera „{{ project_source_filter }}”{% endif %}</small>{% endif %}</span>
+                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+            <span class="tasks-project-filter-menu-empty" data-project-filter-field-empty hidden>Nie znaleziono pola</span>
+        </section>
+
+        {% include 'tasks/includes/project_text_filter_detail.html' with field='name' operator_param='name_op' label='Nazwa projektu' icon='briefcase-business' value=project_name_filter operator=project_name_operator %}
+        {% include 'tasks/includes/project_text_filter_detail.html' with field='code' operator_param='code_op' label='Kod projektu' icon='hash' value=project_code_filter operator=project_code_operator %}
+        {% include 'tasks/includes/project_text_filter_detail.html' with field='description' operator_param='description_op' label='Opis' icon='align-left' value=project_description_filter operator=project_description_operator %}
+        {% include 'tasks/includes/project_text_filter_detail.html' with field='source' operator_param='source_op' label='Źródło' icon='waypoints' value=project_source_filter operator=project_source_operator %}
+        {% include 'tasks/includes/project_choice_filter_detail.html' with field='priority' label='Priorytet' icon='chart-no-axes-column-increasing' current=project_priority_filter options=project_priority_options %}
+        {% include 'tasks/includes/project_choice_filter_detail.html' with field='status' label='Status' icon='circle-dot' current=project_status_filter options=project_filter_options.statuses %}
+        {% include 'tasks/includes/project_choice_filter_detail.html' with field='stage' label='Etap' icon='milestone' current=project_stage_filter options=project_filter_options.stages %}
+        {% include 'tasks/includes/project_choice_filter_detail.html' with field='health' label='Kondycja' icon='heart-pulse' current=project_health_filter options=project_filter_options.healths %}
+        {% include 'tasks/includes/project_choice_filter_detail.html' with field='company' label='Firma' icon='building-2' current=project_company_filter options=project_filter_options.companies searchable=True %}
+        {% include 'tasks/includes/project_choice_filter_detail.html' with field='responsible' label='Odpowiedzialny' icon='circle-user-round' current=project_responsible_filter options=project_filter_options.responsible_users searchable=True %}
+    </div>
+</div>
+
+<div class="tasks-filter-dropdown tasks-project-sort-builder" data-project-sort-menu data-project-default-sort="{{ project_default_sort }}" data-current-sort-field="{{ project_sort_field }}" data-current-sort-direction="{{ project_sort_direction }}">
+    <button type="button" class="tasks-filter-button tasks-project-query-trigger{% if project_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ project_sort_label }}" aria-haspopup="dialog" aria-expanded="false" data-task-sort data-sort-direction="{{ project_sort_direction }}" data-project-sort-toggle>
+        <i data-lucide="{% if project_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-narrow-wide{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+        <span>Sortuj</span>
+        <span class="tasks-project-sort-current">{{ project_sort_label }}</span>
+        <i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+    </button>
+    <div class="tasks-filter-menu tasks-project-query-panel tasks-project-sort-panel" role="dialog" aria-label="Sortowanie projektów">
+        <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main">
+            <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="arrow-up-down"></i></span>
+            <span>
+                <strong>Sortowanie projektów</strong>
+            </span>
+        </header>
+        <div class="tasks-project-sort-directions" role="radiogroup" aria-label="Kierunek sortowania">
+            <button type="button" class="{% if project_sort_direction == 'asc' %}is-active{% endif %}" role="radio" aria-checked="{% if project_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-project-sort-direction-choice="asc">
+                <i data-lucide="arrow-up-narrow-wide" aria-hidden="true"></i>
+                Rosnąco
+            </button>
+            <button type="button" class="{% if project_sort_direction == 'desc' %}is-active{% endif %}" role="radio" aria-checked="{% if project_sort_direction == 'desc' %}true{% else %}false{% endif %}" data-project-sort-direction-choice="desc">
+                <i data-lucide="arrow-down-wide-narrow" aria-hidden="true"></i>
+                Malejąco
+            </button>
+        </div>
+        <label class="tasks-project-query-search">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input type="search" placeholder="Szukaj pola sortowania" autocomplete="off" data-project-sort-field-search>
+        </label>
+        <div class="tasks-project-sort-field-list" role="radiogroup" aria-label="Pole sortowania">
+            {% for field in project_sort_fields %}
+            <button type="button" class="{% if project_sort_field == field.value %}is-active{% endif %}" role="radio" aria-checked="{% if project_sort_field == field.value %}true{% else %}false{% endif %}" data-project-sort-field="{{ field.value }}" data-project-sort-field-search-text="{{ field.label|lower }}">
+                <span class="tasks-project-query-field-icon"><i data-lucide="{{ field.icon }}" aria-hidden="true"></i></span>
+                <span>{{ field.label }}</span>
+                <i data-lucide="check" aria-hidden="true"></i>
+            </button>
+            {% endfor %}
+        </div>
+        <span class="tasks-project-filter-menu-empty" data-project-sort-field-empty hidden>Nie znaleziono pola</span>
+    </div>
+</div>
+
+{% for filter in project_active_filters %}
+<button type="button" class="tasks-project-active-filter" title="Usuń filtr {{ filter.label }}" data-project-filter-remove="{{ filter.param }}" data-project-filter-remove-operator="{{ filter.operator_param }}">
+    <i data-lucide="{{ filter.icon }}" aria-hidden="true"></i>
+    <span><strong>{{ filter.label }}:</strong> {{ filter.value_label }}</span>
+    <i data-lucide="x" aria-hidden="true"></i>
+</button>
+{% endfor %}

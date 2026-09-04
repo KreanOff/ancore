@@ -1,15 +1,64 @@
 import base64
 import os
+import re
 import tempfile
 from datetime import datetime, timezone as datetime_timezone
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase, override_settings
+from django.contrib.staticfiles import finders
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from .models import Company, Contact, SharedItem, UserContact
 from .templatetags.company_avatar import company_avatar
+
+
+class ContactDirectoryStyleTests(SimpleTestCase):
+    def test_spreadsheet_rows_use_turquoise_hover_highlight(self):
+        css_path = finders.find('css/components/contacts.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        hover_rule = re.search(
+            r'\.tasks-directory-board\.contacts-project-sheet '
+            r'\.contacts-directory-list \.contacts-directory-row'
+            r':not\(\.checked\):not\(:has\(\.tasks-row-checkbox:checked\)\):hover,.*?'
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(hover_rule)
+        self.assertIn(
+            'background: rgba(var(--system-accent-rgb), 0.08);',
+            hover_rule.group('body'),
+        )
+        self.assertIn(
+            'border-color: rgba(var(--system-accent-rgb), 0.24);',
+            hover_rule.group('body'),
+        )
+
+        accent_rule = re.search(
+            r'\.tasks-directory-board\.contacts-project-sheet '
+            r'\.contacts-directory-list \.contacts-directory-row::after '
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(accent_rule)
+        self.assertIn('background: var(--system-accent);', accent_rule.group('body'))
+
+        active_accent_rule = re.search(
+            r'\.contacts-directory-row:not\(\.checked\)'
+            r':not\(:has\(\.tasks-row-checkbox:checked\)\):hover::after,.*?'
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(active_accent_rule)
+        self.assertIn('opacity: 1;', active_accent_rule.group('body'))
 
 
 class ContactCollaborationTests(TestCase):

@@ -1,0 +1,42 @@
+<section class="tasks-project-filter-detail" data-project-filter-detail="{{ field }}" hidden>
+    <header class="tasks-project-query-panel__header">
+        <button type="button" class="tasks-project-query-panel__back" aria-label="Wróć do listy pól" data-project-filter-back>
+            <i data-lucide="arrow-left" aria-hidden="true"></i>
+        </button>
+        <span class="tasks-project-query-panel__title-icon" aria-hidden="true">
+            <i data-lucide="{{ icon }}"></i>
+        </span>
+        <span>
+            <strong>{{ label }}</strong>
+            <small>Ustaw warunek tekstowy</small>
+        </span>
+    </header>
+    <div class="tasks-project-filter-detail__body">
+        <div class="tasks-project-filter-control">
+            <span id="project-{{ field }}-operator-label">Warunek</span>
+            <div class="tasks-project-text-operator" data-project-text-filter-operator-menu>
+                <input type="hidden" value="{{ operator }}" data-project-text-filter-operator="{{ operator_param }}">
+                <button type="button" class="tasks-project-text-operator__toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="project-{{ field }}-operator-list" aria-labelledby="project-{{ field }}-operator-label project-{{ field }}-operator-value" data-project-text-filter-operator-toggle>
+                    <span id="project-{{ field }}-operator-value" data-project-text-filter-operator-label>{% for option in project_text_filter_operators %}{% if operator == option.value %}{{ option.label|capfirst }}{% endif %}{% endfor %}</span>
+                    <i data-lucide="chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="tasks-project-text-operator__menu" id="project-{{ field }}-operator-list" role="listbox" aria-labelledby="project-{{ field }}-operator-label" data-project-text-filter-operator-list hidden>
+                {% for option in project_text_filter_operators %}
+                    <button type="button" class="tasks-project-text-operator__option{% if operator == option.value %} is-active{% endif %}" role="option" aria-selected="{% if operator == option.value %}true{% else %}false{% endif %}" data-project-text-filter-operator-option="{{ option.value }}">
+                        <span>{{ option.label|capfirst }}</span>
+                        <i data-lucide="check" aria-hidden="true"></i>
+                    </button>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+        <label class="tasks-project-filter-control" data-project-text-filter-value-wrap>
+            <span>Wartość</span>
+            <input type="text" value="{{ value }}" placeholder="Wpisz tekst" autocomplete="off" data-project-text-filter-value="{{ field }}">
+        </label>
+        <div class="tasks-project-filter-detail__actions">
+            <button type="button" class="tasks-project-filter-detail__clear" data-project-filter-detail-clear="{{ field }}" data-project-filter-detail-clear-operator="{{ operator_param }}">Wyczyść</button>
+            <button type="button" class="tasks-project-filter-detail__apply" data-project-text-filter-apply="{{ field }}" data-project-text-filter-apply-operator="{{ operator_param }}">Zastosuj</button>
+        </div>
+    </div>
+</section>

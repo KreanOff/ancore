@@ -24,6 +24,122 @@ from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProject
 
 
 class TaskProjectControlStyleTests(SimpleTestCase):
+    def test_checked_project_row_uses_turquoise_highlight(self):
+        css_path = finders.find('css/components/tasks.css')
+        theme_path = finders.find('css/theme/elestio.css')
+
+        self.assertIsNotNone(css_path)
+        self.assertIsNotNone(theme_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+        with open(theme_path, encoding='utf-8') as theme_file:
+            theme = theme_file.read()
+
+        checked_row_rule = re.search(
+            r'\.tasks-project-sheet \.tasks-directory-list '
+            r'\.tasks-directory-row\.checked,.*?'
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(checked_row_rule)
+        self.assertIn(
+            'background: rgba(var(--system-accent-rgb), 0.08);',
+            checked_row_rule.group('body'),
+        )
+        self.assertIn(
+            'border-color: rgba(var(--system-accent-rgb), 0.24);',
+            checked_row_rule.group('body'),
+        )
+
+        theme_checked_row_rule = re.search(
+            r'\.tasks-directory-board \.tasks-directory-list '
+            r'\.tasks-directory-row\.checked,.*?'
+            r'\{(?P<body>[^}]*)\}',
+            theme,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(theme_checked_row_rule)
+        self.assertIn(
+            'background: rgba(var(--system-accent-rgb), 0.08);',
+            theme_checked_row_rule.group('body'),
+        )
+        self.assertIn(
+            'border-color: rgba(var(--system-accent-rgb), 0.24);',
+            theme_checked_row_rule.group('body'),
+        )
+
+        checked_accent_rule = re.search(
+            r'\.tasks-directory-board:is\(\.tasks-project-sheet, \.tasks-tag-sheet\) '
+            r'\.tasks-directory-list \.tasks-directory-row:is\('
+            r'\.checked, :has\(\.tasks-row-checkbox:checked\)\)::after '
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(checked_accent_rule)
+        self.assertIn('opacity: 1;', checked_accent_rule.group('body'))
+
+    def test_project_filter_and_sort_text_matches_description_size(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        selectors = (
+            r'\.tasks-project-query-trigger',
+            r'\.tasks-project-query-panel',
+            r'\.tasks-project-query-search input',
+            r'\.tasks-project-filter-choice',
+            r'\.tasks-project-sort-directions button',
+            r'\.tasks-project-row-description,\s*\.tasks-section-row-description',
+        )
+        for selector in selectors:
+            with self.subTest(selector=selector):
+                rule = re.search(rf'{selector}\s*\{{(?P<body>[^}}]*)\}}', css, re.DOTALL)
+                self.assertIsNotNone(rule)
+                self.assertIn('font-size: var(--font-size-sm);', rule.group('body'))
+
+    def test_project_sort_fields_stay_inside_a_scrollable_panel_region(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        open_panel_rule = re.search(
+            r'\.tasks-project-sort-builder\.is-open > '
+            r'\.tasks-project-sort-panel\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(open_panel_rule)
+        self.assertIn('display: flex;', open_panel_rule.group('body'))
+        self.assertIn('flex-direction: column;', open_panel_rule.group('body'))
+
+        field_list_rule = re.search(
+            r'\.tasks-project-sort-panel \.tasks-project-sort-field-list\s*'
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(field_list_rule)
+        self.assertIn('min-height: 0;', field_list_rule.group('body'))
+        self.assertIn('flex: 1 1 auto;', field_list_rule.group('body'))
+        self.assertIn('overflow-y: auto;', field_list_rule.group('body'))
+
+        search_rule = re.search(
+            r'\.tasks-project-query-search\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(search_rule)
+        self.assertIn(
+            'flex: 0 0 var(--dropdown-control-height);',
+            search_rule.group('body'),
+        )
+
     def test_project_utility_column_tracks_match_fixed_css_width(self):
         js_path = finders.find('js/tasks.js')
 
@@ -49,6 +165,31 @@ class TaskProjectControlStyleTests(SimpleTestCase):
 
         self.assertIn("window.matchMedia('(min-width: 1181px)')", javascript)
         self.assertNotIn("window.matchMedia('(min-width: 901px)')", javascript)
+
+    def test_directory_column_reorder_uses_visible_drop_placeholder(self):
+        js_path = finders.find('js/tasks.js')
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(js_path)
+        self.assertIsNotNone(css_path)
+        with open(js_path, encoding='utf-8') as js_file:
+            javascript = js_file.read()
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        self.assertIn("placeholder.className = 'tasks-directory-column-placeholder';", javascript)
+        self.assertIn('positionColumnDragPlaceholder(event.clientY);', javascript)
+        self.assertIn('list.insertBefore(item, placeholder);', javascript)
+        self.assertIn('function handleColumnPointerMove(event) {', javascript)
+        self.assertIn('moveColumnDragPreview(event.clientX, event.clientY);', javascript)
+
+        placeholder_rule = re.search(
+            r'\.tasks-directory-column-placeholder\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(placeholder_rule)
+        self.assertIn('border-top: 2px dashed var(--system-accent);', placeholder_rule.group('body'))
 
     def test_tablet_breakpoints_keep_desktop_table_structure(self):
         tasks_css_path = finders.find('css/components/tasks.css')
@@ -717,7 +858,7 @@ class TaskProjectCreationTests(TestCase):
         topbar_start = html.index('class="tasks-topbar"')
         topbar_end = html.index('</header>', topbar_start)
         topbar_html = html[topbar_start:topbar_end]
-        filterbar_start = html.index('class="tasks-filterbar"', topbar_end)
+        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
         filterbar_end = html.index('</div>', filterbar_start)
         filterbar_html = html[filterbar_start:filterbar_end]
 
@@ -726,11 +867,13 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('data-filter-search-submit', topbar_html)
         self.assertNotIn('id="filter-search"', filterbar_html)
 
-    def test_projects_view_shows_priority_filter_without_status_filter(self):
+    def test_projects_view_uses_unified_filter_builder(self):
         response = self.client.get(reverse('tasks:tasks'))
 
-        self.assertContains(response, 'data-priority-filter-menu')
-        self.assertContains(response, 'data-priority-filter-label')
+        self.assertContains(response, 'data-project-filter-builder')
+        self.assertContains(response, 'data-project-filter-field="priority"')
+        self.assertContains(response, 'data-project-filter-detail="priority"')
+        self.assertNotContains(response, 'data-priority-filter-menu')
         self.assertNotContains(response, 'data-status-filter-menu')
 
     def test_sort_button_exposes_mutable_lucide_icon(self):
@@ -738,7 +881,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertContains(response, 'data-task-sort')
         self.assertContains(response, 'data-sort-direction="asc"')
-        self.assertContains(response, 'data-lucide="arrow-up-wide-narrow"')
+        self.assertContains(response, 'data-lucide="arrow-up-narrow-wide"')
         self.assertContains(response, 'data-task-sort-icon')
 
     def test_projects_view_renders_server_filter_and_sort_controls(self):
@@ -757,18 +900,24 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertContains(response, 'data-project-sort-menu')
-        self.assertContains(response, 'data-project-sort-value="priority_desc"')
-        self.assertContains(response, 'data-project-filter-menu="status"')
-        self.assertContains(response, 'data-project-filter-menu="stage"')
-        self.assertContains(response, 'data-project-filter-menu="health"')
-        self.assertContains(response, 'data-project-filter-menu="company"')
-        self.assertContains(response, 'data-project-filter-menu="responsible"')
+        self.assertContains(response, 'data-project-sort-field="priority"')
+        self.assertContains(response, 'data-project-sort-direction-choice="desc"')
+        self.assertContains(response, 'data-project-filter-builder')
+        self.assertContains(response, 'data-project-filter-detail="status"')
+        self.assertContains(response, 'data-project-filter-detail="stage"')
+        self.assertContains(response, 'data-project-filter-detail="health"')
+        self.assertContains(response, 'data-project-filter-detail="company"')
+        self.assertContains(response, 'data-project-filter-detail="responsible"')
+        self.assertContains(response, 'data-project-filter-detail="name"')
+        self.assertContains(response, 'data-project-text-filter-operator-toggle')
+        self.assertContains(response, 'data-project-text-filter-operator-list')
+        self.assertContains(response, 'data-project-text-filter-operator-option="not_contains"')
+        self.assertNotContains(response, '<select data-project-text-filter-operator=')
         self.assertContains(response, 'data-project-filter-input="company"')
-        self.assertContains(response, 'data-project-filter-search', count=2)
-        self.assertContains(response, 'placeholder="Szukaj firmy"')
-        self.assertContains(response, 'placeholder="Szukaj osoby"')
-        self.assertContains(response, 'data-project-filter-empty', count=2)
-        self.assertContains(response, 'data-project-filter-value="none"')
+        self.assertContains(response, 'placeholder="Szukaj wartości"', count=2)
+        self.assertContains(response, 'placeholder="Szukaj pola"')
+        self.assertContains(response, 'placeholder="Szukaj pola sortowania"')
+        self.assertContains(response, 'data-project-choice-filter-value="none"')
         self.assertContains(response, 'Acme CRM')
         self.assertContains(response, 'Task User')
         self.assertContains(response, 'tasks-project-value-badge--status-planned')
@@ -829,9 +978,94 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn(matching.name, table_html)
         self.assertNotIn('Projekt wewnętrzny', table_html)
         self.assertContains(response, 'value="active" data-project-filter-input="status"')
-        self.assertContains(response, 'Status: Aktywny')
-        self.assertContains(response, 'Etap: Oferta')
-        self.assertContains(response, 'Kondycja: Zagrożony')
+        self.assertContains(response, 'Status:</strong> Aktywny')
+        self.assertContains(response, 'Etap:</strong> Oferta')
+        self.assertContains(response, 'Kondycja:</strong> Zagrożony')
+
+    def test_projects_view_supports_field_specific_text_operators(self):
+        matching = TaskProject.objects.create(
+            user=self.user,
+            name='Migracja CRM',
+            code='P-CRM0001',
+            description='Integracja danych klienta',
+            source='Polecenie',
+        )
+        TaskProject.objects.create(
+            user=self.user,
+            name='Strona firmowa',
+            code='P-WEB0001',
+            description='',
+            source='Formularz',
+        )
+
+        response = self.client.get(reverse('tasks:tasks'), {
+            'name': 'crm',
+            'description': 'archiwum',
+            'description_op': 'not_contains',
+            'source': 'pole',
+        })
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-project-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertIn(matching.name, table_html)
+        self.assertNotIn('Strona firmowa', table_html)
+        self.assertContains(response, 'name="description_op" value="not_contains"')
+        self.assertContains(response, 'Nazwa:</strong> zawiera „crm”')
+        self.assertContains(response, 'Opis:</strong> nie zawiera „archiwum”')
+        self.assertContains(response, 'Źródło:</strong> zawiera „pole”')
+
+        empty_response = self.client.get(reverse('tasks:tasks'), {'description_op': 'is_empty'})
+        empty_html = empty_response.content.decode()
+        table_start = empty_html.index('class="tasks-issue-list tasks-project-list')
+        table_end = empty_html.index('</section>', table_start)
+        table_html = empty_html[table_start:table_end]
+        self.assertIn('Strona firmowa', table_html)
+        self.assertNotIn(matching.name, table_html)
+        self.assertContains(empty_response, 'Opis:</strong> jest puste')
+
+    def test_projects_view_supports_both_sort_directions_for_each_field(self):
+        first = TaskProject.objects.create(user=self.user, name='Alfa', code='P-AAA0001', source='A')
+        last = TaskProject.objects.create(user=self.user, name='Zeta', code='P-ZZZ0001', source='Z')
+
+        sort_fields = (
+            'name',
+            'code',
+            'description',
+            'priority',
+            'start_at',
+            'due_at',
+            'company',
+            'responsible',
+            'status',
+            'stage',
+            'health',
+            'source',
+            'created',
+            'activity',
+        )
+        for field in sort_fields:
+            for direction in ('asc', 'desc'):
+                with self.subTest(field=field, direction=direction):
+                    sort_response = self.client.get(
+                        reverse('tasks:tasks'),
+                        {'sort': f'{field}_{direction}'},
+                    )
+                    self.assertEqual(sort_response.status_code, 200)
+                    self.assertContains(sort_response, f'data-current-sort-field="{field}"')
+                    self.assertContains(sort_response, f'data-current-sort-direction="{direction}"')
+
+        response = self.client.get(reverse('tasks:tasks'), {'sort': 'code_desc'})
+        html = response.content.decode()
+        table_start = html.index('class="tasks-issue-list tasks-project-list')
+        table_end = html.index('</section>', table_start)
+        table_html = html[table_start:table_end]
+
+        self.assertLess(table_html.index(last.name), table_html.index(first.name))
+        self.assertContains(response, 'data-current-sort-field="code"')
+        self.assertContains(response, 'data-current-sort-direction="desc"')
+        self.assertContains(response, 'Sortowanie: Kod Z-A')
 
     def test_projects_view_sort_preserves_query_params_in_pagination(self):
         low = TaskProject.objects.create(user=self.user, name='Niski projekt', priority='low')
@@ -851,7 +1085,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertLess(table_html.index(urgent.name), table_html.index(low.name))
         self.assertContains(response, 'Sortowanie: Priorytet')
-        self.assertContains(response, '<span class="tasks-sort-button__label">Priorytet</span>', html=True)
+        self.assertContains(response, '<span class="tasks-project-sort-current">Priorytet</span>', html=True)
         self.assertContains(response, 'data-project-page-url="/tasks/?sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_task_create_modal_does_not_render_removed_task_fields(self):
@@ -2198,6 +2432,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-directory-column-manager-save')
         self.assertContains(response, 'data-directory-column-manager-cancel')
         self.assertContains(response, 'Zarządzaj tabelą')
+        self.assertContains(response, 'Kolumny tabeli')
 
     def test_project_group_rows_do_not_render_group_type_label(self):
         company = Company.objects.create(owner=self.user, name='Acme CRM')

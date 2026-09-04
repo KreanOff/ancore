@@ -1,0 +1,35 @@
+<section class="tasks-project-filter-detail" data-project-filter-detail="{{ field }}" hidden>
+    <header class="tasks-project-query-panel__header">
+        <button type="button" class="tasks-project-query-panel__back" aria-label="Wróć do listy pól" data-project-filter-back>
+            <i data-lucide="arrow-left" aria-hidden="true"></i>
+        </button>
+        <span class="tasks-project-query-panel__title-icon" aria-hidden="true">
+            <i data-lucide="{{ icon }}"></i>
+        </span>
+        <span>
+            <strong>{{ label }}</strong>
+            <small>Wybierz wartość</small>
+        </span>
+    </header>
+    <div class="tasks-project-filter-detail__body tasks-project-filter-detail__body--choices">
+        {% if searchable %}
+        <label class="tasks-project-query-search tasks-project-query-search--detail">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input type="search" placeholder="Szukaj wartości" autocomplete="off" data-project-choice-filter-search>
+        </label>
+        {% endif %}
+        <div class="tasks-project-filter-choice-list" role="radiogroup" aria-label="{{ label }}">
+            <button type="button" class="tasks-project-filter-choice{% if not current %} is-active{% endif %}" role="radio" aria-checked="{% if not current %}true{% else %}false{% endif %}" data-project-choice-filter-option data-project-choice-filter-param="{{ field }}" data-project-choice-filter-value="">
+                <span>Dowolna wartość</span>
+                <i data-lucide="check" aria-hidden="true"></i>
+            </button>
+            {% for option in options %}
+            <button type="button" class="tasks-project-filter-choice{% if current == option.value %} is-active{% endif %}" role="radio" aria-checked="{% if current == option.value %}true{% else %}false{% endif %}" data-project-choice-filter-option data-project-choice-filter-param="{{ field }}" data-project-choice-filter-value="{{ option.value }}" data-project-choice-filter-search-text="{{ option.label|lower }}">
+                <span>{{ option.label }}</span>
+                <i data-lucide="check" aria-hidden="true"></i>
+            </button>
+            {% endfor %}
+        </div>
+        <span class="tasks-project-filter-menu-empty" data-project-choice-filter-empty hidden>Brak pasujących wartości</span>
+    </div>
+</section>

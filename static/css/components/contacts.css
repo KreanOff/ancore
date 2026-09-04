@@ -387,6 +387,20 @@
     transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 1px;
+    left: 0;
+    z-index: 2;
+    width: 3px;
+    background: var(--system-accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
 .tasks-directory-board.contacts-project-sheet .contacts-directory-header > .contacts-directory-sheet__cell[data-column="action"],
 .tasks-directory-board.contacts-project-sheet .contacts-directory-header > .contacts-directory-sheet__cell[data-column="info"],
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="action"],
@@ -423,8 +437,13 @@
 
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover,
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover > [data-column]:not([data-column="select"]) {
-    background: #f7f8fb;
-    border-color: #dde2ea;
+    background: rgba(var(--system-accent-rgb), 0.08);
+    border-color: rgba(var(--system-accent-rgb), 0.24);
+}
+
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover::after,
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:is(.checked, :has(.tasks-row-checkbox:checked))::after {
+    opacity: 1;
 }
 
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column]:not([data-column="select"]) {

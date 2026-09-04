@@ -8,7 +8,7 @@
     --workplaces-accent-dark: var(--system-accent-hover);
     --workplaces-accent-rgb: var(--system-interaction-rgb);
     --workplaces-accent-soft: var(--nav-selected-bg, rgba(111, 117, 128, 0.1));
-    --workplaces-accent-selected: rgba(var(--workplaces-accent-rgb), 0.08);
+    --workplaces-accent-selected: rgba(var(--system-accent-rgb), 0.08);
     --workplaces-accent-hover-surface: rgba(var(--workplaces-accent-rgb), 0.03);
     --workplaces-accent-border-soft: rgba(var(--workplaces-accent-rgb), 0.2);
     --workplaces-accent-ring: rgba(var(--workplaces-accent-rgb), 0.12);
@@ -3843,7 +3843,7 @@
     z-index: 2;
     inset: 0 auto 0 0;
     width: 3px;
-    background: var(--system-interaction);
+    background: var(--system-accent);
     pointer-events: none;
 }
 
