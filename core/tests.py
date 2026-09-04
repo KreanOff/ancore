@@ -285,17 +285,17 @@ class SidebarActiveStateTests(SimpleTestCase):
             css,
         )
         self.assertIn('.sidebar-view-switcher__item:not(.sidebar-collapse-toggle):not(.is-active):hover {', css)
-        self.assertIn('.sidebar-view-switcher {\n    width: 121px;', css)
+        self.assertIn('.sidebar-view-switcher {\n    width: 106px;\n    height: 42px;', css)
         self.assertIn(
             '.sidebar-view-switcher--collapse {\n'
-            '    width: 45px;\n'
+            '    width: 42px;\n'
             '    justify-content: center;',
             css,
         )
         self.assertIn(
             '.sidebar-view-switcher--collapse .sidebar-view-switcher__item {\n'
-            '    width: 35px;\n'
-            '    flex-basis: 35px;\n'
+            '    width: 32px;\n'
+            '    flex-basis: 32px;\n'
             '}',
             css,
         )
@@ -308,8 +308,8 @@ class SidebarActiveStateTests(SimpleTestCase):
         )
         self.assertIn(
             '.sidebar-collapse-toggle svg {\n'
-            '    width: 17px;\n'
-            '    height: 17px;\n'
+            '    width: var(--sidebar-icon-size);\n'
+            '    height: var(--sidebar-icon-size);\n'
             '}',
             css,
         )
@@ -420,16 +420,16 @@ class SidebarActiveStateTests(SimpleTestCase):
 
         self.assertIn(
             'html.sidebar-collapsed .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {\n'
-            '        height: 98px;\n'
+            '        height: 106px;\n'
             '        display: inline-flex;',
             css,
         )
-        self.assertIn('        gap: 8px;', css)
+        self.assertIn('        gap: 0;', css)
         self.assertIn(
             'html.sidebar-collapsed .sidebar-view-switcher__item {\n'
-            '        width: 35px;\n'
-            '        height: 24px;\n'
-            '        flex: 0 0 24px;\n'
+            '        width: 32px;\n'
+            '        height: 32px;\n'
+            '        flex: 0 0 32px;\n'
             '        padding: 0;\n'
             '        border: 0;\n'
             '        border-radius: 999px;\n'
@@ -438,11 +438,11 @@ class SidebarActiveStateTests(SimpleTestCase):
         )
         self.assertIn(
             'html.sidebar-collapsed .sidebar-view-switcher {\n'
-            '        width: 45px;\n'
-            '        height: 34px;\n'
+            '        width: 42px;\n'
+            '        height: 42px;\n'
             '        padding: 3px;\n'
             '        border: 2px solid #e9eaec;\n'
-            '        border-radius: 17px;\n'
+            '        border-radius: 21px;\n'
             '        background: #ffffff;',
             css,
         )
@@ -457,8 +457,8 @@ class SidebarActiveStateTests(SimpleTestCase):
         )
         self.assertIn(
             'html.sidebar-collapsed .sidebar-view-switcher--collapse .sidebar-view-switcher__item {\n'
-            '        width: 35px;\n'
-            '        flex-basis: 35px;',
+            '        width: 32px;\n'
+            '        flex-basis: 32px;',
             css,
         )
         self.assertIn(
@@ -467,10 +467,79 @@ class SidebarActiveStateTests(SimpleTestCase):
             css,
         )
         self.assertIn('html.sidebar-collapsed .sidebar-workspace-switcher {', css)
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-workspace-avatar {\n'
+            '        width: var(--sidebar-avatar-size);\n'
+            '        height: var(--sidebar-avatar-size);\n'
+            '        flex-basis: var(--sidebar-avatar-size);',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar .sidebar-footer .nav-link .sidebar-profile-avatar {\n'
+            '        width: var(--sidebar-avatar-size);\n'
+            '        height: var(--sidebar-avatar-size);\n'
+            '        flex-basis: var(--sidebar-avatar-size);',
+            css,
+        )
         self.assertIn('function openCollapsedSidebarFlyout(group, focusFirstLink) {', js)
         self.assertIn('if (isSidebarCollapsedMode()) {', js)
         self.assertIn('--sidebar-compact-control-size: 42px;', css)
+        self.assertIn('--sidebar-compact-item-height: 36px;', css)
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-favorites-list {\n'
+            '        gap: 0.125rem;',
+            css,
+        )
+        self.assertIn(
+            'min-height: var(--sidebar-compact-item-height);\n'
+            '        height: var(--sidebar-compact-item-height);',
+            css,
+        )
+        self.assertIn(
+            '.sidebar,\n'
+            '.sidebar-collapsed-flyout {\n'
+            '    --sidebar-icon-size: 18px;\n'
+            '}',
+            css,
+        )
+        self.assertIn('--sidebar-avatar-size: 39px;', css)
+        self.assertNotIn('--sidebar-compact-avatar-size:', css)
         self.assertIn('background: #eceef1;', css)
+
+    def test_sidebar_navigation_icons_share_one_size_in_both_modes(self):
+        css_path = finders.find('css/style.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        self.assertIn('--sidebar-icon-size: 18px;', css)
+        self.assertIn(
+            '.sidebar .nav-icon {\n'
+            '    --nav-icon-size: var(--sidebar-icon-size);\n'
+            '    --nav-icon-optical-scale: 1;\n'
+            '}',
+            css,
+        )
+        for selector in (
+            '.sidebar-view-switcher__item svg',
+            '.sidebar-favorite-icon svg',
+            '.sidebar-subnav-icon svg',
+        ):
+            with self.subTest(selector=selector):
+                selector_start = css.index(f'{selector} {{')
+                selector_end = css.index('}', selector_start)
+                selector_css = css[selector_start:selector_end]
+                self.assertIn('width: var(--sidebar-icon-size);', selector_css)
+                self.assertIn('height: var(--sidebar-icon-size);', selector_css)
+
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-favorite-icon,\n'
+            '    html.sidebar-collapsed .sidebar-favorite-icon svg {\n'
+            '        width: var(--sidebar-icon-size);\n'
+            '        height: var(--sidebar-icon-size);',
+            css,
+        )
 
     def test_sidebar_has_accessible_resize_control(self):
         request = SimpleNamespace(
