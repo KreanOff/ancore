@@ -284,9 +284,35 @@ class SidebarActiveStateTests(SimpleTestCase):
             '}',
             css,
         )
-        self.assertIn('.sidebar-view-switcher__item:not(.is-active):hover {', css)
+        self.assertIn('.sidebar-view-switcher__item:not(.sidebar-collapse-toggle):not(.is-active):hover {', css)
         self.assertIn('.sidebar-view-switcher {\n    width: 121px;', css)
-        self.assertIn('.sidebar-view-switcher--collapse {\n    width: 45px;', css)
+        self.assertIn(
+            '.sidebar-view-switcher--collapse {\n'
+            '    width: 45px;\n'
+            '    justify-content: center;',
+            css,
+        )
+        self.assertIn(
+            '.sidebar-view-switcher--collapse .sidebar-view-switcher__item {\n'
+            '    width: 35px;\n'
+            '    flex-basis: 35px;\n'
+            '}',
+            css,
+        )
+        self.assertIn(
+            '.sidebar-view-switcher.sidebar-view-switcher--collapse .sidebar-collapse-toggle:hover,\n'
+            '.sidebar-view-switcher.sidebar-view-switcher--collapse .sidebar-collapse-toggle[aria-expanded="true"] {\n'
+            '    border-color: transparent;\n'
+            '    background: transparent;',
+            css,
+        )
+        self.assertIn(
+            '.sidebar-collapse-toggle svg {\n'
+            '    width: 17px;\n'
+            '    height: 17px;\n'
+            '}',
+            css,
+        )
         self.assertIn(
             '.sidebar.is-searching .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {',
             css,
@@ -352,7 +378,99 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('Szukaj zadań, osób, projektów…', html)
         self.assertNotIn('id="sidebar-quick-search"', html)
         self.assertIn('data-sidebar-collapse-toggle', html)
-        self.assertIn('data-lucide="panel-left-close"', html)
+        self.assertIn('data-lucide="chevron-left"', html)
+        self.assertIn('data-lucide="chevron-right"', html)
+
+    def test_collapsed_sidebar_keeps_all_navigation_actions_available(self):
+        request = SimpleNamespace(
+            resolver_match=SimpleNamespace(app_name='', view_name='', url_name=''),
+            user=AnonymousUser(),
+        )
+        html = render_to_string('core/base.html', {
+            'request': request,
+            'workplace_app_urls': {},
+            'active_view': '',
+            'active_contact_status': '',
+        })
+
+        for label in ('Dashboard', 'Kalendarz', 'Tagi'):
+            with self.subTest(label=label):
+                link_html = self._sidebar_link_html(html, label)
+                self.assertIn(f'aria-label="{label}"', link_html)
+                self.assertIn(f'title="{label}"', link_html)
+
+        for group_name in ('Zadania', 'Kanban', 'Kontakty'):
+            with self.subTest(group=group_name):
+                self.assertIn(f'data-sidebar-group-label="{group_name}"', html)
+
+        self.assertIn('id="sidebar-collapsed-flyout"', html)
+        self.assertIn('data-sidebar-collapsed-flyout-title', html)
+        self.assertIn('data-sidebar-collapsed-flyout-links', html)
+        self.assertIn('data-sidebar-collapsed-flyout-close', html)
+
+        css_path = finders.find('css/style.css')
+        js_path = finders.find('js/layout.js')
+        self.assertIsNotNone(css_path)
+        self.assertIsNotNone(js_path)
+
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+        with open(js_path, encoding='utf-8') as js_file:
+            js = js_file.read()
+
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {\n'
+            '        height: 98px;\n'
+            '        display: inline-flex;',
+            css,
+        )
+        self.assertIn('        gap: 8px;', css)
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-view-switcher__item {\n'
+            '        width: 35px;\n'
+            '        height: 24px;\n'
+            '        flex: 0 0 24px;\n'
+            '        padding: 0;\n'
+            '        border: 0;\n'
+            '        border-radius: 999px;\n'
+            '        background: transparent;',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-view-switcher {\n'
+            '        width: 45px;\n'
+            '        height: 34px;\n'
+            '        padding: 3px;\n'
+            '        border: 2px solid #e9eaec;\n'
+            '        border-radius: 17px;\n'
+            '        background: #ffffff;',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-view-switcher__item.is-active {\n'
+            '        background: rgba(var(--system-accent-rgb), 0.14);',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-view-switcher__item:not(.sidebar-collapse-toggle):not(.is-active):hover {',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-view-switcher--collapse .sidebar-view-switcher__item {\n'
+            '        width: 35px;\n'
+            '        flex-basis: 35px;',
+            css,
+        )
+        self.assertIn(
+            'html.sidebar-collapsed .sidebar-menu-section--favorites {\n'
+            '        display: block;',
+            css,
+        )
+        self.assertIn('html.sidebar-collapsed .sidebar-workspace-switcher {', css)
+        self.assertIn('function openCollapsedSidebarFlyout(group, focusFirstLink) {', js)
+        self.assertIn('if (isSidebarCollapsedMode()) {', js)
+        self.assertIn('--sidebar-compact-control-size: 42px;', css)
+        self.assertIn('background: #eceef1;', css)
 
     def test_sidebar_has_accessible_resize_control(self):
         request = SimpleNamespace(

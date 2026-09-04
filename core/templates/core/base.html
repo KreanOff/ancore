@@ -55,7 +55,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260904-turquoise-directory-highlights-v7-view-switcher-v5-collapse-group-v1-workspace-current-row-v4">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260904-collapsed-sidebar-grouped-switcher-v4-pill-highlight">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -152,8 +152,8 @@
             </div>
             <div class="sidebar-view-switcher sidebar-view-switcher--collapse" role="group" aria-label="Sterowanie paskiem bocznym">
                 <button type="button" class="sidebar-view-switcher__item sidebar-collapse-toggle" aria-label="Zwiń menu boczne" title="Zwiń menu boczne" aria-controls="app-sidebar" aria-expanded="true" data-sidebar-collapse-toggle>
-                    <i class="sidebar-collapse-icon sidebar-collapse-icon--close" data-lucide="panel-left-close" aria-hidden="true"></i>
-                    <i class="sidebar-collapse-icon sidebar-collapse-icon--open" data-lucide="panel-left-open" aria-hidden="true"></i>
+                    <i class="sidebar-collapse-icon sidebar-collapse-icon--close" data-lucide="chevron-left" aria-hidden="true"></i>
+                    <i class="sidebar-collapse-icon sidebar-collapse-icon--open" data-lucide="chevron-right" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -169,7 +169,7 @@
 
             <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-workspace-title">
                 <h2 class="sidebar-menu-section-title" id="sidebar-workspace-title">Workspace</h2>
-            <a href="{{ sidebar_dashboard_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone sidebar-source-dashboard {% if request.resolver_match.url_name == 'home' %}active{% endif %}" data-sidebar-source-item="dashboard" draggable="true">
+            <a href="{{ sidebar_dashboard_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone sidebar-source-dashboard {% if request.resolver_match.url_name == 'home' %}active{% endif %}" aria-label="Dashboard" title="Dashboard" data-sidebar-source-item="dashboard" draggable="true">
                 <i class="nav-icon nav-icon--dashboard" data-lucide="layout-dashboard" aria-hidden="true"></i>
                 <span class="nav-label">Dashboard</span>
             </a>
@@ -180,7 +180,7 @@
                     <span id="sidebar-tasks-title" class="nav-label">Zadania</span>
                     <i class="sidebar-group-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
                 </button>
-                <div class="sidebar-subnav" id="sidebar-tasks-subnav">
+                <div class="sidebar-subnav" id="sidebar-tasks-subnav" data-sidebar-group-label="Zadania">
                     <a href="{{ sidebar_tasks_url }}" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'projects' or active_view == 'project' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-projects" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-lucide="briefcase-business"></i></span><span>Wszystkie projekty</span></a>
                     {% sidebar_favorite_toggle 'tasks-projects' 'Wszystkie projekty' 'briefcase-business' sidebar_tasks_url %}
                     <a href="{{ sidebar_tasks_url }}?view=all-groups" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_groups' or active_view == 'section' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-groups" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-lucide="layers-3"></i></span><span>Wszystkie grupy</span></a>
@@ -198,7 +198,7 @@
                     <span id="sidebar-kanban-title" class="nav-label">Kanban</span>
                     <i class="sidebar-group-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
                 </button>
-                <div class="sidebar-subnav" id="sidebar-kanban-subnav">
+                <div class="sidebar-subnav" id="sidebar-kanban-subnav" data-sidebar-group-label="Kanban">
                     <a href="{{ sidebar_kanban_url }}" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'kanban' or request.resolver_match.app_name == 'workplace_kanban' %}{% if active_view == 'projects' or active_view == 'project' %}active{% endif %}{% endif %}" data-sidebar-source-item="kanban-spaces" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-lucide="folders"></i></span><span>Przestrzenie robocze</span></a>
                     {% sidebar_favorite_toggle 'kanban-spaces' 'Przestrzenie robocze' 'folders' sidebar_kanban_url %}
                     <a href="{{ sidebar_kanban_url }}?view=all-groups" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'kanban' or request.resolver_match.app_name == 'workplace_kanban' %}{% if active_view == 'all_groups' or active_view == 'section' %}active{% endif %}{% endif %}" data-sidebar-source-item="kanban-boards" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-lucide="kanban"></i></span><span>Tablice</span></a>
@@ -212,7 +212,7 @@
                     <span id="sidebar-contacts-title" class="nav-label">Kontakty</span>
                     <i class="sidebar-group-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
                 </button>
-                <div class="sidebar-subnav" id="sidebar-contacts-subnav">
+                <div class="sidebar-subnav" id="sidebar-contacts-subnav" data-sidebar-group-label="Kontakty">
                     <a href="{{ sidebar_contacts_url }}" class="nav-link sidebar-subnav-link {% if active_contact_status == 'all' %}active{% endif %}" data-sidebar-source-item="contacts-all" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-lucide="users"></i></span><span>Kontakty</span></a>
                     {% sidebar_favorite_toggle 'contacts-all' 'Kontakty' 'users' sidebar_contacts_url %}
                     <a href="{{ sidebar_contacts_url }}companies/" class="nav-link sidebar-subnav-link {% if active_contact_status == 'companies' %}active{% endif %}" data-sidebar-source-item="contacts-companies" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-lucide="building-2"></i></span><span>Firmy</span></a>
@@ -222,12 +222,12 @@
                 </div>
             </section>
 
-            <a href="{{ sidebar_calendar_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'planner' or request.resolver_match.app_name == 'workplace_planner' %}active{% endif %}" data-sidebar-source-item="calendar" draggable="true">
+            <a href="{{ sidebar_calendar_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'planner' or request.resolver_match.app_name == 'workplace_planner' %}active{% endif %}" aria-label="Kalendarz" title="Kalendarz" data-sidebar-source-item="calendar" draggable="true">
                 <i class="nav-icon nav-icon--calendar" data-lucide="calendar-days" aria-hidden="true"></i>
                 <span class="nav-label">Kalendarz</span>
             </a>
             {% sidebar_favorite_toggle 'calendar' 'Kalendarz' 'calendar-days' sidebar_calendar_url %}
-            <a href="{{ sidebar_tasks_url }}?view=tags" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if active_view == 'tags' %}active{% endif %}" data-sidebar-source-item="tags" draggable="true">
+            <a href="{{ sidebar_tasks_url }}?view=tags" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if active_view == 'tags' %}active{% endif %}" aria-label="Tagi" title="Tagi" data-sidebar-source-item="tags" draggable="true">
                 <i class="nav-icon nav-icon--tags" data-lucide="tag" aria-hidden="true"></i>
                 <span class="nav-label">Tagi</span>
             </a>
@@ -251,6 +251,15 @@
         </div>
         <div class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Zmień szerokość menu bocznego" aria-valuemin="220" aria-valuemax="420" aria-valuenow="272" tabindex="0" data-sidebar-resizer></div>
     </aside>
+    <div class="sidebar-collapsed-flyout" id="sidebar-collapsed-flyout" role="dialog" aria-labelledby="sidebar-collapsed-flyout-title" data-sidebar-collapsed-flyout hidden>
+        <header class="sidebar-collapsed-flyout__header">
+            <strong id="sidebar-collapsed-flyout-title" data-sidebar-collapsed-flyout-title></strong>
+            <button type="button" class="sidebar-collapsed-flyout__close" aria-label="Zamknij menu" title="Zamknij menu" data-sidebar-collapsed-flyout-close>
+                <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+        </header>
+        <nav class="sidebar-collapsed-flyout__links" aria-label="Podmenu" data-sidebar-collapsed-flyout-links></nav>
+    </div>
     <div class="global-search-backdrop" data-global-search-backdrop hidden></div>
     <aside class="global-search-panel" id="global-search-panel" role="dialog" aria-modal="true" aria-labelledby="global-search-title" aria-describedby="global-search-description" data-global-search-panel data-search-url="{% url 'global_search' %}" hidden>
         <header class="global-search-panel__header">
@@ -350,7 +359,7 @@
     {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/lucide-icons.js' %}?v=20260709-scoped-icon-render"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260904-favorites-sort-line-v3"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260904-collapsed-sidebar-parity-v1"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260904-default-view-close-v2"></script>
     <script src="{% static 'js/notifications-panel.js' %}?v=20260904-default-view-close-v2"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
