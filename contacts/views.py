@@ -17,6 +17,24 @@ from .models import Company, CompanyMembership, Contact, ContactActivity, UserCo
 
 CONTACT_PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
 CONTACT_DEFAULT_PAGE_SIZE = 50
+CONTACT_DEFAULT_SORT = 'name_asc'
+CONTACT_SORT_OPTIONS = (
+    {'value': 'name_asc', 'label': 'Kontakt A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'name_desc', 'label': 'Kontakt Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'company_asc', 'label': 'Firma A-Z', 'icon': 'building-2', 'direction': 'asc'},
+    {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'calendar-plus', 'direction': 'desc'},
+    {'value': 'created_asc', 'label': 'Najstarsze', 'icon': 'calendar-days', 'direction': 'asc'},
+)
+CONTACT_SORT_OPTION_MAP = {option['value']: option for option in CONTACT_SORT_OPTIONS}
+COMPANY_DEFAULT_SORT = 'name_asc'
+COMPANY_SORT_OPTIONS = (
+    {'value': 'name_asc', 'label': 'Firma A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
+    {'value': 'name_desc', 'label': 'Firma Z-A', 'icon': 'arrow-down-z-a', 'direction': 'desc'},
+    {'value': 'contacts_desc', 'label': 'Najwięcej kontaktów', 'icon': 'users', 'direction': 'desc'},
+    {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'calendar-plus', 'direction': 'desc'},
+    {'value': 'created_asc', 'label': 'Najstarsze', 'icon': 'calendar-days', 'direction': 'asc'},
+)
+COMPANY_SORT_OPTION_MAP = {option['value']: option for option in COMPANY_SORT_OPTIONS}
 
 
 def _active_workplace(request):
@@ -117,7 +135,7 @@ def _contact_page_items(current_page, total_pages, base_url, base_params):
     return items
 
 
-def _contact_window_for_request(request, queryset, *, base_url, query='', status=''):
+def _contact_window_for_request(request, queryset, *, base_url, query='', status='', extra_params=None):
     page_size = _contact_page_size(request)
     requested_page = _contact_page_number(request)
     total_contacts = queryset.count()
@@ -129,6 +147,7 @@ def _contact_window_for_request(request, queryset, *, base_url, query='', status
         'q': query,
         'status': status if status not in ('', 'all', 'guests') else '',
         'page_size': page_size,
+        **(extra_params or {}),
     }
     has_previous = current_page > 1 and total_contacts > 0
     has_next = current_page < total_pages and total_contacts > 0
@@ -148,8 +167,10 @@ def _contact_window_for_request(request, queryset, *, base_url, query='', status
         first_visible = offset + 1
         last_visible = offset + len(contacts)
         summary = f'Pokazano {first_visible}-{last_visible} z {total_contacts} kontaktów'
+        compact_summary = f'{first_visible}-{last_visible} z {total_contacts}'
     else:
         summary = 'Brak kontaktów'
+        compact_summary = '0 z 0'
 
     return {
         'contacts': contacts,
@@ -164,6 +185,88 @@ def _contact_window_for_request(request, queryset, *, base_url, query='', status
         'previous_url': previous_url,
         'next_url': next_url,
         'summary': summary,
+        'compact_summary': compact_summary,
+    }
+
+
+def _contact_sort_value(value):
+    return value if value in CONTACT_SORT_OPTION_MAP else CONTACT_DEFAULT_SORT
+
+
+def _sort_contacts(queryset, sort):
+    ordering = {
+        'name_asc': ('first_name', 'middle_name', 'last_name', 'company', 'id'),
+        'name_desc': ('-first_name', '-middle_name', '-last_name', '-company', '-id'),
+        'company_asc': ('company_record__name', 'company', 'first_name', 'last_name', 'id'),
+        'created_desc': ('-created_at', '-id'),
+        'created_asc': ('created_at', 'id'),
+    }
+    return queryset.order_by(*ordering[sort])
+
+
+def _company_sort_value(value):
+    return value if value in COMPANY_SORT_OPTION_MAP else COMPANY_DEFAULT_SORT
+
+
+def _sort_companies(queryset, sort):
+    ordering = {
+        'name_asc': ('name', 'id'),
+        'name_desc': ('-name', '-id'),
+        'contacts_desc': ('-contact_count', 'name', 'id'),
+        'created_desc': ('-created_at', '-id'),
+        'created_asc': ('created_at', 'id'),
+    }
+    return queryset.order_by(*ordering[sort])
+
+
+def _company_window_for_request(request, queryset, *, base_url, query='', contact_filter='', sort=COMPANY_DEFAULT_SORT):
+    page_size = _contact_page_size(request)
+    requested_page = _contact_page_number(request)
+    total_companies = queryset.count()
+    total_pages = max(1, (total_companies + page_size - 1) // page_size)
+    current_page = min(requested_page, total_pages)
+    offset = (current_page - 1) * page_size
+    companies = list(queryset[offset:offset + page_size])
+    base_params = {
+        'q': query,
+        'contact_filter': contact_filter,
+        'sort': '' if sort == COMPANY_DEFAULT_SORT else sort,
+        'page_size': page_size,
+    }
+    has_previous = current_page > 1 and total_companies > 0
+    has_next = current_page < total_pages and total_companies > 0
+    previous_url = ''
+    next_url = ''
+    if has_previous:
+        previous_params = {**base_params, 'page': current_page - 1}
+        if current_page - 1 == 1:
+            previous_params.pop('page', None)
+        previous_url = _contact_list_url(base_url, previous_params)
+    if has_next:
+        next_url = _contact_list_url(base_url, {**base_params, 'page': current_page + 1})
+
+    if companies:
+        first_visible = offset + 1
+        last_visible = offset + len(companies)
+        summary = f'Pokazano {first_visible}-{last_visible} z {total_companies} firm'
+        compact_summary = f'{first_visible}-{last_visible} z {total_companies}'
+    else:
+        summary = 'Brak firm'
+        compact_summary = '0 z 0'
+
+    return {
+        'companies': companies,
+        'page': current_page,
+        'total_pages': total_pages,
+        'total_companies': total_companies,
+        'page_size': page_size,
+        'page_size_options': CONTACT_PAGE_SIZE_OPTIONS,
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': previous_url,
+        'next_url': next_url,
+        'summary': summary,
+        'compact_summary': compact_summary,
     }
 
 
@@ -388,6 +491,8 @@ def contacts(request):
     workplace = _active_workplace(request)
     query = (request.GET.get('q') or '').strip()
     status = (request.GET.get('status') or 'all').strip()
+    contact_status = (request.GET.get('contact_status') or '').strip()
+    sort = _contact_sort_value((request.GET.get('sort') or '').strip())
     contact_modal_form = ContactModalForm(user=request.user, workplace=workplace)
     company_modal_form = CompanyModalForm()
     contact_modal_open = False
@@ -427,6 +532,9 @@ def contacts(request):
         )
     if status != 'all':
         contacts_qs = contacts_qs.filter(status=status)
+    if contact_status:
+        contacts_qs = contacts_qs.filter(status=contact_status)
+    contacts_qs = _sort_contacts(contacts_qs, sort)
 
     contact_window = _contact_window_for_request(
         request,
@@ -434,6 +542,10 @@ def contacts(request):
         base_url=reverse('contacts:contacts'),
         query=query,
         status=status,
+        extra_params={
+            'contact_status': contact_status,
+            'sort': '' if sort == CONTACT_DEFAULT_SORT else sort,
+        },
     )
 
     context = {
@@ -442,6 +554,17 @@ def contacts(request):
         'contact_window': contact_window,
         'query': query,
         'status': status,
+        'contact_status_filter': contact_status,
+        'contact_status_options': [
+            {'value': value, 'label': label}
+            for value, label in Contact.STATUS_CHOICES
+        ],
+        'contact_sort': sort,
+        'contact_sort_param': '' if sort == CONTACT_DEFAULT_SORT else sort,
+        'contact_sort_label': CONTACT_SORT_OPTION_MAP[sort]['label'],
+        'contact_sort_direction': CONTACT_SORT_OPTION_MAP[sort]['direction'],
+        'contact_sort_options': CONTACT_SORT_OPTIONS,
+        'contact_default_sort': CONTACT_DEFAULT_SORT,
         'contact_modal_form': contact_modal_form,
         'company_modal_form': company_modal_form,
         'contact_modal_open': contact_modal_open,
@@ -454,6 +577,8 @@ def contacts(request):
 def guest_contacts(request):
     workplace = _active_workplace(request)
     query = (request.GET.get('q') or '').strip()
+    contact_status = (request.GET.get('contact_status') or '').strip()
+    sort = _contact_sort_value((request.GET.get('sort') or '').strip())
     contact_modal_form = ContactModalForm(user=request.user, workplace=workplace)
     company_modal_form = CompanyModalForm()
     contact_modal_open = False
@@ -491,6 +616,9 @@ def guest_contacts(request):
             | Q(email__icontains=query)
             | Q(phone__icontains=query)
         )
+    if contact_status:
+        contacts_qs = contacts_qs.filter(status=contact_status)
+    contacts_qs = _sort_contacts(contacts_qs, sort)
 
     contact_window = _contact_window_for_request(
         request,
@@ -498,6 +626,10 @@ def guest_contacts(request):
         base_url=reverse('contacts:guests'),
         query=query,
         status='guests',
+        extra_params={
+            'contact_status': contact_status,
+            'sort': '' if sort == CONTACT_DEFAULT_SORT else sort,
+        },
     )
 
     context = {
@@ -506,6 +638,17 @@ def guest_contacts(request):
         'contact_window': contact_window,
         'query': query,
         'status': 'guests',
+        'contact_status_filter': contact_status,
+        'contact_status_options': [
+            {'value': value, 'label': label}
+            for value, label in Contact.STATUS_CHOICES
+        ],
+        'contact_sort': sort,
+        'contact_sort_param': '' if sort == CONTACT_DEFAULT_SORT else sort,
+        'contact_sort_label': CONTACT_SORT_OPTION_MAP[sort]['label'],
+        'contact_sort_direction': CONTACT_SORT_OPTION_MAP[sort]['direction'],
+        'contact_sort_options': CONTACT_SORT_OPTIONS,
+        'contact_default_sort': CONTACT_DEFAULT_SORT,
         'contacts_page_title': 'Goście',
         'contacts_page_label': 'Lista gości',
         'contacts_search_placeholder': 'Szukaj gościa',
@@ -704,6 +847,8 @@ def add_user_contact(request, user_id):
 def companies(request):
     workplace = _active_workplace(request)
     query = (request.GET.get('q') or '').strip()
+    contact_filter = (request.GET.get('contact_filter') or '').strip()
+    sort = _company_sort_value((request.GET.get('sort') or '').strip())
     contact_modal_form = ContactModalForm(user=request.user, workplace=workplace)
     company_modal_form = CompanyModalForm()
     contact_modal_open = False
@@ -737,11 +882,36 @@ def companies(request):
             | Q(phone__icontains=query)
             | Q(website__icontains=query)
         )
+    if contact_filter == 'with_contacts':
+        companies_qs = companies_qs.filter(contact_count__gt=0)
+    elif contact_filter == 'without_contacts':
+        companies_qs = companies_qs.filter(contact_count=0)
+    companies_qs = _sort_companies(companies_qs, sort)
+    company_window = _company_window_for_request(
+        request,
+        companies_qs,
+        base_url=reverse('contacts:companies'),
+        query=query,
+        contact_filter=contact_filter,
+        sort=sort,
+    )
 
     context = {
         **_contacts_navigation_context(request.user, active_status='companies', workplace=workplace),
         'query': query,
-        'companies': companies_qs,
+        'companies': company_window['companies'],
+        'company_window': company_window,
+        'company_contact_filter': contact_filter,
+        'company_contact_filter_options': (
+            {'value': 'with_contacts', 'label': 'Z kontaktami'},
+            {'value': 'without_contacts', 'label': 'Bez kontaktów'},
+        ),
+        'company_sort': sort,
+        'company_sort_param': '' if sort == COMPANY_DEFAULT_SORT else sort,
+        'company_sort_label': COMPANY_SORT_OPTION_MAP[sort]['label'],
+        'company_sort_direction': COMPANY_SORT_OPTION_MAP[sort]['direction'],
+        'company_sort_options': COMPANY_SORT_OPTIONS,
+        'company_default_sort': COMPANY_DEFAULT_SORT,
         'contact_modal_form': contact_modal_form,
         'company_modal_form': company_modal_form,
         'contact_modal_open': contact_modal_open,

@@ -613,6 +613,28 @@ class SidebarActiveStateTests(SimpleTestCase):
             css,
         )
 
+    def test_sidebar_subnav_labels_stay_on_one_line(self):
+        css_path = finders.find('css/style.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        selector = '.sidebar .sidebar-subnav-link > span:not(.sidebar-subnav-icon)'
+        selector_start = css.index(f'{selector} {{')
+        selector_end = css.index('}', selector_start)
+        selector_css = css[selector_start:selector_end]
+
+        self.assertIn('min-width: 0;', selector_css)
+        self.assertIn('overflow: hidden;', selector_css)
+        self.assertIn('text-overflow: ellipsis;', selector_css)
+        self.assertIn('white-space: nowrap;', selector_css)
+
+        link_selector_start = css.index('.sidebar .sidebar-subnav-link {')
+        link_selector_end = css.index('}', link_selector_start)
+        link_selector_css = css[link_selector_start:link_selector_end]
+        self.assertIn('padding: 0 0.35rem 0 0.65rem;', link_selector_css)
+
     def test_sidebar_has_accessible_resize_control(self):
         request = SimpleNamespace(
             resolver_match=SimpleNamespace(app_name='', view_name=''),

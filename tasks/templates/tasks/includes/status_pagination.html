@@ -1,37 +1,34 @@
 {% if status_group.count %}
 <div class="tasks-project-pagination tasks-status-pagination" data-task-status-pagination>
-    <div class="tasks-project-pagination__size">
-        <span>Na stronie</span>
-        <div class="tasks-filter-dropdown tasks-project-pagination__size-control" data-task-status-page-size-dropdown>
-            <button type="button" class="tasks-project-pagination__size-button" aria-label="Liczba zadań na stronie" aria-haspopup="menu" aria-expanded="false" data-task-status-page-size-toggle>
-                <span>{{ status_group.page_size }}</span>
-                <i data-lucide="chevron-down" aria-hidden="true"></i>
-            </button>
-            <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba zadań na stronie">
-            {% for page_size_item in status_group.page_size_items %}
-                <button type="button" role="menuitemradio" aria-checked="{% if page_size_item.is_current %}true{% else %}false{% endif %}" {% if page_size_item.is_current %}class="is-active"{% endif %} data-task-status-page-url="{{ page_size_item.url }}">{{ page_size_item.size }}</button>
-            {% endfor %}
-            </div>
-        </div>
-        <span>zadań</span>
-    </div>
-    <span class="tasks-project-pagination__summary" data-task-status-pagination-summary>{{ status_group.summary }}</span>
-    <nav class="tasks-project-pagination__pages" aria-label="Strony statusu {{ status_group.label }}">
+    <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony statusu {{ status_group.label }}">
         <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie zadania" data-task-status-page-url="{{ status_group.previous_url }}" {% if not status_group.has_previous %}disabled{% endif %}>
             <i data-lucide="chevron-left" aria-hidden="true"></i>
         </button>
-        <span class="tasks-project-pagination__numbers">
-            {% for page_item in status_group.page_items %}
+        <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-label="{{ status_group.summary }}" data-task-status-pagination-summary>{{ status_group.compact_summary }}</span>
+        <span class="u-sr-only">
+        {% for page_item in status_group.page_items %}
             {% if page_item.is_ellipsis %}
-            <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
+            <span aria-hidden="true">…</span>
             {% else %}
-            <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-task-status-page="{{ page_item.page }}" {% if not page_item.is_current %}data-task-status-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
+            <button type="button" data-task-status-page="{{ page_item.page }}" data-task-status-page-url="{{ page_item.url }}"{% if page_item.is_current %} aria-current="page"{% endif %}>{{ page_item.page }}</button>
             {% endif %}
-            {% endfor %}
+        {% endfor %}
         </span>
         <button type="button" class="tasks-project-pagination__button" aria-label="Następne zadania" data-task-status-page-url="{{ status_group.next_url }}" {% if not status_group.has_next %}disabled{% endif %}>
             <i data-lucide="chevron-right" aria-hidden="true"></i>
         </button>
     </nav>
+    <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact tasks-project-pagination__size-control--toolbar" data-task-status-page-size-dropdown>
+        <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact tasks-project-pagination__size-button--toolbar" aria-label="Liczba zadań na stronie" aria-haspopup="menu" aria-expanded="false" data-task-status-page-size-toggle>
+            <i data-lucide="rows-3" aria-hidden="true"></i>
+            <span class="tasks-project-pagination__size-value"><strong>{{ status_group.page_size }}</strong><span>/ stronę</span></span>
+            <i data-lucide="chevron-down" aria-hidden="true"></i>
+        </button>
+        <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba zadań na stronie">
+        {% for page_size_item in status_group.page_size_items %}
+            <button type="button" role="menuitemradio" aria-checked="{% if page_size_item.is_current %}true{% else %}false{% endif %}" {% if page_size_item.is_current %}class="is-active"{% endif %} data-task-status-page-url="{{ page_size_item.url }}">{{ page_size_item.size }}</button>
+        {% endfor %}
+        </div>
+    </div>
 </div>
 {% endif %}

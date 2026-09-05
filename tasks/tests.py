@@ -625,6 +625,17 @@ class TaskProjectControlStyleTests(SimpleTestCase):
         )
         self.assertIsNotNone(control_rule)
         self.assertIn('--dropdown-menu-width: 132px;', control_rule.group('body'))
+        self.assertIn('height: 28px;', control_rule.group('body'))
+
+        toolbar_rule = re.search(
+            r'\.tasks-project-pagination--toolbar\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(toolbar_rule)
+        self.assertIn('gap: 0;', toolbar_rule.group('body'))
+        self.assertIn('border: 1px solid #dfe3e8;', toolbar_rule.group('body'))
+        self.assertIn('border-radius: 6px;', toolbar_rule.group('body'))
 
         toggle_rule = re.search(
             r'\.tasks-project-pagination__size-button--toolbar\s*\{(?P<body>[^}]*)\}',
@@ -633,7 +644,20 @@ class TaskProjectControlStyleTests(SimpleTestCase):
         )
         self.assertIsNotNone(toggle_rule)
         self.assertIn('width: 132px;', toggle_rule.group('body'))
-        self.assertIn('height: 30px;', toggle_rule.group('body'))
+        self.assertIn('height: 28px;', toggle_rule.group('body'))
+        self.assertIn('border: 0;', toggle_rule.group('body'))
+        self.assertIn('border-left: 1px solid #dfe3e8;', toggle_rule.group('body'))
+
+        pages_rule = re.search(
+            r'\.tasks-project-pagination__pages\.tasks-project-pagination__pages--toolbar\s*'
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(pages_rule)
+        self.assertIn('height: 28px;', pages_rule.group('body'))
+        self.assertIn('gap: 0;', pages_rule.group('body'))
+        self.assertIn('border: 0;', pages_rule.group('body'))
 
         value_rule = re.search(
             r'\.tasks-project-pagination__size-value\s*'
@@ -1155,11 +1179,14 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('name="contact_channel"', form_html)
         self.assertNotIn('name="is_billable"', form_html)
 
-    def test_all_groups_view_shows_priority_filter_without_status_filter(self):
+    def test_all_groups_view_uses_unified_filter_builder(self):
         response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
 
-        self.assertContains(response, 'data-priority-filter-menu')
-        self.assertContains(response, 'data-priority-filter-label')
+        self.assertContains(response, 'data-project-filter-builder')
+        self.assertContains(response, 'data-project-filter-field="priority"')
+        self.assertContains(response, 'data-project-filter-detail="priority"')
+        self.assertContains(response, 'placeholder="Szukaj pola"')
+        self.assertNotContains(response, 'data-priority-filter-menu')
         self.assertNotContains(response, 'data-status-filter-menu')
 
     def test_all_groups_view_renders_server_filter_and_sort_controls(self):
@@ -1184,17 +1211,20 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertContains(response, 'data-project-sort-menu')
         self.assertContains(response, 'data-project-sort-value="priority_desc"')
-        self.assertContains(response, 'data-project-filter-menu="status"')
-        self.assertContains(response, 'data-project-filter-menu="kind"')
-        self.assertContains(response, 'data-project-filter-menu="group_project"')
-        self.assertContains(response, 'data-project-filter-menu="owner"')
+        self.assertContains(response, 'data-project-filter-field="status"')
+        self.assertContains(response, 'data-project-filter-field="kind"')
+        self.assertContains(response, 'data-project-filter-field="group_project"')
+        self.assertContains(response, 'data-project-filter-field="owner"')
+        self.assertContains(response, 'data-project-filter-detail="status"')
+        self.assertContains(response, 'data-project-filter-detail="kind"')
+        self.assertContains(response, 'data-project-filter-detail="group_project"')
+        self.assertContains(response, 'data-project-filter-detail="owner"')
         self.assertContains(response, 'data-project-filter-input="group_project"')
-        self.assertContains(response, 'placeholder="Szukaj projektu"')
-        self.assertContains(response, 'placeholder="Szukaj osoby"')
-        self.assertContains(response, 'data-project-filter-empty', count=2)
+        self.assertContains(response, 'placeholder="Szukaj wartości"', count=2)
+        self.assertContains(response, 'data-project-choice-filter-empty', count=5)
         self.assertContains(response, 'Projekt grupowy')
         self.assertContains(response, 'Olga Grupowa')
-        self.assertContains(response, 'data-project-filter-value="none"')
+        self.assertContains(response, 'data-project-choice-filter-value="none"')
 
     def test_all_groups_view_filters_searches_and_sorts_on_server(self):
         owner = get_user_model().objects.create_user(
@@ -1244,10 +1274,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn(matching.title, table_html)
         self.assertNotIn('Backend', table_html)
         self.assertContains(response, 'value="ready" data-project-filter-input="status"')
-        self.assertContains(response, 'Status: Gotowa')
-        self.assertContains(response, 'Typ: Kamienie milowe')
-        self.assertContains(response, 'Projekt: Projekt CRM')
-        self.assertContains(response, 'Odpowiedzialny: Olga Grupowa')
+        self.assertContains(response, '<span><strong>Status:</strong> Gotowa</span>', html=True)
+        self.assertContains(response, '<span><strong>Typ:</strong> Kamienie milowe</span>', html=True)
+        self.assertContains(response, '<span><strong>Projekt:</strong> Projekt CRM</span>', html=True)
+        self.assertContains(response, '<span><strong>Odpowiedzialny:</strong> Olga Grupowa</span>', html=True)
 
     def test_all_groups_view_sort_preserves_query_params_in_pagination(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt grup', code='GRP')

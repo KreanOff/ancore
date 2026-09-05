@@ -49,8 +49,64 @@ function initTasksPage() {
     const projectSortFieldSearch = projectSortMenu?.querySelector('[data-project-sort-field-search]');
     const projectSortFieldButtons = projectSortMenu?.querySelectorAll('[data-project-sort-field]') || [];
     const projectSortDirectionButtons = projectSortMenu?.querySelectorAll('[data-project-sort-direction-choice]') || [];
+    const directoryFilterAggregates = document.querySelectorAll('[data-directory-filter-aggregate]');
+    const taskDisplayManagers = document.querySelectorAll('[data-task-display-manager]');
     const usesServerProjectPagination = projectPagination?.dataset.serverPagination === 'true';
     const usesServerDirectoryFilters = usesServerProjectPagination || projectSearchForm?.dataset.serverDirectoryFilters === 'true';
+
+    directoryFilterAggregates.forEach(aggregate => {
+        const toolbar = aggregate.closest('.tasks-filterbar-left');
+        const controls = aggregate.querySelector('[data-directory-filter-aggregate-controls]');
+        if (!toolbar || !controls) return;
+
+        Array.from(toolbar.children)
+            .filter(child => child !== aggregate && child.matches('[data-project-filter-menu], [data-status-filter-menu], [data-priority-filter-menu]'))
+            .forEach(filter => controls.appendChild(filter));
+
+        aggregate.querySelector(':scope > summary')?.addEventListener('click', () => {
+            if (!aggregate.open) {
+                directoryFilterAggregates.forEach(other => {
+                    if (other !== aggregate) other.removeAttribute('open');
+                });
+                closeProjectSortMenu();
+                closeProjectPageSizeDropdown();
+                closeTaskStatusPageSizeDropdowns();
+            }
+        }, pageListenerOptions);
+    });
+
+    taskDisplayManagers.forEach(manager => {
+        const storageKey = 'ancore:task-list-visible-fields';
+        let hiddenFields = [];
+        try {
+            hiddenFields = JSON.parse(window.localStorage.getItem(storageKey) || '[]');
+        } catch (error) {
+            hiddenFields = [];
+        }
+
+        const applyVisibility = () => {
+            manager.querySelectorAll('[data-task-display-field]').forEach(input => {
+                input.checked = !hiddenFields.includes(input.value);
+            });
+            ['priority', 'status', 'tags', 'attachments', 'due'].forEach(field => {
+                document.body.classList.toggle(`task-list-hide-${field}`, hiddenFields.includes(field));
+            });
+        };
+
+        applyVisibility();
+        manager.querySelectorAll('[data-task-display-field]').forEach(input => {
+            input.addEventListener('change', () => {
+                hiddenFields = Array.from(manager.querySelectorAll('[data-task-display-field]:not(:checked)'))
+                    .map(field => field.value);
+                try {
+                    window.localStorage.setItem(storageKey, JSON.stringify(hiddenFields));
+                } catch (error) {
+                    // The view still updates when storage is unavailable.
+                }
+                applyVisibility();
+            }, pageListenerOptions);
+        });
+    });
     const deleteBtn = document.getElementById('delete-selected-btn');
     const editSelectedTaskMenuBtn = document.getElementById('edit-selected-task-menu-btn');
     const editSelectedSectionMenuBtn = document.getElementById('edit-selected-section-menu-btn');
@@ -6761,6 +6817,7 @@ function initTasksPage() {
             closeInlineSelectDropdowns();
             closeProjectPageSizeDropdown();
             closeTaskStatusPageSizeDropdowns();
+            directoryFilterAggregates.forEach(aggregate => aggregate.removeAttribute('open'));
             projectSortMenu.classList.toggle('is-open', isOpen);
             projectSortToggle.setAttribute('aria-expanded', String(isOpen));
             if (isOpen && projectSortFieldSearch) {
@@ -6864,6 +6921,7 @@ function initTasksPage() {
             closeIssuePickers();
             closeInlineSelectDropdowns();
             closeTaskStatusPageSizeDropdowns();
+            directoryFilterAggregates.forEach(aggregate => aggregate.removeAttribute('open'));
             projectPageSizeDropdown.classList.toggle('is-open', isOpen);
             projectPageSizeToggle.setAttribute('aria-expanded', String(isOpen));
         }, pageListenerOptions);
@@ -6943,6 +7001,19 @@ function initTasksPage() {
             setProjectPaginationPage(page);
         }, pageListenerOptions);
     }
+
+    directoryFilterAggregates.forEach(aggregate => {
+        aggregate.addEventListener('click', event => event.stopPropagation(), pageListenerOptions);
+    });
+
+    document.addEventListener('click', event => {
+        directoryFilterAggregates.forEach(aggregate => {
+            if (!aggregate.contains(event.target)) aggregate.removeAttribute('open');
+        });
+        taskDisplayManagers.forEach(manager => {
+            if (!manager.contains(event.target)) manager.removeAttribute('open');
+        });
+    }, pageListenerOptions);
 
     taskStatusPaginations.forEach(pagination => {
         const pageSizeDropdown = pagination.querySelector('[data-task-status-page-size-dropdown]');
@@ -7618,12 +7689,14 @@ function initTasksPage() {
         }
 
         function isUniformDirectoryBoard(board) {
-            return board.classList.contains('tasks-directory-sheet') && !board.classList.contains('contacts-directory-sheet');
+            return board.classList.contains('tasks-directory-sheet')
+                || board.classList.contains('contacts-directory-sheet');
         }
 
         function isManagedDirectoryBoard(board) {
             return board.classList.contains('tasks-project-sheet--selectable')
-                || board.classList.contains('tasks-tag-sheet');
+                || board.classList.contains('tasks-tag-sheet')
+                || board.classList.contains('contacts-project-sheet');
         }
 
         function isWorkplaceDirectoryBoard(board) {

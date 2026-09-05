@@ -22,19 +22,50 @@
                     <span>Firmy</span>
                 </span>
             </div>
-            <form class="tasks-titlebar-search tasks-search-actions contacts-titlebar-search" method="get">
+            <form class="tasks-titlebar-search tasks-search-actions contacts-titlebar-search" method="get" data-project-search-form>
                 <label class="tasks-search-field" for="filter-search">
                     <i data-lucide="search" aria-hidden="true"></i>
                     <input id="filter-search" type="search" name="q" value="{{ query }}" placeholder="Szukaj firmy" autocomplete="off">
                 </label>
+                <input type="hidden" name="page_size" value="{{ company_window.page_size }}" data-project-search-page-size>
+                <input type="hidden" name="contact_filter" value="{{ company_contact_filter }}" data-project-filter-input="contact_filter">
+                <input type="hidden" name="sort" value="{{ company_sort_param }}" data-project-sort-input>
             </form>
         </header>
 
         <div class="tasks-filterbar tasks-filterbar--task-directory contacts-filterbar contacts-toolbar-filterbar">
             <div class="tasks-filterbar-left">
-                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
-                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
-                </button>
+                {% include 'tasks/includes/directory_column_manager.html' %}
+                {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=company_contact_filter only %}
+                <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ company_default_sort }}">
+                    <button type="button" class="tasks-filter-button tasks-project-query-trigger tasks-sort-button{% if company_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ company_sort_label }}" title="Sortowanie: {{ company_sort_label }}" aria-haspopup="menu" aria-expanded="false" data-task-sort data-project-sort-toggle data-sort-direction="{{ company_sort_direction }}">
+                        <i data-lucide="{% if company_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+                        <span>Sortuj</span>
+                        <span class="tasks-project-sort-current">{{ company_sort_label }}</span>
+                        <i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+                    </button>
+                    <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie firm">
+                        {% for option in company_sort_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if company_sort == option.value %}true{% else %}false{% endif %}" {% if company_sort == option.value %}class="is-active"{% endif %} data-project-sort-value="{{ option.value }}">
+                            <i data-lucide="{{ option.icon }}" aria-hidden="true"></i>
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% include 'tasks/includes/directory_pagination_toolbar.html' with window=company_window items_exist=companies pages_label='Strony firm' previous_label='Poprzednie firmy' next_label='Następne firmy' page_size_label='Liczba firm na stronie' only %}
+                <div class="tasks-filter-dropdown" data-project-filter-menu="contact_filter">
+                    <button type="button" class="tasks-filter-button{% if company_contact_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="contact_filter">
+                        <i data-lucide="users" aria-hidden="true"></i>
+                        <span>Kontakty{% for option in company_contact_filter_options %}{% if option.value == company_contact_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr liczby kontaktów firmy">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not company_contact_filter %}true{% else %}false{% endif %}" {% if not company_contact_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="contact_filter" data-project-filter-value=""><span>Wszystko</span></button>
+                        {% for option in company_contact_filter_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if company_contact_filter == option.value %}true{% else %}false{% endif %}" {% if company_contact_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="contact_filter" data-project-filter-value="{{ option.value }}"><span>{{ option.label }}</span></button>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
             <div class="tasks-filterbar-center"></div>
             <div class="tasks-filterbar-right">

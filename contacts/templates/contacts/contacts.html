@@ -27,23 +27,51 @@
                     <span>{{ contacts_page_title|default:'Kontakty' }}</span>
                 </span>
             </div>
-            <form class="tasks-titlebar-search tasks-search-actions contacts-titlebar-search" method="get">
+            <form class="tasks-titlebar-search tasks-search-actions contacts-titlebar-search" method="get" data-project-search-form>
                 <label class="tasks-search-field" for="filter-search">
                     <i data-lucide="search" aria-hidden="true"></i>
                     <input id="filter-search" type="search" name="q" value="{{ query }}" placeholder="{{ contacts_search_placeholder|default:'Szukaj kontaktu' }}" autocomplete="off">
                 </label>
                 <input type="hidden" name="page_size" value="{{ contact_window.page_size }}" data-project-search-page-size>
-                {% if status != 'all' and status != 'guests' %}
-                <input type="hidden" name="status" value="{{ status }}" data-project-filter-input>
-                {% endif %}
+                {% if status != 'all' and status != 'guests' %}<input type="hidden" name="status" value="{{ status }}" data-project-filter-input="status">{% endif %}
+                <input type="hidden" name="contact_status" value="{{ contact_status_filter }}" data-project-filter-input="contact_status">
+                <input type="hidden" name="sort" value="{{ contact_sort_param }}" data-project-sort-input>
             </form>
         </header>
 
         <div class="tasks-filterbar tasks-filterbar--task-directory contacts-filterbar contacts-toolbar-filterbar">
             <div class="tasks-filterbar-left">
-                <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
-                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
-                </button>
+                {% include 'tasks/includes/directory_column_manager.html' %}
+                {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=contact_status_filter only %}
+                <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ contact_default_sort }}">
+                    <button type="button" class="tasks-filter-button tasks-project-query-trigger tasks-sort-button{% if contact_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ contact_sort_label }}" title="Sortowanie: {{ contact_sort_label }}" aria-haspopup="menu" aria-expanded="false" data-task-sort data-project-sort-toggle data-sort-direction="{{ contact_sort_direction }}">
+                        <i data-lucide="{% if contact_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+                        <span>Sortuj</span>
+                        <span class="tasks-project-sort-current">{{ contact_sort_label }}</span>
+                        <i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+                    </button>
+                    <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie kontaktów">
+                        {% for option in contact_sort_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if contact_sort == option.value %}true{% else %}false{% endif %}" {% if contact_sort == option.value %}class="is-active"{% endif %} data-project-sort-value="{{ option.value }}">
+                            <i data-lucide="{{ option.icon }}" aria-hidden="true"></i>
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% include 'tasks/includes/directory_pagination_toolbar.html' with window=contact_window items_exist=contacts pages_label='Strony kontaktów' previous_label='Poprzednie kontakty' next_label='Następne kontakty' page_size_label='Liczba kontaktów na stronie' pagination_class='contacts-project-pagination' only %}
+                <div class="tasks-filter-dropdown" data-project-filter-menu="contact_status">
+                    <button type="button" class="tasks-filter-button{% if contact_status_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="contact_status">
+                        <i data-lucide="circle-dot" aria-hidden="true"></i>
+                        <span>Status{% for option in contact_status_options %}{% if option.value == contact_status_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr statusu kontaktu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not contact_status_filter %}true{% else %}false{% endif %}" {% if not contact_status_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="contact_status" data-project-filter-value=""><span>Wszystko</span></button>
+                        {% for option in contact_status_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if contact_status_filter == option.value %}true{% else %}false{% endif %}" {% if contact_status_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="contact_status" data-project-filter-value="{{ option.value }}"><span>{{ option.label }}</span></button>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
             <div class="tasks-filterbar-center"></div>
             <div class="tasks-filterbar-right">
@@ -140,45 +168,6 @@
                 </div>
             </section>
             {% endif %}
-        </div>
-        <div class="tasks-project-pagination contacts-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ contact_window.page }}" data-project-total-pages="{{ contact_window.total_pages }}"{% if not contacts %} hidden{% endif %}>
-            <div class="tasks-project-pagination__size">
-                <span>Na stronie</span>
-                <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact" data-project-page-size-dropdown>
-                    <select aria-label="Liczba kontaktów na stronie" data-project-page-size hidden>
-                        {% for page_size in contact_window.page_size_options %}
-                        <option value="{{ page_size }}" {% if contact_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact" aria-label="Liczba kontaktów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
-                        <span data-project-page-size-label>{{ contact_window.page_size }}</span>
-                    </button>
-                    <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba kontaktów na stronie">
-                    {% for page_size in contact_window.page_size_options %}
-                        <button type="button" role="menuitemradio" aria-checked="{% if contact_window.page_size == page_size %}true{% else %}false{% endif %}" {% if contact_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
-                    {% endfor %}
-                    </div>
-                </div>
-                <span>kontaktów</span>
-            </div>
-            <span class="tasks-project-pagination__summary" data-project-pagination-summary>{{ contact_window.summary }}</span>
-            <nav class="tasks-project-pagination__pages" aria-label="Strony kontaktów">
-                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie kontakty" data-project-page-prev data-project-page-url="{{ contact_window.previous_url }}" {% if not contact_window.has_previous %}disabled{% endif %}>
-                    <i data-lucide="chevron-left" aria-hidden="true"></i>
-                </button>
-                <span class="tasks-project-pagination__numbers" data-project-pagination-pages>
-                    {% for page_item in contact_window.page_items %}
-                    {% if page_item.is_ellipsis %}
-                    <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
-                    {% else %}
-                    <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-project-page="{{ page_item.page }}" {% if not page_item.is_current %}data-project-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
-                    {% endif %}
-                    {% endfor %}
-                </span>
-                <button type="button" class="tasks-project-pagination__button" aria-label="Następne kontakty" data-project-page-next data-project-page-url="{{ contact_window.next_url }}" {% if not contact_window.has_next %}disabled{% endif %}>
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
-                </button>
-            </nav>
         </div>
     </section>
 </div>

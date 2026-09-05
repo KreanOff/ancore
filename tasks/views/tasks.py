@@ -276,10 +276,12 @@ def _paginated_status_group_for_tasks(tasks, status, label, user=None, request=N
 
     if not status_tasks:
         summary = 'Brak zadań'
+        compact_summary = '0 z 0'
     else:
         first_visible = offset + 1
         last_visible = offset + len(status_tasks)
         summary = f'Pokazano {first_visible}-{last_visible} z {total_tasks} zadań'
+        compact_summary = f'{first_visible}-{last_visible} z {total_tasks}'
 
     page_size_items = []
     for option in TASK_PAGE_SIZE_OPTIONS:
@@ -313,6 +315,7 @@ def _paginated_status_group_for_tasks(tasks, status, label, user=None, request=N
         'previous_url': previous_url,
         'next_url': next_url,
         'summary': summary,
+        'compact_summary': compact_summary,
     }
 
 
@@ -1311,6 +1314,28 @@ def _empty_group_filter_options():
     }
 
 
+def _group_active_filters(*, priority, status, kind, project_filter, owner, filter_options):
+    active_filters = []
+    exact_filters = (
+        ('status', 'Status', 'circle-dot', status, filter_options['statuses']),
+        ('kind', 'Typ', 'layers-3', kind, filter_options['kinds']),
+        ('group_project', 'Projekt', 'folder-kanban', project_filter, filter_options['projects']),
+        ('owner', 'Odpowiedzialny', 'circle-user-round', owner, filter_options['owners']),
+        ('priority', 'Priorytet', 'chart-no-axes-column-increasing', priority, _choice_options(TaskSection.PRIORITY_CHOICES)),
+    )
+    for param, label, icon, value, options in exact_filters:
+        if not value:
+            continue
+        option_label = next((option['label'] for option in options if option['value'] == value), value)
+        active_filters.append({
+            'param': param,
+            'label': label,
+            'value_label': option_label,
+            'icon': icon,
+        })
+    return active_filters
+
+
 def _task_filter_queryset(
     queryset,
     query='',
@@ -1966,10 +1991,22 @@ def _group_window_for_request(request, field_configuration=None):
 
     if not sections:
         summary = 'Brak grup'
+        compact_summary = '0 z 0'
     else:
         first_visible = offset + 1
         last_visible = offset + len(sections)
         summary = f'Pokazano {first_visible}-{last_visible} z {total_groups} grup'
+        compact_summary = f'{first_visible}-{last_visible} z {total_groups}'
+
+    filter_options = _group_filter_options(request.user, workplace=workplace)
+    active_filters = _group_active_filters(
+        priority=priority,
+        status=status,
+        kind=kind,
+        project_filter=project_filter,
+        owner=owner,
+        filter_options=filter_options,
+    )
 
     return {
         'sections': sections,
@@ -1983,7 +2020,10 @@ def _group_window_for_request(request, field_configuration=None):
         'sort_param': '' if sort == GROUP_DEFAULT_SORT else sort,
         'sort_label': GROUP_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': GROUP_SORT_OPTION_MAP[sort]['direction'],
-        'filters': _group_filter_options(request.user, workplace=workplace),
+        'filters': filter_options,
+        'active_filters': active_filters,
+        'active_filter_count': len(active_filters),
+        'has_active_filters': bool(active_filters),
         'page': current_page,
         'total_pages': total_pages,
         'total_groups': total_groups,
@@ -1995,6 +2035,7 @@ def _group_window_for_request(request, field_configuration=None):
         'previous_url': previous_url,
         'next_url': next_url,
         'summary': summary,
+        'compact_summary': compact_summary,
     }
 
 
@@ -3756,6 +3797,9 @@ def _tasks_page(request, active_section=None):
         'sort_label': GROUP_SORT_OPTION_MAP[GROUP_DEFAULT_SORT]['label'],
         'sort_direction': GROUP_SORT_OPTION_MAP[GROUP_DEFAULT_SORT]['direction'],
         'filters': _empty_group_filter_options(),
+        'active_filters': [],
+        'active_filter_count': 0,
+        'has_active_filters': False,
         'page': 1,
         'total_pages': 1,
         'total_groups': 0,
@@ -3943,6 +3987,9 @@ def _tasks_page(request, active_section=None):
         'group_project_filter': group_window['project_filter'],
         'group_owner_filter': group_window['owner'],
         'group_filter_options': group_window['filters'],
+        'group_active_filters': group_window['active_filters'],
+        'group_active_filter_count': group_window['active_filter_count'],
+        'group_has_active_filters': group_window['has_active_filters'],
         'group_sort_options': GROUP_SORT_OPTIONS,
         'group_sort': group_window['sort'],
         'group_sort_param': group_window['sort_param'],

@@ -1,0 +1,26 @@
+<div class="tasks-directory-column-manager" data-directory-column-manager hidden>
+    <button type="button" class="tasks-icon-button" title="Zarządzaj tabelą" aria-label="Zarządzaj tabelą" aria-haspopup="dialog" aria-expanded="false" data-directory-column-manager-toggle>
+        <i data-lucide="columns-3" aria-hidden="true"></i>
+    </button>
+    <div class="tasks-directory-column-menu tasks-project-query-panel" role="dialog" aria-label="Zarządzanie tabelą" data-directory-column-manager-menu>
+        <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main">
+            <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="columns-3"></i></span>
+            <span><strong>Kolumny tabeli</strong></span>
+        </header>
+        <label class="tasks-directory-column-search tasks-project-query-search">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input type="search" placeholder="Szukaj kolumny" autocomplete="off" data-directory-column-manager-search>
+        </label>
+        <div class="tasks-directory-column-list" data-directory-column-manager-list></div>
+        <div class="tasks-directory-column-actions">
+            <button type="button" class="tasks-directory-column-reset" title="Resetuj ustawienia tabeli" data-directory-table-reset hidden>
+                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                <span>Resetuj</span>
+            </button>
+            <span class="tasks-directory-column-action-group">
+                <button type="button" class="tasks-directory-column-cancel" data-directory-column-manager-cancel>Anuluj</button>
+                <button type="button" class="tasks-directory-column-save" data-directory-column-manager-save>Zapisz</button>
+            </span>
+        </div>
+    </div>
+</div>

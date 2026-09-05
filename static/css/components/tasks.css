@@ -7012,6 +7012,118 @@ body.modal-open::before {
     display: inline-flex;
 }
 
+.tasks-directory-filter-aggregate {
+    order: 1;
+}
+
+.tasks-filterbar-left > [data-project-sort-menu] {
+    order: 2;
+}
+
+.tasks-filterbar-left > [data-project-pagination] {
+    order: 3;
+}
+
+.tasks-directory-filter-aggregate > summary {
+    list-style: none;
+}
+
+.tasks-directory-filter-aggregate > summary::-webkit-details-marker {
+    display: none;
+}
+
+.tasks-directory-filter-aggregate[open] .tasks-project-query-trigger__chevron {
+    transform: rotate(180deg);
+}
+
+.tasks-directory-filter-aggregate__panel {
+    display: none;
+    overflow: visible;
+}
+
+.tasks-directory-filter-aggregate[open] > .tasks-directory-filter-aggregate__panel {
+    display: block;
+}
+
+.tasks-directory-filter-aggregate__controls {
+    max-height: min(360px, calc(100vh - 220px));
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    padding: 0.65rem;
+    overflow: auto;
+}
+
+.tasks-directory-filter-aggregate__controls > .tasks-filter-dropdown,
+.tasks-directory-filter-aggregate__controls > .tasks-filter-dropdown > .tasks-filter-button {
+    width: 100%;
+}
+
+.tasks-directory-filter-aggregate__controls > .tasks-filter-dropdown > .tasks-filter-button {
+    justify-content: flex-start;
+}
+
+.tasks-directory-filter-aggregate__controls > .tasks-filter-dropdown.is-open {
+    grid-column: 1 / -1;
+    display: grid;
+}
+
+.tasks-directory-filter-aggregate__controls > .tasks-filter-dropdown.is-open > .tasks-filter-menu {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    max-height: 240px;
+    margin-top: 0.35rem;
+    border-color: #e7e9ed;
+    box-shadow: none;
+    overflow-y: auto;
+}
+
+.tasks-task-display-manager {
+    display: inline-flex;
+}
+
+.tasks-task-display-manager > summary {
+    list-style: none;
+}
+
+.tasks-task-display-manager > summary::-webkit-details-marker {
+    display: none;
+}
+
+.tasks-task-display-manager:not([open]) > .tasks-directory-column-menu {
+    display: none;
+}
+
+.tasks-task-display-manager__options {
+    min-width: 210px;
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.55rem;
+}
+
+.tasks-task-display-manager__options label {
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.45rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.tasks-task-display-manager__options label:hover {
+    background: var(--dropdown-menu-highlight-bg);
+}
+
+body.task-list-hide-priority .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks-row-priority,
+body.task-list-hide-status .tasks-issue-row:not(.tasks-issue-row--compact) > .status-indicator,
+body.task-list-hide-tags .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks-row-tags,
+body.task-list-hide-attachments .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks-row-attachments,
+body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks-row-due {
+    display: none;
+}
+
 .tasks-project-query-trigger {
     max-width: none !important;
     font-size: var(--font-size-sm);
@@ -7025,7 +7137,8 @@ body.modal-open::before {
 }
 
 .tasks-project-filter-builder.is-open .tasks-project-query-trigger__chevron,
-.tasks-project-sort-builder.is-open .tasks-project-query-trigger__chevron {
+.tasks-project-sort-builder.is-open .tasks-project-query-trigger__chevron,
+[data-project-sort-menu].is-open .tasks-project-query-trigger__chevron {
     transform: rotate(180deg);
 }
 
@@ -11677,10 +11790,22 @@ body.is-resizing-directory-columns {
     width: max-content;
     height: 30px;
     min-height: 30px;
-    gap: 0.45rem;
+    gap: 0;
     padding: 0;
-    border-top: 0;
-    background: transparent;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.contacts-project-pagination {
+    width: max-content;
+    height: 30px;
+    min-height: 30px;
+    gap: 0;
+    padding: 0;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background: #ffffff;
 }
 
 .tasks-project-pagination__summary--compact {
@@ -11697,13 +11822,13 @@ body.is-resizing-directory-columns {
     text-align: center;
 }
 
-.tasks-project-pagination__pages--toolbar {
-    height: 30px;
+.tasks-project-pagination__pages.tasks-project-pagination__pages--toolbar {
+    height: 28px;
     gap: 0;
     overflow: hidden;
-    border: 1px solid #dfe3e8;
-    border-radius: 6px;
-    background: #ffffff;
+    border: 0;
+    border-radius: 5px 0 0 5px;
+    background: transparent;
 }
 
 .tasks-project-pagination__pages--toolbar .tasks-project-pagination__button {
@@ -11714,13 +11839,18 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-status-pagination {
-    height: 45px;
-    min-height: 45px;
-    padding: 0 0.85rem;
+    width: max-content;
+    height: 30px;
+    min-height: 30px;
+    gap: 0;
+    margin: 0.45rem 0.85rem 0.45rem auto;
+    padding: 0;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
 }
 
 .tasks-status-pagination .tasks-project-pagination__summary {
-    min-width: 150px;
+    min-width: 0;
 }
 
 .tasks-project-pagination__size,
@@ -11748,6 +11878,7 @@ body.is-resizing-directory-columns {
     --dropdown-menu-width: 132px;
     --dropdown-menu-padding: 0.25rem;
     --dropdown-menu-item-height: 28px;
+    height: 28px;
 }
 
 .tasks-project-pagination__size-button {
@@ -11779,10 +11910,13 @@ body.is-resizing-directory-columns {
 .tasks-project-pagination__size-button--toolbar {
     width: 132px;
     min-width: 132px;
-    height: 30px;
+    height: 28px;
     gap: 0.35rem;
     padding: 0 0.45rem;
-    border-radius: 6px;
+    border: 0;
+    border-left: 1px solid #dfe3e8;
+    border-radius: 0 5px 5px 0;
+    background: transparent;
     color: #4d5666;
 }
 
@@ -11920,9 +12054,19 @@ body.is-resizing-directory-columns {
     }
 
     .tasks-project-pagination--toolbar {
-        width: 100%;
+        width: max-content;
+        max-width: 100%;
         height: auto;
         min-height: 30px;
+        flex-wrap: nowrap;
+    }
+
+    .contacts-project-pagination {
+        width: max-content;
+        max-width: 100%;
+        height: auto;
+        min-height: 30px;
+        flex-wrap: nowrap;
     }
 }
 

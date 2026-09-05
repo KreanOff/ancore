@@ -621,10 +621,12 @@ def _project_window_for_request(request):
 
     if not projects:
         summary = 'Brak przestrzeni'
+        compact_summary = '0 z 0'
     else:
         first_visible = offset + 1
         last_visible = offset + len(projects)
         summary = f'Pokazano {first_visible}-{last_visible} z {total_projects} przestrzeni'
+        compact_summary = f'{first_visible}-{last_visible} z {total_projects}'
 
     return {
         'projects': projects,
@@ -651,6 +653,7 @@ def _project_window_for_request(request):
         'previous_url': previous_url,
         'next_url': next_url,
         'summary': summary,
+        'compact_summary': compact_summary,
     }
 
 
@@ -702,10 +705,12 @@ def _section_window_for_request(request):
 
     if not sections:
         summary = 'Brak tablic'
+        compact_summary = '0 z 0'
     else:
         first_visible = offset + 1
         last_visible = offset + len(sections)
         summary = f'Pokazano {first_visible}-{last_visible} z {total_sections} tablic'
+        compact_summary = f'{first_visible}-{last_visible} z {total_sections}'
 
     return {
         'sections': sections,
@@ -721,6 +726,7 @@ def _section_window_for_request(request):
         'previous_url': previous_url,
         'next_url': next_url,
         'summary': summary,
+        'compact_summary': compact_summary,
     }
 
 
