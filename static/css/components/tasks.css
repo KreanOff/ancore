@@ -6994,11 +6994,16 @@ body.modal-open::before {
     height: auto;
     min-height: 45px;
     align-items: start;
+    grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .tasks-filterbar--project-directory .tasks-filterbar-left {
     flex-wrap: wrap;
     row-gap: 0.45rem;
+}
+
+.tasks-filterbar--project-directory .tasks-filterbar-center:empty {
+    display: none;
 }
 
 .tasks-project-filter-builder,
@@ -11668,6 +11673,46 @@ body.is-resizing-directory-columns {
     display: none !important;
 }
 
+.tasks-project-pagination--toolbar {
+    width: max-content;
+    height: 30px;
+    min-height: 30px;
+    gap: 0.45rem;
+    padding: 0;
+    border-top: 0;
+    background: transparent;
+}
+
+.tasks-project-pagination__summary--compact {
+    min-width: 0;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.7rem;
+    border-right: 1px solid #dfe3e8;
+    border-left: 1px solid #dfe3e8;
+    background: transparent;
+    color: #4d5666;
+    font-weight: 500;
+    text-align: center;
+}
+
+.tasks-project-pagination__pages--toolbar {
+    height: 30px;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid #dfe3e8;
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.tasks-project-pagination__pages--toolbar .tasks-project-pagination__button {
+    width: 29px;
+    height: 28px;
+    border: 0;
+    border-radius: 0;
+}
+
 .tasks-status-pagination {
     height: 45px;
     min-height: 45px;
@@ -11699,6 +11744,12 @@ body.is-resizing-directory-columns {
     --dropdown-menu-width: 50px;
 }
 
+.tasks-project-pagination__size-control--toolbar {
+    --dropdown-menu-width: 132px;
+    --dropdown-menu-padding: 0.25rem;
+    --dropdown-menu-item-height: 28px;
+}
+
 .tasks-project-pagination__size-button {
     height: 32px;
     min-width: 76px;
@@ -11725,6 +11776,49 @@ body.is-resizing-directory-columns {
     border-radius: 6px;
 }
 
+.tasks-project-pagination__size-button--toolbar {
+    width: 132px;
+    min-width: 132px;
+    height: 30px;
+    gap: 0.35rem;
+    padding: 0 0.45rem;
+    border-radius: 6px;
+    color: #4d5666;
+}
+
+.tasks-project-pagination__size-button--toolbar > svg:first-child {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+    color: #737b89;
+}
+
+.tasks-project-pagination__size-button--toolbar > svg:last-child {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+}
+
+.tasks-project-pagination__size-value {
+    min-width: 0;
+    flex: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.2rem;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.tasks-project-pagination__size-value strong {
+    color: #333946;
+    font-weight: 650;
+}
+
+.tasks-project-pagination__size-value span {
+    color: #737b89;
+    font-weight: 500;
+}
+
 .tasks-project-pagination__size-button:hover,
 .tasks-project-pagination__size-button:focus-visible,
 .tasks-project-pagination__size-control.is-open .tasks-project-pagination__size-button {
@@ -11739,7 +11833,7 @@ body.is-resizing-directory-columns {
     transition: transform 0.16s ease;
 }
 
-.tasks-project-pagination__size-control.is-open .tasks-project-pagination__size-button svg {
+.tasks-project-pagination__size-control.is-open .tasks-project-pagination__size-button svg:last-child {
     transform: rotate(180deg);
 }
 
@@ -11748,6 +11842,14 @@ body.is-resizing-directory-columns {
     bottom: calc(100% + 6px);
     width: 100%;
     min-width: 100%;
+}
+
+.tasks-project-pagination__size-control--toolbar .tasks-project-pagination__size-menu {
+    top: calc(100% + 6px);
+    right: 0;
+    bottom: auto;
+    left: auto;
+    z-index: 45;
 }
 
 .tasks-project-pagination__size-menu button {
@@ -11815,6 +11917,25 @@ body.is-resizing-directory-columns {
     .tasks-project-pagination__summary {
         min-width: 0;
         text-align: left;
+    }
+
+    .tasks-project-pagination--toolbar {
+        width: 100%;
+        height: auto;
+        min-height: 30px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1180px) {
+    .tasks-filterbar--project-directory .tasks-filterbar-center {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-self: start;
+    }
+
+    .tasks-filterbar--project-directory .tasks-filterbar-right {
+        grid-column: 2;
+        grid-row: 1;
     }
 }
 

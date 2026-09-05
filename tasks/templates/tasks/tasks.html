@@ -278,8 +278,64 @@
 
         <div class="tasks-filterbar{% if active_view == 'projects' %} tasks-filterbar--project-directory{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %} tasks-filterbar--task-directory{% endif %}">
             <div class="tasks-filterbar-left">
+                {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' %}
+                <div class="tasks-directory-column-manager" data-directory-column-manager hidden>
+                    <button type="button" class="tasks-icon-button" title="Zarządzaj tabelą" aria-label="Zarządzaj tabelą" aria-haspopup="dialog" aria-expanded="false" data-directory-column-manager-toggle>
+                        <i data-lucide="columns-3" aria-hidden="true"></i>
+                    </button>
+                    <div class="tasks-directory-column-menu tasks-project-query-panel" role="dialog" aria-label="Zarządzanie tabelą" data-directory-column-manager-menu>
+                        <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main">
+                            <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="columns-3"></i></span>
+                            <span><strong>Kolumny tabeli</strong></span>
+                        </header>
+                        <label class="tasks-directory-column-search tasks-project-query-search">
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            <input type="search" placeholder="Szukaj kolumny" autocomplete="off" data-directory-column-manager-search>
+                        </label>
+                        <div class="tasks-directory-column-list" data-directory-column-manager-list></div>
+                        <div class="tasks-directory-column-actions">
+                            <button type="button" class="tasks-directory-column-reset" title="Resetuj ustawienia tabeli" data-directory-table-reset hidden>
+                                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                                <span>Resetuj</span>
+                            </button>
+                            <span class="tasks-directory-column-action-group">
+                                <button type="button" class="tasks-directory-column-cancel" data-directory-column-manager-cancel>Anuluj</button>
+                                <button type="button" class="tasks-directory-column-save" data-directory-column-manager-save>Zapisz</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 {% if active_view == 'projects' %}
                 {% include 'tasks/includes/project_directory_filter_sort.html' %}
+                <div class="tasks-project-pagination tasks-project-pagination--toolbar" data-project-pagination data-server-pagination="true" data-project-current-page="{{ project_window.page }}" data-project-total-pages="{{ project_window.total_pages }}"{% if not projects %} hidden{% endif %}>
+                    <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony projektów">
+                        <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie projekty" data-project-page-prev data-project-page-url="{{ project_window.previous_url }}" {% if not project_window.has_previous %}disabled{% endif %}>
+                            <i data-lucide="chevron-left" aria-hidden="true"></i>
+                        </button>
+                        <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-label="{{ project_window.summary }}" aria-live="polite" data-project-pagination-summary>{{ project_window.compact_summary }}</span>
+                        <button type="button" class="tasks-project-pagination__button" aria-label="Następne projekty" data-project-page-next data-project-page-url="{{ project_window.next_url }}" {% if not project_window.has_next %}disabled{% endif %}>
+                            <i data-lucide="chevron-right" aria-hidden="true"></i>
+                        </button>
+                    </nav>
+                    <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--toolbar" data-project-page-size-dropdown>
+                        <select aria-label="Liczba projektów na stronie" data-project-page-size hidden>
+                            {% for page_size in project_window.page_size_options %}
+                            <option value="{{ page_size }}" {% if project_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--toolbar" aria-label="Liczba projektów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
+                            <i data-lucide="rows-3" aria-hidden="true"></i>
+                            <span class="tasks-project-pagination__size-value"><strong data-project-page-size-label>{{ project_window.page_size }}</strong><span>/ stronę</span></span>
+                            <i data-lucide="chevron-down" aria-hidden="true"></i>
+                        </button>
+                        <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba projektów na stronie">
+                            {% for page_size in project_window.page_size_options %}
+                            <button type="button" role="menuitemradio" aria-checked="{% if project_window.page_size == page_size %}true{% else %}false{% endif %}" {% if project_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
                 {% elif active_view == 'all_groups' %}
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ group_default_sort }}">
                     <button type="button" class="tasks-icon-button tasks-sort-button{% if group_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ group_sort_label }}" title="Sortowanie: {{ group_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if group_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ group_sort_direction }}">
@@ -329,34 +385,6 @@
                 <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
                     <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
                 </button>
-                {% endif %}
-                {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' %}
-                <div class="tasks-directory-column-manager" data-directory-column-manager hidden>
-                    <button type="button" class="tasks-icon-button" title="Zarządzaj tabelą" aria-label="Zarządzaj tabelą" aria-haspopup="dialog" aria-expanded="false" data-directory-column-manager-toggle>
-                        <i data-lucide="columns-3" aria-hidden="true"></i>
-                    </button>
-                    <div class="tasks-directory-column-menu tasks-project-query-panel" role="dialog" aria-label="Zarządzanie tabelą" data-directory-column-manager-menu>
-                        <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main">
-                            <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="columns-3"></i></span>
-                            <span><strong>Kolumny tabeli</strong></span>
-                        </header>
-                        <label class="tasks-directory-column-search tasks-project-query-search">
-                            <i data-lucide="search" aria-hidden="true"></i>
-                            <input type="search" placeholder="Szukaj kolumny" autocomplete="off" data-directory-column-manager-search>
-                        </label>
-                        <div class="tasks-directory-column-list" data-directory-column-manager-list></div>
-                        <div class="tasks-directory-column-actions">
-                            <button type="button" class="tasks-directory-column-reset" title="Resetuj ustawienia tabeli" data-directory-table-reset hidden>
-                                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
-                                <span>Resetuj</span>
-                            </button>
-                            <span class="tasks-directory-column-action-group">
-                                <button type="button" class="tasks-directory-column-cancel" data-directory-column-manager-cancel>Anuluj</button>
-                                <button type="button" class="tasks-directory-column-save" data-directory-column-manager-save>Zapisz</button>
-                            </span>
-                        </div>
-                    </div>
-                </div>
                 {% endif %}
                 {% if active_view == 'all_groups' %}
                 <div class="tasks-filter-dropdown" data-project-filter-menu="status">
@@ -1423,45 +1451,6 @@
                 {% endfor %}
                 </div>
             </section>
-        </div>
-        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ project_window.page }}" data-project-total-pages="{{ project_window.total_pages }}"{% if not projects %} hidden{% endif %}>
-            <div class="tasks-project-pagination__size">
-                <span>Na stronie</span>
-                <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact" data-project-page-size-dropdown>
-                    <select aria-label="Liczba projektów na stronie" data-project-page-size hidden>
-                        {% for page_size in project_window.page_size_options %}
-                        <option value="{{ page_size }}" {% if project_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact" aria-label="Liczba projektów na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
-                        <span data-project-page-size-label>{{ project_window.page_size }}</span>
-                    </button>
-                    <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba projektów na stronie">
-                    {% for page_size in project_window.page_size_options %}
-                        <button type="button" role="menuitemradio" aria-checked="{% if project_window.page_size == page_size %}true{% else %}false{% endif %}" {% if project_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
-                    {% endfor %}
-                    </div>
-                </div>
-                <span>projektów</span>
-            </div>
-            <span class="tasks-project-pagination__summary" data-project-pagination-summary>{{ project_window.summary }}</span>
-            <nav class="tasks-project-pagination__pages" aria-label="Strony projektów">
-                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie projekty" data-project-page-prev data-project-page-url="{{ project_window.previous_url }}" {% if not project_window.has_previous %}disabled{% endif %}>
-                    <i data-lucide="chevron-left" aria-hidden="true"></i>
-                </button>
-                <span class="tasks-project-pagination__numbers" data-project-pagination-pages>
-                    {% for page_item in project_window.page_items %}
-                    {% if page_item.is_ellipsis %}
-                    <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
-                    {% else %}
-                    <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-project-page="{{ page_item.page }}" {% if not page_item.is_current %}data-project-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
-                    {% endif %}
-                    {% endfor %}
-                </span>
-                <button type="button" class="tasks-project-pagination__button" aria-label="Następne projekty" data-project-page-next data-project-page-url="{{ project_window.next_url }}" {% if not project_window.has_next %}disabled{% endif %}>
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
-                </button>
-            </nav>
         </div>
         {% else %}
         <div class="tasks-empty-state">

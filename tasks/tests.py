@@ -611,6 +611,61 @@ class TaskProjectControlStyleTests(SimpleTestCase):
             tag_select_highlight_rule.group('body'),
         )
 
+    def test_project_page_size_toolbar_uses_compact_dropdown(self):
+        css_path = finders.find('css/components/tasks.css')
+
+        self.assertIsNotNone(css_path)
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+
+        control_rule = re.search(
+            r'\.tasks-project-pagination__size-control--toolbar\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(control_rule)
+        self.assertIn('--dropdown-menu-width: 132px;', control_rule.group('body'))
+
+        toggle_rule = re.search(
+            r'\.tasks-project-pagination__size-button--toolbar\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(toggle_rule)
+        self.assertIn('width: 132px;', toggle_rule.group('body'))
+        self.assertIn('height: 30px;', toggle_rule.group('body'))
+
+        value_rule = re.search(
+            r'\.tasks-project-pagination__size-value\s*'
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(value_rule)
+        self.assertIn('overflow: hidden;', value_rule.group('body'))
+        self.assertIn('white-space: nowrap;', value_rule.group('body'))
+
+        project_filterbar_rule = re.search(
+            r'\.tasks-filterbar\.tasks-filterbar--project-directory\s*'
+            r'\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(project_filterbar_rule)
+        self.assertIn(
+            'grid-template-columns: minmax(0, 1fr) auto;',
+            project_filterbar_rule.group('body'),
+        )
+
+        empty_center_rule = re.search(
+            r'\.tasks-filterbar--project-directory '
+            r'\.tasks-filterbar-center:empty\s*\{(?P<body>[^}]*)\}',
+            css,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(empty_center_rule)
+        self.assertIn('display: none;', empty_center_rule.group('body'))
+
 
 class TaskProjectCreationTests(TestCase):
     def setUp(self):
@@ -1750,12 +1805,17 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Moja notatka projektu')
         self.assertContains(response, 'Cudza notatka projektu')
         self.assertContains(response, 'data-project-pagination')
+        self.assertContains(response, 'tasks-project-pagination__size-control--toolbar')
+        self.assertNotContains(response, 'tasks-project-page-size-menu')
+        self.assertNotContains(response, '>Projektów na stronie<')
+        self.assertContains(response, 'data-project-page-size-dropdown')
+        self.assertContains(response, 'data-project-page-size-toggle')
         self.assertContains(response, 'data-project-page-size')
         self.assertContains(response, 'data-project-page-prev')
         self.assertContains(response, 'data-project-page-next')
+        self.assertContains(response, 'tasks-project-pagination__summary--compact')
         for page_size in (10, 25, 50, 100, 150, 200):
-            self.assertContains(response, f'<option value="{page_size}"')
-        self.assertNotContains(response, '<option value="110"')
+            self.assertContains(response, f'data-project-page-size-value="{page_size}"')
         content = response.content.decode()
         expected_columns = [
             'data-column="action" aria-label="Edytuj projekt"',
@@ -1954,11 +2014,32 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'Projekt 050')
         self.assertContains(response, 'data-project-page-next')
         self.assertContains(response, 'Pokazano 1-50 z 60 projektów')
-        self.assertIn('data-project-page="1"', html)
-        self.assertIn('data-project-page="2"', html)
-        self.assertIn('aria-current="page">1</button>', html)
+        self.assertIn('data-project-pagination-summary>1-50 z 60</span>', html)
+        self.assertContains(response, 'tasks-project-pagination__size-control--toolbar')
+        self.assertContains(response, 'tasks-project-pagination__size-button--toolbar')
+        self.assertNotContains(response, 'tasks-project-page-size-menu')
+        self.assertNotContains(response, '>Projektów na stronie<')
+        self.assertContains(response, 'data-project-page-size-dropdown')
+        self.assertContains(response, 'data-project-page-size-toggle')
+        self.assertContains(response, 'data-project-page-size-label>50</strong>')
+        self.assertContains(response, '<span>/ stronę</span>', html=True)
+        for page_size in (10, 25, 50, 100, 150, 200):
+            self.assertContains(response, f'data-project-page-size-value="{page_size}"')
         self.assertIn('data-project-page-url="/tasks/?page_size=50&amp;page=2"', html)
         self.assertNotIn('&amp;after=', html)
+        filterbar_start = html.index('class="tasks-filterbar tasks-filterbar--project-directory"')
+        sort_start = html.index('class="tasks-filter-dropdown tasks-project-sort-builder"')
+        pagination_start = html.index('class="tasks-project-pagination tasks-project-pagination--toolbar"')
+        page_size_start = html.index('tasks-project-pagination__size-control--toolbar')
+        table_start = html.index('class="tasks-table-wrap tasks-board')
+        left_group_end = html.index('<div class="tasks-filterbar-center">', filterbar_start)
+        self.assertLess(filterbar_start, pagination_start)
+        self.assertLess(sort_start, pagination_start)
+        self.assertLess(pagination_start, page_size_start)
+        self.assertLess(page_size_start, left_group_end)
+        self.assertLess(page_size_start, table_start)
+        self.assertLess(pagination_start, table_start)
+        self.assertNotIn('data-project-pagination-pages', html)
 
         response = self.client.get(f"{reverse('tasks:tasks')}?page_size=50&page=2")
         html = response.content.decode()
@@ -1971,7 +2052,6 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('Projekt 059', table_html)
         self.assertNotIn('Projekt 049', table_html)
         self.assertContains(response, 'Pokazano 51-60 z 60 projektów')
-        self.assertIn('aria-current="page">2</button>', html)
         self.assertIn('data-project-page-url="/tasks/?page_size=50"', html)
 
         response = self.client.get(f"{reverse('tasks:tasks')}?page_size=10")
@@ -1983,7 +2063,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-project-row tasks-directory-row', count=10)
         self.assertIn('Projekt 000', table_html)
         self.assertNotIn('Projekt 010', table_html)
-        self.assertIn('data-project-page="6"', html)
+        self.assertIn('data-project-page-url="/tasks/?page_size=10&amp;page=2"', html)
 
     def test_all_groups_view_renders_only_server_side_window(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt grup', code='GRP')
@@ -2424,6 +2504,7 @@ class TaskProjectCreationTests(TestCase):
 
     def test_projects_view_renders_column_manager(self):
         response = self.client.get(reverse('tasks:tasks'))
+        html = response.content.decode()
 
         self.assertContains(response, 'data-directory-column-manager')
         self.assertContains(response, 'data-directory-column-manager-toggle')
@@ -2433,6 +2514,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-directory-column-manager-cancel')
         self.assertContains(response, 'Zarządzaj tabelą')
         self.assertContains(response, 'Kolumny tabeli')
+        self.assertLess(
+            html.index('data-directory-column-manager hidden'),
+            html.index('data-project-filter-builder'),
+        )
 
     def test_project_group_rows_do_not_render_group_type_label(self):
         company = Company.objects.create(owner=self.user, name='Acme CRM')

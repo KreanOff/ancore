@@ -1852,6 +1852,8 @@ def _project_window_for_request(request, field_configuration=None):
     if has_next:
         next_url = _projects_url({**base_params, 'page': current_page + 1})
 
+    first_visible = 0
+    last_visible = 0
     if not projects:
         summary = 'Brak projektów'
     else:
@@ -1900,6 +1902,7 @@ def _project_window_for_request(request, field_configuration=None):
         'previous_url': previous_url,
         'next_url': next_url,
         'summary': summary,
+        'compact_summary': f'{first_visible}-{last_visible} z {total_projects}',
     }
 
 

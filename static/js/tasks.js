@@ -6042,7 +6042,7 @@ function initTasksPage() {
     }
 
     function getProjectPageSize() {
-        const value = Number.parseInt(projectPageSizeSelect?.value || '', 10);
+        const value = Number.parseInt(projectPageSizeSelect?.value || projectSearchPageSizeInput?.value || '', 10);
         return projectPageSizes.includes(value) ? value : projectPageSizes[0];
     }
 
@@ -6850,8 +6850,6 @@ function initTasksPage() {
     });
 
     if (projectPageSizeDropdown && projectPageSizeToggle) {
-        syncProjectPageSizeDropdown();
-
         projectPageSizeToggle.addEventListener('click', function(e) {
             e.stopPropagation();
             const isOpen = !projectPageSizeDropdown.classList.contains('is-open');
@@ -6873,21 +6871,21 @@ function initTasksPage() {
         projectPageSizeDropdown.addEventListener('click', function(e) {
             e.stopPropagation();
         }, pageListenerOptions);
-
-        projectPageSizeOptions.forEach(button => {
-            button.addEventListener('click', function() {
-                if (!projectPageSizeSelect || !this.dataset.projectPageSizeValue) return;
-
-                const previousValue = projectPageSizeSelect.value;
-                projectPageSizeSelect.value = this.dataset.projectPageSizeValue;
-                syncProjectPageSizeDropdown();
-                closeProjectPageSizeDropdown();
-                if (projectPageSizeSelect.value !== previousValue) {
-                    projectPageSizeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            }, pageListenerOptions);
-        });
     }
+
+    projectPageSizeOptions.forEach(button => {
+        button.addEventListener('click', function() {
+            if (!projectPageSizeSelect || !this.dataset.projectPageSizeValue) return;
+
+            const previousValue = projectPageSizeSelect.value;
+            projectPageSizeSelect.value = this.dataset.projectPageSizeValue;
+            syncProjectPageSizeDropdown();
+            closeProjectPageSizeDropdown();
+            if (projectPageSizeSelect.value !== previousValue) {
+                projectPageSizeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }, pageListenerOptions);
+    });
 
     if (projectPageSizeSelect) {
         syncProjectPageSizeDropdown();
