@@ -855,6 +855,50 @@ body :where(input, textarea)::placeholder {
     line-height: 1.5;
 }
 
+.sidebar-menu-section-toggle {
+    appearance: none;
+    width: 100%;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sidebar-menu-section-toggle:hover {
+    color: #5f6570;
+}
+
+.sidebar-menu-section-toggle:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.sidebar-menu-section-chevron {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    margin-left: auto;
+    transition: transform 0.14s ease;
+}
+
+.sidebar-menu-section--favorites.is-collapsed .sidebar-menu-section-chevron {
+    transform: rotate(-90deg);
+}
+
+html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .sidebar-favorites-content {
+    display: none;
+}
+
 .sidebar-menu-section--workspace {
     margin-top: 1.05rem;
 }
@@ -1104,7 +1148,7 @@ body :where(input, textarea)::placeholder {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    margin: 0 0 0.55rem;
+    margin: 0.55rem 0 0;
     padding: 0.55rem 0.7rem;
     border: 1px dashed #cfd4dc;
     border-radius: 8px;
@@ -1576,6 +1620,10 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         display: none;
     }
 
+    html.sidebar-collapsed .sidebar-menu-section--favorites.is-collapsed {
+        display: none;
+    }
+
     html.sidebar-collapsed .sidebar-favorites-message {
         display: none !important;
     }
@@ -1803,7 +1851,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
     }
 
     .sidebar-menu-section-title {
-        max-height: 20px;
+        max-height: 24px;
         overflow: hidden;
         opacity: 1;
         transform: translateX(0);

@@ -1,4 +1,4 @@
-<div class="sidebar-favorites-content" data-sidebar-favorites-content aria-live="polite">
+<div class="sidebar-favorites-content" id="sidebar-favorites-content" data-sidebar-favorites-content aria-live="polite">
     <p class="u-sr-only" id="sidebar-favorites-instructions">Przeciągnij element z sekcji Workspace do Favorites, aby go dodać. Przeciągaj elementy w Favorites, aby zmienić ich kolejność. Przeciągnij element do pola Usuń z Favorites, aby go usunąć. Użyj Alt i strzałki w górę albo w dół, aby zmienić pozycję za pomocą klawiatury.</p>
     {% if current_workplace %}
     <form method="post" action="{% url 'workplaces:reorder-sidebar-favorites' current_workplace.id %}" class="u-sr-only" data-sidebar-favorites-reorder-form>

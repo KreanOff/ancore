@@ -55,7 +55,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260905-sidebar-collapse-motion-v5">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260905-favorites-collapse-compact-v1">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -158,13 +158,18 @@
             </div>
         </div>
         <nav class="sidebar-navigation" aria-label="Główne menu">
-            <div class="sidebar-favorites-remove-dropzone" data-sidebar-favorites-remove-dropzone aria-hidden="true">
-                <i data-lucide="trash-2" aria-hidden="true"></i>
-                <span>Usuń z Favorites</span>
-            </div>
             <section class="sidebar-menu-section sidebar-menu-section--favorites" aria-labelledby="sidebar-favorites-title" data-sidebar-favorites-dropzone>
-                <h2 class="sidebar-menu-section-title" id="sidebar-favorites-title">Favorites</h2>
+                <h2 class="sidebar-menu-section-title">
+                    <button type="button" class="sidebar-menu-section-toggle" aria-label="Zwiń sekcję Favorites" title="Zwiń sekcję Favorites" aria-controls="sidebar-favorites-content" aria-expanded="true" data-sidebar-favorites-toggle>
+                        <span id="sidebar-favorites-title">Favorites</span>
+                        <i class="sidebar-menu-section-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
+                    </button>
+                </h2>
                 {% include 'workplaces/includes/sidebar_favorites.html' %}
+                <div class="sidebar-favorites-remove-dropzone" data-sidebar-favorites-remove-dropzone aria-hidden="true">
+                    <i data-lucide="trash-2" aria-hidden="true"></i>
+                    <span>Usuń z Favorites</span>
+                </div>
             </section>
 
             <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-workspace-title">
@@ -359,7 +364,7 @@
     {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="{% static 'js/lucide-icons.js' %}?v=20260709-scoped-icon-render"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260905-sidebar-collapse-motion-v1"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260905-favorites-collapse-compact-v1"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260904-default-view-close-v2"></script>
     <script src="{% static 'js/notifications-panel.js' %}?v=20260904-default-view-close-v2"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>

@@ -9,6 +9,7 @@
     const SIDEBAR_DEFAULT_WIDTH = 272;
     const SIDEBAR_TRANSITION_MS = 360;
     const SIDEBAR_GROUPS_STORAGE_KEY = 'ancoreSidebarCollapsedGroups';
+    const SIDEBAR_FAVORITES_STORAGE_KEY = 'ancoreSidebarFavoritesCollapsed';
     const SIDEBAR_COLLAPSED_STORAGE_KEY = 'ancoreSidebarCollapsed';
     const SIDEBAR_WIDTH_STORAGE_KEY = 'ancoreSidebarWidth';
 
@@ -27,6 +28,7 @@
     const sidebarSearchInput = document.querySelector('[data-sidebar-search-input]');
     const sidebarSearchEmpty = document.querySelector('[data-sidebar-search-empty]');
     const sidebarFavoritesDropzone = document.querySelector('[data-sidebar-favorites-dropzone]');
+    const sidebarFavoritesToggle = document.querySelector('[data-sidebar-favorites-toggle]');
     const sidebarFavoritesRemoveDropzone = document.querySelector('[data-sidebar-favorites-remove-dropzone]');
     const sidebarCollapsedFlyout = document.querySelector('[data-sidebar-collapsed-flyout]');
     const sidebarCollapsedFlyoutTitle = document.querySelector('[data-sidebar-collapsed-flyout-title]');
@@ -892,6 +894,7 @@
         document.body.classList.toggle('sidebar-collapsed', collapsed);
         updateSidebarCollapseA11y();
         syncSidebarGroupToggleA11y();
+        syncSidebarFavoritesVisibility();
 
         if (collapsed) {
             setWorkspaceMenuOpen(false);
@@ -1079,6 +1082,46 @@
         }
     }
 
+    function readSidebarFavoritesCollapsed() {
+        try {
+            return window.localStorage.getItem(SIDEBAR_FAVORITES_STORAGE_KEY) === 'true';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function syncSidebarFavoritesVisibility() {
+        const content = sidebarFavoritesDropzone?.querySelector('[data-sidebar-favorites-content]');
+        if (!content) return;
+
+        const collapsed = sidebarFavoritesDropzone.classList.contains('is-collapsed');
+        content.hidden = collapsed;
+    }
+
+    function setSidebarFavoritesCollapsed(collapsed, persist) {
+        if (!sidebarFavoritesDropzone || !sidebarFavoritesToggle) return;
+
+        const action = collapsed ? 'Rozwiń' : 'Zwiń';
+        sidebarFavoritesDropzone.classList.toggle('is-collapsed', collapsed);
+        sidebarFavoritesToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        sidebarFavoritesToggle.setAttribute('aria-label', `${action} sekcję Favorites`);
+        sidebarFavoritesToggle.setAttribute('title', `${action} sekcję Favorites`);
+        syncSidebarFavoritesVisibility();
+
+        if (persist) {
+            try {
+                window.localStorage.setItem(SIDEBAR_FAVORITES_STORAGE_KEY, collapsed ? 'true' : 'false');
+            } catch (error) {
+                // Collapsing still works for this page when localStorage is unavailable.
+            }
+        }
+    }
+
+    setSidebarFavoritesCollapsed(readSidebarFavoritesCollapsed(), false);
+    sidebarFavoritesToggle?.addEventListener('click', function () {
+        setSidebarFavoritesCollapsed(sidebarFavoritesToggle.getAttribute('aria-expanded') === 'true', true);
+    });
+
     function setSidebarGroupCollapsed(group, collapsed) {
         const toggleButton = group.querySelector('[data-sidebar-group-toggle]');
         const subnavId = toggleButton?.dataset.sidebarSubnavId || toggleButton?.getAttribute('aria-controls');
@@ -1201,6 +1244,7 @@
 
         currentContent.replaceWith(nextContent);
         window.AncoreIcons?.render(nextContent);
+        syncSidebarFavoritesVisibility();
         return true;
     }
 
