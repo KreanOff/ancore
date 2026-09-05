@@ -19,11 +19,6 @@
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
                 <span class="tasks-topbar-title">
-                    {% if status == 'guests' %}
-                    <i data-lucide="user-round-alert" aria-hidden="true"></i>
-                    {% else %}
-                    <i data-lucide="users" aria-hidden="true"></i>
-                    {% endif %}
                     <span>{{ contacts_page_title|default:'Kontakty' }}</span>
                 </span>
             </div>
@@ -80,7 +75,7 @@
             </div>
         </div>
 
-        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet contacts-project-sheet{% if not contacts %} contacts-directory-board--empty{% endif %}">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet contacts-project-sheet contacts-project-sheet--contacts{% if not contacts %} contacts-directory-board--empty{% endif %}">
             {% if contacts %}
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
@@ -95,7 +90,8 @@
                         <span class="u-sr-only">Informacja</span>
                     </span>
                     <span class="contacts-directory-sheet__cell" data-column="contact">KONTAKT<i data-lucide="user-round" aria-hidden="true"></i></span>
-                    <span class="contacts-directory-sheet__cell" data-column="company_role">FIRMA / ROLA<i data-lucide="building-2" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="company">FIRMA<i data-lucide="building-2" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="role">ROLA<i data-lucide="briefcase-business" aria-hidden="true"></i></span>
                     <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE<i data-lucide="mail" aria-hidden="true"></i></span>
                     <span class="contacts-directory-sheet__cell" data-column="status">STATUS<i data-lucide="circle-dot" aria-hidden="true"></i></span>
                     <span class="tasks-directory-header-date contacts-directory-sheet__cell" data-column="created_at">DATA<i data-lucide="calendar-days" aria-hidden="true"></i></span>
@@ -133,12 +129,14 @@
                             {% endif %}
                         {% endwith %}
                         <span class="contacts-directory-name-text">
-                            <strong>{{ item.display_name }}</strong>
+                            <strong title="{{ item.display_name }}">{{ item.display_name }}</strong>
                         </span>
                     </span>
-                    <span class="contacts-directory-company contacts-directory-sheet__cell" data-column="company_role">
+                    <span class="contacts-directory-company contacts-directory-sheet__cell" data-column="company">
                         <span class="contacts-directory-company-name">{% if item.company_record %}{{ item.company_record.name }}{% elif item.company %}{{ item.company }}{% else %}Brak firmy{% endif %}</span>
-                        {% if item.role %}<span class="contacts-directory-role-separator" aria-hidden="true">·</span><span class="contacts-directory-role">{{ item.role }}</span>{% endif %}
+                    </span>
+                    <span class="contacts-directory-sheet__cell" data-column="role">
+                        <span class="contacts-directory-role" title="{{ item.role }}">{{ item.role|default:'—' }}</span>
                     </span>
                     <span class="contacts-directory-channel contacts-directory-sheet__cell" data-column="channel">
                         {% if item.email %}
@@ -148,7 +146,7 @@
                         {% else %}
                         <i data-lucide="circle-slash" aria-hidden="true"></i>
                         {% endif %}
-                        {% if item.email %}{{ item.email }}{% elif item.phone %}{{ item.phone }}{% else %}Brak danych kontaktowych{% endif %}
+                        <span class="contacts-directory-channel-text" title="{% if item.email %}{{ item.email }}{% elif item.phone %}{{ item.phone }}{% else %}Brak danych kontaktowych{% endif %}">{% if item.email %}{{ item.email }}{% elif item.phone %}{{ item.phone }}{% else %}Brak danych kontaktowych{% endif %}</span>
                     </span>
                     {% include 'contacts/includes/contact_status_badge.html' with contact=item cell_class='contacts-directory-sheet__cell' data_column='status' only %}
                     <span class="tasks-row-date contacts-directory-sheet__cell" data-column="created_at" title="Data utworzenia">{{ item.created_at|date:"d.m.Y" }}</span>

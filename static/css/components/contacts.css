@@ -241,6 +241,10 @@
     min-width: 0;
 }
 
+.contacts-directory-sheet [hidden] {
+    display: none !important;
+}
+
 .contacts-directory-sheet .contacts-directory-header,
 .contacts-directory-sheet .contacts-directory-list .contacts-directory-row {
     padding-left: 0.75rem;
@@ -359,7 +363,17 @@
 .tasks-directory-board.contacts-project-sheet {
     --tasks-project-row-height: 35px;
     --contacts-directory-action-width: var(--tasks-directory-select-width);
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--contacts-directory-action-width) var(--contacts-directory-action-width) 280px 260px 320px 170px 170px minmax(120px, 1fr);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--contacts-directory-action-width) var(--contacts-directory-action-width) 280px 260px 320px 170px 170px;
+}
+
+.tasks-directory-board.contacts-project-sheet--contacts {
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--contacts-directory-action-width) var(--contacts-directory-action-width) 280px 260px 200px 320px 170px 170px;
+}
+
+/* The column manager omits the spacer track, so it must not create a grid row. */
+.tasks-directory-board.contacts-project-sheet .contacts-directory-header > [data-column="spacer"],
+.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="spacer"] {
+    display: none;
 }
 
 .tasks-directory-board.contacts-project-sheet .contacts-directory-header,
@@ -373,6 +387,16 @@
 .tasks-directory-board.contacts-project-sheet .contacts-directory-header {
     min-height: 35px;
     border-bottom-color: var(--contacts-directory-column-separator);
+}
+
+.contacts-project-sheet .tasks-directory-column-resizer {
+    right: 0;
+}
+
+.contacts-project-sheet .tasks-directory-column-resizer::before {
+    left: auto;
+    right: 0;
+    transform: none;
 }
 
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row {
@@ -456,6 +480,7 @@
 .contacts-project-sheet .contacts-directory-name-text {
     display: flex;
     align-items: center;
+    gap: 0.35rem;
 }
 
 .contacts-project-sheet .contacts-directory-company {
@@ -474,11 +499,6 @@
     flex: 0 1 auto;
 }
 
-.contacts-directory-role-separator {
-    flex: 0 0 auto;
-    color: #9aa0aa;
-}
-
 .contacts-directory-role {
     flex: 1 1 auto;
     color: #737984;
@@ -495,10 +515,10 @@
 }
 
 .contacts-directory-avatar.profile-avatar {
-    width: 24px;
-    height: 24px;
-    flex: 0 0 24px;
-    border-radius: 5px;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border-radius: 50%;
     font-size: var(--font-size-sm);
 }
 
@@ -544,6 +564,13 @@
     flex: 0 0 15px;
     color: #73777f;
     stroke-width: 2;
+}
+
+.contacts-directory-channel-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .contacts-directory-row > .status-indicator,
@@ -1858,7 +1885,8 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
     .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="action"],
     .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="info"],
-    .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="company_role"],
+    .tasks-directory-board.contacts-project-sheet--contacts .contacts-directory-list .contacts-directory-row > [data-column="company"],
+    .tasks-directory-board.contacts-project-sheet--contacts .contacts-directory-list .contacts-directory-row > [data-column="role"],
     .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="website"],
     .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column="spacer"] {
         display: none;

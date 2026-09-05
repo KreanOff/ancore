@@ -2540,9 +2540,9 @@
 }
 
 .workplace-row__avatar {
-    width: 32px;
-    height: 32px;
-    flex: 0 0 32px;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
     font-size: 0.72rem;
     font-weight: 400;
 }

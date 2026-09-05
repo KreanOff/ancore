@@ -18,7 +18,6 @@
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
                 <span class="tasks-topbar-title">
-                    <i data-lucide="building-2" aria-hidden="true"></i>
                     <span>Firmy</span>
                 </span>
             </div>
@@ -117,8 +116,11 @@
                     <span class="tasks-directory-name contacts-directory-contact contacts-directory-sheet__cell" data-column="company">
                         {% include 'contacts/includes/company_avatar.html' with company=company avatar_class='tasks-directory-avatar contacts-directory-avatar contacts-company-avatar' only %}
                         <span class="contacts-directory-name-text">
-                            <strong>{{ company.name }}</strong>
-                            <small>{% if company.address %}{{ company.address }}{% else %}Firma{% endif %}</small>
+                            <strong title="{{ company.name }}">{{ company.name }}</strong>
+                            {% if company.address %}
+                            <span class="contacts-directory-role-separator" aria-hidden="true">·</span>
+                            <small title="{{ company.address }}">{{ company.address }}</small>
+                            {% endif %}
                         </span>
                     </span>
                     <span class="contacts-directory-company contacts-directory-sheet__cell" data-column="website">
@@ -132,7 +134,7 @@
                         {% else %}
                         <i data-lucide="circle-slash" aria-hidden="true"></i>
                         {% endif %}
-                        {% if company.email %}{{ company.email }}{% elif company.phone %}{{ company.phone }}{% else %}Brak danych kontaktowych{% endif %}
+                        <span class="contacts-directory-channel-text" title="{% if company.email %}{{ company.email }}{% elif company.phone %}{{ company.phone }}{% else %}Brak danych kontaktowych{% endif %}">{% if company.email %}{{ company.email }}{% elif company.phone %}{{ company.phone }}{% else %}Brak danych kontaktowych{% endif %}</span>
                     </span>
                     <span class="status-indicator contacts-status-customer contacts-directory-sheet__cell" data-column="contact_count">{{ company.contact_count }} kontaktów</span>
                     <span class="tasks-row-date contacts-directory-sheet__cell" data-column="created_at" title="Data utworzenia">{{ company.created_at|date:"d.m.Y" }}</span>

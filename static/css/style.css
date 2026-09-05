@@ -13,12 +13,12 @@
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tasks.css?v=20260905-directory-toolbars-v12';
-@import 'components/contacts.css?v=20260904-contact-action-headers-v7-turquoise-row-highlight';
+@import 'components/contacts.css?v=20260905-contact-company-role-v13';
 @import 'components/notifications.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/auth.css?v=20260903-gray-interactions-v1';
-@import 'components/workplaces.css?v=20260904-workspace-current-row-v4-turquoise';
+@import 'components/workplaces.css?v=20260905-workspace-avatars-30px-v5';
 @import 'calendar.css?v=20260702-unified-modal-window';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
 @import 'components/checkboxes.css?v=20260625-contacts-project-table-match';
