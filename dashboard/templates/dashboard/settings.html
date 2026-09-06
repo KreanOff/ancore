@@ -1,238 +1,95 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Ustawienia | ancore{% endblock %}
-
 {% block page_container_class %}full-width{% endblock %}
-
-{% block secondary_menu_panel_attrs %}{% endblock %}
-
-{% block secondary_menu %}
-    {% include 'core/includes/settings_secondary_menu.html' %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/components/settings.css' %}?v=20260906-settings-app-titlebar">
+<script src="{% static 'js/settings.js' %}?v=20260906-settings-no-search" defer></script>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-page settings-page">
-    <header class="dashboard-header">
-        <nav class="dashboard-breadcrumb" aria-label="Ścieżka">
-            <span class="dashboard-breadcrumb-icon" aria-hidden="true">
-                <i data-lucide="settings" aria-hidden="true"></i>
-            </span>
-            <span>ancore</span>
-            <span class="dashboard-breadcrumb-separator" aria-hidden="true">/</span>
-            <strong>Ustawienia</strong>
-        </nav>
+<div class="dashboard-page settings-center" data-settings-center>
+    <header class="tasks-topbar tasks-topbar--project-directory">
+        <div class="tasks-titlebar-left">
+            <span class="tasks-topbar-title" id="settings-title"><span>Ustawienia</span></span>
+        </div>
     </header>
-
-    <main class="dashboard-main" aria-labelledby="settings-title">
-        <section class="dashboard-summary">
-            <div class="dashboard-summary-copy">
-                <p>Ustawienia</p>
-                <h1 id="settings-title">Ustawienia Ancore</h1>
-                <span>{{ request.user.get_full_name|default:request.user.email }}</span>
-            </div>
-        </section>
-
-        <section class="settings-section" aria-labelledby="settings-account-title">
-            <header class="settings-section-header">
-                <div>
-                    <p>Konto</p>
-                    <h2 id="settings-account-title">Użytkownik i dostęp</h2>
+    <div class="settings-scroll-area">
+        <div class="settings-layout">
+            <aside class="settings-navigation" aria-label="Kategorie ustawień">
+                <nav class="tasks-rail-nav" data-settings-navigation>
+                    <a href="{% url 'settings' %}" class="tasks-rail-link settings-category is-active" data-settings-category="all" aria-current="true"><span class="tasks-rail-icon" aria-hidden="true"><i data-lucide="settings"></i></span>Ogólne</a>
+                    <a href="#account" class="tasks-rail-link settings-category" data-settings-category="account"><span class="tasks-rail-icon" aria-hidden="true"><i data-lucide="user-round"></i></span>Konto i dostęp</a>
+                    <a href="#workspace" class="tasks-rail-link settings-category" data-settings-category="workspace"><span class="tasks-rail-icon" aria-hidden="true"><i data-lucide="folder"></i></span>Workspace</a>
+                    <a href="#preferences" class="tasks-rail-link settings-category" data-settings-category="preferences"><span class="tasks-rail-icon" aria-hidden="true"><i data-lucide="sliders-horizontal"></i></span>Preferencje</a>
+                </nav>
+            </aside>
+            <div class="settings-content" aria-labelledby="settings-title">
+                <div class="settings-account-summary" data-settings-account-summary>
+                    {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='settings-account-avatar' only %}
+                    <div class="settings-account-copy"><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><span>{{ request.user.email }}</span></div>
+                    <a href="{% url 'profile' %}" class="settings-button">Edytuj profil</a>
                 </div>
-            </header>
-
-            <div class="settings-section-grid">
-                <a href="{% url 'profile' %}" class="dashboard-stat settings-option settings-option--profile">
-                    {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='dashboard-stat-icon settings-profile-avatar' only %}
-                    <div>
-                        <p>Konto</p>
-                        <strong>Profil użytkownika</strong>
-                        <small>{{ request.user.email }}</small>
+                <section class="settings-group" id="account" data-settings-group="account" aria-labelledby="settings-account-title">
+                    <header class="settings-group-heading"><h2 id="settings-account-title">Konto i dostęp</h2><p>Dane osobowe i konta, z których korzystasz.</p></header>
+                    <div class="settings-rows">
+                        {% url 'profile' as profile_url %}
+                        {% include 'dashboard/includes/settings_row.html' with href=profile_url icon='circle-user-round' title='Profil użytkownika' description='Dane osobowe, zdjęcie i status dostępności.' only %}
+                        {% url 'add_account' as add_account_url %}
+                        {% include 'dashboard/includes/settings_row.html' with href=add_account_url icon='user-round-plus' title='Dodaj konto' description='Korzystaj z kilku kont bez wylogowywania.' only %}
                     </div>
-                    <span class="settings-option-arrow" aria-hidden="true">
-                        <i data-lucide="arrow-right" aria-hidden="true"></i>
-                    </span>
-                </a>
-
-                <a href="{% url 'add_account' %}" class="dashboard-stat settings-option settings-option--accounts">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="user-plus" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Przełącznik</p>
-                        <strong>Dodaj konto</strong>
-                        <small>Połącz drugi profil z sesją</small>
+                </section>
+                <section class="settings-group" id="workspace" data-settings-group="workspace" aria-labelledby="settings-workspace-title">
+                    <header class="settings-group-heading"><h2 id="settings-workspace-title">Workspace</h2><p>Organizacja pracy i ustawienia projektów.</p></header>
+                    <div class="settings-rows">
+                        <a href="{% url 'workplaces:workplaces' %}" class="settings-row settings-row--link" data-settings-row>
+                            <span class="settings-row-icon" aria-hidden="true"><i data-lucide="folder"></i></span>
+                            <span class="settings-row-copy"><strong>Przestrzenie robocze</strong><span>{% if current_workplace %}{{ current_workplace.name }} · Bieżący Workspace{% else %}Utwórz lub wybierz przestrzeń do wspólnej pracy.{% endif %}</span></span>
+                            <i class="settings-row-arrow" data-lucide="chevron-right" aria-hidden="true"></i>
+                        </a>
+                        {% url 'project_field_settings' as project_fields_url %}
+                        {% include 'dashboard/includes/settings_row.html' with href=project_fields_url icon='list-filter' title='Wartości pól projektu' description='Statusy, etapy, kondycja i kolory terminów.' only %}
+                        {% if request.user.is_staff %}
+                            {% url 'admin:index' as admin_url %}
+                            {% include 'dashboard/includes/settings_row.html' with href=admin_url icon='shield-check' title='Panel administracyjny' description='Zarządzaj systemem i dostępem użytkowników.' only %}
+                        {% endif %}
                     </div>
-                    <span class="settings-option-arrow" aria-hidden="true">
-                        <i data-lucide="arrow-right" aria-hidden="true"></i>
-                    </span>
-                </a>
-
-                <article class="dashboard-stat settings-option settings-option--security settings-option--muted" id="security" aria-disabled="true">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="shield-check" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Dostęp</p>
-                        <strong>Bezpieczeństwo</strong>
-                        <small>Hasło i uprawnienia</small>
-                    </div>
-                    <span class="settings-option-state">Wkrótce</span>
-                </article>
-
-                <form method="post" action="{% url 'logout' %}" class="settings-option-form">
-                    {% csrf_token %}
-                    <button type="submit" class="dashboard-stat settings-option settings-option--logout">
-                        <span class="dashboard-stat-icon" aria-hidden="true">
-                            <i data-lucide="log-out" aria-hidden="true"></i>
-                        </span>
-                        <div>
-                            <p>Sesja</p>
-                            <strong>Wyloguj się</strong>
-                            <small>Zakończ pracę na tym urządzeniu</small>
+                </section>
+                <section class="settings-group" id="preferences" data-settings-group="preferences" aria-labelledby="settings-preferences-title">
+                    <header class="settings-group-heading"><h2 id="settings-preferences-title">Preferencje</h2><p>Dopasuj Ancore do swojego sposobu pracy.</p></header>
+                    <div class="settings-rows">
+                        <div class="settings-row" id="appearance" data-settings-row>
+                            <span class="settings-row-icon" aria-hidden="true"><i data-lucide="panel-left"></i></span>
+                            <div class="settings-row-copy">
+                                <label for="settings-sidebar-collapsed">Zwinięte menu boczne</label>
+                                <span id="settings-sidebar-description">Więcej miejsca na Twoją pracę. Ustawienie dla tej przeglądarki.</span>
+                                <span class="settings-mobile-hint">Na telefonie menu otworzysz przyciskiem w lewym górnym rogu.</span>
+                                <noscript><span>Do zmiany tego ustawienia włącz JavaScript.</span></noscript>
+                            </div>
+                            <input id="settings-sidebar-collapsed" class="settings-switch" type="checkbox" role="switch" aria-describedby="settings-sidebar-description" data-settings-sidebar-switch disabled>
                         </div>
-                        <span class="settings-option-arrow" aria-hidden="true">
-                            <i data-lucide="arrow-right" aria-hidden="true"></i>
-                        </span>
-                    </button>
-                </form>
+                        <a href="{% url 'notifications' %}" class="settings-row settings-row--link" id="notifications" data-settings-row data-settings-notifications>
+                            <span class="settings-row-icon" aria-hidden="true"><i data-lucide="bell"></i></span>
+                            <span class="settings-row-copy"><strong>Powiadomienia</strong><span>Sprawdź ostatnią aktywność w swojej przestrzeni.</span></span>
+                            <i class="settings-row-arrow" data-lucide="chevron-right" aria-hidden="true"></i>
+                        </a>
+                        <div class="settings-row" id="region" data-settings-row>
+                            <span class="settings-row-icon" aria-hidden="true"><i data-lucide="globe"></i></span>
+                            <span class="settings-row-copy"><strong>Język i region</strong><span>Polski · {{ settings_timezone }}</span></span>
+                        </div>
+                    </div>
+                </section>
+                <section class="settings-session" id="security" data-settings-group="account" aria-label="Sesja i bezpieczeństwo">
+                    <div class="settings-row" data-settings-row>
+                        <span class="settings-row-icon" aria-hidden="true"><i data-lucide="shield-check"></i></span>
+                        <div class="settings-row-copy"><strong>Sesja</strong><span>Zalogowano jako {{ request.user.email }}</span></div>
+                        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="settings-button">Wyloguj się</button></form>
+                    </div>
+                </section>
+                <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-settings-status></span>
             </div>
-        </section>
-
-        <section class="settings-section" aria-labelledby="settings-preferences-title">
-            <header class="settings-section-header">
-                <div>
-                    <p>Preferencje</p>
-                    <h2 id="settings-preferences-title">Sposób pracy</h2>
-                </div>
-            </header>
-
-            <div class="settings-section-grid">
-                <a href="{% url 'workplaces:workplaces' %}" class="dashboard-stat settings-option settings-option--workplaces">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="briefcase" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Organizacja</p>
-                        <strong>Workspace</strong>
-                        <small>{% if current_workplace %}{{ current_workplace.name }} · {{ available_workplace_count }} dostępne{% else %}Wybierz miejsce pracy{% endif %}</small>
-                    </div>
-                    <span class="settings-option-arrow" aria-hidden="true">
-                        <i data-lucide="arrow-right" aria-hidden="true"></i>
-                    </span>
-                </a>
-
-                <a href="{% url 'project_field_settings' %}" class="dashboard-stat settings-option settings-option--projects">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Projekty</p>
-                        <strong>Wartości pól projektu</strong>
-                        <small>Status, etap, kondycja i kolory terminów</small>
-                    </div>
-                    <span class="settings-option-arrow" aria-hidden="true">
-                        <i data-lucide="arrow-right" aria-hidden="true"></i>
-                    </span>
-                </a>
-
-                <article class="dashboard-stat settings-option settings-option--notifications settings-option--muted" id="notifications" aria-disabled="true">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="bell" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Alerty</p>
-                        <strong>Powiadomienia</strong>
-                        <small>Email, aplikacja i przypomnienia</small>
-                    </div>
-                    <span class="settings-option-state">Wkrótce</span>
-                </article>
-
-                <article class="dashboard-stat settings-option settings-option--appearance settings-option--muted" id="appearance" aria-disabled="true">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="palette" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Interfejs</p>
-                        <strong>Wygląd</strong>
-                        <small>Motyw, gęstość i układ</small>
-                    </div>
-                    <span class="settings-option-state">Wkrótce</span>
-                </article>
-
-                <article class="dashboard-stat settings-option settings-option--region settings-option--muted" id="region" aria-disabled="true">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="globe" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Lokalizacja</p>
-                        <strong>Język i region</strong>
-                        <small>Język, strefa i format dat</small>
-                    </div>
-                    <span class="settings-option-state">Wkrótce</span>
-                </article>
-            </div>
-        </section>
-
-        <section class="settings-section" aria-labelledby="settings-workspace-title">
-            <header class="settings-section-header">
-                <div>
-                    <p>Przestrzeń</p>
-                    <h2 id="settings-workspace-title">System i dane</h2>
-                </div>
-            </header>
-
-            <div class="settings-section-grid">
-                <article class="dashboard-stat settings-option settings-option--data settings-option--muted" id="data" aria-disabled="true">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="database" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Eksport</p>
-                        <strong>Dane i eksport</strong>
-                        <small>Import, eksport i kopie</small>
-                    </div>
-                    <span class="settings-option-state">Wkrótce</span>
-                </article>
-
-                <article class="dashboard-stat settings-option settings-option--integrations settings-option--muted" id="integrations" aria-disabled="true">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="link" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Połączenia</p>
-                        <strong>Integracje</strong>
-                        <small>API, webhooki i usługi</small>
-                    </div>
-                    <span class="settings-option-state">Wkrótce</span>
-                </article>
-
-                <a href="/admin/" class="dashboard-stat settings-option settings-option--admin">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="settings" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>System</p>
-                        <strong>Admin</strong>
-                        <small>/admin/</small>
-                    </div>
-                    <span class="settings-option-arrow" aria-hidden="true">
-                        <i data-lucide="arrow-right" aria-hidden="true"></i>
-                    </span>
-                </a>
-
-                <article class="dashboard-stat settings-option settings-option--help settings-option--muted" id="help" aria-disabled="true">
-                    <span class="dashboard-stat-icon" aria-hidden="true">
-                        <i data-lucide="circle-help" aria-hidden="true"></i>
-                    </span>
-                    <div>
-                        <p>Wsparcie</p>
-                        <strong>Pomoc</strong>
-                        <small>Kontakt i zgłoszenia</small>
-                    </div>
-                    <span class="settings-option-state">Wkrótce</span>
-                </article>
-            </div>
-        </section>
-    </main>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -590,6 +590,7 @@ def settings(request):
     return render(request, 'dashboard/settings.html', {
         'current_account_avatar': account_avatar(request.user),
         'switch_accounts': _switch_account_context(request),
+        'settings_timezone': timezone.get_current_timezone_name(),
     })
 
 

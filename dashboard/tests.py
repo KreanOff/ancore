@@ -42,8 +42,7 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'id="app-sticky-note"')
         self.assertContains(response, 'data-sticky-note-resize')
         self.assertContains(response, 'sticky-note.js?v=20260707-sticker-close-fix')
-        self.assertNotContains(response, 'Przegląd')
-        self.assertContains(response, 'href="/admin/"')
+        self.assertNotContains(response, 'href="/admin/"')
         self.assertContains(response, reverse('profile'))
         self.assertContains(response, 'Profil użytkownika')
         self.assertContains(response, reverse('add_account'))
@@ -53,18 +52,36 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, f'action="{reverse("logout")}"')
         self.assertContains(response, 'Wyloguj się')
         self.assertContains(response, reverse('workplaces:workplaces'))
-        self.assertContains(response, '<strong>Workspace</strong>', html=True)
-        self.assertContains(response, 'Bezpieczeństwo')
+        self.assertContains(response, 'Przestrzenie robocze')
+        self.assertContains(response, 'Konto i dostęp')
         self.assertContains(response, 'Powiadomienia')
-        self.assertContains(response, 'Wygląd')
+        self.assertContains(response, 'Zwinięte menu boczne')
         self.assertContains(response, 'Język i region')
-        self.assertContains(response, 'Dane i eksport')
-        self.assertContains(response, 'Integracje')
-        self.assertContains(response, 'Pomoc')
-        content = response.content.decode()
-        self.assertLess(content.index('</nav>'), content.index('profile-rail-actions'))
-        self.assertLess(content.index('Pomoc'), content.index('Dodaj konto'))
-        self.assertLess(content.index('Dodaj konto'), content.index('Wyloguj się'))
+        self.assertNotContains(response, 'Szukaj ustawień')
+        self.assertNotContains(response, 'Wkrótce')
+
+    def test_settings_admin_link_is_visible_to_staff(self):
+        user = get_user_model().objects.create_user(
+            username='settings-admin', email='settings-admin@example.com',
+            password='test-pass-123', is_staff=True,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('settings'))
+
+        self.assertContains(response, f'href="{reverse("admin:index")}"')
+        self.assertContains(response, 'Panel administracyjny')
+
+    def test_settings_displays_active_timezone(self):
+        user = get_user_model().objects.create_user(
+            username='settings-region', email='settings-region@example.com',
+            password='test-pass-123',
+        )
+        self.client.force_login(user)
+        with timezone.override('Europe/London'):
+            response = self.client.get(reverse('settings'))
+
+        self.assertContains(response, 'Polski · Europe/London')
 
     def test_home_redirects_authenticated_user_to_workplaces(self):
         user = get_user_model().objects.create_user(

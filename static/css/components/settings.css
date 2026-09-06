@@ -1,0 +1,376 @@
+/* Settings share Ancore's shell, palette and icon family. */
+.settings-center {
+    --settings-line: #e7e9ed;
+    --settings-soft: #f7f7f9;
+}
+
+.settings-center [hidden] {
+    display: none !important;
+}
+
+.settings-scroll-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+    padding: 28px 28px 30px;
+}
+
+.settings-layout {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: clamp(24px, 2.6vw, 40px);
+    align-items: start;
+}
+
+.settings-navigation {
+    position: sticky;
+    top: 0;
+    padding-right: 14px;
+}
+
+.settings-navigation nav {
+    display: grid;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+}
+
+.settings-category {
+    white-space: nowrap;
+}
+
+.settings-content {
+    min-width: 0;
+    max-width: 960px;
+}
+
+.settings-account-summary {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+    border: 1px solid var(--settings-line);
+    border-radius: 7px;
+    background: var(--settings-soft);
+}
+
+.settings-account-avatar {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+}
+
+.settings-account-copy {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+    flex: 1;
+}
+
+.settings-account-copy strong {
+    font-size: 15px;
+    font-weight: 500 !important;
+    overflow-wrap: anywhere;
+}
+
+.settings-account-copy span {
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.settings-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 7px 13px;
+    flex: 0 0 auto;
+    border: 1px solid #cdd0d6;
+    border-radius: 5px;
+    background: #fff;
+    font: inherit;
+    line-height: 1.4;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.settings-button:hover {
+    background: var(--settings-soft);
+    border-color: var(--system-interaction);
+}
+
+.settings-group {
+    margin-bottom: 26px;
+    scroll-margin-top: 12px;
+}
+
+.settings-group-heading {
+    padding-bottom: 12px;
+}
+
+.settings-group-heading h2 {
+    margin: 0 0 5px;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 500 !important;
+}
+
+.settings-group-heading p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.settings-rows {
+    border-top: 1px solid var(--settings-line);
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 62px;
+    padding: 13px 12px;
+    border-bottom: 1px solid var(--settings-line);
+    font: inherit;
+    text-decoration: none;
+    transition: background-color 120ms ease;
+}
+
+.settings-row--link:hover {
+    background: var(--settings-soft);
+}
+
+.settings-row-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    flex: 0 0 25px;
+}
+
+.settings-row-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 1.65;
+}
+
+.settings-row-copy {
+    min-width: 0;
+    flex: 1;
+    display: grid;
+    gap: 4px;
+}
+
+.settings-row-copy strong, .settings-row-copy label {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.settings-row-copy > span {
+    display: block;
+    font-size: 12px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.settings-row-arrow {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    color: var(--system-interaction);
+}
+
+.settings-row-copy label {
+    cursor: pointer;
+}
+
+/* Override the shared square checkbox style only for this switch. */
+.settings-center input.settings-switch {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 21px;
+    flex: 0 0 36px;
+    margin: 0 3px;
+    padding: 0;
+    border: 1px solid #bdc2ca;
+    border-radius: 999px;
+    background: #c9cdd4;
+    background-image: none;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.settings-center input.settings-switch::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 15px;
+    height: 15px;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px #40444c33;
+    transform: none;
+    transition: transform 150ms ease;
+}
+
+.settings-center input.settings-switch::after {
+    content: none;
+}
+
+.settings-center input.settings-switch:checked {
+    background: var(--system-accent);
+    border-color: var(--system-accent);
+}
+
+.settings-center input.settings-switch:checked::before {
+    transform: translateX(15px);
+}
+
+.settings-center input.settings-switch:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.settings-row-copy .settings-mobile-hint {
+    display: none;
+}
+
+.settings-session {
+    border-top: 1px solid var(--settings-line);
+    margin-top: -6px;
+}
+
+.settings-session .settings-row {
+    padding-top: 17px;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.settings-session form {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.settings-center :is(a, button, input.settings-switch):focus-visible {
+    outline: 2px solid var(--system-interaction);
+    outline-offset: 3px;
+}
+
+@media (max-width: 1100px) {
+    .settings-layout {
+        grid-template-columns: 155px minmax(0, 1fr);
+        gap: 22px;
+    }
+    .settings-navigation {
+        padding-right: 10px;
+    }
+    .settings-scroll-area {
+        padding-inline: 22px;
+    }
+    .settings-row {
+        padding-inline: 8px;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 900px) {
+    .settings-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 22px;
+    }
+    .settings-navigation {
+        position: static;
+        padding: 0 0 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--settings-line);
+    }
+    .settings-navigation nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .settings-category {
+        min-height: 36px;
+    }
+}
+
+@media (max-width: 767px) {
+    .settings-center .tasks-topbar {
+        padding-left: 60px;
+        min-height: 56px;
+    }
+    .settings-scroll-area {
+        padding: 22px 18px 28px;
+    }
+    .settings-navigation nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 8px;
+    }
+    .settings-category {
+        min-height: 40px;
+        padding: 9px 10px;
+        gap: 7px;
+        font-size: var(--font-size-sm);
+    }
+    .settings-account-summary {
+        gap: 12px;
+        padding: 16px;
+        flex-wrap: wrap;
+    }
+    .settings-account-copy {
+        flex-basis: calc(100% - 60px);
+    }
+    .settings-account-summary .settings-button {
+        margin-left: 56px;
+    }
+    .settings-row {
+        gap: 12px;
+        padding: 15px 4px;
+    }
+    .settings-row-icon {
+        width: 22px;
+        flex-basis: 22px;
+    }
+    .settings-row-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+    .settings-row-copy > span {
+        font-size: 12px;
+    }
+    .settings-button {
+        min-height: 40px;
+    }
+    .settings-row-copy .settings-mobile-hint {
+        display: block;
+        margin-top: 3px;
+    }
+    .settings-session .settings-row {
+        flex-wrap: wrap;
+    }
+    .settings-session .settings-row-copy {
+        flex-basis: calc(100% - 40px);
+    }
+    .settings-session form {
+        margin-left: 34px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .settings-center *, .settings-center *::before {
+        transition: none !important;
+    }
+}
