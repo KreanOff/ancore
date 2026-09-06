@@ -408,14 +408,14 @@
 
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row,
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row > [data-column]:not([data-column="select"]) {
-    transition: background-color 0.12s ease, border-color 0.12s ease;
+    transition: background-color 0.12s ease;
 }
 
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row::after {
     content: "";
     position: absolute;
     top: 0;
-    bottom: 1px;
+    bottom: 0;
     left: 0;
     z-index: 2;
     width: 3px;
@@ -457,12 +457,6 @@
 
 .contacts-project-sheet .tasks-project-sheet__edit-button {
     text-decoration: none;
-}
-
-.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover,
-.tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover > [data-column]:not([data-column="select"]) {
-    background: rgba(var(--system-accent-rgb), 0.08);
-    border-color: rgba(var(--system-accent-rgb), 0.24);
 }
 
 .tasks-directory-board.contacts-project-sheet .contacts-directory-list .contacts-directory-row:not(.checked):not(:has(.tasks-row-checkbox:checked)):hover::after,

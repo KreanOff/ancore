@@ -931,20 +931,24 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-project-responsible-user-id')
         self.assertNotContains(response, 'tasks-responsible-select__avatar')
 
-    def test_search_field_is_rendered_in_topbar(self):
+    def test_projects_search_dropdown_is_in_right_toolbar_and_keeps_filter_form(self):
         response = self.client.get(reverse('tasks:tasks'))
         html = response.content.decode()
-        topbar_start = html.index('class="tasks-topbar"')
+        topbar_start = html.index('class="tasks-topbar')
         topbar_end = html.index('</header>', topbar_start)
         topbar_html = html[topbar_start:topbar_end]
-        filterbar_start = html.index('class="tasks-filterbar', topbar_end)
-        filterbar_end = html.index('</div>', filterbar_start)
+        filterbar_start = html.index('class="tasks-filterbar-right', topbar_end)
+        filterbar_end = html.index('data-open-project-field-settings', filterbar_start)
         filterbar_html = html[filterbar_start:filterbar_end]
 
-        self.assertIn('tasks-titlebar-search', topbar_html)
-        self.assertIn('id="filter-search"', topbar_html)
+        self.assertNotIn('tasks-titlebar-search', topbar_html)
+        self.assertNotIn('id="filter-search"', topbar_html)
+        self.assertIn('<form hidden', topbar_html)
+        self.assertIn('data-project-search-form', topbar_html)
         self.assertNotIn('data-filter-search-submit', topbar_html)
-        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertIn('data-project-search-toggle', filterbar_html)
+        self.assertIn('id="filter-search"', filterbar_html)
+        self.assertIn('form="projects-search-form"', filterbar_html)
 
     def test_projects_view_uses_unified_filter_builder(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -1748,13 +1752,32 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(first_task.full_code, '1')
         self.assertEqual(other_group_task.full_code, '3')
 
-    def test_project_icons_get_different_badge_colors(self):
-        first = TaskProject.objects.create(user=self.user, name='Pierwszy')
-        second = TaskProject.objects.create(user=self.user, name='Drugi')
+    def test_legacy_entity_icons_are_not_editable(self):
+        for model in (TaskProject, TaskSection):
+            with self.subTest(model=model.__name__):
+                self.assertFalse(model._meta.get_field('icon').editable)
 
-        self.assertEqual(first.icon, '')
-        self.assertEqual(second.icon, '')
-        self.assertNotEqual(first.icon_color, second.icon_color)
+    def test_legacy_icons_are_absent_from_project_group_and_task_views(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt bez ikon', icon='rocket')
+        section = TaskSection.objects.create(project=project, title='Grupa bez ikon', icon='flask-conical')
+        task = Task.objects.create(user=self.user, section=section, title='Zadanie bez ikon')
+        urls = (
+            reverse('tasks:tasks'),
+            f"{reverse('tasks:tasks')}?project={project.id}",
+            reverse('tasks:task_group', args=[section.id]),
+            reverse('tasks:view-task', args=[task.task_id]),
+        )
+        for url in urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                for marker in (
+                    'tasks-project-badge', 'tasks-issue-crumb-icon',
+                    'data-project-icon', 'data-section-icon', 'data-picker-icon',
+                    'data-task-detail-option-icon', 'data-lucide="rocket"',
+                    'data-lucide="flask-conical"', 'projectIcon', 'sectionIcon', 'projectColor',
+                ):
+                    self.assertNotContains(response, marker)
 
     def test_projects_list_does_not_render_icons_next_to_names(self):
         company = Company.objects.create(owner=self.user, name='Acme CRM')
@@ -2062,11 +2085,11 @@ class TaskProjectCreationTests(TestCase):
         pagination_start = html.index('class="tasks-project-pagination tasks-project-pagination--toolbar"')
         page_size_start = html.index('tasks-project-pagination__size-control--toolbar')
         table_start = html.index('class="tasks-table-wrap tasks-board')
-        left_group_end = html.index('<div class="tasks-filterbar-center">', filterbar_start)
+        right_group_start = html.index('<div class="tasks-filterbar-right">', filterbar_start)
         self.assertLess(filterbar_start, pagination_start)
         self.assertLess(sort_start, pagination_start)
         self.assertLess(pagination_start, page_size_start)
-        self.assertLess(page_size_start, left_group_end)
+        self.assertLess(right_group_start, pagination_start)
         self.assertLess(page_size_start, table_start)
         self.assertLess(pagination_start, table_start)
         self.assertNotIn('data-project-pagination-pages', html)
@@ -2580,8 +2603,8 @@ class TaskProjectCreationTests(TestCase):
         )
         self.assertContains(response, 'tasks-titlebar-left tasks-issue-breadcrumb tasks-project-breadcrumb')
         self.assertContains(response, '<span class="tasks-issue-divider" aria-hidden="true"></span>')
-        self.assertContains(response, 'class="tasks-issue-crumb-icon"')
-        self.assertContains(response, 'data-lucide="briefcase-business" data-lucide-fallback="folder"')
+        self.assertNotContains(response, 'class="tasks-issue-crumb-icon"')
+        self.assertNotContains(response, 'data-lucide="briefcase-business" data-lucide-fallback="folder"')
         self.assertContains(response, 'tasks-project-sheet--selectable')
         self.assertContains(response, 'tasks-section-sheet')
         self.assertContains(response, 'data-directory-column-manager')
@@ -3266,7 +3289,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(projects_response, 'id="delete-selected-project-menu-btn"')
         self.assertContains(projects_response, 'class="tasks-project-delete-button tasks-project-delete-button--separated"')
         self.assertContains(projects_response, 'id="edit-selected-project-menu-btn"')
-        self.assertContains(projects_response, 'id="edit-selected-project-bar-btn"')
+        self.assertNotContains(projects_response, 'id="edit-selected-project-bar-btn"')
         self.assertContains(projects_response, 'data-select-all-target="projects"')
         self.assertContains(projects_response, 'aria-label="Zaznacz projekt Projekt"')
         self.assertContains(groups_response, 'id="delete-selected-section-menu-btn"')

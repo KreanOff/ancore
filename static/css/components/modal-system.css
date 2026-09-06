@@ -148,6 +148,10 @@
     mask: var(--app-modal-icon) center / 22px 22px no-repeat;
 }
 
+.tasks-modal:is(#project-modal, #project-rename-modal, #section-create-modal, #section-rename-modal, #issue-modal) .tasks-modal__header::before {
+    content: none;
+}
+
 .tasks-modal .tasks-modal__header h2,
 .page-container.full-width .tasks-modal .tasks-modal__header h2,
 .tasks-modal .tasks-issue-modal__crumbs > strong,

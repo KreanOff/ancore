@@ -69,6 +69,8 @@ media
 !workplaces/migrations/0006_sidebarfavorite.py
 !workplaces/migrations/0007_sidebarfavorite_position.py
 !tasks/migrations/0042_remove_task_task_user_company_status_idx_and_more.py
+!tasks/migrations/0043_retire_entity_icons.py
+!kanban/migrations/0033_retire_entity_icons.py
 
 # Flask stuff:
 instance/

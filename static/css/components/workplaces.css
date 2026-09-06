@@ -3720,10 +3720,11 @@
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row {
     position: relative;
+    --tasks-directory-row-separator: #e7e8eb;
     height: var(--tasks-project-row-height);
     min-height: var(--tasks-project-row-height);
     max-height: var(--tasks-project-row-height);
-    border-bottom: 1px solid #e7e8eb;
+    border-bottom: 1px solid var(--tasks-directory-row-separator);
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell,

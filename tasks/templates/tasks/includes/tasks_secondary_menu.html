@@ -67,12 +67,7 @@
         {% for project in projects %}
         <div class="tasks-project-node {% if active_project.id == project.id %}is-current{% endif %}" data-project-node data-project-id="{{ project.id }}">
             <div class="tasks-project-title-row">
-                <button type="button" class="tasks-project-title {% if not project.icon %}tasks-project-title--no-icon{% endif %}" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
-                    {% if project.icon %}
-                    <span class="tasks-project-badge" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">
-                        <i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                    </span>
-                    {% endif %}
+                <button type="button" class="tasks-project-title" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
                     <span>{{ project.name }}</span>
                 </button>
                 {% if project.can_manage %}
@@ -81,7 +76,7 @@
                         <i data-lucide="ellipsis" aria-hidden="true"></i>
                     </button>
                     <div class="tasks-project-menu" role="menu">
-                        <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}">
+                        <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}">
                             <i data-lucide="pencil" aria-hidden="true"></i>
                             Edytuj projekt
                         </button>
@@ -110,11 +105,6 @@
                 {% for section in project.sections.all %}
                 <a href="{% url 'tasks:task_group' section.id %}"
                    class="tasks-rail-link {% if active_section.id == section.id %}is-active{% endif %}">
-                    {% if section.icon %}
-                    <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                    </span>
-                    {% endif %}
                     {{ section.title }}
                 </a>
                 {% empty %}

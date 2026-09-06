@@ -231,8 +231,9 @@ class GlobalSearchTests(TestCase):
             workplace=self.workplace,
             name='Projekt Apollo',
             code='P-APOLLO',
+            icon='rocket',
         )
-        task_section = TaskSection.objects.create(project=task_project, title='Wdrożenie Apollo')
+        task_section = TaskSection.objects.create(project=task_project, title='Wdrożenie Apollo', icon='star')
         task = Task.objects.create(
             user=self.user,
             workplace=self.workplace,
@@ -248,8 +249,9 @@ class GlobalSearchTests(TestCase):
             user=self.user,
             workplace=self.workplace,
             name='Apollo Delivery',
+            icon='rocket',
         )
-        kanban_section = KanbanSection.objects.create(project=kanban_project, title='Apollo Board')
+        kanban_section = KanbanSection.objects.create(project=kanban_project, title='Apollo Board', icon='star')
         card = Kanban.objects.create(
             user=self.user,
             workplace=self.workplace,
@@ -279,6 +281,9 @@ class GlobalSearchTests(TestCase):
         self.assertIn('companies', groups)
         self.assertIn('calendar', groups)
         self.assertIn('workplaces', groups)
+        for key in ('tasks', 'projects', 'groups', 'kanban-projects', 'kanban-boards', 'kanban-cards'):
+            with self.subTest(group=key):
+                self.assertTrue(all(result['icon'] == '' for result in groups[key]))
         self.assertEqual(groups['tasks'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "tasks")}view-task/{task.task_id}/')
         self.assertEqual(groups['kanban-cards'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "kanban")}view-task/{card.task_id}/')
         self.assertIn(f'event={event.id}', groups['calendar'][0]['url'])

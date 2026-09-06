@@ -116,22 +116,12 @@ class TaskProject(models.Model):
     CODE_LENGTH = 8
     CODE_ALPHABET = BASE36_ALPHABET
 
-    ICON_COLORS = [
-        {'background': '#ADD8E6', 'foreground': '#1f2328'},
-        {'background': '#eaf7ef', 'foreground': '#16803f'},
-        {'background': '#fff1df', 'foreground': '#c25a00'},
-        {'background': '#f0eaff', 'foreground': '#7c3aed'},
-        {'background': '#e8f8f6', 'foreground': '#0f766e'},
-        {'background': '#ffeaf0', 'foreground': '#be185d'},
-        {'background': '#f4f0e8', 'foreground': '#8b5e22'},
-        {'background': '#edf1f7', 'foreground': '#475569'},
-    ]
-
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
     next_section_code_number = models.PositiveIntegerField(default=1, editable=False)
-    icon = models.CharField(max_length=64, blank=True, default='')
+    # Legacy storage only; entity icons are no longer displayed or editable.
+    icon = models.CharField(max_length=64, blank=True, default='', editable=False)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
     status = models.CharField(max_length=20, default='active')
     stage = models.CharField(max_length=20, default='implementation')
@@ -209,11 +199,6 @@ class TaskProject(models.Model):
 
     def get_health_display(self):
         return self._field_option_display('health')
-
-    @property
-    def icon_color(self):
-        index_source = self.pk or 1
-        return self.ICON_COLORS[(index_source - 1) % len(self.ICON_COLORS)]
 
 
 class TaskProjectFieldOption(models.Model):
@@ -391,7 +376,8 @@ class TaskSection(models.Model):
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='none', blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
-    icon = models.CharField(max_length=64, blank=True, default='')
+    # Legacy storage only; entity icons are no longer displayed or editable.
+    icon = models.CharField(max_length=64, blank=True, default='', editable=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='owned_task_sections', null=True, blank=True)
     due_at = models.DateField(null=True, blank=True)
     wip_limit = models.PositiveIntegerField(null=True, blank=True)

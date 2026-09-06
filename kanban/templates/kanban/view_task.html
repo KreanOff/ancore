@@ -28,20 +28,10 @@
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
                 <span class="tasks-issue-crumb">
-                    {% if task.section and task.section.project.icon %}
-                    <span class="tasks-issue-crumb-icon" aria-hidden="true" style="--project-icon-fg: {{ task.section.project.icon_color.foreground }};">
-                        <i data-lucide="{{ task.section.project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                    </span>
-                    {% endif %}
                     <span>{% if task.section %}{{ task.section.project.name }}{% else %}Bez przestrzeni roboczej{% endif %}</span>
                 </span>
                 <span class="tasks-issue-chevron" aria-hidden="true">›</span>
                 <span class="tasks-issue-crumb">
-                    {% if task.section and task.section.icon %}
-                    <span class="tasks-issue-crumb-icon" aria-hidden="true">
-                        <i data-lucide="{{ task.section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i>
-                    </span>
-                    {% endif %}
                     <span>{% if task.section %}{{ task.section.title }}{% else %}Bez kategorii{% endif %}</span>
                 </span>
                 <span class="tasks-issue-chevron" aria-hidden="true">›</span>
@@ -376,17 +366,11 @@
                                 {{ form.project }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-project-dropdown data-task-detail-select="#{{ form.project.id_for_label }}">
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
-                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
                                         <span data-task-detail-label data-task-detail-default-label="Przestrzeń robocza">Przestrzeń robocza</span>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz przestrzeń roboczą">
                                         {% for project in form.project.field.queryset %}
                                         <button type="button" role="menuitem" data-task-detail-value="{{ project.id }}" data-task-detail-default-section="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
-                                            {% if project.icon %}
-                                            <span class="tasks-issue-mini-avatar" aria-hidden="true" data-task-detail-option-icon style="--project-icon-fg: {{ project.icon_color.foreground }};">
-                                                <i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                                            </span>
-                                            {% endif %}
                                             <span>{{ project.name }}</span>
                                         </button>
                                         {% endfor %}
@@ -400,17 +384,11 @@
                                 {{ form.section }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-section-dropdown data-task-detail-select="#{{ form.section.id_for_label }}">
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
-                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
                                         <span data-task-detail-label data-task-detail-default-label="Tablica">Tablica</span>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tablicę">
                                         {% for section in form.section.field.queryset %}
                                         <button type="button" role="menuitem" data-task-detail-value="{{ section.id }}" data-task-detail-project-id="{{ section.project_id }}">
-                                            {% if section.icon %}
-                                            <span aria-hidden="true" data-task-detail-option-icon>
-                                                <i data-lucide="{{ section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i>
-                                            </span>
-                                            {% endif %}
                                             <span>{{ section.title }}</span>
                                         </button>
                                         {% endfor %}
@@ -425,7 +403,6 @@
                                 {{ form.parent }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-parent-dropdown data-task-detail-select="#{{ form.parent.id_for_label }}">
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
-                                        <span class="tasks-issue-dropdown-icon" aria-hidden="true" data-task-detail-icon></span>
                                         <span data-task-detail-label data-task-detail-default-label="Karta">Karta</span>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz kartę">
@@ -680,7 +657,6 @@ function syncTaskDetailDropdown(dropdown) {
     if (!dropdown) return;
     const select = document.querySelector(dropdown.dataset.taskDetailSelect);
     const label = dropdown.querySelector('[data-task-detail-label]');
-    const detailIcon = dropdown.querySelector('[data-task-detail-icon]');
     const statusIcon = dropdown.querySelector('[data-task-detail-status-icon]');
     const priorityIcon = dropdown.querySelector('[data-task-detail-priority-icon]');
     const isMultiple = dropdown.hasAttribute('data-task-detail-multiple');
@@ -703,14 +679,6 @@ function syncTaskDetailDropdown(dropdown) {
             const activeButton = dropdown.querySelector(`[data-task-detail-value="${currentValue}"]`);
             label.textContent = activeButton ? getTaskDetailButtonText(activeButton) : label.dataset.taskDetailDefaultLabel || label.textContent;
         }
-    }
-
-    if (detailIcon) {
-        detailIcon.replaceChildren();
-        const activeButton = !isMultiple ? dropdown.querySelector(`[data-task-detail-value="${currentValue}"]`) : null;
-        const optionIcon = activeButton?.querySelector('[data-task-detail-option-icon]');
-        if (optionIcon) detailIcon.appendChild(optionIcon.cloneNode(true));
-        window.AncoreIcons?.render(detailIcon);
     }
 
     if (selectedTags && isMultiple) {

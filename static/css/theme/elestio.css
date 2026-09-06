@@ -632,7 +632,6 @@ body.auth-page,
 
 .tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) > .tasks-section-list,
 .tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row,
-.tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row:not(.tasks-section-card),
 .tasks-all-groups-sheet .tasks-issue-group:not(.tasks-status-block) .tasks-section-list > .tasks-section-row > .tasks-project-sheet__cell:not([data-column="select"]) {
     background: #ffffff;
 }
@@ -673,14 +672,14 @@ body.auth-page,
 .tasks-issue-row:has(.tasks-row-checkbox:checked):hover,
 .tasks-project-row.checked,
 .tasks-project-row.checked:hover,
-.tasks-section-row.checked:not(.tasks-section-card),
-.tasks-section-row.checked:not(.tasks-section-card):hover,
+.tasks-section-row.checked:not(.tasks-section-card, .tasks-directory-row),
+.tasks-section-row.checked:not(.tasks-section-card, .tasks-directory-row):hover,
 .tasks-all-groups-row.checked,
 .tasks-all-groups-row.checked:hover,
 .tasks-issue-group:not(.tasks-status-block) .tasks-project-row.checked,
 .tasks-issue-group:not(.tasks-status-block) .tasks-project-row.checked:hover,
-.tasks-issue-group:not(.tasks-status-block) .tasks-section-row.checked:not(.tasks-section-card),
-.tasks-issue-group:not(.tasks-status-block) .tasks-section-row.checked:not(.tasks-section-card):hover,
+.tasks-issue-group:not(.tasks-status-block) .tasks-section-row.checked:not(.tasks-section-card, .tasks-directory-row),
+.tasks-issue-group:not(.tasks-status-block) .tasks-section-row.checked:not(.tasks-section-card, .tasks-directory-row):hover,
 .tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row.checked,
 .tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row.checked:hover {
     background: #e9ebef;
@@ -697,22 +696,19 @@ body.auth-page,
     border-color: #d6d9df;
 }
 
-.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked,
-.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked:hover,
-.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked),
-.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked):hover,
-.tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row.checked::before,
-.tasks-directory-board.tasks-project-sheet .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked)::before,
-.tasks-directory-board.tasks-tag-sheet .tasks-directory-list .tasks-directory-row.checked::before,
-.tasks-directory-board.tasks-tag-sheet .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked)::before,
-.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked > .tasks-directory-sheet__cell:not(.tasks-row-checkbox),
-.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-directory-sheet__cell:not(.tasks-row-checkbox),
-.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked > .tasks-project-sheet__cell:not(.tasks-row-checkbox),
-.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-project-sheet__cell:not(.tasks-row-checkbox),
-.tasks-directory-board .tasks-directory-list .tasks-directory-row.checked > .tasks-tag-sheet__cell:not(.tasks-row-checkbox),
-.tasks-directory-board .tasks-directory-list .tasks-directory-row:has(.tasks-row-checkbox:checked) > .tasks-tag-sheet__cell:not(.tasks-row-checkbox) {
-    background: rgba(var(--system-accent-rgb), 0.08);
-    border-color: rgba(var(--system-accent-rgb), 0.24);
+/* Use the same opaque fill on every layer, including the checkbox gutter.
+   Separators keep their own color in hovered, focused and selected rows. */
+.tasks-directory-board .tasks-directory-list .tasks-directory-row:is(.checked, :has(.tasks-row-checkbox:checked)),
+.tasks-directory-board .tasks-directory-list .tasks-directory-row:is(.checked, :has(.tasks-row-checkbox:checked))::before,
+.tasks-directory-board .tasks-directory-list .tasks-directory-row:is(.checked, :has(.tasks-row-checkbox:checked)) > [data-column]:not([data-column="select"]),
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet, .contacts-project-sheet) .tasks-directory-list .tasks-directory-row:is(:hover, :focus-visible),
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet, .contacts-project-sheet) .tasks-directory-list .tasks-directory-row:is(:hover, :focus-visible)::before,
+.tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet, .contacts-project-sheet) .tasks-directory-list .tasks-directory-row:is(:hover, :focus-visible) > [data-column]:not([data-column="select"]) {
+    background: color-mix(in srgb, var(--system-accent) 8%, #ffffff);
+    background-clip: padding-box;
+    border-color: var(--contacts-directory-column-separator, var(--tasks-directory-column-separator, #edf0f3));
+    border-bottom-color: var(--tasks-directory-row-separator, var(--contacts-directory-column-separator, var(--tasks-directory-column-separator, #edf0f3)));
+    outline: none;
 }
 
 .tasks-row-title,

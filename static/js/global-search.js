@@ -131,10 +131,13 @@
         link.dataset.globalSearchResult = '';
         link.dataset.resultIndex = String(resultIndex);
 
-        const visual = document.createElement('span');
-        visual.className = 'global-search-result__icon';
-        visual.setAttribute('aria-hidden', 'true');
-        visual.appendChild(iconNode(result.icon));
+        if (result.icon) {
+            const visual = document.createElement('span');
+            visual.className = 'global-search-result__icon';
+            visual.setAttribute('aria-hidden', 'true');
+            visual.appendChild(iconNode(result.icon));
+            link.appendChild(visual);
+        }
 
         const body = document.createElement('span');
         body.className = 'global-search-result__body';
@@ -167,7 +170,7 @@
         arrow.className = 'global-search-result__arrow';
         arrow.setAttribute('aria-hidden', 'true');
         arrow.appendChild(iconNode('arrow-up-right'));
-        link.append(visual, body, arrow);
+        link.append(body, arrow);
         return link;
     }
 

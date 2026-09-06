@@ -2246,7 +2246,6 @@ def _task_modal_picker_options(projects):
                 'sectionId': str(section.id),
                 'sectionProjectId': str(project.id),
                 'sectionTitle': section.title,
-                'sectionIcon': section.icon or '',
             }
             for section in project.sections.all()
             if getattr(section, 'can_edit', False)
@@ -2254,12 +2253,9 @@ def _task_modal_picker_options(projects):
         if not (getattr(project, 'can_edit', False) or getattr(project, 'has_editable_sections', False) or sections):
             continue
 
-        icon_color = getattr(project, 'icon_color', None)
         options.append({
             'projectId': str(project.id),
             'projectName': project.name,
-            'projectIcon': project.icon or '',
-            'projectColor': getattr(icon_color, 'foreground', ''),
             'defaultSectionId': '',
             'sections': sections,
         })

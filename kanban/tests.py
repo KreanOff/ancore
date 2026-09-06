@@ -154,13 +154,32 @@ class KanbanProjectCreationTests(TestCase):
         self.assertRegex(project.code, self.PROJECT_CODE_PATTERN)
         self.assertNotEqual(project.code, task_project.code)
 
-    def test_project_icons_get_different_badge_colors(self):
-        first = KanbanProject.objects.create(user=self.user, name='Pierwszy')
-        second = KanbanProject.objects.create(user=self.user, name='Drugi')
+    def test_legacy_entity_icons_are_not_editable(self):
+        for model in (KanbanProject, KanbanSection):
+            with self.subTest(model=model.__name__):
+                self.assertFalse(model._meta.get_field('icon').editable)
 
-        self.assertEqual(first.icon, '')
-        self.assertEqual(second.icon, '')
-        self.assertNotEqual(first.icon_color, second.icon_color)
+    def test_legacy_icons_are_absent_from_project_group_and_task_views(self):
+        project = KanbanProject.objects.create(user=self.user, name='Projekt bez ikon', icon='rocket')
+        section = KanbanSection.objects.create(project=project, title='Grupa bez ikon', icon='flask-conical')
+        task = Kanban.objects.create(user=self.user, section=section, title='Zadanie bez ikon')
+        urls = (
+            reverse('kanban:tasks'),
+            f"{reverse('kanban:tasks')}?project={project.id}",
+            reverse('kanban:task_group', args=[section.id]),
+            reverse('kanban:view-task', args=[task.task_id]),
+        )
+        for url in urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                for marker in (
+                    'tasks-project-badge', 'tasks-issue-crumb-icon',
+                    'data-project-icon', 'data-section-icon', 'data-picker-icon',
+                    'data-task-detail-option-icon', 'data-lucide="rocket"',
+                    'data-lucide="flask-conical"', 'projectIcon', 'sectionIcon', 'projectColor',
+                ):
+                    self.assertNotContains(response, marker)
 
     def test_projects_list_renders_space_directory_table(self):
         project_with_icon = KanbanProject.objects.create(

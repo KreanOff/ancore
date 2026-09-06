@@ -70,12 +70,7 @@
             {% for project in projects %}
             <div class="tasks-project-node {% if active_project.id == project.id %}is-current{% endif %}" data-project-node data-project-id="{{ project.id }}">
                 <div class="tasks-project-title-row">
-                    <button type="button" class="tasks-project-title {% if not project.icon %}tasks-project-title--no-icon{% endif %}" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
-                        {% if project.icon %}
-                        <span class="tasks-project-badge" aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">
-                            <i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                        </span>
-                        {% endif %}
+                    <button type="button" class="tasks-project-title" aria-expanded="true" aria-controls="project-sections-{{ project.id }}" data-project-collapse-toggle>
                         <span>{{ project.name }}</span>
                     </button>
                     <div class="tasks-project-actions" data-project-actions>
@@ -83,7 +78,7 @@
                             <i data-lucide="ellipsis" aria-hidden="true"></i>
                         </button>
                         <div class="tasks-project-menu" role="menu">
-                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}">
+                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}">
                                 <i data-lucide="pencil" aria-hidden="true"></i>
                                 Edytuj przestrzeń
                             </button>
@@ -111,11 +106,6 @@
                     {% for section in project.sections.all %}
                     <a href="{% url 'kanban:task_group' section.id %}"
                        class="tasks-rail-link {% if active_section.id == section.id %}is-active{% endif %}">
-                        {% if section.icon %}
-                        <span class="tasks-rail-icon" aria-hidden="true">
-                            <i data-lucide="{{ section.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                        </span>
-                        {% endif %}
                         {{ section.title }}
                     </a>
                     {% empty %}
@@ -157,20 +147,10 @@
                     {% if active_project %}
                     {% if active_section %}
                     <span class="tasks-topbar-title-item">
-                        {% if active_section.icon %}
-                        <span class="tasks-topbar-title-icon" aria-hidden="true">
-                            <i data-lucide="{{ active_section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i>
-                        </span>
-                        {% endif %}
                         <span>{{ active_section.title }}</span>
                     </span>
                     {% else %}
                     <span class="tasks-topbar-title-item">
-                        {% if active_project.icon %}
-                        <span class="tasks-topbar-title-icon" aria-hidden="true" style="--project-icon-fg: {{ active_project.icon_color.foreground }};">
-                            <i data-lucide="{{ active_project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>
-                        </span>
-                        {% endif %}
                         <span>{{ active_project.name }}</span>
                     </span>
                     {% endif %}
@@ -633,12 +613,9 @@
                     <div class="tasks-section-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
                         <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
                         <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
-                        {% if section.icon %}
-                        <span class="tasks-section-row-icon tasks-section-card__icon"><i data-lucide="{{ section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i></span>
-                        {% endif %}
                     </div>
                     <div class="tasks-section-card__body">
-                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
+                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
                         <span class="tasks-row-title tasks-section-row-title tasks-section-card__title">
                             <span>{{ section.title }}</span>
                         </span>
@@ -794,12 +771,9 @@
                     <div class="tasks-section-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
                         <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
                         <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
-                        {% if section.icon %}
-                        <span class="tasks-section-row-icon tasks-section-card__icon"><i data-lucide="{{ section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i></span>
-                        {% endif %}
                     </div>
                     <div class="tasks-section-card__body">
-                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
+                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
                         <span class="tasks-row-title tasks-section-row-title tasks-section-card__title">
                             <span>{{ section.title }}</span>
                         </span>
@@ -1040,10 +1014,10 @@
                 </div>
                 <div class="tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista przestrzeni Kanban">
                 {% for project in project_window.projects %}
-                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} Przestrzeń Kanban {{ project.get_priority_display|default:'' }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-view-url="{% url 'kanban:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
-                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz przestrzeń {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
+                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} Przestrzeń Kanban {{ project.get_priority_display|default:'' }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-view-url="{% url 'kanban:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz przestrzeń {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
-                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj przestrzeń" aria-label="Edytuj przestrzeń {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}">
+                        <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj przestrzeń" aria-label="Edytuj przestrzeń {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}">
                             <i data-lucide="pencil" aria-hidden="true"></i>
                         </button>
                     </span>
@@ -1699,8 +1673,7 @@
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
                     <div class="tasks-chip-picker" data-issue-project-picker>
-                        <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle {% if active_project %}style="--project-icon-fg: {{ active_project.icon_color.foreground }};"{% endif %}>
-                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_project and active_project.icon %}<i data-lucide="{{ active_project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
+                        <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
                             <span data-picker-label>{% if active_project %}{{ active_project.name }}{% else %}Wybierz przestrzeń{% endif %}</span>
                             <i data-lucide="chevron-down" aria-hidden="true"></i>
                         </button>
@@ -1711,8 +1684,7 @@
                                 <button type="button" class="tasks-chip-picker__search-button" data-picker-search-submit>Szukaj</button>
                             </div>
                             {% for project in projects %}
-                            <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-icon="{{ project.icon|default:''|escape }}" data-project-color="{{ project.icon_color.foreground }}" data-default-section-id="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
-                                <span aria-hidden="true" style="--project-icon-fg: {{ project.icon_color.foreground }};">{% if project.icon %}<i data-lucide="{{ project.icon }}" data-lucide-fallback="folder" aria-hidden="true"></i>{% endif %}</span>
+                            <button type="button" role="menuitem" data-project-option data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-default-section-id="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
                                 {{ project.name }}
                             </button>
                             {% endfor %}
@@ -1721,7 +1693,6 @@
                     <span class="tasks-project-modal__chevron">›</span>
                     <div class="tasks-chip-picker" data-issue-section-picker>
                         <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
-                            <span class="tasks-picker-chip__icon" aria-hidden="true" data-picker-icon>{% if active_section and active_section.icon %}<i data-lucide="{{ active_section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i>{% endif %}</span>
                             <span data-picker-label>{% if active_section %}{{ active_section.title }}{% else %}Wybierz tablicę{% endif %}</span>
                             <i data-lucide="chevron-down" aria-hidden="true"></i>
                         </button>
@@ -1733,8 +1704,7 @@
                             </div>
                             {% for project in projects %}
                                 {% for section in project.sections.all %}
-                                <button type="button" role="menuitem" data-section-option data-section-id="{{ section.id }}" data-section-project-id="{{ project.id }}" data-section-title="{{ section.title|escape }}" data-section-icon="{{ section.icon|default:''|escape }}">
-                                    <span aria-hidden="true">{% if section.icon %}<i data-lucide="{{ section.icon }}" data-lucide-fallback="kanban" aria-hidden="true"></i>{% endif %}</span>
+                                <button type="button" role="menuitem" data-section-option data-section-id="{{ section.id }}" data-section-project-id="{{ project.id }}" data-section-title="{{ section.title|escape }}">
                                     {{ section.title }}
                                 </button>
                                 {% endfor %}

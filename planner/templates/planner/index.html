@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260823-gray-calendar-accent">
-<script src="{% static 'js/calendar.js' %}?v=20260903-global-search-event-v1" defer></script>
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20260905-calendar-v3">
+<script src="{% static 'js/calendar.js' %}?v=20260905-calendar-v3" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -54,13 +54,7 @@
 
         <div class="tasks-rail-section calendar-legend">
             <div class="tasks-rail-section-title">Kolory</div>
-            <div class="calendar-legend-list" aria-label="Legenda kolorów wydarzeń">
-                <span><span class="calendar-color-dot calendar-color-dot--red"></span>Czerwony</span>
-                <span><span class="calendar-color-dot calendar-color-dot--blue"></span>Niebieski</span>
-                <span><span class="calendar-color-dot calendar-color-dot--green"></span>Zielony</span>
-                <span><span class="calendar-color-dot calendar-color-dot--amber"></span>Bursztynowy</span>
-                <span><span class="calendar-color-dot calendar-color-dot--slate"></span>Szary</span>
-            </div>
+            {% include 'planner/includes/color_filters.html' %}
         </div>
     </aside>
 {% endblock %}
@@ -73,18 +67,18 @@
                 <button type="button" class="tasks-icon-button" id="cal-prev" aria-label="Poprzedni okres" title="Poprzedni okres">
                     <i data-lucide="chevron-left" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="tasks-icon-button" id="cal-today" aria-label="Dziś" title="Dziś">
-                    <i data-lucide="calendar-check" aria-hidden="true"></i>
+                <button type="button" class="tasks-icon-button calendar-today-button" id="cal-today" aria-label="Dzisiaj" title="Przejdź do dzisiaj">
+                    Dzisiaj
                 </button>
                 <button type="button" class="tasks-icon-button" id="cal-next" aria-label="Następny okres" title="Następny okres">
                     <i data-lucide="chevron-right" aria-hidden="true"></i>
                 </button>
-                <span class="tasks-topbar-title calendar-period-label" id="cal-period-label"></span>
+                <span class="tasks-topbar-title calendar-period-label" id="cal-period-label" aria-live="polite"></span>
             </div>
             <div class="tasks-section-actions">
-                <button type="button" class="tasks-tag-topbar-button" data-calendar-add title="Dodaj wydarzenie" aria-label="Dodaj wydarzenie" aria-haspopup="dialog" aria-controls="event-dialog-overlay">
+                <button type="button" class="tasks-tag-topbar-button" data-calendar-add title="Dodaj wydarzenie" aria-label="Nowe wydarzenie" aria-haspopup="dialog" aria-controls="event-dialog-overlay">
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
-                    <span>Dodaj wydarzenie</span>
+                    <span>Nowe wydarzenie</span>
                 </button>
             </div>
         </header>
@@ -92,23 +86,31 @@
         <div class="tasks-filterbar calendar-filterbar">
             <div class="tasks-filterbar-left">
                 <div class="calendar-mini-nav" aria-label="Szybka nawigacja">
-                    <button type="button" class="calendar-mini-nav__button" data-view="day">Dzień</button>
-                    <button type="button" class="calendar-mini-nav__button" data-view="week">Tydzień</button>
-                    <button type="button" class="calendar-mini-nav__button is-active" data-view="month">Miesiąc</button>
-                    <button type="button" class="calendar-mini-nav__button" data-view="year">Rok</button>
+                    <button type="button" class="calendar-mini-nav__button" data-view="day" aria-pressed="false">Dzień</button>
+                    <button type="button" class="calendar-mini-nav__button" data-view="week" aria-pressed="false">Tydzień</button>
+                    <button type="button" class="calendar-mini-nav__button is-active" data-view="month" aria-pressed="true">Miesiąc</button>
+                    <button type="button" class="calendar-mini-nav__button" data-view="year" aria-pressed="false">Rok</button>
                 </div>
             </div>
             <div class="tasks-filterbar-center">
                 <span class="calendar-filter-summary" id="cal-events-subtitle"></span>
             </div>
             <div class="tasks-filterbar-right">
-                <button type="button" class="tasks-tag-topbar-button" data-calendar-add title="Nowe wydarzenie" aria-label="Nowe wydarzenie" aria-haspopup="dialog" aria-controls="event-dialog-overlay">
-                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
-                    <span>Nowe wydarzenie</span>
+                <label class="tasks-search-field calendar-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input type="search" id="cal-search" placeholder="Szukaj w tym widoku" aria-label="Szukaj wydarzeń w wybranym okresie" autocomplete="off">
+                </label>
+                <details class="calendar-color-filter">
+                    <summary aria-label="Filtruj kolory"><i data-lucide="list-filter" aria-hidden="true"></i>Kolory</summary>
+                    {% include 'planner/includes/color_filters.html' %}
+                </details>
+                <button type="button" class="tasks-icon-button" id="cal-toggle-agenda" title="Pokaż lub ukryj plan" aria-label="Pokaż lub ukryj plan" aria-expanded="true" aria-controls="calendar-agenda">
+                    <i data-lucide="panel-right" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
 
+        <div class="calendar-status u-hidden" id="cal-status" role="status"><span id="cal-status-text"></span><button type="button" id="cal-retry" class="tasks-filter-button u-hidden">Spróbuj ponownie</button></div>
         <div class="tasks-table-wrap calendar-shell">
             <div class="calendar-body">
                 <div class="calendar-main">
@@ -126,25 +128,26 @@
                         <div class="calendar-days" id="calendar-days-month" role="grid" aria-label="Widok miesięczny"></div>
                     </div>
 
-                    <div id="calendar-view-week" class="calendar-view calendar-view--week u-hidden" role="grid" aria-label="Widok tygodniowy">
-                        <div class="calendar-week-header" id="calendar-week-header"></div>
-                        <div class="calendar-week-columns" id="calendar-week-columns"></div>
-                    </div>
+                    <div id="calendar-view-week" class="calendar-view calendar-view--week u-hidden" aria-label="Widok tygodniowy"></div>
 
-                    <div id="calendar-view-day" class="calendar-view calendar-view--day u-hidden" aria-label="Widok dzienny">
-                        <div class="calendar-day-schedule" id="calendar-day-schedule"></div>
-                    </div>
+                    <div id="calendar-view-day" class="calendar-view calendar-view--day u-hidden" aria-label="Widok dzienny"></div>
 
                     <div id="calendar-view-year" class="calendar-view calendar-view--year u-hidden" aria-label="Widok roczny">
                         <div class="calendar-year-grid" id="calendar-year-grid"></div>
                     </div>
                 </div>
 
-                <aside class="calendar-sidebar" aria-label="Lista wydarzeń">
+                <aside class="calendar-sidebar" id="calendar-agenda" aria-label="Lista wydarzeń">
                     <div class="calendar-sidebar-header">
-                        <h3 class="calendar-sidebar-title">Wydarzenia</h3>
+                        <div class="calendar-agenda-heading">
+                            <h3 class="calendar-sidebar-title" id="cal-agenda-title">Plan dnia</h3>
+                            <button type="button" class="calendar-text-button" id="cal-agenda-mode">Cały okres</button>
+                        </div>
+                        <span class="calendar-sidebar-subtitle" id="cal-agenda-date"></span>
+                        <span class="calendar-agenda-count" id="cal-agenda-count" aria-live="polite"></span>
                     </div>
                     <ul class="calendar-events-list" id="calendar-events-list"></ul>
+                    <div class="calendar-sidebar-footer"><button type="button" class="tasks-filter-button" data-calendar-add><i data-lucide="plus" aria-hidden="true"></i>Dodaj w tym dniu</button></div>
                 </aside>
             </div>
         </div>
@@ -152,7 +155,7 @@
 </div>
 
 <div id="event-dialog-overlay" class="tasks-modal calendar-modal" aria-hidden="true">
-    <div class="tasks-modal__dialog calendar-dialog-panel" role="dialog" aria-labelledby="event-dialog-title">
+    <div class="tasks-modal__dialog calendar-dialog-panel" role="dialog" aria-modal="true" aria-labelledby="event-dialog-title">
         <form id="event-form" class="tasks-modal__form calendar-dialog-form" novalidate>
             <header class="tasks-modal__header calendar-dialog-header">
                 <button type="button" class="tasks-issue-close cancel-event-btn" title="Zamknij" aria-label="Zamknij">
@@ -172,7 +175,7 @@
                 <input type="hidden" name="event_id" id="event-id">
                 <div class="calendar-dialog-field">
                     <label class="form-label" for="event-title">Tytuł</label>
-                    <input type="text" id="event-title" name="title" class="tasks-inline-input" required placeholder="Tytuł wydarzenia">
+                    <input type="text" id="event-title" name="title" class="tasks-inline-input" required maxlength="255" placeholder="Tytuł wydarzenia">
                 </div>
                 <div class="calendar-dialog-field calendar-checkbox-field">
                     <label class="form-label form-label--checkbox" for="event-all-day">

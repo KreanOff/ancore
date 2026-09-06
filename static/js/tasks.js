@@ -24,6 +24,9 @@ function initTasksPage() {
     const projectPageNext = document.querySelector('[data-project-page-next]');
     const taskStatusPaginations = document.querySelectorAll('[data-task-status-pagination]');
     const projectSearchForm = document.querySelector('[data-project-search-form]');
+    const projectSearchDropdown = document.querySelector('[data-project-search-dropdown]');
+    const projectSearchToggle = projectSearchDropdown?.querySelector('[data-project-search-toggle]');
+    const projectSearchPanel = projectSearchDropdown?.querySelector('.tasks-project-search-panel');
     const projectSearchPageSizeInput = document.querySelector('[data-project-search-page-size]');
     const projectFilterInputs = document.querySelectorAll('[data-project-filter-input]');
     const projectFilterToggles = document.querySelectorAll('[data-project-filter-toggle]');
@@ -1131,7 +1134,6 @@ function initTasksPage() {
 
     restoreTaskReturnPoint();
     focusKanbanColumnFromUrl();
-    const projectRenameIconInput = projectRenameForm ? projectRenameForm.querySelector('[name="icon"]') : null;
     const projectRenameIdInput = projectRenameForm ? projectRenameForm.querySelector('[name="project_id"]') : null;
     const sectionCreateTitleInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="title"]') : null;
     const sectionCreateDescriptionInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="description"]') : null;
@@ -1144,7 +1146,6 @@ function initTasksPage() {
     const sectionCreatePriorityInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="priority"]') : null;
     const sectionCreateDueAtInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="due_at"]') : null;
     const sectionCreateWipLimitInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="wip_limit"]') : null;
-    const sectionCreateIconInput = sectionCreateForm ? sectionCreateForm.querySelector('[name="icon"]') : null;
     const sectionRenameTitleInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="title"]') : null;
     const sectionRenameDescriptionInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="description"]') : null;
     const sectionRenameCodeInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="code"]') : null;
@@ -1154,7 +1155,6 @@ function initTasksPage() {
     const sectionRenamePriorityInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="priority"]') : null;
     const sectionRenameDueAtInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="due_at"]') : null;
     const sectionRenameWipLimitInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="wip_limit"]') : null;
-    const sectionRenameIconInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="icon"]') : null;
     const sectionRenameIdInput = sectionRenameForm ? sectionRenameForm.querySelector('[name="section_id"]') : null;
     const issueTitleInput = issueForm ? issueForm.querySelector('[name="title"]') : null;
     const issueProjectInput = issueForm ? issueForm.querySelector('[name="project_id"]') : null;
@@ -1210,14 +1210,6 @@ function initTasksPage() {
     const sectionRenameSubmitBtn = document.getElementById('section-rename-submit');
     const issueSubmitBtn = document.getElementById('issue-create-submit');
     const directoryShareSubmitBtn = document.getElementById('directory-share-submit');
-    const projectIconInput = projectForm ? projectForm.querySelector('[name="icon"]') : null;
-    const projectIconPickers = document.querySelectorAll('[data-project-icon-picker]');
-    const projectIconGroups = [
-        { input: projectIconInput, picker: document.getElementById('project-icon-picker') },
-        { input: projectRenameIconInput, picker: document.getElementById('project-rename-icon-picker') },
-        { input: sectionCreateIconInput, picker: document.getElementById('section-create-icon-picker') },
-        { input: sectionRenameIconInput, picker: document.getElementById('section-rename-icon-picker') }
-    ];
     const statusLabels = {
         new: 'Nowe',
         in_progress: 'Realizowane',
@@ -1230,163 +1222,6 @@ function initTasksPage() {
         const label = getFilterButtonText(button);
         if (status && label) statusLabels[status] = label;
     });
-    const projectIconSets = [
-        {
-            label: 'Najczęstsze',
-            icon: 'star',
-            items: ['rocket', 'star', 'circle-check', 'settings', 'lightbulb', 'pin', 'clipboard-list', 'folder', 'wrench', 'puzzle', 'target', 'chart-no-axes-combined', 'lock', 'flask-conical', 'monitor', 'smartphone', 'globe', 'cloud', 'sparkles', 'trophy', 'party-popper', 'map-pin', 'key-round', 'briefcase-business', 'calendar-days', 'paperclip', 'bell', 'message-square', 'megaphone', 'brain', 'compass', 'flag', 'shield', 'tag', 'package']
-        },
-        {
-            label: 'Praca',
-            icon: 'briefcase-business',
-            items: ['briefcase-business', 'building-2', 'files', 'file-text', 'calendar', 'clock', 'tag', 'package', 'folder-open', 'receipt', 'mail', 'search', 'circle-check', 'triangle-alert', 'megaphone', 'handshake', 'users', 'brain', 'compass', 'notebook', 'contact', 'archive', 'send', 'inbox', 'id-card', 'landmark', 'phone', 'newspaper', 'message-square', 'chart-column', 'calculator', 'credit-card', 'scale', 'scroll-text', 'pen-line', 'paperclip']
-        },
-        {
-            label: 'Technologia',
-            icon: 'laptop',
-            items: ['laptop', 'monitor', 'keyboard', 'mouse', 'smartphone', 'gamepad-2', 'database', 'disc', 'calculator', 'plug', 'battery', 'satellite-dish', 'bot', 'dna', 'microscope', 'flask-conical', 'magnet', 'cog', 'hammer', 'wrench', 'briefcase-business', 'printer', 'server', 'shield', 'wifi', 'lightbulb', 'lock', 'key-round', 'volume-2', 'camera', 'video', 'terminal', 'code', 'cpu', 'zap', 'cloud']
-        },
-        {
-            label: 'Kreatywne',
-            icon: 'palette',
-            items: ['palette', 'paintbrush', 'brush', 'pencil', 'pen-tool', 'pen-line', 'ruler', 'scissors', 'theater', 'clapperboard', 'headphones', 'mic', 'music', 'piano', 'puzzle', 'wand-sparkles', 'camera', 'image', 'rainbow', 'sparkles', 'star', 'flame', 'lightbulb', 'film', 'ticket', 'shapes', 'sticker', 'notepad-text', 'bookmark', 'paperclip']
-        },
-        {
-            label: 'Status',
-            icon: 'zap',
-            items: ['zap', 'flame', 'star', 'bell', 'circle', 'arrow-up', 'arrow-down', 'arrow-right', 'refresh-cw', 'hourglass', 'construction', 'shield', 'flag', 'party-popper', 'sparkles', 'circle-check', 'square-check', 'check', 'circle-x', 'triangle-alert', 'message-square', 'ban', 'plus', 'minus', 'asterisk', 'badge-alert', 'octagon-x', 'siren', 'flag-triangle-right']
-        },
-        {
-            label: 'Zespół',
-            icon: 'users',
-            items: ['users', 'user', 'user-round', 'user-plus', 'user-check', 'user-cog', 'smile', 'handshake', 'thumbs-up', 'hand', 'heart', 'briefcase-business', 'graduation-cap', 'paintbrush', 'wrench', 'rocket', 'stethoscope', 'scale', 'badge-check', 'message-circle', 'messages-square', 'crown']
-        },
-        {
-            label: 'Plan',
-            icon: 'calendar-days',
-            items: ['calendar-days', 'calendar', 'calendar-check', 'alarm-clock', 'timer', 'hourglass', 'clock', 'map-pin', 'compass', 'map', 'construction', 'traffic-cone', 'clipboard-list', 'notebook', 'pin', 'paperclip', 'bookmark', 'tag', 'target', 'flag', 'calculator', 'chart-column', 'chart-no-axes-combined', 'repeat', 'check', 'circle-check', 'triangle-alert']
-        },
-        {
-            label: 'Biznes',
-            icon: 'wallet',
-            items: ['wallet', 'banknote', 'credit-card', 'receipt', 'landmark', 'building-2', 'store', 'factory', 'construction', 'truck', 'package', 'mail', 'phone', 'id-card', 'briefcase-business', 'shopping-cart', 'handshake', 'chart-column', 'chart-no-axes-combined', 'gem', 'scale', 'calculator', 'file-text', 'folder-open', 'clipboard-list', 'lock', 'key-round', 'megaphone', 'target', 'trophy']
-        },
-        {
-            label: 'Miejsca',
-            icon: 'globe',
-            items: ['globe', 'map', 'building-2', 'school', 'landmark', 'hospital', 'factory', 'construction', 'train', 'plane', 'rocket', 'car', 'bike', 'ship', 'anchor', 'tent', 'mountain', 'map-pin', 'route', 'signpost', 'navigation', 'warehouse']
-        },
-        {
-            label: 'Natura',
-            icon: 'leaf',
-            items: ['leaf', 'sprout', 'tree-pine', 'flower', 'sun', 'moon', 'cloud', 'cloud-rain', 'snowflake', 'droplet', 'waves', 'flame', 'gem', 'mountain', 'rainbow', 'wind', 'cloud-sun', 'cloud-lightning']
-        },
-        {
-            label: 'Jedzenie',
-            icon: 'pizza',
-            items: ['pizza', 'sandwich', 'salad', 'soup', 'utensils', 'coffee', 'cup-soda', 'apple', 'carrot', 'cake', 'cookie', 'ice-cream-bowl', 'shopping-basket', 'package']
-        },
-        {
-            label: 'Edukacja',
-            icon: 'graduation-cap',
-            items: ['graduation-cap', 'book-open', 'book', 'notebook', 'pencil', 'pen-line', 'calculator', 'ruler', 'microscope', 'flask-conical', 'dna', 'globe', 'map', 'brain', 'lightbulb', 'school', 'bookmark', 'medal', 'file-text', 'chart-column', 'search', 'compass', 'telescope', 'target', 'trophy', 'puzzle', 'timer']
-        },
-        {
-            label: 'Sport',
-            icon: 'medal',
-            items: ['medal', 'trophy', 'dumbbell', 'bike', 'goal', 'flag', 'target', 'flame', 'zap', 'hand', 'timer', 'chart-column', 'mountain', 'waves', 'snowflake', 'ticket', 'megaphone', 'star']
-        },
-        {
-            label: 'Zdrowie',
-            icon: 'heart-pulse',
-            items: ['heart-pulse', 'heart', 'stethoscope', 'pill', 'dna', 'microscope', 'hospital', 'ambulance', 'salad', 'apple', 'droplet', 'leaf', 'sun', 'bed', 'brain', 'dumbbell', 'alarm-clock', 'clipboard-list', 'sparkles', 'smile']
-        },
-        {
-            label: 'Symbole',
-            icon: 'shapes',
-            items: ['heart', 'recycle', 'circle-check', 'square-check', 'check', 'x', 'plus', 'minus', 'asterisk', 'circle', 'square', 'triangle', 'diamond', 'badge-alert', 'octagon-x', 'ban', 'shield', 'sparkles', 'star']
-        }
-    ];
-    const projectIconSetKeywords = {
-        'Najczęstsze': ['popularne', 'ulubione', 'gwiazda', 'start', 'zadanie', 'projekt'],
-        'Praca': ['firma', 'biuro', 'biznes', 'dokument', 'mail', 'spotkanie', 'zespół', 'zespol'],
-        'Technologia': ['tech', 'komputer', 'laptop', 'telefon', 'kod', 'programowanie', 'narzędzia', 'narzedzia'],
-        'Kreatywne': ['design', 'projektowanie', 'sztuka', 'muzyka', 'foto', 'kamera', 'pomysł', 'pomysl'],
-        'Status': ['priorytet', 'ważne', 'wazne', 'gotowe', 'błąd', 'blad', 'alert', 'kolor'],
-        'Zespół': ['ludzie', 'osoba', 'uśmiech', 'usmiech', 'team', 'człowiek', 'czlowiek'],
-        'Plan': ['kalendarz', 'czas', 'termin', 'harmonogram', 'mapa', 'cel'],
-        'Biznes': ['pieniądze', 'pieniadze', 'finanse', 'bank', 'sprzedaż', 'sprzedaz', 'sklep'],
-        'Miejsca': ['miasto', 'budynek', 'podróż', 'podroz', 'transport', 'auto', 'samolot'],
-        'Natura': ['roślina', 'roslina', 'drzewo', 'kwiat', 'pogoda', 'woda', 'ogień', 'ogien'],
-        'Jedzenie': ['food', 'pizza', 'kawa', 'napój', 'napoj', 'owoc', 'warzywo'],
-        'Edukacja': ['szkoła', 'szkola', 'nauka', 'książka', 'ksiazka', 'student', 'uczeń', 'uczen'],
-        'Sport': ['gra', 'mecz', 'medal', 'puchar', 'piłka', 'pilka', 'trening'],
-        'Zdrowie': ['medycyna', 'lekarz', 'serce', 'apteczka', 'ćwiczenia', 'cwiczenia'],
-        'Symbole': ['znak', 'serce', 'kolor', 'checkbox', 'plus', 'minus', 'okrąg', 'okrag']
-    };
-    const projectIconKeywords = {
-        rocket: ['rakieta', 'start', 'launch'],
-        star: ['gwiazda', 'ulubione', 'star'],
-        'circle-check': ['check', 'gotowe', 'zrobione', 'ok'],
-        settings: ['ustawienia', 'trybik', 'settings'],
-        lightbulb: ['pomysl', 'idea'],
-        pin: ['pinezka', 'przypiete'],
-        'clipboard-list': ['lista', 'clipboard'],
-        folder: ['folder', 'projekt'],
-        wrench: ['klucz', 'naprawa', 'narzedzie'],
-        puzzle: ['puzzle', 'czesc'],
-        target: ['cel', 'target'],
-        'chart-no-axes-combined': ['wzrost', 'wykres'],
-        lock: ['blokada', 'zamkniete'],
-        monitor: ['monitor', 'komputer'],
-        smartphone: ['telefon', 'mobile'],
-        globe: ['internet', 'web', 'siec', 'swiat'],
-        cloud: ['chmura', 'cloud'],
-        'briefcase-business': ['praca', 'teczka', 'biuro'],
-        laptop: ['laptop', 'komputer', 'kod'],
-        palette: ['sztuka', 'design', 'kolor'],
-        users: ['zespol', 'ludzie', 'team'],
-        'calendar-days': ['kalendarz', 'plan', 'termin'],
-        wallet: ['pieniadze', 'finanse'],
-        leaf: ['natura', 'lisc', 'roslina'],
-        pizza: ['pizza', 'jedzenie'],
-        'graduation-cap': ['edukacja', 'nauka'],
-        medal: ['medal', 'sport'],
-        'heart-pulse': ['zdrowie', 'serce'],
-        shapes: ['symbole', 'znaki'],
-        calendar: ['data', 'kalendarz'],
-        'alarm-clock': ['alarm', 'czas'],
-        search: ['szukaj', 'lupa'],
-        package: ['paczka', 'box'],
-        'file-text': ['notatka', 'pisanie', 'dokument'],
-        'building-2': ['firma', 'budynek'],
-        phone: ['telefon', 'kontakt'],
-        handshake: ['wspolpraca'],
-        camera: ['aparat', 'foto'],
-        flame: ['ogien', 'pilne'],
-        bell: ['dzwonek', 'powiadomienie'],
-        'circle-x': ['anuluj', 'blad'],
-        'triangle-alert': ['uwaga', 'ostrzezenie'],
-        house: ['dom', 'home'],
-        heart: ['serce', 'milosc']
-    };
-    const normalizedProjectIconSearch = projectIconSets.map(set => ({
-        label: set.label,
-        items: set.items.map(icon => ({
-            icon,
-            keywords: [
-                set.label,
-                ...(projectIconSetKeywords[set.label] || []),
-                ...(projectIconKeywords[icon] || [])
-            ].join(' ').toLowerCase()
-        }))
-    }));
-    let activeIconPicker = null;
-    let activeIconInput = null;
-    let emojiPicker = null;
-    let emojiPickerSearch = null;
-    let emojiPickerBody = null;
-    let activeIconSetIndex = 0;
     let contactAncoreLoginTimer = null;
     let contactAncoreLoginRequestId = 0;
 
@@ -1852,6 +1687,14 @@ function initTasksPage() {
     function closeProjectSortMenu() {
         projectSortMenu?.classList.remove('is-open');
         projectSortToggle?.setAttribute('aria-expanded', 'false');
+    }
+
+    function closeProjectSearch(restoreFocus = false) {
+        if (!projectSearchDropdown || !projectSearchPanel || projectSearchPanel.hidden) return;
+        projectSearchDropdown.classList.remove('is-open');
+        projectSearchToggle?.setAttribute('aria-expanded', 'false');
+        projectSearchPanel.hidden = true;
+        if (restoreFocus) projectSearchToggle?.focus();
     }
 
     function showProjectFilterFieldsView() {
@@ -2866,15 +2709,12 @@ function initTasksPage() {
             return parsed.map(project => ({
                 projectId: String(project.projectId || ''),
                 projectName: project.projectName || '',
-                projectIcon: project.projectIcon || '',
-                projectColor: project.projectColor || '',
                 defaultSectionId: String(project.defaultSectionId || ''),
                 sections: Array.isArray(project.sections)
                     ? project.sections.map(section => ({
                         sectionId: String(section.sectionId || ''),
                         sectionProjectId: String(section.sectionProjectId || project.projectId || ''),
                         sectionTitle: section.sectionTitle || '',
-                        sectionIcon: section.sectionIcon || '',
                     }))
                     : [],
             })).filter(project => project.projectId);
@@ -2912,15 +2752,9 @@ function initTasksPage() {
         button.dataset.projectOption = '';
         button.dataset.projectId = project.projectId;
         button.dataset.projectName = project.projectName;
-        button.dataset.projectIcon = project.projectIcon;
-        button.dataset.projectColor = project.projectColor;
         button.dataset.defaultSectionId = project.defaultSectionId || '';
 
-        const icon = document.createElement('span');
-        icon.setAttribute('aria-hidden', 'true');
-        if (project.projectColor) icon.style.setProperty('--project-icon-fg', project.projectColor);
-        if (project.projectIcon) icon.appendChild(createProjectIconElement(project.projectIcon));
-        button.append(icon, document.createTextNode(project.projectName));
+        button.textContent = project.projectName;
         return button;
     }
 
@@ -2932,12 +2766,8 @@ function initTasksPage() {
         button.dataset.sectionId = section.sectionId;
         button.dataset.sectionProjectId = section.sectionProjectId;
         button.dataset.sectionTitle = section.sectionTitle;
-        button.dataset.sectionIcon = section.sectionIcon;
 
-        const icon = document.createElement('span');
-        icon.setAttribute('aria-hidden', 'true');
-        if (section.sectionIcon) icon.appendChild(createProjectIconElement(section.sectionIcon));
-        button.append(icon, document.createTextNode(section.sectionTitle));
+        button.textContent = section.sectionTitle;
         return button;
     }
 
@@ -3091,7 +2921,7 @@ function initTasksPage() {
     function setProjectCollapsed(projectNode, isCollapsed) {
         const toggle = projectNode.querySelector('[data-project-collapse-toggle]');
         const projectKindAcc = taskAppSegment === 'kanban' ? 'przestrzeń roboczą' : 'projekt';
-        const projectName = projectNode.querySelector('.tasks-project-title span:not(.tasks-project-badge)')?.textContent?.trim() || 'bez nazwy';
+        const projectName = projectNode.querySelector('.tasks-project-title > span')?.textContent?.trim() || 'bez nazwy';
 
         projectNode.classList.toggle('is-collapsed', isCollapsed);
         toggle?.setAttribute('aria-expanded', String(!isCollapsed));
@@ -3116,7 +2946,6 @@ function initTasksPage() {
 
     function closeModal(modal) {
         if (!modal) return;
-        closeEmojiPicker();
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
         if (!document.querySelector('.tasks-modal.is-open')) {
@@ -3124,74 +2953,13 @@ function initTasksPage() {
         }
     }
 
-    function getLucideProjectIcon(icon, fallback = 'folder') {
-        if (!icon) return fallback;
-        return window.AncoreIcons ? window.AncoreIcons.safeName(icon, fallback) : icon;
-    }
-
-    function createProjectIconElement(icon, fallback = 'folder', className = '') {
-        const iconName = getLucideProjectIcon(icon, fallback);
-        if (window.AncoreIcons) {
-            return window.AncoreIcons.create(iconName, { fallback, className });
-        }
-        const element = document.createElement('i');
-        element.setAttribute('data-lucide', iconName);
-        element.setAttribute('data-lucide-fallback', fallback);
-        element.setAttribute('aria-hidden', 'true');
-        if (className) element.className = className;
-        return element;
-    }
-
-    function createSectionDefaultIconSvg() {
-        return createProjectIconElement('circle-check', 'circle-check', 'tasks-section-default-icon');
-    }
-
-    function createEmptyIconSvg() {
-        return createProjectIconElement('circle-dashed', 'circle-dashed', 'tasks-empty-icon');
-    }
-
     function renderLucideIcons(root) {
         window.AncoreIcons?.render(root || document);
     }
 
-    function renderProjectIcon(display, icon) {
-        if (!display) return;
-        display.replaceChildren();
-        if (!icon) {
-            display.appendChild(createEmptyIconSvg());
-            renderLucideIcons(display);
-            return;
-        }
-        if (icon === 'check' || icon === 'circle-check') {
-            display.appendChild(createSectionDefaultIconSvg());
-            renderLucideIcons(display);
-            return;
-        }
-        display.appendChild(createProjectIconElement(icon));
-        renderLucideIcons(display);
-    }
-
-    function setIconValue(input, picker, icon) {
-        const trimmedIcon = (icon || '').trim();
-        const normalizedIcon = trimmedIcon ? getLucideProjectIcon(trimmedIcon) : '';
-        if (input) input.value = normalizedIcon;
-        const display = picker ? picker.querySelector('[data-selected-project-icon]') : null;
-        renderProjectIcon(display, normalizedIcon);
-    }
-
-    function setIssueChip(picker, label, icon, color) {
-        if (!picker) return;
-        const labelEl = picker.querySelector('[data-picker-label]');
-        const iconEl = picker.querySelector('[data-picker-icon]');
-        const toggle = picker.querySelector('[data-picker-toggle]');
-
+    function setIssueChip(picker, label) {
+        const labelEl = picker?.querySelector('[data-picker-label]');
         if (labelEl) labelEl.textContent = label || '';
-        if (iconEl) {
-            iconEl.replaceChildren();
-            if (icon) iconEl.appendChild(createProjectIconElement(icon));
-            renderLucideIcons(iconEl);
-        }
-        if (toggle && color) toggle.style.setProperty('--project-icon-fg', color);
     }
 
     function getSelectedSectionOption() {
@@ -3204,7 +2972,7 @@ function initTasksPage() {
         if (!sectionOption || !issueSectionSelect) return false;
 
         issueSectionSelect.value = sectionOption.sectionId || '';
-        setIssueChip(issueSectionPicker, sectionOption.sectionTitle || sectionCopy.emptyLabel, sectionOption.sectionIcon || '');
+        setIssueChip(issueSectionPicker, sectionOption.sectionTitle || sectionCopy.emptyLabel);
         return true;
     }
 
@@ -3234,9 +3002,7 @@ function initTasksPage() {
         if (issueProjectInput) issueProjectInput.value = selectedProjectId;
         setIssueChip(
             issueProjectPicker,
-            projectOption.projectName || 'Wybierz przestrzeń',
-            projectOption.projectIcon || '',
-            projectOption.projectColor || ''
+            projectOption.projectName || 'Wybierz przestrzeń'
         );
 
         const firstVisibleSectionId = filterIssueSections(selectedProjectId);
@@ -3279,148 +3045,6 @@ function initTasksPage() {
     function setIssueColumn(columnId) {
         if (!issueColumnInput) return;
         issueColumnInput.value = columnId || '';
-    }
-
-    function syncProjectIconPickers() {
-        projectIconGroups.forEach(group => {
-            if (!group.input || !group.picker) return;
-            setIconValue(group.input, group.picker, group.input.value);
-        });
-    }
-
-    function getPickerForInput(input) {
-        const group = projectIconGroups.find(item => item.input === input);
-        return group ? group.picker : null;
-    }
-
-    function createEmojiPicker() {
-        if (emojiPicker) return emojiPicker;
-
-        emojiPicker = document.createElement('div');
-        emojiPicker.className = 'tasks-emoji-picker';
-        emojiPicker.setAttribute('role', 'dialog');
-        emojiPicker.setAttribute('aria-label', 'Wybór ikony przestrzeni roboczej');
-
-        const tabs = document.createElement('div');
-        tabs.className = 'tasks-emoji-picker__tabs';
-        projectIconSets.forEach((set, index) => {
-            const tab = document.createElement('button');
-            tab.type = 'button';
-            tab.appendChild(createProjectIconElement(set.icon, 'icons'));
-            tab.title = set.label;
-            tab.setAttribute('aria-label', set.label);
-            tab.addEventListener('click', () => {
-                activeIconSetIndex = index;
-                emojiPickerSearch.value = '';
-                renderEmojiPicker();
-            });
-            tabs.appendChild(tab);
-        });
-
-        const searchWrap = document.createElement('div');
-        searchWrap.className = 'tasks-emoji-picker__search';
-        searchWrap.innerHTML = window.AncoreIcons
-            ? window.AncoreIcons.html('search')
-            : '<i data-lucide="search" aria-hidden="true"></i>';
-
-        emojiPickerSearch = document.createElement('input');
-        emojiPickerSearch.type = 'search';
-        emojiPickerSearch.placeholder = 'Szukaj lub wpisz ikonę';
-        emojiPickerSearch.setAttribute('aria-label', 'Szukaj ikony');
-        emojiPickerSearch.addEventListener('input', renderEmojiPicker);
-        searchWrap.appendChild(emojiPickerSearch);
-
-        const clearButton = document.createElement('button');
-        clearButton.type = 'button';
-        clearButton.className = 'tasks-emoji-clear';
-        clearButton.title = 'Usuń ikonę';
-        clearButton.setAttribute('aria-label', 'Usuń ikonę');
-        clearButton.innerHTML = AttachmentIcons.TRASH_SVG;
-        clearButton.addEventListener('click', () => {
-            setIconValue(activeIconInput, activeIconPicker, '');
-            closeEmojiPicker();
-            activeIconInput?.focus();
-        });
-        searchWrap.appendChild(clearButton);
-
-        emojiPickerBody = document.createElement('div');
-        emojiPickerBody.className = 'tasks-emoji-picker__body';
-
-        emojiPicker.appendChild(tabs);
-        emojiPicker.appendChild(searchWrap);
-        emojiPicker.appendChild(emojiPickerBody);
-        document.body.appendChild(emojiPicker);
-        renderLucideIcons(emojiPicker);
-        renderEmojiPicker();
-        return emojiPicker;
-    }
-
-    function renderEmojiPicker() {
-        if (!emojiPicker || !emojiPickerBody) return;
-        const query = (emojiPickerSearch?.value || '').trim().toLowerCase();
-        const tabs = emojiPicker.querySelectorAll('.tasks-emoji-picker__tabs button');
-        tabs.forEach((tab, index) => tab.classList.toggle('is-active', index === activeIconSetIndex));
-
-        emojiPickerBody.innerHTML = '';
-        const searchResults = query
-            ? normalizedProjectIconSearch.flatMap(set => set.items)
-                .filter(item => getLucideProjectIcon(item.icon).includes(query) || item.keywords.includes(query))
-                .map(item => getLucideProjectIcon(item.icon))
-            : [];
-        const sets = query
-            ? [{ label: 'Wyniki', items: [...new Set(searchResults)] }]
-            : [projectIconSets[activeIconSetIndex]];
-
-        sets.forEach(set => {
-            const group = document.createElement('section');
-            group.className = 'tasks-emoji-group';
-            const title = document.createElement('h3');
-            title.textContent = set.label;
-            const list = document.createElement('div');
-            list.className = 'tasks-emoji-list';
-
-            const items = set.items.length ? set.items : (query ? [query] : []);
-            items.forEach(icon => {
-                const iconName = getLucideProjectIcon(icon, 'circle');
-                const option = document.createElement('button');
-                option.type = 'button';
-                option.className = 'tasks-emoji-option';
-                option.appendChild(createProjectIconElement(iconName, 'circle'));
-                option.setAttribute('aria-label', `Wybierz ikonę ${iconName}`);
-                option.title = iconName;
-                option.addEventListener('click', () => {
-                    setIconValue(activeIconInput, activeIconPicker, iconName);
-                    closeEmojiPicker();
-                    activeIconInput?.focus();
-                });
-                list.appendChild(option);
-            });
-
-            group.appendChild(title);
-            group.appendChild(list);
-            emojiPickerBody.appendChild(group);
-        });
-        renderLucideIcons(emojiPickerBody);
-    }
-
-    function openEmojiPicker(picker, input) {
-        if (!picker || !input) return;
-        createEmojiPicker();
-        activeIconPicker = picker;
-        activeIconInput = input;
-        projectIconPickers.forEach(button => button.setAttribute('aria-expanded', String(button === picker)));
-        emojiPickerSearch.value = '';
-        renderEmojiPicker();
-        emojiPicker.classList.add('is-open');
-        setTimeout(() => emojiPickerSearch?.focus(), 30);
-    }
-
-    function closeEmojiPicker() {
-        if (!emojiPicker) return;
-        emojiPicker.classList.remove('is-open');
-        projectIconPickers.forEach(button => button.setAttribute('aria-expanded', 'false'));
-        activeIconPicker = null;
-        activeIconInput = null;
     }
 
     function escapeHtml(value) {
@@ -4025,13 +3649,11 @@ function initTasksPage() {
         setFieldValue(projectRenameCurrencyInput, dataset.projectCurrency || 'PLN');
         setFieldValue(projectRenameSourceInput, dataset.projectSource);
         setFieldValue(projectRenameCodeValue, dataset.projectCode);
-        setFieldValue(projectRenameIconInput, dataset.projectIcon);
     }
 
     openProjectRenameButtons.forEach(button => {
         button.addEventListener('click', () => {
             setProjectRenameFieldsFromDataset(button.dataset);
-            syncProjectIconPickers();
             closeProjectActionMenus();
             openModal(projectRenameModal, projectRenameNameInput, updateProjectRenameSubmitState);
             setTimeout(() => projectRenameNameInput?.select(), 60);
@@ -4641,8 +4263,6 @@ function initTasksPage() {
             setFieldValue(sectionCreatePriorityInput, 'none');
             setFieldValue(sectionCreateDueAtInput, '');
             setFieldValue(sectionCreateWipLimitInput, '');
-            if (sectionCreateIconInput) sectionCreateIconInput.value = '';
-            syncProjectIconPickers();
             closeProjectActionMenus();
             openModal(sectionCreateModal, sectionCreateTitleInput, updateSectionCreateSubmitState);
         });
@@ -4769,9 +4389,6 @@ function initTasksPage() {
         if (!e.target.closest('[data-responsible-select-dropdown]') && !e.target.closest('[data-responsible-select-menu]')) closeResponsibleSelectDropdowns();
         if (!e.target.closest('[data-directory-share-permission-picker]')) closeDirectorySharePermissionPickers();
         if (!e.target.closest('[data-contact-custom-select]')) closeContactCustomSelects();
-        if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('[data-project-icon-picker]')) {
-            closeEmojiPicker();
-        }
     }, pageListenerOptions);
 
     if (projectNameInput) {
@@ -4831,49 +4448,8 @@ function initTasksPage() {
                 codeInput.dataset.touched = 'true';
             });
         }
-        if (projectIconInput && !projectIconInput.value) {
-            setIconValue(projectIconInput, getPickerForInput(projectIconInput), '');
-        }
-        if (projectIconInput) {
-            projectIconInput.addEventListener('input', function() {
-                setIconValue(projectIconInput, getPickerForInput(projectIconInput), projectIconInput.value);
-            });
-        }
         updateProjectSubmitState();
     }
-
-    if (projectRenameIconInput) {
-        projectRenameIconInput.addEventListener('input', function() {
-            setIconValue(projectRenameIconInput, getPickerForInput(projectRenameIconInput), projectRenameIconInput.value);
-        });
-    }
-
-    if (sectionCreateIconInput) {
-        sectionCreateIconInput.addEventListener('input', function() {
-            setIconValue(sectionCreateIconInput, getPickerForInput(sectionCreateIconInput), sectionCreateIconInput.value);
-        });
-    }
-
-    if (sectionRenameIconInput) {
-        sectionRenameIconInput.addEventListener('input', function() {
-            setIconValue(sectionRenameIconInput, getPickerForInput(sectionRenameIconInput), sectionRenameIconInput.value);
-        });
-    }
-
-    syncProjectIconPickers();
-
-    projectIconPickers.forEach(picker => {
-        picker.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const input = document.getElementById(picker.dataset.projectIconTarget || '');
-            if (!input) return;
-            if (emojiPicker?.classList.contains('is-open') && activeIconPicker === picker) {
-                closeEmojiPicker();
-                return;
-            }
-            openEmojiPicker(picker, input);
-        });
-    });
 
     if (issueTitleInput) {
         issueTitleInput.addEventListener('input', updateIssueSubmitState);
@@ -4959,6 +4535,7 @@ function initTasksPage() {
 
         if (e.key === 'Escape') {
             closeCreateMenu();
+            closeProjectSearch(true);
             closeProjectActionMenus();
             closeSectionActionMenu();
             closeStatusFilterMenu();
@@ -4969,7 +4546,6 @@ function initTasksPage() {
             closeIssuePickers();
             closeProjectPageSizeDropdown();
             closeContactCustomSelects();
-            closeEmojiPicker();
             const openModalEl = document.querySelector('.tasks-modal.is-open');
             if (openModalEl) closeModal(openModalEl);
         }
@@ -5376,7 +4952,6 @@ function initTasksPage() {
             sectionId: selectedSectionCheckbox?.dataset.sectionId || '',
             sectionTitle: selectedSectionCheckbox?.dataset.sectionTitle || '',
             sectionDescription: selectedSectionCheckbox?.dataset.sectionDescription || '',
-            sectionIcon: selectedSectionCheckbox?.dataset.sectionIcon || ''
         };
         setMenuButtonState(editSelectedSectionMenuBtn, selectedSectionCheckboxes.length === 1 && checkboxCanManage(selectedSectionCheckbox), sectionDataset);
         setMenuButtonState(
@@ -5402,7 +4977,6 @@ function initTasksPage() {
             projectName: selectedProjectCheckbox?.dataset.projectName || '',
             projectDescription: selectedProjectCheckbox?.dataset.projectDescription || '',
             projectCode: selectedProjectCheckbox?.dataset.projectCode || '',
-            projectIcon: selectedProjectCheckbox?.dataset.projectIcon || '',
             projectPriority: selectedProjectCheckbox?.dataset.projectPriority || 'none',
             projectDueAt: selectedProjectCheckbox?.dataset.projectDueAt || ''
         };
@@ -5695,8 +5269,6 @@ function initTasksPage() {
         syncInlineSelectForSelect(sectionRenamePriorityInput);
         setFieldValue(sectionRenameDueAtInput, sectionDataset.sectionDueAt);
         setFieldValue(sectionRenameWipLimitInput, sectionDataset.sectionWipLimit);
-        setFieldValue(sectionRenameIconInput, sectionDataset.sectionIcon);
-        syncProjectIconPickers();
         closeSectionActionMenu();
         openModal(sectionRenameModal, sectionRenameTitleInput, updateSectionRenameSubmitState);
         setTimeout(() => sectionRenameTitleInput?.select(), 60);
@@ -5734,7 +5306,6 @@ function initTasksPage() {
         if (!checkboxCanManage(selectedProjectCheckbox)) return;
 
         setProjectRenameFieldsFromDataset(selectedProjectCheckbox.dataset);
-        syncProjectIconPickers();
         closeSectionActionMenu();
         openModal(projectRenameModal, projectRenameNameInput, updateProjectRenameSubmitState);
         setTimeout(() => projectRenameNameInput?.select(), 60);
@@ -6864,12 +6435,39 @@ function initTasksPage() {
     }
     if (filterSearch) {
         filterSearch.addEventListener('input', function() {
+            if (projectSearchDropdown) return;
             if (usesServerDirectoryFilters) {
                 scheduleServerProjectSearch();
                 return;
             }
             applyFilters();
         });
+    }
+    if (projectSearchDropdown && projectSearchToggle && projectSearchPanel) {
+        projectSearchToggle.addEventListener('click', function() {
+            if (!projectSearchPanel.hidden) {
+                closeProjectSearch();
+                return;
+            }
+            closeProjectFilterBuilder();
+            closeProjectFilterMenus();
+            closeProjectSortMenu();
+            closeProjectPageSizeDropdown();
+            projectSearchDropdown.classList.add('is-open');
+            projectSearchToggle.setAttribute('aria-expanded', 'true');
+            projectSearchPanel.hidden = false;
+            filterSearch?.focus();
+        }, pageListenerOptions);
+        projectSearchDropdown.querySelector('[data-project-search-clear]')?.addEventListener('click', function() {
+            if (filterSearch) filterSearch.value = '';
+            navigateProjectWindow();
+        }, pageListenerOptions);
+        document.addEventListener('click', function(event) {
+            if (!projectSearchDropdown.contains(event.target)) closeProjectSearch();
+        }, pageCaptureListenerOptions);
+        projectSearchDropdown.addEventListener('focusout', function(event) {
+            if (!projectSearchDropdown.contains(event.relatedTarget)) closeProjectSearch();
+        }, pageListenerOptions);
     }
     filterSearchButtons.forEach(button => {
         button.addEventListener('click', function() {
