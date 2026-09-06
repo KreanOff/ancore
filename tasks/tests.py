@@ -791,21 +791,30 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'data-responsible-select-url')
         self.assertNotContains(response, 'Szukaj lub wpisz ID Ancore')
 
-    def test_project_field_settings_seed_defaults_and_render_management_modal(self):
-        response = self.client.get(reverse('tasks:tasks'))
+    def test_project_field_settings_seed_defaults_and_render_settings_page(self):
+        response = self.client.get(reverse('project_field_settings'))
 
         self.assertEqual(TaskProjectFieldOption.objects.filter(owner=self.user, is_active=True).count(), 14)
-        self.assertContains(response, 'data-open-project-field-settings')
-        self.assertContains(response, 'id="project-field-settings-modal"')
+        self.assertNotContains(response, 'data-open-project-field-settings')
+        self.assertNotContains(response, 'id="project-field-settings-modal"')
+        self.assertTemplateUsed(response, 'dashboard/project_field_settings.html')
         self.assertContains(response, 'Wartości pól projektu')
         self.assertContains(response, 'Status projektu')
         self.assertContains(response, 'Etap')
         self.assertContains(response, 'Kondycja')
-        self.assertContains(response, 'name="action" value="create_project_field_option"', count=3)
+        self.assertContains(response, 'name="action" value="create_project_field_option"', count=4)
         self.assertContains(response, 'type="color"')
 
+        projects_response = self.client.get(reverse('tasks:tasks'))
+        self.assertNotContains(projects_response, 'data-open-project-field-settings')
+        self.assertNotContains(projects_response, 'id="project-field-settings-modal"')
+        self.assertRedirects(
+            self.client.get(reverse('tasks:tasks'), {'field_settings': '1'}),
+            reverse('project_field_settings'),
+        )
+
     def test_custom_project_field_option_can_be_created_and_used_by_project(self):
-        create_option_response = self.client.post(reverse('tasks:tasks'), {
+        create_option_response = self.client.post(reverse('project_field_settings'), {
             'action': 'create_project_field_option',
             'field_type': 'status',
             'label': 'W trakcie QA',
@@ -819,7 +828,7 @@ class TaskProjectCreationTests(TestCase):
         )
         self.assertRedirects(
             create_option_response,
-            f'{reverse("tasks:tasks")}?field_settings=1',
+            reverse('project_field_settings'),
             fetch_redirect_response=False,
         )
         self.assertEqual(option.color, '#123456')
@@ -846,10 +855,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(projects_response, '--tasks-project-highlight-bg: #123456;')
 
     def test_project_field_option_can_be_renamed_and_recolored(self):
-        self.client.get(reverse('tasks:tasks'))
+        self.client.get(reverse('project_field_settings'))
         option = TaskProjectFieldOption.objects.get(owner=self.user, field_type='health', value='at_risk')
 
-        response = self.client.post(reverse('tasks:tasks'), {
+        response = self.client.post(reverse('project_field_settings'), {
             'action': 'update_project_field_option',
             'option_id': option.id,
             'label': 'Wymaga uwagi',
@@ -859,19 +868,19 @@ class TaskProjectCreationTests(TestCase):
         option.refresh_from_db()
         self.assertRedirects(
             response,
-            f'{reverse("tasks:tasks")}?field_settings=1',
+            reverse('project_field_settings'),
             fetch_redirect_response=False,
         )
         self.assertEqual(option.label, 'Wymaga uwagi')
         self.assertEqual(option.color, '#AABBCC')
 
     def test_project_field_option_deletion_is_blocked_while_in_use(self):
-        self.client.get(reverse('tasks:tasks'))
+        self.client.get(reverse('project_field_settings'))
         used_option = TaskProjectFieldOption.objects.get(owner=self.user, field_type='status', value='active')
         unused_option = TaskProjectFieldOption.objects.get(owner=self.user, field_type='status', value='cancelled')
         TaskProject.objects.create(user=self.user, name='Aktywny projekt', status=used_option.value)
 
-        blocked_response = self.client.post(reverse('tasks:tasks'), {
+        blocked_response = self.client.post(reverse('project_field_settings'), {
             'action': 'delete_project_field_option',
             'option_id': used_option.id,
             'label': used_option.label,
@@ -881,12 +890,12 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(
             blocked_response,
-            f'{reverse("tasks:tasks")}?field_settings=1',
+            reverse('project_field_settings'),
             fetch_redirect_response=False,
         )
         self.assertTrue(used_option.is_active)
 
-        delete_response = self.client.post(reverse('tasks:tasks'), {
+        delete_response = self.client.post(reverse('project_field_settings'), {
             'action': 'delete_project_field_option',
             'option_id': unused_option.id,
             'label': unused_option.label,
@@ -896,7 +905,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertRedirects(
             delete_response,
-            f'{reverse("tasks:tasks")}?field_settings=1',
+            reverse('project_field_settings'),
             fetch_redirect_response=False,
         )
         self.assertFalse(unused_option.is_active)
@@ -938,7 +947,7 @@ class TaskProjectCreationTests(TestCase):
         topbar_end = html.index('</header>', topbar_start)
         topbar_html = html[topbar_start:topbar_end]
         filterbar_start = html.index('class="tasks-filterbar-right', topbar_end)
-        filterbar_end = html.index('data-open-project-field-settings', filterbar_start)
+        filterbar_end = html.index('data-project-pagination', filterbar_start)
         filterbar_html = html[filterbar_start:filterbar_end]
 
         self.assertNotIn('tasks-titlebar-search', topbar_html)

@@ -38,6 +38,7 @@ PROJECT_FIELD_OPTION_DEFAULTS = {
         ('at_risk', 'Zagrożony', '#FFEBC9'),
         ('delayed', 'Opóźniony', '#FFE0DC'),
     ],
+    'source': [],
 }
 
 
@@ -128,6 +129,7 @@ class TaskProject(models.Model):
     health = models.CharField(max_length=20, default='ok')
     start_at = models.DateField(null=True, blank=True)
     due_at = models.DateField(null=True, blank=True)
+    use_custom_deadline_rules = models.BooleanField(default=False)
     budget_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=3, default='PLN', blank=True)
     source = models.CharField(max_length=120, blank=True)
@@ -201,14 +203,77 @@ class TaskProject(models.Model):
         return self._field_option_display('health')
 
 
+class TaskProjectDeadlineRule(models.Model):
+    DEFAULTS = ((2, '#FFE0DC'), (16, '#FFEBC9'), (30, '#DFF1E7'))
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, null=True, blank=True)
+    project = models.ForeignKey(
+        TaskProject, on_delete=models.CASCADE, related_name='deadline_rules', null=True, blank=True,
+    )
+    days = models.PositiveIntegerField(
+        'Liczba dni', validators=[MinValueValidator(0), MaxValueValidator(36500)],
+    )
+    color = models.CharField(
+        'Kolor', max_length=7, default='#DFF1E7',
+        validators=[RegexValidator(r'^#[0-9A-Fa-f]{6}$', 'Podaj kolor w formacie #RRGGBB.')],
+    )
+    # Retain deleted rows so removing all rules does not restore the defaults.
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['days', 'id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['owner', 'workplace', 'days'],
+                condition=Q(workplace__isnull=False, project__isnull=True, is_active=True),
+                name='unique_project_deadline_scope',
+            ),
+            models.UniqueConstraint(
+                fields=['owner', 'days'],
+                condition=Q(workplace__isnull=True, project__isnull=True, is_active=True),
+                name='unique_project_deadline_personal',
+            ),
+            models.UniqueConstraint(
+                fields=['project', 'days'],
+                condition=Q(project__isnull=False, is_active=True),
+                name='unique_project_deadline_override',
+            ),
+        ]
+
+    @classmethod
+    def for_scope(cls, owner, workplace=None, project=None):
+        return cls.objects.filter(owner=owner, workplace=workplace, project=project)
+
+    @classmethod
+    def active_for_scope(cls, owner, workplace=None):
+        scoped = cls.for_scope(owner, workplace)
+        if not scoped.exists():
+            cls.objects.bulk_create([
+                cls(owner=owner, workplace=workplace, days=days, color=color)
+                for days, color in cls.DEFAULTS
+            ], ignore_conflicts=True)
+        return scoped.filter(is_active=True)
+
+    @staticmethod
+    def color_for_date(due_at, rules, today=None):
+        if due_at is None:
+            return ''
+        days_left = (due_at - (today if today is not None else timezone.localdate())).days
+        rule = next((rule for rule in sorted(rules, key=lambda rule: rule.days) if days_left <= rule.days), None)
+        return rule.color if rule else ''
+
+
 class TaskProjectFieldOption(models.Model):
     FIELD_STATUS = 'status'
     FIELD_STAGE = 'stage'
     FIELD_HEALTH = 'health'
+    FIELD_SOURCE = 'source'
     FIELD_CHOICES = [
         (FIELD_STATUS, 'Status projektu'),
         (FIELD_STAGE, 'Etap'),
         (FIELD_HEALTH, 'Kondycja'),
+        (FIELD_SOURCE, 'Źródło'),
     ]
 
     owner = models.ForeignKey(
@@ -225,7 +290,7 @@ class TaskProjectFieldOption(models.Model):
     )
     field_type = models.CharField(max_length=10, choices=FIELD_CHOICES)
     value = models.SlugField(max_length=20)
-    label = models.CharField(max_length=60)
+    label = models.CharField(max_length=120)
     color = models.CharField(
         max_length=7,
         default='#DFEFFF',
@@ -262,7 +327,21 @@ class TaskProjectFieldOption(models.Model):
     def save(self, *args, **kwargs):
         self.label = (self.label or '').strip()
         self.color = (self.color or '#DFEFFF').upper()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            old_label = None
+            update_fields = kwargs.get('update_fields')
+            if self.pk and self.field_type == self.FIELD_SOURCE and (update_fields is None or 'label' in update_fields):
+                old_label = type(self).objects.select_for_update().values_list('label', flat=True).get(pk=self.pk)
+            super().save(*args, **kwargs)
+            if old_label is not None and old_label != self.label:
+                TaskProject.objects.filter(
+                    user_id=self.owner_id, workplace_id=self.workplace_id, source=old_label,
+                ).update(source=self.label)
+
+    @property
+    def project_value(self):
+        # Sources retain their text storage so existing searches and imports keep working.
+        return self.label if self.field_type == self.FIELD_SOURCE else self.value
 
     @classmethod
     def for_scope(cls, owner, workplace=None):
@@ -271,10 +350,11 @@ class TaskProjectFieldOption(models.Model):
     @classmethod
     def ensure_defaults(cls, owner, workplace=None):
         scoped = cls.for_scope(owner, workplace)
-        if scoped.exists():
-            return
+        existing_fields = set(scoped.values_list('field_type', flat=True).distinct())
         options = []
         for field_type, defaults in PROJECT_FIELD_OPTION_DEFAULTS.items():
+            if field_type in existing_fields:
+                continue
             options.extend(
                 cls(
                     owner=owner,
@@ -317,7 +397,7 @@ class TaskProjectFieldOption(models.Model):
         return TaskProject.objects.filter(
             user=self.owner,
             workplace=self.workplace,
-            **{self.field_type: self.value},
+            **{self.field_type: self.project_value},
         ).exists()
 
 

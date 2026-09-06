@@ -5,6 +5,7 @@
     const SEARCH_ATTR = 'data-ancore-custom-select-search';
     const SEARCH_INPUT_SELECTOR = '[data-ancore-custom-select-search-input]';
     const LIST_SELECTOR = '[data-ancore-custom-select-list]';
+    const CUSTOM_OPTION_SELECTOR = '[data-ancore-custom-select-custom-option]';
     const SKIP_ANCESTOR_SELECTOR = [
         '.u-sr-only',
         '[data-inline-select-dropdown]',
@@ -139,6 +140,14 @@
 
         const empty = list.querySelector('[data-ancore-custom-select-empty]');
         if (empty) empty.hidden = visibleCount > 0;
+        const customOption = wrapper.querySelector(CUSTOM_OPTION_SELECTOR);
+        if (customOption) {
+            const { select } = getWrapperParts(wrapper);
+            const value = search.value.trim();
+            customOption.hidden = !value || Array.from(select.options).some(option => option.value === value);
+            customOption.textContent = value ? `Użyj „${value}”` : '';
+            if (empty && !customOption.hidden) empty.hidden = true;
+        }
     }
 
     function resetSearch(wrapper) {
@@ -272,6 +281,24 @@
         button.setAttribute('aria-expanded', 'true');
         menu.hidden = false;
 
+        if (select.dataset.ancoreCustomSelectPlacement === 'auto') {
+            menu.style.top = '';
+            menu.style.bottom = '';
+            menu.style.maxHeight = '';
+            const body = wrapper.closest('.tasks-modal__body')?.getBoundingClientRect();
+            const control = button.getBoundingClientRect();
+            const above = Math.max(0, control.top - Math.max(0, body?.top ?? 0) - 8);
+            const below = Math.max(0, Math.min(window.innerHeight, body?.bottom ?? window.innerHeight) - control.bottom - 8);
+            const openAbove = menu.getBoundingClientRect().height > below && above > below;
+            const available = openAbove ? above : below;
+            const maxHeight = parseFloat(window.getComputedStyle(menu).maxHeight);
+            menu.style.maxHeight = `${Math.min(Number.isFinite(maxHeight) ? maxHeight : available, available)}px`;
+            if (openAbove) {
+                menu.style.top = 'auto';
+                menu.style.bottom = 'calc(100% + 4px)';
+            }
+        }
+
         if (focusSelected) {
             selectedOptionButton(wrapper)?.focus({ preventScroll: true });
         } else if (search) {
@@ -294,6 +321,23 @@
             closeWrapper(wrapper, true);
         }
 
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function chooseCustomValue(wrapper) {
+        const { select, search } = getWrapperParts(wrapper);
+        if (select?.dataset.ancoreCustomSelectAllowCustom !== 'true' || select.disabled || !search) return;
+        const value = search.value.trim();
+        if (!value || !search.checkValidity()) return;
+        let option = Array.from(select.options).find(option => option.value === value);
+        if (!option) {
+            option = new Option(value, value);
+            select.add(option);
+        }
+        if (option.disabled) return;
+        select.value = option.value;
+        refreshWrapper(wrapper);
+        closeWrapper(wrapper, true);
         select.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
@@ -361,9 +405,23 @@
             search.spellcheck = false;
             search.setAttribute('aria-label', `Szukaj: ${getLabelText(select)}`);
             search.setAttribute('data-ancore-custom-select-search-input', '');
+            if (select.dataset.ancoreCustomSelectAllowCustom === 'true') {
+                search.setAttribute('aria-label', 'Wpisz własne źródło lub wyszukaj na liście');
+                const maxLength = Number(select.dataset.ancoreCustomSelectMaxLength);
+                if (Number.isInteger(maxLength) && maxLength > 0) search.maxLength = maxLength;
+            }
 
             searchWrap.append(searchIcon, search);
             menu.appendChild(searchWrap);
+        }
+
+        if (select.dataset.ancoreCustomSelectAllowCustom === 'true') {
+            const customOption = document.createElement('button');
+            customOption.type = 'button';
+            customOption.className = 'ancore-custom-select__option ancore-custom-select__custom-option';
+            customOption.setAttribute('data-ancore-custom-select-custom-option', '');
+            customOption.hidden = true;
+            menu.appendChild(customOption);
         }
 
         const list = document.createElement('div');
@@ -424,6 +482,12 @@
         const target = event.target instanceof Element ? event.target : event.target?.parentElement;
         const toggle = target?.closest('[data-ancore-custom-select-toggle]');
         const option = target?.closest(OPTION_SELECTOR);
+        const customOption = target?.closest(CUSTOM_OPTION_SELECTOR);
+
+        if (customOption) {
+            chooseCustomValue(customOption.closest(WRAPPER_SELECTOR));
+            return;
+        }
 
         if (toggle) {
             const wrapper = toggle.closest(WRAPPER_SELECTOR);
@@ -451,8 +515,17 @@
         const wrapper = target?.closest(WRAPPER_SELECTOR);
         if (!wrapper) return;
 
-        if (event.key === 'Escape') {
+        if (event.key === 'Enter' && target.matches(SEARCH_INPUT_SELECTOR)
+            && getWrapperParts(wrapper).select?.dataset.ancoreCustomSelectAllowCustom === 'true') {
+            if (event.isComposing) return;
             event.preventDefault();
+            chooseCustomValue(wrapper);
+            return;
+        }
+
+        if (event.key === 'Escape' && wrapper.classList.contains('is-open')) {
+            event.preventDefault();
+            event.stopPropagation();
             closeWrapper(wrapper, true);
             return;
         }
@@ -479,7 +552,7 @@
             event.preventDefault();
             openWrapper(wrapper, true);
         }
-    });
+    }, true);
 
     document.addEventListener('change', event => {
         const select = event.target instanceof HTMLSelectElement ? event.target : null;

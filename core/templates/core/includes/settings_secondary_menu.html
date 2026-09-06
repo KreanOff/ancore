@@ -20,6 +20,12 @@
         </div>
 
         <div class="tasks-rail-nav-group">
+            <a href="{% url 'project_field_settings' %}" class="tasks-rail-link {% if request.resolver_match.view_name == 'project_field_settings' %}is-active{% endif %}">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+                </span>
+                Wartości pól projektu
+            </a>
             <a href="{% url 'settings' %}#security" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <i data-lucide="shield-check" aria-hidden="true"></i>

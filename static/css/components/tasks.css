@@ -6276,6 +6276,7 @@ body.modal-open::before {
     font-size: var(--dropdown-menu-font-size);
     font-weight: 600;
     text-align: left;
+    text-decoration: none;
     cursor: pointer;
 }
 
@@ -12210,24 +12211,7 @@ body.is-resizing-directory-columns {
     --tasks-project-highlight-bg: #ffe0dc;
 }
 
-#project-field-settings-modal .tasks-project-field-settings-modal__dialog {
-    width: min(1180px, calc(100vw - 3rem));
-    max-width: calc(100vw - 3rem);
-    height: min(720px, calc(var(--app-viewport-height, 100vh) - 4rem));
-    max-height: calc(var(--app-viewport-height, 100vh) - 4rem);
-}
-
-.tasks-project-field-settings-modal__content {
-    min-height: 0;
-    height: 100%;
-}
-
-.tasks-project-field-settings-modal__body {
-    min-height: 0;
-    overflow-y: auto;
-}
-
-.tasks-project-field-settings-modal__intro {
+.tasks-project-field-settings-intro {
     margin: 0 0 1rem;
     color: #626873;
     font-size: var(--font-size-sm);
@@ -12236,7 +12220,7 @@ body.is-resizing-directory-columns {
 
 .tasks-project-field-settings-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
     gap: 1rem;
     align-items: start;
 }
@@ -12291,6 +12275,80 @@ body.is-resizing-directory-columns {
 .tasks-project-field-option-list {
     display: grid;
     gap: 0.45rem;
+}
+
+.tasks-project-deadline-days {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+    color: #626873;
+    font-size: var(--font-size-sm);
+}
+
+.tasks-project-deadline-scope {
+    display: grid;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+    font-size: var(--font-size-sm);
+}
+
+#project-field-group-deadline,
+.tasks-project-field-settings-group--deadline {
+    scroll-margin-top: 4rem;
+}
+
+.tasks-project-deadline-scope__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tasks-project-deadline-scope__controls > :first-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.tasks-project-deadline-scope-status {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e1e5ea;
+    overflow-wrap: anywhere;
+}
+
+.tasks-project-deadline-rules {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.tasks-project-deadline-rules:disabled .tasks-project-field-option-action {
+    visibility: hidden;
+}
+
+.tasks-project-deadline-settings-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    color: var(--text-color, #444b55);
+    font-size: var(--font-size-sm);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.tasks-project-deadline-days input {
+    width: 100%;
+}
+
+.tasks-project-deadline-help {
+    margin: 0 0 0.85rem;
+    color: #626873;
+    font-size: var(--font-size-xs);
+    line-height: 1.45;
+}
+
+.tasks-project-deadline-help--footer {
+    margin: 0.85rem 0 0;
 }
 
 .tasks-project-field-option-row {
@@ -12403,25 +12461,6 @@ body.is-resizing-directory-columns {
 
 .tasks-project-field-option-add:hover {
     background: #d9f1ef;
-}
-
-@media (max-width: 1050px) {
-    .tasks-project-field-settings-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 720px) {
-    #project-field-settings-modal .tasks-project-field-settings-modal__dialog {
-        width: 100%;
-        max-width: 100%;
-        height: var(--app-viewport-height, 100vh);
-        max-height: var(--app-viewport-height, 100vh);
-    }
-
-    .tasks-project-field-settings-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }
 
 .tasks-project-value-badge--group-status-open,

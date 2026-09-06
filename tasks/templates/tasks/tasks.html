@@ -91,10 +91,14 @@
                             <i data-lucide="ellipsis" aria-hidden="true"></i>
                         </button>
                         <div class="tasks-project-menu" role="menu">
-                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}">
+                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-source="{{ project.source|default:''|escape }}">
                                 <i data-lucide="pencil" aria-hidden="true"></i>
                                 Edytuj projekt
                             </button>
+                            <a href="{% url 'project_field_settings' %}?project_id={{ project.pk }}#project-field-group-deadline" class="tasks-project-menu-button" role="menuitem">
+                                <i data-lucide="calendar-clock" aria-hidden="true"></i>
+                                Progi i kolory terminu
+                            </a>
                             <button type="button" class="tasks-project-menu-button" role="menuitem" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-project-info data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-progress-label="{{ project.progress_percent }}%" data-project-tasks-label="{{ project.tasks_count_label }}" data-project-priority-label="{{ project.get_priority_display }}" data-project-status-label="{{ project.get_status_display }}" data-project-stage-label="{{ project.get_stage_display }}" data-project-health-label="{{ project.get_health_display }}" data-project-company-label="{% if project.company %}{{ project.company.name }}{% else %}Brak firmy{% endif %}" data-project-responsible-label="{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}" data-project-start-label="{% if project.start_at %}{{ project.start_at|date:'d.m.Y' }}{% else %}Brak startu{% endif %}" data-project-due-label="{% if project.due_at %}{{ project.due_at|date:'d.m.Y' }}{% else %}Brak terminu{% endif %}" data-project-budget-label="{% if project.budget_amount %}{{ project.budget_amount }} {{ project.currency }}{% else %}Brak budżetu{% endif %}" data-project-source-label="{% if project.source %}{{ project.source }}{% else %}Brak źródła{% endif %}" data-project-created-label="{{ project.created_at|date:'d.m.Y' }}" data-project-last-activity-label="{% if project.last_activity_at %}{{ project.last_activity_at|date:'d.m.Y H:i' }}{% else %}Brak aktywności{% endif %}">
                                 <i data-lucide="info" aria-hidden="true"></i>
                                 Informacje o projekcie
@@ -619,9 +623,6 @@
                         </div>
                     </div>
                 </div>
-                <button type="button" class="tasks-icon-button tasks-project-field-settings-button" title="Zarządzaj statusem, etapem i kondycją" aria-label="Zarządzaj statusem, etapem i kondycją" aria-haspopup="dialog" aria-controls="project-field-settings-modal" data-open-project-field-settings>
-                    <i data-lucide="palette" aria-hidden="true"></i>
-                </button>
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=project_window items_exist=projects pages_label='Strony projektów' previous_label='Poprzednie projekty' next_label='Następne projekty' page_size_label='Liczba projektów na stronie' only %}
                 {% elif active_view == 'all_groups' %}
                 <button type="button" class="tasks-tag-topbar-button" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create>
@@ -1197,7 +1198,7 @@
                         {% if project.start_at %}{{ project.start_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak startu</span>{% endif %}
                     </span>
                     <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">
-                        {% if project.due_at %}<span class="tasks-project-value-badge tasks-project-value-badge--due-{{ project.due_highlight }}">{{ project.due_at|date:"d.m.Y" }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
+                        {% if project.due_at %}<span class="tasks-project-value-badge tasks-project-value-badge--due-{{ project.due_highlight }}"{% if project.due_color %} style="--tasks-project-highlight-bg: {{ project.due_color }};"{% endif %} title="{{ project.due_description }}">{{ project.due_at|date:"d.m.Y" }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
                     </span>
                     <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">{% if project.company %}{{ project.company.name }}{% else %}<span class="tasks-project-sheet__muted">Brak firmy</span>{% endif %}</span>
                     <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">
@@ -1219,7 +1220,7 @@
                         </span>
                         <span>{{ project.progress_percent }}%</span>
                     </span>
-                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">{% if project.source %}<span class="tasks-project-value-badge tasks-project-value-badge--source">{{ project.source }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak źródła</span>{% endif %}</span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">{% if project.source %}<span class="tasks-project-value-badge tasks-project-value-badge--source"{% if project.source_color %} style="--tasks-project-highlight-bg: {{ project.source_color }};"{% endif %}>{{ project.source }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak źródła</span>{% endif %}</span>
                     <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">{{ project.groups_count_label }}</span>
                     <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ project.tasks_total_count_label }}</span>
                     <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
@@ -1348,78 +1349,6 @@
                 <button type="submit" class="tasks-modal__submit" id="tag-create-submit">{% if tag_edit_mode %}Zapisz zmiany{% else %}Utwórz tag{% endif %}</button>
             </footer>
         </form>
-    </div>
-</div>
-
-<div class="tasks-modal tasks-project-modal tasks-project-field-settings-modal {% if project_field_settings_modal_open %}is-open{% endif %}" id="project-field-settings-modal" role="dialog" aria-modal="true" aria-labelledby="project-field-settings-modal-title" aria-hidden="{% if project_field_settings_modal_open %}false{% else %}true{% endif %}">
-    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-field-settings-modal__dialog tasks-issue-modal__dialog">
-        <div class="tasks-modal__form tasks-project-modal__form tasks-project-field-settings-modal__content tasks-issue-modal__form">
-            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
-                <div class="tasks-issue-modal__crumbs">
-                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                        <i data-lucide="arrow-left" aria-hidden="true"></i>
-                    </button>
-                    <span class="tasks-issue-divider" aria-hidden="true"></span>
-                    <strong id="project-field-settings-modal-title">Wartości pól projektu</strong>
-                </div>
-            </header>
-
-            <div class="tasks-modal__body tasks-project-modal__body tasks-project-field-settings-modal__body tasks-issue-modal__body">
-                <p class="tasks-project-field-settings-modal__intro">Dodawaj własne wartości i wybieraj kolor ich podświetlenia. Wartości używane przez projekty możesz edytować, ale nie usuniesz ich do czasu zmiany projektów.</p>
-                <div class="tasks-project-field-settings-grid">
-                    {% for group in project_field_groups %}
-                    <section class="tasks-project-field-settings-group" aria-labelledby="project-field-group-{{ group.field_type }}">
-                        <header class="tasks-project-field-settings-group__header">
-                            <div>
-                                <h3 id="project-field-group-{{ group.field_type }}">{{ group.label }}</h3>
-                                <p>{{ group.description }}</p>
-                            </div>
-                            <span>{{ group.options|length }}</span>
-                        </header>
-
-                        <div class="tasks-project-field-option-list">
-                            {% for option in group.options %}
-                            <form method="post" class="tasks-project-field-option-row" data-project-field-option-form>
-                                {% csrf_token %}
-                                <input type="hidden" name="option_id" value="{{ option.id }}">
-                                <span class="tasks-project-field-option-preview" style="--tasks-project-highlight-bg: {{ option.color }};" aria-hidden="true"></span>
-                                <label class="u-sr-only" for="project-field-option-label-{{ option.id }}">Nazwa wartości</label>
-                                <input type="text" id="project-field-option-label-{{ option.id }}" name="label" value="{{ option.label }}" class="tasks-project-option-name" maxlength="60" autocomplete="off" required>
-                                <label class="tasks-project-option-color-wrap" title="Kolor podświetlenia">
-                                    <span class="u-sr-only">Kolor podświetlenia</span>
-                                    <input type="color" name="color" value="{{ option.color }}" class="tasks-project-option-color" aria-label="Kolor wartości {{ option.label }}" data-project-option-color>
-                                </label>
-                                <button type="submit" name="action" value="update_project_field_option" class="tasks-project-field-option-action" title="Zapisz" aria-label="Zapisz wartość {{ option.label }}">
-                                    <i data-lucide="check" aria-hidden="true"></i>
-                                </button>
-                                <button type="submit" name="action" value="delete_project_field_option" class="tasks-project-field-option-action tasks-project-field-option-action--delete" title="{% if option.in_use %}Wartość jest używana przez projekt{% else %}Usuń{% endif %}" aria-label="Usuń wartość {{ option.label }}" {% if option.in_use %}disabled{% endif %}>
-                                    <i data-lucide="trash-2" aria-hidden="true"></i>
-                                </button>
-                            </form>
-                            {% endfor %}
-                        </div>
-
-                        <form method="post" class="tasks-project-field-option-row tasks-project-field-option-row--new" data-project-field-option-form>
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="create_project_field_option">
-                            <input type="hidden" name="field_type" value="{{ group.field_type }}">
-                            <span class="tasks-project-field-option-preview" style="--tasks-project-highlight-bg: #DFEFFF;" aria-hidden="true"></span>
-                            <label class="u-sr-only" for="project-field-option-new-{{ group.field_type }}">Nowa wartość</label>
-                            <input type="text" id="project-field-option-new-{{ group.field_type }}" name="label" class="tasks-project-option-name" maxlength="60" placeholder="Nowa wartość" autocomplete="off" required>
-                            <label class="tasks-project-option-color-wrap" title="Kolor podświetlenia">
-                                <span class="u-sr-only">Kolor podświetlenia</span>
-                                <input type="color" name="color" value="#DFEFFF" class="tasks-project-option-color" aria-label="Kolor nowej wartości" data-project-option-color>
-                            </label>
-                            <button type="submit" class="tasks-project-field-option-add" aria-label="Dodaj wartość do pola {{ group.label }}">
-                                <i data-lucide="plus" aria-hidden="true"></i>
-                                <span>Dodaj</span>
-                            </button>
-                        </form>
-                    </section>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -1639,6 +1568,7 @@
                             {{ project_rename_form.due_at }}
                         </label>
                     </div>
+                    <a href="{% url 'project_field_settings' %}?project_id={{ project_rename_form.instance.pk|default:'' }}#project-field-group-deadline" data-project-deadline-settings-link data-settings-url="{% url 'project_field_settings' %}" class="tasks-project-deadline-settings-link">Progi i kolory terminu tego projektu</a>
                 </section>
             </div>
 

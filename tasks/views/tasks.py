@@ -28,6 +28,7 @@ from ..models import (
     TaskActivity,
     TaskAttachment,
     TaskProject,
+    TaskProjectDeadlineRule,
     TaskProjectFieldOption,
     TaskProjectNote,
     TaskSection,
@@ -41,7 +42,6 @@ from ..forms import (
     SubTaskModalForm,
     TaskForm,
     TaskModalForm,
-    TaskProjectFieldOptionForm,
     TaskProjectForm,
     TaskProjectRenameForm,
     TaskSectionForm,
@@ -731,9 +731,9 @@ def _project_field_configuration(user, workplace=None):
     labels = {field_type: {} for field_type in choices}
     colors = {field_type: {} for field_type in choices}
     for option in options:
-        choices[option.field_type].append((option.value, option.label))
-        labels[option.field_type][option.value] = option.label
-        colors[option.field_type][option.value] = option.color
+        choices[option.field_type].append((option.project_value, option.label))
+        labels[option.field_type][option.project_value] = option.label
+        colors[option.field_type][option.project_value] = option.color
 
     scoped_projects = TaskProject.objects.filter(user=user, workplace=workplace)
     used_values = {
@@ -741,12 +741,13 @@ def _project_field_configuration(user, workplace=None):
         for field_type in choices
     }
     for option in options:
-        option.in_use = option.value in used_values[option.field_type]
+        option.in_use = option.project_value in used_values[option.field_type]
 
     group_copy = {
         'status': ('Status projektu', 'Określa bieżący stan projektu.'),
         'stage': ('Etap', 'Opisuje fazę realizacji projektu.'),
         'health': ('Kondycja', 'Sygnalizuje ryzyko i ogólną kondycję projektu.'),
+        'source': ('Źródło', 'Dodaj gotowe źródła projektów i wybierz ich kolory.'),
     }
     groups = []
     for field_type, _field_label in TaskProjectFieldOption.FIELD_CHOICES:
@@ -755,6 +756,7 @@ def _project_field_configuration(user, workplace=None):
             'field_type': field_type,
             'label': label,
             'description': description,
+            'max_length': 120 if field_type == TaskProjectFieldOption.FIELD_SOURCE else 60,
             'options': [option for option in options if option.field_type == field_type],
         })
 
@@ -764,6 +766,7 @@ def _project_field_configuration(user, workplace=None):
         'labels': labels,
         'colors': colors,
         'groups': groups,
+        'deadline_rules': list(TaskProjectDeadlineRule.active_for_scope(user, workplace)),
     }
 
 
@@ -772,12 +775,34 @@ def _decorate_project_field_values(projects, field_configuration):
         return
     labels = field_configuration['labels']
     colors = field_configuration['colors']
+    deadline_rules = field_configuration.get('deadline_rules', [])
+    custom_rules = {
+        project.pk: [] for project in projects if project.use_custom_deadline_rules
+    }
+    if custom_rules:
+        for rule in TaskProjectDeadlineRule.objects.filter(project_id__in=custom_rules, is_active=True):
+            custom_rules[rule.project_id].append(rule)
+    today = timezone.localdate()
     default_colors = {
         field_type: {value: color for value, _label, color in defaults}
         for field_type, defaults in PROJECT_FIELD_OPTION_DEFAULTS.items()
     }
     for project in projects:
         project._project_field_option_labels = labels
+        project.source_color = colors.get('source', {}).get(project.source, '')
+        project.due_color = ''
+        project.due_description = ''
+        if project.due_at:
+            days_left = (project.due_at - today).days
+            if days_left < 0:
+                project.due_description = f'Po terminie: {abs(days_left)} dni'
+            elif days_left == 0:
+                project.due_description = 'Termin dzisiaj'
+            else:
+                project.due_description = f'Dni do terminu: {days_left}'
+            if project.status not in ('completed', 'cancelled'):
+                rules = custom_rules.get(project.pk, deadline_rules)
+                project.due_color = TaskProjectDeadlineRule.color_for_date(project.due_at, rules, today) or '#DFEFFF'
         for field_type in ('status', 'stage', 'health'):
             value = getattr(project, field_type, '')
             setattr(
@@ -3115,6 +3140,8 @@ def _redirect_to_task_detail(task, user):
 
 @login_required
 def tasks(request):
+    if request.method == 'GET' and request.GET.get('field_settings') == '1':
+        return redirect('project_field_settings')
     return _tasks_page(request)
 
 
@@ -3198,96 +3225,10 @@ def _tasks_page(request, active_section=None):
     tag_modal_open = False
     tag_edit_mode = False
     tag_edit_tag_id = ''
-    project_field_settings_modal_open = request.GET.get('field_settings') == '1'
 
     if request.method == 'POST':
         action = request.POST.get('action')
         is_ajax = _is_ajax_request(request)
-
-        if action == 'create_project_field_option':
-            field_type = (request.POST.get('field_type') or '').strip()
-            if field_type not in dict(TaskProjectFieldOption.FIELD_CHOICES):
-                raise PermissionDenied
-            option = TaskProjectFieldOption(
-                owner=request.user,
-                workplace=workplace,
-                field_type=field_type,
-            )
-            option_form = TaskProjectFieldOptionForm(
-                request.POST,
-                instance=option,
-                owner=request.user,
-                workplace=workplace,
-            )
-            if option_form.is_valid():
-                option = option_form.save(commit=False)
-                option.value = TaskProjectFieldOption.unique_value_for_label(
-                    request.user,
-                    workplace,
-                    field_type,
-                    option.label,
-                )
-                option.position = (
-                    TaskProjectFieldOption.for_scope(request.user, workplace)
-                    .filter(field_type=field_type)
-                    .aggregate(last_position=Max('position'))['last_position']
-                    or 0
-                ) + 1
-                option.save()
-                messages.success(request, f'Dodano wartość „{option.label}”.')
-            else:
-                error_text = ' '.join(
-                    str(error)
-                    for errors in option_form.errors.values()
-                    for error in errors
-                )
-                messages.error(request, error_text or 'Nie udało się dodać wartości.')
-            return redirect(f'{request.path}?field_settings=1')
-
-        if action == 'update_project_field_option':
-            option = get_object_or_404(
-                TaskProjectFieldOption.for_scope(request.user, workplace).filter(is_active=True),
-                id=request.POST.get('option_id'),
-            )
-            option_form = TaskProjectFieldOptionForm(
-                request.POST,
-                instance=option,
-                owner=request.user,
-                workplace=workplace,
-            )
-            if option_form.is_valid():
-                option_form.save()
-                messages.success(request, f'Zapisano wartość „{option.label}”.')
-            else:
-                error_text = ' '.join(
-                    str(error)
-                    for errors in option_form.errors.values()
-                    for error in errors
-                )
-                messages.error(request, error_text or 'Nie udało się zapisać wartości.')
-            return redirect(f'{request.path}?field_settings=1')
-
-        if action == 'delete_project_field_option':
-            option = get_object_or_404(
-                TaskProjectFieldOption.for_scope(request.user, workplace).filter(is_active=True),
-                id=request.POST.get('option_id'),
-            )
-            active_count = TaskProjectFieldOption.for_scope(request.user, workplace).filter(
-                field_type=option.field_type,
-                is_active=True,
-            ).count()
-            if option.is_used:
-                messages.error(
-                    request,
-                    f'Nie można usunąć wartości „{option.label}”, ponieważ jest używana przez projekt.',
-                )
-            elif active_count <= 1:
-                messages.error(request, 'Każde pole musi mieć co najmniej jedną wartość.')
-            else:
-                option.is_active = False
-                option.save(update_fields=['is_active'])
-                messages.success(request, f'Usunięto wartość „{option.label}”.')
-            return redirect(f'{request.path}?field_settings=1')
 
         if action == 'create_project':
             project_form = TaskProjectForm(
@@ -4073,8 +4014,6 @@ def _tasks_page(request, active_section=None):
         'quick_task_form': QuickTaskForm(),
         'project_modal_open': project_modal_open,
         'project_rename_modal_open': project_rename_modal_open,
-        'project_field_settings_modal_open': project_field_settings_modal_open,
-        'project_field_groups': project_field_configuration['groups'],
         'task_modal_open': task_modal_open,
         'tag_modal_open': tag_modal_open,
         'tag_edit_mode': tag_edit_mode,

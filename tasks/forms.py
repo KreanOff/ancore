@@ -9,6 +9,7 @@ from .models import (
     Task,
     TaskAttachment,
     TaskProject,
+    TaskProjectDeadlineRule,
     TaskProjectFieldOption,
     TaskSection,
     TaskTag,
@@ -302,6 +303,19 @@ class TaskForm(forms.ModelForm):
 
 
 class TaskProjectBaseForm(forms.ModelForm):
+    source = forms.CharField(
+        required=False,
+        max_length=120,
+        label='Źródło',
+        widget=forms.Select(attrs={
+            'class': 'tasks-inline-select',
+            'data-ancore-custom-select-search': 'true',
+            'data-ancore-custom-select-search-placeholder': 'Wpisz własne źródło lub szukaj',
+            'data-ancore-custom-select-allow-custom': 'true',
+            'data-ancore-custom-select-max-length': '120',
+            'data-ancore-custom-select-placement': 'auto',
+        }),
+    )
     status = forms.ChoiceField(
         required=False,
         label='Status projektu',
@@ -340,7 +354,24 @@ class TaskProjectBaseForm(forms.ModelForm):
         if field_options is not None:
             option_choices = {field_type: [] for field_type in PROJECT_FIELD_OPTION_DEFAULTS}
             for option in field_options:
-                option_choices.setdefault(option.field_type, []).append((option.value, option.label))
+                option_choices.setdefault(option.field_type, []).append((option.project_value, option.label))
+        if 'source' in self.fields:
+            sources = option_choices.get('source', [])
+            known_sources = {value for value, _label in sources}
+            # Include legacy/imported text values in the shared edit modal as well.
+            if user:
+                legacy_sources = (
+                    TaskProject.objects.filter(user=user, workplace=workplace)
+                    .exclude(source='').order_by('source').values_list('source', flat=True).distinct()
+                )
+                sources = sources + [(value, value) for value in legacy_sources if value not in known_sources]
+            elif self.instance and self.instance.source and self.instance.source not in known_sources:
+                sources = sources + [(self.instance.source, self.instance.source)]
+            if self.is_bound:
+                submitted_source = (self.data.get(self.add_prefix('source')) or '').strip()
+                if submitted_source and submitted_source not in {value for value, _label in sources}:
+                    sources.append((submitted_source, submitted_source))
+            self.fields['source'].widget.choices = [('', 'Brak źródła'), *sources]
         self._project_field_defaults = {}
         for field_name in ('status', 'stage', 'health'):
             if field_name in self.fields:
@@ -381,16 +412,47 @@ class TaskProjectBaseForm(forms.ModelForm):
         return self.cleaned_data.get('health') or self._project_field_defaults.get('health') or 'ok'
 
 
+class TaskProjectDeadlineRuleForm(forms.ModelForm):
+    def clean_days(self):
+        days = self.cleaned_data['days']
+        rules = TaskProjectDeadlineRule.for_scope(
+            self.instance.owner, self.instance.workplace, self.instance.project,
+        ).filter(
+            days=days, is_active=True,
+        )
+        if self.instance.pk:
+            rules = rules.exclude(pk=self.instance.pk)
+        if rules.exists():
+            raise forms.ValidationError('Reguła dla tej liczby dni już istnieje.')
+        return days
+
+    def clean_color(self):
+        return self.cleaned_data['color'].upper()
+
+    class Meta:
+        model = TaskProjectDeadlineRule
+        fields = ['days', 'color']
+
+
 class TaskProjectFieldOptionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.owner = kwargs.pop('owner')
         self.workplace = kwargs.pop('workplace', None)
         super().__init__(*args, **kwargs)
+        max_length = 120 if self.instance.field_type == TaskProjectFieldOption.FIELD_SOURCE else 60
+        self.fields['label'] = forms.CharField(
+            max_length=max_length,
+            widget=forms.TextInput(attrs={
+                'class': 'tasks-project-option-name', 'maxlength': max_length, 'autocomplete': 'off',
+            }),
+        )
 
     def clean_label(self):
         label = (self.cleaned_data.get('label') or '').strip()
         if not label:
             raise forms.ValidationError('Podaj nazwę wartości.')
+        if self.instance.pk and self.instance.field_type == TaskProjectFieldOption.FIELD_SOURCE and label == self.instance.label:
+            return label
         queryset = TaskProjectFieldOption.for_scope(self.owner, self.workplace).filter(
             field_type=self.instance.field_type,
             is_active=True,
@@ -505,10 +567,6 @@ class TaskProjectForm(TaskProjectBaseForm):
                 'type': 'date',
                 'class': 'tasks-inline-input',
             }),
-            'source': forms.TextInput(attrs={
-                'class': 'tasks-inline-input',
-                'placeholder': 'Źródło projektu',
-            }),
         }
         labels = {
             'code': 'Kod projektu',
@@ -582,10 +640,6 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
             'due_at': forms.DateInput(format='%Y-%m-%d', attrs={
                 'type': 'date',
                 'class': 'tasks-inline-input',
-            }),
-            'source': forms.TextInput(attrs={
-                'class': 'tasks-inline-input',
-                'placeholder': 'Źródło projektu',
             }),
         }
         labels = {

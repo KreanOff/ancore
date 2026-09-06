@@ -16,10 +16,12 @@ from workplaces.services import scoped_workplace_app_path
 
 class DashboardViewTests(TestCase):
     def test_settings_requires_login(self):
-        response = self.client.get(reverse('settings'))
-
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse('login'), response.url)
+        for route in ('settings', 'project_field_settings'):
+            for method in ('get', 'post'):
+                with self.subTest(route=route, method=method):
+                    response = getattr(self.client, method)(reverse(route))
+                    self.assertEqual(response.status_code, 302)
+                    self.assertIn(reverse('login'), response.url)
 
     def test_settings_renders_settings_sections(self):
         user = get_user_model().objects.create_user(
@@ -33,6 +35,8 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Ustawienia Ancore')
+        self.assertContains(response, reverse('project_field_settings'))
+        self.assertContains(response, 'Wartości pól projektu')
         self.assertContains(response, 'data-sticky-note-toggle')
         self.assertContains(response, 'sidebar-sticker-toggle')
         self.assertContains(response, 'id="app-sticky-note"')

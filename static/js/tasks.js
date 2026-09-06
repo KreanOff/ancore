@@ -181,7 +181,6 @@ function initTasksPage() {
     const railNavGroups = document.querySelectorAll('[data-rail-nav-group]');
     const projectNodes = document.querySelectorAll('[data-project-node]');
     const openProjectButtons = document.querySelectorAll('[data-open-project]');
-    const openProjectFieldSettingsButtons = document.querySelectorAll('[data-open-project-field-settings]');
     const openTagButtons = document.querySelectorAll('[data-open-tag]');
     const openTagEditButtons = document.querySelectorAll('[data-open-tag-edit]');
     const openTagInfoButtons = document.querySelectorAll('[data-open-tag-info]');
@@ -197,7 +196,6 @@ function initTasksPage() {
     const openContactButtons = document.querySelectorAll('[data-open-contact]');
     const openCompanyButtons = document.querySelectorAll('[data-open-company]');
     const projectModal = document.getElementById('project-modal');
-    const projectFieldSettingsModal = document.getElementById('project-field-settings-modal');
     const tagModal = document.getElementById('tag-modal');
     const projectRenameModal = document.getElementById('project-rename-modal');
     const projectNotesModal = document.getElementById('project-notes-modal');
@@ -3559,15 +3557,6 @@ function initTasksPage() {
         });
     });
 
-    openProjectFieldSettingsButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            openModal(
-                projectFieldSettingsModal,
-                projectFieldSettingsModal?.querySelector('.tasks-project-option-name')
-            );
-        });
-    });
-
     document.querySelectorAll('[data-project-option-color]').forEach(input => {
         const syncPreview = () => {
             const preview = input.closest('[data-project-field-option-form]')
@@ -3634,6 +3623,13 @@ function initTasksPage() {
 
     function setProjectRenameFieldsFromDataset(dataset = {}) {
         setFieldValue(projectRenameIdInput, dataset.projectId);
+        const deadlineSettingsLink = projectRenameForm?.querySelector('[data-project-deadline-settings-link]');
+        if (deadlineSettingsLink) {
+            const url = new URL(deadlineSettingsLink.dataset.settingsUrl, window.location.origin);
+            url.searchParams.set('project_id', dataset.projectId || '');
+            url.hash = 'project-field-group-deadline';
+            deadlineSettingsLink.href = url.toString();
+        }
         setFieldValue(projectRenameNameInput, dataset.projectName);
         setFieldValue(projectRenameDescriptionInput, dataset.projectDescription);
         setFieldValue(projectRenameCompanyInput, dataset.projectCompanyId);

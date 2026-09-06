@@ -44,6 +44,10 @@
             <i data-lucide="file-text" aria-hidden="true"></i>
             Notatki projektu
         </button>
+        <a href="{% url 'project_field_settings' %}" class="tasks-project-menu-button" role="menuitem">
+            <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+            Wartości pól projektu
+        </a>
         <button type="button" class="tasks-project-delete-button tasks-project-delete-button--separated" role="menuitem" id="delete-selected-project-menu-btn" disabled>
             {% include 'core/includes/trash_icon.html' %}
             Usuń projekt

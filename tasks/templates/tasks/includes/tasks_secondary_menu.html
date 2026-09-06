@@ -76,7 +76,7 @@
                         <i data-lucide="ellipsis" aria-hidden="true"></i>
                     </button>
                     <div class="tasks-project-menu" role="menu">
-                        <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}">
+                        <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-source="{{ project.source|default:''|escape }}">
                             <i data-lucide="pencil" aria-hidden="true"></i>
                             Edytuj projekt
                         </button>

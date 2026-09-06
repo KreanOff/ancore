@@ -1,0 +1,93 @@
+<section class="tasks-project-field-settings-group tasks-project-field-settings-group--deadline" aria-labelledby="project-field-group-deadline">
+    <header class="tasks-project-field-settings-group__header">
+        <div>
+            <h3 id="project-field-group-deadline">Termin</h3>
+            <p>Kolor daty zależy od liczby dni do terminu.</p>
+        </div>
+        <span>{{ project_deadline_rules|length }}</span>
+    </header>
+    <form method="get" action="{% url 'project_field_settings' %}#project-field-group-deadline" class="tasks-project-deadline-scope">
+        <label for="deadline-project-select">Progi terminu dla</label>
+        <div class="tasks-project-deadline-scope__controls">
+            <select id="deadline-project-select" name="project_id" class="tasks-inline-select" data-ancore-custom-select-search="true" data-ancore-custom-select-search-placeholder="Szukaj projektu">
+                <option value="">Wspólne ustawienia (domyślne)</option>
+                {% for project in deadline_projects %}
+                <option value="{{ project.pk }}"{% if deadline_project.pk == project.pk %} selected{% endif %}>{{ project.name }}{% if project.code %} · {{ project.code }}{% endif %}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="tasks-project-field-option-add">Pokaż</button>
+        </div>
+    </form>
+    {% if deadline_project %}
+    <div class="tasks-project-deadline-scope-status">
+        <p class="tasks-project-deadline-help">
+            <strong>{{ deadline_project.name }}</strong><br>
+            {% if deadline_inherited %}Projekt korzysta ze wspólnych progów. Włącz własne progi, aby edytować je tylko dla tego projektu.{% else %}Własne progi — zmiany dotyczą tylko tego projektu.{% endif %}
+        </p>
+        <form method="post" action="{% url 'project_field_settings' %}">
+            {% csrf_token %}
+            <input type="hidden" name="project_id" value="{{ deadline_project.pk }}">
+            {% if deadline_inherited %}
+            <button type="submit" name="action" value="enable_project_deadline_rules" class="tasks-project-field-option-add">Ustaw własne progi</button>
+            {% else %}
+            <button type="submit" name="action" value="reset_project_deadline_rules" class="tasks-project-field-option-add">Wróć do ustawień wspólnych</button>
+            {% endif %}
+        </form>
+    </div>
+    {% else %}
+    <p class="tasks-project-deadline-help">Te progi obowiązują projekty bez własnych ustawień. Wybierz projekt powyżej, aby nadać mu osobne progi i kolory.</p>
+    {% endif %}
+    <p class="tasks-project-deadline-help">Wpisz maksymalną liczbę dni. Np. 30 dni to miesiąc. Jeśli pasuje kilka reguł, obowiązuje najmniejszy próg.</p>
+    <fieldset class="tasks-project-deadline-rules"{% if deadline_inherited %} disabled{% endif %}>
+    <legend class="u-sr-only">Progi dni i kolory{% if deadline_project %} — {{ deadline_project.name }}{% endif %}</legend>
+    <div class="tasks-project-field-option-list">
+        {% for rule in project_deadline_rules %}
+        <form method="post" action="{% url 'project_field_settings' %}" class="tasks-project-field-option-row" data-project-field-option-form>
+            {% csrf_token %}
+            <input type="hidden" name="project_id" value="{{ deadline_project.pk|default:'' }}">
+            <input type="hidden" name="rule_id" value="{{ rule.id }}">
+            <span class="tasks-project-field-option-preview" style="--tasks-project-highlight-bg: {{ rule.color }};" aria-hidden="true"></span>
+            <label class="tasks-project-deadline-days">
+                <span aria-hidden="true">Do</span>
+                <span class="u-sr-only">Maksymalna liczba dni — próg {{ rule.days }}</span>
+                <input type="number" name="days" value="{{ rule.days }}" min="0" max="36500" step="1" class="tasks-project-option-name" required>
+                <span aria-hidden="true">dni</span>
+            </label>
+            <label class="tasks-project-option-color-wrap" title="Kolor podświetlenia">
+                <input type="color" name="color" value="{{ rule.color }}" class="tasks-project-option-color" aria-label="Kolor terminu do {{ rule.days }} dni" data-project-option-color>
+            </label>
+            <button type="submit" name="action" value="update_project_deadline_rule" class="tasks-project-field-option-action" title="Zapisz" aria-label="Zapisz próg {{ rule.days }} dni">
+                <i data-lucide="check" aria-hidden="true"></i>
+            </button>
+            <button type="submit" name="action" value="delete_project_deadline_rule" class="tasks-project-field-option-action tasks-project-field-option-action--delete" title="Usuń" aria-label="Usuń próg {{ rule.days }} dni" formnovalidate>
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+            </button>
+        </form>
+        {% empty %}
+        <p class="tasks-project-deadline-help">Brak progów — termin ma standardowy kolor.</p>
+        {% endfor %}
+    </div>
+    {% if not deadline_inherited %}
+    <form method="post" action="{% url 'project_field_settings' %}" class="tasks-project-field-option-row tasks-project-field-option-row--new" data-project-field-option-form>
+        {% csrf_token %}
+        <input type="hidden" name="project_id" value="{{ deadline_project.pk|default:'' }}">
+        <input type="hidden" name="action" value="create_project_deadline_rule">
+        <span class="tasks-project-field-option-preview" style="--tasks-project-highlight-bg: #DFF1E7;" aria-hidden="true"></span>
+        <label class="tasks-project-deadline-days">
+            <span aria-hidden="true">Do</span>
+            <span class="u-sr-only">Maksymalna liczba dni nowej reguły</span>
+            <input type="number" name="days" min="0" max="36500" step="1" placeholder="np. 45" class="tasks-project-option-name" required>
+            <span aria-hidden="true">dni</span>
+        </label>
+        <label class="tasks-project-option-color-wrap" title="Kolor podświetlenia">
+            <input type="color" name="color" value="#DFF1E7" class="tasks-project-option-color" aria-label="Kolor nowej reguły terminu" data-project-option-color>
+        </label>
+        <button type="submit" class="tasks-project-field-option-add" aria-label="Dodaj regułę terminu">
+            <i data-lucide="plus" aria-hidden="true"></i>
+            <span>Dodaj</span>
+        </button>
+    </form>
+    {% endif %}
+    </fieldset>
+    <p class="tasks-project-deadline-help tasks-project-deadline-help--footer">Po terminie działa kolor najmniejszego progu. Powyżej największego progu obowiązuje standardowy kolor. Projekty zakończone i anulowane zachowują kolor swojego statusu.</p>
+</section>

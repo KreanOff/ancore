@@ -1,0 +1,90 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Wartości pól projektu · Ustawienia | ancore{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+{% block secondary_menu_panel_attrs %}{% endblock %}
+{% block secondary_menu %}
+    {% include 'core/includes/settings_secondary_menu.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-page settings-page settings-project-fields-page">
+    <header class="dashboard-header">
+        <nav class="dashboard-breadcrumb" aria-label="Ścieżka">
+            <span class="dashboard-breadcrumb-icon" aria-hidden="true">
+                <i data-lucide="settings" aria-hidden="true"></i>
+            </span>
+            <a href="{% url 'settings' %}">Ustawienia</a>
+            <span class="dashboard-breadcrumb-separator" aria-hidden="true">/</span>
+            <strong>Wartości pól projektu</strong>
+        </nav>
+    </header>
+
+    <main class="dashboard-main" aria-labelledby="project-field-settings-title">
+        <section class="dashboard-summary">
+            <div class="dashboard-summary-copy">
+                <p>Projekty</p>
+                <h1 id="project-field-settings-title">Wartości pól projektu</h1>
+                <span>{% if current_workplace %}Workspace: {{ current_workplace.name }}{% else %}{{ request.user.get_full_name|default:request.user.email }}{% endif %}</span>
+            </div>
+        </section>
+
+        <p class="tasks-project-field-settings-intro">Dodawaj własne wartości i wybieraj kolor ich podświetlenia. Wartości używane przez projekty możesz edytować, ale nie usuniesz ich do czasu zmiany projektów.</p>
+        <div class="tasks-project-field-settings-grid">
+            {% for group in project_field_groups %}
+            <section class="tasks-project-field-settings-group" aria-labelledby="project-field-group-{{ group.field_type }}">
+                <header class="tasks-project-field-settings-group__header">
+                    <div>
+                        <h3 id="project-field-group-{{ group.field_type }}">{{ group.label }}</h3>
+                        <p>{{ group.description }}</p>
+                    </div>
+                    <span>{{ group.options|length }}</span>
+                </header>
+
+                <div class="tasks-project-field-option-list">
+                    {% for option in group.options %}
+                    <form method="post" class="tasks-project-field-option-row" data-project-field-option-form>
+                        {% csrf_token %}
+                        <input type="hidden" name="option_id" value="{{ option.id }}">
+                        <span class="tasks-project-field-option-preview" style="--tasks-project-highlight-bg: {{ option.color }};" aria-hidden="true"></span>
+                        <label class="u-sr-only" for="project-field-option-label-{{ option.id }}">Nazwa wartości</label>
+                        <input type="text" id="project-field-option-label-{{ option.id }}" name="label" value="{{ option.label }}" class="tasks-project-option-name" maxlength="{{ group.max_length }}" autocomplete="off" required>
+                        <label class="tasks-project-option-color-wrap" title="Kolor podświetlenia">
+                            <span class="u-sr-only">Kolor podświetlenia</span>
+                            <input type="color" name="color" value="{{ option.color }}" class="tasks-project-option-color" aria-label="Kolor wartości {{ option.label }}" data-project-option-color>
+                        </label>
+                        <button type="submit" name="action" value="update_project_field_option" class="tasks-project-field-option-action" title="Zapisz" aria-label="Zapisz wartość {{ option.label }}">
+                            <i data-lucide="check" aria-hidden="true"></i>
+                        </button>
+                        <button type="submit" name="action" value="delete_project_field_option" class="tasks-project-field-option-action tasks-project-field-option-action--delete" title="{% if option.in_use %}Wartość jest używana przez projekt{% else %}Usuń{% endif %}" aria-label="Usuń wartość {{ option.label }}" {% if option.in_use %}disabled{% endif %}>
+                            <i data-lucide="trash-2" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                    {% empty %}
+                    {% if group.field_type == 'source' %}<p class="tasks-project-deadline-help">Dodaj pierwsze źródło, aby wybierać je przy tworzeniu i edycji projektu.</p>{% endif %}
+                    {% endfor %}
+                </div>
+
+                <form method="post" class="tasks-project-field-option-row tasks-project-field-option-row--new" data-project-field-option-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_project_field_option">
+                    <input type="hidden" name="field_type" value="{{ group.field_type }}">
+                    <span class="tasks-project-field-option-preview" style="--tasks-project-highlight-bg: #DFEFFF;" aria-hidden="true"></span>
+                    <label class="u-sr-only" for="project-field-option-new-{{ group.field_type }}">{% if group.field_type == 'source' %}Nowe źródło{% else %}Nowa wartość{% endif %}</label>
+                    <input type="text" id="project-field-option-new-{{ group.field_type }}" name="label" class="tasks-project-option-name" maxlength="{{ group.max_length }}" placeholder="{% if group.field_type == 'source' %}np. Polecenie{% else %}Nowa wartość{% endif %}" autocomplete="off" required>
+                    <label class="tasks-project-option-color-wrap" title="Kolor podświetlenia">
+                        <span class="u-sr-only">Kolor podświetlenia</span>
+                        <input type="color" name="color" value="#DFEFFF" class="tasks-project-option-color" aria-label="Kolor nowej wartości" data-project-option-color>
+                    </label>
+                    <button type="submit" class="tasks-project-field-option-add" aria-label="Dodaj wartość do pola {{ group.label }}">
+                        <i data-lucide="plus" aria-hidden="true"></i>
+                        <span>Dodaj</span>
+                    </button>
+                </form>
+            </section>
+            {% endfor %}
+            {% include 'tasks/includes/project_deadline_settings.html' %}
+        </div>
+    </main>
+</div>
+{% endblock %}

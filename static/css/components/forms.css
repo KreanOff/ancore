@@ -149,7 +149,10 @@ select.form-select {
     box-shadow: var(--dropdown-menu-shadow);
 }
 
-.ancore-custom-select__menu[hidden] {
+.ancore-custom-select__menu[hidden],
+.ancore-custom-select__option[hidden],
+.ancore-custom-select__group-label[hidden],
+.ancore-custom-select__empty[hidden] {
     display: none;
 }
 
@@ -264,6 +267,14 @@ select.form-select {
     padding: 0.55rem;
     color: var(--text-muted);
     font-size: var(--dropdown-menu-font-size);
+}
+
+.ancore-custom-select__custom-option {
+    margin-bottom: 0.25rem;
+    color: var(--text-main);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    text-align: left;
 }
 
 .tasks-issue-fields .ancore-custom-select,
