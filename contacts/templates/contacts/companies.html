@@ -15,24 +15,29 @@
 {% block content %}
 <div class="tasks-page tasks-list-page contacts-page">
     <section class="tasks-workspace contacts-workspace" aria-label="Firmy">
-        <header class="tasks-topbar">
+        <header class="tasks-topbar tasks-topbar--directory">
             <div class="tasks-titlebar-left">
                 <span class="tasks-topbar-title">
                     <span>Firmy</span>
                 </span>
             </div>
-            <form class="tasks-titlebar-search tasks-search-actions contacts-titlebar-search" method="get" data-project-search-form>
-                <label class="tasks-search-field" for="filter-search">
-                    <i data-lucide="search" aria-hidden="true"></i>
-                    <input id="filter-search" type="search" name="q" value="{{ query }}" placeholder="Szukaj firmy" autocomplete="off">
-                </label>
+            <form hidden id="directory-search-form" method="get" data-project-search-form>
                 <input type="hidden" name="page_size" value="{{ company_window.page_size }}" data-project-search-page-size>
                 <input type="hidden" name="contact_filter" value="{{ company_contact_filter }}" data-project-filter-input="contact_filter">
                 <input type="hidden" name="sort" value="{{ company_sort_param }}" data-project-sort-input>
             </form>
+            <div class="tasks-titlebar-actions">
+                <button type="button" class="tasks-tag-topbar-button" title="Dodaj firmę" aria-label="Dodaj firmę" aria-haspopup="dialog" aria-controls="company-create-modal" data-open-company>
+                    <span aria-hidden="true"><i data-lucide="plus"></i></span><span>Dodaj firmę</span>
+                </button>
+                <div class="tasks-section-actions" data-section-actions>
+                    <button type="button" class="tasks-icon-button" aria-label="Więcej opcji" title="Więcej opcji" aria-haspopup="menu" aria-expanded="false" data-section-menu-toggle><i data-lucide="ellipsis" aria-hidden="true"></i></button>
+                    <div class="tasks-section-menu" role="menu"><button type="button" class="tasks-project-menu-button" role="menuitem" data-open-contact>Dodaj kontakt</button></div>
+                </div>
+            </div>
         </header>
 
-        <div class="tasks-filterbar tasks-filterbar--task-directory contacts-filterbar contacts-toolbar-filterbar">
+        <div class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--task-directory contacts-filterbar contacts-toolbar-filterbar">
             <div class="tasks-filterbar-left">
                 {% include 'tasks/includes/directory_column_manager.html' %}
                 {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=company_contact_filter only %}
@@ -52,7 +57,6 @@
                         {% endfor %}
                     </div>
                 </div>
-                {% include 'tasks/includes/directory_pagination_toolbar.html' with window=company_window items_exist=companies pages_label='Strony firm' previous_label='Poprzednie firmy' next_label='Następne firmy' page_size_label='Liczba firm na stronie' only %}
                 <div class="tasks-filter-dropdown" data-project-filter-menu="contact_filter">
                     <button type="button" class="tasks-filter-button{% if company_contact_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="contact_filter">
                         <i data-lucide="users" aria-hidden="true"></i>
@@ -68,7 +72,11 @@
             </div>
             <div class="tasks-filterbar-center"></div>
             <div class="tasks-filterbar-right">
-                <button type="button" class="tasks-tag-topbar-button" aria-haspopup="dialog" aria-controls="company-create-modal" data-open-company>Nowa firma</button>
+                <label class="tasks-search-field tasks-project-search" for="filter-search">
+                    <i data-lucide="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" name="q" form="directory-search-form" value="{{ query }}" placeholder="Szukaj firmy" autocomplete="off">
+                </label>
+                {% include 'tasks/includes/directory_pagination_toolbar.html' with window=company_window items_exist=companies pages_label='Strony firm' previous_label='Poprzednie firmy' next_label='Następne firmy' page_size_label='Liczba firm na stronie' only %}
             </div>
         </div>
 

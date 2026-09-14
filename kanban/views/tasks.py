@@ -680,6 +680,15 @@ def _section_window_for_request(request):
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
     queryset = _section_filter_queryset(request.user, query=query, workplace=_active_workplace(request))
+    project_filter = (request.GET.get('board_project') or '').strip()
+    if project_filter.isdigit():
+        queryset = queryset.filter(project_id=int(project_filter))
+    else:
+        project_filter = ''
+    sort = request.GET.get('sort') or 'name_asc'
+    if sort not in ('name_asc', 'name_desc'):
+        sort = 'name_asc'
+    queryset = queryset.order_by('-title' if sort == 'name_desc' else 'title', 'id')
     total_sections = queryset.count()
     total_pages = max(1, (total_sections + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
@@ -689,6 +698,8 @@ def _section_window_for_request(request):
     base_params = {
         'view': 'all-groups',
         'q': query,
+        'board_project': project_filter,
+        'sort': '' if sort == 'name_asc' else sort,
         'page_size': page_size,
     }
     has_previous = current_page > 1 and total_sections > 0
@@ -714,6 +725,11 @@ def _section_window_for_request(request):
 
     return {
         'sections': sections,
+        'project_filter': project_filter,
+        'project_options': _filter_workplace(KanbanProject.objects.filter(user=request.user), _active_workplace(request)).order_by('name'),
+        'sort': sort,
+        'sort_label': 'Tablica Z–A' if sort == 'name_desc' else 'Tablica A–Z',
+        'sort_direction': 'desc' if sort == 'name_desc' else 'asc',
         'query': query,
         'page': current_page,
         'total_pages': total_pages,
@@ -966,6 +982,7 @@ def _tag_window_for_request(request):
         'previous_url': previous_url,
         'next_url': next_url,
         'summary': summary,
+        'compact_summary': f'{offset + 1}-{offset + len(tags)} z {total_tags}' if tags else '0 z 0',
     }
 
 

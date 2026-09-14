@@ -1572,8 +1572,33 @@ def _task_window_for_request(request, queryset):
         due,
         sort != TASK_DEFAULT_SORT,
     ))
+    total_tasks = queryset.count()
+    page_size = _project_page_size(request)
+    total_pages = max(1, (total_tasks + page_size - 1) // page_size)
+    current_page = min(_project_page_number(request), total_pages)
+    offset = (current_page - 1) * page_size
+    base_params = _request_query_params(request)
+    # Status-specific pages belong to the group view, not the combined directory.
+    for task_status, _label in Task.STATUS_CHOICES:
+        base_params.pop(_task_status_page_param(task_status), None)
+        base_params.pop(_task_status_page_size_param(task_status), None)
+    base_params.update(page_size=page_size)
+    base_params.pop('page', None)
+    has_previous = current_page > 1
+    has_next = current_page < total_pages
+    compact_summary = f'{offset + 1}-{min(offset + page_size, total_tasks)} z {total_tasks}' if total_tasks else '0 z 0'
     return {
-        'queryset': queryset,
+        'queryset': queryset[offset:offset + page_size],
+        'page': current_page,
+        'page_size': page_size,
+        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
+        'total_pages': total_pages,
+        'has_previous': has_previous,
+        'has_next': has_next,
+        'previous_url': _projects_url({**base_params, 'page': current_page - 1}, base_url=request.path) if has_previous else '',
+        'next_url': _projects_url({**base_params, 'page': current_page + 1}, base_url=request.path) if has_next else '',
+        'summary': f'Pokazano {compact_summary} zadań' if total_tasks else 'Brak zadań',
+        'compact_summary': compact_summary,
         'query': query,
         'priority': priority,
         'status': status,
@@ -1587,7 +1612,7 @@ def _task_window_for_request(request, queryset):
         'sort_label': TASK_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': TASK_SORT_OPTION_MAP[sort]['direction'],
         'filters': _task_filter_options(request.user, workplace=workplace),
-        'total_tasks': queryset.count(),
+        'total_tasks': total_tasks,
         'has_active_filters': active_filters,
     }
 
@@ -2242,6 +2267,7 @@ def _tag_window_for_request(request):
         'previous_url': previous_url,
         'next_url': next_url,
         'summary': summary,
+        'compact_summary': f'{offset + 1}-{offset + len(tags)} z {total_tags}' if tags else '0 z 0',
     }
 
 
@@ -3857,9 +3883,6 @@ def _tasks_page(request, active_section=None):
         all_status_groups = _status_groups_for_tasks(
             task_window['queryset'],
             request.user,
-            request=request,
-            base_url=request.path,
-            paginate=True,
         )
     all_sections = group_window['sections'] if active_view == 'all_groups' else []
     shared_projects = []

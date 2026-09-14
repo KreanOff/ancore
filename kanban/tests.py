@@ -765,6 +765,33 @@ class KanbanProjectCreationTests(TestCase):
         self.assertNotIn('Tablica 058', table_html)
         self.assertContains(response, 'Pokazano 1-1 z 1 tablic')
 
+    def test_board_toolbar_filters_and_sorts_before_pagination(self):
+        project = KanbanProject.objects.create(user=self.user, name='Studio')
+        other_project = KanbanProject.objects.create(user=self.user, name='Inna przestrzeń')
+        for index in range(12):
+            KanbanSection.objects.create(project=project, title=f'Tablica {index:02d}')
+        KanbanSection.objects.create(project=other_project, title='Tablica spoza filtra')
+        outsider = get_user_model().objects.create_user(username='outside-board')
+        private_project = KanbanProject.objects.create(user=outsider, name='Prywatna')
+        KanbanSection.objects.create(project=private_project, title='Prywatna tablica')
+        response = self.client.get(reverse('kanban:tasks'), {
+            'view': 'all-groups', 'board_project': project.pk,
+            'q': 'Tablica', 'sort': 'name_desc', 'page_size': 10,
+        })
+        window = response.context['section_window']
+        self.assertEqual(window['total_sections'], 12)
+        self.assertEqual([board.title for board in window['sections']],
+                         [f'Tablica {index:02d}' for index in range(11, 1, -1)])
+        response = self.client.get(window['next_url'])
+        self.assertEqual([board.title for board in response.context['section_window']['sections']],
+                         ['Tablica 01', 'Tablica 00'])
+        self.assertContains(response, '11-12 z 12')
+        response = self.client.get(reverse('kanban:tasks'), {
+            'view': 'all-groups', 'board_project': private_project.pk,
+        })
+        self.assertEqual(response.context['section_window']['total_sections'], 0)
+        self.assertNotContains(response, 'Prywatna tablica')
+
     def test_projects_link_hides_workspace_count(self):
         KanbanProject.objects.create(user=self.user, name='Pierwsza przestrzeń', code='ONE')
         KanbanProject.objects.create(user=self.user, name='Druga przestrzeń', code='TWO')

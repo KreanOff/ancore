@@ -6753,40 +6753,15 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
     color: #7a8391;
 }
 
-.tasks-project-search.is-open .tasks-project-query-trigger__chevron {
-    transform: rotate(180deg);
-}
-
-.tasks-project-query-panel.tasks-project-search-panel {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    left: auto;
-    padding: 0.55rem;
-}
-
-.tasks-project-search-panel[hidden] {
-    display: none;
-}
-
-.tasks-project-search-panel .tasks-project-query-search {
-    margin: 0;
-}
-
-.tasks-project-search-panel__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.45rem;
-    margin-top: 0.55rem;
+.tasks-search-field.tasks-project-search {
+    width: clamp(160px, 20vw, 240px);
+    max-width: 100%;
+    height: 30px;
 }
 
 @media (max-width: 767px) {
-    .tasks-filterbar--project-directory .tasks-filterbar-right {
-        position: relative;
-    }
-
-    .tasks-project-search {
-        position: static;
+    .tasks-search-field.tasks-project-search {
+        width: 100%;
     }
 }
 
@@ -14417,4 +14392,122 @@ body.is-resizing-directory-columns {
     background-image: none;
     -webkit-mask: var(--tasks-status-icon-mask) center / contain no-repeat;
     mask: var(--tasks-status-icon-mask) center / contain no-repeat;
+}
+
+/* Shared two-row directory header: title/actions, then filters/search/paging. */
+.tasks-topbar.tasks-topbar--directory {
+    height: auto;
+    min-height: 45px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.95rem;
+}
+
+.tasks-topbar--directory .tasks-titlebar-left {
+    flex: 1 1 auto;
+    max-width: 100%;
+}
+
+.tasks-filterbar.tasks-filterbar--directory {
+    display: flex;
+    height: auto;
+    min-height: 45px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+}
+
+.tasks-filterbar--directory .tasks-filterbar-left {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.tasks-filterbar--directory .tasks-filterbar-center:empty {
+    display: none;
+}
+
+.tasks-filterbar--directory .tasks-filterbar-right {
+    flex: 1 1 440px;
+    margin-left: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+}
+
+.tasks-filterbar--directory .tasks-search-field.tasks-project-search {
+    flex: 1 1 160px;
+    width: auto;
+    max-width: 420px;
+    min-width: 120px;
+    height: 36px;
+}
+
+.tasks-filterbar--directory .tasks-project-pagination--toolbar {
+    flex: 0 0 auto;
+}
+
+.tasks-filterbar--directory .tasks-project-sort-current {
+    display: inline;
+    padding-left: 0.4rem;
+    border-left: 1px solid #edf0f3;
+}
+
+@media (max-width: 767px) {
+    .tasks-filterbar--directory .tasks-filterbar-right {
+        flex-basis: 100%;
+        flex-wrap: wrap;
+    }
+
+    .tasks-filterbar--directory .tasks-search-field.tasks-project-search {
+        flex-basis: 100%;
+        max-width: none;
+    }
+
+    .tasks-topbar--directory .tasks-titlebar-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .tasks-filterbar--directory .tasks-project-query-panel {
+        max-width: calc(100vw - 3rem);
+    }
+}
+
+.tasks-filterbar.tasks-filterbar--directory {
+    flex-direction: row;
+}
+
+.tasks-all-groups-board .tasks-section-card__cover[hidden] {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .tasks-filterbar--directory .tasks-filterbar-left,
+    .tasks-filterbar--directory .tasks-filterbar-left > *,
+    .tasks-filterbar--directory [data-project-sort-toggle] {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .tasks-filterbar--directory .tasks-project-sort-current {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .tasks-filterbar--directory .tasks-project-pagination--toolbar {
+        flex: 0 1 auto;
+        max-width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        margin: 0;
+    }
+}
+
+.tasks-task-display-manager[open] > .tasks-directory-column-menu {
+    display: flex;
+    flex-direction: column;
 }

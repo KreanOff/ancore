@@ -940,7 +940,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-project-responsible-user-id')
         self.assertNotContains(response, 'tasks-responsible-select__avatar')
 
-    def test_projects_search_dropdown_is_in_right_toolbar_and_keeps_filter_form(self):
+    def test_projects_search_field_is_in_right_toolbar_and_keeps_filter_form(self):
         response = self.client.get(reverse('tasks:tasks'))
         html = response.content.decode()
         topbar_start = html.index('class="tasks-topbar')
@@ -955,7 +955,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('<form hidden', topbar_html)
         self.assertIn('data-project-search-form', topbar_html)
         self.assertNotIn('data-filter-search-submit', topbar_html)
-        self.assertIn('data-project-search-toggle', filterbar_html)
+        self.assertIn('class="tasks-search-field tasks-project-search"', filterbar_html)
+        self.assertNotIn('data-project-search-toggle', filterbar_html)
+        self.assertNotIn('projects-search-panel', filterbar_html)
         self.assertIn('id="filter-search"', filterbar_html)
         self.assertIn('form="projects-search-form"', filterbar_html)
 
@@ -1312,7 +1314,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertLess(table_html.index(urgent.title), table_html.index(low.title))
         self.assertContains(response, 'Sortowanie: Priorytet')
-        self.assertContains(response, '<span class="tasks-sort-button__label">Priorytet</span>', html=True)
+        self.assertContains(response, '<span class="tasks-project-sort-current">Priorytet</span>', html=True)
         self.assertContains(response, 'data-project-page-url="/tasks/?view=all-groups&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_tags_view_renders_server_filter_controls(self):
@@ -1412,7 +1414,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertLess(table_html.index(urgent.name), table_html.index(low.name))
         self.assertContains(response, 'Sortowanie: Priorytet')
-        self.assertContains(response, '<span class="tasks-sort-button__label">Priorytet</span>', html=True)
+        self.assertContains(response, '<span class="tasks-project-sort-current">Priorytet</span>', html=True)
         self.assertContains(response, 'data-project-page-url="/tasks/?view=tags&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_tags_view_sorts_by_task_count(self):
@@ -2237,83 +2239,40 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('Grupa projektu 010', table_html)
         self.assertIn('data-project-page="6"', html)
 
-    def test_all_tasks_view_paginates_each_status_independently(self):
+    def test_all_tasks_view_paginates_the_directory_with_status_headings(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt zadań', code='TSK')
         section = TaskSection.objects.create(project=project, title='Plan')
-        for index in range(60):
-            Task.objects.create(
-                user=self.user,
-                section=section,
-                title=f'Nowe zadanie {index:03d}',
-                status='new',
-            )
-        for index in range(12):
-            Task.objects.create(
-                user=self.user,
-                section=section,
-                title=f'Realizowane zadanie {index:03d}',
-                status='in_progress',
-            )
+        for index in range(72):
+            Task.objects.create(user=self.user, section=section,
+                                title=f'Zadanie {index:03d}',
+                                status='new' if index < 60 else 'in_progress')
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
-        html = response.content.decode()
-        new_start = html.index('id="all-tasks-new"')
-        new_end = html.index('</section>', new_start)
-        new_html = html[new_start:new_end]
-        in_progress_start = html.index('id="all-tasks-in_progress"')
-        in_progress_end = html.index('</section>', in_progress_start)
-        in_progress_html = html[in_progress_start:in_progress_end]
+        url = reverse('tasks:tasks')
+        response = self.client.get(f'{url}?view=all-tasks&sort=title_asc')
+        self.assertContains(response, 'task-row tasks-issue-row', count=50)
+        self.assertContains(response, 'Pokazano 1-50 z 72 zadań')
+        self.assertContains(response, 'Zadanie 049')
+        self.assertNotContains(response, 'Zadanie 050')
+        self.assertNotContains(response, 'data-task-status-pagination')
+        self.assertTrue(response.context['task_window']['has_next'])
 
-        self.assertContains(
-            response,
-            'class="tasks-project-pagination tasks-status-pagination" data-task-status-pagination',
-            count=2,
-        )
-        self.assertContains(response, 'task-row tasks-issue-row', count=37)
-        self.assertIn('Nowe zadanie 000', new_html)
-        self.assertIn('Nowe zadanie 024', new_html)
-        self.assertNotIn('Nowe zadanie 025', new_html)
-        self.assertIn('Realizowane zadanie 011', in_progress_html)
-        self.assertContains(response, 'Pokazano 1-25 z 60 zadań')
-        self.assertContains(response, 'Pokazano 1-12 z 12 zadań')
-        self.assertIn(
-            'data-task-status-page-url="/tasks/?view=all-tasks&amp;task_new_page_size=25&amp;task_new_page=2"',
-            html,
-        )
-        self.assertIn('data-task-status-page="2"', html)
-
-        response = self.client.get(
-            f"{reverse('tasks:tasks')}?view=all-tasks&task_new_page_size=50&task_new_page=2"
-        )
-        html = response.content.decode()
-        new_start = html.index('id="all-tasks-new"')
-        new_end = html.index('</section>', new_start)
-        new_html = html[new_start:new_end]
-        in_progress_start = html.index('id="all-tasks-in_progress"')
-        in_progress_end = html.index('</section>', in_progress_start)
-        in_progress_html = html[in_progress_start:in_progress_end]
-
+        response = self.client.get(response.context['task_window']['next_url'])
         self.assertContains(response, 'task-row tasks-issue-row', count=22)
-        self.assertIn('Nowe zadanie 050', new_html)
-        self.assertIn('Nowe zadanie 059', new_html)
-        self.assertNotIn('Nowe zadanie 049', new_html)
-        self.assertIn('Realizowane zadanie 011', in_progress_html)
-        self.assertContains(response, 'Pokazano 51-60 z 60 zadań')
-        self.assertIn('aria-current="page">2</button>', html)
-        self.assertIn(
-            'data-task-status-page-url="/tasks/?view=all-tasks&amp;task_new_page_size=50"',
-            html,
-        )
+        self.assertContains(response, 'Pokazano 51-72 z 72 zadań')
+        self.assertContains(response, 'id="all-tasks-new"')
+        self.assertContains(response, 'id="all-tasks-in_progress"')
+        self.assertContains(response, 'Zadanie 050')
+        self.assertContains(response, 'Zadanie 071')
+        self.assertNotContains(response, 'Zadanie 049')
+        self.assertFalse(response.context['task_window']['has_next'])
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks&task_new_page_size=10")
-        html = response.content.decode()
-        new_start = html.index('id="all-tasks-new"')
-        new_end = html.index('</section>', new_start)
-        new_html = html[new_start:new_end]
-
-        self.assertIn('Nowe zadanie 000', new_html)
-        self.assertNotIn('Nowe zadanie 010', new_html)
-        self.assertIn('data-task-status-page="6"', html)
+        response = self.client.get(f'{url}?view=all-tasks&page_size=10&page=999')
+        self.assertContains(response, 'task-row tasks-issue-row', count=2)
+        self.assertEqual(response.context['task_window']['page'], 8)
+        response = self.client.get(f'{url}?view=all-tasks&q=missing')
+        self.assertContains(response, '0 z 0')
+        self.assertFalse(response.context['task_window']['has_previous'])
+        self.assertFalse(response.context['task_window']['has_next'])
 
     def test_all_tasks_view_renders_server_search_sort_and_filter_controls(self):
         assignee = get_user_model().objects.create_user(
@@ -2354,7 +2313,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Szukaj grupy')
         self.assertContains(response, 'Szukaj osoby')
 
-    def test_all_tasks_view_filters_searches_sorts_and_preserves_status_pagination_params(self):
+    def test_all_tasks_view_filters_searches_sorts_and_preserves_pagination_params(self):
         assignee = get_user_model().objects.create_user(
             username='alpha-assignee',
             first_name='Adam',
@@ -2399,7 +2358,7 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(
             f"{reverse('tasks:tasks')}?view=all-tasks&q=Alpha&priority=high&status=new"
             f"&task_project={project.id}&task_section={section.id}&task_assignee={assignee.id}"
-            f"&task_type=call&task_due=overdue&sort=title_desc"
+            f"&task_type=call&task_due=overdue&sort=title_desc&page_size=25"
         )
         html = response.content.decode()
         new_start = html.index('id="all-tasks-new"')
@@ -2414,7 +2373,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('Beta ukryte', html)
         self.assertIn('id="all-tasks-new"', html)
         self.assertNotIn('id="all-tasks-in_progress"', html)
-        self.assertIn('task_new_page=2', html)
+        self.assertIn('page=2', html)
         self.assertIn('q=Alpha', html)
         self.assertIn('priority=high', html)
         self.assertIn('status=new', html)
@@ -2424,7 +2383,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('task_type=call', html)
         self.assertIn('task_due=overdue', html)
         self.assertIn('sort=title_desc', html)
-        self.assertContains(response, '<span class="tasks-sort-button__label">Zadanie Z-A</span>', html=True)
+        self.assertContains(response, '<span class="tasks-project-sort-current">Zadanie Z-A</span>', html=True)
         self.assertContains(response, 'Projekt: Projekt Alpha')
         self.assertContains(response, 'Grupa: Wdrożenie (Projekt Alpha)')
         self.assertContains(response, 'Odpowiedzialny: Adam Nowak')

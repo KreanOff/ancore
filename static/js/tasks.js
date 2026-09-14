@@ -8,6 +8,23 @@ function initTasksPage() {
     const pageListenerOptions = pageListenersController ? { signal: pageListenersController.signal } : false;
     const pageCaptureListenerOptions = pageListenersController ? { signal: pageListenersController.signal, capture: true } : true;
 
+    const boardDisplayToggle = document.querySelector('[data-board-show-covers]');
+    if (boardDisplayToggle) {
+        let showCovers = true;
+        try { showCovers = localStorage.getItem('ancore:board-show-covers') !== 'false'; } catch (_) {}
+        const applyBoardDisplay = () => {
+            document.querySelectorAll('.tasks-all-groups-board .tasks-section-card__cover').forEach(cover => {
+                cover.hidden = !boardDisplayToggle.checked;
+            });
+        };
+        boardDisplayToggle.checked = showCovers;
+        applyBoardDisplay();
+        boardDisplayToggle.addEventListener('change', () => {
+            try { localStorage.setItem('ancore:board-show-covers', String(boardDisplayToggle.checked)); } catch (_) {}
+            applyBoardDisplay();
+        }, pageListenerOptions);
+    }
+
     const taskRows = document.querySelectorAll('.task-row');
     const projectRows = document.querySelectorAll('.tasks-project-row');
     const sectionRows = document.querySelectorAll('.tasks-section-row');
@@ -24,9 +41,6 @@ function initTasksPage() {
     const projectPageNext = document.querySelector('[data-project-page-next]');
     const taskStatusPaginations = document.querySelectorAll('[data-task-status-pagination]');
     const projectSearchForm = document.querySelector('[data-project-search-form]');
-    const projectSearchDropdown = document.querySelector('[data-project-search-dropdown]');
-    const projectSearchToggle = projectSearchDropdown?.querySelector('[data-project-search-toggle]');
-    const projectSearchPanel = projectSearchDropdown?.querySelector('.tasks-project-search-panel');
     const projectSearchPageSizeInput = document.querySelector('[data-project-search-page-size]');
     const projectFilterInputs = document.querySelectorAll('[data-project-filter-input]');
     const projectFilterToggles = document.querySelectorAll('[data-project-filter-toggle]');
@@ -1685,14 +1699,6 @@ function initTasksPage() {
     function closeProjectSortMenu() {
         projectSortMenu?.classList.remove('is-open');
         projectSortToggle?.setAttribute('aria-expanded', 'false');
-    }
-
-    function closeProjectSearch(restoreFocus = false) {
-        if (!projectSearchDropdown || !projectSearchPanel || projectSearchPanel.hidden) return;
-        projectSearchDropdown.classList.remove('is-open');
-        projectSearchToggle?.setAttribute('aria-expanded', 'false');
-        projectSearchPanel.hidden = true;
-        if (restoreFocus) projectSearchToggle?.focus();
     }
 
     function showProjectFilterFieldsView() {
@@ -4531,7 +4537,6 @@ function initTasksPage() {
 
         if (e.key === 'Escape') {
             closeCreateMenu();
-            closeProjectSearch(true);
             closeProjectActionMenus();
             closeSectionActionMenu();
             closeStatusFilterMenu();
@@ -6431,39 +6436,12 @@ function initTasksPage() {
     }
     if (filterSearch) {
         filterSearch.addEventListener('input', function() {
-            if (projectSearchDropdown) return;
             if (usesServerDirectoryFilters) {
                 scheduleServerProjectSearch();
                 return;
             }
             applyFilters();
         });
-    }
-    if (projectSearchDropdown && projectSearchToggle && projectSearchPanel) {
-        projectSearchToggle.addEventListener('click', function() {
-            if (!projectSearchPanel.hidden) {
-                closeProjectSearch();
-                return;
-            }
-            closeProjectFilterBuilder();
-            closeProjectFilterMenus();
-            closeProjectSortMenu();
-            closeProjectPageSizeDropdown();
-            projectSearchDropdown.classList.add('is-open');
-            projectSearchToggle.setAttribute('aria-expanded', 'true');
-            projectSearchPanel.hidden = false;
-            filterSearch?.focus();
-        }, pageListenerOptions);
-        projectSearchDropdown.querySelector('[data-project-search-clear]')?.addEventListener('click', function() {
-            if (filterSearch) filterSearch.value = '';
-            navigateProjectWindow();
-        }, pageListenerOptions);
-        document.addEventListener('click', function(event) {
-            if (!projectSearchDropdown.contains(event.target)) closeProjectSearch();
-        }, pageCaptureListenerOptions);
-        projectSearchDropdown.addEventListener('focusout', function(event) {
-            if (!projectSearchDropdown.contains(event.relatedTarget)) closeProjectSearch();
-        }, pageListenerOptions);
     }
     filterSearchButtons.forEach(button => {
         button.addEventListener('click', function() {
