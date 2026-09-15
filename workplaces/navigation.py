@@ -16,6 +16,7 @@ SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'contacts-guests', 'label': 'Goście', 'icon': 'user-round-alert', 'app': 'contacts', 'suffix': 'guests/'},
     {'key': 'calendar', 'label': 'Kalendarz', 'icon': 'calendar-days', 'app': 'calendar'},
     {'key': 'tags', 'label': 'Tagi', 'icon': 'tag', 'app': 'tasks', 'query': 'view=tags'},
+    {'key': 'documents', 'label': 'Dokumenty', 'icon': 'files', 'app': 'documents'},
 )
 
 SIDEBAR_FAVORITE_KEYS = frozenset(item['key'] for item in SIDEBAR_FAVORITE_DEFINITIONS)
@@ -45,6 +46,9 @@ def sidebar_favorite_is_active(item_key, request, active_view='', active_contact
 
     if item_key == 'dashboard':
         return view_name == 'home'
+
+    if item_key == 'documents':
+        return app_name in {'documents', 'workplace_documents'}
 
     if item_key.startswith('tasks-') or item_key == 'tags':
         if app_name not in {'tasks', 'workplace_tasks', 'kanban', 'workplace_kanban'}:

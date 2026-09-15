@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     'contacts',
     'dashboard',
     'planner',
+    'documents',
 ]
 
 MIDDLEWARE = [
@@ -205,6 +206,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # Media files (uploaded attachments)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+PRIVATE_DOCUMENT_ROOT = BASE_DIR / 'private_documents'
 MAX_PROFILE_PHOTO_SIZE = env_int('MAX_PROFILE_PHOTO_SIZE', 5 * 1024 * 1024)
 MAX_ATTACHMENT_SIZE = env_int('MAX_ATTACHMENT_SIZE', 10 * 1024 * 1024)
 FILE_UPLOAD_MAX_MEMORY_SIZE = env_int('FILE_UPLOAD_MAX_MEMORY_SIZE', 5 * 1024 * 1024)

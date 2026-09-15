@@ -3,12 +3,14 @@
 {% url 'kanban:tasks' as sidebar_kanban_fallback_url %}
 {% url 'contacts:contacts' as sidebar_contacts_fallback_url %}
 {% url 'planner:index' as sidebar_calendar_fallback_url %}
+{% url 'documents:library' as sidebar_documents_fallback_url %}
 {% url 'home' as sidebar_dashboard_url %}
 {% url 'notifications' as sidebar_notifications_url %}
 {% firstof workplace_app_urls.tasks sidebar_tasks_fallback_url as sidebar_tasks_url %}
 {% firstof workplace_app_urls.kanban sidebar_kanban_fallback_url as sidebar_kanban_url %}
 {% firstof workplace_app_urls.contacts sidebar_contacts_fallback_url as sidebar_contacts_url %}
 {% firstof workplace_app_urls.calendar sidebar_calendar_fallback_url as sidebar_calendar_url %}
+{% firstof workplace_app_urls.documents sidebar_documents_fallback_url as sidebar_documents_url %}
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -237,6 +239,11 @@
                 <span class="nav-label">Tagi</span>
             </a>
             {% sidebar_favorite_toggle 'tags' 'Tagi' 'tag' sidebar_tasks_url|add:'?view=tags' %}
+            <a href="{{ sidebar_documents_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'documents' or request.resolver_match.app_name == 'workplace_documents' %}active{% endif %}" aria-label="Dokumenty" title="Dokumenty" data-sidebar-source-item="documents" draggable="true">
+                <i class="nav-icon" data-lucide="files" aria-hidden="true"></i>
+                <span class="nav-label">Dokumenty</span>
+            </a>
+            {% sidebar_favorite_toggle 'documents' 'Dokumenty' 'files' sidebar_documents_url %}
             </section>
 
         </nav>

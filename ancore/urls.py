@@ -6,6 +6,7 @@ from contacts import urls as contacts_urls
 from kanban import urls as kanban_urls
 from planner import urls as planner_urls
 from tasks import urls as tasks_urls
+from documents import urls as documents_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,7 +16,9 @@ urlpatterns = [
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/kanban/', include((kanban_urls.urlpatterns, 'workplace_kanban'), namespace='workplace_kanban')),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/contacts/', include((contacts_urls.urlpatterns, 'workplace_contacts'), namespace='workplace_contacts')),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/calendar/', include((planner_urls.urlpatterns, 'workplace_planner'), namespace='workplace_planner')),
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/documents/', include((documents_urls.urlpatterns, 'workplace_documents'), namespace='workplace_documents')),
     path('workplaces/', include('workplaces.urls')),
+    path('documents/', include('documents.urls')),
     path('tasks/', include('tasks.urls')),
     path('kanban/', include('kanban.urls')),
     path('contacts/', include('contacts.urls')),

@@ -1,0 +1,263 @@
+# Moduły i funkcje aplikacji
+
+Ten dokument opisuje aktywny kod lokalny. Szczegółowe modele, relacje,
+formularze, endpointy i szablony są w [indeksie kodu](CODE_INDEX.md).
+Zasady wspólne znajdują się w [MECHANISMS.md](MECHANISMS.md).
+
+## 1. Konta i profil — Accounts
+
+Źródła: [widoki](../accounts/views.py), [model](../accounts/models.py),
+[formularze](../accounts/forms.py), [obecność](../accounts/presence.py).
+
+**Funkcje:** rejestracja, logowanie przez e-mail, wylogowanie, edycja profilu,
+zdjęcie z kadrowaniem/usuwaniem, publiczny identyfikator Ancore, dane kontaktowe,
+status obecności i przełączanie między kontami dodanymi do jednej sesji.
+
+`User` rozszerza `AbstractUser`. E-mail jest unikalny i służy do logowania;
+`username` pozostaje osobnym publicznym identyfikatorem. Profil zawiera imiona,
+nazwisko, telefon, stanowisko, opis, zdjęcie i dane obecności.
+
+Dodanie kolejnego konta wymaga jego uwierzytelnienia. Przełącznik przechowuje
+identyfikatory wcześniej dodanych kont w sesji. „Usuń konto z przełącznika”
+usuwa wpis z przełącznika; nie usuwa użytkownika z bazy. Nie można w ten sposób
+usunąć jedynego pozostałego konta sesji.
+
+**Scenariusz:** rejestracja → logowanie → Workspace → profil/ustawienia →
+opcjonalnie dodanie drugiego konta → przełączenie. Statusy automatyczne i ręczne
+obsługuje osobny mechanizm opisany w Mechanizmach.
+
+## 2. Workspace — Workplaces
+
+Źródła: [modele](../workplaces/models.py), [usługi](../workplaces/services.py),
+[middleware](../workplaces/middleware.py), [widoki](../workplaces/views.py),
+[nawigacja](../workplaces/navigation.py).
+
+**Funkcje:** lista miejsc pracy, utworzenie, edycja, usunięcie i przełączenie;
+nazwa, opis, kod, slug i obraz; ulubione miejsca w nawigacji oraz ich kolejność.
+Po zalogowaniu, jeśli nie ma Workspace, usługa może utworzyć domyślne
+„Moje miejsce pracy”.
+
+`WorkplaceMembership` przechowuje role owner/admin/member, ale
+`workplaces_for_user()` zwraca obecnie wyłącznie Workspace, których konto jest
+właścicielem. Nie jest to aktywny system współdzielonych przestrzeni zespołowych.
+
+`SidebarFavorite` zapisuje w bazie parę użytkownik–Workspace, klucz miejsca
+nawigacji i pozycję. Katalog dozwolonych miejsc jest w
+`SIDEBAR_FAVORITE_DEFINITIONS`. Zwijanie i szerokość nawigacji to lokalny stan UI.
+
+**Scenariusz:** wybierz Workspace → otwórz moduł pod jego adresem → pracuj na
+danych tego kontekstu. Zmiana Workspace zmienia kontekst list, formularzy,
+tagów i wyszukiwania. Konto wykonawcy i członkostwo nie zastępują kontroli właściciela.
+
+## 3. Projekty, grupy i zadania — Tasks
+
+Źródła: [modele](../tasks/models.py), [formularze](../tasks/forms.py),
+[główna logika](../tasks/views/tasks.py), [ustawienia pól](../tasks/views/project_settings.py).
+
+### Ekrany
+
+- Katalog projektów — domyślny widok modułu.
+- Projekt — lista jego grup.
+- Wszystkie grupy oraz widok konkretnej grupy.
+- Wszystkie zadania i Moje zadania.
+- Szczegóły zadania/podzadania, komentarze i historia.
+- Katalog tagów oraz formularze tworzenia i edycji.
+
+Katalogi obsługują wyszukiwanie, sortowanie, filtrowanie i paginację po stronie
+serwera. UI ma wybór widocznych kolumn, zmianę szerokości/kolejności oraz akcje
+zbiorcze. Zakres funkcji różni się między typami list; nie należy automatycznie
+przenosić każdej funkcji jednego katalogu do wszystkich pozostałych.
+
+### Dane
+
+| Obiekt | Zawartość i powiązania |
+| --- | --- |
+| `TaskProject` | Nazwa, opis, kod, priorytet, status, etap, kondycja, początek i termin, budżet/waluta, źródło, firma, osoba odpowiedzialna, właściciel i Workspace |
+| `TaskSection` | Grupa projektu: nazwa, opis, kod, rodzaj, status, właściciel grupy, priorytet, termin, zapisany limit WIP i kolejność |
+| `Task` | Tytuł, opis, status, priorytet, termin i zapisane przypomnienie, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic |
+| Notatki | Osobne modele dla projektu, grupy i tagu, z autorem i czasem edycji |
+| `TaskActivity` | Historia i komentarze zadania; aktor, akcja, wiadomość i metadane zmian |
+| `TaskAttachment` | Plik przypisany do zadania, nazwa i rozmiar |
+
+„Moje zadania” korzystają z przypisania, nadal wewnątrz dostępnych danych
+właściciela. Przypisanie innego użytkownika nie udostępnia mu rekordu.
+
+### Podstawowy scenariusz
+
+1. Utwórz projekt. Aktywna akcja tworzy razem z nim początkową grupę.
+2. Dodaj lub wybierz grupę i utwórz zadanie przez istniejący formularz/modal.
+3. Otwórz szczegóły, zmień pola i użyj przycisku zapisu.
+4. Dodaj komentarz, pliki do zadania głównego lub podzadanie.
+5. Zmień status. `closed` wiąże się z zakończeniem i datą zakończenia;
+   otwarcie ponownie czyści te dane.
+
+Szczegóły zadania mają jawny zapis. Nazwa starego parametru wersji skryptu
+zawierająca „autosave” nie oznacza aktywnego autozapisu.
+Podzadanie dziedziczy kontekst rodzica; w obecnych widokach nie można dodawać
+do niego załączników.
+
+### Konfigurowalne pola projektu i terminy
+
+`TaskProjectFieldOption` definiuje etykiety i kolory statusu, etapu, kondycji
+i źródła w zakresie właściciela/Workspace. Źródło może też zostać wpisane ręcznie.
+Zmiana nazwy źródła może aktualizować używające go projekty w tym samym zakresie.
+Usunięcie używanej opcji jest blokowane. Dla statusu/etapu/kondycji trzeba
+zachować co najmniej jedną aktywną opcję; źródła mogą być puste.
+
+`TaskProjectDeadlineRule` określa kolor terminu według liczby dni. Są reguły
+wspólne dla Workspace i opcjonalne reguły konkretnego projektu. Włączenie
+własnych progów kopiuje reguły wspólne; reset przywraca dziedziczenie.
+To osobny mechanizm od `Task.due_urgency`, który ocenia termin zadania w godzinach.
+
+## 4. Przestrzenie, tablice i karty — Kanban
+
+Źródła: [modele](../kanban/models.py), [formularze](../kanban/forms.py),
+[widoki](../kanban/views/tasks.py), [szablony](../kanban/templates/kanban).
+
+**Hierarchia:** `KanbanProject` (przestrzeń robocza) → `KanbanSection` (tablica)
+→ `KanbanBoardColumn` → `Kanban` (karta), z opcjonalnymi podkartami.
+
+**Funkcje:** katalog przestrzeni, katalog tablic, tablica z kolumnami,
+tworzenie/edycja kart, komentarze, historia, załączniki, czas pracy,
+priorytety, tagi, dodawanie/nazywanie/usuwanie i przestawianie kolumn,
+przenoszenie kart między kolumnami. Ustawienia widoku obejmują m.in.
+okładki i lokalnie przechowywane tapety.
+
+Karty mają osobne statusy i relację `column`. Zmiana kolumny w obecnym kodzie
+ustawia relację; nie należy utożsamiać jej ze zmianą statusu na `closed`.
+Pole `is_done` na kolumnie samo nie stanowi automatyzacji zakończenia karty.
+`ensure_defaults_for_section()` jest obecnie funkcją pustą.
+
+Usunięcie kolumny przez aktywną akcję usuwa również przypisane do niej karty.
+Nie można tą akcją usunąć ostatniej kolumny. To ważny kontrakt do sprawdzenia
+przy każdej zmianie zarządzania tablicą.
+
+Modele projektów Kanbana mają m.in. status, etap, kondycję i firmę, ale nie
+korzystają automatycznie ze wszystkich ustawień `TaskProjectFieldOption`
+i reguł terminu modułu Tasks. UI i JavaScript są częściowo wspólne, dane osobne.
+
+## 5. Wspólne tagi
+
+Źródła: `TaskTag`, `TaskTagNote` w [tasks/models.py](../tasks/models.py),
+formularze i katalogi Tasks/Kanban oraz formularze Dokumentów.
+
+Tag ma nazwę, opis, kod, kategorię, kolor, ikonę, priorytet, deklarowany zakres,
+etykietę właściciela, status, powiązane tagi, notatki użycia i tekst reguł.
+Ten sam model jest przypinany do zadań, kart i dokumentów.
+
+`scope` jest zapisaną klasyfikacją; nie jest samoistnym systemem uprawnień.
+`automation_rules` jest tekstem. Nie znaleziono silnika wykonującego te reguły.
+Przy zmianie/usunięciu tagu sprawdź wszystkie trzy moduły i wyszukiwanie.
+
+## 6. Kontakty, firmy i goście — Contacts
+
+Źródła: [modele](../contacts/models.py), [widoki](../contacts/views.py),
+[formularze](../contacts/forms.py).
+
+- `Company`: firma właściciela w Workspace; dane kontaktowe, adres, notatki,
+  zdjęcie, kontakty i model członkostwa.
+- `Contact`: osoba lub wpis kontaktowy z danymi, firmą tekstową/opcjonalnym
+  rekordem `Company`, rolą, statusem, źródłem i datą ostatniego kontaktu.
+- `UserContact`: połączenie wpisu właściciela z kontem Ancore.
+- `ContactActivity`: historia zmian i komentarze.
+
+Moduł rozróżnia wpisy powiązane z kontem Ancore oraz gości bez tego powiązania.
+Są formularze tworzenia kontaktu/firmy, szczegóły i edycja, wyszukiwanie,
+sortowanie, paginacja i wyszukiwanie publicznego identyfikatora Ancore.
+Widok katalogu użytkowników odnosi się do dodanych kontaktów, a nie pełnego
+publicznego katalogu wszystkich kont.
+
+**Scenariusz:** utwórz firmę → utwórz kontakt, opcjonalnie wskaż ID Ancore →
+obejrzyj szczegóły → edytuj dane lub dopisz komentarz. Relacja z użytkownikiem
+nie nadaje mu dostępu do prywatnych projektów właściciela.
+
+Modele `SharedItem` i `SharedItemLink` nadal istnieją, lecz nie opisują
+obecnie aktywnej funkcji udostępniania w interfejsie. Patrz Mechanizmy.
+
+## 7. Kalendarz — Planner
+
+Źródła: [widoki](../planner/views.py), [formularz](../planner/forms.py),
+[szablon](../planner/templates/planner/index.html), [JS](../static/js/calendar.js).
+
+Własny kalendarz przeglądarkowy pracuje na `CalendarEvent`: tytuł, opis,
+początek, koniec, cały dzień, kolor, użytkownik i Workspace.
+Ekran pozwala nawigować po datach i zmieniać widok; wydarzenia pobierane są
+przez endpoint zakresu dat. Tworzenie, edycja i usuwanie używają POST.
+
+Formularz sprawdza kolejność dat. Dla wydarzenia całodniowego normalizuje
+godziny do początku i końca dnia. Parametry `date`/`event` pozwalają wejść
+na wybraną datę lub wydarzenie, np. z wyszukiwarki.
+
+To własne wydarzenia aplikacji. Kod nie potwierdza synchronizacji z Google
+Calendar/Outlook ani automatycznej zamiany każdego terminu zadania w wydarzenie.
+
+## 8. Biblioteki i pliki — Documents
+
+Źródła: [modele](../documents/models.py), [widoki](../documents/views.py),
+[formularze](../documents/forms.py), [JS](../static/js/documents.js).
+
+**Hierarchia:** biblioteka → foldery zagnieżdżone → pliki.
+Każda biblioteka, folder i dokument mają właściciela oraz Workspace.
+Dokument ma UUID, nazwę, opis, oryginalną nazwę pliku, rozmiar, tagi,
+gwiazdkę oraz datę przeniesienia do kosza.
+
+**Ekrany i funkcje:**
+
+- Katalog bibliotek z tworzeniem, zmianą nazwy/opisu i usunięciem pustej biblioteki.
+- Zawartość biblioteki/folderu i ścieżka nawigacyjna.
+- Widoki całego Workspace: wszystkie, ostatnio zmienione, oznaczone i kosz.
+- Wyszukiwanie, sortowanie, filtr tagu, paginacja i wybór widocznych kolumn.
+- Upload wielu plików, pobieranie po autoryzacji, edycja metadanych,
+  przenoszenie pliku między folderami tej samej biblioteki.
+- Tworzenie/zmiana nazwy/usunięcie pustego folderu.
+- Przeniesienie do kosza i przywrócenie do poprzedniej lokalizacji.
+
+W widoku Workspace pliki mogą pochodzić z wielu bibliotek i zagnieżdżonych
+folderów. Liczniki nawigacji są niezależne od aktualnego wyszukiwania.
+Formularze tworzenia/edycji działają jako dialog na tle listy także po otwarciu
+bezpośredniego linku; specjalny nagłówek pobiera sam fragment formularza.
+
+Upload wymaga biblioteki, waliduje całą partię przed zapisem i dopuszcza do
+20 plików. Dostępne formaty i limity wynikają ze wspólnego walidatora.
+Folder zawierający pliki, podfoldery lub pliki w koszu nie może zostać usunięty.
+Biblioteka również musi być pusta. Kosz jest logiczny; nie ma tu endpointu
+trwałego opróżniania kosza, wersjonowania, OCR ani edytora zawartości dokumentów.
+
+## 9. Start, ustawienia, wyszukiwarka i powiadomienia — Dashboard
+
+Źródła: [widoki](../dashboard/views.py), [routing](../dashboard/urls.py).
+
+- **Start:** `/` przekierowuje do listy Workspace.
+- **Ustawienia:** centrum linków do profilu, kont, Workspace, pól projektów
+  i preferencji dostępnych na ekranie.
+- **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
+- **Powiadomienia:** panel/strona ostatniej aktywności Zadań i Kanbana.
+
+Plik `dashboard/home.html` jest obecnie szablonem powiadomień. Sama nazwa
+`home` nie oznacza osobnego pulpitu statystyk. Powiadomienia nie mają
+oddzielnej tabeli dostarczenia/odczytu ani push/email w sprawdzonej implementacji.
+
+## 10. Wspólna powłoka i narzędzia — Core / Static
+
+[core/base.html](../core/templates/core/base.html) dostarcza nawigację,
+przełącznik Workspace, ulubione, profil, obszar treści, host modali,
+komunikaty, globalne wyszukiwanie, panel powiadomień i Sticker.
+
+Sticker przechowuje tekst, pozycję, rozmiar i otwarcie w `localStorage`
+przeglądarki. Nie jest zapisem w bazie ani notatką synchronizowaną między kontami.
+Pozostałe lokalne preferencje UI opisuje [MECHANISMS.md](MECHANISMS.md).
+
+## 11. Funkcje wymagające ostrożnej interpretacji
+
+| Element w kodzie | Faktyczny zakres |
+| --- | --- |
+| Role członkostwa Workspace/firmy | Są w modelach; obecne widoki biznesowe opierają się na właścicielu |
+| `SharedItem`, funkcje share i tokeny | Pozostałości; aktywny routing Tasks nie rejestruje endpointów linków udostępniania, helpery dostępu zwracają puste wartości |
+| `reminder_at` | Termin przechowywany w zadaniu; nie znaleziono harmonogramu wysyłania przypomnień |
+| `automation_rules` tagu | Tekst opisu; nie znaleziono wykonawcy reguł |
+| `wip_limit` grupy | Zapisane pole; brak potwierdzenia mechanizmu blokującego przekroczenie limitu |
+| `is_done` kolumny Kanban | Pole modelu; przeniesienie do kolumny nie kończy samo karty |
+| `icon` projektu/grupy | Pole historyczne, nieedytowalne; pickery usunięte, nie przywracać ich przy okazji |
+| „Dokumenty” | Lokalny moduł bibliotek i plików; nie integracja SharePoint/Drive |
+
+Przed rozwinięciem tych obszarów sprawdź ich aktualne wywołania i testy.

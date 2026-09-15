@@ -1,0 +1,19 @@
+from django.urls import path
+from . import views
+
+app_name = 'documents'
+urlpatterns = [
+    path('', views.library, name='library'),
+    path('libraries/create/', views.library_create, name='library-create'),
+    path('libraries/<int:pk>/edit/', views.library_edit, name='library-edit'),
+    path('libraries/<int:pk>/delete/', views.library_delete, name='library-delete'),
+    path('upload/', views.upload, name='upload'),
+    path('folders/create/', views.folder_create, name='folder-create'),
+    path('folders/<int:pk>/edit/', views.folder_edit, name='folder-edit'),
+    path('folders/<int:pk>/delete/', views.folder_delete, name='folder-delete'),
+    path('<uuid:pk>/', views.detail, name='detail'),
+    path('<uuid:pk>/download/', views.download, name='download'),
+    path('<uuid:pk>/star/', views.star, name='star'),
+    path('<uuid:pk>/trash/', views.trash, name='trash'),
+    path('<uuid:pk>/restore/', views.restore, name='restore'),
+]

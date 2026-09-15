@@ -19,6 +19,7 @@ def current_workplace(request):
             'kanban': scoped_workplace_app_path(active_workplace, 'kanban'),
             'contacts': scoped_workplace_app_path(active_workplace, 'contacts'),
             'calendar': scoped_workplace_app_path(active_workplace, 'calendar'),
+            'documents': scoped_workplace_app_path(active_workplace, 'documents'),
         }
         sidebar_favorite_keys = list(
             SidebarFavorite.objects.filter(user=user, workplace=active_workplace)
