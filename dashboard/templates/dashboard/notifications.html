@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Powiadomienia | ancore{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+
+{% block content %}
+    <section class="dashboard-rail dashboard-home-notifications" aria-label="Powiadomienia systemowe">
+        <header class="dashboard-rail-header">
+            <div><h1>Powiadomienia</h1></div>
+            <span class="dashboard-rail-badge" aria-label="Liczba powiadomień">{{ dashboard_notification_count }}</span>
+        </header>
+        {% include 'dashboard/includes/notification_list.html' %}
+    </section>
+{% endblock %}

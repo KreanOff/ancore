@@ -135,6 +135,15 @@ Kontakty i firmy mają własne okna wyników. Dokumenty używają `Paginator`;
 na jednej stronie najpierw rozliczają foldery, potem dokumenty, aby nie
 powielać i nie pomijać pozycji przy przechodzeniu między stronami.
 
+`documents/query.py` normalizuje dozwolone filtry i pola sortowania przed
+wykonaniem zapytań. Warunki są nakładane na zbiory ograniczone właścicielem
+i Workspace; wybór biblioteki lub tagu również weryfikuje ten zakres.
+Foldery pozostają przed plikami, z kolejnością według nazwy albo daty utworzenia.
+Daty filtrów obejmują dzisiaj lub ostatnie 7/30 dni kalendarzowych w strefie
+aplikacji. W koszu filtr i sortowanie „Usunięto” używają `deleted_at`.
+Puste lokalizacje trafiają na koniec sortowania; `pk` rozstrzyga remisy.
+Historyczne linki `sort=name`, `updated`, `oldest`, `size` pozostają obsługiwane.
+
 **Zasada:** zachowuj filtrowanie i paginację na serwerze. Pobranie wszystkich
 rekordów do JS i ukrywanie części wierszy zmienia koszt oraz zachowanie list.
 Przed zmianą zapytań sprawdź testy liczby zapytań i renderowania tylko bieżącego okna.

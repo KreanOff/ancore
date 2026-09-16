@@ -23,6 +23,10 @@ referencyjny ekran w tej samej szerokości i stanie co ekran zmieniany.
 - Osobny host `#app-page-modals` oraz komunikaty `#app-notifications`.
 - Wspólne panele wyszukiwania i powiadomień oraz Sticker.
 
+Aktywna ikona w przełączniku domu, powiadomień i wyszukiwania używa
+`color-mix(in srgb, var(--system-accent) 15%, #ffffff)`, tak jak podstawowe
+tło przycisku „Dodaj projekt”, także przy zwiniętym sidebarze.
+
 Nową stronę modułu oprzyj na aktywnych blokach `title`, `extra_head`,
 `page_container_class`, `content` i `page_modals`. Niektóre starsze szablony
 definiują bloki `secondary_menu`/`page_header`, których aktualny base nie
@@ -125,6 +129,62 @@ Ważne wyjątki:
 Referencje pokazują bieżące wzorce kodu, a nie polecenie skopiowania całych
 ekranów. Szablony mają wymagany kontekst i kontrakt z JS. Przy użyciu include'a
 sprawdź wszystkie jego zmienne oraz miejsca wywołania.
+
+### Przyciski akcji w paskach narzędzi
+
+Przyciski używają wariantu `tasks-tag-topbar-button--row-highlight`:
+tła `color-mix(in srgb, var(--system-accent) 15%, #ffffff)` oraz tekstu i ikony
+w kolorze `--text-primary`. Tło jest o 7 punktów procentowych intensywniejsze
+niż podświetlenie wiersza tabeli; przycisk nie ma paska po lewej ani cienia.
+Po najechaniu na aktywny przycisk udział turkusu rośnie do 22%, z przejściem
+koloru wspólnego komponentu; fokus klawiatury dodaje obrys.
+Rozmiar, zaokrąglenie i obsługa modala pochodzą ze wspólnego
+przycisku. Wariant jest stosowany do akcji „Dodaj projekt”, „Dodaj grupę”
+i „Dodaj zadanie” w Zadaniach, „Dodaj przestrzeń” i „Dodaj tablicę” w Kanbanie
+oraz „Dodaj kontakt”, „Dodaj firmę” i „Dodaj gościa” w Kontaktach.
+Ten sam wariant mają „Dodaj tag” w Zadaniach i Kanbanie, „Nowe wydarzenie”
+w pasku Kalendarza, „Nowa biblioteka” w pasku Dokumentów oraz „Otwórz zadania”
+w pasku Dashboardu.
+Obejmuje przyciski katalogów oraz ich odpowiedniki wewnątrz projektu/grupy.
+
+### Tabele i formularze Dokumentów
+
+`documents.css` zachowuje semantyczne tabele bibliotek i plików, dopasowane do
+katalogu projektów: tekst 13px, nagłówki 35px, wiersze danych minimum 48px, białe tło,
+delikatne podziały poziome bez separatorów między kolumnami oraz szare
+podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
+drugą linię z typem i lokalizacją. Nazwy mają
+ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony bibliotek,
+folderów i plików są monochromatyczne, bez ozdobnych ramek.
+
+Panel bibliotek używa `tasks-rail-link`, akcje ikonowe `tasks-icon-button`,
+a wybór kolumn `tasks-directory-column-item`. Formularze korzystają z
+`form-input`, `tasks-inline-input`, `form-select`/`tasks-inline-select` oraz
+`tasks-modal__errors`. Lokalne reguły odpowiadają za układ modułu i upload;
+wspólne komponenty za kontrolki, stany interakcji i powłokę okna.
+
+Filtry Dokumentów używają panelu `tasks-project-filter-builder` i wspólnych
+szablonów warunków tekstowych oraz wyboru wartości. Lista pól i aktywne warunki
+pochodzą z `documents/query.py`; obsługę wyszukiwania, czyszczenia i nawigacji
+zapewnia `tasks.js`. Panel sortowania
+[directory_sort_builder.html](../tasks/templates/tasks/includes/directory_sort_builder.html)
+jest wspólny dla Dokumentów i Wszystkich projektów: wyszukiwanie pola,
+wybór kierunku i zaznaczenie aktualnego ustawienia. Biblioteka, folder i widok
+stanowią kontekst nawigacji; przycisk „Wyczyść” w panelu filtrów ich nie usuwa.
+
+### Dashboard bieżącego Workspace
+
+`dashboard/home.html` rozszerza `core/base.html` i używa `tasks-topbar`,
+istniejących `dashboard-stat`, `dashboard-panel`, ikon statusów oraz include'a
+priorytetu. Wariant `.dashboard-overview` w `components/dashboard.css` ogranicza
+lokalne zmiany do układu pulpitu: cztery liczniki, dwie kolumny paneli,
+natywne paski `progress` i zwarte wiersze linków. Używa tokenów Ancore;
+turkus wyróżnia aktywną listę i postęp. Na węższych ekranach panele tworzą
+jedną kolumnę, liczniki dwie. Treść przewija się w `.dashboard-main`.
+
+Zakładki są linkami GET z `aria-current`, obsługiwanymi również przez wspólną
+częściową nawigację. Dashboard nie wymaga osobnego JavaScriptu. Puste stany
+prowadzą do odpowiedniego modułu; pełne nazwy pozostają w tekście i `title`.
 
 ## 6. Modale
 

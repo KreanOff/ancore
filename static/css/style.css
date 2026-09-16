@@ -12,7 +12,7 @@
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20260914-directory-toolbars-v1';
+@import 'components/tasks.css?v=20260916-project-add-row-highlight-v4';
 @import 'components/contacts.css?v=20260906-row-highlight-v2';
 @import 'components/notifications.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
@@ -298,7 +298,9 @@ body .contacts-actions-menu__item--danger {
 }
 
 body .tasks-tag-topbar-button--secondary,
-body .tasks-tag-topbar-button--secondary :where(span) {
+body .tasks-tag-topbar-button--secondary :where(span),
+body .tasks-tag-topbar-button--row-highlight,
+body .tasks-tag-topbar-button--row-highlight :where(span) {
     --app-text-color: var(--text-main);
     color: var(--app-text-color) !important;
 }
@@ -963,7 +965,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
 .sidebar-view-switcher__item.is-active {
     --app-text-color: var(--text-primary);
 
-    background: rgba(var(--system-accent-rgb), 0.14);
+    background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);
     color: var(--app-text-color);
 }
 
@@ -1578,7 +1580,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
     }
 
     html.sidebar-collapsed .sidebar-view-switcher__item.is-active {
-        background: rgba(var(--system-accent-rgb), 0.14);
+        background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);
         color: var(--text-primary);
     }
 

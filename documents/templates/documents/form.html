@@ -7,16 +7,16 @@
                 <a href="{{ modal.folder_url }}" class="tasks-modal__close" aria-label="Zamknij" data-document-modal-close></a>
             </header>
             <div class="tasks-modal__body documents-form">
-                <p class="documents-modal-error errorlist" role="alert" data-document-modal-error hidden></p>
-                {{ modal.form.non_field_errors }}
+                <div class="documents-modal-error tasks-modal__errors" role="alert" data-document-modal-error hidden></div>
+                {% if modal.form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
                 {% if modal.current_library %}<p class="documents-muted documents-modal-location">{{ modal.current_library.name }}{% if modal.current_folder %} / {{ modal.current_folder.name }}{% endif %}</p>{% endif %}
                 {% if modal.document %}
-                <div class="documents-file-summary"><span class="documents-file-icon"><i data-lucide="{{ modal.document.icon }}" aria-hidden="true"></i></span><div>{{ modal.document.filename }}<small>{{ modal.document.extension }} · {{ modal.document.file_size|filesizeformat }} · Dodano {{ modal.document.created_at|date:'d.m.Y, H:i' }}</small></div><a class="documents-icon-button" href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" download aria-label="Pobierz plik" title="Pobierz plik"><i data-lucide="download" aria-hidden="true"></i></a></div>
+                <div class="documents-file-summary"><span class="documents-file-icon"><i data-lucide="{{ modal.document.icon }}" aria-hidden="true"></i></span><div>{{ modal.document.filename }}<small>{{ modal.document.extension }} · {{ modal.document.file_size|filesizeformat }} · Dodano {{ modal.document.created_at|date:'d.m.Y, H:i' }}</small></div><a class="tasks-icon-button documents-icon-button" href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" download aria-label="Pobierz plik" title="Pobierz plik"><i data-lucide="download" aria-hidden="true"></i></a></div>
                 {% endif %}
                 {% if modal.upload_form %}<p class="documents-upload-hint"><i data-lucide="cloud-upload" aria-hidden="true"></i><span>Wybierz pliki do przesłania<small>Dokumenty, arkusze, obrazy i archiwa. Maks. {{ modal.max_upload_size|filesizeformat }} na plik, do 20 plików jednocześnie.</small></span></p>{% endif %}
                 {% for field in modal.form %}
-                {% if field.name == 'tags' %}<fieldset class="documents-tag-picker"><legend>Tagi</legend>{% if field.field.queryset %}{{ field }}{% else %}<p class="documents-muted">Brak tagów w tym Workspace.</p>{% endif %}{{ field.errors }}</fieldset>
-                {% else %}<div class="documents-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{{ field.errors }}</div>{% endif %}
+                {% if field.name == 'tags' %}<fieldset class="documents-tag-picker"><legend>Tagi</legend>{% if field.field.queryset %}{{ field }}{% else %}<p class="documents-muted">Brak tagów w tym Workspace.</p>{% endif %}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</fieldset>
+                {% else %}<div class="documents-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endif %}
                 {% endfor %}
             </div>
             <footer class="tasks-modal__footer">

@@ -19,6 +19,7 @@ from kanban.models import Kanban, KanbanActivity, KanbanProject, KanbanSection
 from planner.models import CalendarEvent
 from tasks.models import Task, TaskActivity, TaskProject, TaskSection, TaskTag
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
+from .overview import dashboard_overview
 
 
 DASHBOARD_NOTIFICATION_LIMIT = 12
@@ -623,8 +624,16 @@ def settings(request):
 
 
 @login_required
+@require_GET
 def home(request):
-    return redirect('workplaces:workplaces')
+    workplace = getattr(request, 'workplace', None)
+    if workplace is None:
+        return redirect('workplaces:workplaces')
+    response = render(request, 'dashboard/home.html', dashboard_overview(
+        request.user, workplace, request.GET.get('focus'),
+    ))
+    response['Cache-Control'] = 'no-store'
+    return response
 
 
 @login_required
@@ -647,4 +656,4 @@ def notifications(request):
         response['Cache-Control'] = 'no-store'
         return response
 
-    return render(request, 'dashboard/home.html', context)
+    return render(request, 'dashboard/notifications.html', context)

@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Biblioteki dokumentów | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260915-document-modals"><script src="{% static 'js/documents.js' %}?v=20260915-document-modals" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260915-document-rows"><script src="{% static 'js/documents.js' %}?v=20260915-document-filters" defer></script>{% endblock %}
 {% block content %}
 <div class="documents-page documents-library-index">
     {% include 'documents/toolbar.html' %}
@@ -14,18 +14,18 @@
                 <tbody>
                     {% for item in libraries %}
                     <tr>
-                        <td><div class="documents-name"><span class="documents-library-icon"><i data-lucide="library-big" aria-hidden="true"></i></span><a href="{{ documents_url }}?library={{ item.pk }}">{{ item.name }}</a></div></td>
-                        <td data-document-column="description"><span class="documents-library-description">{{ item.description|default:'—' }}</span></td>
+                        <td><div class="documents-name"><span class="documents-library-icon"><i data-lucide="library-big" aria-hidden="true"></i></span><a href="{{ documents_url }}?library={{ item.pk }}" title="{{ item.name }}">{{ item.name }}</a></div></td>
+                        <td data-document-column="description"><span class="documents-library-description" title="{{ item.description }}">{{ item.description|default:'—' }}</span></td>
                         <td data-document-column="documents">{{ item.document_count }}</td>
                         <td data-document-column="folders">{{ item.folder_count }}</td>
                         <td data-document-column="date" class="documents-date">{{ item.updated_at|date:'d.m.Y' }}</td>
                         <td><div class="documents-row-actions">
-                            <a class="documents-icon-button" data-document-modal href="{{ documents_url }}libraries/{{ item.pk }}/edit/" aria-label="Ustawienia biblioteki {{ item.name }}" title="Ustawienia biblioteki"><i data-lucide="pencil" aria-hidden="true"></i></a>
-                            <form method="post" action="{{ documents_url }}libraries/{{ item.pk }}/delete/">{% csrf_token %}<button type="submit" class="documents-icon-button" aria-label="Usuń pustą bibliotekę {{ item.name }}" title="Usuń pustą bibliotekę"><i data-lucide="trash-2" aria-hidden="true"></i></button></form>
+                            <a class="tasks-icon-button documents-icon-button" data-document-modal href="{{ documents_url }}libraries/{{ item.pk }}/edit/" aria-label="Ustawienia biblioteki {{ item.name }}" title="Ustawienia biblioteki"><i data-lucide="pencil" aria-hidden="true"></i></a>
+                            <form method="post" action="{{ documents_url }}libraries/{{ item.pk }}/delete/">{% csrf_token %}<button type="submit" class="tasks-icon-button documents-icon-button" aria-label="Usuń pustą bibliotekę {{ item.name }}" title="Usuń pustą bibliotekę"><i data-lucide="trash-2" aria-hidden="true"></i></button></form>
                         </div></td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="documents-empty"><div><i data-lucide="library-big" aria-hidden="true"></i><h3>{% if query %}Nie znaleziono bibliotek{% else %}Utwórz pierwszą bibliotekę{% endif %}</h3><p>{% if query %}Wpisz inną nazwę lub fragment opisu.{% else %}Biblioteka to osobne miejsce na foldery i pliki, np. dla projektu lub działu.{% endif %}</p>{% if not query %}<a class="btn btn-primary btn-sm" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i>Nowa biblioteka</a>{% endif %}</div></td></tr>
+                    <tr><td colspan="6" class="documents-empty"><div><i data-lucide="library-big" aria-hidden="true"></i><h3>{% if query or has_active_filters %}Nie znaleziono bibliotek{% else %}Utwórz pierwszą bibliotekę{% endif %}</h3><p>{% if query or has_active_filters %}Zmień wyszukiwanie lub wybrane filtry.{% else %}Biblioteka to osobne miejsce na foldery i pliki, np. dla projektu lub działu.{% endif %}</p>{% if not query and not has_active_filters %}<a class="btn btn-primary btn-sm" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i>Nowa biblioteka</a>{% endif %}</div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

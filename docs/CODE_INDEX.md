@@ -20,12 +20,12 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 8 | 0 | 7 | 19 |
 | [accounts](../accounts) | 14 | 4 | 8 | 23 |
 | [workplaces](../workplaces) | 15 | 7 | 4 | 44 |
-| [tasks](../tasks) | 14 | 46 | 23 | 168 |
+| [tasks](../tasks) | 14 | 46 | 24 | 168 |
 | [kanban](../kanban) | 9 | 33 | 9 | 71 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 7 | 0 | 5 | 13 |
+| [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 8 | 2 | 7 | 35 |
+| [documents](../documents) | 10 | 2 | 8 | 46 |
 
 ## 2. Modele i relacje
 
@@ -836,6 +836,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/admin.py](../dashboard/admin.py)
 - [dashboard/apps.py](../dashboard/apps.py) — `DashboardConfig`
 - [dashboard/models.py](../dashboard/models.py)
+- [dashboard/overview.py](../dashboard/overview.py) — `dashboard_overview`
 - [dashboard/urls.py](../dashboard/urls.py)
 - [dashboard/views.py](../dashboard/views.py) — `global_search`, `settings`, `home`, `notifications`
 
@@ -855,6 +856,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/apps.py](../documents/apps.py) — `DocumentsConfig`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
 - [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `DocumentLibrary`, `Folder`, `Document`
+- [documents/query.py](../documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
 - [documents/urls.py](../documents/urls.py)
 - [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `detail`, `download`, `star`, `trash`, `restore`
 
@@ -896,6 +898,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/directory_filter_aggregate.html](../tasks/templates/tasks/includes/directory_filter_aggregate.html)
 - [tasks/templates/tasks/includes/directory_members.html](../tasks/templates/tasks/includes/directory_members.html)
 - [tasks/templates/tasks/includes/directory_pagination_toolbar.html](../tasks/templates/tasks/includes/directory_pagination_toolbar.html)
+- [tasks/templates/tasks/includes/directory_sort_builder.html](../tasks/templates/tasks/includes/directory_sort_builder.html)
 - [tasks/templates/tasks/includes/group_directory_filter_builder.html](../tasks/templates/tasks/includes/group_directory_filter_builder.html)
 - [tasks/templates/tasks/includes/project_choice_filter_detail.html](../tasks/templates/tasks/includes/project_choice_filter_detail.html)
 - [tasks/templates/tasks/includes/project_deadline_settings.html](../tasks/templates/tasks/includes/project_deadline_settings.html)
@@ -945,6 +948,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/templates/dashboard/home.html](../dashboard/templates/dashboard/home.html)
 - [dashboard/templates/dashboard/includes/notification_list.html](../dashboard/templates/dashboard/includes/notification_list.html)
 - [dashboard/templates/dashboard/includes/settings_row.html](../dashboard/templates/dashboard/includes/settings_row.html)
+- [dashboard/templates/dashboard/notifications.html](../dashboard/templates/dashboard/notifications.html)
 - [dashboard/templates/dashboard/project_field_settings.html](../dashboard/templates/dashboard/project_field_settings.html)
 - [dashboard/templates/dashboard/settings.html](../dashboard/templates/dashboard/settings.html)
 
@@ -955,6 +959,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### documents
 
+- [documents/templates/documents/filter_sort.html](../documents/templates/documents/filter_sort.html)
 - [documents/templates/documents/form.html](../documents/templates/documents/form.html)
 - [documents/templates/documents/libraries.html](../documents/templates/documents/libraries.html)
 - [documents/templates/documents/library.html](../documents/templates/documents/library.html)
@@ -977,6 +982,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/cards.css](../static/css/components/cards.css)
 - [static/css/components/checkboxes.css](../static/css/components/checkboxes.css)
 - [static/css/components/contacts.css](../static/css/components/contacts.css)
+- [static/css/components/dashboard.css](../static/css/components/dashboard.css)
 - [static/css/components/dialogs.css](../static/css/components/dialogs.css)
 - [static/css/components/documents.css](../static/css/components/documents.css)
 - [static/css/components/file-upload.css](../static/css/components/file-upload.css)
@@ -1090,6 +1096,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `ContactDirectoryStyleTests`: 1 metod testowych.
 - `ContactCollaborationTests`: 27 metod testowych.
 
+### dashboard/test_overview.py
+
+Źródło: [dashboard/test_overview.py](../dashboard/test_overview.py).
+
+- `DashboardOverviewTests`: 10 metod testowych.
+
 ### dashboard/tests.py
 
 Źródło: [dashboard/tests.py](../dashboard/tests.py).
@@ -1108,6 +1120,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [documents/test_migrations.py](../documents/test_migrations.py).
 
 - `LibraryMigrationTests`: 1 metod testowych.
+
+### documents/test_query.py
+
+Źródło: [documents/test_query.py](../documents/test_query.py).
+
+- `DocumentQueryTests`: 11 metod testowych.
 
 ### documents/tests.py
 

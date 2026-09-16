@@ -263,19 +263,19 @@
             {% if not active_project %}
             <div class="tasks-titlebar-actions">
                 {% if active_view == 'projects' %}
-                <button type="button" class="tasks-tag-topbar-button" title="Dodaj projekt" aria-label="Dodaj projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj projekt" aria-label="Dodaj projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span><span>Dodaj projekt</span>
                 </button>
                 {% elif active_view == 'all_groups' %}
-                <button type="button" class="tasks-tag-topbar-button" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create>
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span><span>Dodaj grupę</span>
                 </button>
                 {% elif active_view == 'tags' %}
-                <button type="button" class="tasks-tag-topbar-button" title="Dodaj tag" aria-label="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag>
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj tag" aria-label="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span><span>Dodaj tag</span>
                 </button>
                 {% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}
-                <button type="button" class="tasks-tag-topbar-button" title="Dodaj zadanie" aria-label="Dodaj zadanie" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue {% if not can_create_issue %}disabled{% endif %}>
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj zadanie" aria-label="Dodaj zadanie" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue {% if not can_create_issue %}disabled{% endif %}>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span><span>Dodaj zadanie</span>
                 </button>
                 {% endif %}
@@ -633,12 +633,12 @@
                 {% endif %}
                 {% else %}
                 {% if active_project and active_project.can_manage and not active_section %}
-                <button type="button" class="tasks-tag-topbar-button" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}">
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}">
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj grupę</span>
                 </button>
                 {% elif active_section %}
-                <button type="button" class="tasks-tag-topbar-button" title="Dodaj zadanie" aria-label="Dodaj zadanie" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue {% if not can_create_issue %}disabled{% endif %}>
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj zadanie" aria-label="Dodaj zadanie" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue {% if not can_create_issue %}disabled{% endif %}>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span>
                     <span>Dodaj zadanie</span>
                 </button>

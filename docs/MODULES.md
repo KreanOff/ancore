@@ -207,6 +207,13 @@ gwiazdkę oraz datę przeniesienia do kosza.
 - Zawartość biblioteki/folderu i ścieżka nawigacyjna.
 - Widoki całego Workspace: wszystkie, ostatnio zmienione, oznaczone i kosz.
 - Wyszukiwanie, sortowanie, filtr tagu, paginacja i wybór widocznych kolumn.
+- Panele filtrów i sortowania zgodne z Wszystkimi projektami. Biblioteki można
+  filtrować po nazwie, opisie, obecności plików/folderów i ostatniej zmianie;
+  dokumenty po nazwie, oryginalnej nazwie pliku, opisie, bibliotece (widok Workspace),
+  tagu, rozszerzeniu, rozmiarze, gwiazdce i dacie zmiany/usunięcia.
+  Warunki tekstowe obsługują zawieranie, wykluczenie i pustą/niepustą wartość.
+  Sortowanie ma oba kierunki dla pól tekstowych, liczników bibliotek, lokalizacji,
+  rozmiaru i dat; dostępne pola zależą od listy.
 - Upload wielu plików, pobieranie po autoryzacji, edycja metadanych,
   przenoszenie pliku między folderami tej samej biblioteki.
 - Tworzenie/zmiana nazwy/usunięcie pustego folderu.
@@ -214,6 +221,10 @@ gwiazdkę oraz datę przeniesienia do kosza.
 
 W widoku Workspace pliki mogą pochodzić z wielu bibliotek i zagnieżdżonych
 folderów. Liczniki nawigacji są niezależne od aktualnego wyszukiwania.
+Filtry łączą się ze sobą i wyszukiwaniem. W bibliotece obejmują także foldery
+zagnieżdżone. Filtry właściwe tylko plikom (np. tag, rozszerzenie, rozmiar)
+pokazują wyłącznie dokumenty. Zmiana filtra lub sortowania wraca na pierwszą
+stronę; paginacja, kliknięcie tagu i operacje gwiazdki/kosza zachowują warunki.
 Formularze tworzenia/edycji działają jako dialog na tle listy także po otwarciu
 bezpośredniego linku; specjalny nagłówek pobiera sam fragment formularza.
 
@@ -227,14 +238,27 @@ trwałego opróżniania kosza, wersjonowania, OCR ani edytora zawartości dokume
 
 Źródła: [widoki](../dashboard/views.py), [routing](../dashboard/urls.py).
 
-- **Start:** `/` przekierowuje do listy Workspace.
+- **Dashboard:** `/` pokazuje dane właściciela w aktywnym Workspace:
+  liczbę otwartych zadań i kart Kanban, ich wysokich/pilnych priorytetów,
+  zaległych zadań oraz pozycji zamkniętych w ostatnich 7 dniach.
+  Przełączane listy `focus=deadlines|priority|kanban` pokazują maksymalnie
+  6 pozycji. Są też rozkład statusów, 4 niezakończone/nieanulowane projekty
+  Zadań z postępem oraz do 4 trwających/nadchodzących wydarzeń.
 - **Ustawienia:** centrum linków do profilu, kont, Workspace, pól projektów
   i preferencji dostępnych na ekranie.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
 - **Powiadomienia:** panel/strona ostatniej aktywności Zadań i Kanbana.
 
-Plik `dashboard/home.html` jest obecnie szablonem powiadomień. Sama nazwa
-`home` nie oznacza osobnego pulpitu statystyk. Powiadomienia nie mają
+Podsumowanie z [overview.py](../dashboard/overview.py) liczy główne zadania
+i karty, bez podzadań/podkart. Zamknięcie oznacza status `closed`; `resolved`
+pozostaje otwarte. Terminy obejmują zaległości i czas do północy za 7 dni
+w aktywnej strefie czasu. Licznik ostatnich zamknięć obejmuje dziś i 6 poprzednich
+dni według `completion_date`. Projekty są sortowane po terminie, potem od
+najnowszych; postęp liczy zamknięte zadania tego samego właściciela i Workspace.
+Linki do modułów mają scoped URL, szczegóły zadań/kart używają `task_id`,
+a projekty i wydarzenia PK. `/` nadal używa aktywnego kontekstu z sesji.
+
+Szablon powiadomień to `dashboard/notifications.html`. Powiadomienia nie mają
 oddzielnej tabeli dostarczenia/odczytu ani push/email w sprawdzonej implementacji.
 
 ## 10. Wspólna powłoka i narzędzia — Core / Static

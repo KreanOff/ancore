@@ -143,7 +143,7 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 
 ## 7. Adresy i punkt wejścia
 
-- `/` przekierowuje zalogowanego użytkownika do zarządzania Workspace.
+- `/` pokazuje Dashboard z podsumowaniem aktywnego Workspace.
 - `/accounts/...` obsługuje konto; `/workplaces/...` Workspace.
 - Moduły mają adresy bazowe `/tasks/`, `/kanban/`, `/contacts/`, `/calendar/`,
   `/documents/` oraz warianty `/workplaces/<slug>/<moduł>/...`.

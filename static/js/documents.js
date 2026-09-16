@@ -44,7 +44,7 @@
         }, options);
         document.addEventListener('click', event => {
             if (!menu.contains(event.target)) menu.open = false;
-        }, options);
+        }, { ...options, capture: true });
         menu.addEventListener('keydown', event => {
             if (event.key === 'Escape') {
                 menu.open = false;

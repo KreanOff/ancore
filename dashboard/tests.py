@@ -83,7 +83,7 @@ class DashboardViewTests(TestCase):
 
         self.assertContains(response, 'Polski · Europe/London')
 
-    def test_home_redirects_authenticated_user_to_workplaces(self):
+    def test_home_renders_workspace_dashboard(self):
         user = get_user_model().objects.create_user(
             username='dashboard-user',
             email='dashboard-user@example.com',
@@ -94,7 +94,10 @@ class DashboardViewTests(TestCase):
 
         response = self.client.get(reverse('home'))
 
-        self.assertRedirects(response, reverse('workplaces:workplaces'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dashboard/home.html')
+        self.assertContains(response, 'Brak nadchodzących terminów')
+        self.assertEqual(response['Cache-Control'], 'no-store')
 
     def test_notifications_view_renders_notification_center_and_active_switcher(self):
         user = get_user_model().objects.create_user(

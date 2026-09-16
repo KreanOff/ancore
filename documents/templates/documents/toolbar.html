@@ -7,20 +7,20 @@
         </nav>
         {% else %}<h1 class="tasks-topbar-title">{{ view_title }}</h1>{% endif %}
     </div>
-    <form hidden id="documents-search-form" method="get" action="{{ documents_url }}" data-project-search-form data-server-directory-filters="true">
+    <form hidden id="documents-search-form" method="get" action="{{ folder_url }}" data-project-search-form data-server-directory-filters="true">
         {% if current_library %}
-        <input type="hidden" name="library" value="{{ current_library.pk }}" data-project-filter-input="library">
+        <input type="hidden" name="library" value="{{ current_library.pk }}">
         {% endif %}
-        {% if not is_library_index %}<input type="hidden" name="view" value="{{ library_view }}" data-project-filter-input="view">{% endif %}
-        <input type="hidden" name="folder" value="{{ current_folder.pk|default:'' }}" data-project-filter-input="folder">
-        <input type="hidden" name="tag" value="{{ selected_tag.pk|default:'' }}" data-project-filter-input="tag">
-        <input type="hidden" name="sort" value="{{ sort }}" data-project-sort-input>
+        {% if not is_library_index %}<input type="hidden" name="view" value="{{ library_view }}">{% endif %}
+        <input type="hidden" name="folder" value="{{ current_folder.pk|default:'' }}">
+        {% for param, value in document_filter_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}" data-project-filter-input="{{ param }}">{% endfor %}
+        <input type="hidden" name="sort" value="{{ sort_param }}" data-project-sort-input>
         <input type="hidden" name="page_size" value="{{ document_window.page_size }}" data-project-search-page-size>
     </form>
     <div class="tasks-titlebar-actions">
         <button type="button" class="tasks-icon-button documents-sidebar-toggle" aria-label="Panel bibliotek" aria-controls="documents-sidebar" aria-expanded="false" data-documents-sidebar-toggle><i data-lucide="panel-right" aria-hidden="true"></i></button>
         {% if not current_library %}
-        <a class="tasks-tag-topbar-button" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i><span>Nowa biblioteka</span></a>
+        <a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i><span>Nowa biblioteka</span></a>
         {% else %}
         <a class="tasks-tag-topbar-button" data-document-modal href="{{ upload_url }}"><i data-lucide="upload" aria-hidden="true"></i><span>Prześlij pliki</span></a>
         <div class="tasks-section-actions" data-section-actions>
@@ -41,37 +41,20 @@
                 <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="columns-3"></i></span><strong>Kolumny tabeli</strong></header>
                 <div class="documents-column-options">
                     {% if is_library_index %}
-                    <label><input type="checkbox" data-document-column-toggle="description" checked>Opis</label>
-                    <label><input type="checkbox" data-document-column-toggle="documents" checked>Pliki</label>
-                    <label><input type="checkbox" data-document-column-toggle="folders" checked>Foldery</label>
+                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="description" checked>Opis</label>
+                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="documents" checked>Pliki</label>
+                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="folders" checked>Foldery</label>
                     {% else %}
-                    <label><input type="checkbox" data-document-column-toggle="tags" checked>Tagi</label>
+                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="tags" checked>Tagi</label>
                     {% endif %}
-                    <label><input type="checkbox" data-document-column-toggle="date" checked>{% if library_view == 'trash' %}Usunięto{% else %}Zmodyfikowano{% endif %}</label>
-                    {% if not is_library_index %}<label><input type="checkbox" data-document-column-toggle="size" checked>Rozmiar</label>{% endif %}
+                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="date" checked>{% if library_view == 'trash' %}Usunięto{% else %}Zmodyfikowano{% endif %}</label>
+                    {% if not is_library_index %}<label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="size" checked>Rozmiar</label>{% endif %}
                 </div>
                 <div class="tasks-directory-column-actions"><button type="button" class="tasks-directory-column-reset" data-document-columns-reset><i data-lucide="rotate-ccw" aria-hidden="true"></i><span>Resetuj</span></button></div>
             </div>
         </details>
-        {% if not is_library_index %}
-        {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=selected_tag only %}
-        <div class="tasks-filter-dropdown" data-project-filter-menu="tag">
-            <button type="button" class="tasks-filter-button{% if selected_tag %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="tag"><i data-lucide="tag" aria-hidden="true"></i><span>Tagi{% if selected_tag %}: {{ selected_tag.name }}{% endif %}</span><i data-lucide="chevron-down" aria-hidden="true"></i></button>
-            <div class="tasks-filter-menu" role="menu" aria-label="Filtruj po tagu">
-                <button type="button" role="menuitemradio" aria-checked="{% if not selected_tag %}true{% else %}false{% endif %}" data-project-filter-option data-project-filter-param="tag" data-project-filter-value="">Wszystkie tagi</button>
-                {% for tag in tags %}<button type="button" role="menuitemradio" aria-checked="{% if selected_tag.pk == tag.pk %}true{% else %}false{% endif %}" data-project-filter-option data-project-filter-param="tag" data-project-filter-value="{{ tag.pk }}">{{ tag.name }}</button>{% endfor %}
-            </div>
-        </div>
-        {% endif %}
-        <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ default_sort }}">
-            <button type="button" class="tasks-filter-button tasks-project-query-trigger tasks-sort-button" aria-label="Sortowanie: {{ sort_label }}" title="Sortowanie: {{ sort_label }}" aria-haspopup="menu" aria-expanded="false" data-project-sort-toggle>
-                <i data-lucide="arrow-up-down" aria-hidden="true"></i><span>Sortuj</span><span class="tasks-project-sort-current">{{ sort_label }}</span><i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
-            </button>
-            <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie dokumentów">
-                {% for option in sort_options %}<button type="button" role="menuitemradio" aria-checked="{% if sort == option.value %}true{% else %}false{% endif %}" {% if sort == option.value %}class="is-active"{% endif %} data-project-sort-value="{{ option.value }}"><i data-lucide="{{ option.icon }}" aria-hidden="true"></i><span>{{ option.label }}</span></button>{% endfor %}
-            </div>
-        </div>
-        {% if query or selected_tag %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść filtry" title="Wyczyść filtry"><i data-lucide="x" aria-hidden="true"></i></a>{% endif %}
+        {% include 'documents/filter_sort.html' %}
+        {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-lucide="x" aria-hidden="true"></i></a>{% endif %}
     </div>
     <div class="tasks-filterbar-right">
         <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-lucide="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="documents-search-form" value="{{ query }}" placeholder="{% if is_library_index %}Szukaj bibliotek{% elif current_library %}Szukaj w bibliotece{% else %}Szukaj dokumentów{% endif %}" aria-label="{% if is_library_index %}Szukaj bibliotek{% elif current_library %}Szukaj w bibliotece{% else %}Szukaj dokumentów{% endif %}" autocomplete="off"></label>

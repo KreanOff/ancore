@@ -29,7 +29,7 @@
                 <input type="hidden" name="sort" value="{{ contact_sort_param }}" data-project-sort-input>
             </form>
             <div class="tasks-titlebar-actions">
-                <button type="button" class="tasks-tag-topbar-button" title="{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}" aria-label="{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}" aria-haspopup="dialog" aria-controls="contact-create-modal" data-open-contact>
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}" aria-label="{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}" aria-haspopup="dialog" aria-controls="contact-create-modal" data-open-contact>
                     <span aria-hidden="true"><i data-lucide="plus"></i></span><span>{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}</span>
                 </button>
                 <div class="tasks-section-actions" data-section-actions>

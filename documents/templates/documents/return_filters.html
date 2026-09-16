@@ -2,7 +2,7 @@
 <input type="hidden" name="view" value="{{ library_view }}">
 <input type="hidden" name="folder" value="{{ current_folder.pk|default:'' }}">
 <input type="hidden" name="q" value="{{ query }}">
-<input type="hidden" name="tag" value="{{ selected_tag.pk|default:'' }}">
+{% for param, value in document_filter_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}">{% endfor %}
 <input type="hidden" name="sort" value="{{ sort }}">
 <input type="hidden" name="page" value="{{ page.number }}">
 <input type="hidden" name="page_size" value="{{ document_window.page_size }}">

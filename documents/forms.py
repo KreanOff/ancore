@@ -22,6 +22,7 @@ class MultipleFileField(forms.FileField):
 
 class UploadForm(forms.Form):
     files = MultipleFileField(label='Pliki', widget=MultipleFileInput(attrs={
+        'class': 'form-input',
         'accept': ','.join(sorted(ATTACHMENT_ALLOWED_EXTENSIONS)),
     }))
 
@@ -30,7 +31,10 @@ class LibraryForm(forms.ModelForm):
     class Meta:
         model = DocumentLibrary
         fields = ['name', 'description']
-        widgets = {'description': forms.Textarea(attrs={'rows': 3})}
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'}),
+            'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
+        }
 
     def __init__(self, *args, owner, workplace, **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,6 +54,7 @@ class FolderForm(forms.ModelForm):
     class Meta:
         model = Folder
         fields = ['name']
+        widgets = {'name': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'})}
 
     def __init__(self, *args, owner, workplace, library, parent=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -72,7 +77,12 @@ class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
         fields = ['title', 'description', 'folder', 'tags']
-        widgets = {'description': forms.Textarea(attrs={'rows': 3}), 'tags': forms.CheckboxSelectMultiple}
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'}),
+            'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
+            'folder': forms.Select(attrs={'class': 'form-select tasks-inline-select'}),
+            'tags': forms.CheckboxSelectMultiple,
+        }
         labels = {'folder': 'Folder'}
 
     def __init__(self, *args, owner, workplace, **kwargs):

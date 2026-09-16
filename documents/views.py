@@ -13,20 +13,19 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
-from core.upload_validation import attachment_download_response
+from core.upload_validation import ATTACHMENT_ALLOWED_EXTENSIONS, attachment_download_response
 from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
 from .forms import DocumentForm, FolderForm, LibraryForm, UploadForm
 from .models import Document, DocumentLibrary, Folder
+from .query import (
+    DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS, LIBRARY_SORT_FIELDS,
+    PRESENCE_OPTIONS, SIZE_OPTIONS, apply_date_filter, apply_text_filters,
+    choice_field, order_results, query_context, text_field,
+)
 
 
 DOCUMENT_PAGE_SIZES = (10, 25, 50, 100, 150, 200)
-DOCUMENT_SORT_OPTIONS = (
-    {'value': 'updated', 'label': 'Ostatnia zmiana', 'icon': 'clock-3'},
-    {'value': 'name', 'label': 'Nazwa A–Z', 'icon': 'arrow-down-a-z'},
-    {'value': 'oldest', 'label': 'Najstarsze', 'icon': 'calendar-days'},
-    {'value': 'size', 'label': 'Największe', 'icon': 'arrow-down-wide-narrow'},
-)
 DOCUMENT_VIEW_OPTIONS = (
     {'value': 'all', 'label': 'Wszystkie dokumenty', 'icon': 'files'},
     {'value': 'recent', 'label': 'Ostatnio zmienione', 'icon': 'clock-3'},
@@ -132,22 +131,35 @@ def _pagination(request, total):
 
 def _library_index(request, form_context=None):
     query = request.GET.get('q', '').strip()[:120]
-    sort = request.GET.get('sort', 'name')
-    sort = sort if sort in {'name', 'updated', 'oldest'} else 'name'
+    fields = [
+        text_field(request.GET, 'name', 'Nazwa biblioteki', 'library-big', 'name'),
+        text_field(request.GET, 'description', 'Opis', 'align-left', 'description'),
+        choice_field(request.GET, 'documents', 'Pliki', 'files', PRESENCE_OPTIONS),
+        choice_field(request.GET, 'folders', 'Foldery', 'folders', PRESENCE_OPTIONS),
+        choice_field(request.GET, 'modified', 'Zmodyfikowano', 'clock-3', DATE_OPTIONS),
+    ]
+    query_state = query_context(request.GET, fields, LIBRARY_SORT_FIELDS, 'name_asc')
+    values = query_state['document_filter_params']
     libraries = _libraries(request).filter(Q(name__icontains=query) | Q(description__icontains=query)).annotate(
-        document_count=Count('documents', filter=Q(documents__deleted_at__isnull=True), distinct=True),
-        folder_count=Count('folders', distinct=True),
-    ).order_by({'name': 'name', 'updated': '-updated_at', 'oldest': 'created_at'}[sort], 'pk')
+        document_count=Count('documents', filter=Q(documents__deleted_at__isnull=True, documents__owner=request.user, documents__workplace=request.workplace), distinct=True),
+        folder_count=Count('folders', filter=Q(folders__owner=request.user, folders__workplace=request.workplace), distinct=True),
+    )
+    libraries = apply_text_filters(libraries, fields)
+    for param, count in [('documents', 'document_count'), ('folders', 'folder_count')]:
+        if values[param]:
+            lookup = count if values[param] == 'no' else f'{count}__gt'
+            libraries = libraries.filter(**{lookup: 0})
+    libraries = apply_date_filter(libraries, 'updated_at', values['modified'])
+    libraries = order_results(libraries, query_state)
     page, window = _pagination(request, libraries.count())
     start = page.start_index() - 1 if page.paginator.count else 0
     context = _context(request)
     context.update(_sidebar(request))
+    context.update(query_state)
     context.update({
         'is_library_index': True, 'view_title': 'Biblioteki dokumentów', 'document_form': form_context,
         'libraries': libraries[start:page.end_index()], 'page': page, 'document_window': window,
-        'query': query, 'sort': sort, 'default_sort': 'name', 'clear_url': _url(request),
-        'sort_options': DOCUMENT_SORT_OPTIONS[:3],
-        'sort_label': next(option['label'] for option in DOCUMENT_SORT_OPTIONS if option['value'] == sort),
+        'query': query, 'clear_url': _url(request),
     })
     return render(request, 'documents/libraries.html', context)
 
@@ -175,24 +187,78 @@ def _library_page(request, form_context=None):
     query = request.GET.get('q', '').strip()[:120]
     tags = TaskTag.objects.filter(user=request.user, workplace=request.workplace)
     selected_tag = _by_id(tags, request.GET['tag']) if request.GET.get('tag') else None
+    selected_library = None
+    if not current_library and request.GET.get('document_library'):
+        selected_library = _by_id(_libraries(request), request.GET['document_library'])
+    fields = [
+        text_field(request.GET, 'name', 'Nazwa dokumentu', 'file-text', 'title'),
+        text_field(request.GET, 'filename', 'Nazwa pliku', 'file', 'filename'),
+        text_field(request.GET, 'description', 'Opis', 'align-left', 'description'),
+        choice_field(request.GET, 'tag', 'Tagi', 'tag', (
+            {'value': str(tag.pk), 'label': tag.name} for tag in tags
+        ), searchable=True),
+        choice_field(request.GET, 'file_type', 'Typ pliku', 'file-type', (
+            {'value': extension, 'label': extension[1:].upper()} for extension in sorted(ATTACHMENT_ALLOWED_EXTENSIONS)
+        ), searchable=True),
+        choice_field(request.GET, 'size', 'Rozmiar', 'hard-drive', SIZE_OPTIONS),
+        choice_field(request.GET, 'starred', 'Gwiazdka', 'star', (
+            {'value': 'yes', 'label': 'Oznaczone gwiazdką'}, {'value': 'no', 'label': 'Bez gwiazdki'},
+        )),
+        choice_field(request.GET, 'modified', 'Usunięto' if current_view == 'trash' else 'Zmodyfikowano', 'clock-3', DATE_OPTIONS),
+    ]
+    if not current_library:
+        fields.insert(3, choice_field(request.GET, 'document_library', 'Biblioteka', 'library-big', (
+            {'value': str(item.pk), 'label': item.name} for item in _libraries(request)
+        ), searchable=True))
+    sort_fields = tuple(
+        {**field, 'label': 'Usunięto', 'lookup': 'deleted_at'}
+        if current_view == 'trash' and field['value'] == 'updated' else field
+        for field in DOCUMENT_SORT_FIELDS
+    )
+    query_state = query_context(request.GET, fields, sort_fields, 'updated_desc')
+    values = query_state['document_filter_params']
+    # Searching/filtering spans nested folders within the current library, as tag search does.
+    searching = bool(query or query_state['has_active_filters'])
+    document_only_filter = any(field['active'] and field['param'] not in {'name', 'modified'} for field in fields)
     documents = _documents(request).filter(deleted_at__isnull=current_view != 'trash')
     if current_library:
         documents = documents.filter(library=current_library)
+    elif selected_library:
+        documents = documents.filter(library=selected_library)
     library_folders = _folders(request).filter(library=current_library) if current_library else Folder.objects.none()
-    folders = library_folders.filter(parent=folder) if current_view == 'all' and not selected_tag else Folder.objects.none()
+    folders = library_folders if current_view == 'all' and not document_only_filter else Folder.objects.none()
+    if not searching:
+        folders = folders.filter(parent=folder)
     if current_view == 'starred':
         documents = documents.filter(is_starred=True)
     if query:
         documents = documents.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)).distinct()
-        folders = library_folders.filter(name__icontains=query) if current_view == 'all' and not selected_tag else Folder.objects.none()
-    elif current_library and current_view == 'all' and not selected_tag:
+        folders = folders.filter(name__icontains=query)
+    elif current_library and current_view == 'all' and not searching:
         documents = documents.filter(folder=folder)
     if selected_tag:
         documents = documents.filter(tags=selected_tag)
-    sort = request.GET.get('sort', 'updated')
-    ordering = {'updated': '-updated_at', 'name': 'title', 'oldest': 'created_at', 'size': '-file_size'}
-    sort = sort if sort in ordering else 'updated'
-    documents = documents.select_related('folder', 'owner', 'library').prefetch_related('tags').order_by(ordering[sort], 'pk')
+    documents = apply_text_filters(documents, fields)
+    folders = apply_text_filters(folders, [{**field, 'lookup': 'name'} for field in fields if field['param'] == 'name'])
+    documents = apply_date_filter(documents, 'deleted_at' if current_view == 'trash' else 'updated_at', values['modified'])
+    folders = apply_date_filter(folders, 'created_at', values['modified'])
+    if values['file_type']:
+        documents = documents.filter(filename__iendswith=values['file_type'])
+    if values['starred']:
+        documents = documents.filter(is_starred=values['starred'] == 'yes')
+    if values['size'] == 'small':
+        documents = documents.filter(file_size__lt=1024 * 1024)
+    elif values['size'] == 'medium':
+        documents = documents.filter(file_size__gte=1024 * 1024, file_size__lte=5 * 1024 * 1024)
+    elif values['size'] == 'large':
+        documents = documents.filter(file_size__gt=5 * 1024 * 1024)
+    documents = order_results(documents.select_related('folder', 'owner', 'library').prefetch_related('tags'), query_state)
+    folder_sort = query_state['sort_field'] if query_state['sort_field'] in {'name', 'updated', 'created'} else 'name'
+    folder_sort_fields = (
+        {'value': 'name', 'lookup': 'name', 'text': True},
+        {'value': 'updated', 'lookup': 'created_at'}, {'value': 'created', 'lookup': 'created_at'},
+    )
+    folders = order_results(folders, {**query_state, 'sort_fields': folder_sort_fields, 'sort_field': folder_sort})
     folder_count = folders.count()
     page, window = _pagination(request, folder_count + documents.count())
     start, end = (page.start_index() - 1 if page.paginator.count else 0), page.end_index()
@@ -209,15 +275,17 @@ def _library_page(request, form_context=None):
     view_label = next(option['label'] for option in DOCUMENT_VIEW_OPTIONS if option['value'] == current_view)
     context = _context(request, current_library, folder)
     context.update(_sidebar(request, active_view=current_view if not current_library else None))
+    context.update(query_state)
     context.update({
         'clear_url': _url(request, library=library_id, view=current_view, folder=folder.pk if folder else None),
-        'view_url': _url(request, library=library_id, view=current_view),
+        'view_url': _url(request, library=library_id, view=current_view, folder=folder.pk if folder else None),
+        'tag_filter_query': urlencode({key: value for key, value in {
+            **values, 'q': query, 'sort': query_state['sort_param'], 'page_size': window['page_size'],
+        }.items() if key != 'tag' and value not in ('', None)}),
         'rows': rows, 'page': page, 'query': query, 'document_window': window, 'document_form': form_context,
-        'sort_options': DOCUMENT_SORT_OPTIONS, 'default_sort': 'updated',
-        'sort_label': next(option['label'] for option in DOCUMENT_SORT_OPTIONS if option['value'] == sort),
-        'library_view': current_view, 'sort': sort, 'tags': tags, 'selected_tag': selected_tag,
+        'library_view': current_view, 'tags': tags, 'selected_tag': selected_tag,
         'view_label': view_label,
-        'view_title': (folder.name if folder and not query and not selected_tag and current_view == 'all' else current_library.name) if current_library else view_label,
+        'view_title': (folder.name if folder and not searching and current_view == 'all' else current_library.name) if current_library else view_label,
     })
     return render(request, 'documents/library.html', context)
 
@@ -383,7 +451,7 @@ def download(request, pk):
 
 
 def _return_to_library(request, document):
-    params = {key: request.POST.get(key, '') for key in ('view', 'folder', 'q', 'tag', 'sort', 'page', 'page_size')}
+    params = {key: request.POST.get(key, '') for key in dict.fromkeys(('view', 'folder', 'q', 'tag', 'sort', 'page', 'page_size', *FILTER_PARAMETERS))}
     library_id = None if request.POST.get('scope') == 'workspace' else document.library_id
     if library_id is None:
         params['view'] = params['view'] or 'all'

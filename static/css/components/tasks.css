@@ -844,6 +844,24 @@
     height: 20px;
 }
 
+/* A stronger tint of the project directory's row highlight. */
+.tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight,
+.tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight:hover,
+.tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight:focus-visible {
+    background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+.tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--system-accent) 22%, #ffffff);
+}
+
+.tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight:focus-visible {
+    outline: 2px solid var(--system-interaction);
+    outline-offset: 2px;
+}
+
 .tasks-tag-topbar-button--secondary {
     border: 1px solid #dfe3e8;
     background: #ffffff;
