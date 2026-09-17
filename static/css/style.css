@@ -1,5 +1,5 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260903-gray-interactions-v1';
+@import 'base/variables.css?v=20260917-primary-button-tint-v2';
 @import 'base/reset.css?v=20260902-app-scale-98';
 @import 'layout/sidebar.css?v=20260902-resizable-app-sidebar-v1';
 @import 'layout/main.css?v=20260903-lightweight-loader-v1';
@@ -12,7 +12,7 @@
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20260916-project-add-row-highlight-v4';
+@import 'components/tasks.css?v=20260917-primary-button-tint-v1';
 @import 'components/contacts.css?v=20260906-row-highlight-v2';
 @import 'components/notifications.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
@@ -303,6 +303,60 @@ body .tasks-tag-topbar-button--row-highlight,
 body .tasks-tag-topbar-button--row-highlight :where(span) {
     --app-text-color: var(--text-main);
     color: var(--app-text-color) !important;
+}
+
+/* Primary actions share the palette of the project toolbar's add button.
+   Keep success/error save indicators and secondary actions in their own palettes. */
+body :is(
+    .btn-primary,
+    .auth-submit,
+    .auth-switch-link,
+    .dashboard-action--primary,
+    .tasks-new-button,
+    .contacts-new-button--secondary,
+    .tasks-tag-topbar-button:not(.tasks-tag-topbar-button--secondary),
+    .tasks-directory-column-save,
+    .tasks-project-modal__submit,
+    .tasks-modal__submit,
+    .tasks-inline-submit,
+    .tasks-issue-save:not([data-state="saved"]):not([data-state="error"]),
+    .contacts-photo-editor-primary,
+    .workplaces-primary-button,
+    .workplace-settings__save,
+    .profile-action-primary,
+    .confirm-modal--destructive .btn-danger
+) {
+    --primary-button-current-bg: var(--primary-button-bg);
+    --app-text-color: var(--text-primary);
+    background: var(--primary-button-current-bg);
+    border-color: var(--primary-button-current-bg);
+    color: var(--app-text-color) !important;
+    box-shadow: none;
+
+    :where(span, i, svg) {
+        --app-text-color: var(--text-primary);
+        color: var(--app-text-color) !important;
+    }
+
+    &:hover:not(:disabled):not([aria-disabled="true"]) {
+        --primary-button-current-bg: var(--primary-button-hover-bg);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--system-interaction);
+        outline-offset: 2px;
+    }
+
+    &:disabled,
+    &[aria-disabled="true"] {
+        opacity: 0.55;
+    }
+}
+
+body.auth-page .auth-submit .auth-submit-icon,
+body.auth-page .auth-submit:hover .auth-submit-icon,
+body.auth-page .auth-submit:focus-visible .auth-submit-icon {
+    background: var(--primary-button-current-bg);
 }
 
 /* App-wide text weight: no bold text. */

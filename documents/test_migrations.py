@@ -8,6 +8,7 @@ from django.utils import timezone
 class LibraryMigrationTests(TransactionTestCase):
     def test_existing_content_keeps_its_files_hierarchy_tags_and_trash_status(self):
         executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
         other_apps = [node for node in executor.loader.graph.leaf_nodes() if node[0] != 'documents']
         previous = other_apps + [('documents', '0001_initial')]
         current = other_apps + [('documents', '0002_documentlibrary_and_more')]
@@ -52,4 +53,4 @@ class LibraryMigrationTests(TransactionTestCase):
             self.assertNotEqual(Document.objects.get(pk=other.pk).library_id, library.pk)
             self.assertFalse(Library.objects.filter(workplace_id=empty.pk).exists())
         finally:
-            MigrationExecutor(connection).migrate(current)
+            MigrationExecutor(connection).migrate(latest)

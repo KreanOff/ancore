@@ -20,7 +20,7 @@
         <nav class="documents-sidebar-nav" aria-label="Biblioteki dokumentów">
             <a class="tasks-rail-link{% if is_library_index %} is-active{% endif %}" href="{{ documents_url }}" {% if is_library_index %}aria-current="page"{% endif %}><i data-lucide="layout-list" aria-hidden="true"></i><span>Wszystkie biblioteki</span></a>
             {% for item in sidebar_libraries %}
-            <a class="tasks-rail-link{% if current_library.pk == item.pk %} is-active{% endif %}" href="{{ documents_url }}?library={{ item.pk }}" {% if current_library.pk == item.pk %}aria-current="page"{% endif %} title="{{ item.name }}"><i data-lucide="library-big" aria-hidden="true"></i><span>{{ item.name }}</span></a>
+            <a class="tasks-rail-link documents-sidebar-library-link{% if current_library.pk == item.pk %} is-active{% endif %}" href="{{ documents_url }}?library={{ item.pk }}" {% if current_library.pk == item.pk %}aria-current="page"{% endif %} title="{{ item.name }}">{% include 'documents/includes/library_avatar.html' with library=item %}<span>{{ item.name }}</span></a>
             {% empty %}<p class="documents-sidebar-empty">Utwórz bibliotekę, aby dodać foldery i pliki.</p>{% endfor %}
         </nav>
     </section>

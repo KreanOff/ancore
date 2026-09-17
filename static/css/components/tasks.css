@@ -848,13 +848,13 @@
 .tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight,
 .tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight:hover,
 .tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight:focus-visible {
-    background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);
+    background: var(--primary-button-bg);
     color: var(--text-primary);
     box-shadow: none;
 }
 
 .tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--system-accent) 22%, #ffffff);
+    background: var(--primary-button-hover-bg);
 }
 
 .tasks-tag-topbar-button.tasks-tag-topbar-button--row-highlight:focus-visible {

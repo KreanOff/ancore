@@ -14,6 +14,8 @@
     --text-inverse: #FFFFFF;
     --system-accent: rgb(30, 191, 191);
     --system-accent-rgb: 30, 191, 191;
+    --primary-button-bg: color-mix(in srgb, var(--system-accent) 17%, #ffffff);
+    --primary-button-hover-bg: color-mix(in srgb, var(--system-accent) 24%, #ffffff);
     --system-interaction: #6f7580;
     --system-interaction-rgb: 111, 117, 128;
     --system-interaction-soft: rgba(var(--system-interaction-rgb), 0.1);

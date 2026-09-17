@@ -24,8 +24,8 @@ referencyjny ekran w tej samej szerokości i stanie co ekran zmieniany.
 - Wspólne panele wyszukiwania i powiadomień oraz Sticker.
 
 Aktywna ikona w przełączniku domu, powiadomień i wyszukiwania używa
-`color-mix(in srgb, var(--system-accent) 15%, #ffffff)`, tak jak podstawowe
-tło przycisku „Dodaj projekt”, także przy zwiniętym sidebarze.
+`color-mix(in srgb, var(--system-accent) 15%, #ffffff)`, także przy zwiniętym
+sidebarze.
 
 Nową stronę modułu oprzyj na aktywnych blokach `title`, `extra_head`,
 `page_container_class`, `content` i `page_modals`. Niektóre starsze szablony
@@ -133,10 +133,10 @@ sprawdź wszystkie jego zmienne oraz miejsca wywołania.
 ### Przyciski akcji w paskach narzędzi
 
 Przyciski używają wariantu `tasks-tag-topbar-button--row-highlight`:
-tła `color-mix(in srgb, var(--system-accent) 15%, #ffffff)` oraz tekstu i ikony
-w kolorze `--text-primary`. Tło jest o 7 punktów procentowych intensywniejsze
+tła `color-mix(in srgb, var(--system-accent) 17%, #ffffff)` oraz tekstu i ikony
+w kolorze `--text-primary`. Tło jest o 9 punktów procentowych intensywniejsze
 niż podświetlenie wiersza tabeli; przycisk nie ma paska po lewej ani cienia.
-Po najechaniu na aktywny przycisk udział turkusu rośnie do 22%, z przejściem
+Po najechaniu na aktywny przycisk udział turkusu rośnie do 24%, z przejściem
 koloru wspólnego komponentu; fokus klawiatury dodaje obrys.
 Rozmiar, zaokrąglenie i obsługa modala pochodzą ze wspólnego
 przycisku. Wariant jest stosowany do akcji „Dodaj projekt”, „Dodaj grupę”
@@ -147,6 +147,15 @@ w pasku Kalendarza, „Nowa biblioteka” w pasku Dokumentów oraz „Otwórz za
 w pasku Dashboardu.
 Obejmuje przyciski katalogów oraz ich odpowiedniki wewnątrz projektu/grupy.
 
+Te same kolory obowiązują we wszystkich głównych przyciskach tworzenia,
+zapisu i potwierdzania: w modalach, formularzach, edycji zdjęć, Workspace
+i uwierzytelnianiu. Wspólne tokeny `--primary-button-bg` (17% akcentu)
+i `--primary-button-hover-bg` (24%) są używane także przez „Dodaj projekt”.
+Reguła w `style.css` ustala ciemny tekst i ikony, usuwa cień, zachowuje
+widoczny obrys fokusu i osłabia przyciski nieaktywne przez opacity 0.55.
+Nie zmienia geometrii przycisków, akcji drugorzędnych ani kolorów stanów
+`saved`/`error` przycisku zapisu zadania.
+
 ### Tabele i formularze Dokumentów
 
 `documents.css` zachowuje semantyczne tabele bibliotek i plików, dopasowane do
@@ -155,8 +164,45 @@ delikatne podziały poziome bez separatorów między kolumnami oraz szare
 podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
 drugą linię z typem i lokalizacją. Nazwy mają
 ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony bibliotek,
-folderów i plików są monochromatyczne, bez ozdobnych ramek.
+folderów i plików są monochromatyczne, bez ozdobnych ramek. Biblioteki używają
+ikony Lucide `archive` na liście, w panelu bocznym, pustym stanie, filtrach,
+sortowaniu i wynikach globalnego wyszukiwania. Ikona w wierszu listy bibliotek
+ma rozmiar 22×22px w polu 48×48px. Własne zdjęcie zastępuje tę ikonę na liście
+oraz w panelu bibliotek; miniatura ma 48×48px na liście i w panelu
+bocznym, używa `object-fit: cover`. Wspólna szerokość pola ikony i zdjęcia
+w obu miejscach zachowuje wyrównanie nazw bibliotek. Wiersze bibliotek mają minimum
+64px wysokości, a odstęp między miniaturą i nazwą wynosi 12px, także na telefonie.
+Miniatury i podgląd zdjęcia w formularzu są okrągłe (`border-radius: 50%`),
+zgodnie z kadrem edytora Workspace.
 
+Formularz tworzenia i ustawień biblioteki udostępnia ten sam edytor zdjęcia
+co Workspace: wybór pliku, przesuwanie kadru, zoom 1–4, podgląd oraz akcje
+„Zmień”, „Usuń” i „Zapisz”. Wspólna powłoka jest w
+[photo_crop_dialog.html](../core/templates/core/includes/photo_crop_dialog.html),
+a zachowanie w `profile.js`. Eksport kadru tworzy JPEG 512×512px.
+`AncorePhotoEditors.init(root)` inicjalizuje także formularz pobrany dynamicznie;
+znacznik na kontrolce zapobiega ponownemu podpinaniu obsługi.
+Escape zamyka najpierw kadrowanie i przywraca fokus. Zamknięcie kadrowania
+odrzuca niezapisany wybór; „Zapisz” zatwierdza podgląd, a „Zapisz bibliotekę”
+zapisuje formularz na serwerze. Błąd nazwy zachowuje zatwierdzony kadr;
+błędy pliku pojawiają się obok kontrolki zdjęcia.
+
+Lista bibliotek ma 24px odstępu w pierwszej kolumnie od lewej krawędzi tabeli
+i w ostatniej kolumnie od prawej krawędzi,
+zarówno w nagłówku, jak i w wierszach, także na wąskich ekranach.
+Komórka pustego stanu zachowuje własne, symetryczne odstępy.
+
+Panel bibliotek ma białe tło `--bg-main`, takie samo jak lista bibliotek,
+również w wariancie wysuwanym na wąskich ekranach.
+Linki poszczególnych bibliotek używają wariantu `documents-sidebar-library-link`:
+minimum 64px wysokości, pole zdjęcia 48×48px i odstęp 12px od nazwy.
+Zastępcza ikona `archive` ma 22×22px i jest wyśrodkowana w tym samym polu.
+Pełna nazwa pozostaje w `title`, a długie nazwy skracają się przez ellipsis.
+Przycisk z ikoną `panel-right` na końcu paska filtrów zwija i rozwija cały
+prawy panel, zgodnie ze wzorcem Kalendarza. Na szerokich ekranach zwinięcie
+poszerza tabelę i jest zapamiętywane lokalnie w przeglądarce. Do 1100px
+przycisk otwiera dotychczasowy panel wysuwany z tłem, obsługą Escape i fokusu;
+otwarcie tego panelu nie zmienia preferencji szerokiego ekranu.
 Panel bibliotek używa `tasks-rail-link`, akcje ikonowe `tasks-icon-button`,
 a wybór kolumn `tasks-directory-column-item`. Formularze korzystają z
 `form-input`, `tasks-inline-input`, `form-select`/`tasks-inline-select` oraz

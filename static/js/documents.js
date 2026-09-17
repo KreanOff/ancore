@@ -64,6 +64,7 @@
         let inertElements = [];
 
         function restoreBackground() {
+            document.body.classList.remove('contacts-photo-editor-open');
             inertElements.forEach(element => { element.inert = false; });
             inertElements = [];
             if (!document.querySelector('.tasks-modal.is-open')) document.body.classList.remove('modal-open');
@@ -82,8 +83,9 @@
             }
             window.AncoreIcons?.render(modal);
             window.AncoreCustomSelect?.refresh(modal);
+            window.AncorePhotoEditors?.init(modal);
             const focusTarget = modal.querySelector('[aria-invalid="true"]')
-                || modal.querySelector('input:not([type="hidden"]), textarea, select');
+                || modal.querySelector('input:not([type="hidden"]):not([type="file"]), textarea, select');
             (focusTarget || modal.querySelector('[data-document-modal-close]'))?.focus();
         }
 
@@ -111,9 +113,14 @@
             const next = parsed.querySelector('[data-document-dialog]');
             if (!next) throw new Error('Missing document dialog');
             // A validation error must not discard files already selected by the user.
+            const photoEditor = modal?.querySelector('.documents-library-photo-field');
+            const nextPhotoEditor = next.querySelector('.documents-library-photo-field');
+            if (photoEditor && nextPhotoEditor && !nextPhotoEditor.querySelector('[role="alert"]')) {
+                nextPhotoEditor.replaceWith(photoEditor);
+            }
             const files = modal?.querySelector('input[type="file"]');
             const nextFiles = next.querySelector('input[type="file"]');
-            if (files && nextFiles) {
+            if (files && nextFiles && !photoEditor) {
                 for (const attribute of ['aria-invalid', 'aria-describedby']) {
                     if (nextFiles.hasAttribute(attribute)) files.setAttribute(attribute, nextFiles.getAttribute(attribute));
                     else files.removeAttribute(attribute);
@@ -204,6 +211,7 @@
 
         document.addEventListener('keydown', event => {
             if (!modal || event.defaultPrevented) return;
+            if (modal.querySelector('[data-profile-photo-modal]:not([hidden])')) return;
             if (event.key === 'Escape') {
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -228,28 +236,42 @@
         const backdrop = page?.querySelector('[data-documents-sidebar-backdrop]');
         if (!sidebar || !toggle || !backdrop) return;
         const compact = window.matchMedia('(max-width: 1100px)');
+        const storageKey = 'ancore:documents:sidebar-collapsed:v1';
+        let collapsed = false;
+        try { collapsed = localStorage.getItem(storageKey) === 'true'; } catch (_) {}
         let open = false;
 
         function update(restoreFocus = false) {
-            const expanded = compact.matches && open;
-            page.classList.toggle('is-sidebar-open', expanded);
+            const overlayOpen = compact.matches && open;
+            const expanded = compact.matches ? open : !collapsed;
+            page.classList.toggle('is-sidebar-open', overlayOpen);
+            page.classList.toggle('is-sidebar-collapsed', !compact.matches && collapsed);
             toggle.setAttribute('aria-expanded', String(expanded));
-            sidebar.inert = compact.matches && !expanded;
-            backdrop.hidden = !expanded;
-            if (expanded) {
+            const label = expanded ? 'Ukryj panel bibliotek' : 'Pokaż panel bibliotek';
+            toggle.setAttribute('aria-label', label);
+            toggle.title = label;
+            const focusHidden = !expanded && sidebar.contains(document.activeElement);
+            sidebar.inert = !expanded;
+            backdrop.hidden = !overlayOpen;
+            if (overlayOpen) {
                 sidebar.setAttribute('role', 'dialog');
                 sidebar.setAttribute('aria-modal', 'true');
             } else {
                 sidebar.removeAttribute('role');
                 sidebar.removeAttribute('aria-modal');
             }
-            if (restoreFocus) toggle.focus();
+            if (restoreFocus || focusHidden) toggle.focus();
         }
         function close() { open = false; update(true); }
         toggle.addEventListener('click', () => {
-            open = !open;
+            if (compact.matches) {
+                open = !open;
+            } else {
+                collapsed = !collapsed;
+                try { localStorage.setItem(storageKey, String(collapsed)); } catch (_) {}
+            }
             update();
-            if (open) sidebar.querySelector('[data-documents-sidebar-close]').focus();
+            if (compact.matches && open) sidebar.querySelector('[data-documents-sidebar-close]').focus();
         }, options);
         sidebar.querySelector('[data-documents-sidebar-close]').addEventListener('click', close, options);
         backdrop.addEventListener('click', close, options);

@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Biblioteki dokumentów | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260915-document-rows"><script src="{% static 'js/documents.js' %}?v=20260915-document-filters" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260917-library-photo-size-v7"><script src="{% static 'js/documents.js' %}?v=20260917-library-photo-v2" defer></script>{% endblock %}
 {% block content %}
 <div class="documents-page documents-library-index">
     {% include 'documents/toolbar.html' %}
@@ -14,7 +14,7 @@
                 <tbody>
                     {% for item in libraries %}
                     <tr>
-                        <td><div class="documents-name"><span class="documents-library-icon"><i data-lucide="library-big" aria-hidden="true"></i></span><a href="{{ documents_url }}?library={{ item.pk }}" title="{{ item.name }}">{{ item.name }}</a></div></td>
+                        <td><div class="documents-name">{% include 'documents/includes/library_avatar.html' with library=item %}<a href="{{ documents_url }}?library={{ item.pk }}" title="{{ item.name }}">{{ item.name }}</a></div></td>
                         <td data-document-column="description"><span class="documents-library-description" title="{{ item.description }}">{{ item.description|default:'—' }}</span></td>
                         <td data-document-column="documents">{{ item.document_count }}</td>
                         <td data-document-column="folders">{{ item.folder_count }}</td>
@@ -25,7 +25,7 @@
                         </div></td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="documents-empty"><div><i data-lucide="library-big" aria-hidden="true"></i><h3>{% if query or has_active_filters %}Nie znaleziono bibliotek{% else %}Utwórz pierwszą bibliotekę{% endif %}</h3><p>{% if query or has_active_filters %}Zmień wyszukiwanie lub wybrane filtry.{% else %}Biblioteka to osobne miejsce na foldery i pliki, np. dla projektu lub działu.{% endif %}</p>{% if not query and not has_active_filters %}<a class="btn btn-primary btn-sm" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i>Nowa biblioteka</a>{% endif %}</div></td></tr>
+                    <tr><td colspan="6" class="documents-empty"><div><i data-lucide="archive" aria-hidden="true"></i><h3>{% if query or has_active_filters %}Nie znaleziono bibliotek{% else %}Utwórz pierwszą bibliotekę{% endif %}</h3><p>{% if query or has_active_filters %}Zmień wyszukiwanie lub wybrane filtry.{% else %}Biblioteka to osobne miejsce na foldery i pliki, np. dla projektu lub działu.{% endif %}</p>{% if not query and not has_active_filters %}<a class="btn btn-primary btn-sm" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i>Nowa biblioteka</a>{% endif %}</div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

@@ -1,6 +1,6 @@
 <div class="tasks-modal documents-modal is-open" role="dialog" aria-modal="true" aria-labelledby="documents-modal-title" data-document-dialog data-return-url="{{ modal.folder_url }}">
     <div class="tasks-modal__dialog">
-        <form method="post" action="{{ modal.form_action }}" {% if modal.upload_form %}enctype="multipart/form-data"{% endif %} class="tasks-modal__form" data-document-form>
+        <form method="post" action="{{ modal.form_action }}" {% if modal.form.is_multipart %}enctype="multipart/form-data"{% endif %} class="tasks-modal__form" data-document-form>
             {% csrf_token %}
             <header class="tasks-modal__header">
                 <h2 id="documents-modal-title">{{ modal.form_title }}</h2>
@@ -14,8 +14,10 @@
                 <div class="documents-file-summary"><span class="documents-file-icon"><i data-lucide="{{ modal.document.icon }}" aria-hidden="true"></i></span><div>{{ modal.document.filename }}<small>{{ modal.document.extension }} · {{ modal.document.file_size|filesizeformat }} · Dodano {{ modal.document.created_at|date:'d.m.Y, H:i' }}</small></div><a class="tasks-icon-button documents-icon-button" href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" download aria-label="Pobierz plik" title="Pobierz plik"><i data-lucide="download" aria-hidden="true"></i></a></div>
                 {% endif %}
                 {% if modal.upload_form %}<p class="documents-upload-hint"><i data-lucide="cloud-upload" aria-hidden="true"></i><span>Wybierz pliki do przesłania<small>Dokumenty, arkusze, obrazy i archiwa. Maks. {{ modal.max_upload_size|filesizeformat }} na plik, do 20 plików jednocześnie.</small></span></p>{% endif %}
+                {% if modal.library_form %}{% include 'documents/includes/library_photo_editor.html' with form=modal.form photo_url=modal.photo_preview_url only %}{% endif %}
                 {% for field in modal.form %}
-                {% if field.name == 'tags' %}<fieldset class="documents-tag-picker"><legend>Tagi</legend>{% if field.field.queryset %}{{ field }}{% else %}<p class="documents-muted">Brak tagów w tym Workspace.</p>{% endif %}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</fieldset>
+                {% if modal.library_form and field.name == 'photo' or field.is_hidden %}
+                {% elif field.name == 'tags' %}<fieldset class="documents-tag-picker"><legend>Tagi</legend>{% if field.field.queryset %}{{ field }}{% else %}<p class="documents-muted">Brak tagów w tym Workspace.</p>{% endif %}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</fieldset>
                 {% else %}<div class="documents-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endif %}
                 {% endfor %}
             </div>

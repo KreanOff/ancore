@@ -442,12 +442,12 @@ def global_search(request):
     documents_url = _workspace_app_url(workplace, 'documents')
     groups.extend((
         _global_search_group(
-            'document-libraries', 'Biblioteki dokumentów', 'library-big',
+            'document-libraries', 'Biblioteki dokumentów', 'archive',
             DocumentLibrary.objects.filter(owner=user, workplace=workplace).filter(
                 Q(name__icontains=query) | Q(description__icontains=query)
             ),
             lambda item: _global_search_result(item.name, 'Biblioteka dokumentów',
-                                                _search_url(documents_url, library=item.pk), 'library-big', item.description),
+                                                _search_url(documents_url, library=item.pk), 'archive', item.description),
         ),
         _global_search_group(
             'documents', 'Dokumenty', 'files',

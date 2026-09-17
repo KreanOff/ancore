@@ -1,3 +1,5 @@
+import base64
+import binascii
 import mimetypes
 import os
 
@@ -149,6 +151,24 @@ def validate_image_bytes(content, content_type, max_size=DEFAULT_IMAGE_MAX_SIZE)
         raise ValidationError('Plik obrazu ma nieprawidłową zawartość.')
 
     return detected_extension
+
+
+def validate_image_crop(crop_data, max_size=DEFAULT_IMAGE_MAX_SIZE, error_message='Nie udało się odczytać przyciętego zdjęcia.'):
+    crop_data = (crop_data or '').strip()
+    if not crop_data:
+        return None
+    header, separator, encoded = crop_data.partition(',')
+    if not separator or not header.startswith('data:') or not header.endswith(';base64'):
+        raise ValidationError(error_message)
+    # Bound the encoded input before allocating the decoded image.
+    if len(encoded) > ((max_size + 2) // 3) * 4:
+        raise ValidationError('Zdjęcie może mieć maksymalnie 5 MB.')
+    try:
+        content = base64.b64decode(encoded, validate=True)
+    except (binascii.Error, ValueError):
+        raise ValidationError(error_message)
+    extension = validate_image_bytes(content, header[5:-7].lower(), max_size)
+    return {'content': content, 'extension': extension}
 
 
 def validate_image_upload(uploaded_file, max_size=DEFAULT_IMAGE_MAX_SIZE):

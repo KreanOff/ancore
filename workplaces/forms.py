@@ -1,12 +1,10 @@
-import base64
-import binascii
 import uuid
 
 from django import forms
 from django.conf import settings
 from django.core.files.base import ContentFile
 
-from core.upload_validation import validate_image_bytes, validate_image_upload
+from core.upload_validation import validate_image_crop, validate_image_upload
 from .models import Workplace
 
 
@@ -118,27 +116,10 @@ class WorkplaceForm(forms.ModelForm):
         return validate_image_upload(workplace_photo, WORKPLACE_PHOTO_MAX_SIZE)
 
     def clean_workplace_photo_crop(self):
-        crop_data = (self.cleaned_data.get('workplace_photo_crop') or '').strip()
-
-        if not crop_data:
-            return None
-
-        header, separator, encoded = crop_data.partition(',')
-        if not separator or not header.startswith('data:') or not header.endswith(';base64'):
-            raise forms.ValidationError('Nie udało się odczytać przyciętego logo.')
-
-        try:
-            content = base64.b64decode(encoded, validate=True)
-        except (binascii.Error, ValueError):
-            raise forms.ValidationError('Nie udało się odczytać przyciętego logo.')
-
-        content_type = header[5:-7].lower()
-        extension = validate_image_bytes(content, content_type, WORKPLACE_PHOTO_MAX_SIZE)
-
-        return {
-            'content': content,
-            'extension': extension,
-        }
+        return validate_image_crop(
+            self.cleaned_data.get('workplace_photo_crop'), WORKPLACE_PHOTO_MAX_SIZE,
+            error_message='Nie udało się odczytać przyciętego logo.',
+        )
 
     def clean_workplace_photo_remove(self):
         return (self.cleaned_data.get('workplace_photo_remove') or '').strip() == '1'

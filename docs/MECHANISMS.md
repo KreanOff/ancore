@@ -172,7 +172,7 @@ reguł nie powodował ponownego utworzenia domyślnych.
 
 Źródło: [core/upload_validation.py](../core/upload_validation.py).
 
-- Zdjęcia kont/firm/Workspace: JPEG, PNG, WebP, domyślnie 5 MB.
+- Zdjęcia kont/firm/Workspace i bibliotek: JPEG, PNG, WebP, domyślnie 5 MB.
 - Załączniki: lista rozszerzeń w `ATTACHMENT_ALLOWED_EXTENSIONS`, domyślnie 10 MB.
 - Walidacja obejmuje pusty plik, rozmiar, rozszerzenie i rozpoznawaną sygnaturę.
   To walidacja formatu, nie skaner antywirusowy ani pełne parsowanie zawartości.
@@ -184,6 +184,7 @@ reguł nie powodował ponownego utworzenia domyślnych.
 | Rodzaj danych | Przechowywanie |
 | --- | --- |
 | Zdjęcia i załączniki Tasks/Kanban | Standardowy `MEDIA_ROOT`, podkatalog zależny od modelu |
+| Zdjęcia bibliotek | `PRIVATE_DOCUMENT_ROOT/library_photos/<workplace_id>/`, losowa nazwa; kontrolowany widok obrazu |
 | Pliki Documents | `FileSystemStorage` w `PRIVATE_DOCUMENT_ROOT`; losowa nazwa pod katalogiem Workspace |
 | Metadane, foldery, tagi, gwiazdki, kosz | PostgreSQL |
 
@@ -193,7 +194,14 @@ Upload waliduje całą partię, używa transakcji bazy i sprząta już zapisane
 pliki przy błędzie. Transakcja bazy sama nie wycofuje plików na dysku.
 
 Sygnały `post_delete` załączników Tasks/Kanban usuwają powiązany plik.
-Nie przenoś tej gwarancji automatycznie na Documents: obecny model Documents
+Zdjęcia bibliotek mają osobny sygnał `post_delete`: usunięcie pliku następuje
+po zatwierdzeniu transakcji. Podmiana/usunięcie zdjęcia w formularzu także sprząta
+poprzedni plik dopiero po zapisie; błąd zapisu usuwa nowo utworzony plik.
+GET `libraries/<pk>/photo/` sprawdza właściciela i aktywny Workspace, zwraca obraz
+z `nosniff` oraz `Cache-Control: private, no-store`; brak zdjęcia daje 404.
+Formularze bibliotek i Workspace współdzielą `validate_image_crop`, używający
+tej samej walidacji formatu i rozmiaru co upload zdjęcia.
+Nie przenoś gwarancji sprzątania automatycznie na pliki: model `Document`
 nie ma analogicznego sygnału. Kosz ustawia tylko `deleted_at`.
 
 `ancore/urls.py` serwuje `MEDIA_ROOT` bezpośrednio przy DEBUG. Kontrolowany

@@ -1,0 +1,53 @@
+<div class="contacts-photo-editor-overlay" role="dialog" aria-modal="true" aria-label="{{ editor_title }}" hidden data-profile-photo-modal>
+    <div class="contacts-photo-editor-dialog">
+        <header class="contacts-photo-editor-header">
+            <strong>{{ editor_title }}</strong>
+            <button type="button" class="contacts-photo-editor-close" aria-label="Zamknij edycję obrazu" title="Zamknij" data-profile-photo-close>
+                <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+        </header>
+
+        <div class="profile-photo-cropper contacts-photo-editor-cropper" data-profile-photo-cropper>
+            <div class="profile-photo-crop-stage contacts-photo-editor-stage" data-profile-photo-crop-stage>
+                <canvas class="profile-photo-crop-canvas"
+                        width="640"
+                        height="640"
+                        aria-label="{{ canvas_label }}"
+                        data-profile-photo-canvas></canvas>
+                <div class="contacts-photo-editor-empty" data-profile-photo-empty>
+                    <span>{{ empty_label }}</span>
+                </div>
+            </div>
+            <div class="profile-photo-zoom-controls contacts-photo-editor-zoom">
+                <button type="button"
+                        class="profile-photo-zoom-button"
+                        aria-label="Pomniejsz obraz"
+                        title="Pomniejsz obraz"
+                        data-profile-photo-zoom-out>
+                    <i data-lucide="minus" aria-hidden="true"></i>
+                </button>
+                <input type="range"
+                       class="profile-photo-zoom-range"
+                       min="1"
+                       max="4"
+                       step="0.01"
+                       value="1"
+                       aria-label="Powiększenie obrazu"
+                       data-profile-photo-zoom>
+                <button type="button"
+                        class="profile-photo-zoom-button"
+                        aria-label="Powiększ obraz"
+                        title="Powiększ obraz"
+                        data-profile-photo-zoom-in>
+                    <i data-lucide="plus" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        <footer class="contacts-photo-editor-footer">
+            <button type="button" class="contacts-photo-editor-secondary" data-profile-photo-remove>Usuń</button>
+            <button type="button" class="contacts-photo-editor-secondary" data-profile-photo-change>Zmień</button>
+            <button type="button" class="contacts-photo-editor-primary" data-profile-photo-save>Zapisz</button>
+        </footer>
+    </div>
+</div>

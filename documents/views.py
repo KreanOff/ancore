@@ -1,4 +1,5 @@
 from copy import copy
+import mimetypes
 from urllib.parse import urlencode, urlsplit
 
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.db.models.deletion import RestrictedError
-from django.http import Http404, JsonResponse, QueryDict
+from django.http import FileResponse, Http404, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
@@ -132,7 +133,7 @@ def _pagination(request, total):
 def _library_index(request, form_context=None):
     query = request.GET.get('q', '').strip()[:120]
     fields = [
-        text_field(request.GET, 'name', 'Nazwa biblioteki', 'library-big', 'name'),
+        text_field(request.GET, 'name', 'Nazwa biblioteki', 'archive', 'name'),
         text_field(request.GET, 'description', 'Opis', 'align-left', 'description'),
         choice_field(request.GET, 'documents', 'Pliki', 'files', PRESENCE_OPTIONS),
         choice_field(request.GET, 'folders', 'Foldery', 'folders', PRESENCE_OPTIONS),
@@ -207,7 +208,7 @@ def _library_page(request, form_context=None):
         choice_field(request.GET, 'modified', 'Usunięto' if current_view == 'trash' else 'Zmodyfikowano', 'clock-3', DATE_OPTIONS),
     ]
     if not current_library:
-        fields.insert(3, choice_field(request.GET, 'document_library', 'Biblioteka', 'library-big', (
+        fields.insert(3, choice_field(request.GET, 'document_library', 'Biblioteka', 'archive', (
             {'value': str(item.pk), 'label': item.name} for item in _libraries(request)
         ), searchable=True))
     sort_fields = tuple(
@@ -307,20 +308,36 @@ def _form_success(request, url):
 
 
 def _save_library(request, instance=None):
-    form = LibraryForm(request.POST if request.method == 'POST' else None, instance=instance, owner=request.user, workplace=request.workplace)
+    previous_photo = instance.photo.name if instance and instance.photo else ''
+    form = LibraryForm(request.POST if request.method == 'POST' else None, request.FILES or None,
+                       instance=instance, owner=request.user, workplace=request.workplace)
     if request.method == 'POST' and form.is_valid():
         item = form.save(commit=False)
         item.owner, item.workplace = request.user, request.workplace
         try:
             with transaction.atomic():
                 item.save()
-        except IntegrityError:
+        except Exception as error:
+            if item.photo and item.photo._committed and item.photo.name != previous_photo:
+                item.photo.storage.delete(item.photo.name)
+            if not isinstance(error, IntegrityError):
+                raise
             form.add_error('name', 'Biblioteka o tej nazwie już istnieje w tym Workspace.')
         else:
+            if previous_photo and previous_photo != item.photo.name:
+                storage = item.photo.storage
+                transaction.on_commit(lambda: storage.delete(previous_photo), robust=True)
             messages.success(request, 'Zapisano bibliotekę.' if instance else 'Utworzono bibliotekę dokumentów.')
             return _form_success(request, _url(request, library=item.pk))
     context = _context(request, instance)
-    context.update({'form': form, 'form_title': 'Ustawienia biblioteki' if instance else 'Nowa biblioteka dokumentów', 'submit_label': 'Zapisz bibliotekę' if instance else 'Utwórz bibliotekę'})
+    photo_preview_url = _url(request, f'libraries/{instance.pk}/photo/') if previous_photo else ''
+    if form.is_bound and form.cleaned_data.get('photo_crop'):
+        photo_preview_url = form['photo_crop'].value().strip()
+    elif form.is_bound and form.cleaned_data.get('photo_remove'):
+        photo_preview_url = ''
+    context.update({'form': form, 'library_form': True, 'photo_preview_url': photo_preview_url,
+                    'form_title': 'Ustawienia biblioteki' if instance else 'Nowa biblioteka dokumentów',
+                    'submit_label': 'Zapisz bibliotekę' if instance else 'Utwórz bibliotekę'})
     return _render_form(request, context)
 
 
@@ -334,6 +351,22 @@ def library_create(request):
 @require_http_methods(['GET', 'POST'])
 def library_edit(request, pk):
     return _save_library(request, get_object_or_404(_libraries(request), pk=pk))
+
+
+@login_required
+@require_GET
+def library_photo(request, pk):
+    library = get_object_or_404(_libraries(request), pk=pk)
+    if not library.photo:
+        raise Http404
+    try:
+        photo = library.photo.open('rb')
+    except FileNotFoundError:
+        raise Http404
+    response = FileResponse(photo, content_type=mimetypes.guess_type(library.photo.name)[0] or 'application/octet-stream')
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 @login_required

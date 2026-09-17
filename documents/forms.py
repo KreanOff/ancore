@@ -1,6 +1,10 @@
 from django import forms
+from django.core.files.base import ContentFile
 
-from core.upload_validation import ATTACHMENT_ALLOWED_EXTENSIONS, validate_attachment_upload
+from core.upload_validation import (
+    ATTACHMENT_ALLOWED_EXTENSIONS, validate_attachment_upload,
+    validate_image_crop, validate_image_upload,
+)
 from tasks.models import TaskTag
 from .models import Document, DocumentLibrary, Folder
 
@@ -28,9 +32,20 @@ class UploadForm(forms.Form):
 
 
 class LibraryForm(forms.ModelForm):
+    photo = forms.FileField(label='Zdjęcie biblioteki', required=False, widget=forms.FileInput(attrs={
+        'accept': '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
+        'class': 'profile-photo-input', 'hidden': True,
+    }))
+    photo_crop = forms.CharField(required=False, widget=forms.HiddenInput(attrs={
+        'class': 'profile-photo-crop-input', 'data-profile-photo-crop-input': True,
+    }))
+    photo_remove = forms.CharField(required=False, widget=forms.HiddenInput(attrs={
+        'data-profile-photo-remove-input': True,
+    }))
+
     class Meta:
         model = DocumentLibrary
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'photo']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'}),
             'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
@@ -48,6 +63,27 @@ class LibraryForm(forms.ModelForm):
         if duplicates.exists():
             raise forms.ValidationError('Biblioteka o tej nazwie już istnieje w tym Workspace.')
         return name
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get('photo')
+        return validate_image_upload(photo) if self.files.get(self.add_prefix('photo')) else photo
+
+    def clean_photo_crop(self):
+        return validate_image_crop(self.cleaned_data.get('photo_crop'))
+
+    def clean_photo_remove(self):
+        return (self.cleaned_data.get('photo_remove') or '').strip() == '1'
+
+    def save(self, commit=True):
+        library = super().save(commit=False)
+        crop = self.cleaned_data.get('photo_crop')
+        if crop:
+            library.photo = ContentFile(crop['content'], name=f'library.{crop["extension"]}')
+        elif self.cleaned_data.get('photo_remove'):
+            library.photo = ''
+        if commit:
+            library.save()
+        return library
 
 
 class FolderForm(forms.ModelForm):

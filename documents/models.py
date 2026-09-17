@@ -3,11 +3,14 @@ import uuid
 
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.db import models
+from django.core.validators import FileExtensionValidator
+from django.db import models, transaction
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 def document_storage():
-    # Documents are served only by the authenticated download view, outside MEDIA_ROOT.
+    # Document files and library photos use authenticated views, outside MEDIA_ROOT.
     return FileSystemStorage(location=settings.PRIVATE_DOCUMENT_ROOT)
 
 
@@ -15,9 +18,18 @@ def document_upload_path(instance, filename):
     return f'{instance.workplace_id}/{uuid.uuid4().hex}{Path(filename).suffix.lower()}'
 
 
+def library_photo_upload_path(instance, filename):
+    return f'library_photos/{instance.workplace_id}/{uuid.uuid4().hex}{Path(filename).suffix.lower()}'
+
+
 class DocumentLibrary(models.Model):
     name = models.CharField('Nazwa biblioteki', max_length=120)
     description = models.TextField('Opis', blank=True, max_length=2000)
+    photo = models.FileField(
+        'Zdjęcie biblioteki', blank=True, storage=document_storage,
+        upload_to=library_photo_upload_path,
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
+    )
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='document_libraries')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='document_libraries')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -29,6 +41,13 @@ class DocumentLibrary(models.Model):
 
     def __str__(self):
         return self.name
+
+
+@receiver(post_delete, sender=DocumentLibrary)
+def delete_library_photo(sender, instance, using, **kwargs):
+    if instance.photo:
+        storage, name = instance.photo.storage, instance.photo.name
+        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
 
 
 class Folder(models.Model):

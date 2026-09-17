@@ -208,12 +208,16 @@
             || editor.closest('.profile-edit-body');
         const currentPhotoUrl = editor.dataset.profilePhotoUrl || '';
         const hasModal = Boolean(modal);
+        let previousPhotoFocus;
 
         if (!fileInput || !cropInput || !cropper || !stage || !canvas || !zoomInput || !context || !form) {
             return;
         }
 
         editor.dataset.profilePhotoInitialized = 'true';
+        let acceptedCrop = cropInput.value;
+        let acceptedRemove = removeInput?.value || '';
+        let acceptedPhotoUrl = acceptedRemove === '1' ? '' : (acceptedCrop || currentPhotoUrl);
 
         const state = {
             image: null,
@@ -301,12 +305,15 @@
         function setModalOpen(isOpen) {
             if (!modal) return;
 
+            if (isOpen && modal.hidden) previousPhotoFocus = document.activeElement;
             modal.hidden = !isOpen;
             document.body.classList.toggle('contacts-photo-editor-open', isOpen);
 
             if (isOpen) {
                 setCropperVisible(Boolean(state.image));
                 saveButton?.focus();
+            } else if (previousPhotoFocus?.isConnected) {
+                previousPhotoFocus.focus({ preventScroll: true });
             }
         }
 
@@ -316,11 +323,23 @@
         }
 
         function openPhotoEditor() {
-            requestPhotoFile();
+            if (hasModal && state.image) setModalOpen(true);
+            else requestPhotoFile();
         }
 
         function closePhotoEditor() {
             setModalOpen(false);
+            fileInput.value = '';
+            cropInput.value = acceptedCrop;
+            if (removeInput) removeInput.value = acceptedRemove;
+            updatePreview(acceptedPhotoUrl);
+            if (acceptedPhotoUrl) loadPhotoSource(acceptedPhotoUrl, '', false);
+            else {
+                clearObjectUrl();
+                state.image = null;
+                state.shouldExport = false;
+                setCropperVisible(false);
+            }
         }
 
         function updatePreview(photoUrl) {
@@ -333,6 +352,7 @@
             }
 
             preview.innerHTML = fallbackTemplate?.innerHTML || '';
+            window.AncoreIcons?.render(preview);
         }
 
         function setZoom(nextZoom, anchorX = canvas.width / 2, anchorY = canvas.height / 2) {
@@ -370,8 +390,8 @@
                 state.objectUrl = nextObjectUrl || '';
                 state.shouldExport = Boolean(shouldExport);
                 state.removed = false;
-                cropInput.value = '';
-                if (removeInput) {
+                if (shouldExport) cropInput.value = '';
+                if (removeInput && shouldExport) {
                     removeInput.value = '';
                 }
                 setCropperVisible(true);
@@ -455,6 +475,9 @@
                 removeInput.value = '1';
             }
             updatePreview('');
+            acceptedPhotoUrl = '';
+            acceptedCrop = '';
+            acceptedRemove = '1';
             setCropperVisible(false);
             setModalOpen(false);
         }
@@ -481,6 +504,9 @@
                 state.removed = false;
             }
 
+            acceptedCrop = cropInput.value;
+            acceptedRemove = removeInput?.value || '';
+            acceptedPhotoUrl = preview?.querySelector('img')?.getAttribute('src') || '';
             setModalOpen(false);
         }
 
@@ -507,6 +533,22 @@
         modal?.addEventListener('click', event => {
             if (event.target === modal) {
                 closePhotoEditor();
+            }
+        });
+
+        modal?.addEventListener('keydown', event => {
+            if (modal.hidden) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                closePhotoEditor();
+            } else if (event.key === 'Tab') {
+                const focusable = [...modal.querySelectorAll('button:not(:disabled), input:not(:disabled)')]
+                    .filter(element => element.getClientRects().length);
+                const first = focusable[0], last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+                event.stopPropagation();
             }
         });
 
@@ -604,8 +646,8 @@
             cropInput.value = cropData;
         });
 
-        if (currentPhotoUrl) {
-            loadPhotoSource(currentPhotoUrl, '', false);
+        if (acceptedPhotoUrl) {
+            loadPhotoSource(acceptedPhotoUrl, '', false);
         }
 
         editor.profilePhotoEditorApi = {
@@ -617,9 +659,11 @@
         };
     }
 
-    function initPhotoEditors() {
-        document.querySelectorAll('[data-profile-photo-editor]').forEach(initPhotoEditor);
+    function initPhotoEditors(root = document) {
+        root.querySelectorAll('[data-profile-photo-editor]').forEach(initPhotoEditor);
     }
+
+    window.AncorePhotoEditors = { init: initPhotoEditors };
 
     document.addEventListener('click', event => {
         const photoAction = event.target.closest('[data-profile-photo-open], [data-profile-photo-close], [data-profile-photo-change], [data-profile-photo-remove], [data-profile-photo-save]');

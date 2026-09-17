@@ -6,6 +6,7 @@ urlpatterns = [
     path('', views.library, name='library'),
     path('libraries/create/', views.library_create, name='library-create'),
     path('libraries/<int:pk>/edit/', views.library_edit, name='library-edit'),
+    path('libraries/<int:pk>/photo/', views.library_photo, name='library-photo'),
     path('libraries/<int:pk>/delete/', views.library_delete, name='library-delete'),
     path('upload/', views.upload, name='upload'),
     path('folders/create/', views.folder_create, name='folder-create'),

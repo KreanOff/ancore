@@ -17,7 +17,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 8 | 0 | 7 | 19 |
+| [core](../core) | 8 | 0 | 8 | 19 |
 | [accounts](../accounts) | 14 | 4 | 8 | 23 |
 | [workplaces](../workplaces) | 15 | 7 | 4 | 44 |
 | [tasks](../tasks) | 14 | 46 | 24 | 168 |
@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 10 | 2 | 8 | 46 |
+| [documents](../documents) | 11 | 3 | 10 | 57 |
 
 ## 2. Modele i relacje
 
@@ -457,7 +457,7 @@ Metody/properties: `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `workplace` (ForeignKey), `owner` (ForeignKey), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `photo` (FileField), `workplace` (ForeignKey), `owner` (ForeignKey), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -582,7 +582,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `MultipleFileInput`
 - `MultipleFileField`
 - `UploadForm`
-- `LibraryForm` — Meta.fields: `['name', 'description']`
+- `LibraryForm` — Meta.fields: `['name', 'description', 'photo']`
 - `FolderForm` — Meta.fields: `['name']`
 - `DocumentForm` — Meta.fields: `['title', 'description', 'folder', 'tags']`
 
@@ -728,6 +728,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `''` | `views.library` | 'library' |
 | `'libraries/create/'` | `views.library_create` | 'library-create' |
 | `'libraries/<int:pk>/edit/'` | `views.library_edit` | 'library-edit' |
+| `'libraries/<int:pk>/photo/'` | `views.library_photo` | 'library-photo' |
 | `'libraries/<int:pk>/delete/'` | `views.library_delete` | 'library-delete' |
 | `'upload/'` | `views.upload` | 'upload' |
 | `'folders/create/'` | `views.folder_create` | 'folder-create' |
@@ -758,7 +759,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/apps.py](../core/apps.py) — `CoreConfig`
 - [core/forms.py](../core/forms.py)
 - [core/models.py](../core/models.py)
-- [core/upload_validation.py](../core/upload_validation.py) — `validate_image_bytes`, `validate_image_upload`, `validate_attachment_upload`, `attachment_download_response`
+- [core/upload_validation.py](../core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `attachment_download_response`
 - [core/views/__init__.py](../core/views/__init__.py)
 
 ### accounts
@@ -855,10 +856,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/__init__.py](../documents/__init__.py)
 - [documents/apps.py](../documents/apps.py) — `DocumentsConfig`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
-- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `DocumentLibrary`, `Folder`, `Document`
+- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`
 - [documents/query.py](../documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
 - [documents/urls.py](../documents/urls.py)
-- [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `detail`, `download`, `star`, `trash`, `restore`
+- [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `detail`, `download`, `star`, `trash`, `restore`
 
 ## 6. Szablony
 
@@ -868,6 +869,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/includes/attachment_icon.html](../core/templates/core/includes/attachment_icon.html)
 - [core/templates/core/includes/attachment_upload_icon.html](../core/templates/core/includes/attachment_upload_icon.html)
 - [core/templates/core/includes/bootstrap.html](../core/templates/core/includes/bootstrap.html)
+- [core/templates/core/includes/photo_crop_dialog.html](../core/templates/core/includes/photo_crop_dialog.html)
 - [core/templates/core/includes/priority_icon.html](../core/templates/core/includes/priority_icon.html)
 - [core/templates/core/includes/settings_secondary_menu.html](../core/templates/core/includes/settings_secondary_menu.html)
 - [core/templates/core/includes/trash_icon.html](../core/templates/core/includes/trash_icon.html)
@@ -961,6 +963,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [documents/templates/documents/filter_sort.html](../documents/templates/documents/filter_sort.html)
 - [documents/templates/documents/form.html](../documents/templates/documents/form.html)
+- [documents/templates/documents/includes/library_avatar.html](../documents/templates/documents/includes/library_avatar.html)
+- [documents/templates/documents/includes/library_photo_editor.html](../documents/templates/documents/includes/library_photo_editor.html)
 - [documents/templates/documents/libraries.html](../documents/templates/documents/libraries.html)
 - [documents/templates/documents/library.html](../documents/templates/documents/library.html)
 - [documents/templates/documents/modal_host.html](../documents/templates/documents/modal_host.html)
@@ -1115,6 +1119,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `CalendarEventTests`: 3 metod testowych.
 
+### documents/test_library_photos.py
+
+Źródło: [documents/test_library_photos.py](../documents/test_library_photos.py).
+
+- `LibraryPhotoTests`: 11 metod testowych.
+
 ### documents/test_migrations.py
 
 Źródło: [documents/test_migrations.py](../documents/test_migrations.py).
@@ -1259,3 +1269,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 
 - [documents/migrations/0001_initial.py](../documents/migrations/0001_initial.py)
 - [documents/migrations/0002_documentlibrary_and_more.py](../documents/migrations/0002_documentlibrary_and_more.py)
+- [documents/migrations/0003_documentlibrary_photo.py](../documents/migrations/0003_documentlibrary_photo.py)

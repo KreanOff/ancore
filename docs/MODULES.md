@@ -204,6 +204,9 @@ gwiazdkę oraz datę przeniesienia do kosza.
 **Ekrany i funkcje:**
 
 - Katalog bibliotek z tworzeniem, zmianą nazwy/opisu i usunięciem pustej biblioteki.
+- Własne zdjęcie biblioteki: dodanie, kadrowanie, podmiana i usunięcie w formularzu,
+  przez wspólny edytor zdjęć Workspace. Zdjęcie zastępuje ikonę na liście i w panelu
+  bocznym; bez zdjęcia biblioteka używa ikony `archive`.
 - Zawartość biblioteki/folderu i ścieżka nawigacyjna.
 - Widoki całego Workspace: wszystkie, ostatnio zmienione, oznaczone i kosz.
 - Wyszukiwanie, sortowanie, filtr tagu, paginacja i wybór widocznych kolumn.
