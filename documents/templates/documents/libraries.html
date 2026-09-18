@@ -1,38 +1,37 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% block title %}Biblioteki dokumentów | ancore{% endblock %}
+{% block title %}Dyski | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260917-library-photo-size-v7"><script src="{% static 'js/documents.js' %}?v=20260917-library-photo-v2" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260918-drive-spacing-v1"><script src="{% static 'js/documents.js' %}?v=20260918-drive-v1" defer></script>{% endblock %}
 {% block content %}
-<div class="documents-page documents-library-index">
+<div class="documents-page documents-library-index" data-document-display="{{ document_display }}">
     {% include 'documents/toolbar.html' %}
-    <div class="documents-layout">
-    <section class="documents-main" aria-label="Biblioteki dokumentów">
+    <section class="documents-main" aria-label="Dyski">
+        {% if document_display == 'grid' %}
+            {% include 'documents/includes/libraries_grid.html' %}
+        {% else %}
         <div class="documents-table-scroll">
             <table class="documents-table documents-libraries-table">
-                <thead><tr><th scope="col">Biblioteka</th><th scope="col" data-document-column="description">Opis</th><th scope="col" data-document-column="documents">Pliki</th><th scope="col" data-document-column="folders">Foldery</th><th scope="col" data-document-column="date">Zmodyfikowano</th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+                <thead><tr><th scope="col">Nazwa</th><th scope="col" data-document-column="date">Zmodyfikowano</th><th scope="col" data-document-column="size">Rozmiar</th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
                 <tbody>
                     {% for item in libraries %}
                     <tr>
-                        <td><div class="documents-name">{% include 'documents/includes/library_avatar.html' with library=item %}<a href="{{ documents_url }}?library={{ item.pk }}" title="{{ item.name }}">{{ item.name }}</a></div></td>
-                        <td data-document-column="description"><span class="documents-library-description" title="{{ item.description }}">{{ item.description|default:'—' }}</span></td>
-                        <td data-document-column="documents">{{ item.document_count }}</td>
-                        <td data-document-column="folders">{{ item.folder_count }}</td>
+                        <td><a class="documents-library-entry" href="{{ documents_url }}?library={{ item.pk }}" title="Otwórz dysk: {{ item.name }}">
+                            {% include 'documents/includes/library_avatar.html' with library=item %}
+                            <span class="documents-library-copy"><span class="documents-library-title">{{ item.name }}</span></span>
+                        </a></td>
                         <td data-document-column="date" class="documents-date">{{ item.updated_at|date:'d.m.Y' }}</td>
-                        <td><div class="documents-row-actions">
-                            <a class="tasks-icon-button documents-icon-button" data-document-modal href="{{ documents_url }}libraries/{{ item.pk }}/edit/" aria-label="Ustawienia biblioteki {{ item.name }}" title="Ustawienia biblioteki"><i data-lucide="pencil" aria-hidden="true"></i></a>
-                            <form method="post" action="{{ documents_url }}libraries/{{ item.pk }}/delete/">{% csrf_token %}<button type="submit" class="tasks-icon-button documents-icon-button" aria-label="Usuń pustą bibliotekę {{ item.name }}" title="Usuń pustą bibliotekę"><i data-lucide="trash-2" aria-hidden="true"></i></button></form>
-                        </div></td>
+                        <td data-document-column="size" class="documents-size">{{ item.total_size|filesizeformat }}</td>
+                        <td>{% include 'documents/includes/library_actions.html' %}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="documents-empty"><div><i data-lucide="archive" aria-hidden="true"></i><h3>{% if query or has_active_filters %}Nie znaleziono bibliotek{% else %}Utwórz pierwszą bibliotekę{% endif %}</h3><p>{% if query or has_active_filters %}Zmień wyszukiwanie lub wybrane filtry.{% else %}Biblioteka to osobne miejsce na foldery i pliki, np. dla projektu lub działu.{% endif %}</p>{% if not query and not has_active_filters %}<a class="btn btn-primary btn-sm" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i>Nowa biblioteka</a>{% endif %}</div></td></tr>
+                    <tr><td colspan="4" class="documents-empty">{% include 'documents/includes/libraries_empty.html' %}</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        {% endif %}
     </section>
-        {% include 'documents/sidebar.html' %}
-    </div>
 </div>
 {% endblock %}
 {% block page_modals %}{% include 'documents/modal_host.html' %}{% endblock %}

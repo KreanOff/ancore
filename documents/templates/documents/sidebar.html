@@ -1,10 +1,10 @@
-<aside class="documents-sidebar" id="documents-sidebar" aria-label="Panel bibliotek dokumentów" data-documents-sidebar>
+<aside class="documents-sidebar" id="documents-sidebar" aria-label="Panel dysków" data-documents-sidebar>
     <header class="documents-sidebar-header">
-        <h2>Dokumenty w Workspace</h2>
-        <button type="button" class="tasks-icon-button documents-icon-button documents-sidebar-close" aria-label="Zamknij panel bibliotek" data-documents-sidebar-close><i data-lucide="x" aria-hidden="true"></i></button>
+        <h2>Pliki w Workspace</h2>
+        <button type="button" class="tasks-icon-button documents-icon-button documents-sidebar-close" aria-label="Zamknij panel dysków" data-documents-sidebar-close><i data-lucide="x" aria-hidden="true"></i></button>
     </header>
     {% if sidebar_views %}
-    <nav class="documents-sidebar-nav" aria-label="Widoki dokumentów">
+    <nav class="documents-sidebar-nav" aria-label="Widoki Dysku">
         {% for item in sidebar_views %}
         <a class="tasks-rail-link{% if item.active %} is-active{% endif %}" href="{{ item.url }}" {% if item.active %}aria-current="page"{% endif %} data-document-view="{{ item.value }}">
             <i data-lucide="{{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span>{% if item.count != None %}<small>{{ item.count }}</small>{% endif %}
@@ -14,15 +14,15 @@
     {% endif %}
     <section class="documents-sidebar-libraries" aria-labelledby="documents-sidebar-libraries-title">
         <div class="documents-sidebar-section-heading">
-            <h2 id="documents-sidebar-libraries-title">Biblioteki dokumentów</h2>
-            <a class="tasks-icon-button documents-icon-button" data-document-modal href="{{ documents_url }}libraries/create/" aria-label="Dodaj bibliotekę" title="Dodaj bibliotekę"><i data-lucide="plus" aria-hidden="true"></i></a>
+            <h2 id="documents-sidebar-libraries-title">Dyski</h2>
+            <a class="tasks-icon-button documents-icon-button" data-document-modal href="{{ documents_url }}libraries/create/" aria-label="Dodaj dysk" title="Dodaj dysk"><i data-lucide="plus" aria-hidden="true"></i></a>
         </div>
-        <nav class="documents-sidebar-nav" aria-label="Biblioteki dokumentów">
-            <a class="tasks-rail-link{% if is_library_index %} is-active{% endif %}" href="{{ documents_url }}" {% if is_library_index %}aria-current="page"{% endif %}><i data-lucide="layout-list" aria-hidden="true"></i><span>Wszystkie biblioteki</span></a>
+        <nav class="documents-sidebar-nav" aria-label="Dyski">
+            <a class="tasks-rail-link{% if is_library_index %} is-active{% endif %}" href="{{ documents_url }}" {% if is_library_index %}aria-current="page"{% endif %}><i data-lucide="layout-list" aria-hidden="true"></i><span>Wszystkie dyski</span></a>
             {% for item in sidebar_libraries %}
             <a class="tasks-rail-link documents-sidebar-library-link{% if current_library.pk == item.pk %} is-active{% endif %}" href="{{ documents_url }}?library={{ item.pk }}" {% if current_library.pk == item.pk %}aria-current="page"{% endif %} title="{{ item.name }}">{% include 'documents/includes/library_avatar.html' with library=item %}<span>{{ item.name }}</span></a>
-            {% empty %}<p class="documents-sidebar-empty">Utwórz bibliotekę, aby dodać foldery i pliki.</p>{% endfor %}
+            {% empty %}<p class="documents-sidebar-empty">Utwórz dysk, aby dodać foldery i pliki.</p>{% endfor %}
         </nav>
     </section>
 </aside>
-<button type="button" class="documents-sidebar-backdrop" aria-label="Zamknij panel bibliotek" data-documents-sidebar-backdrop hidden></button>
+<button type="button" class="documents-sidebar-backdrop" aria-label="Zamknij panel dysków" data-documents-sidebar-backdrop hidden></button>

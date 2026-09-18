@@ -105,7 +105,7 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Planner | Wydarzenia i izolacja właściciela |
 | Dashboard | Wyszukiwanie, powiadomienia i integracje |
 | Core | Wspólne mechanizmy i kontrakty UI/uploadu według aktualnych przypadków |
-| Documents | Biblioteki, foldery, pliki, kosz, izolacja, modale, paginacja, wyszukiwarka, migracja bibliotek |
+| Documents | Dyski, foldery, pliki, kosz, izolacja, modale, paginacja, wyszukiwarka, migracja dysków |
 
 Lista klas i liczba zdefiniowanych metod testowych jest generowana w
 [CODE_INDEX.md](CODE_INDEX.md). Nie jest to raport wykonania testów ani procent pokrycia.
@@ -172,7 +172,7 @@ To obserwacje stanu na 15.09.2026, nie lista wdrożonych poprawek.
   ich do bieżącego Workspace.
 - Częściowa nawigacja ma listę obsługiwanych ścieżek, nie obejmuje automatycznie
   nowych modułów ani wszystkich wariantów scoped URL.
-- Dokumenty mają prywatny storage; standardowe media są serwowane w DEBUG
+- Dysk ma prywatny storage; standardowe media są serwowane w DEBUG
   przez konfigurację Django. Politykę plików produkcji trzeba sprawdzić osobno.
 - `Task`/Kanban numerują i renumerują `task_id`; numer nie jest trwałym PK.
 - Wspólne reguły CSS nadpisują m.in. kolory i wagi; bazowy plik komponentu

@@ -31,7 +31,7 @@ FILTER_PARAMETERS = (
     'tag', 'document_library', 'file_type', 'starred', 'modified', 'size', 'documents', 'folders',
 )
 LIBRARY_SORT_FIELDS = (
-    {'value': 'name', 'label': 'Nazwa biblioteki', 'icon': 'archive', 'lookup': 'name', 'text': True},
+    {'value': 'name', 'label': 'Nazwa dysku', 'icon': 'hard-drive', 'lookup': 'name', 'text': True},
     {'value': 'description', 'label': 'Opis', 'icon': 'align-left', 'lookup': 'description', 'text': True},
     {'value': 'documents', 'label': 'Liczba plików', 'icon': 'files', 'lookup': 'document_count'},
     {'value': 'folders', 'label': 'Liczba folderów', 'icon': 'folders', 'lookup': 'folder_count'},
@@ -39,10 +39,10 @@ LIBRARY_SORT_FIELDS = (
     {'value': 'created', 'label': 'Data utworzenia', 'icon': 'calendar-plus-2', 'lookup': 'created_at'},
 )
 DOCUMENT_SORT_FIELDS = (
-    {'value': 'name', 'label': 'Nazwa dokumentu', 'icon': 'file-text', 'lookup': 'title', 'text': True},
-    {'value': 'filename', 'label': 'Nazwa pliku', 'icon': 'file', 'lookup': 'filename', 'text': True},
+    {'value': 'name', 'label': 'Nazwa pliku', 'icon': 'file-text', 'lookup': 'title', 'text': True},
+    {'value': 'filename', 'label': 'Oryginalna nazwa pliku', 'icon': 'file', 'lookup': 'filename', 'text': True},
     {'value': 'description', 'label': 'Opis', 'icon': 'align-left', 'lookup': 'description', 'text': True},
-    {'value': 'library', 'label': 'Biblioteka', 'icon': 'archive', 'lookup': 'library__name', 'text': True},
+    {'value': 'library', 'label': 'Dysk', 'icon': 'hard-drive', 'lookup': 'library__name', 'text': True},
     {'value': 'folder', 'label': 'Folder', 'icon': 'folder', 'lookup': 'folder__name', 'text': True},
     {'value': 'size', 'label': 'Rozmiar', 'icon': 'hard-drive', 'lookup': 'file_size'},
     {'value': 'updated', 'label': 'Zmodyfikowano', 'icon': 'clock-3', 'lookup': 'updated_at'},

@@ -131,18 +131,26 @@ filtrują, sortują i wycinają okno wyników po stronie serwera. Widoki używaj
 Tasks ma osobne mechanizmy katalogów projektów, grup, tagów i zadań oraz
 grupowania/paginacji po statusach.
 
-Kontakty i firmy mają własne okna wyników. Dokumenty używają `Paginator`;
-na jednej stronie najpierw rozliczają foldery, potem dokumenty, aby nie
+Kontakty i firmy mają własne okna wyników. Dysk używa `Paginator`;
+na jednej stronie najpierw rozlicza foldery, potem pliki, aby nie
 powielać i nie pomijać pozycji przy przechodzeniu między stronami.
 
 `documents/query.py` normalizuje dozwolone filtry i pola sortowania przed
 wykonaniem zapytań. Warunki są nakładane na zbiory ograniczone właścicielem
-i Workspace; wybór biblioteki lub tagu również weryfikuje ten zakres.
+i Workspace; wybór dysku lub tagu również weryfikuje ten zakres.
 Foldery pozostają przed plikami, z kolejnością według nazwy albo daty utworzenia.
 Daty filtrów obejmują dzisiaj lub ostatnie 7/30 dni kalendarzowych w strefie
 aplikacji. W koszu filtr i sortowanie „Usunięto” używają `deleted_at`.
 Puste lokalizacje trafiają na koniec sortowania; `pk` rozstrzyga remisy.
 Historyczne linki `sort=name`, `updated`, `oldest`, `size` pozostają obsługiwane.
+
+Parametr Dysku `display=list|grid` wybiera tabelę albo kafelki z tych samych
+wierszy i zakresu paginacji. Preferencja w sesji ma zakres konta, Workspace i rodzaju
+katalogu (dyski/pliki); nieznany parametr korzysta z zapisanej wartości lub
+domyślnej listy. Linki przełącznika zachowują parametry GET, a wyszukiwanie i akcje
+gwiazdki/kosza/przywracania przekazują wybrany układ. Zmiana układu działa również
+bez JavaScriptu. Kafelki korzystają z tych samych formularzy i kontrolowanego
+pobierania co tabela.
 
 **Zasada:** zachowuj filtrowanie i paginację na serwerze. Pobranie wszystkich
 rekordów do JS i ukrywanie części wierszy zmienia koszt oraz zachowanie list.
@@ -172,7 +180,7 @@ reguł nie powodował ponownego utworzenia domyślnych.
 
 Źródło: [core/upload_validation.py](../core/upload_validation.py).
 
-- Zdjęcia kont/firm/Workspace i bibliotek: JPEG, PNG, WebP, domyślnie 5 MB.
+- Zdjęcia kont/firm/Workspace i dysków: JPEG, PNG, WebP, domyślnie 5 MB.
 - Załączniki: lista rozszerzeń w `ATTACHMENT_ALLOWED_EXTENSIONS`, domyślnie 10 MB.
 - Walidacja obejmuje pusty plik, rozmiar, rozszerzenie i rozpoznawaną sygnaturę.
   To walidacja formatu, nie skaner antywirusowy ani pełne parsowanie zawartości.
@@ -184,22 +192,37 @@ reguł nie powodował ponownego utworzenia domyślnych.
 | Rodzaj danych | Przechowywanie |
 | --- | --- |
 | Zdjęcia i załączniki Tasks/Kanban | Standardowy `MEDIA_ROOT`, podkatalog zależny od modelu |
-| Zdjęcia bibliotek | `PRIVATE_DOCUMENT_ROOT/library_photos/<workplace_id>/`, losowa nazwa; kontrolowany widok obrazu |
+| Zdjęcia dysków | `PRIVATE_DOCUMENT_ROOT/library_photos/<workplace_id>/`, losowa nazwa; kontrolowany widok obrazu |
 | Pliki Documents | `FileSystemStorage` w `PRIVATE_DOCUMENT_ROOT`; losowa nazwa pod katalogiem Workspace |
 | Metadane, foldery, tagi, gwiazdki, kosz | PostgreSQL |
 
 Documents pobiera pliki tylko przez widok właściciela/Workspace,
 wyklucza kosz i ustawia `Cache-Control: private, no-store`.
+Te same ograniczenia obowiązują dla `/<uuid>/preview/` (dialog/pełna strona)
+i `/<uuid>/content/` (strumień podglądu). Surowe pliki są serwowane inline
+wyłącznie dla PDF i obrazów rastrowych, z ponownym sprawdzeniem sygnatury,
+ustalonym MIME, `nosniff`, `X-Frame-Options: SAMEORIGIN` oraz CSP sandbox
+i `frame-ancestors 'self'`. Globalna ochrona ramek pozostaje bez zmian.
+Podgląd nie korzysta z zewnętrznych usług ani publicznych adresów storage.
+
+`documents/previews.py` odczytuje pozostałe obsługiwane formaty lokalnie,
+a szablon escapuje cały tekst. Archiwa nie są rozpakowywane na dysk;
+relacje zewnętrzne arkuszy są odrzucane, formuły i makra nie są wykonywane.
+Limity podglądu: tekst 256 KiB (arkusze/DOCX do 262144 znaków), 200 wierszy
+i 30 kolumn na arkusz, 10 arkuszy, 200 pozycji archiwum. XML Office jest
+ograniczony do 2 MiB na część i 12 MiB na pakiet (maks. 2000 wpisów), bez
+DTD/encji, z limitem 50 tys. elementów i głębokości 64. Ograniczenie lub błąd
+odczytu daje komunikat; oryginał pozostaje dostępny do pobrania, jeśli istnieje.
 Upload waliduje całą partię, używa transakcji bazy i sprząta już zapisane
 pliki przy błędzie. Transakcja bazy sama nie wycofuje plików na dysku.
 
 Sygnały `post_delete` załączników Tasks/Kanban usuwają powiązany plik.
-Zdjęcia bibliotek mają osobny sygnał `post_delete`: usunięcie pliku następuje
+Zdjęcia dysków mają osobny sygnał `post_delete`: usunięcie pliku następuje
 po zatwierdzeniu transakcji. Podmiana/usunięcie zdjęcia w formularzu także sprząta
 poprzedni plik dopiero po zapisie; błąd zapisu usuwa nowo utworzony plik.
 GET `libraries/<pk>/photo/` sprawdza właściciela i aktywny Workspace, zwraca obraz
 z `nosniff` oraz `Cache-Control: private, no-store`; brak zdjęcia daje 404.
-Formularze bibliotek i Workspace współdzielą `validate_image_crop`, używający
+Formularze dysków i Workspace współdzielą `validate_image_crop`, używający
 tej samej walidacji formatu i rozmiaru co upload zdjęcia.
 Nie przenoś gwarancji sprzątania automatycznie na pliki: model `Document`
 nie ma analogicznego sygnału. Kosz ustawia tylko `deleted_at`.
@@ -217,7 +240,7 @@ wymaga sprawdzenia w środowisku wdrożenia.
 GET `/global-search/?q=...` wymaga logowania. Minimum wynosi 2 znaki,
 tekst jest ograniczany do 120 znaków. Wyszukiwanie obejmuje zadania i ich
 historię, projekty/grupy, karty/tablice/przestrzenie Kanban, tagi, kontakty,
-firmy, wydarzenia, Workspace, miejsca nawigacji oraz biblioteki/foldery/dokumenty.
+firmy, wydarzenia, Workspace, miejsca nawigacji oraz dyski/foldery/pliki.
 Zakres konkretnych querysetów uwzględnia właściciela i tam, gdzie przewidziano,
 aktywny Workspace; lista samych Workspace dotyczy przestrzeni właściciela.
 
@@ -256,7 +279,7 @@ fragmentem HTML. Nie jest to push/WebSocket ani system read/unread.
 
 Lista ścieżek nie obejmuje automatycznie wszystkich adresów modułów.
 W sprawdzonej wersji regexy `layout.js` są głównie bazowe; nie zawierają
-scoped ścieżek Workspace ani Dokumentów. Obsługa `ancore:content-loaded`
+scoped ścieżek Workspace ani Dysku. Obsługa `ancore:content-loaded`
 w danym skrypcie nie dowodzi, że każdy jego adres jest częściowo nawigowany.
 Tasks ma dodatkowo własny mechanizm podmiany widoków katalogu.
 
@@ -289,9 +312,9 @@ Zmieniając strukturę klucza, uwzględnij odczyt starszych danych i reset prefe
   jest `SET_NULL`, ale akcja UI może jawnie usuwać powiązane karty.
 - Usunięcie kolumny Kanban w aktywnym widoku usuwa jej karty.
 - Podzadania/podkarty mają rodzica z `CASCADE`.
-- Dokumenty/foldery/biblioteki używają `RESTRICT` dla ochrony niepustych
+- Pliki/foldery/dyski używają `RESTRICT` dla ochrony niepustych
   kontenerów. Workspace ma relacje kaskadowe; jego usuwanie jest osobnym
-  scenariuszem od usuwania niepustego folderu/biblioteki.
+  scenariuszem od usuwania niepustego folderu/dysku.
 
 Przed zmianą usuwania czytaj zarówno model, jak i akcję widoku oraz test.
 Nie wyciągaj zachowania całego scenariusza tylko z jednej deklaracji `on_delete`.

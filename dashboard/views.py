@@ -100,7 +100,7 @@ def _navigation_search_results(query, workplace):
         ('Firmy', 'Baza firm i organizacji', f'{contacts_url}companies/', 'building-2', 'organizacje companies'),
         ('Kalendarz', 'Wydarzenia i terminy', calendar_url, 'calendar-days', 'wydarzenia terminy'),
         ('Tagi', 'Wspólne oznaczenia', _search_url(tasks_url, view='tags'), 'tag', 'etykiety labels'),
-        ('Dokumenty', 'Biblioteki, foldery i pliki', _workspace_app_url(workplace, 'documents'), 'files', 'sharepoint pliki foldery dokumenty biblioteka'),
+        ('Dysk', 'Dyski, foldery i pliki', _workspace_app_url(workplace, 'documents'), 'hard-drive', 'dysk dyski pliki foldery dokumenty biblioteka'),
         ('Workspace', 'Miejsca pracy i ich ustawienia', reverse('workplaces:workplaces'), 'briefcase', 'miejsca pracy'),
         ('Powiadomienia', 'Ostatnia aktywność', reverse('notifications'), 'bell', 'aktywność historia'),
         ('Ustawienia Ancore', 'Konfiguracja aplikacji', reverse('settings'), 'settings', 'preferencje konfiguracja'),
@@ -442,24 +442,24 @@ def global_search(request):
     documents_url = _workspace_app_url(workplace, 'documents')
     groups.extend((
         _global_search_group(
-            'document-libraries', 'Biblioteki dokumentów', 'archive',
+            'document-libraries', 'Dyski', 'hard-drive',
             DocumentLibrary.objects.filter(owner=user, workplace=workplace).filter(
                 Q(name__icontains=query) | Q(description__icontains=query)
             ),
-            lambda item: _global_search_result(item.name, 'Biblioteka dokumentów',
-                                                _search_url(documents_url, library=item.pk), 'archive', item.description),
+            lambda item: _global_search_result(item.name, 'Dysk',
+                                                _search_url(documents_url, library=item.pk), 'hard-drive', item.description),
         ),
         _global_search_group(
-            'documents', 'Dokumenty', 'files',
+            'documents', 'Pliki', 'files',
             Document.objects.filter(owner=user, workplace=workplace, deleted_at__isnull=True).filter(
                 Q(title__icontains=query) | Q(filename__icontains=query)
                 | Q(description__icontains=query) | Q(tags__name__icontains=query)
             ).select_related('folder', 'library').distinct(),
-            lambda item: _global_search_result(item.title, 'Dokument', f'{documents_url}{item.pk}/', item.icon,
+            lambda item: _global_search_result(item.title, 'Plik', f'{documents_url}{item.pk}/preview/', item.icon,
                                                 ' / '.join(part for part in (item.library.name, item.folder.name if item.folder else '') if part)),
         ),
         _global_search_group(
-            'document-folders', 'Foldery dokumentów', 'folder',
+            'document-folders', 'Foldery', 'folder',
             Folder.objects.filter(owner=user, workplace=workplace, name__icontains=query).select_related('library'),
             lambda item: _global_search_result(item.name, 'Folder', _search_url(documents_url, library=item.library_id, folder=item.pk), 'folder', item.library.name),
         ),

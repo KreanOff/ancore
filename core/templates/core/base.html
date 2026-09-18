@@ -57,7 +57,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260917-primary-button-tint-v2">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260918-modal-bars-50">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -239,11 +239,11 @@
                 <span class="nav-label">Tagi</span>
             </a>
             {% sidebar_favorite_toggle 'tags' 'Tagi' 'tag' sidebar_tasks_url|add:'?view=tags' %}
-            <a href="{{ sidebar_documents_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'documents' or request.resolver_match.app_name == 'workplace_documents' %}active{% endif %}" aria-label="Dokumenty" title="Dokumenty" data-sidebar-source-item="documents" draggable="true">
-                <i class="nav-icon" data-lucide="files" aria-hidden="true"></i>
-                <span class="nav-label">Dokumenty</span>
+            <a href="{{ sidebar_documents_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'documents' or request.resolver_match.app_name == 'workplace_documents' %}active{% endif %}" aria-label="Dysk" title="Dysk" data-sidebar-source-item="documents" draggable="true">
+                <i class="nav-icon" data-lucide="hard-drive" aria-hidden="true"></i>
+                <span class="nav-label">Dysk</span>
             </a>
-            {% sidebar_favorite_toggle 'documents' 'Dokumenty' 'files' sidebar_documents_url %}
+            {% sidebar_favorite_toggle 'documents' 'Dysk' 'hard-drive' sidebar_documents_url %}
             </section>
 
         </nav>

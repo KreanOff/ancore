@@ -1,7 +1,7 @@
 # Mapa dokumentacji Ancore
 
 Pierwszy przegląd źródeł: **15 września 2026**. Opis obejmuje lokalne drzewo
-robocze, w tym moduł Dokumentów i jego integracje. Stan wdrożenia na serwerze
+robocze, w tym moduł Dysku i jego integracje. Stan wdrożenia na serwerze
 nie był ustalany. Przy zmianie zachowania aktualizuj odpowiedni rozdział.
 
 ## Szybkie wejście w projekt
@@ -30,7 +30,7 @@ do szczegółowych opisów i wymaga zachowania istniejących wzorców.
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
 | Kontakty, firmy, profil | Odpowiedni moduł; Mechanizmy: tożsamość, dostęp, obrazy |
 | Nawigacja lub nowy moduł | Architektura; Mechanizmy: Workspace, URL i podmiana treści |
-| Dokumenty i upload | Moduły: Dokumenty; Mechanizmy: pliki; `documents/`, `core/upload_validation.py` |
+| Dysk i upload | Moduły: Dysk; Mechanizmy: pliki; `documents/`, `core/upload_validation.py` |
 | Wyszukiwanie lub powiadomienia | Mechanizmy: wyszukiwanie i historia; `dashboard/views.py` oraz odpowiedni panel JS |
 | Baza, migracje, środowisko | Praca developerska; modele i odpowiednie testy migracyjne |
 

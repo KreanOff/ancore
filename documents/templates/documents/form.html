@@ -22,6 +22,7 @@
                 {% endfor %}
             </div>
             <footer class="tasks-modal__footer">
+                {% if modal.document %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/preview/" class="btn btn-secondary" data-document-modal>Podgląd pliku</a>{% endif %}
                 <a href="{{ modal.folder_url }}" class="btn btn-secondary" data-document-modal-close>Anuluj</a>
                 <button type="submit" class="tasks-modal__submit">{{ modal.submit_label }}</button>
             </footer>

@@ -73,7 +73,9 @@ class LibraryPhotoTests(TestCase):
             self.assertContains(response, marker)
         self.assertContains(response, f'data-profile-photo-url="{self.photo_url}"')
         index = self.client.get(self.base)
-        self.assertContains(index, f'src="{self.photo_url}"', count=2)
+        self.assertContains(index, f'src="{self.photo_url}"', count=1)
+        contents = self.client.get(f'{self.base}?library={self.library.pk}')
+        self.assertContains(contents, f'src="{self.photo_url}"', count=1)
         self.assertNotContains(index, '/media/library_photos/')
         self.assertNotContains(index, self.library.photo.name)
 
@@ -92,7 +94,7 @@ class LibraryPhotoTests(TestCase):
         self.assertFalse(self.library.photo)
         self.assertFalse(self.storage.exists(replacement))
         self.assertEqual(self.client.get(self.photo_url).status_code, 404)
-        self.assertContains(self.client.get(self.base), 'data-lucide="archive"')
+        self.assertContains(self.client.get(self.base), 'data-lucide="hard-drive"')
 
     def test_ordinary_metadata_edit_preserves_photo(self):
         self.save_photo()

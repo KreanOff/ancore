@@ -110,13 +110,13 @@ Ważne wyjątki:
 | --- | --- | --- |
 | Katalog projektów/grup/tagów | [tasks/tasks.html](../tasks/templates/tasks/tasks.html) | `components/tasks.css`, `tasks.js` |
 | Lista kontaktów i firm | [contacts.html](../contacts/templates/contacts/contacts.html), [companies.html](../contacts/templates/contacts/companies.html) | `contacts.css` + wspólne style katalogu |
-| Tytuł i toolbar katalogu | [toolbar Dokumentów](../documents/templates/documents/toolbar.html) jako przykład użycia wspólnych klas | `tasks-topbar`, `tasks-filterbar`, `tasks-filter-button`, `tasks-search-field` |
+| Tytuł i toolbar katalogu | [toolbar Dysku](../documents/templates/documents/toolbar.html) jako przykład użycia wspólnych klas | `tasks-topbar`, `tasks-filterbar`, `tasks-filter-button`, `tasks-search-field` |
 | Paginacja | [directory_pagination_toolbar.html](../tasks/templates/tasks/includes/directory_pagination_toolbar.html) | Kontekst `window`, atrybuty `data-project-*`, serwerowe URL |
 | Zarządzanie kolumnami | [directory_column_manager.html](../tasks/templates/tasks/includes/directory_column_manager.html) | `tasks.js`, zapis ustawień lokalnych |
 | Agregat filtrów | [directory_filter_aggregate.html](../tasks/templates/tasks/includes/directory_filter_aggregate.html) | Wspólne menu i aktywny stan |
 | Wiersz zadania | [task_issue_row.html](../tasks/templates/tasks/includes/task_issue_row.html) | Stan, uprawnienia, `data-task-*`, ikony, JS listy |
 | Karta Kanban | [task_board_card.html](../kanban/templates/kanban/includes/task_board_card.html) | Kolumna, okładka i przeciąganie |
-| Standardowy modal formularza | [form.html Dokumentów](../documents/templates/documents/form.html), modale projektów/zadań | `tasks-modal*` + `modal-system.css` |
+| Standardowy modal formularza | [form.html Dysku](../documents/templates/documents/form.html), modale projektów/zadań | `tasks-modal*` + `modal-system.css` |
 | Potwierdzenie | [modal.js](../static/js/modal.js) | `showConfirmModal`, `dialogs.css` |
 | Zwykłe przyciski | [buttons.css](../static/css/components/buttons.css) | `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-sm`, `.btn-cancel` |
 | Formularz/dropdown | [forms.css](../static/css/components/forms.css), [custom-select.js](../static/js/custom-select.js) | `.form-input`, `.form-select`, `.ancore-custom-select*` |
@@ -143,7 +143,7 @@ przycisku. Wariant jest stosowany do akcji „Dodaj projekt”, „Dodaj grupę�
 i „Dodaj zadanie” w Zadaniach, „Dodaj przestrzeń” i „Dodaj tablicę” w Kanbanie
 oraz „Dodaj kontakt”, „Dodaj firmę” i „Dodaj gościa” w Kontaktach.
 Ten sam wariant mają „Dodaj tag” w Zadaniach i Kanbanie, „Nowe wydarzenie”
-w pasku Kalendarza, „Nowa biblioteka” w pasku Dokumentów oraz „Otwórz zadania”
+w pasku Kalendarza, „Nowy dysk” w pasku Dysku oraz „Otwórz zadania”
 w pasku Dashboardu.
 Obejmuje przyciski katalogów oraz ich odpowiedniki wewnątrz projektu/grupy.
 
@@ -156,26 +156,43 @@ widoczny obrys fokusu i osłabia przyciski nieaktywne przez opacity 0.55.
 Nie zmienia geometrii przycisków, akcji drugorzędnych ani kolorów stanów
 `saved`/`error` przycisku zapisu zadania.
 
-### Tabele i formularze Dokumentów
+### Tabele i formularze Dysku
 
-`documents.css` zachowuje semantyczne tabele bibliotek i plików, dopasowane do
+Nawigacja główna i ulubione używają nazwy „Dysk” oraz ikony Lucide `hard-drive`.
+Indeks nosi tytuł „Dyski”, tworzenie — „Nowy dysk”, edycja — „Ustawienia dysku”.
+Każdy dysk zawiera własne foldery i pliki. Zdjęcia referencyjne ilustrują tę
+organizację i układy lista/kafelki; wygląd zachowuje tokeny oraz komponenty Ancore.
+
+Przełącznik `documents-display-switch` używa dwóch linków `tasks-icon-button`
+z etykietami „Lista” i „Kafelki” i `aria-current` dla aktywnego układu.
+Serwer renderuje jeden układ, bez ukrytej kopii tabeli. Kafelki tworzą semantyczną
+listę w `documents-grid`, z ikoną, nazwą do dwóch linii i pełnym tekstem w linku,
+metadanymi oraz wspólnymi akcjami z tabeli. Dyski zachowują zdjęcia i liczniki.
+Siatka dopasowuje liczbę kolumn do miejsca; na telefonie akcje mogą przejść pod datę.
+Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Wybór kolumn dotyczy
+wyłącznie tabeli i jest dostępny w trybie listy. „Nowy folder” używa istniejącego
+drugorzędnego przycisku w pasku, obok „Prześlij pliki”. Wyszukiwanie ma widoczny
+opis zakresu obejmującego podfoldery i akcję czyszczenia pustych wyników.
+
+`documents.css` zachowuje semantyczne tabele dysków i plików, dopasowane do
 katalogu projektów: tekst 13px, nagłówki 35px, wiersze danych minimum 48px, białe tło,
 delikatne podziały poziome bez separatorów między kolumnami oraz szare
 podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
-drugą linię z typem i lokalizacją. Nazwy mają
-ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony bibliotek,
-folderów i plików są monochromatyczne, bez ozdobnych ramek. Biblioteki używają
-ikony Lucide `archive` na liście, w panelu bocznym, pustym stanie, filtrach,
-sortowaniu i wynikach globalnego wyszukiwania. Ikona w wierszu listy bibliotek
-ma rozmiar 22×22px w polu 48×48px. Własne zdjęcie zastępuje tę ikonę na liście
-oraz w panelu bibliotek; miniatura ma 48×48px na liście i w panelu
+drugą linię z lokalizacją. Lista nie wyświetla pod nazwą etykiety „Folder” ani
+typu pliku (np. „PDF”, „JPEG”); bez lokalizacji nie tworzy drugiej linii. Nazwy mają
+ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony dysków,
+folderów i plików są monochromatyczne, bez ozdobnych ramek. Dyski używają
+ikony Lucide `hard-drive` na liście, w panelu bocznym, pustym stanie, filtrach,
+sortowaniu i wynikach globalnego wyszukiwania. Ikona w wierszu listy dysków
+ma rozmiar 22×22px w polu 36×36px. Własne zdjęcie zastępuje tę ikonę na liście
+oraz w panelu dysków; miniatura ma 36×36px na liście i 28×28px w panelu
 bocznym, używa `object-fit: cover`. Wspólna szerokość pola ikony i zdjęcia
-w obu miejscach zachowuje wyrównanie nazw bibliotek. Wiersze bibliotek mają minimum
-64px wysokości, a odstęp między miniaturą i nazwą wynosi 12px, także na telefonie.
+w każdym wariancie zachowuje wyrównanie nazw dysków. Wiersze dysków mają minimum
+64px wysokości, a odstęp między miniaturą i nazwą wynosi 12px (10px na telefonie).
 Miniatury i podgląd zdjęcia w formularzu są okrągłe (`border-radius: 50%`),
 zgodnie z kadrem edytora Workspace.
 
-Formularz tworzenia i ustawień biblioteki udostępnia ten sam edytor zdjęcia
+Formularz tworzenia i ustawień dysku udostępnia ten sam edytor zdjęcia
 co Workspace: wybór pliku, przesuwanie kadru, zoom 1–4, podgląd oraz akcje
 „Zmień”, „Usuń” i „Zapisz”. Wspólna powłoka jest w
 [photo_crop_dialog.html](../core/templates/core/includes/photo_crop_dialog.html),
@@ -183,39 +200,65 @@ a zachowanie w `profile.js`. Eksport kadru tworzy JPEG 512×512px.
 `AncorePhotoEditors.init(root)` inicjalizuje także formularz pobrany dynamicznie;
 znacznik na kontrolce zapobiega ponownemu podpinaniu obsługi.
 Escape zamyka najpierw kadrowanie i przywraca fokus. Zamknięcie kadrowania
-odrzuca niezapisany wybór; „Zapisz” zatwierdza podgląd, a „Zapisz bibliotekę”
+odrzuca niezapisany wybór; „Zapisz” zatwierdza podgląd, a „Zapisz dysk”
 zapisuje formularz na serwerze. Błąd nazwy zachowuje zatwierdzony kadr;
 błędy pliku pojawiają się obok kontrolki zdjęcia.
 
-Lista bibliotek ma 24px odstępu w pierwszej kolumnie od lewej krawędzi tabeli
-i w ostatniej kolumnie od prawej krawędzi,
-zarówno w nagłówku, jak i w wierszach, także na wąskich ekranach.
-Komórka pustego stanu zachowuje własne, symetryczne odstępy.
+Lista dysków zajmuje całą szerokość treści. Pod tytułem jest pasek narzędzi
+z przełącznikiem widoku, filtrami, sortowaniem, wyszukiwaniem i paginacją.
+Poniżej pasek `documents-workspace-nav` używa zwartego wariantu `tasks-rail-link`: aktywne „Dyski” oraz
+linki do wszystkich plików, ostatnich zmian, gwiazdek i kosza. Liczniki
+zachowują zakres Workspace i nie zależą od filtrów. Na telefonie pasek przewija
+się poziomo. Indeks nie powtarza listy dysków w panelu bocznym.
+Pasek narzędzi, zakładki, skrajne komórki tabeli i siatka dysków mają wspólny
+odstęp boczny `--documents-index-padding-x: 0.95rem`, zgodny z paskiem narzędzi
+katalogów. Wyrównanie jest zachowane również na telefonie i przy węższej tabeli.
 
-Panel bibliotek ma białe tło `--bg-main`, takie samo jak lista bibliotek,
+Listy dysków, folderów i plików mają trzy kolumny danych: „Nazwa”,
+„Zmodyfikowano”, „Rozmiar”, z osobnym polem przycisków działań.
+Rozmiar dysku i folderu sumuje aktywne pliki, również w podfolderach,
+w zakresie właściciela i Workspace. Puste elementy pokazują 0 bajtów.
+Tagi pozostają w filtrach, edycji i kafelkach. W koszu kolumna pokazuje datę
+modyfikacji, a data usunięcia jest dostępna w `title` komórki.
+Foldery nadal używają daty utworzenia, ponieważ model nie zapisuje daty modyfikacji.
+Wybór kolumn pozwala ukryć datę i rozmiar.
+
+`documents-library-entry` jest linkiem obejmującym miniaturę i nazwę (14px).
+Lista dysków nie wyświetla opisu pod nazwą ani opcji „Opis” w wyborze kolumn.
+Rozmiar jest wyrównany do prawej, a akcja
+ze strzałką otwiera dysk. Przy szerokości obszaru listy do 740px (container
+query, także przy rozwiniętej nawigacji aplikacji na tablecie) nazwa zawija się.
+Na wąskich ekranach tabela przewija się poziomo, zachowując wszystkie
+trzy kolumny danych (minimalna szerokość 620px).
+Ustawienia i usunięcie pustego dysku pozostają oddzielnymi kontrolkami.
+Skrajne komórki mają 24px odstępu od krawędzi (16px w zwężonej liście).
+Pusty wynik ma bezpośrednią akcję wyczyszczenia wyszukiwania i filtrów.
+
+Panel dysków ma białe tło `--bg-main`, takie samo jak lista dysków,
 również w wariancie wysuwanym na wąskich ekranach.
-Linki poszczególnych bibliotek używają wariantu `documents-sidebar-library-link`:
-minimum 64px wysokości, pole zdjęcia 48×48px i odstęp 12px od nazwy.
-Zastępcza ikona `archive` ma 22×22px i jest wyśrodkowana w tym samym polu.
+Panel jest dostępny w widokach plików i wewnątrz dysku.
+Linki poszczególnych dysków używają wariantu `documents-sidebar-library-link`:
+minimum 40px wysokości, pole zdjęcia 28×28px i odstęp 10px od nazwy.
+Zastępcza ikona `hard-drive` ma 18×18px i jest wyśrodkowana w tym samym polu.
 Pełna nazwa pozostaje w `title`, a długie nazwy skracają się przez ellipsis.
 Przycisk z ikoną `panel-right` na końcu paska filtrów zwija i rozwija cały
 prawy panel, zgodnie ze wzorcem Kalendarza. Na szerokich ekranach zwinięcie
 poszerza tabelę i jest zapamiętywane lokalnie w przeglądarce. Do 1100px
 przycisk otwiera dotychczasowy panel wysuwany z tłem, obsługą Escape i fokusu;
 otwarcie tego panelu nie zmienia preferencji szerokiego ekranu.
-Panel bibliotek używa `tasks-rail-link`, akcje ikonowe `tasks-icon-button`,
+Panel dysków używa `tasks-rail-link`, akcje ikonowe `tasks-icon-button`,
 a wybór kolumn `tasks-directory-column-item`. Formularze korzystają z
 `form-input`, `tasks-inline-input`, `form-select`/`tasks-inline-select` oraz
 `tasks-modal__errors`. Lokalne reguły odpowiadają za układ modułu i upload;
 wspólne komponenty za kontrolki, stany interakcji i powłokę okna.
 
-Filtry Dokumentów używają panelu `tasks-project-filter-builder` i wspólnych
+Filtry Dysku używają panelu `tasks-project-filter-builder` i wspólnych
 szablonów warunków tekstowych oraz wyboru wartości. Lista pól i aktywne warunki
 pochodzą z `documents/query.py`; obsługę wyszukiwania, czyszczenia i nawigacji
 zapewnia `tasks.js`. Panel sortowania
 [directory_sort_builder.html](../tasks/templates/tasks/includes/directory_sort_builder.html)
-jest wspólny dla Dokumentów i Wszystkich projektów: wyszukiwanie pola,
-wybór kierunku i zaznaczenie aktualnego ustawienia. Biblioteka, folder i widok
+jest wspólny dla Dysku i Wszystkich projektów: wyszukiwanie pola,
+wybór kierunku i zaznaczenie aktualnego ustawienia. Dysk, folder i widok
 stanowią kontekst nawigacji; przycisk „Wyczyść” w panelu filtrów ich nie usuwa.
 
 ### Dashboard bieżącego Workspace
@@ -246,15 +289,40 @@ szerokość, cień, nagłówek, stopkę i przycisk zamknięcia; moduł odpowiada
 | `--app-modal-radius` | `14px` |
 | `--app-modal-width` | `min(760px, calc(100vw - 2rem))` |
 | `--app-modal-padding-x` | `24px` |
-| `--app-modal-bar-min-height` | `60px` |
+| `--app-modal-bar-min-height` | `50px` (stała wysokość nagłówka i stopki) |
+| `--app-modal-bar-padding-y` | `4px` |
+
+Nagłówki i stopki standardowych okien aplikacji mają po 50px wysokości CSS,
+również na telefonie. Wspólny standard obejmuje projekty, grupy, zadania,
+Kanban, kontakty, firmy, Kalendarz, Workspace i Dokumenty, a także edycję
+profilu oraz kadrowanie zdjęć. Paski nie kurczą się przy przewijaniu treści.
 
 Modal ma nazwę dostępną dla czytnika, sensowny fokus po otwarciu, obsługę
 klawiatury i powrót fokusu. Błędy formularza zachowują wpisane dane. Podczas
 zapisu użytkownik dostaje stan oczekiwania, a powtórne wysłanie jest kontrolowane.
 
-Dokumenty są przykładem dialogu HTML pobieranego nagłówkiem `X-Document-Modal`.
+Dysk jest przykładem dialogu HTML pobieranego nagłówkiem `X-Document-Modal`.
 Obsługa aktywuje `inert` na tle i przywraca je po zamknięciu. Nie należy
 dodawać drugiej równoległej powłoki tylko dlatego, że nowy formularz jest w innym module.
+
+Podgląd Dysku używa tej samej powłoki i obsługi `data-document-dialog`.
+Wariant `documents-preview-modal` zajmuje niemal całą szerokość i wysokość ekranu,
+z marginesem 1rem z każdej strony i uwzględnieniem skali UI oraz dynamicznej
+wysokości viewportu. Treść wypełnia miejsce między nagłówkiem a stałą stopką;
+nie ma limitu szerokości 1100px ani wysokości treści 650px.
+Nagłówek pokazuje nazwę dokumentu. Pod nim zaczyna się zawartość podglądu;
+nie ma dodatkowego paska metadanych ani stałego komunikatu nad czytnikiem PDF.
+Czytnik PDF wypełnia obszar treści bez wewnętrznych odstępów na komputerze
+i telefonie; tekst, tabele i komunikaty zachowują standardowy padding.
+Przewijana treść mieści obraz/PDF, tekst, tabele arkuszy albo listę archiwum;
+stopka zawiera „Edytuj dane”, „Pobierz” i „Zamknij”. Nagłówek i stopka mają
+po 50px wysokości CSS i po 4px paddingu pionowego. Stopka zachowuje jeden rząd
+przycisków, z mniejszymi odstępami bocznymi na telefonie. Tabele mają własny
+poziomy scroll, a tekst zawija się.
+Podgląd i formularz mogą zastępować się w jednym hoście. Fokus, Escape, Tab
+i powrót do wybranego pliku korzystają ze wspólnej obsługi Dysku.
+Pusty, nieobsługiwany, uszkodzony i niedostępny plik mają osobne komunikaty;
+obraz sygnalizuje ładowanie i błąd. Natywny czytnik PDF obsługuje własną klawiaturę.
 
 ## 7. Ikony i typografia
 
@@ -291,7 +359,7 @@ kontraktu komponentu. Samo odtworzenie wyglądu bez tego kontraktu może zepsuć
 filtrowanie, zapis, dostępność albo częściową nawigację.
 
 Nie każda klasa `tasks-*` jest specyficzna dla Zadań: wiele z nich jest już
-używanych w Kontaktach, Workspace i Dokumentach. Przed zmianą selektora
+używanych w Kontaktach, Workspace i Dysku. Przed zmianą selektora
 przeszukaj całe repozytorium.
 
 ## 9. Responsywność i geometria

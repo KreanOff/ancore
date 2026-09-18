@@ -1,8 +1,8 @@
 <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory documents-topbar">
     <div class="tasks-titlebar-left">
         {% if current_library %}
-        <nav class="documents-breadcrumbs" aria-label="Ścieżka biblioteki">
-            <a href="{{ documents_url }}" aria-label="Wszystkie biblioteki">Biblioteki dokumentów</a>
+        <nav class="documents-breadcrumbs" aria-label="Ścieżka dysku">
+            <a href="{{ documents_url }}" aria-label="Wszystkie dyski">Dyski</a>
             {% for crumb in breadcrumbs %}<i data-lucide="chevron-right" aria-hidden="true"></i>{% if forloop.last %}<h1 class="tasks-topbar-title">{{ crumb.name }}</h1>{% else %}<a href="{{ crumb.url }}">{{ crumb.name }}</a>{% endif %}{% endfor %}
         </nav>
         {% else %}<h1 class="tasks-topbar-title">{{ view_title }}</h1>{% endif %}
@@ -16,17 +16,18 @@
         {% for param, value in document_filter_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}" data-project-filter-input="{{ param }}">{% endfor %}
         <input type="hidden" name="sort" value="{{ sort_param }}" data-project-sort-input>
         <input type="hidden" name="page_size" value="{{ document_window.page_size }}" data-project-search-page-size>
+        <input type="hidden" name="display" value="{{ document_display }}">
     </form>
     <div class="tasks-titlebar-actions">
         {% if not current_library %}
-        <a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i><span>Nowa biblioteka</span></a>
+        <a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-document-modal href="{{ documents_url }}libraries/create/"><i data-lucide="plus" aria-hidden="true"></i><span>Nowy dysk</span></a>
         {% else %}
         <a class="tasks-tag-topbar-button" data-document-modal href="{{ upload_url }}"><i data-lucide="upload" aria-hidden="true"></i><span>Prześlij pliki</span></a>
+        <a class="tasks-tag-topbar-button tasks-tag-topbar-button--secondary" data-document-modal href="{{ folder_create_url }}"><i data-lucide="folder-plus" aria-hidden="true"></i><span>Nowy folder</span></a>
         <div class="tasks-section-actions" data-section-actions>
             <button type="button" class="tasks-icon-button" aria-label="Więcej opcji" title="Więcej opcji" aria-haspopup="menu" aria-expanded="false" data-section-menu-toggle><i data-lucide="ellipsis" aria-hidden="true"></i></button>
             <div class="tasks-section-menu" role="menu">
-                <a class="tasks-project-menu-button" role="menuitem" data-document-modal href="{{ folder_create_url }}"><i data-lucide="folder-plus" aria-hidden="true"></i><span>Nowy folder</span></a>
-                <a class="tasks-project-menu-button" role="menuitem" data-document-modal href="{{ documents_url }}libraries/{{ current_library.pk }}/edit/"><i data-lucide="settings-2" aria-hidden="true"></i><span>Ustawienia biblioteki</span></a>
+                <a class="tasks-project-menu-button" role="menuitem" data-document-modal href="{{ documents_url }}libraries/{{ current_library.pk }}/edit/"><i data-lucide="settings-2" aria-hidden="true"></i><span>Ustawienia dysku</span></a>
             </div>
         </div>
         {% endif %}
@@ -34,30 +35,36 @@
 </header>
 <div class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory documents-filterbar">
     <div class="tasks-filterbar-left">
+        <nav class="documents-display-switch" aria-label="Sposób wyświetlania Dysku">
+            {% for option in display_options %}<a class="tasks-icon-button{% if option.active %} is-active{% endif %}" href="{{ option.url }}" aria-label="{{ option.label }}" title="{{ option.label }}" {% if option.active %}aria-current="true"{% endif %} data-document-display="{{ option.value }}"><i data-lucide="{{ option.icon }}" aria-hidden="true"></i></a>{% endfor %}
+        </nav>
+        {% if document_display == 'list' %}
         <details class="tasks-directory-column-manager documents-columns" data-documents-columns="{% if is_library_index %}libraries{% else %}files{% endif %}">
             <summary class="tasks-icon-button" aria-label="Zarządzaj tabelą" title="Zarządzaj tabelą" aria-haspopup="dialog"><i data-lucide="columns-3" aria-hidden="true"></i></summary>
-            <div class="tasks-directory-column-menu tasks-project-query-panel" role="dialog" aria-label="Kolumny dokumentów">
+            <div class="tasks-directory-column-menu tasks-project-query-panel" role="dialog" aria-label="Kolumny Dysku">
                 <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="columns-3"></i></span><strong>Kolumny tabeli</strong></header>
                 <div class="documents-column-options">
-                    {% if is_library_index %}
-                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="description" checked>Opis</label>
-                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="documents" checked>Pliki</label>
-                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="folders" checked>Foldery</label>
-                    {% else %}
-                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="tags" checked>Tagi</label>
-                    {% endif %}
-                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="date" checked>{% if library_view == 'trash' %}Usunięto{% else %}Zmodyfikowano{% endif %}</label>
-                    {% if not is_library_index %}<label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="size" checked>Rozmiar</label>{% endif %}
+                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="date" checked>Zmodyfikowano</label>
+                    <label class="tasks-directory-column-item"><input type="checkbox" data-document-column-toggle="size" checked>Rozmiar</label>
                 </div>
                 <div class="tasks-directory-column-actions"><button type="button" class="tasks-directory-column-reset" data-document-columns-reset><i data-lucide="rotate-ccw" aria-hidden="true"></i><span>Resetuj</span></button></div>
             </div>
         </details>
+        {% endif %}
         {% include 'documents/filter_sort.html' %}
         {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-lucide="x" aria-hidden="true"></i></a>{% endif %}
     </div>
     <div class="tasks-filterbar-right">
-        <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-lucide="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="documents-search-form" value="{{ query }}" placeholder="{% if is_library_index %}Szukaj bibliotek{% elif current_library %}Szukaj w bibliotece{% else %}Szukaj dokumentów{% endif %}" aria-label="{% if is_library_index %}Szukaj bibliotek{% elif current_library %}Szukaj w bibliotece{% else %}Szukaj dokumentów{% endif %}" autocomplete="off"></label>
-        {% include 'tasks/includes/directory_pagination_toolbar.html' with window=document_window pages_label='Strony dokumentów' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
-        <button type="button" class="tasks-icon-button documents-sidebar-toggle" title="Pokaż lub ukryj panel bibliotek" aria-label="Pokaż lub ukryj panel bibliotek" aria-controls="documents-sidebar" aria-expanded="true" data-documents-sidebar-toggle><i data-lucide="panel-right" aria-hidden="true"></i></button>
+        <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-lucide="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="documents-search-form" value="{{ query }}" placeholder="{% if is_library_index %}Szukaj dysków{% elif current_library %}Szukaj na dysku{% else %}Szukaj plików{% endif %}" aria-label="{% if is_library_index %}Szukaj dysków{% elif current_library %}Szukaj na dysku{% else %}Szukaj plików{% endif %}" autocomplete="off"></label>
+        {% include 'tasks/includes/directory_pagination_toolbar.html' with window=document_window pages_label='Strony Dysku' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
+        {% if not is_library_index %}<button type="button" class="tasks-icon-button documents-sidebar-toggle" title="Pokaż lub ukryj panel dysków" aria-label="Pokaż lub ukryj panel dysków" aria-controls="documents-sidebar" aria-expanded="true" data-documents-sidebar-toggle><i data-lucide="panel-right" aria-hidden="true"></i></button>{% endif %}
     </div>
 </div>
+{% if is_library_index %}
+<nav class="documents-workspace-nav" aria-label="Widoki Dysku">
+    <a class="tasks-rail-link is-active" href="{{ documents_url }}" aria-current="page"><i data-lucide="hard-drive" aria-hidden="true"></i><span>Dyski</span></a>
+    {% for item in sidebar_views %}
+    <a class="tasks-rail-link" href="{{ item.url }}" data-document-view="{{ item.value }}"><i data-lucide="{{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span>{% if item.count != None %}<small>{{ item.count }}</small>{% endif %}</a>
+    {% endfor %}
+</nav>
+{% endif %}

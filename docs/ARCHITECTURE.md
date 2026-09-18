@@ -25,14 +25,14 @@ tasks/                  projekty, grupy, zadania, tagi, słowniki, terminy
 kanban/                 przestrzenie Kanban, tablice, kolumny i karty
 contacts/               kontakty, firmy, powiązania z kontami Ancore
 planner/                wydarzenia i kalendarz
-documents/              biblioteki, foldery, dokumenty, gwiazdki i kosz
+documents/              dyski, foldery, pliki, gwiazdki i kosz
 dashboard/              start, ustawienia, globalne szukanie, powiadomienia
 core/                   wspólny szablon aplikacji i walidacja uploadu
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
 static/js/              wspólne i modułowe skrypty przeglądarki
 static/img/             logo i favicon
 media/                  pliki obsługiwane przez standardowy MEDIA_ROOT
-private_documents/      prywatne pliki modułu Dokumentów
+private_documents/      prywatne pliki modułu Dysku
 files/                  katalog lokalny; brak aktywnej aplikacji Django o tej nazwie
 docs/                   opisy projektu i generowany indeks kodu
 scripts/                narzędzia utrzymania dokumentacji
@@ -112,7 +112,7 @@ flowchart LR
   na właścicielu, mimo że istnieje model członkostwa.
 - Zadania i Kanban mają różne hierarchie i osobne tabele. Kanban nie jest
   jedynie innym sposobem wyświetlenia `Task`.
-- Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach, Kanbanie i Dokumentach.
+- Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach, Kanbanie i Dysku.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
   Zadań i Kanbana.
 - `core` dostarcza powłokę interfejsu i upload; `core` i `dashboard` nie mają
@@ -131,7 +131,7 @@ Użytkownik → Workspace
   │                                              └─ KanbanAttachment
   ├─ Kontakty: Company ← Contact ← UserContact → konto Ancore
   ├─ Kalendarz: CalendarEvent
-  └─ Dokumenty: DocumentLibrary → Folder → Folder / Document
+  └─ Dysk: DocumentLibrary → Folder / Document (foldery mogą być zagnieżdżone)
 
 TaskTag ↔ Task / Kanban / Document
 ```

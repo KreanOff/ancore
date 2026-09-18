@@ -1,11 +1,13 @@
 import tempfile
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.storage import FileSystemStorage
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from tasks.models import TaskTag
 from workplaces.models import create_workplace_for_user
@@ -62,7 +64,7 @@ class DocumentLibraryTests(TestCase):
 
     def test_empty_library_and_navigation(self):
         response = self.client.get(self.library_url)
-        self.assertContains(response, 'Ta biblioteka jest pusta')
+        self.assertContains(response, 'Ten dysk jest pusty')
         self.assertContains(response, 'data-sidebar-source-item="documents"')
         self.assertContains(response, self.upload_url)
 
@@ -89,7 +91,7 @@ class DocumentLibraryTests(TestCase):
         response = self.client.post(f'{self.base}libraries/create/', {
             'name': self.primary_library.name, 'description': 'Zachowaj ten opis',
         }, headers={'X-Document-Modal': 'true'})
-        self.assertContains(response, 'Biblioteka o tej nazwie już istnieje')
+        self.assertContains(response, 'Dysk o tej nazwie już istnieje')
         self.assertContains(response, 'Zachowaj ten opis')
         self.assertContains(response, 'data-document-dialog')
         self.assertNotContains(response, '<html')
@@ -276,12 +278,49 @@ class DocumentLibraryTests(TestCase):
         Folder.objects.create(owner=self.user, workplace=self.workspace, library=self.primary_library, name='Wewnętrzny folder')
         response = self.client.get(self.base)
         self.assertEqual(list(response.context['libraries']), [self.primary_library, self.secondary_library])
-        self.assertContains(response, 'Biblioteki dokumentów')
+        self.assertContains(response, 'Dyski')
         self.assertNotContains(response, 'Poufny plik zespołu')
         self.assertNotContains(response, 'Wewnętrzny folder')
         self.assertNotContains(response, 'documents-rail')
         self.assertNotContains(response, self.other_library.name)
         self.assertNotContains(response, self.foreign_library.name)
+
+    def test_library_sizes_do_not_multiply_files_or_include_trash_and_foreign_data(self):
+        folders = [Folder.objects.create(owner=self.user, workplace=self.workspace,
+                   library=self.primary_library, name=name) for name in ['Umowy', 'Oferty']]
+        self.document(file_size=1024)
+        self.document(file_size=1024, folder=folders[0])
+        self.document(file_size=8192, deleted_at=timezone.now())
+        self.document(file_size=8192, owner=self.other, library=self.primary_library)
+        self.document(file_size=8192, workplace=self.other_workspace, library=self.primary_library)
+        libraries = {item.pk: item for item in self.client.get(self.base).context['libraries']}
+        self.assertEqual(libraries[self.primary_library.pk].total_size, 2048)
+        self.assertEqual(libraries[self.secondary_library.pk].total_size, 0)
+
+    def test_folder_sizes_include_descendants_and_keep_access_and_library_scope(self):
+        parent = Folder.objects.create(owner=self.user, workplace=self.workspace,
+                                       library=self.primary_library, name='Umowy')
+        child = Folder.objects.create(owner=self.user, workplace=self.workspace,
+                                      library=self.primary_library, parent=parent, name='Podfolder')
+        nested = Folder.objects.create(owner=self.user, workplace=self.workspace,
+                                       library=self.primary_library, parent=child, name='Zagnieżdżony')
+        empty = Folder.objects.create(owner=self.user, workplace=self.workspace,
+                                      library=self.primary_library, name='Pusty')
+        self.document(file_size=1024, folder=parent)
+        self.document(file_size=1024, folder=child)
+        self.document(file_size=1024, folder=nested)
+        self.document(file_size=8192)
+        for params in [
+            {'deleted_at': timezone.now()}, {'owner': self.other},
+            {'workplace': self.other_workspace}, {'library': self.secondary_library},
+        ]:
+            self.document(file_size=8192, folder=nested, **{'library': self.primary_library, **params})
+        # Searching exposes ancestors and descendants together without double counting.
+        rows = self.client.get(f'{self.library_url}&name_op=is_not_empty').context['rows']
+        sizes = {row['item'].pk: row['item'].total_size for row in rows if row['kind'] == 'folder'}
+        self.assertEqual(sizes, {parent.pk: 3072, child.pk: 2048, nested.pk: 1024, empty.pk: 0})
+        page = self.client.get(f'{self.library_url}&folder={parent.pk}').context['rows']
+        self.assertEqual(next(row['item'].total_size for row in page if row['kind'] == 'folder'), 2048)
 
     def test_library_create_edit_duplicate_names_and_empty_delete(self):
         response = self.client.post(f'{self.base}libraries/create/', {'name': 'Nowa biblioteka', 'description': 'Materiały projektu'})
@@ -289,7 +328,7 @@ class DocumentLibraryTests(TestCase):
         self.assertRedirects(response, f'{self.base}?library={item.pk}')
         self.assertEqual((item.owner, item.workplace), (self.user, self.workspace))
         duplicate = self.client.post(f'{self.base}libraries/create/', {'name': 'nowa biblioteka'})
-        self.assertContains(duplicate, 'Biblioteka o tej nazwie już istnieje')
+        self.assertContains(duplicate, 'Dysk o tej nazwie już istnieje')
         self.client.post(f'{self.base}libraries/{item.pk}/edit/', {'name': 'Archiwum', 'description': 'Zamknięte projekty'})
         item.refresh_from_db()
         self.assertEqual(item.name, 'Archiwum')
@@ -375,7 +414,13 @@ class DocumentLibraryTests(TestCase):
             self.assertEqual({key: value['count'] for key, value in views.items()}, {'all': 2, 'recent': None, 'starred': 1, 'trash': 1})
             self.assertEqual(views['starred']['url'], f'{self.base}?view=starred')
             self.assertEqual(list(response.context['sidebar_libraries']), [self.primary_library, self.secondary_library])
-            self.assertContains(response, 'data-documents-sidebar')
+            if url == self.base:
+                self.assertContains(response, 'documents-workspace-nav')
+                self.assertNotContains(response, 'data-documents-sidebar')
+            else:
+                self.assertContains(response, 'data-documents-sidebar')
+            for view in views.values():
+                self.assertContains(response, f'href="{view["url"]}"')
 
     def test_workspace_document_views_include_nested_files_from_all_owned_libraries(self):
         from django.utils import timezone
@@ -400,7 +445,8 @@ class DocumentLibraryTests(TestCase):
         response = self.client.get(f'{self.base}?view=all&q=Instrukcja&tag={tag.pk}&page_size=10')
         self.assertEqual([row['item'].pk for row in response.context['rows']], [document.pk])
         self.assertContains(response, 'name="scope" value="workspace"')
-        self.assertContains(response, f'{self.base}?view=all&amp;tag={tag.pk}')
+        grid = self.client.get(f'{self.base}?view=all&q=Instrukcja&tag={tag.pk}&page_size=10&display=grid')
+        self.assertContains(grid, f'{self.base}?view=all&amp;tag={tag.pk}')
         params = {'scope': 'workspace', 'view': 'all', 'q': 'Instrukcja', 'page_size': 10}
         response = self.client.post(f'{self.base}{document.pk}/star/', params)
         self.assertRedirects(response, f'{self.base}?view=all&q=Instrukcja&page_size=10')
@@ -410,3 +456,59 @@ class DocumentLibraryTests(TestCase):
         response = self.client.post(f'{self.base}{document.pk}/restore/', {'scope': 'workspace', 'view': 'trash'})
         self.assertRedirects(response, f'{self.base}?view=trash')
         self.assertContains(self.client.get(f'{self.base}?view=all'), 'Instrukcja.txt')
+
+    def test_display_preference_is_validated_and_scoped(self):
+        self.assertEqual(self.client.get(self.library_url).context['document_display'], 'list')
+        self.client.get(f'{self.library_url}&display=grid')
+        for url in [self.library_url, '/documents/?view=all', f'{self.library_url}&display=invalid']:
+            self.assertEqual(self.client.get(url, follow=True).context['document_display'], 'grid')
+        # The library index and another Workspace keep their own preference.
+        self.assertEqual(self.client.get(self.base).context['document_display'], 'list')
+        other_base = scoped_workplace_app_path(self.other_workspace, 'documents')
+        self.assertEqual(self.client.get(f'{other_base}?view=all').context['document_display'], 'list')
+        self.client.get(f'{self.base}?display=grid')
+        self.assertContains(self.client.get(self.base), 'Dyski — kafelki')
+        self.client.get(f'{self.library_url}&display=list')
+        self.assertEqual(self.client.get(self.library_url).context['document_display'], 'list')
+        self.client.force_login(self.other)
+        foreign_base = scoped_workplace_app_path(self.foreign_workspace, 'documents')
+        self.assertEqual(self.client.get(f'{foreign_base}?view=all').context['document_display'], 'list')
+
+    def test_display_switch_preserves_results_filters_sort_and_page(self):
+        for number in range(12):
+            self.document(title=f'Raport {number:02}')
+        url = f'{self.library_url}&q=Raport&sort=name_asc&page_size=10&page=2'
+        listing = self.client.get(url)
+        grid_url = next(option['url'] for option in listing.context['display_options'] if option['value'] == 'grid')
+        self.assertEqual(parse_qs(urlsplit(grid_url).query), {
+            'library': [str(self.primary_library.pk)], 'q': ['Raport'], 'sort': ['name_asc'],
+            'page_size': ['10'], 'page': ['2'], 'display': ['grid'],
+        })
+        grid = self.client.get(grid_url)
+        self.assertEqual([row['item'].pk for row in listing.context['rows']], [row['item'].pk for row in grid.context['rows']])
+        self.assertContains(grid, 'Raport 10')
+        self.assertNotContains(grid, 'Raport 00')
+        self.assertContains(grid, 'name="display" value="grid"')
+        self.assertEqual(grid.context['document_window']['page'], 2)
+
+    def test_grid_search_and_actions_keep_access_and_trash_rules(self):
+        from django.utils import timezone
+        folder = Folder.objects.create(owner=self.user, workplace=self.workspace, library=self.primary_library, name='Zagnieżdżony folder')
+        document = self.document(folder=folder, title='Raport w podfolderze')
+        trashed = self.document(title='Raport w koszu', deleted_at=timezone.now())
+        self.document(owner=self.other, workplace=self.foreign_workspace, title='Raport niedostępny')
+        self.document(workplace=self.other_workspace, title='Raport z innego Workspace')
+        response = self.client.get(f'{self.library_url}&display=grid&q=Raport')
+        self.assertEqual([row['item'].pk for row in response.context['rows']], [document.pk])
+        self.assertContains(response, f'{self.base}{document.pk}/download/')
+        self.assertContains(response, f'{self.base}{document.pk}/star/')
+        self.assertNotContains(response, 'Raport niedostępny')
+        self.assertNotContains(response, 'Raport z innego Workspace')
+        self.assertNotContains(response, 'Raport w koszu')
+        response = self.client.post(f'{self.base}{document.pk}/star/', {'view': 'all', 'q': 'Raport', 'display': 'grid'})
+        self.assertEqual(parse_qs(urlsplit(response.url).query)['display'], ['grid'])
+        response = self.client.get(f'{self.library_url}&view=trash&display=grid')
+        self.assertContains(response, f'{self.base}{trashed.pk}/restore/')
+        self.assertNotContains(response, f'{self.base}{trashed.pk}/download/')
+        self.assertNotContains(response, f'{self.base}{trashed.pk}/star/')
+        self.assertNotContains(response, f'href="{self.base}{trashed.pk}/"')

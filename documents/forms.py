@@ -32,7 +32,7 @@ class UploadForm(forms.Form):
 
 
 class LibraryForm(forms.ModelForm):
-    photo = forms.FileField(label='Zdjęcie biblioteki', required=False, widget=forms.FileInput(attrs={
+    photo = forms.FileField(label='Zdjęcie dysku', required=False, widget=forms.FileInput(attrs={
         'accept': '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
         'class': 'profile-photo-input', 'hidden': True,
     }))
@@ -46,6 +46,7 @@ class LibraryForm(forms.ModelForm):
     class Meta:
         model = DocumentLibrary
         fields = ['name', 'description', 'photo']
+        labels = {'name': 'Nazwa dysku'}
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'}),
             'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
@@ -61,7 +62,7 @@ class LibraryForm(forms.ModelForm):
         if self.instance.pk:
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():
-            raise forms.ValidationError('Biblioteka o tej nazwie już istnieje w tym Workspace.')
+            raise forms.ValidationError('Dysk o tej nazwie już istnieje w tym Workspace.')
         return name
 
     def clean_photo(self):
@@ -119,7 +120,7 @@ class DocumentForm(forms.ModelForm):
             'folder': forms.Select(attrs={'class': 'form-select tasks-inline-select'}),
             'tags': forms.CheckboxSelectMultiple,
         }
-        labels = {'folder': 'Folder'}
+        labels = {'title': 'Nazwa pliku', 'folder': 'Folder'}
 
     def __init__(self, *args, owner, workplace, **kwargs):
         super().__init__(*args, **kwargs)

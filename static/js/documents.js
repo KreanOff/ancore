@@ -84,6 +84,18 @@
             window.AncoreIcons?.render(modal);
             window.AncoreCustomSelect?.refresh(modal);
             window.AncorePhotoEditors?.init(modal);
+            const media = modal.querySelector('[data-document-preview-media]');
+            if (media) {
+                const finish = success => {
+                    media.parentElement?.querySelector('[data-document-preview-loading]')?.setAttribute('hidden', '');
+                    media.hidden = !success;
+                    const error = media.parentElement?.querySelector('[data-document-preview-error]');
+                    if (error) error.hidden = success;
+                };
+                media.addEventListener('load', () => finish(true), { ...options, once: true });
+                media.addEventListener('error', () => finish(false), { ...options, once: true });
+                if (media.complete) finish(media.naturalWidth > 0);
+            }
             const focusTarget = modal.querySelector('[aria-invalid="true"]')
                 || modal.querySelector('input:not([type="hidden"]):not([type="file"]), textarea, select');
             (focusTarget || modal.querySelector('[data-document-modal-close]'))?.focus();
@@ -143,8 +155,8 @@
             const link = event.target.closest('a[data-document-modal]');
             if (!link || (link.target && link.target !== '_self')) return;
             event.preventDefault();
-            if (pending || modal) return;
-            previousFocus = link;
+            if (pending || (modal && !modal.contains(link))) return;
+            if (!modal) previousFocus = link;
             pending = true;
             link.setAttribute('aria-busy', 'true');
             document.querySelector('.documents-page.is-sidebar-open [data-documents-sidebar-close]')?.click();
@@ -217,7 +229,7 @@
                 event.stopImmediatePropagation();
                 close();
             } else if (event.key === 'Tab') {
-                const focusable = [...modal.querySelectorAll('a[href], button:not(:disabled), input:not([type="hidden"]), textarea, select, [tabindex="0"]')]
+                const focusable = [...modal.querySelectorAll('a[href], button:not(:disabled), input:not([type="hidden"]), textarea, select, iframe, [tabindex="0"]')]
                     .filter(element => element.getClientRects().length && !element.closest('[inert]')
                         && !element.matches('[tabindex="-1"], [aria-hidden="true"], :disabled'));
                 const first = focusable[0], last = focusable[focusable.length - 1];
@@ -247,7 +259,7 @@
             page.classList.toggle('is-sidebar-open', overlayOpen);
             page.classList.toggle('is-sidebar-collapsed', !compact.matches && collapsed);
             toggle.setAttribute('aria-expanded', String(expanded));
-            const label = expanded ? 'Ukryj panel bibliotek' : 'Pokaż panel bibliotek';
+            const label = expanded ? 'Ukryj panel dysków' : 'Pokaż panel dysków';
             toggle.setAttribute('aria-label', label);
             toggle.title = label;
             const focusHidden = !expanded && sidebar.contains(document.activeElement);

@@ -1,0 +1,20 @@
+<div class="documents-grid-scroll">
+    {% if libraries %}
+    <ul class="documents-grid documents-grid--libraries" aria-label="Dyski — kafelki">
+        {% for item in libraries %}
+        <li class="documents-card documents-card--library">
+            <a class="documents-card-entry" href="{{ documents_url }}?library={{ item.pk }}" title="Otwórz dysk: {{ item.name }}">
+                <span class="documents-card-preview">{% include 'documents/includes/library_avatar.html' with library=item %}</span>
+                <span class="documents-card-title">{{ item.name }}</span>
+                {% if item.description %}<span class="documents-card-description" title="{{ item.description }}">{{ item.description }}</span>{% endif %}
+            </a>
+            <p class="documents-card-counts"><span>Pliki: {{ item.document_count }}</span><span>Foldery: {{ item.folder_count }}</span></p>
+            <div class="documents-card-footer">
+                <span class="documents-card-date" title="Zmodyfikowano">{{ item.updated_at|date:'d.m.Y' }}</span>
+                {% include 'documents/includes/library_actions.html' %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}<div class="documents-empty documents-grid-empty">{% include 'documents/includes/libraries_empty.html' %}</div>{% endif %}
+</div>

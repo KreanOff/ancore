@@ -17,8 +17,8 @@
     --app-modal-width: min(760px, calc(100vw - 2rem));
     --app-modal-max-height: min(840px, calc(var(--app-viewport-height, 100dvh) - 2rem));
     --app-modal-padding-x: 24px;
-    --app-modal-bar-min-height: 60px;
-    --app-modal-bar-padding-y: 11.5px;
+    --app-modal-bar-min-height: 50px;
+    --app-modal-bar-padding-y: 4px;
     --app-modal-icon-color: #4f5865;
     --app-modal-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='white' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='7' width='16' height='13' rx='2'/%3E%3Cpath d='M9 7V5a3 3 0 0 1 6 0v2M4 12h16M9 10v4M15 10v4'/%3E%3C/svg%3E");
     --app-modal-close-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");
@@ -128,7 +128,9 @@
 .tasks-modal .tasks-modal__header,
 .page-container.full-width .tasks-modal .tasks-modal__header {
     width: 100%;
+    height: var(--app-modal-bar-min-height);
     min-height: var(--app-modal-bar-min-height);
+    flex-shrink: 0;
     align-self: stretch;
     justify-content: flex-start;
     gap: 0.75rem;
@@ -278,7 +280,8 @@
 .page-container.full-width .tasks-modal .tasks-modal__footer {
     width: 100%;
     min-height: var(--app-modal-bar-min-height);
-    height: auto;
+    height: var(--app-modal-bar-min-height);
+    flex-shrink: 0;
     align-self: stretch;
     justify-content: flex-end;
     gap: 0.6rem;
@@ -324,7 +327,9 @@
 .profile-edit-header,
 .page-container.full-width .profile-edit-header {
     width: 100%;
+    height: var(--app-modal-bar-min-height);
     min-height: var(--app-modal-bar-min-height);
+    flex-shrink: 0;
     align-self: stretch;
     justify-content: flex-start;
     gap: 0.75rem;
@@ -405,7 +410,9 @@
 .profile-edit-footer,
 .page-container.full-width .profile-edit-footer {
     width: 100%;
+    height: var(--app-modal-bar-min-height);
     min-height: var(--app-modal-bar-min-height);
+    flex-shrink: 0;
     align-self: stretch;
     padding: var(--app-modal-bar-padding-y) var(--app-modal-padding-x);
     background: #ffffff;
@@ -432,14 +439,13 @@
     box-shadow: var(--app-modal-shadow);
 }
 
-.contacts-photo-editor-header {
-    min-height: 64px;
-    padding: 12px var(--app-modal-padding-x);
-}
-
+.contacts-photo-editor-header,
 .contacts-photo-editor-footer {
-    min-height: 64px;
-    padding: 12px var(--app-modal-padding-x);
+    height: var(--app-modal-bar-min-height);
+    min-height: var(--app-modal-bar-min-height);
+    flex-shrink: 0;
+    padding: var(--app-modal-bar-padding-y) var(--app-modal-padding-x);
+    box-sizing: border-box;
 }
 
 @media (max-width: 720px) {
@@ -447,8 +453,6 @@
         --app-modal-width: calc(100vw - 1.5rem);
         --app-modal-max-height: calc(var(--app-viewport-height, 100dvh) - 1.5rem);
         --app-modal-padding-x: 18px;
-        --app-modal-bar-min-height: 60px;
-        --app-modal-bar-padding-y: 11.5px;
     }
 
     .tasks-modal,

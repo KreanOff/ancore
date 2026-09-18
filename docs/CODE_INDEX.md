@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 11 | 3 | 10 | 57 |
+| [documents](../documents) | 13 | 3 | 17 | 80 |
 
 ## 2. Modele i relacje
 
@@ -735,6 +735,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'folders/<int:pk>/edit/'` | `views.folder_edit` | 'folder-edit' |
 | `'folders/<int:pk>/delete/'` | `views.folder_delete` | 'folder-delete' |
 | `'<uuid:pk>/'` | `views.detail` | 'detail' |
+| `'<uuid:pk>/preview/'` | `views.preview` | 'preview' |
+| `'<uuid:pk>/content/'` | `views.preview_content` | 'preview-content' |
 | `'<uuid:pk>/download/'` | `views.download` | 'download' |
 | `'<uuid:pk>/star/'` | `views.star` | 'star' |
 | `'<uuid:pk>/trash/'` | `views.trash` | 'trash' |
@@ -857,9 +859,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/apps.py](../documents/apps.py) — `DocumentsConfig`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
 - [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`
+- [documents/previews.py](../documents/previews.py) — `inline_type`, `validate_inline`, `OfficePackage`, `build_preview`
 - [documents/query.py](../documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
 - [documents/urls.py](../documents/urls.py)
-- [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `detail`, `download`, `star`, `trash`, `restore`
+- [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `detail`, `preview`, `preview_content`, `download`, `star`, `trash`, `restore`
 
 ## 6. Szablony
 
@@ -963,11 +966,18 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [documents/templates/documents/filter_sort.html](../documents/templates/documents/filter_sort.html)
 - [documents/templates/documents/form.html](../documents/templates/documents/form.html)
+- [documents/templates/documents/includes/files_empty.html](../documents/templates/documents/includes/files_empty.html)
+- [documents/templates/documents/includes/files_grid.html](../documents/templates/documents/includes/files_grid.html)
+- [documents/templates/documents/includes/libraries_empty.html](../documents/templates/documents/includes/libraries_empty.html)
+- [documents/templates/documents/includes/libraries_grid.html](../documents/templates/documents/includes/libraries_grid.html)
+- [documents/templates/documents/includes/library_actions.html](../documents/templates/documents/includes/library_actions.html)
 - [documents/templates/documents/includes/library_avatar.html](../documents/templates/documents/includes/library_avatar.html)
 - [documents/templates/documents/includes/library_photo_editor.html](../documents/templates/documents/includes/library_photo_editor.html)
+- [documents/templates/documents/includes/row_actions.html](../documents/templates/documents/includes/row_actions.html)
 - [documents/templates/documents/libraries.html](../documents/templates/documents/libraries.html)
 - [documents/templates/documents/library.html](../documents/templates/documents/library.html)
 - [documents/templates/documents/modal_host.html](../documents/templates/documents/modal_host.html)
+- [documents/templates/documents/preview.html](../documents/templates/documents/preview.html)
 - [documents/templates/documents/return_filters.html](../documents/templates/documents/return_filters.html)
 - [documents/templates/documents/sidebar.html](../documents/templates/documents/sidebar.html)
 - [documents/templates/documents/toolbar.html](../documents/templates/documents/toolbar.html)
@@ -1131,6 +1141,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `LibraryMigrationTests`: 1 metod testowych.
 
+### documents/test_previews.py
+
+Źródło: [documents/test_previews.py](../documents/test_previews.py).
+
+- `PreviewParserTests`: 9 metod testowych.
+- `DocumentPreviewTests`: 9 metod testowych.
+
 ### documents/test_query.py
 
 Źródło: [documents/test_query.py](../documents/test_query.py).
@@ -1141,7 +1158,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [documents/tests.py](../documents/tests.py).
 
-- `DocumentLibraryTests`: 34 metod testowych.
+- `DocumentLibraryTests`: 39 metod testowych.
 
 ## 9. Migracje obecne lokalnie
 

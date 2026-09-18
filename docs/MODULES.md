@@ -139,7 +139,7 @@ i reguł terminu modułu Tasks. UI i JavaScript są częściowo wspólne, dane o
 ## 5. Wspólne tagi
 
 Źródła: `TaskTag`, `TaskTagNote` w [tasks/models.py](../tasks/models.py),
-formularze i katalogi Tasks/Kanban oraz formularze Dokumentów.
+formularze i katalogi Tasks/Kanban oraz formularze Dysku.
 
 Tag ma nazwę, opis, kod, kategorię, kolor, ikonę, priorytet, deklarowany zakres,
 etykietę właściciela, status, powiązane tagi, notatki użycia i tekst reguł.
@@ -191,50 +191,89 @@ na wybraną datę lub wydarzenie, np. z wyszukiwarki.
 To własne wydarzenia aplikacji. Kod nie potwierdza synchronizacji z Google
 Calendar/Outlook ani automatycznej zamiany każdego terminu zadania w wydarzenie.
 
-## 8. Biblioteki i pliki — Documents
+## 8. Dysk — Documents
 
 Źródła: [modele](../documents/models.py), [widoki](../documents/views.py),
-[formularze](../documents/forms.py), [JS](../static/js/documents.js).
+[podgląd](../documents/previews.py), [formularze](../documents/forms.py), [JS](../static/js/documents.js).
 
-**Hierarchia:** biblioteka → foldery zagnieżdżone → pliki.
-Każda biblioteka, folder i dokument mają właściciela oraz Workspace.
-Dokument ma UUID, nazwę, opis, oryginalną nazwę pliku, rozmiar, tagi,
+**Hierarchia:** Workspace → dyski → foldery i pliki; foldery mogą zawierać podfoldery i pliki.
+Pliki mogą znajdować się także bezpośrednio w katalogu głównym dysku.
+
+Nazwa modułu w nawigacji to „Dysk”, a jego ekran główny to „Dyski”.
+Każda dotychczasowa biblioteka jest osobnym dyskiem; nazwy i zawartość istniejących
+rekordów pozostają bez zmian. Formularze, filtry, komunikaty, ulubione i wyszukiwarka
+używają pojęć „dysk”, „folder” i „plik”. Techniczne nazwy `documents`,
+`DocumentLibrary`, `Folder`, `Document`, parametr `library` i dotychczasowe URL
+pozostają kompatybilne; ta zmiana nazewnictwa nie wymaga migracji danych.
+
+Każdy dysk, folder i plik ma właściciela oraz Workspace.
+Plik ma UUID, nazwę, opis, oryginalną nazwę pliku, rozmiar, tagi,
 gwiazdkę oraz datę przeniesienia do kosza.
 
 **Ekrany i funkcje:**
 
-- Katalog bibliotek z tworzeniem, zmianą nazwy/opisu i usunięciem pustej biblioteki.
-- Własne zdjęcie biblioteki: dodanie, kadrowanie, podmiana i usunięcie w formularzu,
+- Katalog dysków z tworzeniem, zmianą nazwy/opisu i usunięciem pustego dysku.
+- Własne zdjęcie dysku: dodanie, kadrowanie, podmiana i usunięcie w formularzu,
   przez wspólny edytor zdjęć Workspace. Zdjęcie zastępuje ikonę na liście i w panelu
-  bocznym; bez zdjęcia biblioteka używa ikony `archive`.
-- Zawartość biblioteki/folderu i ścieżka nawigacyjna.
+  bocznym; bez zdjęcia dysk używa ikony `hard-drive`.
+- Zawartość dysku/folderu i ścieżka nawigacyjna.
+- Przełącznik „Lista / Kafelki” na indeksie dysków i w widokach plików.
+  Kafelki pokazują typ, rozmiar, datę, lokalizację i tagi pliku oraz te same
+  akcje co lista; dyski pokazują zdjęcie/ikonę, opis i liczniki.
+  Układ jest zapamiętywany w sesji oddzielnie dla konta, Workspace oraz katalogu
+  dysków i plików. Zmiana układu zachowuje wyszukiwanie, filtry i stronę.
+  „Nowy folder” jest bezpośrednią akcją w pasku dysku.
 - Widoki całego Workspace: wszystkie, ostatnio zmienione, oznaczone i kosz.
+- Listy dysków, folderów i plików pokazują „Nazwa”, „Zmodyfikowano” i „Rozmiar”.
+  Lista folderów i plików nie powtarza pod nazwą etykiety „Folder” ani rozszerzenia
+  pliku; dodatkowa linia pokazuje jedynie lokalizację, gdy jest dostępna.
+  Dyski i foldery sumują rozmiary aktywnych plików także w podfolderach,
+  wyłącznie w zakresie właściciela i Workspace; pliki w koszu są pomijane.
+  Data folderu pozostaje datą utworzenia (model nie zapisuje modyfikacji).
+  Liczniki plików i folderów pozostają na kafelkach dysków oraz w filtrach/sortowaniu.
+- Indeks dysków ma skróty do tych widoków nad listą; lista pokazuje nazwy bez opisów.
+  Panel przełączania dysków jest dostępny
+  wewnątrz dysków i w widokach plików; nie powtarza listy na indeksie.
 - Wyszukiwanie, sortowanie, filtr tagu, paginacja i wybór widocznych kolumn.
-- Panele filtrów i sortowania zgodne z Wszystkimi projektami. Biblioteki można
+- Panele filtrów i sortowania zgodne z Wszystkimi projektami. Dyski można
   filtrować po nazwie, opisie, obecności plików/folderów i ostatniej zmianie;
-  dokumenty po nazwie, oryginalnej nazwie pliku, opisie, bibliotece (widok Workspace),
+  pliki po nazwie, oryginalnej nazwie pliku, opisie, dysku (widok Workspace),
   tagu, rozszerzeniu, rozmiarze, gwiazdce i dacie zmiany/usunięcia.
   Warunki tekstowe obsługują zawieranie, wykluczenie i pustą/niepustą wartość.
-  Sortowanie ma oba kierunki dla pól tekstowych, liczników bibliotek, lokalizacji,
+  Sortowanie ma oba kierunki dla pól tekstowych, liczników dysków, lokalizacji,
   rozmiaru i dat; dostępne pola zależą od listy.
 - Upload wielu plików, pobieranie po autoryzacji, edycja metadanych,
-  przenoszenie pliku między folderami tej samej biblioteki.
+  przenoszenie pliku między folderami tego samego dysku.
+- Kliknięcie nazwy/kafelka pliku albo wyniku globalnego wyszukiwania otwiera
+  podgląd w aplikacji. PDF i obrazy (JPEG, PNG, GIF, WebP) używają przeglądarki;
+  TXT pokazuje tekst, CSV tabelę, DOCX uproszczony tekst, XLSX arkusze z zapisanymi
+  wartościami, ZIP/TAR listę zawartości. Akcja „Edytuj dane” otwiera dotychczasowy
+  formularz, a „Pobierz” nadal pobiera oryginał. Zamknięcie dialogu przywraca listę
+  z jej filtrami, układem i fokusem; bezpośredni URL wraca do folderu pliku.
+- Podgląd nie jest edytorem ani konwerterem Office: nie odtwarza formatowania,
+  obrazów DOCX, wykresów XLSX ani nie oblicza formuł; daty XLSX mogą być liczbami.
+  DOC, XLS, RTF, RAR, 7Z i GZ mają komunikat o braku podglądu oraz pobieranie.
+  Duże podglądy są ograniczane z komunikatem; brakujący, uszkodzony lub
+  zaszyfrowany plik ma stan zastępczy. PDF wymaga obsługi tego formatu w przeglądarce.
 - Tworzenie/zmiana nazwy/usunięcie pustego folderu.
 - Przeniesienie do kosza i przywrócenie do poprzedniej lokalizacji.
 
-W widoku Workspace pliki mogą pochodzić z wielu bibliotek i zagnieżdżonych
+W widoku Workspace pliki mogą pochodzić z wielu dysków i zagnieżdżonych
 folderów. Liczniki nawigacji są niezależne od aktualnego wyszukiwania.
-Filtry łączą się ze sobą i wyszukiwaniem. W bibliotece obejmują także foldery
+Filtry łączą się ze sobą i wyszukiwaniem. Na dysku obejmują także foldery
 zagnieżdżone. Filtry właściwe tylko plikom (np. tag, rozszerzenie, rozmiar)
-pokazują wyłącznie dokumenty. Zmiana filtra lub sortowania wraca na pierwszą
+pokazują wyłącznie pliki. Zmiana filtra lub sortowania wraca na pierwszą
 stronę; paginacja, kliknięcie tagu i operacje gwiazdki/kosza zachowują warunki.
 Formularze tworzenia/edycji działają jako dialog na tle listy także po otwarciu
 bezpośredniego linku; specjalny nagłówek pobiera sam fragment formularza.
+Wyniki wyszukiwania wskazują, że obejmują podfoldery; pusty wynik pozwala
+wyczyścić wyszukiwanie i filtry. Oba układy korzystają z tej samej paginacji
+i zasad dostępu. Kafelki plików pokazują ikony formatów, nie podgląd zawartości.
 
-Upload wymaga biblioteki, waliduje całą partię przed zapisem i dopuszcza do
+Upload wymaga dysku, waliduje całą partię przed zapisem i dopuszcza do
 20 plików. Dostępne formaty i limity wynikają ze wspólnego walidatora.
 Folder zawierający pliki, podfoldery lub pliki w koszu nie może zostać usunięty.
-Biblioteka również musi być pusta. Kosz jest logiczny; nie ma tu endpointu
+Dysk również musi być pusty. Kosz jest logiczny; nie ma tu endpointu
 trwałego opróżniania kosza, wersjonowania, OCR ani edytora zawartości dokumentów.
 
 ## 9. Start, ustawienia, wyszukiwarka i powiadomienia — Dashboard

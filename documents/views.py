@@ -7,18 +7,21 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q
+from django.db.models import BigIntegerField, Count, OuterRef, Q, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.db.models.deletion import RestrictedError
 from django.http import FileResponse, Http404, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from core.upload_validation import ATTACHMENT_ALLOWED_EXTENSIONS, attachment_download_response
 from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
 from .forms import DocumentForm, FolderForm, LibraryForm, UploadForm
 from .models import Document, DocumentLibrary, Folder
+from .previews import build_preview, inline_type, validate_inline
 from .query import (
     DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS, LIBRARY_SORT_FIELDS,
     PRESENCE_OPTIONS, SIZE_OPTIONS, apply_date_filter, apply_text_filters,
@@ -28,7 +31,7 @@ from .query import (
 
 DOCUMENT_PAGE_SIZES = (10, 25, 50, 100, 150, 200)
 DOCUMENT_VIEW_OPTIONS = (
-    {'value': 'all', 'label': 'Wszystkie dokumenty', 'icon': 'files'},
+    {'value': 'all', 'label': 'Wszystkie pliki', 'icon': 'files'},
     {'value': 'recent', 'label': 'Ostatnio zmienione', 'icon': 'clock-3'},
     {'value': 'starred', 'label': 'Oznaczone gwiazdką', 'icon': 'star'},
     {'value': 'trash', 'label': 'Kosz', 'icon': 'trash-2'},
@@ -51,6 +54,26 @@ def _folders(request):
 
 def _libraries(request):
     return DocumentLibrary.objects.filter(owner=request.user, workplace=request.workplace)
+
+
+def _set_folder_sizes(request, library, rows):
+    visible = {row['item'].pk: row['item'] for row in rows if row['kind'] == 'folder'}
+    if not visible:
+        return
+    for item in visible.values():
+        item.total_size = 0
+    parents = dict(_folders(request).filter(library=library).values_list('pk', 'parent_id'))
+    sizes = _documents(request).filter(
+        library=library, deleted_at__isnull=True, folder_id__in=parents,
+    ).order_by().values('folder_id').annotate(total=Sum('file_size'))
+    # Roll up each folder's direct files through its accessible ancestors.
+    for entry in sizes:
+        folder_id, seen = entry['folder_id'], set()
+        while folder_id in parents and folder_id not in seen:
+            seen.add(folder_id)
+            if folder_id in visible:
+                visible[folder_id].total_size += entry['total']
+            folder_id = parents[folder_id]
 
 
 def _by_id(queryset, value):
@@ -108,6 +131,29 @@ def _sidebar(request, active_view=None):
     }
 
 
+def _display_context(request, scope):
+    # Keep each account/Workspace and the library index independent in this session.
+    key = f'documents_display:{request.user.pk}:{request.workplace.pk}:{scope}'
+    display = request.GET.get('display')
+    if display not in {'list', 'grid'}:
+        display = request.session.get(key, 'list')
+    if display not in {'list', 'grid'}:
+        display = 'list'
+    if request.session.get(key) != display:
+        request.session[key] = display
+    params = {name: request.GET[name] for name in (
+        'library', 'folder', 'view', 'q', 'sort', 'page', 'page_size', *FILTER_PARAMETERS,
+    ) if name in request.GET}
+    return {
+        'document_display': display,
+        'display_options': [
+            {'value': value, 'label': label, 'icon': icon, 'active': display == value,
+             'url': _url(request, **{**params, 'display': value})}
+            for value, label, icon in [('list', 'Lista', 'list'), ('grid', 'Kafelki', 'layout-grid')]
+        ],
+    }
+
+
 def _pagination(request, total):
     try:
         page_size = int(request.GET.get('page_size', 50))
@@ -133,7 +179,7 @@ def _pagination(request, total):
 def _library_index(request, form_context=None):
     query = request.GET.get('q', '').strip()[:120]
     fields = [
-        text_field(request.GET, 'name', 'Nazwa biblioteki', 'archive', 'name'),
+        text_field(request.GET, 'name', 'Nazwa dysku', 'hard-drive', 'name'),
         text_field(request.GET, 'description', 'Opis', 'align-left', 'description'),
         choice_field(request.GET, 'documents', 'Pliki', 'files', PRESENCE_OPTIONS),
         choice_field(request.GET, 'folders', 'Foldery', 'folders', PRESENCE_OPTIONS),
@@ -141,9 +187,13 @@ def _library_index(request, form_context=None):
     ]
     query_state = query_context(request.GET, fields, LIBRARY_SORT_FIELDS, 'name_asc')
     values = query_state['document_filter_params']
+    library_sizes = _documents(request).filter(
+        library_id=OuterRef('pk'), deleted_at__isnull=True,
+    ).order_by().values('library_id').annotate(total=Sum('file_size')).values('total')
     libraries = _libraries(request).filter(Q(name__icontains=query) | Q(description__icontains=query)).annotate(
         document_count=Count('documents', filter=Q(documents__deleted_at__isnull=True, documents__owner=request.user, documents__workplace=request.workplace), distinct=True),
         folder_count=Count('folders', filter=Q(folders__owner=request.user, folders__workplace=request.workplace), distinct=True),
+        total_size=Coalesce(Subquery(library_sizes), 0, output_field=BigIntegerField()),
     )
     libraries = apply_text_filters(libraries, fields)
     for param, count in [('documents', 'document_count'), ('folders', 'folder_count')]:
@@ -156,9 +206,10 @@ def _library_index(request, form_context=None):
     start = page.start_index() - 1 if page.paginator.count else 0
     context = _context(request)
     context.update(_sidebar(request))
+    context.update(_display_context(request, 'libraries'))
     context.update(query_state)
     context.update({
-        'is_library_index': True, 'view_title': 'Biblioteki dokumentów', 'document_form': form_context,
+        'is_library_index': True, 'view_title': 'Dyski', 'document_form': form_context,
         'libraries': libraries[start:page.end_index()], 'page': page, 'document_window': window,
         'query': query, 'clear_url': _url(request),
     })
@@ -192,8 +243,8 @@ def _library_page(request, form_context=None):
     if not current_library and request.GET.get('document_library'):
         selected_library = _by_id(_libraries(request), request.GET['document_library'])
     fields = [
-        text_field(request.GET, 'name', 'Nazwa dokumentu', 'file-text', 'title'),
-        text_field(request.GET, 'filename', 'Nazwa pliku', 'file', 'filename'),
+        text_field(request.GET, 'name', 'Nazwa pliku', 'file-text', 'title'),
+        text_field(request.GET, 'filename', 'Oryginalna nazwa pliku', 'file', 'filename'),
         text_field(request.GET, 'description', 'Opis', 'align-left', 'description'),
         choice_field(request.GET, 'tag', 'Tagi', 'tag', (
             {'value': str(tag.pk), 'label': tag.name} for tag in tags
@@ -208,7 +259,7 @@ def _library_page(request, form_context=None):
         choice_field(request.GET, 'modified', 'Usunięto' if current_view == 'trash' else 'Zmodyfikowano', 'clock-3', DATE_OPTIONS),
     ]
     if not current_library:
-        fields.insert(3, choice_field(request.GET, 'document_library', 'Biblioteka', 'archive', (
+        fields.insert(3, choice_field(request.GET, 'document_library', 'Dysk', 'hard-drive', (
             {'value': str(item.pk), 'label': item.name} for item in _libraries(request)
         ), searchable=True))
     sort_fields = tuple(
@@ -267,15 +318,17 @@ def _library_page(request, form_context=None):
         {'kind': 'folder', 'item': item, 'url': _url(request, library=current_library.pk, folder=item.pk)}
         for item in folders[start:end]
     ] if start < folder_count else []
+    _set_folder_sizes(request, current_library, rows)
     if end > folder_count:
         rows += [
-            {'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/')}
+            {'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/preview/')}
             for item in documents[max(0, start - folder_count):end - folder_count]
         ]
     library_id = current_library.pk if current_library else None
     view_label = next(option['label'] for option in DOCUMENT_VIEW_OPTIONS if option['value'] == current_view)
     context = _context(request, current_library, folder)
     context.update(_sidebar(request, active_view=current_view if not current_library else None))
+    context.update(_display_context(request, 'files'))
     context.update(query_state)
     context.update({
         'clear_url': _url(request, library=library_id, view=current_view, folder=folder.pk if folder else None),
@@ -291,10 +344,10 @@ def _library_page(request, form_context=None):
     return render(request, 'documents/library.html', context)
 
 
-def _render_form(request, context):
+def _render_form(request, context, template='documents/form.html'):
     context['form_action'] = request.get_full_path()
     if request.headers.get('X-Document-Modal') == 'true':
-        return render(request, 'documents/form.html', {'modal': context})
+        return render(request, template, {'modal': context})
     # Direct links and ordinary form submissions use the same dialog over its list.
     background_request = copy(request)
     background_request.GET = QueryDict(urlsplit(context['folder_url']).query)
@@ -322,12 +375,12 @@ def _save_library(request, instance=None):
                 item.photo.storage.delete(item.photo.name)
             if not isinstance(error, IntegrityError):
                 raise
-            form.add_error('name', 'Biblioteka o tej nazwie już istnieje w tym Workspace.')
+            form.add_error('name', 'Dysk o tej nazwie już istnieje w tym Workspace.')
         else:
             if previous_photo and previous_photo != item.photo.name:
                 storage = item.photo.storage
                 transaction.on_commit(lambda: storage.delete(previous_photo), robust=True)
-            messages.success(request, 'Zapisano bibliotekę.' if instance else 'Utworzono bibliotekę dokumentów.')
+            messages.success(request, 'Zapisano dysk.' if instance else 'Utworzono dysk.')
             return _form_success(request, _url(request, library=item.pk))
     context = _context(request, instance)
     photo_preview_url = _url(request, f'libraries/{instance.pk}/photo/') if previous_photo else ''
@@ -336,8 +389,8 @@ def _save_library(request, instance=None):
     elif form.is_bound and form.cleaned_data.get('photo_remove'):
         photo_preview_url = ''
     context.update({'form': form, 'library_form': True, 'photo_preview_url': photo_preview_url,
-                    'form_title': 'Ustawienia biblioteki' if instance else 'Nowa biblioteka dokumentów',
-                    'submit_label': 'Zapisz bibliotekę' if instance else 'Utwórz bibliotekę'})
+                    'form_title': 'Ustawienia dysku' if instance else 'Nowy dysk',
+                    'submit_label': 'Zapisz dysk' if instance else 'Utwórz dysk'})
     return _render_form(request, context)
 
 
@@ -376,9 +429,9 @@ def library_delete(request, pk):
     try:
         item.delete()
     except RestrictedError:
-        messages.error(request, 'Można usunąć tylko pustą bibliotekę. Zawiera ona foldery lub pliki, również w koszu.')
+        messages.error(request, 'Można usunąć tylko pusty dysk. Zawiera on foldery lub pliki, również w koszu.')
     else:
-        messages.success(request, 'Usunięto pustą bibliotekę.')
+        messages.success(request, 'Usunięto pusty dysk.')
     return redirect(_url(request))
 
 
@@ -451,7 +504,7 @@ def folder_delete(request, pk):
     try:
         folder.delete()
     except RestrictedError:
-        messages.error(request, 'Folder zawiera podfoldery lub dokumenty (również w koszu). Najpierw je przenieś.')
+        messages.error(request, 'Folder zawiera podfoldery lub pliki (również w koszu). Najpierw je przenieś.')
     else:
         messages.success(request, 'Usunięto pusty folder.')
     return redirect(_url(request, library=library_id, folder=parent_id))
@@ -464,11 +517,47 @@ def detail(request, pk):
     form = DocumentForm(request.POST if request.method == 'POST' else None, instance=document, owner=request.user, workplace=request.workplace)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        messages.success(request, 'Zapisano dokument.')
+        messages.success(request, 'Zapisano plik.')
         return _form_success(request, _url(request, library=document.library_id, folder=form.instance.folder_id))
     context = _context(request, document.library, document.folder)
     context.update({'form': form, 'document': document, 'form_title': document.title, 'submit_label': 'Zapisz zmiany'})
     return _render_form(request, context)
+
+
+@login_required
+@require_GET
+def preview(request, pk):
+    document = get_object_or_404(_documents(request).select_related('folder', 'library'), pk=pk, deleted_at__isnull=True)
+    context = _context(request, document.library, document.folder)
+    context.update({'document': document, 'preview': build_preview(document),
+                    'content_url': _url(request, f'{document.pk}/content/')})
+    response = _render_form(request, context, template='documents/preview.html')
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@login_required
+@require_GET
+@xframe_options_sameorigin
+def preview_content(request, pk):
+    document = get_object_or_404(_documents(request), pk=pk, deleted_at__isnull=True)
+    kind = inline_type(document)
+    if not kind or not document.file:
+        raise Http404
+    try:
+        file = document.file.open('rb')
+    except OSError:
+        raise Http404('Plik nie jest dostępny.')
+    try:
+        validate_inline(file, document.filename)
+        response = FileResponse(file, as_attachment=False, filename=document.filename, content_type=kind[1])
+    except (OSError, ValueError):
+        file.close()
+        raise Http404('Plik nie jest dostępny.')
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Content-Security-Policy'] = "sandbox; default-src 'none'; frame-ancestors 'self'"
+    return response
 
 
 @login_required
@@ -485,6 +574,8 @@ def download(request, pk):
 
 def _return_to_library(request, document):
     params = {key: request.POST.get(key, '') for key in dict.fromkeys(('view', 'folder', 'q', 'tag', 'sort', 'page', 'page_size', *FILTER_PARAMETERS))}
+    if request.POST.get('display') in {'list', 'grid'}:
+        params['display'] = request.POST['display']
     library_id = None if request.POST.get('scope') == 'workspace' else document.library_id
     if library_id is None:
         params['view'] = params['view'] or 'all'
@@ -508,7 +599,7 @@ def trash(request, pk):
     document = get_object_or_404(_documents(request), pk=pk, deleted_at__isnull=True)
     document.deleted_at = timezone.now()
     document.save(update_fields=['deleted_at'])
-    messages.success(request, 'Dokument przeniesiono do kosza. Możesz go przywrócić.')
+    messages.success(request, 'Plik przeniesiono do kosza. Możesz go przywrócić.')
     return _return_to_library(request, document)
 
 
@@ -518,5 +609,5 @@ def restore(request, pk):
     document = get_object_or_404(_documents(request), pk=pk, deleted_at__isnull=False)
     document.deleted_at = None
     document.save(update_fields=['deleted_at'])
-    messages.success(request, 'Przywrócono dokument do jego folderu.')
+    messages.success(request, 'Przywrócono plik do jego folderu.')
     return _return_to_library(request, document)

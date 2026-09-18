@@ -16,7 +16,7 @@ SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'contacts-guests', 'label': 'Goście', 'icon': 'user-round-alert', 'app': 'contacts', 'suffix': 'guests/'},
     {'key': 'calendar', 'label': 'Kalendarz', 'icon': 'calendar-days', 'app': 'calendar'},
     {'key': 'tags', 'label': 'Tagi', 'icon': 'tag', 'app': 'tasks', 'query': 'view=tags'},
-    {'key': 'documents', 'label': 'Dokumenty', 'icon': 'files', 'app': 'documents'},
+    {'key': 'documents', 'label': 'Dysk', 'icon': 'hard-drive', 'app': 'documents'},
 )
 
 SIDEBAR_FAVORITE_KEYS = frozenset(item['key'] for item in SIDEBAR_FAVORITE_DEFINITIONS)

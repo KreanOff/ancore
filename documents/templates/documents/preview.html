@@ -1,0 +1,44 @@
+<div class="tasks-modal documents-modal documents-preview-modal is-open" role="dialog" aria-modal="true" aria-labelledby="documents-preview-title" data-document-dialog data-document-preview data-return-url="{{ modal.folder_url }}">
+    <div class="tasks-modal__dialog">
+        <div class="tasks-modal__form">
+            <header class="tasks-modal__header">
+                <h2 id="documents-preview-title">{{ modal.document.title }}</h2>
+                <a href="{{ modal.folder_url }}" class="tasks-modal__close" aria-label="Zamknij podgląd" data-document-modal-close></a>
+            </header>
+            <div class="tasks-modal__body documents-preview-body" tabindex="0" aria-label="Zawartość pliku">
+                {% if modal.preview.note %}<p class="documents-preview-notice">{{ modal.preview.note }}</p>{% endif %}
+                {% if modal.preview.truncated %}<p class="documents-preview-notice" role="status">Wyświetlono część zawartości ze względu na rozmiar pliku. Pobierz plik, aby zobaczyć całość.</p>{% endif %}
+                {% if modal.preview.kind == 'image' %}
+                    <p class="documents-preview-notice" data-document-preview-loading role="status">Ładowanie podglądu…</p>
+                    <img class="documents-preview-image" src="{{ modal.content_url }}" alt="{{ modal.document.title }}" data-document-preview-media>
+                    <p class="documents-preview-notice" data-document-preview-error role="alert" hidden>Nie udało się wyświetlić obrazu. Spróbuj ponownie lub pobierz plik.</p>
+                {% elif modal.preview.kind == 'pdf' %}
+                    <iframe class="documents-preview-pdf" src="{{ modal.content_url }}" title="Podgląd PDF: {{ modal.document.title }}"></iframe>
+                {% elif modal.preview.kind == 'text' %}
+                    {% if modal.preview.text %}<pre class="documents-preview-text">{{ modal.preview.text }}</pre>{% else %}<p class="documents-preview-notice">Brak tekstu do wyświetlenia.</p>{% endif %}
+                {% elif modal.preview.kind == 'sheets' %}
+                    {% for sheet in modal.preview.sheets %}
+                    <section class="documents-preview-sheet" aria-label="{{ sheet.name }}">
+                        <h3>{{ sheet.name }}</h3>
+                        {% if sheet.rows %}<div class="documents-preview-table-scroll" tabindex="0" role="region" aria-label="Dane: {{ sheet.name }}"><table class="documents-preview-table"><tbody>
+                            {% for row in sheet.rows %}<tr><th scope="row">{{ row.number }}</th>{% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}
+                        </tbody></table></div>{% else %}<p class="documents-preview-notice">Arkusz jest pusty.</p>{% endif %}
+                    </section>
+                    {% empty %}<p class="documents-preview-notice">Brak danych do wyświetlenia.</p>{% endfor %}
+                {% elif modal.preview.kind == 'hard-drive' %}
+                    {% if modal.preview.entries %}<div class="documents-preview-table-scroll" tabindex="0" role="region" aria-label="Zawartość archiwum"><table class="documents-preview-table">
+                        <thead><tr><th scope="col">Nazwa</th><th scope="col">Rozmiar</th></tr></thead>
+                        <tbody>{% for entry in modal.preview.entries %}<tr><td>{{ entry.name }}{% if entry.folder %} (folder){% endif %}</td><td>{{ entry.size|filesizeformat }}</td></tr>{% endfor %}</tbody>
+                    </table></div>{% else %}<p class="documents-preview-notice">Archiwum jest puste.</p>{% endif %}
+                {% else %}
+                    <div class="documents-preview-fallback" role="status"><i data-lucide="{{ modal.document.icon }}" aria-hidden="true"></i><p>{{ modal.preview.message }}</p></div>
+                {% endif %}
+            </div>
+            <footer class="tasks-modal__footer">
+                <a href="{{ modal.documents_url }}{{ modal.document.pk }}/" class="btn btn-secondary" data-document-modal>Edytuj dane</a>
+                {% if modal.preview.kind != 'unavailable' %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" class="btn btn-primary" download><i data-lucide="download" aria-hidden="true"></i>Pobierz</a>{% endif %}
+                <a href="{{ modal.folder_url }}" class="btn btn-secondary" data-document-modal-close>Zamknij</a>
+            </footer>
+        </div>
+    </div>
+</div>
