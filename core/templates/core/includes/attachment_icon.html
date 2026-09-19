@@ -1,13 +1,13 @@
 <div class="attachment-icon attachment-icon--{{ size|default:'md' }} {{ type_class }}"{% if title %} title="{{ title }}"{% endif %}>
     {% if type_class == 'image' %}
-    <i data-lucide="file-image" aria-hidden="true"></i>
+    <i data-icon="file-image" aria-hidden="true"></i>
     {% elif type_class == 'pdf' %}
-    <i data-lucide="file-text" aria-hidden="true"></i>
+    <i data-icon="file-text" aria-hidden="true"></i>
     {% elif type_class == 'document' %}
-    <i data-lucide="file-text" aria-hidden="true"></i>
+    <i data-icon="file-text" aria-hidden="true"></i>
     {% elif type_class == 'archive' %}
-    <i data-lucide="file-archive" aria-hidden="true"></i>
+    <i data-icon="file-archive" aria-hidden="true"></i>
     {% else %}
-    <i data-lucide="file" aria-hidden="true"></i>
+    <i data-icon="file" aria-hidden="true"></i>
     {% endif %}
 </div>

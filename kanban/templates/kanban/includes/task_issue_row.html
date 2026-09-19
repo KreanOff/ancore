@@ -38,11 +38,11 @@
         </span>
     </span>
     <span class="tasks-row-tags" title="Tagi: {{ task.tags.count }}" aria-label="Tagi: {{ task.tags.count }}">
-        <i data-lucide="tag" aria-hidden="true"></i>
+        <i data-icon="tag" aria-hidden="true"></i>
         {{ task.tags.count }}
     </span>
     <span class="tasks-row-attachments" title="Załączniki: {{ task.attachments.count }}">
-        <i data-lucide="paperclip" aria-hidden="true"></i>
+        <i data-icon="paperclip" aria-hidden="true"></i>
         {{ task.attachments.count }}
     </span>
     <span class="tasks-row-date">{{ task.created_at|date:"d M" }}</span>

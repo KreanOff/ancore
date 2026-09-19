@@ -158,10 +158,10 @@ class SidebarActiveStateTests(SimpleTestCase):
         subnav_end = html.index('</div>', subnav_start)
         subnav_html = html[subnav_start:subnav_end]
 
-        self.assertIn('data-lucide="briefcase-business"', subnav_html)
-        self.assertIn('data-lucide="layers-3"', subnav_html)
-        self.assertNotIn('data-lucide="folders"', subnav_html)
-        self.assertNotIn('data-lucide="folder-open"', subnav_html)
+        self.assertIn('data-icon="briefcase-business"', subnav_html)
+        self.assertIn('data-icon="layers-3"', subnav_html)
+        self.assertNotIn('data-icon="folders"', subnav_html)
+        self.assertNotIn('data-icon="folder-open"', subnav_html)
 
         favorite_icons = {
             item['key']: item['icon']
@@ -258,9 +258,9 @@ class SidebarActiveStateTests(SimpleTestCase):
 
         self.assertIn('aria-label="Widok domyślny, powiadomienia i wyszukiwanie"', html)
         self.assertEqual(switcher_html.count('class="sidebar-view-switcher__item'), 3)
-        self.assertIn('data-lucide="house"', html[switcher_position:])
-        self.assertIn('data-lucide="bell"', html[switcher_position:])
-        self.assertIn('data-lucide="search"', switcher_html)
+        self.assertIn('data-icon="house"', html[switcher_position:])
+        self.assertIn('data-icon="bell"', html[switcher_position:])
+        self.assertIn('data-icon="search"', switcher_html)
         self.assertIn('aria-label="Widok domyślny"', html[switcher_position:])
         self.assertIn('data-sidebar-default-view', switcher_html)
         self.assertIn('aria-label="Powiadomienia"', html[switcher_position:])
@@ -385,8 +385,8 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('Szukaj zadań, osób, projektów…', html)
         self.assertNotIn('id="sidebar-quick-search"', html)
         self.assertIn('data-sidebar-collapse-toggle', html)
-        self.assertIn('data-lucide="chevron-left"', html)
-        self.assertIn('data-lucide="chevron-right"', html)
+        self.assertIn('data-icon="chevron-left"', html)
+        self.assertIn('data-icon="chevron-right"', html)
 
     def test_collapsed_sidebar_keeps_all_navigation_actions_available(self):
         request = SimpleNamespace(

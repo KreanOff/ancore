@@ -114,7 +114,7 @@
         '🖥️': 'monitor',
     };
 
-    const LUCIDE_ALIASES = {
+    const ICON_ALIASES = {
         alert: 'triangle-alert',
         archivebox: 'archive',
         bin: 'trash-2',
@@ -137,20 +137,13 @@
         userprofile: 'user-round',
     };
 
-    function kebabToPascal(name) {
-        return String(name || '')
-            .split('-')
-            .filter(Boolean)
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join('');
-    }
+    const catalog = global.AncoreFlaticon;
+    const owns = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
     function normalizeIconName(name, fallback) {
-        const defaultName = fallback || 'circle';
         const raw = String(name || '').trim();
-        if (!raw) return defaultName;
-        if (LEGACY_ICON_MAP[raw]) return LEGACY_ICON_MAP[raw];
-
+        if (!raw) return fallback || 'circle';
+        if (owns(LEGACY_ICON_MAP, raw)) return LEGACY_ICON_MAP[raw];
         const kebab = raw
             .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
             .replace(/_/g, '-')
@@ -159,95 +152,78 @@
             .replace(/-+/g, '-')
             .replace(/^-|-$/g, '')
             .toLowerCase();
-
-        const aliased = LUCIDE_ALIASES[kebab.replace(/-/g, '')] || LUCIDE_ALIASES[kebab] || kebab;
-        return aliased || defaultName;
+        const alias = kebab.replace(/-/g, '');
+        return (owns(ICON_ALIASES, alias) ? ICON_ALIASES[alias] : kebab) || fallback || 'circle';
     }
 
-    function hasLucideIcon(name) {
-        if (!global.lucide || !global.lucide.icons) return true;
-        return Boolean(global.lucide.icons[kebabToPascal(name)]);
+    function flaticonName(name) {
+        return owns(catalog.aliases, name) ? catalog.aliases[name] : name;
     }
 
     function safeIconName(name, fallback) {
         const normalized = normalizeIconName(name, fallback);
-        if (hasLucideIcon(normalized)) return normalized;
-        const normalizedFallback = normalizeIconName(fallback || 'circle', 'circle');
-        return hasLucideIcon(normalizedFallback) ? normalizedFallback : 'circle';
-    }
-
-    function iconHtml(name, options) {
-        const opts = options || {};
-        const iconName = safeIconName(name, opts.fallback);
-        const className = opts.className ? ` class="${opts.className}"` : '';
-        const label = opts.label ? ` aria-label="${opts.label}"` : ' aria-hidden="true"';
-        const title = opts.title ? ` title="${opts.title}"` : '';
-        const strokeWidth = opts.strokeWidth ? ` stroke-width="${opts.strokeWidth}"` : '';
-        return `<i data-lucide="${iconName}"${className}${label}${title}${strokeWidth}></i>`;
+        if (owns(catalog.icons, flaticonName(normalized))) return normalized;
+        const defaultName = normalizeIconName(fallback, 'circle');
+        return owns(catalog.icons, flaticonName(defaultName)) ? defaultName : 'circle';
     }
 
     function createIcon(name, options) {
         const opts = options || {};
         const icon = document.createElement('i');
-        icon.setAttribute('data-lucide', safeIconName(name, opts.fallback));
+        icon.setAttribute('data-icon', safeIconName(name, opts.fallback));
         if (opts.className) icon.className = opts.className;
         if (opts.label) {
             icon.setAttribute('aria-label', opts.label);
+            icon.setAttribute('role', 'img');
         } else {
             icon.setAttribute('aria-hidden', 'true');
         }
         if (opts.title) icon.setAttribute('title', opts.title);
-        if (opts.strokeWidth) icon.setAttribute('stroke-width', opts.strokeWidth);
         return icon;
     }
 
-    function dataLucideElements(root) {
-        const scope = root && root.querySelectorAll ? root : document;
-        const icons = Array.from(scope.querySelectorAll('[data-lucide]'));
-        if (scope.matches && scope.matches('[data-lucide]')) {
-            icons.unshift(scope);
-        }
-        return icons;
-    }
-
-    function normalizeDataLucide(root) {
-        dataLucideElements(root).forEach(icon => {
-            const fallback = icon.getAttribute('data-lucide-fallback') || 'circle';
-            icon.setAttribute('data-lucide', safeIconName(icon.getAttribute('data-lucide'), fallback));
-        });
-    }
-
-    function renderScoped(root) {
-        if (!global.lucide || typeof global.lucide.createElement !== 'function' || !global.lucide.icons) {
-            return false;
-        }
-
-        dataLucideElements(root).forEach(icon => {
-            const iconName = safeIconName(icon.getAttribute('data-lucide'), icon.getAttribute('data-lucide-fallback') || 'circle');
-            const iconNode = global.lucide.icons[kebabToPascal(iconName)];
-            if (!iconNode) return;
-
-            const attrs = {};
-            Array.from(icon.attributes).forEach(attribute => {
-                if (attribute.name === 'data-lucide' || attribute.name === 'data-lucide-fallback') return;
-                attrs[attribute.name] = attribute.value;
-            });
-            attrs.class = [attrs.class, 'lucide', `lucide-${iconName}`].filter(Boolean).join(' ');
-
-            const svg = global.lucide.createElement(iconNode, attrs);
-            icon.replaceWith(svg);
-        });
-        return true;
+    function iconHtml(name, options) {
+        return createIcon(name, options).outerHTML;
     }
 
     function render(root) {
-        normalizeDataLucide(root);
-        if (global.lucide && typeof global.lucide.createIcons === 'function') {
-            if (root && root !== document && renderScoped(root)) {
-                return;
+        const scope = root && root.querySelectorAll ? root : document;
+        const placeholders = Array.from(scope.querySelectorAll('[data-icon]'));
+        if (scope.matches?.('[data-icon]')) placeholders.unshift(scope);
+        placeholders.forEach(icon => {
+            const name = safeIconName(icon.getAttribute('data-icon'), icon.getAttribute('data-icon-fallback'));
+            const source = flaticonName(name);
+            if (icon.localName === 'svg' && icon.getAttribute('data-flaticon') === source) return;
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            Array.from(icon.attributes).forEach(attribute => {
+                if (!['stroke', 'stroke-width', 'fill', 'viewBox', 'data-icon-fallback'].includes(attribute.name)) {
+                    svg.setAttribute(attribute.name, attribute.value);
+                }
+            });
+            svg.classList.add('ancore-icon');
+            svg.setAttribute('data-icon', name);
+            svg.setAttribute('data-flaticon', source);
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('width', icon.getAttribute('width') || '24');
+            svg.setAttribute('height', icon.getAttribute('height') || '24');
+            svg.setAttribute('fill', 'currentColor');
+            svg.setAttribute('stroke', 'none');
+            svg.setAttribute('focusable', 'false');
+            if (svg.hasAttribute('aria-label')) {
+                svg.setAttribute('role', 'img');
+            } else if (!svg.hasAttribute('aria-labelledby')) {
+                svg.setAttribute('aria-hidden', 'true');
             }
-            global.lucide.createIcons();
-        }
+            if (icon.getAttribute('title')) {
+                const title = document.createElementNS(svg.namespaceURI, 'title');
+                title.textContent = icon.getAttribute('title');
+                svg.appendChild(title);
+            }
+            const path = document.createElementNS(svg.namespaceURI, 'path');
+            path.setAttribute('d', catalog.icons[source]);
+            svg.appendChild(path);
+            icon.replaceWith(svg);
+        });
     }
 
     global.AncoreIcons = {
@@ -264,4 +240,5 @@
     } else {
         render(document);
     }
+    document.addEventListener('ancore:content-loaded', () => render(document));
 })(typeof window !== 'undefined' ? window : globalThis);

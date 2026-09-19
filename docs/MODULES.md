@@ -219,7 +219,7 @@ gwiazdkę oraz datę przeniesienia do kosza.
 - Zawartość dysku/folderu i ścieżka nawigacyjna.
 - Przełącznik „Lista / Kafelki” na indeksie dysków i w widokach plików.
   Kafelki pokazują typ, rozmiar, datę, lokalizację i tagi pliku oraz te same
-  akcje co lista; dyski pokazują zdjęcie/ikonę, opis i liczniki.
+  akcje co lista; dyski pokazują zdjęcie/ikonę, nazwę i datę, bez opisu i liczników.
   Układ jest zapamiętywany w sesji oddzielnie dla konta, Workspace oraz katalogu
   dysków i plików. Zmiana układu zachowuje wyszukiwanie, filtry i stronę.
   „Nowy folder” jest bezpośrednią akcją w pasku dysku.
@@ -230,7 +230,7 @@ gwiazdkę oraz datę przeniesienia do kosza.
   Dyski i foldery sumują rozmiary aktywnych plików także w podfolderach,
   wyłącznie w zakresie właściciela i Workspace; pliki w koszu są pomijane.
   Data folderu pozostaje datą utworzenia (model nie zapisuje modyfikacji).
-  Liczniki plików i folderów pozostają na kafelkach dysków oraz w filtrach/sortowaniu.
+  Liczniki plików i folderów pozostają dostępne w filtrach/sortowaniu dysków.
 - Indeks dysków ma skróty do tych widoków nad listą; lista pokazuje nazwy bez opisów.
   Panel przełączania dysków jest dostępny
   wewnątrz dysków i w widokach plików; nie powtarza listy na indeksie.

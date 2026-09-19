@@ -19,7 +19,7 @@
         </div>
 
         <button type="button" class="tasks-new-button calendar-new-button" id="cal-add-event" title="Nowe wydarzenie" aria-haspopup="dialog" aria-controls="event-dialog-overlay">
-            <span aria-hidden="true"><i data-lucide="plus"></i></span>
+            <span aria-hidden="true"><i data-icon="plus"></i></span>
             Nowe wydarzenie
         </button>
 
@@ -27,25 +27,25 @@
             <div class="tasks-rail-nav-group calendar-view-switch" role="tablist" aria-label="Widok kalendarza">
                 <button type="button" class="tasks-rail-link calendar-view-btn" data-view="day" role="tab">
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="calendar-day" data-lucide-fallback="calendar" aria-hidden="true"></i>
+                        <i data-icon="calendar-day" data-icon-fallback="calendar" aria-hidden="true"></i>
                     </span>
                     Dzień
                 </button>
                 <button type="button" class="tasks-rail-link calendar-view-btn" data-view="week" role="tab">
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="calendar-range" aria-hidden="true"></i>
+                        <i data-icon="calendar-range" aria-hidden="true"></i>
                     </span>
                     Tydzień
                 </button>
                 <button type="button" class="tasks-rail-link calendar-view-btn is-active" data-view="month" role="tab" aria-selected="true">
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="calendar-days" aria-hidden="true"></i>
+                        <i data-icon="calendar-days" aria-hidden="true"></i>
                     </span>
                     Miesiąc
                 </button>
                 <button type="button" class="tasks-rail-link calendar-view-btn" data-view="year" role="tab">
                     <span class="tasks-rail-icon" aria-hidden="true">
-                        <i data-lucide="calendar-fold" data-lucide-fallback="calendar-days" aria-hidden="true"></i>
+                        <i data-icon="calendar-fold" data-icon-fallback="calendar-days" aria-hidden="true"></i>
                     </span>
                     Rok
                 </button>
@@ -65,19 +65,19 @@
         <header class="tasks-topbar calendar-topbar">
             <div class="tasks-titlebar-left">
                 <button type="button" class="tasks-icon-button" id="cal-prev" aria-label="Poprzedni okres" title="Poprzedni okres">
-                    <i data-lucide="chevron-left" aria-hidden="true"></i>
+                    <i data-icon="chevron-left" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="tasks-icon-button calendar-today-button" id="cal-today" aria-label="Dzisiaj" title="Przejdź do dzisiaj">
                     Dzisiaj
                 </button>
                 <button type="button" class="tasks-icon-button" id="cal-next" aria-label="Następny okres" title="Następny okres">
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
                 <span class="tasks-topbar-title calendar-period-label" id="cal-period-label" aria-live="polite"></span>
             </div>
             <div class="tasks-section-actions">
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-calendar-add title="Dodaj wydarzenie" aria-label="Nowe wydarzenie" aria-haspopup="dialog" aria-controls="event-dialog-overlay">
-                    <span aria-hidden="true"><i data-lucide="plus"></i></span>
+                    <span aria-hidden="true"><i data-icon="plus"></i></span>
                     <span>Nowe wydarzenie</span>
                 </button>
             </div>
@@ -97,15 +97,15 @@
             </div>
             <div class="tasks-filterbar-right">
                 <label class="tasks-search-field calendar-search">
-                    <i data-lucide="search" aria-hidden="true"></i>
+                    <i data-icon="search" aria-hidden="true"></i>
                     <input type="search" id="cal-search" placeholder="Szukaj w tym widoku" aria-label="Szukaj wydarzeń w wybranym okresie" autocomplete="off">
                 </label>
                 <details class="calendar-color-filter">
-                    <summary aria-label="Filtruj kolory"><i data-lucide="list-filter" aria-hidden="true"></i>Kolory</summary>
+                    <summary aria-label="Filtruj kolory"><i data-icon="list-filter" aria-hidden="true"></i>Kolory</summary>
                     {% include 'planner/includes/color_filters.html' %}
                 </details>
                 <button type="button" class="tasks-icon-button" id="cal-toggle-agenda" title="Pokaż lub ukryj plan" aria-label="Pokaż lub ukryj plan" aria-expanded="true" aria-controls="calendar-agenda">
-                    <i data-lucide="panel-right" aria-hidden="true"></i>
+                    <i data-icon="panel-right" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -147,7 +147,7 @@
                         <span class="calendar-agenda-count" id="cal-agenda-count" aria-live="polite"></span>
                     </div>
                     <ul class="calendar-events-list" id="calendar-events-list"></ul>
-                    <div class="calendar-sidebar-footer"><button type="button" class="tasks-filter-button" data-calendar-add><i data-lucide="plus" aria-hidden="true"></i>Dodaj w tym dniu</button></div>
+                    <div class="calendar-sidebar-footer"><button type="button" class="tasks-filter-button" data-calendar-add><i data-icon="plus" aria-hidden="true"></i>Dodaj w tym dniu</button></div>
                 </aside>
             </div>
         </div>
@@ -159,7 +159,7 @@
         <form id="event-form" class="tasks-modal__form calendar-dialog-form" novalidate>
             <header class="tasks-modal__header calendar-dialog-header">
                 <button type="button" class="tasks-issue-close cancel-event-btn" title="Zamknij" aria-label="Zamknij">
-                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <i data-icon="arrow-left" aria-hidden="true"></i>
                 </button>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
                 <h2 id="event-dialog-title">Nowe wydarzenie</h2>
@@ -212,7 +212,7 @@
                                 data-calendar-color-toggle>
                             <span class="calendar-color-dot calendar-color-dot--red" aria-hidden="true" data-calendar-color-dot></span>
                             <span id="event-color-current" data-calendar-color-label>Czerwony</span>
-                            <i class="calendar-color-select__caret" data-lucide="chevron-down" aria-hidden="true"></i>
+                            <i class="calendar-color-select__caret" data-icon="chevron-down" aria-hidden="true"></i>
                         </button>
                         <div class="calendar-color-select__menu" role="listbox" aria-labelledby="event-color-label" hidden data-calendar-color-menu>
                             <button type="button" class="calendar-color-select__option is-selected" role="option" aria-selected="true" data-calendar-color-option data-value="red" data-label="Czerwony">

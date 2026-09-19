@@ -130,7 +130,7 @@
     cursor: pointer;
     appearance: none;
     font-family: inherit;
-    background-image: var(--lucide-chevron-down-gray);
+    background-image: var(--icon-chevron-down-gray);
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
 }

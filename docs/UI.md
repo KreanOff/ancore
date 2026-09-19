@@ -158,7 +158,7 @@ Nie zmienia geometrii przycisków, akcji drugorzędnych ani kolorów stanów
 
 ### Tabele i formularze Dysku
 
-Nawigacja główna i ulubione używają nazwy „Dysk” oraz ikony Lucide `hard-drive`.
+Nawigacja główna i ulubione używają nazwy „Dysk” oraz ikony Flaticon pod nazwą aplikacji `hard-drive`.
 Indeks nosi tytuł „Dyski”, tworzenie — „Nowy dysk”, edycja — „Ustawienia dysku”.
 Każdy dysk zawiera własne foldery i pliki. Zdjęcia referencyjne ilustrują tę
 organizację i układy lista/kafelki; wygląd zachowuje tokeny oraz komponenty Ancore.
@@ -167,7 +167,12 @@ Przełącznik `documents-display-switch` używa dwóch linków `tasks-icon-butto
 z etykietami „Lista” i „Kafelki” i `aria-current` dla aktywnego układu.
 Serwer renderuje jeden układ, bez ukrytej kopii tabeli. Kafelki tworzą semantyczną
 listę w `documents-grid`, z ikoną, nazwą do dwóch linii i pełnym tekstem w linku,
-metadanymi oraz wspólnymi akcjami z tabeli. Dyski zachowują zdjęcia i liczniki.
+metadanymi oraz wspólnymi akcjami z tabeli. Kafelki dysków pokazują zdjęcie/ikonę,
+nazwę i datę, bez opisu oraz liczników plików i folderów. Wariant
+`documents-card--library` eksponuje ikonę lub okrągłe zdjęcie o rozmiarze
+128×128px (104×104px do szerokości 767px), wyśrodkowane na powierzchni
+kafelka bez dodatkowego tła podglądu. Nazwa, data i akcje pozostają poniżej.
+Ten wariant nie zmienia ikon w tabeli, panelu bocznym ani kafelkach plików.
 Siatka dopasowuje liczbę kolumn do miejsca; na telefonie akcje mogą przejść pod datę.
 Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Wybór kolumn dotyczy
 wyłącznie tabeli i jest dostępny w trybie listy. „Nowy folder” używa istniejącego
@@ -182,7 +187,7 @@ drugą linię z lokalizacją. Lista nie wyświetla pod nazwą etykiety „Folder
 typu pliku (np. „PDF”, „JPEG”); bez lokalizacji nie tworzy drugiej linii. Nazwy mają
 ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony dysków,
 folderów i plików są monochromatyczne, bez ozdobnych ramek. Dyski używają
-ikony Lucide `hard-drive` na liście, w panelu bocznym, pustym stanie, filtrach,
+ikony Flaticon `hard-drive` na liście, w panelu bocznym, pustym stanie, filtrach,
 sortowaniu i wynikach globalnego wyszukiwania. Ikona w wierszu listy dysków
 ma rozmiar 22×22px w polu 36×36px. Własne zdjęcie zastępuje tę ikonę na liście
 oraz w panelu dysków; miniatura ma 36×36px na liście i 28×28px w panelu
@@ -326,13 +331,28 @@ obraz sygnalizuje ładowanie i błąd. Natywny czytnik PDF obsługuje własną k
 
 ## 7. Ikony i typografia
 
-Biblioteka ikon to Lucide, ładowana przez bazowy szablon. Lokalny adapter
-[lucide-icons.js](../static/js/lucide-icons.js) normalizuje nazwy i udostępnia
+Biblioteka ikon to **Flaticon UIcons Regular Rounded 3.3.1**, ładowana lokalnie
+w bazowych szablonach aplikacji i uwierzytelniania. Lokalny adapter
+[flaticon-icons.js](../static/js/flaticon-icons.js) normalizuje nazwy i udostępnia
 `AncoreIcons.render(scope)`, `create`, `html`, `safeName` i `normalize`.
+Nazwy używane przez moduły pozostają stabilne; ich odpowiedniki Flaticon określa
+[mapowanie](../scripts/flaticon-icon-map.json). Nie wymagają migracji danych.
+`data-icon` jest wspólnym atrybutem placeholdera i wygenerowanego SVG;
+`data-flaticon` wskazuje nazwę źródłową UIcons. Ponowne renderowanie jest idempotentne,
+obejmuje również przekazany element główny i działa na `ancore:content-loaded`.
+Nieznane nazwy używają podanego fallbacku lub `circle`.
+
+Kontury SVG dziedziczą `currentColor`, zachowując istniejącą geometrię kontrolek.
+Flaticon używa wypełnionych konturów, dlatego `.ancore-icon` wyłącza obrys `stroke`;
+nie stosuj do nich `stroke-width`. Checkboxy, strzałki selectów i wskaźniki statusu
+korzystają z lokalnych SVG przez tokeny `--icon-*`.
+Zestaw, licencja i instrukcja odtworzenia znajdują się w
+[static/vendor/flaticon](../static/vendor/flaticon/README.md).
+Oznaczenie źródła ikon jest widoczne w Ustawieniach i na ekranach uwierzytelniania.
 
 ```html
 <button type="button" class="btn btn-secondary btn-sm" aria-label="Odśwież listę">
-    <i data-lucide="refresh-cw" aria-hidden="true"></i>
+    <i data-icon="refresh-cw" aria-hidden="true"></i>
     Odśwież
 </button>
 ```

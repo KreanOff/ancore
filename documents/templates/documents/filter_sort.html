@@ -1,23 +1,23 @@
 <div class="tasks-project-filter-builder" data-project-filter-builder>
     <button type="button" class="tasks-filter-button tasks-project-query-trigger{% if has_active_filters %} is-active{% endif %}" aria-haspopup="dialog" aria-expanded="false" data-project-filter-builder-toggle>
-        <i data-lucide="list-filter" aria-hidden="true"></i><span>Filtruj</span>
+        <i data-icon="list-filter" aria-hidden="true"></i><span>Filtruj</span>
         {% if active_filter_count %}<span class="tasks-project-query-count" aria-label="Aktywne filtry: {{ active_filter_count }}">{{ active_filter_count }}</span>{% endif %}
-        <i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+        <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
     </button>
     <div class="tasks-project-query-panel tasks-project-filter-panel" role="dialog" aria-label="{% if is_library_index %}Filtrowanie dysków{% else %}Filtrowanie plików{% endif %}" data-project-filter-builder-panel>
         <section data-project-filter-fields-view>
             <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main">
-                <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="list-filter"></i></span>
+                <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-icon="list-filter"></i></span>
                 <span><strong>{% if is_library_index %}Filtry dysków{% else %}Filtry plików{% endif %}</strong></span>
                 {% if has_active_filters %}<button type="button" class="tasks-project-query-panel__clear" data-project-filters-clear>Wyczyść</button>{% endif %}
             </header>
-            <label class="tasks-project-query-search"><i data-lucide="search" aria-hidden="true"></i><input type="search" placeholder="Szukaj pola" autocomplete="off" data-project-filter-field-search></label>
+            <label class="tasks-project-query-search"><i data-icon="search" aria-hidden="true"></i><input type="search" placeholder="Szukaj pola" autocomplete="off" data-project-filter-field-search></label>
             <div class="tasks-project-filter-field-list">
                 {% for field in document_filter_fields %}
                 <button type="button" data-project-filter-field="{{ field.param }}" data-project-filter-field-search-text="{{ field.label|lower }}">
-                    <span class="tasks-project-query-field-icon"><i data-lucide="{{ field.icon }}" aria-hidden="true"></i></span>
+                    <span class="tasks-project-query-field-icon"><i data-icon="{{ field.icon }}" aria-hidden="true"></i></span>
                     <span><strong>{{ field.label }}</strong>{% if field.active %}<small>{{ field.value_label }}</small>{% endif %}</span>
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
                 {% endfor %}
             </div>
@@ -39,6 +39,6 @@
 {% endif %}
 {% for filter in document_active_filters %}
 <button type="button" class="tasks-project-active-filter" title="Usuń filtr {{ filter.label }}" data-project-filter-remove="{{ filter.param }}" data-project-filter-remove-operator="{{ filter.operator_param }}">
-    <i data-lucide="{{ filter.icon }}" aria-hidden="true"></i><span><strong>{{ filter.label }}:</strong> {{ filter.value_label }}</span><i data-lucide="x" aria-hidden="true"></i>
+    <i data-icon="{{ filter.icon }}" aria-hidden="true"></i><span><strong>{{ filter.label }}:</strong> {{ filter.value_label }}</span><i data-icon="x" aria-hidden="true"></i>
 </button>
 {% endfor %}

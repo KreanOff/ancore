@@ -31,6 +31,7 @@ core/                   wspólny szablon aplikacji i walidacja uploadu
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
 static/js/              wspólne i modułowe skrypty przeglądarki
 static/img/             logo i favicon
+static/vendor/flaticon/ lokalny podzbiór Flaticon UIcons i licencja
 media/                  pliki obsługiwane przez standardowy MEDIA_ROOT
 private_documents/      prywatne pliki modułu Dysku
 files/                  katalog lokalny; brak aktywnej aplikacji Django o tej nazwie

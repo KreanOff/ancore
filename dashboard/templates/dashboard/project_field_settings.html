@@ -12,7 +12,7 @@
     <header class="dashboard-header">
         <nav class="dashboard-breadcrumb" aria-label="Ścieżka">
             <span class="dashboard-breadcrumb-icon" aria-hidden="true">
-                <i data-lucide="settings" aria-hidden="true"></i>
+                <i data-icon="settings" aria-hidden="true"></i>
             </span>
             <a href="{% url 'settings' %}">Ustawienia</a>
             <span class="dashboard-breadcrumb-separator" aria-hidden="true">/</span>
@@ -54,10 +54,10 @@
                             <input type="color" name="color" value="{{ option.color }}" class="tasks-project-option-color" aria-label="Kolor wartości {{ option.label }}" data-project-option-color>
                         </label>
                         <button type="submit" name="action" value="update_project_field_option" class="tasks-project-field-option-action" title="Zapisz" aria-label="Zapisz wartość {{ option.label }}">
-                            <i data-lucide="check" aria-hidden="true"></i>
+                            <i data-icon="check" aria-hidden="true"></i>
                         </button>
                         <button type="submit" name="action" value="delete_project_field_option" class="tasks-project-field-option-action tasks-project-field-option-action--delete" title="{% if option.in_use %}Wartość jest używana przez projekt{% else %}Usuń{% endif %}" aria-label="Usuń wartość {{ option.label }}" {% if option.in_use %}disabled{% endif %}>
-                            <i data-lucide="trash-2" aria-hidden="true"></i>
+                            <i data-icon="trash-2" aria-hidden="true"></i>
                         </button>
                     </form>
                     {% empty %}
@@ -77,7 +77,7 @@
                         <input type="color" name="color" value="#DFEFFF" class="tasks-project-option-color" aria-label="Kolor nowej wartości" data-project-option-color>
                     </label>
                     <button type="submit" class="tasks-project-field-option-add" aria-label="Dodaj wartość do pola {{ group.label }}">
-                        <i data-lucide="plus" aria-hidden="true"></i>
+                        <i data-icon="plus" aria-hidden="true"></i>
                         <span>Dodaj</span>
                     </button>
                 </form>

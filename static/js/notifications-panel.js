@@ -16,17 +16,13 @@
 
     function iconNode(iconName) {
         const icon = document.createElement('i');
-        icon.setAttribute('data-lucide', iconName);
+        icon.setAttribute('data-icon', iconName);
         icon.setAttribute('aria-hidden', 'true');
         return icon;
     }
 
     function renderIcons(scope) {
-        if (window.renderLucideIcons) {
-            window.renderLucideIcons(scope);
-        } else if (window.lucide?.createIcons) {
-            window.lucide.createIcons({ attrs: { 'aria-hidden': 'true' } });
-        }
+        window.AncoreIcons?.render(scope);
     }
 
     function stateElement(kind, icon, title, copy) {

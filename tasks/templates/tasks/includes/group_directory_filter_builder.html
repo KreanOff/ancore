@@ -1,46 +1,46 @@
 <div class="tasks-project-filter-builder" data-project-filter-builder>
     <button type="button" class="tasks-filter-button tasks-project-query-trigger{% if group_has_active_filters %} is-active{% endif %}" aria-haspopup="dialog" aria-expanded="false" data-project-filter-builder-toggle>
-        <i data-lucide="list-filter" aria-hidden="true"></i>
+        <i data-icon="list-filter" aria-hidden="true"></i>
         <span>Filtruj</span>
         {% if group_active_filter_count %}<span class="tasks-project-query-count" aria-label="Aktywne filtry: {{ group_active_filter_count }}">{{ group_active_filter_count }}</span>{% endif %}
-        <i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+        <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
     </button>
     <div class="tasks-project-query-panel tasks-project-filter-panel" role="dialog" aria-label="Filtrowanie grup" data-project-filter-builder-panel>
         <section data-project-filter-fields-view>
             <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main">
-                <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="list-filter"></i></span>
+                <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-icon="list-filter"></i></span>
                 <span><strong>Filtry grup</strong></span>
                 {% if group_has_active_filters %}<button type="button" class="tasks-project-query-panel__clear" data-project-filters-clear>Wyczyść</button>{% endif %}
             </header>
             <label class="tasks-project-query-search">
-                <i data-lucide="search" aria-hidden="true"></i>
+                <i data-icon="search" aria-hidden="true"></i>
                 <input type="search" placeholder="Szukaj pola" autocomplete="off" data-project-filter-field-search>
             </label>
             <div class="tasks-project-filter-field-list">
                 <button type="button" data-project-filter-field="status" data-project-filter-field-search-text="status stan">
-                    <span class="tasks-project-query-field-icon"><i data-lucide="circle-dot" aria-hidden="true"></i></span>
+                    <span class="tasks-project-query-field-icon"><i data-icon="circle-dot" aria-hidden="true"></i></span>
                     <span><strong>Status</strong>{% for option in group_filter_options.statuses %}{% if option.value == group_status_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
                 <button type="button" data-project-filter-field="kind" data-project-filter-field-search-text="typ rodzaj">
-                    <span class="tasks-project-query-field-icon"><i data-lucide="layers-3" aria-hidden="true"></i></span>
+                    <span class="tasks-project-query-field-icon"><i data-icon="layers-3" aria-hidden="true"></i></span>
                     <span><strong>Typ</strong>{% for option in group_filter_options.kinds %}{% if option.value == group_kind_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
                 <button type="button" data-project-filter-field="group_project" data-project-filter-field-search-text="projekt">
-                    <span class="tasks-project-query-field-icon"><i data-lucide="folder-kanban" aria-hidden="true"></i></span>
+                    <span class="tasks-project-query-field-icon"><i data-icon="folder-kanban" aria-hidden="true"></i></span>
                     <span><strong>Projekt</strong>{% for option in group_filter_options.projects %}{% if option.value == group_project_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
                 <button type="button" data-project-filter-field="owner" data-project-filter-field-search-text="odpowiedzialny osoba właściciel">
-                    <span class="tasks-project-query-field-icon"><i data-lucide="circle-user-round" aria-hidden="true"></i></span>
+                    <span class="tasks-project-query-field-icon"><i data-icon="circle-user-round" aria-hidden="true"></i></span>
                     <span><strong>Odpowiedzialny</strong>{% for option in group_filter_options.owners %}{% if option.value == group_owner_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
                 <button type="button" data-project-filter-field="priority" data-project-filter-field-search-text="priorytet">
-                    <span class="tasks-project-query-field-icon"><i data-lucide="chart-no-axes-column-increasing" aria-hidden="true"></i></span>
+                    <span class="tasks-project-query-field-icon"><i data-icon="chart-no-axes-column-increasing" aria-hidden="true"></i></span>
                     <span><strong>Priorytet</strong>{% for option in project_priority_options %}{% if option.value == group_priority_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
-                    <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
             </div>
             <span class="tasks-project-filter-menu-empty" data-project-filter-field-empty hidden>Nie znaleziono pola</span>
@@ -56,8 +56,8 @@
 
 {% for filter in group_active_filters %}
 <button type="button" class="tasks-project-active-filter" title="Usuń filtr {{ filter.label }}" data-project-filter-remove="{{ filter.param }}">
-    <i data-lucide="{{ filter.icon }}" aria-hidden="true"></i>
+    <i data-icon="{{ filter.icon }}" aria-hidden="true"></i>
     <span><strong>{{ filter.label }}:</strong> {{ filter.value_label }}</span>
-    <i data-lucide="x" aria-hidden="true"></i>
+    <i data-icon="x" aria-hidden="true"></i>
 </button>
 {% endfor %}

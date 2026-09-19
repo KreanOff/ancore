@@ -26,7 +26,7 @@
                 </div>
                 <div class="tasks-titlebar-search tasks-search-actions" role="search">
                     <label class="tasks-search-field" for="workplaces-search-input">
-                        <i data-lucide="search" aria-hidden="true"></i>
+                        <i data-icon="search" aria-hidden="true"></i>
                         <input id="workplaces-search-input" type="search" placeholder="Szukaj" autocomplete="off" data-workplaces-search>
                     </label>
                 </div>
@@ -38,7 +38,7 @@
                 <div class="tasks-filterbar-right">
                     <div class="workplaces-create-actions workplaces-create-actions--filterbar">
                         <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--project-add workplaces-create-button" aria-haspopup="dialog" aria-expanded="{% if workplace_create_modal_open %}true{% else %}false{% endif %}" aria-controls="workplace-create-modal" data-workplace-create-open>
-                            <span aria-hidden="true"><i data-lucide="plus"></i></span>
+                            <span aria-hidden="true"><i data-icon="plus"></i></span>
                             <span>Dodaj</span>
                         </button>
                     </div>
@@ -54,19 +54,19 @@
                                     <input type="checkbox" id="workplaces-select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie miejsca pracy" title="Zaznacz wszystkie miejsca pracy" data-workplaces-select-all>
                                 </span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" aria-label="Przełącz miejsce pracy" title="Przełącz miejsce pracy" data-column-label="Przełącz">
-                                    <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+                                    <i data-icon="arrow-up-right" aria-hidden="true"></i>
                                     <span class="u-sr-only">Przełącz</span>
                                 </span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="info" aria-label="Ustawienia miejsca pracy" title="Ustawienia miejsca pracy" data-column-label="Ustawienia">
-                                    <i data-lucide="settings" aria-hidden="true"></i>
+                                    <i data-icon="settings" aria-hidden="true"></i>
                                     <span class="u-sr-only">Ustawienia</span>
                                 </span>
-                                <span class="workplaces-directory__cell tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name">Nazwa<i data-lucide="briefcase-business" aria-hidden="true"></i></span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code">Kod miejsca pracy<i data-lucide="hash" aria-hidden="true"></i></span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">Opis<i data-lucide="align-left" aria-hidden="true"></i></span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members">Członkowie<i data-lucide="users" aria-hidden="true"></i></span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context">Kontekst<i data-lucide="panels-top-left" aria-hidden="true"></i></span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="status">Status<i data-lucide="circle-dot" aria-hidden="true"></i></span>
+                                <span class="workplaces-directory__cell tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name">Nazwa<i data-icon="briefcase-business" aria-hidden="true"></i></span>
+                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code">Kod miejsca pracy<i data-icon="hash" aria-hidden="true"></i></span>
+                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">Opis<i data-icon="align-left" aria-hidden="true"></i></span>
+                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members">Członkowie<i data-icon="users" aria-hidden="true"></i></span>
+                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context">Kontekst<i data-icon="panels-top-left" aria-hidden="true"></i></span>
+                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="status">Status<i data-icon="circle-dot" aria-hidden="true"></i></span>
                             </div>
 
                             <div class="workplaces-directory__body tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista miejsc pracy">
@@ -77,20 +77,20 @@
                                     <div class="workplaces-directory__cell workplace-row__open tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                                         {% if active_workplace and workplace.id == active_workplace.id %}
                                         <button type="button" class="tasks-project-sheet__edit-button workplace-table-icon-button workplace-table-icon-button--current" title="Bieżący workspace: {{ workplace.name }}" aria-label="{{ workplace.name }} — bieżący workspace" data-workplace-current-action disabled>
-                                            <i data-lucide="check" aria-hidden="true"></i>
+                                            <i data-icon="check" aria-hidden="true"></i>
                                         </button>
                                         {% else %}
                                         <form method="post" action="{% url 'workplaces:switch' workplace.id %}">
                                             {% csrf_token %}
                                             <button type="submit" class="tasks-project-sheet__edit-button workplace-table-icon-button" title="Przełącz na {{ workplace.name }}" aria-label="Przełącz na {{ workplace.name }}" data-workplace-switch-action>
-                                                <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+                                                <i data-icon="arrow-up-right" aria-hidden="true"></i>
                                             </button>
                                         </form>
                                         {% endif %}
                                     </div>
                                     <div class="workplaces-directory__cell workplace-row__settings tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="info" role="cell">
                                         <button type="button" class="tasks-project-sheet__edit-button workplace-settings__toggle" title="Edytuj {{ workplace.name }}" aria-label="Edytuj {{ workplace.name }}" aria-haspopup="dialog" aria-expanded="false" aria-controls="workplace-edit-modal-{{ workplace.id }}" data-workplace-edit-open="workplace-edit-modal-{{ workplace.id }}">
-                                            <i data-lucide="settings" aria-hidden="true"></i>
+                                            <i data-icon="settings" aria-hidden="true"></i>
                                         </button>
                                     </div>
                                     {% workplace_avatar workplace as workplace_logo %}
@@ -99,7 +99,7 @@
                                             {% if workplace_logo.photo_url %}
                                             <img src="{{ workplace_logo.photo_url }}" alt="">
                                             {% else %}
-                                            <i class="profile-avatar-icon" data-lucide="briefcase" aria-hidden="true" focusable="false"></i>
+                                            <i class="profile-avatar-icon" data-icon="briefcase" aria-hidden="true" focusable="false"></i>
                                             {% endif %}
                                         </span>
                                         <span class="tasks-row-title-main">
@@ -112,7 +112,7 @@
                                     <span class="workplaces-directory__cell workplace-row__code tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code" role="cell">{{ workplace.code|default:"—" }}</span>
                                     <span class="workplaces-directory__cell workplace-row__description tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="cell">{{ workplace.description|default:"—" }}</span>
                                     <span class="workplaces-directory__cell workplace-row__members tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" role="cell">
-                                        <i data-lucide="users" aria-hidden="true"></i>
+                                        <i data-icon="users" aria-hidden="true"></i>
                                         {{ member_count }} {% if member_count == 1 %}członek{% else %}członków{% endif %}
                                     </span>
                                     <span class="workplaces-directory__cell workplace-row__context tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context" role="cell">{% if active_workplace and workplace.id == active_workplace.id %}Bieżące miejsce pracy{% else %}Dostępne miejsce pracy{% endif %}</span>
@@ -153,11 +153,11 @@
                     <span class="tasks-project-pagination__summary" aria-live="polite" data-workplaces-pagination-summary></span>
                     <nav class="tasks-project-pagination__pages" aria-label="Strony miejsc pracy">
                         <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie miejsca pracy" data-workplaces-page-prev disabled>
-                            <i data-lucide="chevron-left" aria-hidden="true"></i>
+                            <i data-icon="chevron-left" aria-hidden="true"></i>
                         </button>
                         <span class="tasks-project-pagination__numbers" data-workplaces-pagination-pages></span>
                         <button type="button" class="tasks-project-pagination__button" aria-label="Następne miejsca pracy" data-workplaces-page-next disabled>
-                            <i data-lucide="chevron-right" aria-hidden="true"></i>
+                            <i data-icon="chevron-right" aria-hidden="true"></i>
                         </button>
                     </nav>
                 </div>
@@ -172,7 +172,7 @@
                 <header class="tasks-modal__header tasks-project-create-modal__header tasks-issue-modal__header workplace-create-modal__header">
                     <div class="tasks-issue-modal__crumbs">
                         <button type="button" class="tasks-issue-close" data-close-workplace-create-modal aria-label="Zamknij" title="Zamknij">
-                            <i data-lucide="arrow-left" aria-hidden="true"></i>
+                            <i data-icon="arrow-left" aria-hidden="true"></i>
                         </button>
                         <span class="tasks-issue-divider" aria-hidden="true"></span>
                         <strong id="workplace-create-modal-title">Nowe miejsce pracy</strong>
@@ -234,7 +234,7 @@
                 <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header workplace-edit-modal__header">
                     <div class="tasks-issue-modal__crumbs">
                         <button type="button" class="tasks-issue-close" data-close-workplace-modal aria-label="Zamknij" title="Zamknij">
-                            <i data-lucide="arrow-left" aria-hidden="true"></i>
+                            <i data-icon="arrow-left" aria-hidden="true"></i>
                         </button>
                         <span class="tasks-issue-divider" aria-hidden="true"></span>
                         <strong class="tasks-project-edit-modal__title-chip workplace-edit-modal__title-chip" id="workplace-edit-modal-title-{{ workplace.id }}">

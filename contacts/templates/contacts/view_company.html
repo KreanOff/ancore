@@ -23,7 +23,7 @@
                 {% else %}
                 <a href="{% url 'contacts:companies' %}" class="tasks-issue-close" aria-label="Wróć do firm" title="Wróć do firm">
                 {% endif %}
-                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <i data-icon="arrow-left" aria-hidden="true"></i>
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
                 <span class="tasks-issue-crumb"><span>Firmy</span></span>
@@ -45,12 +45,12 @@
                             aria-expanded="false"
                             aria-controls="company-actions-menu-{{ company.pk }}"
                             data-contact-actions-toggle>
-                        <i data-lucide="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
+                        <i data-icon="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
                     </button>
                     <div class="contacts-actions-menu__panel" id="company-actions-menu-{{ company.pk }}" role="menu" aria-label="Opcje firmy">
                         {% if can_edit_company %}
                         <a href="{% url 'contacts:edit-company' company.pk %}" class="contacts-actions-menu__item" role="menuitem">
-                            <i data-lucide="pencil" aria-hidden="true"></i>
+                            <i data-icon="pencil" aria-hidden="true"></i>
                             Edytuj
                         </a>
                         {% endif %}
@@ -109,7 +109,7 @@
                     <section class="contacts-note-panel" aria-label="Notatki">
                         <div class="tasks-issue-activity-head">
                             <h2>
-                                <i data-lucide="file-text" aria-hidden="true"></i>
+                                <i data-icon="file-text" aria-hidden="true"></i>
                                 Notatki
                             </h2>
                         </div>
@@ -280,7 +280,7 @@
                         <div class="tasks-issue-modal__crumbs">
                             <span class="tasks-project-chip contacts-modal-chip">
                                 <span class="contacts-modal-chip__icon" aria-hidden="true">
-                                    <i data-lucide="building-2" aria-hidden="true"></i>
+                                    <i data-icon="building-2" aria-hidden="true"></i>
                                 </span>
                                 Firmy
                             </span>
@@ -288,7 +288,7 @@
                             <strong id="company-edit-title">Edytuj firmę</strong>
                         </div>
                         <a href="{% url 'contacts:view-company' company.pk %}" class="tasks-modal__close" aria-label="Zamknij edycję firmy" title="Zamknij">
-                            <i data-lucide="x" aria-hidden="true"></i>
+                            <i data-icon="x" aria-hidden="true"></i>
                         </a>
                     </header>
 

@@ -13,12 +13,12 @@
             {% if workplace_logo.photo_url %}
             <img src="{{ workplace_logo.photo_url }}" alt="">
             {% else %}
-            <i class="profile-avatar-icon" data-lucide="briefcase" aria-hidden="true" focusable="false"></i>
+            <i class="profile-avatar-icon" data-icon="briefcase" aria-hidden="true" focusable="false"></i>
             {% endif %}
         </span>
     </button>
     <template data-profile-photo-fallback>
-        <i class="profile-avatar-icon" data-lucide="briefcase" aria-hidden="true" focusable="false"></i>
+        <i class="profile-avatar-icon" data-icon="briefcase" aria-hidden="true" focusable="false"></i>
     </template>
     <button type="button" class="profile-photo-button" title="{{ photo_button_label }} logo" data-profile-photo-open>{{ photo_button_label }}</button>
 

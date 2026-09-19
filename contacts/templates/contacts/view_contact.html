@@ -23,7 +23,7 @@
                 {% else %}
                 <a href="{% url 'contacts:contacts' %}" class="tasks-issue-close" aria-label="Wróć do kontaktów" title="Wróć do kontaktów">
                 {% endif %}
-                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <i data-icon="arrow-left" aria-hidden="true"></i>
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
                 <span class="tasks-issue-crumb">
@@ -47,12 +47,12 @@
                             aria-expanded="false"
                             aria-controls="contact-actions-menu-{{ contact.pk }}"
                             data-contact-actions-toggle>
-                        <i data-lucide="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
+                        <i data-icon="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
                     </button>
                     <div class="contacts-actions-menu__panel" id="contact-actions-menu-{{ contact.pk }}" role="menu" aria-label="Opcje kontaktu">
                         {% if can_edit_contact %}
                         <a href="{% url 'contacts:edit-contact' contact.pk %}" class="contacts-actions-menu__item" role="menuitem">
-                            <i data-lucide="pencil" aria-hidden="true"></i>
+                            <i data-icon="pencil" aria-hidden="true"></i>
                             Edytuj
                         </a>
                         {% endif %}
@@ -187,7 +187,7 @@
                     <section class="contacts-note-panel" aria-label="Notatki">
                         <div class="tasks-issue-activity-head">
                             <h2>
-                                <i data-lucide="file-text" aria-hidden="true"></i>
+                                <i data-icon="file-text" aria-hidden="true"></i>
                                 Notatki
                             </h2>
                         </div>
@@ -199,7 +199,7 @@
                     <section class="tasks-issue-activity contacts-activity">
                         <div class="tasks-issue-activity-head">
                             <h2>
-                                <i data-lucide="messages-square" aria-hidden="true"></i>
+                                <i data-icon="messages-square" aria-hidden="true"></i>
                                 Aktywność
                             </h2>
                         </div>
@@ -208,7 +208,7 @@
                             <textarea class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Dodaj notatkę z rozmowy..." form="activity-comment-form"></textarea>
                             <div class="tasks-issue-comment-tools">
                                 <button type="submit" class="tasks-issue-send" aria-label="Dodaj notatkę" title="Dodaj notatkę" form="activity-comment-form">
-                                    <i data-lucide="send" aria-hidden="true"></i>
+                                    <i data-icon="send" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -409,7 +409,7 @@
                         <div class="tasks-issue-modal__crumbs">
                             <span class="tasks-project-chip contacts-modal-chip">
                                 <span class="contacts-modal-chip__icon" aria-hidden="true">
-                                    <i data-lucide="users" aria-hidden="true"></i>
+                                    <i data-icon="users" aria-hidden="true"></i>
                                 </span>
                                 Kontakty
                             </span>
@@ -417,7 +417,7 @@
                             <strong id="contact-edit-title">Edytuj kontakt</strong>
                         </div>
                         <a href="{% url 'contacts:view-contact' contact.pk %}" class="tasks-modal__close" aria-label="Zamknij edycję kontaktu" title="Zamknij">
-                        <i data-lucide="x" aria-hidden="true"></i>
+                        <i data-icon="x" aria-hidden="true"></i>
                         </a>
                     </header>
 

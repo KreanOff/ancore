@@ -19,10 +19,10 @@
         <div class="settings-layout">
             <aside class="settings-navigation" aria-label="Kategorie ustawień">
                 <nav class="tasks-rail-nav" data-settings-navigation>
-                    <a href="{% url 'settings' %}" class="tasks-rail-link settings-category is-active" data-settings-category="all" aria-current="true"><span class="tasks-rail-icon" aria-hidden="true"><i data-lucide="settings"></i></span>Ogólne</a>
-                    <a href="#account" class="tasks-rail-link settings-category" data-settings-category="account"><span class="tasks-rail-icon" aria-hidden="true"><i data-lucide="user-round"></i></span>Konto i dostęp</a>
-                    <a href="#workspace" class="tasks-rail-link settings-category" data-settings-category="workspace"><span class="tasks-rail-icon" aria-hidden="true"><i data-lucide="folder"></i></span>Workspace</a>
-                    <a href="#preferences" class="tasks-rail-link settings-category" data-settings-category="preferences"><span class="tasks-rail-icon" aria-hidden="true"><i data-lucide="sliders-horizontal"></i></span>Preferencje</a>
+                    <a href="{% url 'settings' %}" class="tasks-rail-link settings-category is-active" data-settings-category="all" aria-current="true"><span class="tasks-rail-icon" aria-hidden="true"><i data-icon="settings"></i></span>Ogólne</a>
+                    <a href="#account" class="tasks-rail-link settings-category" data-settings-category="account"><span class="tasks-rail-icon" aria-hidden="true"><i data-icon="user-round"></i></span>Konto i dostęp</a>
+                    <a href="#workspace" class="tasks-rail-link settings-category" data-settings-category="workspace"><span class="tasks-rail-icon" aria-hidden="true"><i data-icon="folder"></i></span>Workspace</a>
+                    <a href="#preferences" class="tasks-rail-link settings-category" data-settings-category="preferences"><span class="tasks-rail-icon" aria-hidden="true"><i data-icon="sliders-horizontal"></i></span>Preferencje</a>
                 </nav>
             </aside>
             <div class="settings-content" aria-labelledby="settings-title">
@@ -44,9 +44,9 @@
                     <header class="settings-group-heading"><h2 id="settings-workspace-title">Workspace</h2><p>Organizacja pracy i ustawienia projektów.</p></header>
                     <div class="settings-rows">
                         <a href="{% url 'workplaces:workplaces' %}" class="settings-row settings-row--link" data-settings-row>
-                            <span class="settings-row-icon" aria-hidden="true"><i data-lucide="folder"></i></span>
+                            <span class="settings-row-icon" aria-hidden="true"><i data-icon="folder"></i></span>
                             <span class="settings-row-copy"><strong>Przestrzenie robocze</strong><span>{% if current_workplace %}{{ current_workplace.name }} · Bieżący Workspace{% else %}Utwórz lub wybierz przestrzeń do wspólnej pracy.{% endif %}</span></span>
-                            <i class="settings-row-arrow" data-lucide="chevron-right" aria-hidden="true"></i>
+                            <i class="settings-row-arrow" data-icon="chevron-right" aria-hidden="true"></i>
                         </a>
                         {% url 'project_field_settings' as project_fields_url %}
                         {% include 'dashboard/includes/settings_row.html' with href=project_fields_url icon='list-filter' title='Wartości pól projektu' description='Statusy, etapy, kondycja i kolory terminów.' only %}
@@ -60,7 +60,7 @@
                     <header class="settings-group-heading"><h2 id="settings-preferences-title">Preferencje</h2><p>Dopasuj Ancore do swojego sposobu pracy.</p></header>
                     <div class="settings-rows">
                         <div class="settings-row" id="appearance" data-settings-row>
-                            <span class="settings-row-icon" aria-hidden="true"><i data-lucide="panel-left"></i></span>
+                            <span class="settings-row-icon" aria-hidden="true"><i data-icon="panel-left"></i></span>
                             <div class="settings-row-copy">
                                 <label for="settings-sidebar-collapsed">Zwinięte menu boczne</label>
                                 <span id="settings-sidebar-description">Więcej miejsca na Twoją pracę. Ustawienie dla tej przeglądarki.</span>
@@ -70,19 +70,19 @@
                             <input id="settings-sidebar-collapsed" class="settings-switch" type="checkbox" role="switch" aria-describedby="settings-sidebar-description" data-settings-sidebar-switch disabled>
                         </div>
                         <a href="{% url 'notifications' %}" class="settings-row settings-row--link" id="notifications" data-settings-row data-settings-notifications>
-                            <span class="settings-row-icon" aria-hidden="true"><i data-lucide="bell"></i></span>
+                            <span class="settings-row-icon" aria-hidden="true"><i data-icon="bell"></i></span>
                             <span class="settings-row-copy"><strong>Powiadomienia</strong><span>Sprawdź ostatnią aktywność w swojej przestrzeni.</span></span>
-                            <i class="settings-row-arrow" data-lucide="chevron-right" aria-hidden="true"></i>
+                            <i class="settings-row-arrow" data-icon="chevron-right" aria-hidden="true"></i>
                         </a>
                         <div class="settings-row" id="region" data-settings-row>
-                            <span class="settings-row-icon" aria-hidden="true"><i data-lucide="globe"></i></span>
+                            <span class="settings-row-icon" aria-hidden="true"><i data-icon="globe"></i></span>
                             <span class="settings-row-copy"><strong>Język i region</strong><span>Polski · {{ settings_timezone }}</span></span>
                         </div>
                     </div>
                 </section>
                 <section class="settings-session" id="security" data-settings-group="account" aria-label="Sesja i bezpieczeństwo">
                     <div class="settings-row" data-settings-row>
-                        <span class="settings-row-icon" aria-hidden="true"><i data-lucide="shield-check"></i></span>
+                        <span class="settings-row-icon" aria-hidden="true"><i data-icon="shield-check"></i></span>
                         <div class="settings-row-copy"><strong>Sesja</strong><span>Zalogowano jako {{ request.user.email }}</span></div>
                         <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="settings-button">Wyloguj się</button></form>
                     </div>
@@ -90,6 +90,7 @@
                 <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-settings-status></span>
             </div>
         </div>
+        {% include 'core/includes/icon_credit.html' %}
     </div>
 </div>
 {% endblock %}

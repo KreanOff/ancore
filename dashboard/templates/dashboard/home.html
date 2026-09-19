@@ -12,7 +12,7 @@
     <header class="tasks-topbar tasks-topbar--project-directory">
         <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Dashboard</h1></div>
         <div class="tasks-titlebar-actions">
-            <a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" href="{{ dashboard_tasks_url }}"><i data-lucide="list-checks" aria-hidden="true"></i><span>Otwórz zadania</span></a>
+            <a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" href="{{ dashboard_tasks_url }}"><i data-icon="list-checks" aria-hidden="true"></i><span>Otwórz zadania</span></a>
         </div>
     </header>
     <div class="dashboard-main">
@@ -21,20 +21,20 @@
                 <h2 id="dashboard-greeting">Dzień dobry{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h2>
                 <span>Oto przegląd pracy w przestrzeni <span class="dashboard-workplace-name">{{ current_workplace.name }}</span>.</span>
             </div>
-            <time class="dashboard-overview-date" datetime="{{ dashboard_today|date:'Y-m-d' }}"><i data-lucide="calendar-days" aria-hidden="true"></i>{{ dashboard_today|date:'l, j E Y' }}</time>
+            <time class="dashboard-overview-date" datetime="{{ dashboard_today|date:'Y-m-d' }}"><i data-icon="calendar-days" aria-hidden="true"></i>{{ dashboard_today|date:'l, j E Y' }}</time>
         </section>
 
         <section class="dashboard-stat-grid" aria-label="Podsumowanie zadań i kart Kanban">
-            <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-lucide="circle-dashed" aria-hidden="true"></i></div><div><p>Otwarte</p><strong>{{ dashboard_totals.open }}</strong><small>Zadania i karty Kanban</small></div></article>
-            <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-lucide="flag" aria-hidden="true"></i></div><div><p>Wysoki priorytet</p><strong>{{ dashboard_totals.priority }}</strong><small>Otwarte: wysoki i pilny</small></div></article>
-            <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-lucide="clock-alert" aria-hidden="true"></i></div><div><p>Po terminie</p><strong>{{ dashboard_totals.overdue }}</strong><small>Otwarte zadania</small></div></article>
-            <article class="dashboard-stat dashboard-overview-completed"><div class="dashboard-stat-icon"><i data-lucide="circle-check" aria-hidden="true"></i></div><div><p>Zamknięte</p><strong>{{ dashboard_totals.closed_week }}</strong><small>Ostatnie 7 dni</small></div></article>
+            <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-icon="circle-dashed" aria-hidden="true"></i></div><div><p>Otwarte</p><strong>{{ dashboard_totals.open }}</strong><small>Zadania i karty Kanban</small></div></article>
+            <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-icon="flag" aria-hidden="true"></i></div><div><p>Wysoki priorytet</p><strong>{{ dashboard_totals.priority }}</strong><small>Otwarte: wysoki i pilny</small></div></article>
+            <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-icon="clock-alert" aria-hidden="true"></i></div><div><p>Po terminie</p><strong>{{ dashboard_totals.overdue }}</strong><small>Otwarte zadania</small></div></article>
+            <article class="dashboard-stat dashboard-overview-completed"><div class="dashboard-stat-icon"><i data-icon="circle-check" aria-hidden="true"></i></div><div><p>Zamknięte</p><strong>{{ dashboard_totals.closed_week }}</strong><small>Ostatnie 7 dni</small></div></article>
         </section>
 
         <div class="dashboard-overview-grid">
             <div class="dashboard-overview-column">
             <section class="dashboard-panel dashboard-overview-focus" aria-labelledby="dashboard-focus-title">
-                <header class="dashboard-panel-header"><h2 id="dashboard-focus-title">Twoja praca</h2><a class="dashboard-panel-link" href="{% if dashboard_focus == 'kanban' %}{{ dashboard_kanban_url }}{% else %}{{ dashboard_tasks_url }}{% endif %}">Pełna lista<i data-lucide="arrow-up-right" aria-hidden="true"></i></a></header>
+                <header class="dashboard-panel-header"><h2 id="dashboard-focus-title">Twoja praca</h2><a class="dashboard-panel-link" href="{% if dashboard_focus == 'kanban' %}{{ dashboard_kanban_url }}{% else %}{{ dashboard_tasks_url }}{% endif %}">Pełna lista<i data-icon="arrow-up-right" aria-hidden="true"></i></a></header>
                 <nav class="dashboard-overview-tabs" aria-label="Widok pracy">
                     <a href="{% url 'home' %}?focus=deadlines" aria-label="Terminy zadań"{% if dashboard_focus == 'deadlines' %} aria-current="page"{% endif %}>Terminy</a>
                     <a href="{% url 'home' %}?focus=priority" aria-label="Priorytety zadań"{% if dashboard_focus == 'priority' %} aria-current="page"{% endif %}>Priorytety</a>
@@ -52,22 +52,22 @@
                         <span class="tasks-row-priority priority-{{ item.object.priority }}" title="Priorytet: {{ item.object.get_priority_display }}" aria-label="Priorytet: {{ item.object.get_priority_display }}">{% include 'core/includes/priority_icon.html' with priority=item.object.priority only %}</span>
                     </a>
                     {% empty %}
-                    <div class="dashboard-overview-empty"><i data-lucide="{% if dashboard_focus == 'kanban' %}kanban{% else %}circle-check{% endif %}" aria-hidden="true"></i><h3>{% if dashboard_focus == 'deadlines' %}Brak nadchodzących terminów{% elif dashboard_focus == 'priority' %}Brak pilnych zadań{% else %}Brak otwartych kart{% endif %}</h3><p>{% if dashboard_focus == 'deadlines' %}Nie masz zaległych zadań ani terminów na najbliższe 7 dni.{% elif dashboard_focus == 'priority' %}Tutaj zobaczysz zadania z wysokim i pilnym priorytetem.{% else %}Dodaj kartę na swojej tablicy, aby pojawiła się w tym miejscu.{% endif %}</p><a class="dashboard-panel-link" href="{% if dashboard_focus == 'kanban' %}{{ dashboard_kanban_url }}{% else %}{{ dashboard_tasks_url }}{% endif %}">{% if dashboard_focus == 'kanban' %}Otwórz Kanban{% else %}Otwórz zadania{% endif %}<i data-lucide="arrow-right" aria-hidden="true"></i></a></div>
+                    <div class="dashboard-overview-empty"><i data-icon="{% if dashboard_focus == 'kanban' %}kanban{% else %}circle-check{% endif %}" aria-hidden="true"></i><h3>{% if dashboard_focus == 'deadlines' %}Brak nadchodzących terminów{% elif dashboard_focus == 'priority' %}Brak pilnych zadań{% else %}Brak otwartych kart{% endif %}</h3><p>{% if dashboard_focus == 'deadlines' %}Nie masz zaległych zadań ani terminów na najbliższe 7 dni.{% elif dashboard_focus == 'priority' %}Tutaj zobaczysz zadania z wysokim i pilnym priorytetem.{% else %}Dodaj kartę na swojej tablicy, aby pojawiła się w tym miejscu.{% endif %}</p><a class="dashboard-panel-link" href="{% if dashboard_focus == 'kanban' %}{{ dashboard_kanban_url }}{% else %}{{ dashboard_tasks_url }}{% endif %}">{% if dashboard_focus == 'kanban' %}Otwórz Kanban{% else %}Otwórz zadania{% endif %}<i data-icon="arrow-right" aria-hidden="true"></i></a></div>
                     {% endfor %}
                 </div>
                 {% if dashboard_items %}<div class="dashboard-overview-list-footer">Wyświetlono {{ dashboard_items|length }} z {{ dashboard_item_count }} pozycji</div>{% endif %}
             </section>
 
             <section class="dashboard-panel" aria-labelledby="dashboard-projects-title">
-                <header class="dashboard-panel-header"><h2 id="dashboard-projects-title">Projekty <span class="dashboard-overview-count">{{ dashboard_project_count }}</span></h2><a class="dashboard-panel-link" href="{{ dashboard_projects_url }}">Wszystkie<i data-lucide="arrow-up-right" aria-hidden="true"></i></a></header>
+                <header class="dashboard-panel-header"><h2 id="dashboard-projects-title">Projekty <span class="dashboard-overview-count">{{ dashboard_project_count }}</span></h2><a class="dashboard-panel-link" href="{{ dashboard_projects_url }}">Wszystkie<i data-icon="arrow-up-right" aria-hidden="true"></i></a></header>
                 <p class="dashboard-overview-caption">Projekty w module Zadania, które nie są zakończone ani anulowane.</p>
-                {% for item in dashboard_projects %}<a class="dashboard-overview-project" href="{{ item.url }}"><div class="dashboard-overview-project-copy"><span title="{{ item.object.name }}">{{ item.object.name }}</span><small>{% if item.object.due_at %}Termin: {{ item.object.due_at|date:'j E Y' }}{% else %}Bez terminu{% endif %}</small></div><div class="dashboard-overview-project-progress"><span>{{ item.object.closed_count }} / {{ item.object.item_count }} zamkniętych</span><progress max="100" value="{{ item.percent }}" aria-label="Postęp projektu {{ item.object.name }}">{{ item.percent }}%</progress></div><i data-lucide="chevron-right" aria-hidden="true"></i></a>{% empty %}<div class="dashboard-overview-empty"><i data-lucide="folders" aria-hidden="true"></i><h3>Miejsce na kolejny projekt</h3><p>Utwórz projekt i zbierz zadania w jednym miejscu.</p><a class="dashboard-panel-link" href="{{ dashboard_projects_url }}">Otwórz projekty<i data-lucide="arrow-right" aria-hidden="true"></i></a></div>{% endfor %}
+                {% for item in dashboard_projects %}<a class="dashboard-overview-project" href="{{ item.url }}"><div class="dashboard-overview-project-copy"><span title="{{ item.object.name }}">{{ item.object.name }}</span><small>{% if item.object.due_at %}Termin: {{ item.object.due_at|date:'j E Y' }}{% else %}Bez terminu{% endif %}</small></div><div class="dashboard-overview-project-progress"><span>{{ item.object.closed_count }} / {{ item.object.item_count }} zamkniętych</span><progress max="100" value="{{ item.percent }}" aria-label="Postęp projektu {{ item.object.name }}">{{ item.percent }}%</progress></div><i data-icon="chevron-right" aria-hidden="true"></i></a>{% empty %}<div class="dashboard-overview-empty"><i data-icon="folders" aria-hidden="true"></i><h3>Miejsce na kolejny projekt</h3><p>Utwórz projekt i zbierz zadania w jednym miejscu.</p><a class="dashboard-panel-link" href="{{ dashboard_projects_url }}">Otwórz projekty<i data-icon="arrow-right" aria-hidden="true"></i></a></div>{% endfor %}
             </section>
 
             </div>
             <div class="dashboard-overview-column">
             <section class="dashboard-panel" aria-labelledby="dashboard-progress-title">
-                <header class="dashboard-panel-header"><h2 id="dashboard-progress-title">Postęp pracy</h2><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i></header>
+                <header class="dashboard-panel-header"><h2 id="dashboard-progress-title">Postęp pracy</h2><i data-icon="chart-no-axes-combined" aria-hidden="true"></i></header>
                 <div class="dashboard-overview-progress">
                     <div class="dashboard-overview-progress-total"><strong>{{ dashboard_completed_percent }}<span>%</span></strong><span>Zamknięte: {{ dashboard_closed_count }} z {{ dashboard_totals.total }}</span></div>
                     <progress max="100" value="{{ dashboard_completed_percent }}" aria-label="Odsetek zamkniętych zadań i kart">{{ dashboard_completed_percent }}%</progress>
@@ -77,9 +77,9 @@
             </section>
 
             <section class="dashboard-panel" aria-labelledby="dashboard-agenda-title">
-                <header class="dashboard-panel-header"><h2 id="dashboard-agenda-title">Kalendarz <span class="dashboard-overview-count">{{ dashboard_event_count }}</span></h2><a class="dashboard-panel-link" href="{{ dashboard_calendar_url }}">Otwórz<i data-lucide="arrow-up-right" aria-hidden="true"></i></a></header>
+                <header class="dashboard-panel-header"><h2 id="dashboard-agenda-title">Kalendarz <span class="dashboard-overview-count">{{ dashboard_event_count }}</span></h2><a class="dashboard-panel-link" href="{{ dashboard_calendar_url }}">Otwórz<i data-icon="arrow-up-right" aria-hidden="true"></i></a></header>
                 <p class="dashboard-overview-caption">Trwające i nadchodzące · najbliższe 7 dni</p>
-                {% for item in dashboard_events %}<a class="dashboard-overview-event" href="{{ item.url }}"><time class="dashboard-overview-event-date" datetime="{{ item.object.start|date:'c' }}"><span>{{ item.object.start|date:'d' }}</span><small>{{ item.object.start|date:'b' }}</small></time><span class="dashboard-overview-event-copy"><span title="{{ item.object.title }}">{{ item.object.title }}</span><small>{% if item.object.all_day %}Cały dzień{% else %}{{ item.object.start|date:'H:i' }} – {% if item.object.start|date:'Y-m-d' != item.object.end|date:'Y-m-d' %}{{ item.object.end|date:'j E' }}, {% endif %}{{ item.object.end|date:'H:i' }}{% endif %}</small></span><i data-lucide="chevron-right" aria-hidden="true"></i></a>{% empty %}<div class="dashboard-overview-empty"><i data-lucide="calendar-days" aria-hidden="true"></i><h3>Spokojny kalendarz</h3><p>Nie masz wydarzeń na najbliższe 7 dni.</p><a class="dashboard-panel-link" href="{{ dashboard_calendar_url }}">Otwórz kalendarz<i data-lucide="arrow-right" aria-hidden="true"></i></a></div>{% endfor %}
+                {% for item in dashboard_events %}<a class="dashboard-overview-event" href="{{ item.url }}"><time class="dashboard-overview-event-date" datetime="{{ item.object.start|date:'c' }}"><span>{{ item.object.start|date:'d' }}</span><small>{{ item.object.start|date:'b' }}</small></time><span class="dashboard-overview-event-copy"><span title="{{ item.object.title }}">{{ item.object.title }}</span><small>{% if item.object.all_day %}Cały dzień{% else %}{{ item.object.start|date:'H:i' }} – {% if item.object.start|date:'Y-m-d' != item.object.end|date:'Y-m-d' %}{{ item.object.end|date:'j E' }}, {% endif %}{{ item.object.end|date:'H:i' }}{% endif %}</small></span><i data-icon="chevron-right" aria-hidden="true"></i></a>{% empty %}<div class="dashboard-overview-empty"><i data-icon="calendar-days" aria-hidden="true"></i><h3>Spokojny kalendarz</h3><p>Nie masz wydarzeń na najbliższe 7 dni.</p><a class="dashboard-panel-link" href="{{ dashboard_calendar_url }}">Otwórz kalendarz<i data-icon="arrow-right" aria-hidden="true"></i></a></div>{% endfor %}
             </section>
             </div>
         </div>

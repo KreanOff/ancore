@@ -57,8 +57,8 @@
             <div class="auth-password-control">
                 {{ form.password1 }}
                 <button type="button" class="auth-password-toggle" data-password-toggle aria-controls="{{ form.password1.id_for_label }}" aria-label="Pokaż hasło" aria-pressed="false">
-                    <svg class="auth-eye auth-eye--show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg>
-                    <svg class="auth-eye auth-eye--hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18"></path><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-2.2 3"></path><path d="M6.6 6.6C3.6 8.4 2 12 2 12s3.5 6 10 6c1 0 2-.2 2.8-.5"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>
+                    <i class="auth-eye auth-eye--show" data-icon="eye" aria-hidden="true"></i>
+                    <i class="auth-eye auth-eye--hide" data-icon="eye-off" aria-hidden="true"></i>
                 </button>
             </div>
             {% for error in form.password1.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
@@ -68,8 +68,8 @@
             <div class="auth-password-control">
                 {{ form.password2 }}
                 <button type="button" class="auth-password-toggle" data-password-toggle aria-controls="{{ form.password2.id_for_label }}" aria-label="Pokaż hasło" aria-pressed="false">
-                    <svg class="auth-eye auth-eye--show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg>
-                    <svg class="auth-eye auth-eye--hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18"></path><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-2.2 3"></path><path d="M6.6 6.6C3.6 8.4 2 12 2 12s3.5 6 10 6c1 0 2-.2 2.8-.5"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>
+                    <i class="auth-eye auth-eye--show" data-icon="eye" aria-hidden="true"></i>
+                    <i class="auth-eye auth-eye--hide" data-icon="eye-off" aria-hidden="true"></i>
                 </button>
             </div>
             {% for error in form.password2.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
@@ -79,13 +79,13 @@
     <button type="submit" class="auth-submit">
         <span class="auth-submit-label">Zacznij w Ancore</span>
         <span class="auth-submit-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+            <i data-icon="arrow-right" aria-hidden="true"></i>
         </span>
     </button>
 </form>
 
 <a href="{% url 'home' %}" class="auth-home-link">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"></path><path d="m11 18-6-6 6-6"></path></svg>
+    <i data-icon="arrow-left" aria-hidden="true"></i>
     <span>Wróć do strony głównej</span>
 </a>
 {% endblock %}

@@ -14,6 +14,12 @@
 Brak aktywnego fallbacku SQLite: blok SQLite w settings jest komentarzem.
 Nie zastępuj PostgreSQL przy testowaniu funkcji zależnych od jego indeksów/migracji.
 
+Ikony Flaticon UIcons są wersjonowane lokalnie w `static/vendor/flaticon`.
+Aplikacja nie wymaga połączenia z CDN ani instalowania npm do ich wyświetlania.
+Jedynie regenerowanie podzbioru ikon wymaga narzędzia `fonttools`; źródło,
+wersję, sumę kontrolną i komendę opisuje
+[instrukcja zestawu](../static/vendor/flaticon/README.md).
+
 ## 2. Konfiguracja środowiska
 
 `load_dotenv(BASE_DIR / '.env')` ładuje lokalną konfigurację. Poniżej są nazwy

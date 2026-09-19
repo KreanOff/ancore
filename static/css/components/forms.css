@@ -40,7 +40,7 @@ textarea.form-input {
 select.form-input,
 select.form-select {
     appearance: none;
-    background-image: var(--lucide-chevron-down-gray);
+    background-image: var(--icon-chevron-down-gray);
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     padding-right: 2rem;

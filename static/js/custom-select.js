@@ -93,11 +93,7 @@
     }
 
     function renderIcon(scope) {
-        if (window.AncoreIcons?.render) {
-            window.AncoreIcons.render(scope);
-        } else if (window.lucide?.createIcons) {
-            window.lucide.createIcons();
-        }
+        window.AncoreIcons?.render(scope);
     }
 
     function normalizedText(value) {
@@ -379,7 +375,7 @@
 
         const caret = document.createElement('i');
         caret.className = 'ancore-custom-select__caret';
-        caret.setAttribute('data-lucide', 'chevron-down');
+        caret.setAttribute('data-icon', 'chevron-down');
         caret.setAttribute('aria-hidden', 'true');
 
         button.append(label, caret);
@@ -394,7 +390,7 @@
             searchWrap.className = 'ancore-custom-select__search';
 
             const searchIcon = document.createElement('i');
-            searchIcon.setAttribute('data-lucide', 'search');
+            searchIcon.setAttribute('data-icon', 'search');
             searchIcon.setAttribute('aria-hidden', 'true');
 
             const search = document.createElement('input');

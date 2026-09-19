@@ -1,5 +1,5 @@
 (function (global) {
-    const LUCIDE_BY_TYPE = {
+    const ICON_BY_TYPE = {
         image: 'file-image',
         pdf: 'file-text',
         document: 'file-text',
@@ -15,8 +15,8 @@
         default: { color: '#616161', bg: '#f5f5f5' },
     };
 
-    const PAPERCLIP_SVG = '<i data-lucide="paperclip" aria-hidden="true"></i>';
-    const TRASH_SVG = '<i data-lucide="trash-2" aria-hidden="true"></i>';
+    const PAPERCLIP_SVG = '<i data-icon="paperclip" aria-hidden="true"></i>';
+    const TRASH_SVG = '<i data-icon="trash-2" aria-hidden="true"></i>';
 
     function normalizeExt(ext) {
         if (!ext) return '';
@@ -32,8 +32,8 @@
         return 'default';
     }
 
-    function getLucideName(typeClass) {
-        return LUCIDE_BY_TYPE[typeClass] || LUCIDE_BY_TYPE.default;
+    function getIconName(typeClass) {
+        return ICON_BY_TYPE[typeClass] || ICON_BY_TYPE.default;
     }
 
     function getTypeStyle(typeClass) {
@@ -42,8 +42,8 @@
 
     function iconHtml(typeClass, size) {
         size = size || 'md';
-        const icon = getLucideName(typeClass);
-        return `<div class="attachment-icon attachment-icon--${size} ${typeClass}"><i data-lucide="${icon}" aria-hidden="true"></i></div>`;
+        const icon = getIconName(typeClass);
+        return `<div class="attachment-icon attachment-icon--${size} ${typeClass}"><i data-icon="${icon}" aria-hidden="true"></i></div>`;
     }
 
     function iconHtmlByExtension(ext, size) {
@@ -54,10 +54,10 @@
         const wrap = document.createElement('div');
         wrap.className = `attachment-icon attachment-icon--${size || 'md'} ${typeClass}`;
         const icon = global.AncoreIcons
-            ? global.AncoreIcons.create(getLucideName(typeClass))
+            ? global.AncoreIcons.create(getIconName(typeClass))
             : document.createElement('i');
         if (!global.AncoreIcons) {
-            icon.setAttribute('data-lucide', getLucideName(typeClass));
+            icon.setAttribute('data-icon', getIconName(typeClass));
             icon.setAttribute('aria-hidden', 'true');
         }
         wrap.appendChild(icon);
@@ -72,9 +72,9 @@
     }
 
     global.AttachmentIcons = {
-        LUCIDE_BY_TYPE,
+        ICON_BY_TYPE,
         extensionToTypeClass,
-        getLucideName,
+        getIconName,
         getTypeStyle,
         iconHtml,
         iconHtmlByExtension,

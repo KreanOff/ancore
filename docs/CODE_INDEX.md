@@ -17,7 +17,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 8 | 0 | 8 | 19 |
+| [core](../core) | 8 | 0 | 9 | 19 |
 | [accounts](../accounts) | 14 | 4 | 8 | 23 |
 | [workplaces](../workplaces) | 15 | 7 | 4 | 44 |
 | [tasks](../tasks) | 14 | 46 | 24 | 168 |
@@ -872,6 +872,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/includes/attachment_icon.html](../core/templates/core/includes/attachment_icon.html)
 - [core/templates/core/includes/attachment_upload_icon.html](../core/templates/core/includes/attachment_upload_icon.html)
 - [core/templates/core/includes/bootstrap.html](../core/templates/core/includes/bootstrap.html)
+- [core/templates/core/includes/icon_credit.html](../core/templates/core/includes/icon_credit.html)
 - [core/templates/core/includes/photo_crop_dialog.html](../core/templates/core/includes/photo_crop_dialog.html)
 - [core/templates/core/includes/priority_icon.html](../core/templates/core/includes/priority_icon.html)
 - [core/templates/core/includes/settings_secondary_menu.html](../core/templates/core/includes/settings_secondary_menu.html)
@@ -1028,9 +1029,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/custom-select.js](../static/js/custom-select.js)
 - [static/js/documents.js](../static/js/documents.js)
 - [static/js/file-upload.js](../static/js/file-upload.js)
+- [static/js/flaticon-icons.js](../static/js/flaticon-icons.js)
 - [static/js/global-search.js](../static/js/global-search.js)
 - [static/js/layout.js](../static/js/layout.js)
-- [static/js/lucide-icons.js](../static/js/lucide-icons.js)
 - [static/js/modal.js](../static/js/modal.js)
 - [static/js/notifications-panel.js](../static/js/notifications-panel.js)
 - [static/js/notifications.js](../static/js/notifications.js)

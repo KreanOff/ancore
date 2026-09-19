@@ -1,18 +1,18 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260917-primary-button-tint-v2';
+@import 'base/variables.css?v=20260918-flaticon-v1';
 @import 'base/reset.css?v=20260902-app-scale-98';
 @import 'layout/sidebar.css?v=20260902-resizable-app-sidebar-v1';
 @import 'layout/main.css?v=20260903-lightweight-loader-v1';
 @import 'layout/responsive.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/cards.css?v=20260902-system-accent-v1';
 @import 'components/buttons.css?v=20260822-center-cancel-button-label';
-@import 'components/toolbar.css?v=20260903-gray-interactions-v1';
+@import 'components/toolbar.css?v=20260918-flaticon-v1';
 @import 'components/alerts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/forms.css?v=20260906-project-source-manual-v1';
+@import 'components/forms.css?v=20260918-flaticon-v1';
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20260917-primary-button-tint-v1';
+@import 'components/tasks.css?v=20260918-flaticon-v1';
 @import 'components/contacts.css?v=20260906-row-highlight-v2';
 @import 'components/notifications.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
@@ -65,7 +65,7 @@ body :where(
     dt,
     dd
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path):not([class*="avatar"])
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path):not([class*="avatar"])
 ) {
     color: var(--app-text-color, var(--text-primary)) !important;
 }
@@ -103,7 +103,7 @@ body :where(
     figcaption,
     caption
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path):not([class*="avatar"])
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path):not([class*="avatar"])
 ),
 body :where(
     [class*="muted"],
@@ -164,7 +164,7 @@ body :where(
     dt,
     dd
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path):not([class*="avatar"])
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path):not([class*="avatar"])
 ) {
     --app-text-color: var(--text-primary);
     color: var(--app-text-color) !important;
@@ -210,7 +210,7 @@ body :where(
     .profile-action-primary,
     .profile-avatar--blue
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path)
 ),
 body :where(
     .btn-primary,
@@ -280,7 +280,7 @@ body :where(
     dt,
     dd
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path)
 ) {
     --app-text-color: var(--text-inverse);
     color: var(--app-text-color) !important;
@@ -399,7 +399,7 @@ body :where(
     figcaption,
     caption
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path):not([class*="avatar"])
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path):not([class*="avatar"])
 ) {
     font-weight: 400 !important;
 }
@@ -424,7 +424,7 @@ body :where(
     .tasks-topbar-title-item > span,
     .tasks-topbar-title-separator
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path)
 ) {
     font-weight: 500 !important;
 }
@@ -434,7 +434,7 @@ body :where(
     span,
     .tasks-issue-crumb
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path)
 ) {
     font-size: 16px !important;
     font-weight: 500 !important;
@@ -448,7 +448,7 @@ body :where(
     .tasks-project-title > span,
     .tasks-empty-rail-note
 ):where(
-    :not([aria-hidden="true"]):not([data-lucide]):not(svg):not(path)
+    :not([aria-hidden="true"]):not([data-icon]):not(svg):not(path)
 ) {
     font-size: 13px !important;
     text-transform: none !important;
@@ -2253,4 +2253,20 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         margin: 1rem;
         max-height: calc(var(--app-dynamic-viewport-height) - 2rem);
     }
+}
+
+/* UIcons outlines are filled paths; keep existing SVG geometry and inherited color. */
+svg.ancore-icon {
+    fill: currentColor !important;
+    stroke: none !important;
+}
+
+.icon-credit {
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.auth-form-inner > .icon-credit {
+    margin-top: 1rem;
 }

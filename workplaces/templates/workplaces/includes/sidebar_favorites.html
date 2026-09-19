@@ -12,7 +12,7 @@
         {% for item in sidebar_favorites %}
         <div class="sidebar-favorite-row" data-sidebar-favorite-item="{{ item.key }}" draggable="true" aria-describedby="sidebar-favorites-instructions" title="Przeciągnij, aby zmienić kolejność">
             <a href="{{ item.url }}" class="nav-link sidebar-favorite-link{% if item.is_active %} active{% endif %}" aria-label="{{ item.label }}" title="{{ item.label }}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown">
-                <span class="sidebar-favorite-icon" aria-hidden="true"><i data-lucide="{{ item.icon }}"></i></span>
+                <span class="sidebar-favorite-icon" aria-hidden="true"><i data-icon="{{ item.icon }}"></i></span>
                 <span class="nav-label">{{ item.label }}</span>
             </a>
             <form method="post" action="{% url 'workplaces:toggle-sidebar-favorite' current_workplace.id %}" class="sidebar-favorite-form sidebar-favorite-remove-form u-sr-only" data-sidebar-favorite-form data-favorite-key="{{ item.key }}" data-favorite-label="{{ item.label }}" data-favorite-icon="{{ item.icon }}" data-favorite-url="{{ item.url }}" data-favorite-state="pinned">

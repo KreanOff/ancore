@@ -5,11 +5,11 @@
 
     <div class="tasks-create-menu" data-create-menu>
         <button type="button" class="tasks-new-button tasks-new-button-main" id="open-issue-modal" title="Nowa karta" aria-haspopup="dialog" aria-controls="issue-modal" {% if not can_create_issue %}disabled{% endif %}>
-            <span aria-hidden="true"><i data-lucide="plus"></i></span>
+            <span aria-hidden="true"><i data-icon="plus"></i></span>
             Nowa karta
         </button>
         <button type="button" class="tasks-new-button tasks-new-button-toggle" id="open-create-menu" aria-label="Otwórz menu tworzenia" aria-haspopup="menu" aria-expanded="false">
-            <i data-lucide="chevron-down" aria-hidden="true"></i>
+            <i data-icon="chevron-down" aria-hidden="true"></i>
         </button>
         <div class="tasks-create-menu__panel" id="create-menu-panel" role="menu" aria-labelledby="open-create-menu">
             <button type="button" role="menuitem" data-open-project>Utwórz przestrzeń roboczą</button>
@@ -22,19 +22,19 @@
         <div class="tasks-rail-nav-group">
             <a href="{% url 'kanban:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="folders" aria-hidden="true"></i>
+                    <i data-icon="folders" aria-hidden="true"></i>
                 </span>
                 Przestrzenie robocze
             </a>
             <a href="{% url 'kanban:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="kanban" aria-hidden="true"></i>
+                    <i data-icon="kanban" aria-hidden="true"></i>
                 </span>
                 Tablice
             </a>
             <a href="{% url 'kanban:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="tag" aria-hidden="true"></i>
+                    <i data-icon="tag" aria-hidden="true"></i>
                 </span>
                 Tagi
             </a>
@@ -44,11 +44,11 @@
     <div class="tasks-rail-section tasks-project-tree" data-project-tree>
         <div class="tasks-rail-section-title tasks-project-tree-heading">
             <button type="button" class="tasks-project-tree-toggle" aria-label="Zwiń sekcję Twoje projekty" aria-expanded="true" aria-controls="tasks-project-tree-content" data-project-tree-toggle data-project-tree-label="Twoje projekty">
-                <i data-lucide="chevron-down" aria-hidden="true"></i>
+                <i data-icon="chevron-down" aria-hidden="true"></i>
                 <span class="tasks-project-tree-label">Twoje projekty</span>
             </button>
             <button type="button" class="tasks-rail-add-button" aria-label="Nowy projekt" title="Nowy projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
-                <span aria-hidden="true"><i data-lucide="plus"></i></span>
+                <span aria-hidden="true"><i data-icon="plus"></i></span>
             </button>
         </div>
 
@@ -61,15 +61,15 @@
                 </button>
                 <div class="tasks-project-actions" data-project-actions>
                     <button type="button" class="tasks-project-more" aria-label="Opcje przestrzeni roboczej {{ project.name }}" title="Opcje przestrzeni roboczej" aria-haspopup="menu" aria-expanded="false" data-project-menu-toggle>
-                        <i data-lucide="ellipsis" aria-hidden="true"></i>
+                        <i data-icon="ellipsis" aria-hidden="true"></i>
                     </button>
                     <div class="tasks-project-menu" role="menu">
                         <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}">
-                            <i data-lucide="pencil" aria-hidden="true"></i>
+                            <i data-icon="pencil" aria-hidden="true"></i>
                             Edytuj przestrzeń
                         </button>
                         <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-section-create data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}">
-                            <i data-lucide="plus" aria-hidden="true"></i>
+                            <i data-icon="plus" aria-hidden="true"></i>
                             Dodaj tablicę
                         </button>
                         <form method="post" class="tasks-project-delete-form" data-delete-project-form data-project-name="{{ project.name|escape }}">

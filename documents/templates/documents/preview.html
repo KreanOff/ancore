@@ -31,12 +31,12 @@
                         <tbody>{% for entry in modal.preview.entries %}<tr><td>{{ entry.name }}{% if entry.folder %} (folder){% endif %}</td><td>{{ entry.size|filesizeformat }}</td></tr>{% endfor %}</tbody>
                     </table></div>{% else %}<p class="documents-preview-notice">Archiwum jest puste.</p>{% endif %}
                 {% else %}
-                    <div class="documents-preview-fallback" role="status"><i data-lucide="{{ modal.document.icon }}" aria-hidden="true"></i><p>{{ modal.preview.message }}</p></div>
+                    <div class="documents-preview-fallback" role="status"><i data-icon="{{ modal.document.icon }}" aria-hidden="true"></i><p>{{ modal.preview.message }}</p></div>
                 {% endif %}
             </div>
             <footer class="tasks-modal__footer">
                 <a href="{{ modal.documents_url }}{{ modal.document.pk }}/" class="btn btn-secondary" data-document-modal>Edytuj dane</a>
-                {% if modal.preview.kind != 'unavailable' %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" class="btn btn-primary" download><i data-lucide="download" aria-hidden="true"></i>Pobierz</a>{% endif %}
+                {% if modal.preview.kind != 'unavailable' %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" class="btn btn-primary" download><i data-icon="download" aria-hidden="true"></i>Pobierz</a>{% endif %}
                 <a href="{{ modal.folder_url }}" class="btn btn-secondary" data-document-modal-close>Zamknij</a>
             </footer>
         </div>

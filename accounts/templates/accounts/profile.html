@@ -19,7 +19,7 @@
             <div class="tasks-issue-breadcrumb">
                 <span class="tasks-issue-crumb tasks-issue-crumb--current">
                     <span class="tasks-issue-crumb-icon profile-crumb-icon" aria-hidden="true">
-                        <i data-lucide="square-user-round" aria-hidden="true"></i>
+                        <i data-icon="square-user-round" aria-hidden="true"></i>
                     </span>
                     <span id="profile-title">Profil użytkownika</span>
                 </span>
@@ -36,11 +36,11 @@
                             aria-controls="profile-actions-menu"
                             data-contact-actions-toggle
                             data-profile-actions-toggle>
-                        <i data-lucide="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
+                        <i data-icon="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
                     </button>
                     <div class="contacts-actions-menu__panel" id="profile-actions-menu" role="menu" aria-label="Opcje profilu">
                         <button type="button" class="contacts-actions-menu__item" role="menuitem" data-profile-edit-open>
-                            <i data-lucide="pencil" aria-hidden="true"></i>
+                            <i data-icon="pencil" aria-hidden="true"></i>
                             Edytuj
                         </button>
                     </div>
@@ -84,12 +84,12 @@
                 <section class="tasks-issue-activity profile-accounts-activity" id="accounts" aria-label="Konta w sesji">
                     <div class="tasks-issue-activity-head">
                         <h2>
-                            <i data-lucide="users" aria-hidden="true"></i>
+                            <i data-icon="users" aria-hidden="true"></i>
                             Konta w sesji
                         </h2>
                         <a href="{% url 'add_account' %}" class="tasks-issue-activity-chip profile-add-chip">
                             <span>Dodaj konto</span>
-                            <i data-lucide="plus" aria-hidden="true"></i>
+                            <i data-icon="plus" aria-hidden="true"></i>
                         </a>
                     </div>
 
@@ -164,7 +164,7 @@
                                         <span data-profile-status-selected-label>{{ option.label }}</span>
                                         {% endif %}
                                     {% endfor %}
-                                    <i class="profile-status-caret" data-lucide="chevron-down" aria-hidden="true"></i>
+                                    <i class="profile-status-caret" data-icon="chevron-down" aria-hidden="true"></i>
                                 </button>
                                 <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
                                     {% for option in presence_status_options %}
@@ -237,7 +237,7 @@
                         <p>{{ request.user.get_full_name|default:request.user.email }}</p>
                     </div>
                     <button type="button" class="profile-edit-close" aria-label="Zamknij edycję profilu" title="Zamknij" data-profile-edit-close>
-                        <i data-lucide="x" aria-hidden="true"></i>
+                        <i data-icon="x" aria-hidden="true"></i>
                     </button>
                 </header>
 
@@ -293,7 +293,7 @@
                                     <header class="contacts-photo-editor-header">
                                         <strong>Edytuj zdjęcie użytkownika</strong>
                                         <button type="button" class="contacts-photo-editor-close" aria-label="Zamknij edycję zdjęcia" title="Zamknij" data-profile-photo-close>
-                                            <i data-lucide="x" aria-hidden="true"></i>
+                                            <i data-icon="x" aria-hidden="true"></i>
                                         </button>
                                     </header>
 
@@ -314,7 +314,7 @@
                                                     aria-label="Pomniejsz zdjęcie"
                                                     title="Pomniejsz zdjęcie"
                                                     data-profile-photo-zoom-out>
-                                                <i data-lucide="minus" aria-hidden="true"></i>
+                                                <i data-icon="minus" aria-hidden="true"></i>
                                             </button>
                                             <input type="range"
                                                    class="profile-photo-zoom-range"
@@ -329,7 +329,7 @@
                                                     aria-label="Powiększ zdjęcie"
                                                     title="Powiększ zdjęcie"
                                                     data-profile-photo-zoom-in>
-                                                <i data-lucide="plus" aria-hidden="true"></i>
+                                                <i data-icon="plus" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -386,7 +386,7 @@
                                             <span data-profile-status-selected-label>{{ option.label }}</span>
                                             {% endif %}
                                         {% endfor %}
-                                        <i class="profile-status-caret" data-lucide="chevron-down" aria-hidden="true"></i>
+                                        <i class="profile-status-caret" data-icon="chevron-down" aria-hidden="true"></i>
                                     </button>
                                     <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
                                         {% for option in presence_status_options %}

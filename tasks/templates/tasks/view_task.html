@@ -25,7 +25,7 @@
                    aria-label="{% if task.parent %}Wróć do zadania{% else %}Wróć do poprzedniej strony{% endif %}"
                    title="{% if task.parent %}Wróć do zadania{% else %}Wróć do poprzedniej strony{% endif %}"
                    {% if not task.parent %}data-history-back{% endif %}>
-                    <i data-lucide="arrow-left" aria-hidden="true"></i>
+                    <i data-icon="arrow-left" aria-hidden="true"></i>
                 </a>
                 <span class="tasks-issue-divider" aria-hidden="true"></span>
                 <span class="tasks-issue-crumb tasks-issue-crumb--current" data-task-title-current>
@@ -80,7 +80,7 @@
                     {% if can_add_attachments %}
                     <div class="tasks-issue-tool-row" aria-label="Narzędzia zadania">
                         <label class="tasks-issue-tool tasks-issue-tool--labelled" for="file-input" title="Dodaj załącznik">
-                            <i data-lucide="paperclip" aria-hidden="true"></i>
+                            <i data-icon="paperclip" aria-hidden="true"></i>
                             <span>Dodaj załącznik</span>
                         </label>
                     </div>
@@ -119,12 +119,12 @@
                     <section class="tasks-issue-subtasks" aria-label="Podzadania">
                         <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
                             <button type="button" class="tasks-subtasks-title" data-subtasks-collapse aria-expanded="true">
-                                <i data-lucide="chevron-down" aria-hidden="true"></i>
+                                <i data-icon="chevron-down" aria-hidden="true"></i>
                                 <span>Podzadania ({{ task.subtasks.count }})</span>
                             </button>
                             <div class="tasks-subtasks-actions">
                                 <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-subtasks-sort>
-                                    <i data-lucide="arrow-down-wide-narrow" aria-hidden="true"></i>
+                                    <i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i>
                                 </button>
                                 {% if can_manage_task %}
                                 <button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-subtasks-delete>
@@ -133,7 +133,7 @@
                                 {% endif %}
                                 {% if can_edit_task %}
                                 <button type="button" class="tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-open-issue aria-haspopup="dialog" aria-controls="issue-modal">
-                                    <i data-lucide="plus" aria-hidden="true"></i>
+                                    <i data-icon="plus" aria-hidden="true"></i>
                                 </button>
                                 {% endif %}
                             </div>
@@ -145,7 +145,7 @@
                             <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
                                 <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
                                     <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
-                                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                                        <i data-icon="chevron-down" aria-hidden="true"></i>
                                     </button>
                                     <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
                                     <span class="tasks-rail-count">{{ status_group.count }}</span>
@@ -166,14 +166,14 @@
                     <section class="tasks-issue-activity">
                         <div class="tasks-issue-activity-head">
                             <h2>
-                                <i data-lucide="messages-square" aria-hidden="true"></i>
+                                <i data-icon="messages-square" aria-hidden="true"></i>
                                 Aktywność
                             </h2>
                             <div class="tasks-issue-activity-filters">
                                 <div class="tasks-filter-dropdown tasks-issue-activity-dropdown" data-activity-dropdown>
                                     <button type="button" class="tasks-issue-activity-chip" aria-haspopup="menu" aria-expanded="false" data-activity-toggle>
                                         <span data-activity-label>Wszystko w jednym</span>
-                                        <i data-lucide="chevron-down" aria-hidden="true"></i>
+                                        <i data-icon="chevron-down" aria-hidden="true"></i>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-activity-menu" role="menu" aria-label="Filtr aktywności">
                                         <button type="button" class="is-active" role="menuitemradio" aria-checked="true" data-activity-filter="all">Wszystko w jednym</button>
@@ -188,7 +188,7 @@
                             <textarea class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz wiadomość do zadania..." form="activity-comment-form"></textarea>
                             <div class="tasks-issue-comment-tools">
                                 <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
-                                    <i data-lucide="send" aria-hidden="true"></i>
+                                    <i data-icon="send" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
@@ -259,7 +259,7 @@
                                 {{ form.tags }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.tags.id_for_label }}" data-task-detail-multiple>
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
-                                        <i data-lucide="tag" aria-hidden="true"></i>
+                                        <i data-icon="tag" aria-hidden="true"></i>
                                         <span data-task-detail-label>Tagi</span>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi">
@@ -298,7 +298,7 @@
                                 <span class="tasks-issue-code__value" data-task-code-value>{{ task.code }}</span>
                                 <span class="tasks-issue-code__actions">
                                     <button type="button" class="tasks-issue-code__button" data-task-code-copy="{{ task.code|escape }}" aria-label="Kopiuj ID zadania" title="Kopiuj ID zadania">
-                                        <i data-lucide="copy" aria-hidden="true"></i>
+                                        <i data-icon="copy" aria-hidden="true"></i>
                                     </button>
                                 </span>
                             </strong>
@@ -348,7 +348,7 @@
                                       data-task-detail-due-icon
                                       title="{% if task.due_at %}Termin: {{ task.due_at|date:'d.m.Y, H:i' }}{% else %}Brak terminu{% endif %}"
                                       aria-label="{% if task.due_at %}Termin: {{ task.due_at|date:'d.m.Y, H:i' }}{% else %}Brak terminu{% endif %}">
-                                    <i data-lucide="flame" aria-hidden="true"></i>
+                                    <i data-icon="flame" aria-hidden="true"></i>
                                 </span>
                                 {{ form.due_at }}
                             </div>
@@ -392,7 +392,7 @@
                                         <span>{{ task.time_spent_label }}</span>
                                         {% if can_edit_task %}
                                         <button type="button" title="Usuń czas pracy" aria-label="Usuń czas pracy" data-task-clear-time>
-                                            <i data-lucide="x" aria-hidden="true"></i>
+                                            <i data-icon="x" aria-hidden="true"></i>
                                         </button>
                                         {% endif %}
                                     </div>
@@ -497,7 +497,7 @@
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
                     <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                        <i data-lucide="arrow-left" aria-hidden="true"></i>
+                        <i data-icon="arrow-left" aria-hidden="true"></i>
                     </button>
                     <span class="tasks-issue-divider" aria-hidden="true"></span>
                     <strong id="issue-modal-title">Nowe podzadanie</strong>
@@ -744,11 +744,11 @@ function initTaskCodeControl() {
 initTaskCodeControl();
 
 const taskDetailPriorityIcons = {
-    urgent: '<span class="tasks-row-priority priority-urgent"><span class="tasks-priority-icon"><i data-lucide="circle-alert" data-lucide-fallback="triangle-alert" aria-hidden="true"></i></span></span>',
-    none: '<span class="tasks-row-priority priority-none"><span class="tasks-priority-icon"><i data-lucide="circle" aria-hidden="true"></i></span></span>',
-    low: '<span class="tasks-row-priority priority-low"><span class="tasks-priority-icon"><i data-lucide="arrow-down" data-lucide-fallback="chevron-down" aria-hidden="true"></i></span></span>',
-    medium: '<span class="tasks-row-priority priority-medium"><span class="tasks-priority-icon"><i data-lucide="equal" data-lucide-fallback="minus" aria-hidden="true"></i></span></span>',
-    high: '<span class="tasks-row-priority priority-high"><span class="tasks-priority-icon"><i data-lucide="arrow-up" data-lucide-fallback="chevron-up" aria-hidden="true"></i></span></span>',
+    urgent: '<span class="tasks-row-priority priority-urgent"><span class="tasks-priority-icon"><i data-icon="circle-alert" data-icon-fallback="triangle-alert" aria-hidden="true"></i></span></span>',
+    none: '<span class="tasks-row-priority priority-none"><span class="tasks-priority-icon"><i data-icon="circle" aria-hidden="true"></i></span></span>',
+    low: '<span class="tasks-row-priority priority-low"><span class="tasks-priority-icon"><i data-icon="arrow-down" data-icon-fallback="chevron-down" aria-hidden="true"></i></span></span>',
+    medium: '<span class="tasks-row-priority priority-medium"><span class="tasks-priority-icon"><i data-icon="equal" data-icon-fallback="minus" aria-hidden="true"></i></span></span>',
+    high: '<span class="tasks-row-priority priority-high"><span class="tasks-priority-icon"><i data-icon="arrow-up" data-icon-fallback="chevron-up" aria-hidden="true"></i></span></span>',
 };
 
 function getTaskDetailButtonText(button) {
@@ -1149,7 +1149,7 @@ function deleteAttachment(attachmentId) {
                 const btn = el.querySelector('.tasks-delete-attach-btn');
                 if (btn) {
                     btn.dataset.originalHtml = btn.innerHTML;
-                    btn.innerHTML = '<i data-lucide="rotate-ccw" aria-hidden="true"></i>';
+                    btn.innerHTML = '<i data-icon="rotate-ccw" aria-hidden="true"></i>';
                     window.AncoreIcons?.render(btn);
                     btn.title = 'Cofnij usunięcie';
                     btn.setAttribute('aria-label', 'Cofnij usunięcie załącznika');
@@ -1174,7 +1174,7 @@ function undoDeleteAttachment(attachmentId) {
         el.classList.remove('marked-for-deletion');
         const btn = el.querySelector('.tasks-delete-attach-btn');
         if (btn) {
-            btn.innerHTML = btn.dataset.originalHtml || '<i data-lucide="trash-2" aria-hidden="true"></i>';
+            btn.innerHTML = btn.dataset.originalHtml || '<i data-icon="trash-2" aria-hidden="true"></i>';
             window.AncoreIcons?.render(btn);
             btn.title = 'Usuń załącznik';
             btn.setAttribute('aria-label', 'Usuń załącznik');

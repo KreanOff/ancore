@@ -538,7 +538,7 @@ class TaskProjectControlStyleTests(SimpleTestCase):
         visible_caret_selectors = [
             '#section-create-form .tasks-project-create-fields .ancore-custom-select__caret,',
             '#tag-create-form .tasks-tag-fields .ancore-custom-select__caret',
-            '#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-lucide="chevron-down"],',
+            '#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-icon="chevron-down"],',
             '#issue-create-form .tasks-issue-dropdown-button::after',
         ]
         for selector in visible_caret_selectors:
@@ -970,12 +970,12 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'data-priority-filter-menu')
         self.assertNotContains(response, 'data-status-filter-menu')
 
-    def test_sort_button_exposes_mutable_lucide_icon(self):
+    def test_sort_button_exposes_mutable_icon(self):
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertContains(response, 'data-task-sort')
         self.assertContains(response, 'data-sort-direction="asc"')
-        self.assertContains(response, 'data-lucide="arrow-up-narrow-wide"')
+        self.assertContains(response, 'data-icon="arrow-up-narrow-wide"')
         self.assertContains(response, 'data-task-sort-icon')
 
     def test_projects_view_renders_server_filter_and_sort_controls(self):
@@ -1447,7 +1447,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertIn('data-column="priority"', row_html)
         self.assertIn('tasks-row-priority priority-urgent', row_html)
-        self.assertIn('data-lucide="circle-alert"', row_html)
+        self.assertIn('data-icon="circle-alert"', row_html)
         self.assertNotIn('tasks-project-priority-dot', row_html)
 
     @patch('tasks.views.tasks.timezone.localdate', return_value=date(2026, 7, 10))
@@ -1568,7 +1568,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('tasks-project-value-badge--tag-category-risk', row_html)
         self.assertIn('tasks-project-value-badge--tag-visual', row_html)
         self.assertIn('style="--tag-color: #3b82f6;"', row_html)
-        self.assertIn('data-lucide="layers"', row_html)
+        self.assertIn('data-icon="layers"', row_html)
         self.assertIn('tasks-project-value-badge--priority-high', row_html)
         self.assertIn('tasks-project-value-badge--tag-scope-projects', row_html)
         self.assertIn('tasks-project-value-badge--tag-status-archived', row_html)
@@ -1604,7 +1604,7 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertIn('data-column="priority"', row_html)
         self.assertIn('tasks-row-priority priority-urgent', row_html)
-        self.assertIn('data-lucide="circle-alert"', row_html)
+        self.assertIn('data-icon="circle-alert"', row_html)
         self.assertIn('Pilny', row_html)
 
     def test_edit_project_modal_uses_issue_modal_layout(self):
@@ -1785,8 +1785,8 @@ class TaskProjectCreationTests(TestCase):
                 for marker in (
                     'tasks-project-badge', 'tasks-issue-crumb-icon',
                     'data-project-icon', 'data-section-icon', 'data-picker-icon',
-                    'data-task-detail-option-icon', 'data-lucide="rocket"',
-                    'data-lucide="flask-conical"', 'projectIcon', 'sectionIcon', 'projectColor',
+                    'data-task-detail-option-icon', 'data-icon="rocket"',
+                    'data-icon="flask-conical"', 'projectIcon', 'sectionIcon', 'projectColor',
                 ):
                     self.assertNotContains(response, marker)
 
@@ -1845,8 +1845,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'id="info-selected-project-menu-btn"')
         self.assertContains(response, 'id="notes-selected-project-menu-btn"')
         self.assertContains(response, 'data-open-project-info', count=4)
-        self.assertContains(response, 'data-project-notes-icon data-lucide="file-text"')
-        self.assertContains(response, 'data-project-notes-icon data-lucide="file-plus-2"')
+        self.assertContains(response, 'data-project-notes-icon data-icon="file-text"')
+        self.assertContains(response, 'data-project-notes-icon data-icon="file-plus-2"')
         self.assertContains(response, 'data-open-project-notes', count=4)
         self.assertContains(
             response,
@@ -1925,7 +1925,7 @@ class TaskProjectCreationTests(TestCase):
         for column, label, icon in expected_header_icons:
             self.assertContains(
                 response,
-                f'data-column="{column}">{label}<i data-lucide="{icon}" aria-hidden="true"></i>',
+                f'data-column="{column}">{label}<i data-icon="{icon}" aria-hidden="true"></i>',
             )
         column_positions = [content.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
@@ -2435,7 +2435,7 @@ class TaskProjectCreationTests(TestCase):
             header_html,
         )
         self.assertIn('aria-label="Wróć do projektu"', header_html)
-        self.assertIn('data-lucide="arrow-left"', header_html)
+        self.assertIn('data-icon="arrow-left"', header_html)
         self.assertNotIn('Projekt nadrzędny', header_html)
         self.assertNotIn('tasks-topbar-title-separator', header_html)
 
@@ -2572,7 +2572,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-titlebar-left tasks-issue-breadcrumb tasks-project-breadcrumb')
         self.assertContains(response, '<span class="tasks-issue-divider" aria-hidden="true"></span>')
         self.assertNotContains(response, 'class="tasks-issue-crumb-icon"')
-        self.assertNotContains(response, 'data-lucide="briefcase-business" data-lucide-fallback="folder"')
+        self.assertNotContains(response, 'data-icon="briefcase-business" data-icon-fallback="folder"')
         self.assertContains(response, 'tasks-project-sheet--selectable')
         self.assertContains(response, 'tasks-section-sheet')
         self.assertContains(response, 'data-directory-column-manager')
@@ -2760,8 +2760,8 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-open-section-info', count=2)
         self.assertContains(response, 'data-open-section-notes', count=2)
         self.assertContains(response, 'data-open-section-rename', count=2)
-        self.assertContains(response, 'data-section-notes-icon data-lucide="file-text"')
-        self.assertContains(response, 'data-section-notes-icon data-lucide="file-plus-2"')
+        self.assertContains(response, 'data-section-notes-icon data-icon="file-text"')
+        self.assertContains(response, 'data-section-notes-icon data-icon="file-plus-2"')
         self.assertContains(
             response,
             f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button has-notes" title="Notatki grupy — zawiera notatkę" aria-label="Notatki grupy {frontend.title}, zawiera notatkę"',
@@ -3443,7 +3443,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'data-task-code-short')
         self.assertNotContains(response, 'data-task-code-full')
         self.assertNotContains(response, 'data-task-code-toggle')
-        self.assertContains(response, 'data-lucide="copy"')
+        self.assertContains(response, 'data-icon="copy"')
         self.assertLess(content.index('<label for="id_tags">Tagi</label>'), content.index('<span>ID zadania</span>'))
         self.assertLess(content.index('<span>ID zadania</span>'), content.index('<span>Utworzył</span>'))
 

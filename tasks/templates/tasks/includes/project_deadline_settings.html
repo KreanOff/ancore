@@ -57,10 +57,10 @@
                 <input type="color" name="color" value="{{ rule.color }}" class="tasks-project-option-color" aria-label="Kolor terminu do {{ rule.days }} dni" data-project-option-color>
             </label>
             <button type="submit" name="action" value="update_project_deadline_rule" class="tasks-project-field-option-action" title="Zapisz" aria-label="Zapisz próg {{ rule.days }} dni">
-                <i data-lucide="check" aria-hidden="true"></i>
+                <i data-icon="check" aria-hidden="true"></i>
             </button>
             <button type="submit" name="action" value="delete_project_deadline_rule" class="tasks-project-field-option-action tasks-project-field-option-action--delete" title="Usuń" aria-label="Usuń próg {{ rule.days }} dni" formnovalidate>
-                <i data-lucide="trash-2" aria-hidden="true"></i>
+                <i data-icon="trash-2" aria-hidden="true"></i>
             </button>
         </form>
         {% empty %}
@@ -83,7 +83,7 @@
             <input type="color" name="color" value="#DFF1E7" class="tasks-project-option-color" aria-label="Kolor nowej reguły terminu" data-project-option-color>
         </label>
         <button type="submit" class="tasks-project-field-option-add" aria-label="Dodaj regułę terminu">
-            <i data-lucide="plus" aria-hidden="true"></i>
+            <i data-icon="plus" aria-hidden="true"></i>
             <span>Dodaj</span>
         </button>
     </form>

@@ -5681,19 +5681,19 @@ body.modal-open::before {
     text-align: left;
 }
 
-#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-lucide="chevron-down"],
+#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-icon="chevron-down"],
 #issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > svg:last-child,
 #issue-create-form .ancore-custom-select__caret {
     display: block;
 }
 
-#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-lucide="chevron-down"],
+#issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > i[data-icon="chevron-down"],
 #issue-create-form .tasks-issue-chip-picker .tasks-picker-chip > svg:last-child {
     margin-left: auto;
     transition: transform 0.1s;
 }
 
-#issue-create-form .tasks-issue-chip-picker.is-open .tasks-picker-chip > i[data-lucide="chevron-down"],
+#issue-create-form .tasks-issue-chip-picker.is-open .tasks-picker-chip > i[data-icon="chevron-down"],
 #issue-create-form .tasks-issue-chip-picker.is-open .tasks-picker-chip > svg:last-child {
     transform: rotate(180deg);
 }
@@ -5752,7 +5752,7 @@ body.modal-open::before {
     display: block;
     flex: 0 0 16px;
     margin-left: auto;
-    background-image: var(--lucide-chevron-down-gray);
+    background-image: var(--icon-chevron-down-gray);
     background-position: center;
     background-repeat: no-repeat;
     background-size: 16px 16px;
@@ -14380,23 +14380,23 @@ body.is-resizing-directory-columns {
 }
 
 .status-indicator.status-new::before {
-    --tasks-status-icon-mask: var(--lucide-circle-dashed-mask);
+    --tasks-status-icon-mask: var(--icon-circle-dashed-mask);
 }
 
 .status-indicator.status-in_progress::before {
-    --tasks-status-icon-mask: var(--lucide-clock-mask);
+    --tasks-status-icon-mask: var(--icon-clock-mask);
 }
 
 .status-indicator.status-resolved::before {
-    --tasks-status-icon-mask: var(--lucide-circle-check-mask);
+    --tasks-status-icon-mask: var(--icon-circle-check-mask);
 }
 
 .status-indicator.status-closed::before {
-    --tasks-status-icon-mask: var(--lucide-circle-x-mask);
+    --tasks-status-icon-mask: var(--icon-circle-x-mask);
 }
 
 .status-indicator.status-reopened::before {
-    --tasks-status-icon-mask: var(--lucide-circle-minus-mask);
+    --tasks-status-icon-mask: var(--icon-circle-minus-mask);
 }
 
 .status-indicator.status-new::before,

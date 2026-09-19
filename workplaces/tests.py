@@ -86,9 +86,9 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-workplace-code="FIRST-01"')
         self.assertContains(response, 'data-workplace-description="Miejsce pracy zespołu wdrożeniowego"')
         self.assertContains(response, 'data-workplace-code="DRUGI-WORKPLACE"')
-        self.assertContains(response, 'data-lucide="briefcase-business"')
-        self.assertContains(response, 'data-lucide="hash"')
-        self.assertContains(response, 'data-lucide="align-left"')
+        self.assertContains(response, 'data-icon="briefcase-business"')
+        self.assertContains(response, 'data-icon="hash"')
+        self.assertContains(response, 'data-icon="align-left"')
         self.assertContains(response, 'data-workplaces-pagination')
         self.assertContains(response, 'data-workplaces-page-size-toggle')
         self.assertContains(response, 'data-workplaces-pagination-summary')
@@ -172,9 +172,9 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, second_avatar['color_style'])
         self.assertContains(
             response,
-            'class="profile-avatar-icon" data-lucide="briefcase"',
+            'class="profile-avatar-icon" data-icon="briefcase"',
         )
-        self.assertNotContains(response, 'data-lucide="landmark"')
+        self.assertNotContains(response, 'data-icon="landmark"')
 
     def test_workplace_edit_renders_in_tasks_modal_shell(self):
         self.client.force_login(self.user)
@@ -208,7 +208,7 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="nav-link nav-link--workplace ')
-        self.assertContains(response, 'data-lucide="briefcase"')
+        self.assertContains(response, 'data-icon="briefcase"')
         self.assertNotContains(response, 'sidebar-workplace__avatar')
         self.assertContains(response, 'sidebar-workspace-avatar')
         self.assertContains(response, '/media/workplace_photos/moje-miejsce.webp', count=2)
@@ -478,7 +478,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'data-sidebar-workspace-dropzone')
         self.assertContains(response, 'data-sidebar-favorite-item="tags" draggable="true"')
         self.assertNotContains(response, 'data-sidebar-favorite-drag-handle')
-        self.assertNotContains(response, 'data-lucide="grip-vertical"')
+        self.assertNotContains(response, 'data-icon="grip-vertical"')
         self.assertContains(response, 'data-sidebar-source-item="tags" draggable="true"')
         self.assertNotContains(response, 'data-sidebar-favorite-remove')
         self.assertContains(
@@ -489,7 +489,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, '>Usuń Tagi z Favorites</button>')
         self.assertNotContains(response, 'sidebar-pinnable-row')
         self.assertNotContains(response, 'sidebar-favorite-toggle')
-        self.assertNotContains(response, 'data-lucide="star"')
+        self.assertNotContains(response, 'data-icon="star"')
         self.assertGreaterEqual(
             response.content.decode().count(f'/workplaces/{self.first_workplace.slug}/tasks/?view=tags'),
             3,
@@ -540,7 +540,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'class="nav-link nav-link--workplace ')
         self.assertContains(
             response,
-            '<i class="nav-icon nav-icon--workplace" data-lucide="briefcase" aria-hidden="true"></i>',
+            '<i class="nav-icon nav-icon--workplace" data-icon="briefcase" aria-hidden="true"></i>',
             html=True,
         )
 

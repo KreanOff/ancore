@@ -2,7 +2,7 @@
 <div class="tasks-project-pagination tasks-status-pagination" data-task-status-pagination>
     <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony statusu {{ status_group.label }}">
         <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie zadania" data-task-status-page-url="{{ status_group.previous_url }}" {% if not status_group.has_previous %}disabled{% endif %}>
-            <i data-lucide="chevron-left" aria-hidden="true"></i>
+            <i data-icon="chevron-left" aria-hidden="true"></i>
         </button>
         <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-label="{{ status_group.summary }}" data-task-status-pagination-summary>{{ status_group.compact_summary }}</span>
         <span class="u-sr-only">
@@ -15,14 +15,14 @@
         {% endfor %}
         </span>
         <button type="button" class="tasks-project-pagination__button" aria-label="Następne zadania" data-task-status-page-url="{{ status_group.next_url }}" {% if not status_group.has_next %}disabled{% endif %}>
-            <i data-lucide="chevron-right" aria-hidden="true"></i>
+            <i data-icon="chevron-right" aria-hidden="true"></i>
         </button>
     </nav>
     <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact tasks-project-pagination__size-control--toolbar" data-task-status-page-size-dropdown>
         <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact tasks-project-pagination__size-button--toolbar" aria-label="Liczba zadań na stronie" aria-haspopup="menu" aria-expanded="false" data-task-status-page-size-toggle>
-            <i data-lucide="rows-3" aria-hidden="true"></i>
+            <i data-icon="rows-3" aria-hidden="true"></i>
             <span class="tasks-project-pagination__size-value"><strong>{{ status_group.page_size }}</strong><span>/ stronę</span></span>
-            <i data-lucide="chevron-down" aria-hidden="true"></i>
+            <i data-icon="chevron-down" aria-hidden="true"></i>
         </button>
         <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba zadań na stronie">
         {% for page_size_item in status_group.page_size_items %}

@@ -1,37 +1,37 @@
 <div class="tasks-filter-dropdown tasks-project-sort-builder" data-project-sort-menu data-project-default-sort="{{ default_sort }}" data-current-sort-field="{{ sort_field }}" data-current-sort-direction="{{ sort_direction }}">
     <button type="button" class="tasks-filter-button tasks-project-query-trigger{% if sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ sort_label }}" aria-haspopup="dialog" aria-expanded="false" data-task-sort data-sort-direction="{{ sort_direction }}" data-project-sort-toggle>
-        <i data-lucide="{% if sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-narrow-wide{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+        <i data-icon="{% if sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-narrow-wide{% endif %}" aria-hidden="true" data-task-sort-icon></i>
         <span>Sortuj</span>
         <span class="tasks-project-sort-current">{{ sort_label }}</span>
-        <i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+        <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
     </button>
     <div class="tasks-filter-menu tasks-project-query-panel tasks-project-sort-panel" role="dialog" aria-label="{{ sort_title }}">
         <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main">
-            <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-lucide="arrow-up-down"></i></span>
+            <span class="tasks-project-query-panel__title-icon" aria-hidden="true"><i data-icon="arrow-up-down"></i></span>
             <span>
                 <strong>{{ sort_title }}</strong>
             </span>
         </header>
         <div class="tasks-project-sort-directions" role="radiogroup" aria-label="Kierunek sortowania">
             <button type="button" class="{% if sort_direction == 'asc' %}is-active{% endif %}" role="radio" aria-checked="{% if sort_direction == 'asc' %}true{% else %}false{% endif %}" data-project-sort-direction-choice="asc">
-                <i data-lucide="arrow-up-narrow-wide" aria-hidden="true"></i>
+                <i data-icon="arrow-up-narrow-wide" aria-hidden="true"></i>
                 Rosnąco
             </button>
             <button type="button" class="{% if sort_direction == 'desc' %}is-active{% endif %}" role="radio" aria-checked="{% if sort_direction == 'desc' %}true{% else %}false{% endif %}" data-project-sort-direction-choice="desc">
-                <i data-lucide="arrow-down-wide-narrow" aria-hidden="true"></i>
+                <i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i>
                 Malejąco
             </button>
         </div>
         <label class="tasks-project-query-search">
-            <i data-lucide="search" aria-hidden="true"></i>
+            <i data-icon="search" aria-hidden="true"></i>
             <input type="search" placeholder="Szukaj pola sortowania" autocomplete="off" data-project-sort-field-search>
         </label>
         <div class="tasks-project-sort-field-list" role="radiogroup" aria-label="Pole sortowania">
             {% for field in sort_fields %}
             <button type="button" class="{% if sort_field == field.value %}is-active{% endif %}" role="radio" aria-checked="{% if sort_field == field.value %}true{% else %}false{% endif %}" data-project-sort-field="{{ field.value }}" data-project-sort-field-search-text="{{ field.label|lower }}">
-                <span class="tasks-project-query-field-icon"><i data-lucide="{{ field.icon }}" aria-hidden="true"></i></span>
+                <span class="tasks-project-query-field-icon"><i data-icon="{{ field.icon }}" aria-hidden="true"></i></span>
                 <span>{{ field.label }}</span>
-                <i data-lucide="check" aria-hidden="true"></i>
+                <i data-icon="check" aria-hidden="true"></i>
             </button>
             {% endfor %}
         </div>

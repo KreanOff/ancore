@@ -94,7 +94,7 @@ class LibraryPhotoTests(TestCase):
         self.assertFalse(self.library.photo)
         self.assertFalse(self.storage.exists(replacement))
         self.assertEqual(self.client.get(self.photo_url).status_code, 404)
-        self.assertContains(self.client.get(self.base), 'data-lucide="hard-drive"')
+        self.assertContains(self.client.get(self.base), 'data-icon="hard-drive"')
 
     def test_ordinary_metadata_edit_preserves_photo(self):
         self.save_photo()

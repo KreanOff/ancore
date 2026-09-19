@@ -3,7 +3,7 @@
     <article class="tasks-project-note {% if note.author_id == request.user.id %}tasks-project-note--owned{% endif %}" data-tag-note-item data-tag-note-id="{{ note.id }}">
         <div class="tasks-project-note__heading">
             <span class="tasks-project-note__icon" aria-hidden="true">
-                <i data-lucide="file-text"></i>
+                <i data-icon="file-text"></i>
             </span>
             <div class="tasks-project-note__meta">
                 <strong>{{ note.author.get_full_name|default:note.author.username|default:"System" }}</strong>
@@ -15,7 +15,7 @@
             {% if note.author_id == request.user.id %}
             <div class="tasks-project-note__actions">
                 <button type="button" class="tasks-project-note__icon-button" title="Edytuj notatkę" aria-label="Edytuj notatkę" data-tag-note-edit-toggle>
-                    <i data-lucide="pencil" aria-hidden="true"></i>
+                    <i data-icon="pencil" aria-hidden="true"></i>
                 </button>
                 <form method="post" class="tasks-project-note__delete-form" data-tag-note-delete-form>
                     {% csrf_token %}
@@ -24,7 +24,7 @@
                     <input type="hidden" name="tag_id" value="{{ tag.id }}">
                     <input type="hidden" name="note_id" value="{{ note.id }}">
                     <button type="submit" class="tasks-project-note__icon-button" title="Usuń notatkę" aria-label="Usuń notatkę">
-                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                        <i data-icon="trash-2" aria-hidden="true"></i>
                     </button>
                 </form>
             </div>

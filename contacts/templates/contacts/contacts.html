@@ -30,10 +30,10 @@
             </form>
             <div class="tasks-titlebar-actions">
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}" aria-label="{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}" aria-haspopup="dialog" aria-controls="contact-create-modal" data-open-contact>
-                    <span aria-hidden="true"><i data-lucide="plus"></i></span><span>{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}</span>
+                    <span aria-hidden="true"><i data-icon="plus"></i></span><span>{% if status == 'guests' %}Dodaj gościa{% else %}Dodaj kontakt{% endif %}</span>
                 </button>
                 <div class="tasks-section-actions" data-section-actions>
-                    <button type="button" class="tasks-icon-button" aria-label="Więcej opcji" title="Więcej opcji" aria-haspopup="menu" aria-expanded="false" data-section-menu-toggle><i data-lucide="ellipsis" aria-hidden="true"></i></button>
+                    <button type="button" class="tasks-icon-button" aria-label="Więcej opcji" title="Więcej opcji" aria-haspopup="menu" aria-expanded="false" data-section-menu-toggle><i data-icon="ellipsis" aria-hidden="true"></i></button>
                     <div class="tasks-section-menu" role="menu"><button type="button" class="tasks-project-menu-button" role="menuitem" data-open-company>Dodaj firmę</button></div>
                 </div>
             </div>
@@ -45,15 +45,15 @@
                 {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=contact_status_filter only %}
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ contact_default_sort }}">
                     <button type="button" class="tasks-filter-button tasks-project-query-trigger tasks-sort-button{% if contact_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ contact_sort_label }}" title="Sortowanie: {{ contact_sort_label }}" aria-haspopup="menu" aria-expanded="false" data-task-sort data-project-sort-toggle data-sort-direction="{{ contact_sort_direction }}">
-                        <i data-lucide="{% if contact_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+                        <i data-icon="{% if contact_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
                         <span>Sortuj</span>
                         <span class="tasks-project-sort-current">{{ contact_sort_label }}</span>
-                        <i data-lucide="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+                        <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
                     </button>
                     <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie kontaktów">
                         {% for option in contact_sort_options %}
                         <button type="button" role="menuitemradio" aria-checked="{% if contact_sort == option.value %}true{% else %}false{% endif %}" {% if contact_sort == option.value %}class="is-active"{% endif %} data-project-sort-value="{{ option.value }}">
-                            <i data-lucide="{{ option.icon }}" aria-hidden="true"></i>
+                            <i data-icon="{{ option.icon }}" aria-hidden="true"></i>
                             <span>{{ option.label }}</span>
                         </button>
                         {% endfor %}
@@ -61,7 +61,7 @@
                 </div>
                 <div class="tasks-filter-dropdown" data-project-filter-menu="contact_status">
                     <button type="button" class="tasks-filter-button{% if contact_status_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="contact_status">
-                        <i data-lucide="circle-dot" aria-hidden="true"></i>
+                        <i data-icon="circle-dot" aria-hidden="true"></i>
                         <span>Status{% for option in contact_status_options %}{% if option.value == contact_status_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
                     </button>
                     <div class="tasks-filter-menu" role="menu" aria-label="Filtr statusu kontaktu">
@@ -75,7 +75,7 @@
             <div class="tasks-filterbar-center"></div>
             <div class="tasks-filterbar-right">
                 <label class="tasks-search-field tasks-project-search" for="filter-search">
-                    <i data-lucide="search" aria-hidden="true"></i>
+                    <i data-icon="search" aria-hidden="true"></i>
                     <input id="filter-search" type="search" name="q" form="directory-search-form" value="{{ query }}" placeholder="{{ contacts_search_placeholder|default:'Szukaj kontaktu' }}" autocomplete="off">
                 </label>
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=contact_window items_exist=contacts pages_label='Strony kontaktów' previous_label='Poprzednie kontakty' next_label='Następne kontakty' page_size_label='Liczba kontaktów na stronie' only %}
@@ -90,18 +90,18 @@
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie kontakty" title="Zaznacz wszystkie kontakty" data-select-all-checkbox data-select-all-target="contacts">
                     </span>
                     <span class="tasks-project-sheet__action contacts-directory-sheet__cell" data-column="action" aria-label="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" title="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" data-column-label="Edycja">
-                        <i data-lucide="pencil" aria-hidden="true"></i>
+                        <i data-icon="pencil" aria-hidden="true"></i>
                     </span>
                     <span class="tasks-project-sheet__info contacts-directory-sheet__cell" data-column="info" aria-label="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %}" title="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %}" data-column-label="Informacja">
-                        <i data-lucide="info" aria-hidden="true"></i>
+                        <i data-icon="info" aria-hidden="true"></i>
                         <span class="u-sr-only">Informacja</span>
                     </span>
-                    <span class="contacts-directory-sheet__cell" data-column="contact">KONTAKT<i data-lucide="user-round" aria-hidden="true"></i></span>
-                    <span class="contacts-directory-sheet__cell" data-column="company">FIRMA<i data-lucide="building-2" aria-hidden="true"></i></span>
-                    <span class="contacts-directory-sheet__cell" data-column="role">ROLA<i data-lucide="briefcase-business" aria-hidden="true"></i></span>
-                    <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE<i data-lucide="mail" aria-hidden="true"></i></span>
-                    <span class="contacts-directory-sheet__cell" data-column="status">STATUS<i data-lucide="circle-dot" aria-hidden="true"></i></span>
-                    <span class="tasks-directory-header-date contacts-directory-sheet__cell" data-column="created_at">DATA<i data-lucide="calendar-days" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="contact">KONTAKT<i data-icon="user-round" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="company">FIRMA<i data-icon="building-2" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="role">ROLA<i data-icon="briefcase-business" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="channel">DANE KONTAKTOWE<i data-icon="mail" aria-hidden="true"></i></span>
+                    <span class="contacts-directory-sheet__cell" data-column="status">STATUS<i data-icon="circle-dot" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-header-date contacts-directory-sheet__cell" data-column="created_at">DATA<i data-icon="calendar-days" aria-hidden="true"></i></span>
                     <span class="contacts-directory-spacer-cell contacts-directory-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </div>
                 <div class="tasks-issue-list tasks-directory-list contacts-directory-list" aria-label="{{ contacts_page_label|default:'Lista kontaktów' }}">
@@ -116,12 +116,12 @@
                     <input type="checkbox" class="tasks-row-checkbox contacts-directory-sheet__cell" data-column="select" aria-label="Zaznacz kontakt {{ item.display_name }}" data-contact-id="{{ item.pk }}">
                     <span class="tasks-project-sheet__action contacts-directory-sheet__cell" data-column="action">
                         <a href="{% url 'contacts:edit-contact' item.pk %}" class="tasks-project-sheet__edit-button" title="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" aria-label="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %} {{ item.display_name }}">
-                            <i data-lucide="pencil" aria-hidden="true"></i>
+                            <i data-icon="pencil" aria-hidden="true"></i>
                         </a>
                     </span>
                     <span class="tasks-project-sheet__info contacts-directory-sheet__cell" data-column="info">
                         <a href="{% url 'contacts:view-contact' item.pk %}" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %}" aria-label="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %} {{ item.display_name }}">
-                            <i data-lucide="info" aria-hidden="true"></i>
+                            <i data-icon="info" aria-hidden="true"></i>
                         </a>
                     </span>
                     <span class="tasks-directory-name contacts-directory-contact contacts-directory-sheet__cell" data-column="contact">
@@ -147,11 +147,11 @@
                     </span>
                     <span class="contacts-directory-channel contacts-directory-sheet__cell" data-column="channel">
                         {% if item.email %}
-                        <i data-lucide="mail" aria-hidden="true"></i>
+                        <i data-icon="mail" aria-hidden="true"></i>
                         {% elif item.phone %}
-                        <i data-lucide="phone" aria-hidden="true"></i>
+                        <i data-icon="phone" aria-hidden="true"></i>
                         {% else %}
-                        <i data-lucide="circle-slash" aria-hidden="true"></i>
+                        <i data-icon="circle-slash" aria-hidden="true"></i>
                         {% endif %}
                         <span class="contacts-directory-channel-text" title="{% if item.email %}{{ item.email }}{% elif item.phone %}{{ item.phone }}{% else %}Brak danych kontaktowych{% endif %}">{% if item.email %}{{ item.email }}{% elif item.phone %}{{ item.phone }}{% else %}Brak danych kontaktowych{% endif %}</span>
                     </span>
@@ -165,7 +165,7 @@
             {% else %}
             <section class="tasks-empty-state tasks-empty-state--centered contacts-empty-state contacts-empty-state--directory" role="status" aria-live="polite">
                 <div class="tasks-empty-state__icon" aria-hidden="true">
-                    <i data-lucide="users" aria-hidden="true"></i>
+                    <i data-icon="users" aria-hidden="true"></i>
                 </div>
                 <div class="tasks-empty-state__copy">
                     <h2>{% if query %}Nie znaleziono kontaktów.{% else %}{{ contacts_empty_heading|default:'Nie ma jeszcze kontaktów.' }}{% endif %}</h2>

@@ -7,13 +7,13 @@
         <div class="tasks-rail-nav-group">
             <a href="{% url 'profile' %}" class="tasks-rail-link {% if request.resolver_match.view_name == 'profile' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="square-user-round" aria-hidden="true"></i>
+                    <i data-icon="square-user-round" aria-hidden="true"></i>
                 </span>
                 Profil użytkownika
             </a>
             <a href="{% url 'workplaces:workplaces' %}" class="tasks-rail-link {% if request.resolver_match.app_name == 'workplaces' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="briefcase" aria-hidden="true"></i>
+                    <i data-icon="briefcase" aria-hidden="true"></i>
                 </span>
                 Workspace
             </a>
@@ -22,31 +22,31 @@
         <div class="tasks-rail-nav-group">
             <a href="{% url 'project_field_settings' %}" class="tasks-rail-link {% if request.resolver_match.view_name == 'project_field_settings' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+                    <i data-icon="sliders-horizontal" aria-hidden="true"></i>
                 </span>
                 Wartości pól projektu
             </a>
             <a href="{% url 'settings' %}#security" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="shield-check" aria-hidden="true"></i>
+                    <i data-icon="shield-check" aria-hidden="true"></i>
                 </span>
                 Bezpieczeństwo
             </a>
             <a href="{% url 'settings' %}#notifications" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="bell" aria-hidden="true"></i>
+                    <i data-icon="bell" aria-hidden="true"></i>
                 </span>
                 Powiadomienia
             </a>
             <a href="{% url 'settings' %}#appearance" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="palette" aria-hidden="true"></i>
+                    <i data-icon="palette" aria-hidden="true"></i>
                 </span>
                 Wygląd
             </a>
             <a href="{% url 'settings' %}#region" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="globe" aria-hidden="true"></i>
+                    <i data-icon="globe" aria-hidden="true"></i>
                 </span>
                 Język i region
             </a>
@@ -55,25 +55,25 @@
         <div class="tasks-rail-nav-group">
             <a href="{% url 'settings' %}#data" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="database" aria-hidden="true"></i>
+                    <i data-icon="database" aria-hidden="true"></i>
                 </span>
                 Dane i eksport
             </a>
             <a href="{% url 'settings' %}#integrations" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="link" aria-hidden="true"></i>
+                    <i data-icon="link" aria-hidden="true"></i>
                 </span>
                 Integracje
             </a>
             <a href="/admin/" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="settings" aria-hidden="true"></i>
+                    <i data-icon="settings" aria-hidden="true"></i>
                 </span>
                 Admin
             </a>
             <a href="{% url 'settings' %}#help" class="tasks-rail-link">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="circle-help" aria-hidden="true"></i>
+                    <i data-icon="circle-help" aria-hidden="true"></i>
                 </span>
                 Pomoc
             </a>
@@ -84,7 +84,7 @@
     <div class="profile-rail-actions" aria-label="Akcje konta">
         <a href="{% url 'add_account' %}" class="tasks-rail-link profile-rail-action {% if request.resolver_match.view_name == 'add_account' %}is-active{% endif %}">
             <span class="tasks-rail-icon" aria-hidden="true">
-                <i data-lucide="user-plus" aria-hidden="true"></i>
+                <i data-icon="user-plus" aria-hidden="true"></i>
             </span>
             Dodaj konto
         </a>
@@ -92,7 +92,7 @@
             {% csrf_token %}
             <button type="submit" class="tasks-rail-link profile-rail-action profile-rail-action--logout">
                 <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-lucide="log-out" aria-hidden="true"></i>
+                    <i data-icon="log-out" aria-hidden="true"></i>
                 </span>
                 Wyloguj się
             </button>

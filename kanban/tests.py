@@ -176,8 +176,8 @@ class KanbanProjectCreationTests(TestCase):
                 for marker in (
                     'tasks-project-badge', 'tasks-issue-crumb-icon',
                     'data-project-icon', 'data-section-icon', 'data-picker-icon',
-                    'data-task-detail-option-icon', 'data-lucide="rocket"',
-                    'data-lucide="flask-conical"', 'projectIcon', 'sectionIcon', 'projectColor',
+                    'data-task-detail-option-icon', 'data-icon="rocket"',
+                    'data-icon="flask-conical"', 'projectIcon', 'sectionIcon', 'projectColor',
                 ):
                     self.assertNotContains(response, marker)
 
@@ -226,8 +226,8 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, project_without_icon.code)
         self.assertContains(response, 'id="notes-selected-project-menu-btn"')
         self.assertContains(response, 'data-open-project-notes', count=4)
-        self.assertContains(response, 'data-project-notes-icon data-lucide="file-text"')
-        self.assertContains(response, 'data-project-notes-icon data-lucide="file-plus-2"')
+        self.assertContains(response, 'data-project-notes-icon data-icon="file-text"')
+        self.assertContains(response, 'data-project-notes-icon data-icon="file-plus-2"')
         self.assertContains(
             response,
             f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button has-notes" title="Notatki przestrzeni — zawiera notatkę" aria-label="Notatki przestrzeni {project_with_icon.name}, zawiera notatkę"',
@@ -291,7 +291,7 @@ class KanbanProjectCreationTests(TestCase):
         for column, label, icon in expected_header_icons:
             self.assertContains(
                 response,
-                f'data-column="{column}">{label}<i data-lucide="{icon}" aria-hidden="true"></i>',
+                f'data-column="{column}">{label}<i data-icon="{icon}" aria-hidden="true"></i>',
             )
         column_positions = [html.index(column) for column in expected_columns]
         self.assertEqual(column_positions, sorted(column_positions))
@@ -1002,7 +1002,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertIn('tasks-project-value-badge--tag-category-area', table_html)
         self.assertIn('tasks-project-value-badge--tag-visual', table_html)
         self.assertIn('style="--tag-color: #22c55e;"', table_html)
-        self.assertIn('data-lucide="workflow"', table_html)
+        self.assertIn('data-icon="workflow"', table_html)
         self.assertIn('tasks-project-value-badge--priority-high', table_html)
         self.assertIn('tasks-project-value-badge--tag-scope-projects', table_html)
         self.assertIn('tasks-project-value-badge--tag-status-active', table_html)

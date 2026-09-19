@@ -19,13 +19,13 @@
         <header class="tasks-topbar">
             <div class="tasks-titlebar-left">
                 <span class="tasks-topbar-title">
-                    <i data-lucide="search" aria-hidden="true"></i>
+                    <i data-icon="search" aria-hidden="true"></i>
                     <span>Szukaj osób</span>
                 </span>
             </div>
             <form class="tasks-titlebar-search tasks-search-actions contacts-titlebar-search" method="get">
                 <label class="tasks-search-field" for="filter-search">
-                    <i data-lucide="search" aria-hidden="true"></i>
+                    <i data-icon="search" aria-hidden="true"></i>
                     <input id="filter-search" type="search" name="q" value="{{ query }}" placeholder="Imię, drugie imię, nazwisko, ID Ancore albo email" autocomplete="off">
                 </label>
                 {% if presence != 'all' %}
@@ -37,7 +37,7 @@
         <div class="tasks-filterbar tasks-filterbar--task-directory contacts-filterbar contacts-toolbar-filterbar">
             <div class="tasks-filterbar-left">
                 <button type="button" class="tasks-icon-button tasks-sort-button" aria-label="Sortowanie" title="Sortowanie" aria-pressed="false" data-task-sort data-sort-direction="asc">
-                    <i data-lucide="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
+                    <i data-icon="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
                 </button>
             </div>
             <div class="tasks-filterbar-center"></div>
@@ -96,7 +96,7 @@
             {% else %}
             <section class="tasks-empty-state tasks-empty-state--centered contacts-empty-state contacts-empty-state--directory" role="status" aria-live="polite">
                 <div class="tasks-empty-state__icon" aria-hidden="true">
-                    <i data-lucide="search" aria-hidden="true"></i>
+                    <i data-icon="search" aria-hidden="true"></i>
                 </div>
                 <div class="tasks-empty-state__copy">
                     <h2>{% if query %}Nie znaleziono osób.{% else %}Wpisz szukaną osobę{% endif %}</h2>

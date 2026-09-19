@@ -707,8 +707,8 @@ function initTasksPage() {
                 remove.className = 'tasks-kanban-wallpaper-swatch__remove';
                 remove.innerHTML = window.AncoreIcons
                     ? window.AncoreIcons.html('x')
-                    : '<i data-lucide="x" aria-hidden="true"></i>';
-                renderLucideIcons(remove);
+                    : '<i data-icon="x" aria-hidden="true"></i>';
+                renderAncoreIcons(remove);
                 remove.setAttribute('aria-label', 'Usuń tapetę');
                 remove.addEventListener('click', event => {
                     event.stopPropagation();
@@ -1486,11 +1486,7 @@ function initTasksPage() {
             });
         });
 
-        if (window.AncoreIcons?.render) {
-            window.AncoreIcons.render(directoryShareSharedList);
-        } else if (window.lucide?.createIcons) {
-            window.lucide.createIcons();
-        }
+        window.AncoreIcons?.render(directoryShareSharedList);
     }
 
     function syncDirectoryShareTriggerLink(linkUrl, permission = '') {
@@ -2035,19 +2031,15 @@ function initTasksPage() {
 
     function renderDirectorySharePermissionIcon(picker, iconName) {
         const currentIcon = picker.querySelector('[data-directory-share-permission-current-icon]');
-        if (!currentIcon || currentIcon.getAttribute('data-lucide') === iconName) return;
+        if (!currentIcon || currentIcon.getAttribute('data-icon') === iconName) return;
 
         const icon = document.createElement('i');
-        icon.setAttribute('data-lucide', iconName);
+        icon.setAttribute('data-icon', iconName);
         icon.setAttribute('aria-hidden', 'true');
         icon.setAttribute('data-directory-share-permission-current-icon', '');
         currentIcon.replaceWith(icon);
 
-        if (window.AncoreIcons?.render) {
-            window.AncoreIcons.render(picker);
-        } else if (window.lucide?.createIcons) {
-            window.lucide.createIcons();
-        }
+        window.AncoreIcons?.render(picker);
     }
 
     function updateDirectorySharePermissionPicker(picker, value) {
@@ -2498,18 +2490,7 @@ function initTasksPage() {
             label.className = 'contacts-custom-select__button-label';
             label.dataset.contactCustomSelectLabel = '';
 
-            const caret = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            caret.setAttribute('class', 'contacts-custom-select__caret');
-            caret.setAttribute('viewBox', '0 0 20 20');
-            caret.setAttribute('fill', 'none');
-            caret.setAttribute('stroke', 'currentColor');
-            caret.setAttribute('stroke-width', '1.8');
-            caret.setAttribute('stroke-linecap', 'round');
-            caret.setAttribute('stroke-linejoin', 'round');
-            caret.setAttribute('aria-hidden', 'true');
-            const caretPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            caretPath.setAttribute('d', 'm5 7.5 5 5 5-5');
-            caret.appendChild(caretPath);
+            const caret = window.AncoreIcons.create('chevron-down', { className: 'contacts-custom-select__caret' });
 
             const menu = document.createElement('div');
             menu.className = 'contacts-custom-select__menu';
@@ -2519,6 +2500,7 @@ function initTasksPage() {
             menu.dataset.contactCustomSelectMenu = '';
 
             button.append(label, caret);
+            window.AncoreIcons.render(button);
             selectControl.append(button, menu);
             renderContactCustomOptions(selectControl);
             syncContactCustomSelect(selectControl);
@@ -2564,7 +2546,7 @@ function initTasksPage() {
         const icon = icons[priority] || 'circle';
         const iconMarkup = window.AncoreIcons
             ? window.AncoreIcons.html(icon, { fallback: 'circle' })
-            : `<i data-lucide="${icon}" data-lucide-fallback="circle" aria-hidden="true"></i>`;
+            : `<i data-icon="${icon}" data-icon-fallback="circle" aria-hidden="true"></i>`;
         return `<span class="tasks-row-priority priority-${priority}"><span class="tasks-priority-icon">${iconMarkup}</span></span>`;
     }
 
@@ -2814,8 +2796,8 @@ function initTasksPage() {
         issueProjectOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-project-option]')) : [];
         issueSectionOptions = issueForm ? Array.from(issueForm.querySelectorAll('[data-section-option]')) : [];
         issuePickerOptionsHydrated = true;
-        renderLucideIcons(projectMenu);
-        renderLucideIcons(sectionMenu);
+        renderAncoreIcons(projectMenu);
+        renderAncoreIcons(sectionMenu);
     }
 
     function normalizePickerSearch(value) {
@@ -2957,7 +2939,7 @@ function initTasksPage() {
         }
     }
 
-    function renderLucideIcons(root) {
+    function renderAncoreIcons(root) {
         window.AncoreIcons?.render(root || document);
     }
 
@@ -3720,18 +3702,14 @@ function initTasksPage() {
                 ? window.AncoreIcons.create('file-text')
                 : document.createElement('i');
             populatedIcon.setAttribute('data-project-notes-icon', '');
-            populatedIcon.setAttribute('data-lucide', 'file-text');
+            populatedIcon.setAttribute('data-icon', 'file-text');
             populatedIcon.setAttribute('aria-hidden', 'true');
             if (currentIcon) {
                 currentIcon.replaceWith(populatedIcon);
             } else {
                 button.appendChild(populatedIcon);
             }
-            if (window.AncoreIcons?.render) {
-                window.AncoreIcons.render(populatedIcon);
-            } else if (window.lucide?.createIcons) {
-                window.lucide.createIcons();
-            }
+            window.AncoreIcons?.render(populatedIcon);
             const baseTitle = (button.getAttribute('title') || '').split(' — ')[0];
             if (baseTitle) button.setAttribute('title', `${baseTitle} — zawiera notatkę`);
             const ariaLabel = (button.getAttribute('aria-label') || '').replace(/, zawiera notatkę$/, '');
@@ -3753,11 +3731,7 @@ function initTasksPage() {
         thread.querySelector('[data-project-notes-empty]')?.remove();
         thread.appendChild(noteItem);
         thread.hidden = false;
-        if (window.AncoreIcons?.render) {
-            window.AncoreIcons.render(noteItem);
-        } else if (window.lucide?.createIcons) {
-            window.lucide.createIcons();
-        }
+        window.AncoreIcons?.render(noteItem);
         return noteItem;
     }
 
@@ -5071,19 +5045,19 @@ function initTasksPage() {
                     if (anyOpen) {
                         statusToggleBtn.className = 'btn btn-secondary tasks-toolbar-btn';
                         statusToggleBtn.innerHTML = `
-                            ${window.AncoreIcons ? window.AncoreIcons.html('circle-check') : '<i data-lucide="circle-check" aria-hidden="true"></i>'}
+                            ${window.AncoreIcons ? window.AncoreIcons.html('circle-check') : '<i data-icon="circle-check" aria-hidden="true"></i>'}
                             ${taskCopy.closeOne}
                         `;
                         statusToggleBtn.dataset.targetStatus = 'closed';
                     } else {
                         statusToggleBtn.className = 'btn btn-secondary tasks-toolbar-btn';
                         statusToggleBtn.innerHTML = `
-                            ${window.AncoreIcons ? window.AncoreIcons.html('rotate-ccw') : '<i data-lucide="rotate-ccw" aria-hidden="true"></i>'}
+                            ${window.AncoreIcons ? window.AncoreIcons.html('rotate-ccw') : '<i data-icon="rotate-ccw" aria-hidden="true"></i>'}
                             Otwórz ponownie
                         `;
                         statusToggleBtn.dataset.targetStatus = 'reopened';
                     }
-                    renderLucideIcons(statusToggleBtn);
+                    renderAncoreIcons(statusToggleBtn);
                 }
             } else {
                 selectionActions.style.visibility = 'hidden';
@@ -7579,7 +7553,7 @@ function initTasksPage() {
                 label.textContent = displayLabel;
 
                 drag.className = 'tasks-directory-column-drag';
-                drag.innerHTML = '<i data-lucide="grip-vertical" aria-hidden="true"></i>';
+                drag.innerHTML = '<i data-icon="grip-vertical" aria-hidden="true"></i>';
 
                 item.appendChild(checkbox);
                 item.appendChild(label);
@@ -7711,11 +7685,7 @@ function initTasksPage() {
                 delete list.dataset.suppressColumnDragClick;
             };
 
-            if (window.AncoreIcons?.render) {
-                window.AncoreIcons.render(list);
-            } else if (window.lucide?.createIcons) {
-                window.lucide.createIcons();
-            }
+            window.AncoreIcons?.render(list);
         }
 
         function filterDirectoryColumnManager(manager) {
@@ -8227,7 +8197,7 @@ function sortCurrentTaskLists(direction) {
 
 function updateTaskSortButton(button, direction) {
     const sortArrowHead = button.querySelector('[data-sort-arrow-head]');
-    const sortIcon = button.querySelector('[data-task-sort-icon], [data-lucide]');
+    const sortIcon = button.querySelector('[data-task-sort-icon], [data-icon]');
     const iconName = direction === 'asc' ? 'arrow-up-wide-narrow' : 'arrow-down-wide-narrow';
 
     button.dataset.sortDirection = direction;
@@ -8239,18 +8209,14 @@ function updateTaskSortButton(button, direction) {
         sortArrowHead.setAttribute('d', direction === 'asc' ? 'M5 7l3-3 3 3' : 'M5 17l3 3 3-3');
     }
 
-    if (sortIcon && sortIcon.getAttribute('data-lucide') !== iconName) {
+    if (sortIcon && sortIcon.getAttribute('data-icon') !== iconName) {
         const icon = document.createElement('i');
-        icon.setAttribute('data-lucide', iconName);
+        icon.setAttribute('data-icon', iconName);
         icon.setAttribute('aria-hidden', 'true');
         icon.setAttribute('data-task-sort-icon', '');
         sortIcon.replaceWith(icon);
 
-        if (window.AncoreIcons?.render) {
-            window.AncoreIcons.render(button);
-        } else if (window.lucide?.createIcons) {
-            window.lucide.createIcons();
-        }
+        window.AncoreIcons?.render(button);
     }
 }
 

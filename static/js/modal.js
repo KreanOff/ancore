@@ -57,7 +57,7 @@ window.showConfirmModal = function (options) {
     modal.innerHTML = `
         <div class="confirm-modal__body">
             <div class="confirm-modal__icon">
-                <i data-lucide="${iconName}" aria-hidden="true" stroke-width="2.5"></i>
+                <i data-icon="${iconName}" aria-hidden="true"></i>
             </div>
             <div class="confirm-modal__content">
                 <h3 class="confirm-modal__title" id="${titleId}">${title}</h3>
