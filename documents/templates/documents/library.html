@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Dysk | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260919-drive-tiles-v1"><script src="{% static 'js/documents.js' %}?v=20260919-tabs" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260919-file-icons-25"><script src="{% static 'js/documents.js' %}?v=20260919-tabs" defer></script>{% endblock %}
 {% block content %}
 <div class="documents-page" data-document-display="{{ document_display }}">
     {% include 'documents/toolbar.html' %}
@@ -14,7 +14,7 @@
             {% else %}
             <div class="documents-table-scroll">
                 <table class="documents-table">
-                    <thead><tr><th scope="col">Nazwa</th><th scope="col" data-document-column="date">Zmodyfikowano</th><th scope="col" data-document-column="size">Rozmiar</th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+                    <thead><tr><th scope="col"><span class="documents-column-heading"><i data-icon="{% if is_library_index %}hard-drive{% else %}file-text{% endif %}" aria-hidden="true"></i>Nazwa</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading"><i data-icon="calendar" aria-hidden="true"></i>Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
                     <tbody>{% for row in rows %}{% with item=row.item %}
                     <tr>
                         <td><div class="documents-name"><span class="documents-file-icon {% if row.kind == 'folder' %}documents-file-icon--folder{% endif %}"><i data-icon="{% if row.kind == 'folder' %}folder{% else %}{{ item.icon }}{% endif %}" aria-hidden="true"></i></span><div>{% if library_view == 'trash' %}<span>{{ item.title }}</span>{% else %}<a href="{{ row.url }}" title="{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}" {% if row.kind == 'document' %}data-document-modal{% endif %}>{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}</a>{% endif %}{% if row.kind == 'document' %}{% if item.folder or not current_library %}<small>{% if item.folder %}{{ item.folder.name }}{% endif %}{% if not current_library %}{% if item.folder %} · {% endif %}<a href="{{ documents_url }}?library={{ item.library_id }}">{{ item.library.name }}</a>{% endif %}</small>{% endif %}{% endif %}</div></div></td>

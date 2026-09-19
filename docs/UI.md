@@ -169,10 +169,10 @@ Serwer renderuje jeden układ, bez ukrytej kopii tabeli. Kafelki tworzą semanty
 listę w `documents-grid`, z ikoną, nazwą do dwóch linii i pełnym tekstem w linku,
 metadanymi oraz wspólnymi akcjami z tabeli. Kafelki dysków pokazują zdjęcie/ikonę,
 nazwę i datę, bez opisu oraz liczników plików i folderów. Wariant
-`documents-card--library` eksponuje ikonę lub okrągłe zdjęcie o rozmiarze
-128×128px (104×104px do szerokości 767px), wyśrodkowane na powierzchni
-kafelka bez dodatkowego tła podglądu. Nazwa, data i akcje pozostają poniżej.
-Ten wariant nie zmienia ikon w tabeli, panelu bocznym ani kafelkach plików.
+`documents-card--library` używa tego samego pola podglądu co kafelki plików:
+104px wysokości (88px na telefonie), ikony 42×42px lub okrągłego zdjęcia
+64×64px. Nazwa, data i akcje pozostają poniżej. Ten wariant nie zmienia ikon
+w tabeli ani panelu bocznym.
 Siatka dopasowuje liczbę kolumn do miejsca; na telefonie akcje mogą przejść pod datę.
 Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Wybór kolumn dotyczy
 wyłącznie tabeli i jest dostępny w trybie listy. „Nowy folder” używa istniejącego
@@ -180,20 +180,21 @@ drugorzędnego przycisku w pasku, obok „Prześlij pliki”. Wyszukiwanie ma wi
 opis zakresu obejmującego podfoldery i akcję czyszczenia pustych wyników.
 
 `documents.css` zachowuje semantyczne tabele dysków i plików, dopasowane do
-katalogu projektów: tekst 13px, nagłówki 35px, wiersze danych minimum 48px, białe tło,
-delikatne podziały poziome bez separatorów między kolumnami oraz szare
+katalogu projektów: tekst 13px, nagłówki 35px, wiersze plików minimum 36px, białe tło,
+delikatne podziały poziome i pionowe z tokenu `--tasks-directory-column-separator` oraz szare
 podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
 drugą linię z lokalizacją. Lista nie wyświetla pod nazwą etykiety „Folder” ani
 typu pliku (np. „PDF”, „JPEG”); bez lokalizacji nie tworzy drugiej linii. Nazwy mają
 ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony dysków,
-folderów i plików są monochromatyczne, bez ozdobnych ramek. Dyski używają
+folderów i plików są monochromatyczne, bez ozdobnych ramek. Ikony plików i folderów
+w tabelach Dysku i Dokumentów mają 25×25px w polu 28×28px. Dyski używają
 ikony Flaticon `hard-drive` na liście, w panelu bocznym, pustym stanie, filtrach,
 sortowaniu i wynikach globalnego wyszukiwania. Ikona w wierszu listy dysków
-ma rozmiar 22×22px w polu 36×36px. Własne zdjęcie zastępuje tę ikonę na liście
-oraz w panelu dysków; miniatura ma 36×36px na liście i 28×28px w panelu
+ma rozmiar 25×25px w polu 28×28px. Własne zdjęcie zastępuje tę ikonę na liście
+oraz w panelu dysków; miniatura ma 28×28px na liście i w panelu
 bocznym, używa `object-fit: cover`. Wspólna szerokość pola ikony i zdjęcia
 w każdym wariancie zachowuje wyrównanie nazw dysków. Wiersze dysków mają minimum
-64px wysokości, a odstęp między miniaturą i nazwą wynosi 12px (10px na telefonie).
+44px wysokości, a odstęp między miniaturą i nazwą wynosi 8px (10px w zwężonej liście).
 Miniatury i podgląd zdjęcia w formularzu są okrągłe (`border-radius: 50%`),
 zgodnie z kadrem edytora Workspace.
 
@@ -228,7 +229,7 @@ modyfikacji, a data usunięcia jest dostępna w `title` komórki.
 Foldery nadal używają daty utworzenia, ponieważ model nie zapisuje daty modyfikacji.
 Wybór kolumn pozwala ukryć datę i rozmiar.
 
-`documents-library-entry` jest linkiem obejmującym miniaturę i nazwę (14px).
+`documents-library-entry` jest linkiem obejmującym miniaturę i nazwę (13px).
 Lista dysków nie wyświetla opisu pod nazwą ani opcji „Opis” w wyborze kolumn.
 Rozmiar jest wyrównany do prawej, a akcja
 ze strzałką otwiera dysk. Przy szerokości obszaru listy do 740px (container
@@ -236,7 +237,7 @@ query, także przy rozwiniętej nawigacji aplikacji na tablecie) nazwa zawija si
 Na wąskich ekranach tabela przewija się poziomo, zachowując wszystkie
 trzy kolumny danych (minimalna szerokość 620px).
 Ustawienia i usunięcie pustego dysku pozostają oddzielnymi kontrolkami.
-Skrajne komórki mają 24px odstępu od krawędzi (16px w zwężonej liście).
+Skrajne komórki listy dysków korzystają z `--documents-index-padding-x`.
 Pusty wynik ma bezpośrednią akcję wyczyszczenia wyszukiwania i filtrów.
 
 Panel dysków ma białe tło `--bg-main`, takie samo jak lista dysków,
@@ -274,6 +275,18 @@ nawigację `tasks-rail-link`, tabelę i kafelki Dysku. Foldery i upload używaj�
 tego samego `documents/form.html` oraz obsługi fokusu, Escape i błędów w
 `documents.js`. Wariant uploadu `office_upload` wyświetla wyłącznie formaty dokumentów.
 
+Oba katalogi korzystają z jednego odstępu bocznego zakładek i siatki
+(`--documents-index-padding-x` na `.documents-page`). Nagłówki tabel używają
+małych ikon, lista Dokumentów pokazuje drugą linię tylko dla lokalizacji
+poza bieżącym folderem. Kafelki Dokumentów mają tę samą powierzchnię podglądu,
+nazwę, metadane i stopkę co pliki Dysku oraz własny przewijany kontener.
+Sortowanie Dokumentów używa `tasks-filter-dropdown`, a paginacja wspólnego
+`directory_pagination_toolbar.html` z wyborem 25/50/100 pozycji. `tasks.js`
+obsługuje także wyszukiwanie z opóźnieniem i Enter; układ, folder i widok
+pozostają zachowane przy zmianie sortowania lub liczby pozycji. Na telefonie
+wiele akcji nagłówka zawija się do kolejnych rzędów we wspólnym wariancie
+Dysku i Dokumentów; tabela zachowuje własne przewijanie poziome.
+
 Starszy edytor tekstu jest pełnym ekranem z nazwą, wyborem folderu, paskiem formatowania,
 powierzchnią dokumentu oraz jawnym zapisem. `office.css` dodaje wyłącznie układ
 tej części; kontrolki i kolory pochodzą ze wspólnych komponentów. Szerokości
@@ -294,9 +307,11 @@ Tworzenie pliku rezerwuje kartę podczas zatwierdzenia modalu, a po zapisie
 odświeża katalog w pierwotnej karcie. Błąd zamyka pustą kartę; blokada okien
 pokazuje odnośnik do utworzonego pliku. Tablica zachowuje nawigację Ancore.
 ONLYOFFICE zachowuje własny polski interfejs, Excalidraw jest izolowany od
-CSS aplikacji i używa turkusowego akcentu. Katalog dodaje minimalny rząd
-czterech przycisków tworzenia (`office-create-types`), opartych na `btn-secondary`.
-Nie kopiowano układu ani tła referencyjnego zrzutu Bitrix.
+CSS aplikacji i używa turkusowego akcentu. Katalog ma dwa wspólne paski:
+tytuł z akcjami oraz narzędzia z wyszukiwaniem i paginacją. „Nowy dokument”
+jest główną akcją; upload i folder używają wariantu drugorzędnego. Typ pliku
+(dokument, arkusz, prezentacja, tablica) wybiera się w istniejącym modalu tworzenia.
+Nie ma osobnego rzędu powielającego akcje tworzenia.
 `office-suite.js` inicjalizuje ekran także po `ancore:content-loaded`;
 `data-app-full-navigation` wymusza bezpieczne opuszczanie aktywnych edytorów.
 Statusy zapisu są potwierdzane przez serwer. Tablica przy błędzie zachowuje

@@ -1,13 +1,4 @@
 /* Dokumenty extends the drive catalog and common Ancore controls. */
-.office-page .documents-topbar { padding-inline: 0.95rem; }
-.office-page .office-sort { width: 190px; }
-.office-page .tasks-filterbar-left > .ancore-custom-select { width: 190px; flex: 0 0 190px; }
-.office-page .tasks-filterbar-left { flex-wrap: nowrap; }
-.office-page .documents-card { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-.office-page .documents-card > a { overflow-wrap: anywhere; text-decoration: none; }
-.office-page .documents-card .documents-row-actions { justify-content: flex-start; margin-top: auto; }
-.office-card-heading { padding-block: 16px; }
-.office-card-heading svg { width: 40px; height: 40px; }
 .office-editor-scroll { overflow: auto; min-height: 0; flex: 1; padding: 24px; background: var(--secondary-menu-bg); }
 .office-editor-metadata { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; max-width: 900px; margin: 0 auto 20px; }
 .office-editor-errors { max-width: 900px; margin: 0 auto 16px; }
@@ -37,12 +28,9 @@
 .office-paper-footer { display: flex; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--border-color); font-size: var(--font-size-sm); }
 .office-import-form { margin: 0 0 16px; }
 @media (max-width: 767px) {
-    .office-page .documents-topbar, .office-editor .documents-topbar { flex-wrap: wrap; height: auto; padding-block: 12px; }
-    .office-page .tasks-titlebar-actions, .office-editor .tasks-titlebar-actions { flex-wrap: wrap; }
-    .office-page .tasks-topbar .tasks-titlebar-actions,
+    .office-editor .documents-topbar { flex-wrap: wrap; height: auto; padding-block: 12px; }
+    .office-editor .tasks-titlebar-actions { flex-wrap: wrap; }
     .office-editor .tasks-topbar .tasks-titlebar-actions { flex: 1 1 100%; width: 100%; max-width: 100%; min-width: 0; justify-content: flex-start; }
-    .office-page .documents-filterbar { flex-wrap: wrap; gap: 10px; }
-    .office-page .tasks-filterbar-right { flex-wrap: wrap; justify-content: flex-start; }
     .office-editor-scroll { padding: 12px; }
     .office-editor-metadata { grid-template-columns: minmax(0, 1fr); gap: 12px; }
     .office-formatbar { padding: 8px; top: -12px; }
@@ -64,8 +52,6 @@ html.office-editor-window { --app-ui-scale: 1; }
 .office-suite-error { margin: 8px 16px; }
 .office-suite-unavailable { flex: 1; display: grid; place-items: center; }
 .office-suite .office-save-status { max-width: 260px; }
-.office-create-types { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; }
-.office-create-types a { display: flex; gap: 8px; align-items: center; }
 @media (max-width: 800px) {
     .office-suite .documents-topbar { flex-wrap: wrap; }
     .office-suite .tasks-titlebar-actions { flex-wrap: wrap; gap: 8px; }

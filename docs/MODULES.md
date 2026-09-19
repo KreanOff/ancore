@@ -292,7 +292,8 @@ pokazuje dokumenty i foldery, bez tworzenia osobnego dysku/biblioteki.
 
 - Cztery rodzaje nowych plików: dokument DOCX, arkusz XLSX, prezentacja PPTX
   i tablica Board. Katalog zachowuje foldery, listę/kafelki, sortowanie,
-  wyszukiwanie, gwiazdki, kosz i globalne szukanie.
+  wyszukiwanie, gwiazdki, kosz i globalne szukanie. Typ wybiera się w oknie
+  „Nowy dokument”. Wspólna paginacja pozwala wyświetlić 25, 50 lub 100 pozycji.
 - DOCX/XLSX/PPTX otwierają się w pełnych edytorach ONLYOFFICE w osobnej karcie
   Ancore, na pełną szerokość bez menu bocznego; katalog zostaje w pierwotnej karcie.
   Edytory zapisują pliki w prywatnym storage. DOC/XLS/PPT/RTF/TXT/CSV mogą utworzyć osobną

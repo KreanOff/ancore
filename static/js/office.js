@@ -5,8 +5,6 @@
         controller?.abort();
         controller = new AbortController();
         const options = { signal: controller.signal };
-        const search = document.querySelector('[data-office-search]');
-        document.querySelector('[data-office-sort]')?.addEventListener('change', () => search?.requestSubmit(), options);
         document.querySelector('[data-office-catalog]')?.addEventListener('submit', event => {
             const target = event.target.closest('[data-document-confirm]');
             if (!target || !window.showConfirmModal) return;

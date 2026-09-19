@@ -33,8 +33,8 @@ class OfficeUploadForm(forms.Form):
 class OfficeCreateForm(forms.Form):
     kind = forms.ChoiceField(label='Typ', choices=[('word', 'Dokument — DOCX'), ('cell', 'Arkusz — XLSX'),
                                                   ('slide', 'Prezentacja — PPTX'), ('board', 'Tablica — Board')],
-                             widget=forms.Select(attrs={'class': 'form-select'}))
-    title = forms.CharField(label='Nazwa', max_length=240, widget=forms.TextInput(attrs={'class': 'form-input', 'autofocus': True}))
+                             widget=forms.Select(attrs={'class': 'form-select tasks-inline-select'}))
+    title = forms.CharField(label='Nazwa', max_length=240, widget=forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'autofocus': True}))
 
 
 class OfficeFolderForm(forms.ModelForm):
