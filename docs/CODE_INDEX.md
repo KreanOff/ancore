@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 22 | 5 | 23 | 123 |
+| [documents](../documents) | 23 | 6 | 27 | 136 |
 
 ## 2. Modele i relacje
 
@@ -515,13 +515,14 @@ Metody/properties: `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `kind` (CharField), `content` (TextField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `kind` (CharField), `content` (TextField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `folder` | `WorkspaceDocumentFolder` | on_delete=models.RESTRICT; related_name='documents'; null=True |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='office_documents' |
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='office_documents' |
+| `tags` | `'tasks.TaskTag'` | related_name='office_documents' |
 
 Metody/properties: `extension`, `office_type`, `has_full_editor`, `icon`, `__str__`.
 
@@ -1018,8 +1019,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [documents/templates/documents/filter_sort.html](../documents/templates/documents/filter_sort.html)
 - [documents/templates/documents/form.html](../documents/templates/documents/form.html)
+- [documents/templates/documents/includes/drive_icon.html](../documents/templates/documents/includes/drive_icon.html)
+- [documents/templates/documents/includes/file_icon.html](../documents/templates/documents/includes/file_icon.html)
+- [documents/templates/documents/includes/file_icon_shape.html](../documents/templates/documents/includes/file_icon_shape.html)
 - [documents/templates/documents/includes/files_empty.html](../documents/templates/documents/includes/files_empty.html)
 - [documents/templates/documents/includes/files_grid.html](../documents/templates/documents/includes/files_grid.html)
+- [documents/templates/documents/includes/folder_icon.html](../documents/templates/documents/includes/folder_icon.html)
 - [documents/templates/documents/includes/libraries_empty.html](../documents/templates/documents/includes/libraries_empty.html)
 - [documents/templates/documents/includes/libraries_grid.html](../documents/templates/documents/includes/libraries_grid.html)
 - [documents/templates/documents/includes/library_actions.html](../documents/templates/documents/includes/library_actions.html)
@@ -1220,7 +1225,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [documents/test_office.py](../documents/test_office.py).
 
 - `RichTextTests`: 3 metod testowych.
-- `OfficeTests`: 18 metod testowych.
+- `OfficeTests`: 22 metod testowych.
+
+### documents/test_office_query.py
+
+Źródło: [documents/test_office_query.py](../documents/test_office_query.py).
+
+- `OfficeQueryTests`: 9 metod testowych.
 
 ### documents/test_previews.py
 
@@ -1379,3 +1390,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [documents/migrations/0003_documentlibrary_photo.py](../documents/migrations/0003_documentlibrary_photo.py)
 - [documents/migrations/0004_workspacedocumentfolder_workspacedocument_and_more.py](../documents/migrations/0004_workspacedocumentfolder_workspacedocument_and_more.py)
 - [documents/migrations/0005_workspacedocument_office_key_and_more.py](../documents/migrations/0005_workspacedocument_office_key_and_more.py)
+- [documents/migrations/0006_workspacedocument_tags.py](../documents/migrations/0006_workspacedocument_tags.py)

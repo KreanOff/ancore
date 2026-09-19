@@ -13,6 +13,7 @@ from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from tasks.models import TaskTag
 from workplaces.models import create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .models import Document, DocumentLibrary, WorkspaceDocument, WorkspaceDocumentFolder
@@ -108,6 +109,72 @@ class OfficeTests(TestCase):
         response = self.client.post(self.base + 'create/text/', self.save_payload(content=''), headers={'X-Office-Editor': 'true'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(WorkspaceDocument.objects.get().content, '')
+
+    def test_document_tags_save_reload_and_clear_for_each_kind(self):
+        tag = TaskTag.objects.create(user=self.user, workplace=self.workspace, name='Ważne')
+        for kind in WorkspaceDocument.Kind.values:
+            with self.subTest(kind=kind):
+                item = self.document(kind=kind)
+                url = self.base + f'{item.pk}/'
+                response = self.client.post(url, self.save_payload(tags=[tag.pk]), headers={'X-Office-Editor': 'true'})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(list(item.tags.all()), [tag])
+                self.assertContains(self.client.get(url), 'Ważne')
+                response = self.client.post(url, self.save_payload(revision=2, tags=[]), headers={'X-Office-Editor': 'true'})
+                self.assertEqual(response.status_code, 200)
+                self.assertFalse(item.tags.exists())
+
+    def test_document_tags_reject_other_owner_workspace_and_stale_revision(self):
+        tag = TaskTag.objects.create(user=self.user, workplace=self.workspace, name='Własny')
+        foreign = TaskTag.objects.create(user=self.other, workplace=self.workspace, name='Obcy właściciel')
+        outside = TaskTag.objects.create(user=self.user, workplace=self.second_workspace, name='Inny Workspace')
+        item = self.document(revision=2)
+        item.tags.add(tag)
+        url = self.base + f'{item.pk}/'
+        response = self.client.get(url)
+        self.assertNotContains(response, foreign.name)
+        self.assertNotContains(response, outside.name)
+        for invalid in [foreign, outside]:
+            response = self.client.post(url, self.save_payload(revision=2, tags=[invalid.pk]), headers={'X-Office-Editor': 'true'})
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('tags', response.json()['errors'])
+        response = self.client.post(url, self.save_payload(revision=1, tags=[]), headers={'X-Office-Editor': 'true'})
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(list(item.tags.all()), [tag])
+        item.refresh_from_db()
+        self.assertEqual(item.revision, 2)
+
+    def test_tag_filter_search_and_navigation_keep_scope(self):
+        tag = TaskTag.objects.create(user=self.user, workplace=self.workspace, name='Klient')
+        second_tag = TaskTag.objects.create(user=self.user, workplace=self.workspace, name='Klient ważny')
+        folder = self.folder()
+        item = self.document(folder=folder)
+        item.tags.set([tag, second_tag])
+        self.document(title='Bez tagu')
+        for overrides in [{'owner': self.other}, {'workplace': self.second_workspace}, {'deleted_at': timezone.now()}]:
+            self.document(**overrides).tags.add(tag)
+        for url in [self.base, '/office/']:
+            response = self.client.get(url, {'tag': tag.pk, 'sort': 'name', 'page_size': 50}, follow=True)
+            self.assertEqual([row['item'].pk for row in response.context['rows']], [item.pk])
+            self.assertContains(response, 'Tagi')
+            for option in response.context['display_options']:
+                self.assertIn(f'tag={tag.pk}', option['url'])
+            self.assertIn(f'tag={tag.pk}', response.context['return_query'])
+            self.assertIn('sort=name', response.context['tag_filter_url'])
+        response = self.client.get(self.base, {'q': 'Klient'})
+        self.assertEqual([row['item'].pk for row in response.context['rows']], [item.pk])
+        response = self.client.post(self.base + f'{item.pk}/star/', {'return_query': f'tag={tag.pk}&display=list'})
+        self.assertIn(f'tag={tag.pk}', response.url)
+        response = self.client.get(self.base, {'tag': tag.pk, 'view': 'trash'})
+        self.assertEqual(len(response.context['rows']), 1)
+        self.assertContains(response, tag.name)
+
+    def test_tag_filter_rejects_foreign_and_invalid_tags(self):
+        foreign = TaskTag.objects.create(user=self.other, workplace=self.workspace, name='Obcy')
+        outside = TaskTag.objects.create(user=self.user, workplace=self.second_workspace, name='Inny')
+        for tag in [foreign.pk, outside.pk, 'abc', '9' * 40]:
+            with self.subTest(tag=tag):
+                self.assertEqual(self.client.get(self.base, {'tag': tag}).status_code, 404)
 
     def test_conflict_preserves_current_version_and_returns_409(self):
         item = self.document(revision=4)

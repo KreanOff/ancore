@@ -21,10 +21,15 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from core.upload_validation import attachment_download_response
+from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
-from .editor_forms import OfficeDocumentForm, OfficeFolderForm, OfficeUploadForm
+from .editor_forms import DOCUMENT_EXTENSIONS, OfficeDocumentForm, OfficeFolderForm, OfficeUploadForm
 from .models import WorkspaceDocument as Document, WorkspaceDocumentFolder as Folder
 from .previews import build_preview, validate_inline
+from .query import (
+    DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS, SIZE_OPTIONS,
+    apply_date_filter, apply_text_filters, choice_field, order_results, query_context, text_field,
+)
 from .rich_text import docx_bytes, text_to_content
 from .views import _form_success
 
@@ -82,24 +87,79 @@ def _list(request, modal=None):
     if view not in {'all', 'recent', 'starred', 'trash'}:
         view = 'all'
     query = request.GET.get('q', '').strip()[:120]
+    tags = TaskTag.objects.filter(user=request.user, workplace=request.workplace)
+    selected_tag = None
+    if request.GET.get('tag'):
+        try:
+            selected_tag = get_object_or_404(tags, pk=int(request.GET['tag']))
+        except (ValueError, TypeError, OverflowError):
+            raise Http404
     display_key = f'office_display:{request.user.pk}:{request.workplace.pk}'
     display = request.GET.get('display', request.session.get(display_key, 'list'))
     if display not in {'list', 'grid'}:
         display = 'list'
     request.session[display_key] = display
-    sorting = request.GET.get('sort', 'updated')
-    order = {'updated': ['-updated_at', 'title', 'pk'], 'name': ['title', 'pk'], 'oldest': ['updated_at', 'pk']}
-    if sorting not in order:
-        sorting = 'updated'
+    fields = [
+        text_field(request.GET, 'name', 'Nazwa dokumentu', 'file-text', 'title'),
+        text_field(request.GET, 'filename', 'Oryginalna nazwa pliku', 'file', 'filename'),
+        choice_field(request.GET, 'tag', 'Tagi', 'tag', (
+            {'value': str(tag.pk), 'label': tag.name} for tag in tags
+        ), searchable=True),
+        choice_field(request.GET, 'file_type', 'Typ pliku', 'file-type', [
+            {'value': extension, 'label': extension[1:].upper()} for extension in sorted(DOCUMENT_EXTENSIONS)
+        ] + [{'value': 'text', 'label': 'Dokument Ancore'}, {'value': 'board', 'label': 'Tablica — Board'}], searchable=True),
+        choice_field(request.GET, 'size', 'Rozmiar', 'hard-drive', SIZE_OPTIONS),
+        choice_field(request.GET, 'starred', 'Gwiazdka', 'star', (
+            {'value': 'yes', 'label': 'Oznaczone gwiazdką'}, {'value': 'no', 'label': 'Bez gwiazdki'},
+        )),
+        choice_field(request.GET, 'modified', 'Usunięto' if view == 'trash' else 'Zmodyfikowano', 'clock-3', DATE_OPTIONS),
+    ]
+    sort_fields = tuple(
+        {**field, 'label': 'Nazwa dokumentu'} if field['value'] == 'name' else
+        {**field, 'label': 'Usunięto', 'lookup': 'deleted_at'} if view == 'trash' and field['value'] == 'updated' else field
+        for field in DOCUMENT_SORT_FIELDS if field['value'] not in {'description', 'library'}
+    )
+    # The old Dokumenty link meant oldest modification, unlike the Drive alias.
+    query_params = request.GET.copy()
+    if query_params.get('sort') == 'oldest':
+        query_params['sort'] = 'updated_asc'
+    query_state = query_context(query_params, fields, sort_fields, 'updated_desc')
+    values = query_state['document_filter_params']
+    searching = bool(query or query_state['has_active_filters'])
+    document_only_filter = any(field['active'] and field['param'] not in {'name', 'modified'} for field in fields)
     items = _documents(request).filter(deleted_at__isnull=view != 'trash')
-    folders = _folders(request) if view == 'all' else Folder.objects.none()
+    folders = _folders(request) if view == 'all' and not document_only_filter else Folder.objects.none()
     if view == 'starred':
         items = items.filter(is_starred=True)
     if query:
-        items = items.filter(Q(title__icontains=query) | Q(filename__icontains=query))
+        items = items.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(tags__name__icontains=query)).distinct()
         folders = folders.filter(name__icontains=query)
-    elif view == 'all':
+    elif view == 'all' and not searching:
         items, folders = items.filter(folder=folder), folders.filter(parent=folder)
+    if selected_tag:
+        items = items.filter(tags=selected_tag)
+    items = apply_text_filters(items, fields)
+    folders = apply_text_filters(folders, [{**field, 'lookup': 'name'} for field in fields if field['param'] == 'name'])
+    items = apply_date_filter(items, 'deleted_at' if view == 'trash' else 'updated_at', values['modified'])
+    folders = apply_date_filter(folders, 'created_at', values['modified'])
+    if values['file_type'] in {Document.Kind.TEXT, Document.Kind.BOARD}:
+        items = items.filter(kind=values['file_type'])
+    elif values['file_type']:
+        items = items.filter(kind=Document.Kind.FILE, filename__iendswith=values['file_type'])
+    if values['starred']:
+        items = items.filter(is_starred=values['starred'] == 'yes')
+    if values['size'] == 'small':
+        items = items.filter(file_size__lt=1024 * 1024)
+    elif values['size'] == 'medium':
+        items = items.filter(file_size__gte=1024 * 1024, file_size__lte=5 * 1024 * 1024)
+    elif values['size'] == 'large':
+        items = items.filter(file_size__gt=5 * 1024 * 1024)
+    items = order_results(items.select_related('folder').prefetch_related('tags'), query_state)
+    folder_sort = query_state['sort_field'] if query_state['sort_field'] in {'name', 'updated', 'created'} else 'name'
+    folders = order_results(folders, {**query_state, 'sort_field': folder_sort, 'sort_fields': (
+        {'value': 'name', 'lookup': 'name', 'text': True},
+        {'value': 'updated', 'lookup': 'created_at'}, {'value': 'created', 'lookup': 'created_at'},
+    )})
     # Searches and special views cover all folders in this Workspace.
     try:
         size = int(request.GET.get('page_size', 25))
@@ -113,19 +173,22 @@ def _list(request, modal=None):
     start, end = max(0, page.start_index() - 1), page.end_index()
     rows = [{'kind': 'folder', 'item': item, 'url': _url(request, folder=item.pk)} for item in folders[start:end]] if start < folder_count else []
     if end > folder_count:
-        rows += [{'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.has_full_editor else (f'{item.pk}/' if item.kind == Document.Kind.TEXT else f'{item.pk}/preview/'))} for item in items.select_related('folder').order_by(*order[sorting])[max(0, start-folder_count):end-folder_count]]
-    params = {'folder': folder.pk if folder else None, 'view': view, 'q': query, 'sort': sorting, 'display': display, 'page_size': size}
+        rows += [{'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.has_full_editor else (f'{item.pk}/' if item.kind == Document.Kind.TEXT else f'{item.pk}/preview/'))} for item in items[max(0, start-folder_count):end-folder_count]]
+    params = {**values, 'folder': folder.pk if folder else None, 'view': view, 'q': query, 'sort': query_state['sort_param'], 'display': display, 'page_size': size}
     counts = _documents(request).aggregate(all=Count('pk', filter=Q(deleted_at__isnull=True)), starred=Count('pk', filter=Q(deleted_at__isnull=True, is_starred=True)), trash=Count('pk', filter=Q(deleted_at__isnull=False)))
     context = _context(request, folder)
+    context.update(query_state)
     context.update({
-        'rows': rows, 'query': query, 'office_view': view, 'document_display': display, 'sort': sorting,
+        'rows': rows, 'query': query, 'office_view': view, 'document_display': display,
+        'search_url': _url(request, folder=folder.pk if folder else None, display=display),
+        'selected_tag': selected_tag, 'tag_filter_url': _url(request, **{**params, 'tag': None}),
         'document_form': modal, 'clear_url': _url(request, folder=folder.pk if folder else None, view=view),
-        'return_query': urlencode({**{key: value for key, value in params.items() if value is not None}, 'page': page.number}),
+        'return_query': urlencode({**{key: value for key, value in params.items() if value not in ('', None)}, 'page': page.number}),
         'office_views': [{'value': key, 'label': label, 'icon': icon, 'count': counts.get(key), 'active': view == key and not folder,
                          'url': _url(request, view=key)} for key, label, icon in [
                              ('all', 'Wszystkie dokumenty', 'files'), ('recent', 'Ostatnio zmienione', 'clock-3'),
                              ('starred', 'Oznaczone gwiazdką', 'star'), ('trash', 'Kosz', 'trash-2')]],
-        'display_options': [{'label': label, 'icon': icon, 'active': display == key, 'url': _url(request, **{**params, 'display': key})}
+        'display_options': [{'label': label, 'icon': icon, 'active': display == key, 'url': _url(request, **{**params, 'display': key, 'page': page.number})}
                             for key, label, icon in [('list', 'Lista', 'list'), ('grid', 'Kafelki', 'layout-grid')]],
         'document_window': {'page': page.number, 'total_pages': page.paginator.num_pages, 'page_size': size, 'page_size_options': [25, 50, 100],
                             'has_previous': page.has_previous(), 'has_next': page.has_next(),
@@ -239,6 +302,7 @@ def edit(request, pk=None):
                     elif item.kind == Document.Kind.TEXT:
                         item.file_size = len(item.content.encode('utf-8'))
                     item.save()
+                    form.save_m2m()
         except Exception:
             if saved_name:
                 item.file.storage.delete(saved_name)
@@ -364,5 +428,5 @@ def action(request, pk, operation):
             raise Http404
     # Rebuild the return path locally; never redirect to a posted external URL.
     params = QueryDict(request.POST.get('return_query', ''))
-    allowed = {key: params[key] for key in ('folder', 'view', 'q', 'sort', 'display', 'page', 'page_size') if key in params}
+    allowed = {key: params[key] for key in ('folder', 'view', 'q', 'sort', 'display', 'page', 'page_size', *FILTER_PARAMETERS) if key in params}
     return redirect(_url(request, **allowed))

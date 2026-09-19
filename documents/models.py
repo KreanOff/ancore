@@ -147,6 +147,7 @@ class WorkspaceDocument(models.Model):
     folder = models.ForeignKey(WorkspaceDocumentFolder, on_delete=models.RESTRICT, null=True, blank=True, related_name='documents')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='office_documents')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='office_documents')
+    tags = models.ManyToManyField('tasks.TaskTag', blank=True, related_name='office_documents', verbose_name='Tagi')
     is_starred = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

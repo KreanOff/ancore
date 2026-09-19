@@ -1,6 +1,7 @@
 /* Dokumenty extends the drive catalog and common Ancore controls. */
 .office-editor-scroll { overflow: auto; min-height: 0; flex: 1; padding: 24px; background: var(--secondary-menu-bg); }
 .office-editor-metadata { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; max-width: 900px; margin: 0 auto 20px; }
+.office-editor-metadata .documents-tag-picker { grid-column: 1 / -1; }
 .office-editor-errors { max-width: 900px; margin: 0 auto 16px; }
 .office-paper { max-width: 900px; margin: 0 auto; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); }
 .office-formatbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border-color); position: sticky; top: -24px; background: var(--bg-main); z-index: 2; border-radius: var(--radius) var(--radius) 0 0; }

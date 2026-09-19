@@ -1,0 +1,27 @@
+{% with extension=document.extension|lower %}
+    {% if document.kind == 'board' or extension == 'board' or extension == 'excalidraw' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='board' only %}
+    {% elif extension == 'doc' or extension == 'docx' or extension == 'docm' or extension == 'dot' or extension == 'dotx' or extension == 'dotm' or extension == 'odt' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='word' only %}
+    {% elif extension == 'xls' or extension == 'xlsx' or extension == 'xlsm' or extension == 'xlsb' or extension == 'xlt' or extension == 'xltx' or extension == 'xltm' or extension == 'csv' or extension == 'tsv' or extension == 'ods' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='excel' only %}
+    {% elif extension == 'ppt' or extension == 'pptx' or extension == 'pptm' or extension == 'pot' or extension == 'potx' or extension == 'pps' or extension == 'ppsx' or extension == 'ppsm' or extension == 'odp' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='powerpoint' only %}
+    {% elif extension == 'pdf' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='pdf' only %}
+    {% elif extension == 'jpg' or extension == 'jpeg' or extension == 'png' or extension == 'gif' or extension == 'webp' or extension == 'svg' or extension == 'bmp' or extension == 'tif' or extension == 'tiff' or extension == 'heic' or extension == 'avif' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='image' only %}
+    {% elif extension == 'zip' or extension == 'rar' or extension == '7z' or extension == 'tar' or extension == 'gz' or extension == 'bz2' or extension == 'xz' or extension == 'tgz' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='archive' only %}
+    {% elif extension == 'mp3' or extension == 'wav' or extension == 'ogg' or extension == 'flac' or extension == 'm4a' or extension == 'aac' or extension == 'opus' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='audio' only %}
+    {% elif extension == 'mp4' or extension == 'mov' or extension == 'avi' or extension == 'mkv' or extension == 'webm' or extension == 'm4v' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='video' only %}
+    {% elif extension == 'json' or extension == 'xml' or extension == 'html' or extension == 'css' or extension == 'js' or extension == 'ts' or extension == 'py' or extension == 'sql' or extension == 'yaml' or extension == 'yml' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='code' only %}
+    {% elif document.kind == 'text' or extension == 'ancore' or extension == 'txt' or extension == 'rtf' or extension == 'md' or extension == 'log' %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='text' only %}
+    {% else %}
+        {% include 'documents/includes/file_icon_shape.html' with variant='generic' only %}
+    {% endif %}
+{% endwith %}

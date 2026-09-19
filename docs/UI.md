@@ -130,6 +130,26 @@ Referencje pokazują bieżące wzorce kodu, a nie polecenie skopiowania całych
 ekranów. Szablony mają wymagany kontekst i kontrakt z JS. Przy użyciu include'a
 sprawdź wszystkie jego zmienne oraz miejsca wywołania.
 
+### Krótkie powiadomienia
+
+Komunikaty Django Messages i `showNotification(message, type, options)` używają
+jednego komponentu z [notifications.css](../static/css/components/notifications.css)
+i [notifications.js](../static/js/notifications.js), także na ekranach logowania.
+Nie dodawaj wariantów wyglądu zależnych od modułu ani klas `tasks-page`/`tasks-ui`.
+Powiadomienia pojawiają się w prawym górnym rogu, 20px od góry i 24px od prawej
+krawędzi, z uwzględnieniem bezpiecznych obszarów urządzenia.
+Wspólny stos ma szerokość 280–420px; do 767px wypełnia szerokość z marginesami
+1rem. Długi tekst, również bez spacji, zawija się wewnątrz komunikatu.
+
+Wszystkie typy mają białą powierzchnię `--card-bg`, ramkę `--border-color`,
+zaokrąglenie `--radius`, cień `--shadow-md` i tekst 13px/400 z `--text-primary`.
+Typ rozróżnia wyłącznie lewa ramka 3px: turkus `--system-accent` dla sukcesu
+i informacji, dotychczasowy czerwony `#c94f45` dla błędu, bursztynowy `#c18a34`
+dla ostrzeżenia, szary `--system-interaction` dla komunikatu bez typu.
+Animacje wejścia/wyjścia respektują `prefers-reduced-motion`.
+Zachowane są automatyczne wygaszanie, role `status`/`alert` i inicjalizacja
+po `ancore:content-loaded`. Panel historii aktywności pozostaje osobnym komponentem.
+
 ### Przyciski akcji w paskach narzędzi
 
 Przyciski używają wariantu `tasks-tag-topbar-button--row-highlight`:
@@ -174,9 +194,10 @@ nazwę i datę, bez opisu oraz liczników plików i folderów. Wariant
 64×64px. Nazwa, data i akcje pozostają poniżej. Ten wariant nie zmienia ikon
 w tabeli ani panelu bocznym.
 Siatka dopasowuje liczbę kolumn do miejsca; na telefonie akcje mogą przejść pod datę.
-Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Wybór kolumn dotyczy
-wyłącznie tabeli i jest dostępny w trybie listy. „Nowy folder” używa istniejącego
-drugorzędnego przycisku w pasku, obok „Prześlij pliki”. Wyszukiwanie ma widoczny
+Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Pasek Dysków nie zawiera
+przycisku „Zarządzaj tabelą”; listy dysków i plików pokazują wszystkie kolumny,
+także przy zapisanych wcześniej preferencjach ich ukrywania. „Nowy folder” używa
+istniejącego drugorzędnego przycisku w pasku, obok „Prześlij pliki”. Wyszukiwanie ma widoczny
 opis zakresu obejmującego podfoldery i akcję czyszczenia pustych wyników.
 
 `documents.css` zachowuje semantyczne tabele dysków i plików, dopasowane do
@@ -184,14 +205,36 @@ katalogu projektów: tekst 13px, nagłówki 35px, wiersze plików minimum 36px, 
 delikatne podziały poziome i pionowe z tokenu `--tasks-directory-column-separator` oraz szare
 podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
 drugą linię z lokalizacją. Lista nie wyświetla pod nazwą etykiety „Folder” ani
-typu pliku (np. „PDF”, „JPEG”); bez lokalizacji nie tworzy drugiej linii. Nazwy mają
-ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony dysków,
-folderów i plików są monochromatyczne, bez ozdobnych ramek. Ikony plików i folderów
-w tabelach Dysku i Dokumentów mają 25×25px w polu 28×28px. Dyski używają
-ikony Flaticon `hard-drive` na liście, w panelu bocznym, pustym stanie, filtrach,
-sortowaniu i wynikach globalnego wyszukiwania. Ikona w wierszu listy dysków
-ma rozmiar 25×25px w polu 28×28px. Własne zdjęcie zastępuje tę ikonę na liście
-oraz w panelu dysków; miniatura ma 28×28px na liście i w panelu
+typu pliku (np. „PDF”, „JPEG”); bez lokalizacji nie tworzy drugiej linii.
+Lista plików i folderów Dysku (`documents-layout`) ma symetryczne odstępy 24px
+od obu krawędzi tabeli, także na telefonie i w nagłówku. Przyciski działań
+są wyrównane do prawej; ich kolumna ma 168px szerokości, aby zachować miejsce
+na cztery przyciski także przy przewijaniu poziomym.
+Pusty stan zachowuje własne wyśrodkowanie i padding. Nazwy mają
+ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony nie mają
+ozdobnych ramek. Foldery na listach i kafelkach Dysku oraz Dokumentów używają
+wspólnego include'a `documents/includes/folder_icon.html`: pełnej żółtej ikony
+SVG (`#ffd855`) z pomarańczową zakładką (`#ffb41f`), bez obrysu, zgodnie z wzorcem
+użytkownika. Ikona dekoracyjna ma `aria-hidden` i nie podlega zamianie przez
+`AncoreIcons`. Pliki używają podobnej pełnej kartki z zagiętym rogiem:
+`documents/includes/file_icon.html` wybiera wariant według rozszerzenia lub
+natywnego typu dokumentu, a `file_icon_shape.html` rysuje wspólny SVG.
+Word ma niebieską ikonę z „W”, Excel zieloną z „X”, PowerPoint pomarańczową z „P”,
+a PDF czerwoną z „PDF”. Obrazy, archiwa, audio, wideo, kod, tekst i tablice mają
+własne symbole oraz kolory; nieznany format otrzymuje szarą kartkę.
+Te same ikony występują na listach, kafelkach, w formularzu danych pliku
+i zastępczym widoku podglądu. Są dekoracyjne, bez fokusu, zachowują kolory
+po inicjalizacji `AncoreIcons` i podmianie treści. Nie zmieniają obsługi formatów
+ani ikon załączników w innych modułach.
+Ikony plików i folderów w tabelach Dysku i Dokumentów mają 32×32px w polu 32×32px.
+Dyski bez zdjęcia używają pełnej, dwukolorowej niebieskiej ikony z include'a
+`documents/includes/drive_icon.html` na liście, w kafelkach, panelu bocznym
+i edytorze zdjęcia (także po usunięciu zdjęcia). SVG zachowuje stałe kolory
+`#7da2bf` i `#4285d4`, nie ma obrysu ani fokusu i jest dekoracyjne.
+Nawigacja, pusty stan, filtry, sortowanie i globalne wyszukiwanie zachowują
+ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków
+ma rozmiar 32×32px w polu 32×32px. Własne zdjęcie zastępuje tę ikonę na liście
+oraz w panelu dysków; miniatura ma 32×32px na liście i 28×28px w panelu
 bocznym, używa `object-fit: cover`. Wspólna szerokość pola ikony i zdjęcia
 w każdym wariancie zachowuje wyrównanie nazw dysków. Wiersze dysków mają minimum
 44px wysokości, a odstęp między miniaturą i nazwą wynosi 8px (10px w zwężonej liście).
@@ -216,18 +259,26 @@ Poniżej pasek `documents-workspace-nav` używa zwartego wariantu `tasks-rail-li
 linki do wszystkich plików, ostatnich zmian, gwiazdek i kosza. Liczniki
 zachowują zakres Workspace i nie zależą od filtrów. Na telefonie pasek przewija
 się poziomo. Indeks nie powtarza listy dysków w panelu bocznym.
-Pasek narzędzi, zakładki, skrajne komórki tabeli i siatka dysków mają wspólny
+Pasek narzędzi, zakładki i siatka dysków mają wspólny
 odstęp boczny `--documents-index-padding-x: 0.95rem`, zgodny z paskiem narzędzi
-katalogów. Wyrównanie jest zachowane również na telefonie i przy węższej tabeli.
+katalogów. Skrajne komórki listy dysków mają symetryczne odstępy od krawędzi tabeli:
+24px na komputerze i 20px na telefonie, również w nagłówku i przy węższej tabeli.
+Na komputerze lewy odstęp jest taki sam jak na liście plików.
 
-Listy dysków, folderów i plików mają trzy kolumny danych: „Nazwa”,
-„Zmodyfikowano”, „Rozmiar”, z osobnym polem przycisków działań.
+Lista dysków ma trzy kolumny danych: „Nazwa”, „Zmodyfikowano”, „Rozmiar”,
+z osobnym polem przycisków działań. Lista folderów i plików Dysku pokazuje
+dodatkowo kolumnę „Tagi” między nazwą a datą. Używa tych samych etykiet
+`documents-tag` co kafelki; kliknięcie tagu filtruje listę z zachowaniem
+kontekstu dysku/Workspace, wyszukiwania i pozostałych filtrów. Foldery i pliki
+bez tagów pokazują „—”. Kolumna ma 180px, a etykiety zawijają się w komórce.
+Minimalna szerokość tabeli plików wynosi 870px (800px na telefonie);
+węższy obszar zachowuje wszystkie kolumny dzięki przewijaniu poziomemu.
 Rozmiar dysku i folderu sumuje aktywne pliki, również w podfolderach,
 w zakresie właściciela i Workspace. Puste elementy pokazują 0 bajtów.
-Tagi pozostają w filtrach, edycji i kafelkach. W koszu kolumna pokazuje datę
+Tagi są dostępne także w filtrach, edycji i kafelkach. W koszu kolumna pokazuje datę
 modyfikacji, a data usunięcia jest dostępna w `title` komórki.
 Foldery nadal używają daty utworzenia, ponieważ model nie zapisuje daty modyfikacji.
-Wybór kolumn pozwala ukryć datę i rozmiar.
+Data i rozmiar pozostają widoczne w trybie listy.
 
 `documents-library-entry` jest linkiem obejmującym miniaturę i nazwę (13px).
 Lista dysków nie wyświetla opisu pod nazwą ani opcji „Opis” w wyborze kolumn.
@@ -237,7 +288,6 @@ query, także przy rozwiniętej nawigacji aplikacji na tablecie) nazwa zawija si
 Na wąskich ekranach tabela przewija się poziomo, zachowując wszystkie
 trzy kolumny danych (minimalna szerokość 620px).
 Ustawienia i usunięcie pustego dysku pozostają oddzielnymi kontrolkami.
-Skrajne komórki listy dysków korzystają z `--documents-index-padding-x`.
 Pusty wynik ma bezpośrednią akcję wyczyszczenia wyszukiwania i filtrów.
 
 Panel dysków ma białe tło `--bg-main`, takie samo jak lista dysków,
@@ -252,9 +302,9 @@ prawy panel, zgodnie ze wzorcem Kalendarza. Na szerokich ekranach zwinięcie
 poszerza tabelę i jest zapamiętywane lokalnie w przeglądarce. Do 1100px
 przycisk otwiera dotychczasowy panel wysuwany z tłem, obsługą Escape i fokusu;
 otwarcie tego panelu nie zmienia preferencji szerokiego ekranu.
-Panel dysków używa `tasks-rail-link`, akcje ikonowe `tasks-icon-button`,
-a wybór kolumn `tasks-directory-column-item`. Formularze korzystają z
-`form-input`, `tasks-inline-input`, `form-select`/`tasks-inline-select` oraz
+Panel dysków używa `tasks-rail-link`, a akcje ikonowe `tasks-icon-button`.
+Formularze korzystają z `form-input`, `tasks-inline-input`,
+`form-select`/`tasks-inline-select` oraz
 `tasks-modal__errors`. Lokalne reguły odpowiadają za układ modułu i upload;
 wspólne komponenty za kontrolki, stany interakcji i powłokę okna.
 
@@ -275,15 +325,40 @@ nawigację `tasks-rail-link`, tabelę i kafelki Dysku. Foldery i upload używaj�
 tego samego `documents/form.html` oraz obsługi fokusu, Escape i błędów w
 `documents.js`. Wariant uploadu `office_upload` wyświetla wyłącznie formaty dokumentów.
 
+Lista Dokumentów używa tych samych odstępów co lista plików Dysku: 24px
+od lewej i prawej krawędzi tabeli, także na telefonie oraz w nagłówku.
+Kolumna działań ma 168px szerokości i przyciski wyrównane do prawej.
+Pusty stan zachowuje własne odstępy i wyśrodkowanie.
+Kolumna „Tagi” między nazwą a datą używa etykiet `documents-tag` z Dysku;
+foldery i dokumenty bez tagów pokazują „—”. Oba katalogi mają tę samą
+minimalną szerokość tabeli (870px, 800px na telefonie) oraz zawijanie tagów.
+Tagi są widoczne również na kafelkach. Kliknięcie etykiety filtruje dokumenty
+ze wszystkich folderów bieżącego Workspace; aktywny tag i akcja czyszczenia
+pojawiają się nad listą. Filtr pozostaje przy wyszukiwaniu, sortowaniu,
+paginacji, zmianie układu i akcjach gwiazdki/kosza.
+Przypisanie tagów korzysta ze wspólnego pola `documents-tag-picker` w oknie
+„Dane dokumentu” i w metadanych starszego edytora tekstu. Zmiana tagów
+w edytorze tekstu oznacza niezapisane zmiany tak samo jak zmiana treści.
+
 Oba katalogi korzystają z jednego odstępu bocznego zakładek i siatki
-(`--documents-index-padding-x` na `.documents-page`). Nagłówki tabel używają
-małych ikon, lista Dokumentów pokazuje drugą linię tylko dla lokalizacji
+(`--documents-index-padding-x` na `.documents-page`). Nagłówki tabel Dysków,
+plików Dysku i Dokumentów są tekstowe, bez ikon. Lista Dokumentów pokazuje
+drugą linię tylko dla lokalizacji
 poza bieżącym folderem. Kafelki Dokumentów mają tę samą powierzchnię podglądu,
 nazwę, metadane i stopkę co pliki Dysku oraz własny przewijany kontener.
-Sortowanie Dokumentów używa `tasks-filter-dropdown`, a paginacja wspólnego
-`directory_pagination_toolbar.html` z wyborem 25/50/100 pozycji. `tasks.js`
+Dokumenty używają wspólnego z Dyskiem include'a `documents/filter_sort.html`:
+przycisku „Filtruj” z licznikiem, wyszukiwaniem pól, warunkami tekstowymi,
+wyborem wartości oraz etykietami aktywnych filtrów z usuwaniem. Wariant
+przyjmuje `filter_title`, `filter_heading` i `sort_title`, aby zachować nazwy
+modułu. Sortowanie używa `directory_sort_builder.html` z wyszukiwaniem pól,
+kierunkiem rosnąco/malejąco i aktualnym ustawieniem w przycisku, identycznie
+jak w Dysku. Pusty wynik filtrów ma akcję czyszczenia.
+Paginacja korzysta z `directory_pagination_toolbar.html` z wyborem 25/50/100 pozycji. `tasks.js`
 obsługuje także wyszukiwanie z opóźnieniem i Enter; układ, folder i widok
-pozostają zachowane przy zmianie sortowania lub liczby pozycji. Na telefonie
+pozostają zachowane przy zmianie filtrów, sortowania lub liczby pozycji.
+Folder i układ należą do adresu formularza wyszukiwania, a nie do zbioru
+czyszczonych filtrów. Filtry i sortowanie wracają na pierwszą stronę;
+zmiana lista/kafelki zachowuje stronę. Na telefonie
 wiele akcji nagłówka zawija się do kolejnych rzędów we wspólnym wariancie
 Dysku i Dokumentów; tabela zachowuje własne przewijanie poziome.
 

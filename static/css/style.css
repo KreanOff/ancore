@@ -14,7 +14,7 @@
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tasks.css?v=20260918-flaticon-v1';
 @import 'components/contacts.css?v=20260906-row-highlight-v2';
-@import 'components/notifications.css?v=20260829-pc-tablet-layout-v4';
+@import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/auth.css?v=20260903-gray-interactions-v1';
@@ -206,7 +206,6 @@ body :where(
     .contacts-photo-editor-primary,
     .contacts-empty-state .tasks-empty-state__icon,
     .dashboard-rail-badge,
-    .notification.info,
     .profile-action-primary,
     .profile-avatar--blue
 ):where(
@@ -248,7 +247,6 @@ body :where(
     .contacts-photo-editor-primary,
     .contacts-empty-state .tasks-empty-state__icon,
     .dashboard-rail-badge,
-    .notification.info,
     .profile-action-primary,
     .profile-avatar--blue
 ) :where(

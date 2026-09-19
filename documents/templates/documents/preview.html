@@ -38,7 +38,7 @@
                         <tbody>{% for entry in modal.preview.entries %}<tr><td>{{ entry.name }}{% if entry.folder %} (folder){% endif %}</td><td>{{ entry.size|filesizeformat }}</td></tr>{% endfor %}</tbody>
                     </table></div>{% else %}<p class="documents-preview-notice">Archiwum jest puste.</p>{% endif %}
                 {% else %}
-                    <div class="documents-preview-fallback" role="status"><i data-icon="{{ modal.document.icon }}" aria-hidden="true"></i><p>{{ modal.preview.message }}</p></div>
+                    <div class="documents-preview-fallback" role="status">{% include 'documents/includes/file_icon.html' with document=modal.document only %}<p>{{ modal.preview.message }}</p></div>
                 {% endif %}
             </div>
             <footer class="tasks-modal__footer">

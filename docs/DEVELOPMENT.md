@@ -121,6 +121,7 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Documents | Dyski, foldery, pliki, kosz, izolacja, modale, paginacja, wyszukiwarka, migracja dysków |
 | Documents: `test_suite.py` | Tworzenie czterech typów, osobna karta ONLYOFFICE i katalog po utworzeniu, cel wyników wyszukiwania, podpisane callbacki i źródła, deduplikacja, konflikty tablicy, walidacja OOXML, izolacja właściciela/Workspace, stara sesja po podmianie/koszu |
 | Documents: `test_office.py` | Osobny katalog Dokumentów, edycja i konflikt rewizji, formatowanie/eksport DOCX, import, walidacja/rollback plików, dwa konta i Workspace, globalne szukanie |
+| Documents: `test_office_query.py` | Łączenie filtrów katalogu Dokumentów, zakres folderów, typy natywne i uploady, granice rozmiaru, daty kosza, kierunki sortowania, stare linki, izolacja oraz zachowanie warunków w paginacji i akcjach |
 
 Lista klas i liczba zdefiniowanych metod testowych jest generowana w
 [CODE_INDEX.md](CODE_INDEX.md). Nie jest to raport wykonania testów ani procent pokrycia.
@@ -232,6 +233,10 @@ dodaje dwie osobne tabele oraz ich ograniczenia i indeks. Nie przenosi ani nie
 zmienia rekordów Dysku. Przed wejściem do Dokumentów zastosuj migrację na bazie
 danego środowiska; nowa trasa to `/office/` i jej wariant scoped Workspace.
 Nie dodano zależności Python/npm ani usług zewnętrznych.
+
+Migracja `documents/0006_workspacedocument_tags.py` dodaje relację Dokumentów
+do wspólnych tagów `tasks.TaskTag`. Należy zastosować ją przed uruchomieniem
+wersji z kolumną „Tagi”; istniejące dokumenty początkowo nie mają tagów.
 
 Sprawdzenia funkcji obejmują `manage.py test documents` oraz
 `manage.py test workplaces dashboard core`. Siedem starszych testów Workspace/core

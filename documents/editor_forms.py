@@ -3,6 +3,7 @@ from pathlib import Path
 from django import forms
 
 from core.upload_validation import validate_attachment_upload
+from tasks.models import TaskTag
 from .forms import MultipleFileField, MultipleFileInput
 from .models import WorkspaceDocument, WorkspaceDocumentFolder
 from .rich_text import clean_content
@@ -67,16 +68,18 @@ class OfficeDocumentForm(forms.ModelForm):
 
     class Meta:
         model = WorkspaceDocument
-        fields = ['title', 'folder', 'content']
+        fields = ['title', 'folder', 'tags', 'content']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'placeholder': 'Nazwa dokumentu'}),
             'folder': forms.Select(attrs={'class': 'form-select tasks-inline-select'}),
+            'tags': forms.CheckboxSelectMultiple(),
             'content': forms.Textarea(attrs={'class': 'form-input', 'rows': 20}),
         }
 
     def __init__(self, *args, owner, workplace, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['revision'].initial = self.instance.revision
+        self.fields['tags'].queryset = TaskTag.objects.filter(user=owner, workplace=workplace)
         folders = WorkspaceDocumentFolder.objects.filter(owner=owner, workplace=workplace)
         self.fields['folder'].queryset = folders
         self.fields['folder'].empty_label = 'Dokumenty (folder główny)'

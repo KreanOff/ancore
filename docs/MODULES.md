@@ -227,6 +227,8 @@ gwiazdkę oraz datę przeniesienia do kosza.
   „Nowy folder” jest bezpośrednią akcją w pasku dysku.
 - Widoki całego Workspace: wszystkie, ostatnio zmienione, oznaczone i kosz.
 - Listy dysków, folderów i plików pokazują „Nazwa”, „Zmodyfikowano” i „Rozmiar”.
+  Lista folderów i plików ma także kolumnę „Tagi” po nazwie. Etykiety plików
+  filtrują listę po kliknięciu; foldery i pliki bez tagów pokazują „—”.
   Lista folderów i plików nie powtarza pod nazwą etykiety „Folder” ani rozszerzenia
   pliku; dodatkowa linia pokazuje jedynie lokalizację, gdy jest dostępna.
   Dyski i foldery sumują rozmiary aktywnych plików także w podfolderach,
@@ -236,7 +238,8 @@ gwiazdkę oraz datę przeniesienia do kosza.
 - Indeks dysków ma skróty do tych widoków nad listą; lista pokazuje nazwy bez opisów.
   Panel przełączania dysków jest dostępny
   wewnątrz dysków i w widokach plików; nie powtarza listy na indeksie.
-- Wyszukiwanie, sortowanie, filtr tagu, paginacja i wybór widocznych kolumn.
+- Wyszukiwanie, sortowanie, filtr tagu i paginacja. Listy dysków i plików
+  pokazują wszystkie kolumny; pasek nie zawiera przycisku „Zarządzaj tabelą”.
 - Panele filtrów i sortowania zgodne z Wszystkimi projektami. Dyski można
   filtrować po nazwie, opisie, obecności plików/folderów i ostatniej zmianie;
   pliki po nazwie, oryginalnej nazwie pliku, opisie, dysku (widok Workspace),
@@ -294,6 +297,23 @@ pokazuje dokumenty i foldery, bez tworzenia osobnego dysku/biblioteki.
   i tablica Board. Katalog zachowuje foldery, listę/kafelki, sortowanie,
   wyszukiwanie, gwiazdki, kosz i globalne szukanie. Typ wybiera się w oknie
   „Nowy dokument”. Wspólna paginacja pozwala wyświetlić 25, 50 lub 100 pozycji.
+- Filtry i sortowanie korzystają z tych samych paneli co Dysk. Filtry obejmują
+  nazwę dokumentu, oryginalną nazwę pliku, tag, typ pliku (także Dokument Ancore
+  i tablicę Board), rozmiar, gwiazdkę oraz datę zmiany, a w koszu datę usunięcia.
+  Warunki tekstowe obsługują zawieranie, wykluczenie i pustą/niepustą wartość.
+  Łączą się ze sobą i wyszukiwaniem, obejmując wszystkie foldery Workspace.
+  Warunki dotyczące wyłącznie dokumentów ukrywają foldery w wynikach.
+  Sortowanie pozwala wybrać oba kierunki dla nazwy, oryginalnej nazwy pliku,
+  folderu, rozmiaru, daty zmiany/usunięcia i daty dodania. Foldery są pierwsze;
+  ich data odpowiada utworzeniu, a dla pól właściwych plikom są sortowane po nazwie.
+  Zmiana warunków wraca na pierwszą stronę. Paginacja, zmiana lista/kafelki,
+  kliknięcie tagu oraz akcje gwiazdki/kosza zachowują filtry i sortowanie.
+  Czyszczenie filtrów w panelu zachowuje bieżący folder, układ i widok.
+- Wspólne tagi `TaskTag` można przypisywać w edycji danych dokumentu (także
+  tablicy) oraz w starszym edytorze tekstu. Lista ma kolumnę „Tagi” po nazwie,
+  a kafelki pokazują te same etykiety. Kliknięcie tagu filtruje dokumenty
+  we wszystkich folderach bieżącego Workspace; wyszukiwanie uwzględnia nazwy tagów.
+  Wybór i filtrowanie tagów są ograniczone do właściciela oraz Workspace.
 - DOCX/XLSX/PPTX otwierają się w pełnych edytorach ONLYOFFICE w osobnej karcie
   Ancore, na pełną szerokość bez menu bocznego; katalog zostaje w pierwotnej karcie.
   Edytory zapisują pliki w prywatnym storage. DOC/XLS/PPT/RTF/TXT/CSV mogą utworzyć osobną

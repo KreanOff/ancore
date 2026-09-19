@@ -3,10 +3,10 @@
 {% block title %}Dokumenty | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260919-office-icons-25">
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-office-tags">
 <link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260919-catalog-style-v2">
 <script src="{% static 'js/documents.js' %}?v=20260919-tabs" defer></script>
-<script src="{% static 'js/office.js' %}?v=20260919-catalog-style-v2" defer></script>
+<script src="{% static 'js/office.js' %}?v=20260920-tags" defer></script>
 {% endblock %}
 {% block content %}
 <div class="documents-page office-page" data-office-catalog>
@@ -23,30 +23,21 @@
             <a class="tasks-tag-topbar-button tasks-tag-topbar-button--secondary" href="{{ folder_create_url }}" data-document-modal><i data-icon="folder-plus" aria-hidden="true"></i><span>Nowy folder</span></a>
         </div>
     </header>
-    <form id="office-search" method="get" action="{{ documents_url }}" hidden data-project-search-form data-server-directory-filters="true">
-        <input type="hidden" name="folder" value="{{ current_folder.pk|default:'' }}" data-project-filter-input="folder">
+    <form id="office-search" method="get" action="{{ search_url }}" hidden data-project-search-form data-server-directory-filters="true">
+        <input type="hidden" name="folder" value="{{ current_folder.pk|default:'' }}">
         <input type="hidden" name="view" value="{{ office_view }}">
-        <input type="hidden" name="display" value="{{ document_display }}" data-project-filter-input="display">
+        {% for param, value in document_filter_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}" data-project-filter-input="{{ param }}">{% endfor %}
+        <input type="hidden" name="display" value="{{ document_display }}">
         <input type="hidden" name="page_size" value="{{ document_window.page_size }}" data-project-search-page-size>
-        <input type="hidden" name="sort" value="{{ sort }}" data-project-sort-input>
+        <input type="hidden" name="sort" value="{{ sort_param }}" data-project-sort-input>
     </form>
     <div class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory documents-filterbar">
         <div class="tasks-filterbar-left">
             <nav class="documents-display-switch" aria-label="Sposób wyświetlania dokumentów">
                 {% for option in display_options %}<a class="tasks-icon-button{% if option.active %} is-active{% endif %}" href="{{ option.url }}" aria-label="{{ option.label }}" title="{{ option.label }}"{% if option.active %} aria-current="true"{% endif %}><i data-icon="{{ option.icon }}" aria-hidden="true"></i></a>{% endfor %}
             </nav>
-            <div class="tasks-filter-dropdown" data-project-sort-menu data-project-default-sort="updated">
-                <button type="button" class="tasks-filter-button tasks-project-query-trigger" aria-label="Sortowanie dokumentów" aria-haspopup="menu" aria-expanded="false" data-project-sort-toggle>
-                    <i data-icon="arrow-up-down" aria-hidden="true"></i><span>Sortuj</span>
-                    <span class="tasks-project-sort-current">{% if sort == 'name' %}Nazwa A–Z{% elif sort == 'oldest' %}Najdawniej zmienione{% else %}Ostatnio zmienione{% endif %}</span>
-                    <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
-                </button>
-                <div class="tasks-filter-menu" role="menu" aria-label="Sortowanie dokumentów">
-                    <button type="button" role="menuitemradio" aria-checked="{% if sort == 'updated' %}true{% else %}false{% endif %}"{% if sort == 'updated' %} class="is-active"{% endif %} data-project-sort-value="updated">Ostatnio zmienione</button>
-                    <button type="button" role="menuitemradio" aria-checked="{% if sort == 'name' %}true{% else %}false{% endif %}"{% if sort == 'name' %} class="is-active"{% endif %} data-project-sort-value="name">Nazwa A–Z</button>
-                    <button type="button" role="menuitemradio" aria-checked="{% if sort == 'oldest' %}true{% else %}false{% endif %}"{% if sort == 'oldest' %} class="is-active"{% endif %} data-project-sort-value="oldest">Najdawniej zmienione</button>
-                </div>
-            </div>
+            {% include 'documents/filter_sort.html' with filter_title="Filtrowanie dokumentów" filter_heading="Filtry dokumentów" sort_title="Sortowanie dokumentów" %}
+            {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-icon="x" aria-hidden="true"></i></a>{% endif %}
         </div>
         <div class="tasks-filterbar-right">
             <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-icon="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="office-search" value="{{ query }}" placeholder="Szukaj dokumentów" aria-label="Szukaj dokumentów" autocomplete="off"></label>
@@ -56,7 +47,7 @@
     <nav class="documents-workspace-nav" aria-label="Widoki dokumentów">
         {% for view in office_views %}<a class="tasks-rail-link{% if view.active %} is-active{% endif %}" href="{{ view.url }}"{% if view.active %} aria-current="page"{% endif %}><i data-icon="{{ view.icon }}" aria-hidden="true"></i><span>{{ view.label }}</span>{% if view.count != None %}<small>{{ view.count }}</small>{% endif %}</a>{% endfor %}
     </nav>
-    {% if query %}<p class="documents-results-hint">Wyniki ze wszystkich folderów w tym Workspace. <a href="{{ clear_url }}">Wyczyść wyszukiwanie</a></p>{% endif %}
+    {% if query or has_active_filters %}<p class="documents-results-hint" role="status">Wyniki ze wszystkich folderów w tym Workspace.{% if selected_tag %} Tag: {{ selected_tag.name }}.{% endif %} <a href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a></p>{% endif %}
     {% if office_view == 'trash' %}<p class="documents-results-hint">Przywróć dokument, aby go otworzyć lub edytować.</p>{% endif %}
     <section class="documents-main" aria-label="Dokumenty i foldery">
         {% if document_display == 'grid' and rows %}
@@ -64,10 +55,11 @@
         <ul class="documents-grid" aria-label="Dokumenty i foldery — kafelki">
             {% for row in rows %}{% with item=row.item %}<li class="documents-card{% if row.kind == 'folder' %} documents-card--folder{% endif %}">
                 {% if office_view == 'trash' %}<div class="documents-card-entry">{% else %}<a class="documents-card-entry" href="{{ row.url }}" title="{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}"{% if item.office_type %} target="_blank" rel="noopener"{% endif %}{% if item.kind == 'file' and not item.has_full_editor %} data-document-modal{% endif %}>{% endif %}
-                    <span class="documents-card-preview" aria-hidden="true"><i data-icon="{% if row.kind == 'folder' %}folder{% else %}{{ item.icon }}{% endif %}"></i>{% if row.kind == 'document' %}<small>{{ item.extension }}</small>{% endif %}</span>
+                    <span class="documents-card-preview" aria-hidden="true">{% if row.kind == 'folder' %}{% include 'documents/includes/folder_icon.html' %}{% else %}{% include 'documents/includes/file_icon.html' with document=item only %}{% endif %}{% if row.kind == 'document' %}<small>{{ item.extension }}</small>{% endif %}</span>
                     <span class="documents-card-title">{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}</span>
                     <span class="documents-card-meta">{% if row.kind == 'folder' %}Folder{% else %}{{ item.extension }} · {{ item.file_size|filesizeformat }}{% endif %}</span>
                 {% if office_view == 'trash' %}</div>{% else %}</a>{% endif %}
+                {% if row.kind == 'document' and item.tags.all %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% endfor %}</div>{% endif %}
                 <div class="documents-card-footer">
                     <span class="documents-card-date">{% if row.kind == 'folder' %}{{ item.created_at|date:'d.m.Y' }}{% else %}{{ item.updated_at|date:'d.m.Y' }}{% endif %}</span>
                     {% include 'documents/office/actions.html' %}
@@ -77,15 +69,16 @@
         </div>
         {% else %}
         <div class="documents-table-scroll"><table class="documents-table">
-            <thead><tr><th scope="col"><span class="documents-column-heading"><i data-icon="{% if is_library_index %}hard-drive{% else %}file-text{% endif %}" aria-hidden="true"></i>Nazwa</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading"><i data-icon="calendar" aria-hidden="true"></i>Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+            <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="tags"><span class="documents-column-heading">Tagi</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
             <tbody>{% for row in rows %}{% with item=row.item %}<tr>
-                <td><div class="documents-name"><span class="documents-file-icon"><i data-icon="{% if row.kind == 'folder' %}folder{% else %}{{ item.icon }}{% endif %}" aria-hidden="true"></i></span><div>{% include 'documents/office/name.html' %}{% if row.kind == 'document' and item.folder and not current_folder %}<small>{{ item.folder.name }}</small>{% endif %}</div></div></td>
+                <td><div class="documents-name"><span class="documents-file-icon">{% if row.kind == 'folder' %}{% include 'documents/includes/folder_icon.html' %}{% else %}{% include 'documents/includes/file_icon.html' with document=item only %}{% endif %}</span><div>{% include 'documents/office/name.html' %}{% if row.kind == 'document' and item.folder and item.folder_id != current_folder.pk %}<small>{{ item.folder.name }}</small>{% endif %}</div></div></td>
+                <td data-document-column="tags">{% if row.kind == 'document' %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% empty %}<span class="documents-muted">—</span>{% endfor %}</div>{% else %}<span class="documents-muted">—</span>{% endif %}</td>
                 <td class="documents-date" data-document-column="date" title="{% if row.kind == 'folder' %}Utworzono: {{ item.created_at|date:'d.m.Y, H:i' }}{% else %}Zmodyfikowano: {{ item.updated_at|date:'d.m.Y, H:i' }}{% endif %}">{% if row.kind == 'folder' %}{{ item.created_at|date:'d.m.Y' }}{% else %}{{ item.updated_at|date:'d.m.Y' }}{% endif %}</td>
                 <td class="documents-size" data-document-column="size">{% if row.kind == 'document' %}{{ item.file_size|filesizeformat }}{% else %}—{% endif %}</td>
                 <td>{% include 'documents/office/actions.html' %}</td>
-            </tr>{% endwith %}{% empty %}<tr><td colspan="4" class="documents-empty"><div>
+            </tr>{% endwith %}{% empty %}<tr><td colspan="5" class="documents-empty"><div>
                 <i data-icon="{% if office_view == 'trash' %}trash-2{% else %}file-text{% endif %}" aria-hidden="true"></i>
-                {% if query %}<h3>Brak pasujących dokumentów</h3><p>Zmień wyszukiwanie lub wróć do pełnej listy.</p><a class="btn btn-secondary" href="{{ clear_url }}">Wyczyść wyszukiwanie</a>
+                {% if query or has_active_filters %}<h3>Brak pasujących dokumentów</h3><p>Zmień wyszukiwanie lub filtry albo wróć do pełnej listy.</p><a class="btn btn-secondary" href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a>
                 {% elif office_view == 'trash' %}<h3>Kosz jest pusty</h3><p>Tutaj znajdziesz usunięte dokumenty, które możesz przywrócić.</p>
                 {% elif office_view == 'starred' %}<h3>Brak oznaczonych dokumentów</h3><p>Dodaj gwiazdkę do dokumentu, aby łatwo do niego wrócić.</p>
                 {% else %}<h3>{% if current_folder %}Ten folder jest pusty{% else %}Twoje dokumenty w jednym miejscu{% endif %}</h3><p>Twórz dokumenty, arkusze, prezentacje i tablice lub prześlij swoje pliki z komputera.</p><a class="btn btn-primary" href="{{ create_url }}" data-document-modal>Utwórz dokument</a>{% endif %}

@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Dyski | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260919-drive-icon-25"><script src="{% static 'js/documents.js' %}?v=20260919-tabs" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-drive-icons-32"><script src="{% static 'js/documents.js' %}?v=20260919-tabs" defer></script>{% endblock %}
 {% block content %}
 <div class="documents-page documents-library-index" data-document-display="{{ document_display }}">
     {% include 'documents/toolbar.html' %}
@@ -12,7 +12,7 @@
         {% else %}
         <div class="documents-table-scroll">
             <table class="documents-table documents-libraries-table">
-                <thead><tr><th scope="col"><span class="documents-column-heading"><i data-icon="{% if is_library_index %}hard-drive{% else %}file-text{% endif %}" aria-hidden="true"></i>Nazwa</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading"><i data-icon="calendar" aria-hidden="true"></i>Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+                <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
                 <tbody>
                     {% for item in libraries %}
                     <tr>

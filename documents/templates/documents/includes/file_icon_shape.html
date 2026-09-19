@@ -1,0 +1,37 @@
+<svg class="documents-type-icon documents-type-icon--{{ variant }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true" focusable="false">
+    <path d="M7 1h12l8 8v18a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V5a4 4 0 0 1 4-4Z"/>
+    <path fill="#fff" opacity=".35" d="M19 1v5a3 3 0 0 0 3 3h5Z"/>
+    <g fill="#fff">
+        {% if variant == 'word' %}
+        <path d="M7 13h2.7l1.7 9 2-9h2.9l2 9 1.7-9h2.7l-3.1 13h-2.7l-2.1-8.5-2.1 8.5H10Z"/>
+        {% elif variant == 'excel' %}
+        <path d="M9 13h3.6l2.9 4.5 2.9-4.5H22l-4.6 6.3 4.9 6.7h-3.7l-3.1-4.8-3.1 4.8H8.7l4.9-6.7Z"/>
+        {% elif variant == 'powerpoint' %}
+        <path fill-rule="evenodd" d="M10 13h6.5a4.5 4.5 0 0 1 0 9H13v4h-3Zm3 2.7v3.6h3.2a1.8 1.8 0 0 0 0-3.6Z"/>
+        {% elif variant == 'pdf' %}
+        <path fill-rule="evenodd" d="M6 16h3.4a3 3 0 0 1 0 6H8v3H6Zm2 2v2h1.4a1 1 0 0 0 0-2Zm5-2h2.6a4.5 4.5 0 0 1 0 9H13Zm2 2v5h.6a2.5 2.5 0 0 0 0-5Z"/>
+        <path d="M21 16h5v2h-3v1.5h2.5v2H23V25h-2Z"/>
+        {% elif variant == 'image' %}
+        <circle cx="19.5" cy="15.5" r="2.5"/>
+        <path d="m7 26 5-8 4 6 3-4 5 6Z"/>
+        {% elif variant == 'archive' %}
+        <path d="M13 11h3v3h-3Zm3 3h3v3h-3Zm-3 3h3v3h-3Z"/>
+        <path fill-rule="evenodd" d="M12 21h8v7h-8Zm2 2v3h4v-3Z"/>
+        {% elif variant == 'audio' %}
+        <path d="M13 14v9.2a3.4 3.4 0 1 0 2 3.1V17l7-1.6v5.8a3.4 3.4 0 1 0 2 3.1V11Z"/>
+        {% elif variant == 'video' %}
+        <path d="M11 13.5a1 1 0 0 1 1.5-.9l10 6a1 1 0 0 1 0 1.8l-10 6a1 1 0 0 1-1.5-.9Z"/>
+        {% elif variant == 'code' %}
+        <path d="m12 14-6 6 6 6 1.8-1.8L9.6 20l4.2-4.2Zm7 0-1.8 1.8 4.2 4.2-4.2 4.2L19 26l6-6Z"/>
+        {% elif variant == 'board' %}
+        <rect x="7" y="13" width="7" height="7" rx="1.5"/>
+        <circle cx="20" cy="16.5" r="3.5"/>
+        <path d="m10.5 21 4.5 7H6Z"/>
+        <rect x="17" y="22" width="7" height="6" rx="1.5"/>
+        {% elif variant == 'text' %}
+        <path d="M8 14h14v2H8Zm0 5h14v2H8Zm0 5h10v2H8Z"/>
+        {% else %}
+        <path d="M10 18h10v2H10Zm0 5h7v2h-7Z"/>
+        {% endif %}
+    </g>
+</svg>

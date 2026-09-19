@@ -27,6 +27,7 @@
 .documents-table-scroll { width: 100%; min-height: 0; overflow: auto; flex: 1; }
 /* Match the compact project directory while retaining semantic tables. */
 .documents-table { width: 100%; min-width: 690px; border-collapse: collapse; table-layout: fixed; font-size: var(--font-size-sm); }
+:is(.documents-layout, .office-page) .documents-table { min-width: 870px; }
 .documents-table th { background: var(--bg-main); font-weight: 400; text-align: left; text-transform: uppercase; height: 35px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .documents-table :is(th, td) { padding: 2px 12px; border-bottom: 1px solid var(--tasks-directory-column-separator, #edf0f3); vertical-align: middle; }
 .documents-table td { height: 36px; }
@@ -34,10 +35,13 @@
 .documents-column-heading { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; }
 .documents-column-heading svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .documents-table :is(th, td):first-child { width: auto; }
+:is(.documents-layout, .office-page) .documents-table :is(th, td):first-child:not(.documents-empty) { padding-left: 24px; }
 .documents-table :is(th, td)[data-document-column="date"] { width: 176px; }
+.documents-table :is(th, td)[data-document-column="tags"] { width: 180px; }
 .documents-table :is(th, td)[data-document-column="size"] { width: 100px; text-align: right; font-variant-numeric: tabular-nums; }
 .documents-table :is(th, td):last-child { width: 126px; }
 .documents-table:not(.documents-libraries-table) :is(th, td):last-child:not(.documents-empty) { width: 156px; }
+:is(.documents-layout, .office-page) .documents-table :is(th, td):last-child:not(.documents-empty) { width: 168px; padding-right: 24px; }
 .documents-table tbody tr:has(td:not(.documents-empty)):is(:hover, :focus-within) { background: var(--system-interaction-soft); }
 .documents-name { display: flex; gap: 8px; align-items: center; min-width: 0; }
 .documents-name > div { min-width: 0; }
@@ -46,20 +50,36 @@
 .documents-name small { font-size: 12px; margin-top: 1px; line-height: 1.5; }
 .documents-file-icon, .documents-library-icon { display: grid; place-items: center; width: 20px; height: 24px; flex: 0 0 20px; color: var(--text-main); }
 .documents-file-icon svg, .documents-library-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; }
-.documents-table .documents-file-icon { width: 28px; height: 28px; flex-basis: 28px; }
-.documents-table .documents-file-icon svg { width: 25px; height: 25px; }
+.documents-page svg.documents-folder-icon { stroke: none; }
+svg.documents-drive-icon { stroke: none; }
+/* Flat file symbols share the folder's filled style and keep their own colors in dialogs. */
+svg.documents-type-icon { --documents-file-color: #98a2b3; fill: var(--documents-file-color); stroke: none; }
+svg.documents-type-icon--word { --documents-file-color: #4285d4; }
+svg.documents-type-icon--excel { --documents-file-color: #2eaa73; }
+svg.documents-type-icon--powerpoint { --documents-file-color: #ef8053; }
+svg.documents-type-icon--pdf { --documents-file-color: #ed6461; }
+svg.documents-type-icon--image { --documents-file-color: #ad77d2; }
+svg.documents-type-icon--archive { --documents-file-color: #e9b44c; }
+svg.documents-type-icon--audio { --documents-file-color: #d579b0; }
+svg.documents-type-icon--video { --documents-file-color: #8675d9; }
+svg.documents-type-icon--code { --documents-file-color: #64758b; }
+svg.documents-type-icon--board { --documents-file-color: #32b9b0; }
+svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
+.documents-table .documents-file-icon { width: 32px; height: 32px; flex-basis: 32px; }
+.documents-table .documents-file-icon svg { width: 32px; height: 32px; }
 .documents-library-icon { width: 22px; flex-basis: 22px; }
 .documents-library-icon svg { width: 22px; height: 22px; }
 .documents-library-photo { width: 22px; height: 22px; object-fit: cover; border-radius: 50%; }
-.documents-libraries-table .documents-library-icon { width: 28px; height: 28px; flex-basis: 28px; }
-.documents-libraries-table .documents-library-icon svg { width: 25px; height: 25px; }
-.documents-libraries-table .documents-library-photo { width: 28px; height: 28px; }
+.documents-libraries-table .documents-library-icon { width: 32px; height: 32px; flex-basis: 32px; }
+.documents-libraries-table .documents-library-icon svg { width: 32px; height: 32px; }
+.documents-libraries-table .documents-library-photo { width: 32px; height: 32px; }
 .documents-libraries-table td:not(.documents-empty) { height: 44px; }
 .documents-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .documents-tag { padding: 3px 7px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 12px; text-decoration: none; overflow-wrap: anywhere; }
 .documents-tag:hover { background: var(--nav-selected-bg); }
 .documents-muted { font-size: var(--font-size-sm); line-height: 1.5; margin: 0; }
 .documents-row-actions { justify-content: center; gap: 3px; }
+:is(.documents-layout, .office-page) .documents-table .documents-row-actions { justify-content: flex-end; }
 .documents-row-actions .documents-icon-button { width: 28px; height: 28px; }
 .documents-row-actions form { margin: 0; }
 .documents-date, .documents-size { font-size: 13px; white-space: nowrap; }
@@ -86,10 +106,10 @@
 .documents-tag-picker input { accent-color: var(--system-accent); }
 .documents-form .errorlist { list-style: none; margin: 0; }
 .documents-libraries-table :is(th, td):first-child { width: auto; }
-.documents-libraries-table :is(th, td):first-child:not(.documents-empty) { padding-left: var(--documents-index-padding-x); }
+.documents-libraries-table :is(th, td):first-child:not(.documents-empty) { padding-left: 24px; }
 .documents-libraries-table :is(th, td)[data-document-column="date"] { width: 176px; }
 .documents-libraries-table :is(th, td):last-child { width: 132px; }
-.documents-libraries-table :is(th, td):last-child:not(.documents-empty) { padding-right: var(--documents-index-padding-x); }
+.documents-libraries-table :is(th, td):last-child:not(.documents-empty) { padding-right: 24px; }
 .documents-library-entry { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 40px; padding-block: 4px; color: inherit; text-decoration: none; }
 .documents-library-copy { display: block; min-width: 0; }
 .documents-library-title, .documents-library-description { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.5; }
@@ -110,8 +130,11 @@
     .documents-page .tasks-topbar .tasks-titlebar-actions:has(> :nth-child(2)) { flex: 1 1 100%; width: 100%; max-width: 100%; min-width: 0; flex-wrap: wrap; justify-content: flex-start; }
     .documents-page .documents-topbar .documents-actions { flex-wrap: wrap; }
     .documents-page .documents-table { min-width: 620px; }
+    :is(.documents-layout, .office-page) .documents-table { min-width: 800px; }
     .documents-table :is(th, td):first-child { width: auto; padding-left: 16px; padding-right: 4px; }
+    .documents-libraries-table :is(th, td):first-child:not(.documents-empty) { padding-left: 20px; }
     .documents-table :is(th, td):last-child { width: 122px; padding-inline: 4px 12px; }
+    .documents-libraries-table :is(th, td):last-child:not(.documents-empty) { padding-right: 20px; }
     .documents-page .documents-table td.documents-empty { width: auto; padding: 55px 16px; }
     .documents-row-actions .documents-icon-button { width: 32px; height: 38px; }
     .documents-name { gap: 8px; }
@@ -123,8 +146,8 @@
 @container library-list (max-width: 740px) {
     .documents-library-index .documents-libraries-table { min-width: 620px; }
     .documents-libraries-table :is(th, td):last-child { width: 104px; }
-    .documents-libraries-table :is(th, td):last-child:not(.documents-empty) { padding-inline: 4px var(--documents-index-padding-x); }
-    .documents-libraries-table :is(th, td):first-child:not(.documents-empty) { padding-inline: var(--documents-index-padding-x) 4px; }
+    .documents-libraries-table :is(th, td):last-child:not(.documents-empty) { padding-left: 4px; }
+    .documents-libraries-table :is(th, td):first-child:not(.documents-empty) { padding-right: 4px; }
     .documents-library-entry { gap: 10px; }
     .documents-library-title { white-space: normal; overflow-wrap: anywhere; }
     .documents-library-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; }

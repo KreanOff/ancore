@@ -1,92 +1,50 @@
-/* Fixed Notifications */
+/* Shared transient messages for every Ancore module and authentication page. */
 .notifications-container {
     position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: max(20px, env(safe-area-inset-top));
+    right: max(24px, env(safe-area-inset-right));
     z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: max-content;
+    min-width: 280px;
+    max-width: min(420px, calc(var(--app-viewport-width, 100vw) - 48px));
     pointer-events: none;
 }
 
 .notification {
-    background: #ffffff;
+    min-width: 0;
+    width: 100%;
+    padding: 0.85rem 1rem;
     border: 1px solid var(--border-color);
-    padding: 1rem 1.5rem;
-    margin-bottom: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    min-width: 300px;
-    max-width: 500px;
+    border-left: 3px solid var(--system-interaction);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
     pointer-events: auto;
-    animation: slideDown 0.15s ease-out;
+    animation: notification-enter 0.15s ease-out;
 }
 
-.notification.success {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-    color: #059669;
+.notification.success,
+.notification.info {
+    border-left-color: var(--system-accent);
 }
 
 .notification.error {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
+    border-left-color: #c94f45;
 }
 
 .notification.warning {
-    background: #fffbeb;
-    border-color: #fed7aa;
-    color: #ea580c;
+    border-left-color: #c18a34;
 }
 
-.notification.info {
-    background: var(--accent-peach);
-    border-color: var(--accent-peach);
-    color: var(--accent-on-peach);
-}
-
-body:has(.tasks-page) .notifications-container,
-.tasks-ui .notifications-container {
-    top: 20px;
-    right: 24px;
-    left: auto;
-    transform: none;
-}
-
-body:has(.tasks-page) .notification,
-.tasks-ui .notification {
-    min-width: 280px;
-    max-width: 420px;
-    padding: 0.85rem 1rem;
-    border: 1px solid #e8ebef;
-    border-radius: 8px;
-    background: #ffffff;
-    box-shadow: 0 14px 34px rgba(31, 35, 40, 0.16);
-    color: #242830;
-    font-size: var(--font-size-sm);
-    line-height: 1.4;
-}
-
-body:has(.tasks-page) .notification.success,
-.tasks-ui .notification.success {
-    border-left: 3px solid #759d42;
-}
-
-body:has(.tasks-page) .notification.error,
-.tasks-ui .notification.error {
-    border-left: 3px solid #c94f45;
-}
-
-body:has(.tasks-page) .notification.warning,
-.tasks-ui .notification.warning {
-    border-left: 3px solid #c18a34;
-}
-
-body:has(.tasks-page) .notification.info,
-.tasks-ui .notification.info {
-    border-left: 3px solid var(--accent-peach);
-}
-
-@keyframes slideDown {
+@keyframes notification-enter {
     from {
         opacity: 0;
         transform: translateY(-20px);
@@ -97,7 +55,7 @@ body:has(.tasks-page) .notification.info,
     }
 }
 
-@keyframes fadeOut {
+@keyframes notification-exit {
     from {
         opacity: 1;
     }
@@ -107,7 +65,7 @@ body:has(.tasks-page) .notification.info,
 }
 
 .notification.hiding {
-    animation: fadeOut 0.15s ease-out forwards;
+    animation: notification-exit 0.15s ease-out forwards;
 }
 
 /* Responsive */
@@ -116,27 +74,14 @@ body:has(.tasks-page) .notification.info,
         left: max(1rem, env(safe-area-inset-left));
         right: max(1rem, env(safe-area-inset-right));
         width: auto;
-    }
-
-    .notification {
         min-width: 0;
         max-width: none;
-        width: 100%;
-        margin: 0 0 0.5rem;
     }
+}
 
-    body:has(.tasks-page) .notifications-container,
-    .tasks-ui .notifications-container {
-        left: max(1rem, env(safe-area-inset-left));
-        right: max(1rem, env(safe-area-inset-right));
-        width: auto;
-    }
-
-    body:has(.tasks-page) .notification,
-    .tasks-ui .notification {
-        min-width: 0;
-        max-width: none;
-        width: 100%;
-        margin: 0 0 0.5rem;
+@media (prefers-reduced-motion: reduce) {
+    .notification,
+    .notification.hiding {
+        animation: none;
     }
 }
