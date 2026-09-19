@@ -14,7 +14,7 @@ from django.views.decorators.http import require_GET
 from accounts.avatar import account_avatar
 from accounts.views import _switch_account_context
 from contacts.models import Company, Contact
-from documents.models import Document, DocumentLibrary, Folder
+from documents.models import Document, DocumentLibrary, Folder, WorkspaceDocument
 from kanban.models import Kanban, KanbanActivity, KanbanProject, KanbanSection
 from planner.models import CalendarEvent
 from tasks.models import Task, TaskActivity, TaskProject, TaskSection, TaskTag
@@ -46,12 +46,13 @@ def _workspace_app_url(workplace, app_label, suffix=''):
         'contacts': reverse('contacts:contacts'),
         'calendar': reverse('planner:index'),
         'documents': reverse('documents:library'),
+        'office': reverse('office:index'),
     }
     base_url = fallback_urls[app_label]
     return f'{base_url}{suffix.lstrip("/")}' if suffix else base_url
 
 
-def _global_search_result(title, type_label, url, icon, meta='', eyebrow=''):
+def _global_search_result(title, type_label, url, icon, meta='', eyebrow='', *, new_tab=False):
     return {
         'title': str(title or '').strip(),
         'type': type_label,
@@ -59,6 +60,7 @@ def _global_search_result(title, type_label, url, icon, meta='', eyebrow=''):
         'icon': icon,
         'meta': str(meta or '').strip(),
         'eyebrow': str(eyebrow or '').strip(),
+        'new_tab': new_tab,
     }
 
 
@@ -101,6 +103,7 @@ def _navigation_search_results(query, workplace):
         ('Kalendarz', 'Wydarzenia i terminy', calendar_url, 'calendar-days', 'wydarzenia terminy'),
         ('Tagi', 'Wspólne oznaczenia', _search_url(tasks_url, view='tags'), 'tag', 'etykiety labels'),
         ('Dysk', 'Dyski, foldery i pliki', _workspace_app_url(workplace, 'documents'), 'hard-drive', 'dysk dyski pliki foldery dokumenty biblioteka'),
+        ('Dokumenty', 'Tworzenie, edycja i przechowywanie dokumentów', _workspace_app_url(workplace, 'office'), 'file-text', 'dokumenty edytor tekst pisanie'),
         ('Workspace', 'Miejsca pracy i ich ustawienia', reverse('workplaces:workplaces'), 'briefcase', 'miejsca pracy'),
         ('Powiadomienia', 'Ostatnia aktywność', reverse('notifications'), 'bell', 'aktywność historia'),
         ('Ustawienia Ancore', 'Konfiguracja aplikacji', reverse('settings'), 'settings', 'preferencje konfiguracja'),
@@ -440,7 +443,17 @@ def global_search(request):
     ))
 
     documents_url = _workspace_app_url(workplace, 'documents')
+    office_url = _workspace_app_url(workplace, 'office')
     groups.extend((
+        _global_search_group(
+            'office-documents', 'Dokumenty', 'file-text',
+            WorkspaceDocument.objects.filter(owner=user, workplace=workplace, deleted_at__isnull=True).filter(
+                Q(title__icontains=query) | Q(filename__icontains=query)
+            ).select_related('folder'),
+            lambda item: _global_search_result(item.title, 'Dokument',
+                f'{office_url}{item.pk}/' + ('editor/' if item.has_full_editor else ('preview/' if item.kind == WorkspaceDocument.Kind.FILE else '')),
+                'file-text', item.folder.name if item.folder else 'Dokumenty', new_tab=bool(item.office_type)),
+        ),
         _global_search_group(
             'document-libraries', 'Dyski', 'hard-drive',
             DocumentLibrary.objects.filter(owner=user, workplace=workplace).filter(

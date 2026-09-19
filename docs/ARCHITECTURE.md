@@ -8,8 +8,10 @@ JavaScript dodaje interakcje: dialogi, filtry, kolumny tabel, przeciąganie,
 upload, kalendarz i częściową nawigację. Wybrane endpointy zwracają JSON lub
 fragmenty HTML.
 
-W repozytorium nie ma osobnego projektu React/Vue ani pipeline'u npm.
-Obecne zależności Pythona to Django, `psycopg2-binary` i `python-dotenv`.
+Główna aplikacja pozostaje szablonowa. Jedyny pakiet frontendowy (`frontend/board`)
+buduje odizolowany edytor Excalidraw/React do iframe. Pełne edytory biurowe
+uruchamia osobny serwer ONLYOFFICE. Python używa Django, `psycopg2-binary`,
+`python-dotenv` i PyJWT. Szczegóły: [Dokumenty](OFFICE.md).
 Kod używa mechanizmów PostgreSQL, w tym indeksów GIN i rozszerzenia `pg_trgm`.
 
 Źródła: [settings.py](../ancore/settings.py), [requirements.txt](../requirements.txt),
@@ -25,7 +27,9 @@ tasks/                  projekty, grupy, zadania, tagi, słowniki, terminy
 kanban/                 przestrzenie Kanban, tablice, kolumny i karty
 contacts/               kontakty, firmy, powiązania z kontami Ancore
 planner/                wydarzenia i kalendarz
-documents/              dyski, foldery, pliki, gwiazdki i kosz
+documents/              Dysk, Dokumenty i bezpieczna integracja edytorów
+frontend/board/         izolowany bundle Excalidraw/React i lockfile
+deploy/                 lokalny serwer ONLYOFFICE (Compose)
 dashboard/              start, ustawienia, globalne szukanie, powiadomienia
 core/                   wspólny szablon aplikacji i walidacja uploadu
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
@@ -33,7 +37,7 @@ static/js/              wspólne i modułowe skrypty przeglądarki
 static/img/             logo i favicon
 static/vendor/flaticon/ lokalny podzbiór Flaticon UIcons i licencja
 media/                  pliki obsługiwane przez standardowy MEDIA_ROOT
-private_documents/      prywatne pliki modułu Dysku
+private_documents/      prywatne pliki Dysku i Dokumentów
 files/                  katalog lokalny; brak aktywnej aplikacji Django o tej nazwie
 docs/                   opisy projektu i generowany indeks kodu
 scripts/                narzędzia utrzymania dokumentacji
@@ -132,7 +136,8 @@ Użytkownik → Workspace
   │                                              └─ KanbanAttachment
   ├─ Kontakty: Company ← Contact ← UserContact → konto Ancore
   ├─ Kalendarz: CalendarEvent
-  └─ Dysk: DocumentLibrary → Folder / Document (foldery mogą być zagnieżdżone)
+  ├─ Dysk: DocumentLibrary → Folder / Document (foldery mogą być zagnieżdżone)
+  └─ Dokumenty: WorkspaceDocumentFolder → WorkspaceDocument (także bez folderu)
 
 TaskTag ↔ Task / Kanban / Document
 ```
@@ -147,7 +152,8 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 - `/` pokazuje Dashboard z podsumowaniem aktywnego Workspace.
 - `/accounts/...` obsługuje konto; `/workplaces/...` Workspace.
 - Moduły mają adresy bazowe `/tasks/`, `/kanban/`, `/contacts/`, `/calendar/`,
-  `/documents/` oraz warianty `/workplaces/<slug>/<moduł>/...`.
+  `/documents/` (Dysk), `/office/` (Dokumenty) oraz warianty
+  `/workplaces/<slug>/<moduł>/...`.
 - Kalendarz ma etykietę aplikacji `planner`, lecz segment URL `calendar`.
 - Ustawienia pól projektów są pod `/settings/project-fields/`, ale logika
   znajduje się w `tasks/views/project_settings.py`.
@@ -157,6 +163,12 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 
 Przy rozbudowie modułu trzeba uwzględnić także nawigację Workspace,
 context processor, wyszukiwarkę i ograniczenia częściowej nawigacji.
+
+Dokumenty mają osobne modele w aplikacji `documents`, widoki w
+`documents/editor_views.py` i routing `documents/workspace_urls.py` z przestrzeniami
+nazw `office` oraz `workplace_office`. Nie są filtrem Dysku i nie przenoszą
+jego dotychczasowych danych. Współdzielą prywatny storage, walidację uploadu,
+podglądy i powłokę formularzy/modalów.
 
 ## 8. Granice tego opisu
 

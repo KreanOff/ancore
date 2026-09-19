@@ -105,6 +105,8 @@
     }
 
     function canUsePartialNavigation(href) {
+        // Editors need a full navigation so beforeunload protects unsaved work.
+        if (document.querySelector('[data-app-full-navigation]')) return false;
         const url = getUrl(href);
         if (!url || url.origin !== window.location.origin) {
             return false;
@@ -496,7 +498,13 @@
         }, 0);
     });
 
-    window.addEventListener('beforeunload', showPageLoading);
+    window.addEventListener('beforeunload', function (event) {
+        showPageLoading();
+        // A later listener can cancel leaving an editor. Clear the scrim if it does.
+        window.setTimeout(function () {
+            if (event.defaultPrevented) hidePageLoading();
+        }, 0);
+    });
     window.addEventListener('pagehide', function (e) {
         if (!e.persisted) {
             showPageLoading();
@@ -513,6 +521,7 @@
     });
 
     if (!sidebar) {
+        root.classList.remove('app-shell-booting');
         return;
     }
 

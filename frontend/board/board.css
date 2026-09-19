@@ -1,0 +1,3 @@
+html, body, #board-root { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body { font-family: Inter, system-ui, sans-serif; }
+#board-root .excalidraw { --color-surface-primary-container: #dcf6f6; --color-on-primary-container: #40444c; --color-selection: #1ebfbf; --color-primary: #1ebfbf; --color-primary-darker: #159797; --color-primary-darkest: #137d7d; --color-primary-light: #dcf6f6; }

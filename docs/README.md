@@ -15,7 +15,8 @@ nie był ustalany. Przy zmianie zachowania aktualizuj odpowiedni rozdział.
    i sposób zachowania spójności.
 5. [Praca developerska](DEVELOPMENT.md) — konfiguracja, testy, ograniczenia
    lokalnego repozytorium i utrzymanie dokumentacji.
-6. [Indeks kodu](CODE_INDEX.md) — generowany katalog modeli, relacji,
+6. [Pełne edytory Dokumentów](OFFICE.md) — ONLYOFFICE, tablica, zapis i uruchomienie.
+7. [Indeks kodu](CODE_INDEX.md) — generowany katalog modeli, relacji,
    formularzy, tras URL, szablonów, zasobów i testów.
 
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
@@ -31,6 +32,7 @@ do szczegółowych opisów i wymaga zachowania istniejących wzorców.
 | Kontakty, firmy, profil | Odpowiedni moduł; Mechanizmy: tożsamość, dostęp, obrazy |
 | Nawigacja lub nowy moduł | Architektura; Mechanizmy: Workspace, URL i podmiana treści |
 | Dysk i upload | Moduły: Dysk; Mechanizmy: pliki; `documents/`, `core/upload_validation.py` |
+| Dokumenty i edycja treści | [Pełne edytory](OFFICE.md); `documents/editor_views.py`, `suite_views.py`, `office_service.py`, `frontend/board/` |
 | Wyszukiwanie lub powiadomienia | Mechanizmy: wyszukiwanie i historia; `dashboard/views.py` oraz odpowiedni panel JS |
 | Baza, migracje, środowisko | Praca developerska; modele i odpowiednie testy migracyjne |
 

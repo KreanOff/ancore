@@ -1,0 +1,5 @@
+{% load static %}<!doctype html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tablica | Ancore</title>
+<link rel="stylesheet" href="{% static 'vendor/board/board.css' %}">
+<script type="module" src="{% static 'vendor/board/board.js' %}"></script>
+</head><body><div id="board-root" data-assets="{% static 'vendor/board/' %}"><p>Ładowanie tablicy…</p></div>{% csrf_token %}{{ board_config|json_script:'board-config' }}</body></html>

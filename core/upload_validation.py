@@ -33,6 +33,8 @@ ATTACHMENT_ALLOWED_EXTENSIONS = {
     '.jpg',
     '.jpeg',
     '.pdf',
+    '.ppt',
+    '.pptx',
     '.png',
     '.rar',
     '.rtf',
@@ -123,9 +125,9 @@ def _validate_attachment_signature(extension, data):
         return _looks_like_text(data)
     if extension == '.rtf':
         return data.startswith(b'{\\rtf')
-    if extension in {'.doc', '.xls'}:
+    if extension in {'.doc', '.xls', '.ppt'}:
         return data.startswith(b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1')
-    if extension in {'.docx', '.xlsx', '.zip'}:
+    if extension in {'.docx', '.xlsx', '.pptx', '.zip'}:
         return data.startswith((b'PK\x03\x04', b'PK\x05\x06', b'PK\x07\x08'))
     if extension == '.rar':
         return data.startswith(b'Rar!\x1a\x07')

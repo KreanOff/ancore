@@ -1,6 +1,6 @@
 <div class="tasks-modal documents-modal is-open" role="dialog" aria-modal="true" aria-labelledby="documents-modal-title" data-document-dialog data-return-url="{{ modal.folder_url }}">
     <div class="tasks-modal__dialog">
-        <form method="post" action="{{ modal.form_action }}" {% if modal.form.is_multipart %}enctype="multipart/form-data"{% endif %} class="tasks-modal__form" data-document-form>
+        <form method="post" action="{{ modal.form_action }}" {% if modal.form.is_multipart %}enctype="multipart/form-data"{% endif %} class="tasks-modal__form" data-document-form{% if modal.office_create %} data-office-create{% endif %}>
             {% csrf_token %}
             <header class="tasks-modal__header">
                 <h2 id="documents-modal-title">{{ modal.form_title }}</h2>
@@ -13,16 +13,17 @@
                 {% if modal.document %}
                 <div class="documents-file-summary"><span class="documents-file-icon"><i data-icon="{{ modal.document.icon }}" aria-hidden="true"></i></span><div>{{ modal.document.filename }}<small>{{ modal.document.extension }} · {{ modal.document.file_size|filesizeformat }} · Dodano {{ modal.document.created_at|date:'d.m.Y, H:i' }}</small></div><a class="tasks-icon-button documents-icon-button" href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" download aria-label="Pobierz plik" title="Pobierz plik"><i data-icon="download" aria-hidden="true"></i></a></div>
                 {% endif %}
-                {% if modal.upload_form %}<p class="documents-upload-hint"><i data-icon="cloud-upload" aria-hidden="true"></i><span>Wybierz pliki do przesłania<small>Dokumenty, arkusze, obrazy i archiwa. Maks. {{ modal.max_upload_size|filesizeformat }} na plik, do 20 plików jednocześnie.</small></span></p>{% endif %}
+                {% if modal.upload_form %}<p class="documents-upload-hint"><i data-icon="cloud-upload" aria-hidden="true"></i><span>Wybierz pliki do przesłania<small>{% if modal.office_upload %}Dokumenty, arkusze i prezentacje: PDF, DOCX, XLSX, PPTX, DOC, XLS, PPT, CSV, RTF i TXT.{% else %}Dokumenty, arkusze, obrazy i archiwa.{% endif %} Maks. {{ modal.max_upload_size|filesizeformat }} na plik, do 20 plików jednocześnie.</small></span></p>{% endif %}
                 {% if modal.library_form %}{% include 'documents/includes/library_photo_editor.html' with form=modal.form photo_url=modal.photo_preview_url only %}{% endif %}
                 {% for field in modal.form %}
-                {% if modal.library_form and field.name == 'photo' or field.is_hidden %}
+                {% if field.is_hidden %}{% if not modal.library_form %}{{ field }}{% endif %}
+                {% elif modal.library_form and field.name == 'photo' %}
                 {% elif field.name == 'tags' %}<fieldset class="documents-tag-picker"><legend>Tagi</legend>{% if field.field.queryset %}{{ field }}{% else %}<p class="documents-muted">Brak tagów w tym Workspace.</p>{% endif %}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</fieldset>
                 {% else %}<div class="documents-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endif %}
                 {% endfor %}
             </div>
             <footer class="tasks-modal__footer">
-                {% if modal.document %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/preview/" class="btn btn-secondary" data-document-modal>Podgląd pliku</a>{% endif %}
+                {% if modal.document %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/preview/" class="btn btn-secondary"{% if modal.document.office_type %} target="_blank" rel="noopener"{% elif not modal.document.has_full_editor %} data-document-modal{% endif %}>{% if modal.document.has_full_editor %}Otwórz edytor{% else %}Podgląd pliku{% endif %}</a>{% endif %}
                 <a href="{{ modal.folder_url }}" class="btn btn-secondary" data-document-modal-close>Anuluj</a>
                 <button type="submit" class="tasks-modal__submit">{{ modal.submit_label }}</button>
             </footer>

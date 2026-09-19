@@ -7,8 +7,12 @@ from kanban import urls as kanban_urls
 from planner import urls as planner_urls
 from tasks import urls as tasks_urls
 from documents import urls as documents_urls
+from documents import workspace_urls as office_urls
+from documents import suite_views
 
 urlpatterns = [
+    path('office-service/<uuid:pk>/source/', suite_views.source, name='office-service-source'),
+    path('office-service/<uuid:pk>/callback/', suite_views.callback, name='office-service-callback'),
     path('admin/', admin.site.urls),
     path('', include('dashboard.urls')),
     path('accounts/', include('accounts.urls')),
@@ -17,8 +21,10 @@ urlpatterns = [
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/contacts/', include((contacts_urls.urlpatterns, 'workplace_contacts'), namespace='workplace_contacts')),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/calendar/', include((planner_urls.urlpatterns, 'workplace_planner'), namespace='workplace_planner')),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/documents/', include((documents_urls.urlpatterns, 'workplace_documents'), namespace='workplace_documents')),
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/office/', include((office_urls.urlpatterns, 'workplace_office'), namespace='workplace_office')),
     path('workplaces/', include('workplaces.urls')),
     path('documents/', include('documents.urls')),
+    path('office/', include('documents.workspace_urls')),
     path('tasks/', include('tasks.urls')),
     path('kanban/', include('kanban.urls')),
     path('contacts/', include('contacts.urls')),

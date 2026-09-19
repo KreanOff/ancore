@@ -58,7 +58,7 @@
         const host = document.querySelector('[data-document-modal-host]');
         if (!host) return;
         let modal = host.querySelector('[data-document-dialog]');
-        const directLink = Boolean(modal);
+        let directLink = Boolean(modal);
         let previousFocus;
         let pending = false;
         let inertElements = [];
@@ -182,8 +182,19 @@
             if (!form || !host.contains(form)) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            if (pending) return;
+            if (pending || form.dataset.saved === 'true') return;
             pending = true;
+            const formData = new FormData(form);
+            let editorTab = null;
+            if (form.hasAttribute('data-office-create') && ['word', 'cell', 'slide'].includes(formData.get('kind'))) {
+                // Reserve the tab during the user's click, before the asynchronous save.
+                editorTab = window.open('about:blank', '_blank');
+                if (editorTab) {
+                    editorTab.opener = null;
+                    editorTab.document.title = 'Otwieranie dokumentu | Ancore';
+                    editorTab.document.body.textContent = 'Tworzenie dokumentu…';
+                }
+            }
             const submit = form.querySelector('[type="submit"]');
             const errorMessage = form.querySelector('[data-document-modal-error]');
             submit.disabled = true;
@@ -191,13 +202,40 @@
             errorMessage.hidden = true;
             try {
                 const response = await fetch(form.action, {
-                    method: 'POST', body: new FormData(form),
+                    method: 'POST', body: formData,
                     headers: { 'X-Document-Modal': 'true' }, signal: options.signal,
                 });
                 if (!response.ok || response.redirected) throw new Error('Unable to save document');
                 if (response.headers.get('Content-Type')?.includes('application/json')) {
                     const result = await response.json();
                     if (!options.signal.aborted) {
+                        if (result.editor_url) {
+                            if (editorTab && !editorTab.closed) {
+                                editorTab.location.replace(result.editor_url);
+                                editorTab = null;
+                            } else {
+                                // A blocked or manually closed tab must not cause a duplicate creation.
+                                form.dataset.saved = 'true';
+                                form.querySelectorAll('.documents-field').forEach(field => field.remove());
+                                submit.remove();
+                                modal.querySelector('h2').textContent = 'Dokument utworzony';
+                                errorMessage.textContent = 'Dokument został zapisany. Otwórz edytor w nowej karcie.';
+                                errorMessage.hidden = false;
+                                const open = document.createElement('a');
+                                open.href = result.editor_url;
+                                open.target = '_blank';
+                                open.rel = 'noopener';
+                                open.className = 'btn btn-primary';
+                                open.textContent = 'Otwórz edytor';
+                                form.querySelector('.tasks-modal__footer').append(open);
+                                const cancel = form.querySelector('.tasks-modal__footer [data-document-modal-close]');
+                                cancel.textContent = 'Wróć do dokumentów';
+                                modal.dataset.returnUrl = result.redirect_url;
+                                directLink = true;
+                                open.focus();
+                                return;
+                            }
+                        }
                         pending = false;
                         modal.remove();
                         modal = null;
@@ -215,6 +253,7 @@
                     errorMessage.scrollIntoView({ block: 'nearest' });
                 }
             } finally {
+                if (editorTab && !editorTab.closed) editorTab.close();
                 pending = false;
                 submit.disabled = false;
                 form.removeAttribute('aria-busy');

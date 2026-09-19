@@ -6,7 +6,7 @@
 
 - Python zgodny z używaną wersją Django.
 - PostgreSQL; migracje Tasks korzystają z `TrigramExtension` (`pg_trgm`) i GIN.
-- Zależności: `django>=5.0`, `psycopg2-binary`, `python-dotenv`.
+- Zależności: `django>=5.0`, `psycopg2-binary`, `python-dotenv`, `PyJWT>=2.10,<3`.
 - Lokalnie podczas pierwszego przeglądu odczytano Python **3.14.6** i Django
   **6.0.7** z `.venv`. Są to wersje tego środowiska, nie ścisłe wymagania zapisane
   w repozytorium. Zależności nie są przypięte lockfile'em.
@@ -73,6 +73,11 @@ włącza bezpieczne ciasteczka/HTTPS, co nie pasuje automatycznie do lokalnego H
 migracji. Powyższa procedura zakłada ich dostępność; pierwszy przegląd nie
 potwierdza odtwarzalności czystego klona.
 
+Pełne edytory Dokumentów wymagają dodatkowej konfiguracji opisanej w
+[OFFICE.md](OFFICE.md): lokalnego ONLYOFFICE oraz zbudowania zasobów tablicy.
+`./scripts/start_office.sh` uruchamia osobny profil Colima/Compose; nie uruchamia
+Django. Przy wdrożeniu buduj `frontend/board` przed `collectstatic`.
+
 ## 4. Testy
 
 Projekt używa testów Django (`TestCase`, `TransactionTestCase`) w modułach.
@@ -112,6 +117,8 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Dashboard | Wyszukiwanie, powiadomienia i integracje |
 | Core | Wspólne mechanizmy i kontrakty UI/uploadu według aktualnych przypadków |
 | Documents | Dyski, foldery, pliki, kosz, izolacja, modale, paginacja, wyszukiwarka, migracja dysków |
+| Documents: `test_suite.py` | Tworzenie czterech typów, osobna karta ONLYOFFICE i katalog po utworzeniu, cel wyników wyszukiwania, podpisane callbacki i źródła, deduplikacja, konflikty tablicy, walidacja OOXML, izolacja właściciela/Workspace, stara sesja po podmianie/koszu |
+| Documents: `test_office.py` | Osobny katalog Dokumentów, edycja i konflikt rewizji, formatowanie/eksport DOCX, import, walidacja/rollback plików, dwa konta i Workspace, globalne szukanie |
 
 Lista klas i liczba zdefiniowanych metod testowych jest generowana w
 [CODE_INDEX.md](CODE_INDEX.md). Nie jest to raport wykonania testów ani procent pokrycia.
@@ -215,3 +222,18 @@ Weryfikacja 15.09.2026:
 
 Nie uruchamiano pełnego zestawu testów ani wizualnej weryfikacji ekranów;
 zakres zmian obejmuje dokumentację i jej generator.
+
+## 10. Uruchomienie osobnego modułu Dokumenty
+
+Migracja `documents/0004_workspacedocumentfolder_workspacedocument_and_more.py`
+dodaje dwie osobne tabele oraz ich ograniczenia i indeks. Nie przenosi ani nie
+zmienia rekordów Dysku. Przed wejściem do Dokumentów zastosuj migrację na bazie
+danego środowiska; nowa trasa to `/office/` i jej wariant scoped Workspace.
+Nie dodano zależności Python/npm ani usług zewnętrznych.
+
+Sprawdzenia funkcji obejmują `manage.py test documents` oraz
+`manage.py test workplaces dashboard core`. Siedem starszych testów Workspace/core
+ma oczekiwania niezgodne z obecną nawigacją i CSS; ten sam zestaw błędów
+odtworzono na kopii wersji sprzed dodania Dokumentów. Nie należy traktować
+tego jako zielonego wyniku całego zestawu. Szczegóły aktualnego wykonania
+podaje podsumowanie zadania.

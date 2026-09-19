@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 13 | 3 | 17 | 80 |
+| [documents](../documents) | 22 | 5 | 23 | 123 |
 
 ## 2. Modele i relacje
 
@@ -497,6 +497,44 @@ Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `library` (Fore
 
 Metody/properties: `extension`, `icon`, `__str__`.
 
+### `WorkspaceDocumentFolder`
+
+Źródło: [documents/models.py](../documents/models.py).
+
+Pola zadeklarowane tutaj: `name` (CharField), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `parent` | `'self'` | on_delete=models.RESTRICT; related_name='children'; null=True |
+| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='office_folders' |
+| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='office_folders' |
+
+Metody/properties: `__str__`.
+
+### `WorkspaceDocument`
+
+Źródło: [documents/models.py](../documents/models.py).
+
+Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `kind` (CharField), `content` (TextField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `folder` | `WorkspaceDocumentFolder` | on_delete=models.RESTRICT; related_name='documents'; null=True |
+| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='office_documents' |
+| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='office_documents' |
+
+Metody/properties: `extension`, `office_type`, `has_full_editor`, `icon`, `__str__`.
+
+### `OfficeSaveReceipt`
+
+Źródło: [documents/models.py](../documents/models.py).
+
+Pola zadeklarowane tutaj: `document` (ForeignKey), `digest` (CharField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `document` | `WorkspaceDocument` | on_delete=models.CASCADE; related_name='save_receipts' |
+
 ## 3. Formularze
 
 Wypisane są deklaracje klas, także bazowe klasy i widgety.
@@ -596,6 +634,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'office-service/<uuid:pk>/source/'` | `suite_views.source` | 'office-service-source' |
+| `'office-service/<uuid:pk>/callback/'` | `suite_views.callback` | 'office-service-callback' |
 | `'admin/'` | `admin.site.urls` | — |
 | `''` | `include('dashboard.urls')` | — |
 | `'accounts/'` | `include('accounts.urls')` | — |
@@ -604,8 +644,10 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'^workplaces/[-a-zA-Z0-9_]+/contacts/'` | `include((contacts_urls.urlpatterns, 'workplace_contacts'), namespace='workplace_contacts')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/calendar/'` | `include((planner_urls.urlpatterns, 'workplace_planner'), namespace='workplace_planner')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/documents/'` | `include((documents_urls.urlpatterns, 'workplace_documents'), namespace='workplace_documents')` | — |
+| `'^workplaces/[-a-zA-Z0-9_]+/office/'` | `include((office_urls.urlpatterns, 'workplace_office'), namespace='workplace_office')` | — |
 | `'workplaces/'` | `include('workplaces.urls')` | — |
 | `'documents/'` | `include('documents.urls')` | — |
+| `'office/'` | `include('documents.workspace_urls')` | — |
 | `'tasks/'` | `include('tasks.urls')` | — |
 | `'kanban/'` | `include('kanban.urls')` | — |
 | `'contacts/'` | `include('contacts.urls')` | — |
@@ -857,12 +899,19 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [documents/__init__.py](../documents/__init__.py)
 - [documents/apps.py](../documents/apps.py) — `DocumentsConfig`
+- [documents/board.py](../documents/board.py) — `clean_scene`
+- [documents/editor_forms.py](../documents/editor_forms.py) — `validate_document`, `DocumentFilesField`, `OfficeUploadForm`, `OfficeCreateForm`, `OfficeFolderForm`, `OfficeDocumentForm`
+- [documents/editor_views.py](../documents/editor_views.py) — `index`, `folder_edit`, `folder_delete`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
-- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`
+- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`
+- [documents/office_service.py](../documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
 - [documents/previews.py](../documents/previews.py) — `inline_type`, `validate_inline`, `OfficePackage`, `build_preview`
 - [documents/query.py](../documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
+- [documents/rich_text.py](../documents/rich_text.py) — `DocumentHTML`, `clean_content`, `text_to_content`, `docx_bytes`
+- [documents/suite_views.py](../documents/suite_views.py) — `create`, `editor`, `board_frame`, `save_board`, `save_office`, `state`, `source`, `callback`, `upgrade_text`, `convert`
 - [documents/urls.py](../documents/urls.py)
 - [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `detail`, `preview`, `preview_content`, `download`, `star`, `trash`, `restore`
+- [documents/workspace_urls.py](../documents/workspace_urls.py)
 
 ## 6. Szablony
 
@@ -978,6 +1027,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/templates/documents/libraries.html](../documents/templates/documents/libraries.html)
 - [documents/templates/documents/library.html](../documents/templates/documents/library.html)
 - [documents/templates/documents/modal_host.html](../documents/templates/documents/modal_host.html)
+- [documents/templates/documents/office/actions.html](../documents/templates/documents/office/actions.html)
+- [documents/templates/documents/office/board_frame.html](../documents/templates/documents/office/board_frame.html)
+- [documents/templates/documents/office/editor.html](../documents/templates/documents/office/editor.html)
+- [documents/templates/documents/office/index.html](../documents/templates/documents/office/index.html)
+- [documents/templates/documents/office/name.html](../documents/templates/documents/office/name.html)
+- [documents/templates/documents/office/suite.html](../documents/templates/documents/office/suite.html)
 - [documents/templates/documents/preview.html](../documents/templates/documents/preview.html)
 - [documents/templates/documents/return_filters.html](../documents/templates/documents/return_filters.html)
 - [documents/templates/documents/sidebar.html](../documents/templates/documents/sidebar.html)
@@ -1007,6 +1062,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/modals.css](../static/css/components/modals.css)
 - [static/css/components/notifications-panel.css](../static/css/components/notifications-panel.css)
 - [static/css/components/notifications.css](../static/css/components/notifications.css)
+- [static/css/components/office.css](../static/css/components/office.css)
 - [static/css/components/profile.css](../static/css/components/profile.css)
 - [static/css/components/settings.css](../static/css/components/settings.css)
 - [static/css/components/sticky-note.css](../static/css/components/sticky-note.css)
@@ -1035,6 +1091,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/modal.js](../static/js/modal.js)
 - [static/js/notifications-panel.js](../static/js/notifications-panel.js)
 - [static/js/notifications.js](../static/js/notifications.js)
+- [static/js/office-suite.js](../static/js/office-suite.js)
+- [static/js/office.js](../static/js/office.js)
 - [static/js/presence.js](../static/js/presence.js)
 - [static/js/profile.js](../static/js/profile.js)
 - [static/js/settings.js](../static/js/settings.js)
@@ -1140,7 +1198,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [documents/test_migrations.py](../documents/test_migrations.py).
 
-- `LibraryMigrationTests`: 1 metod testowych.
+- `LibraryMigrationTests`: 2 metod testowych.
+
+### documents/test_office.py
+
+Źródło: [documents/test_office.py](../documents/test_office.py).
+
+- `RichTextTests`: 3 metod testowych.
+- `OfficeTests`: 18 metod testowych.
 
 ### documents/test_previews.py
 
@@ -1154,6 +1219,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [documents/test_query.py](../documents/test_query.py).
 
 - `DocumentQueryTests`: 11 metod testowych.
+
+### documents/test_suite.py
+
+Źródło: [documents/test_suite.py](../documents/test_suite.py).
+
+- `FullEditorTests`: 19 metod testowych.
+- `SceneValidationTests`: 2 metod testowych.
 
 ### documents/tests.py
 
@@ -1288,3 +1360,5 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [documents/migrations/0001_initial.py](../documents/migrations/0001_initial.py)
 - [documents/migrations/0002_documentlibrary_and_more.py](../documents/migrations/0002_documentlibrary_and_more.py)
 - [documents/migrations/0003_documentlibrary_photo.py](../documents/migrations/0003_documentlibrary_photo.py)
+- [documents/migrations/0004_workspacedocumentfolder_workspacedocument_and_more.py](../documents/migrations/0004_workspacedocumentfolder_workspacedocument_and_more.py)
+- [documents/migrations/0005_workspacedocument_office_key_and_more.py](../documents/migrations/0005_workspacedocument_office_key_and_more.py)

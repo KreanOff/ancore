@@ -51,9 +51,9 @@ sprawdź oczekiwany kontekst i zachowanie aktywnego middleware.
 ## 3. Routing zwykły i scoped
 
 `scoped_workplace_app_path()` buduje adresy modułów. Zestaw obsługiwanych
-segmentów to `tasks`, `kanban`, `contacts`, `calendar`, `documents`.
+segmentów to `tasks`, `kanban`, `contacts`, `calendar`, `documents`, `office`.
 Wariant scoped ma namespace `workplace_tasks`, `workplace_kanban`,
-`workplace_contacts`, `workplace_planner` albo `workplace_documents`.
+`workplace_contacts`, `workplace_planner`, `workplace_documents` albo `workplace_office`.
 
 Po włączeniu zakresu URL middleware przekierowuje bazowe GET/HEAD do
 odpowiedniego Workspace i zachowuje query string. POST nie jest w ten sam
@@ -226,6 +226,47 @@ Formularze dysków i Workspace współdzielą `validate_image_crop`, używający
 tej samej walidacji formatu i rozmiaru co upload zdjęcia.
 Nie przenoś gwarancji sprzątania automatycznie na pliki: model `Document`
 nie ma analogicznego sygnału. Kosz ustawia tylko `deleted_at`.
+
+### Treść i pliki osobnego modułu Dokumenty
+
+`WorkspaceDocument` zapisuje natywną treść w PostgreSQL, a przesłany oryginał
+w tym samym prywatnym storage co Dysk, z losową nazwą. Każdy odczyt i zapis
+widoków `editor_views.py` ogranicza obiekty do właściciela i aktywnego Workspace;
+formularz folderu nie pozwala wskazać relacji spoza tego zakresu. Kosz blokuje
+edycję, import, podgląd i pobieranie.
+
+Treść przechodzi przez `rich_text.clean_content`: dopuszczona jest mała lista
+znaczników formatowania bez atrybutów; aktywne elementy, skrypty, style, obrazy,
+odnośniki i nieprawidłowe znaki XML są usuwane. Limit wynosi 500 tys. znaków
+z formatowaniem oraz 64 poziomy zagnieżdżenia. Przeglądarka dodatkowo buduje
+edytor z listy dozwolonych elementów i wkleja wyłącznie tekst. Eksport DOCX
+tworzy lokalnie pakiet OOXML, bez makr, zewnętrznych relacji i wykonywania kodu.
+
+Zapis blokuje rekord transakcją (`select_for_update`) i porównuje numer
+`revision`. Stara wersja daje błąd 409 dla edytora AJAX bez nadpisania bazy.
+Zmiana metadanych/przesłanie nowego pliku również zwiększa rewizję. Gwiazdka
+i kosz są oddzielnymi operacjami. Edytor wyświetla błąd po utracie połączenia
+lub sesji, zachowując lokalnie wpisaną treść.
+
+Upload waliduje całą partię przed zapisem i sprząta pliki przy wycofaniu
+transakcji. Podmiana usuwa stary plik dopiero po zatwierdzeniu bazy. Sygnał
+`WorkspaceDocument.post_delete` usuwa oryginał po commit, także przy usuwaniu
+Workspace. Jest to osobny mechanizm od starszego modelu `Document` Dysku.
+PDF jest serwowany przez autoryzowany endpoint z kontrolą sygnatury,
+`nosniff`, `SAMEORIGIN`, CSP sandbox i `private, no-store`. Pozostałe podglądy
+korzystają z istniejących limitów `previews.py`; import tekstu odrzuca obcięte dane.
+
+Pełne edytory DOCX/XLSX/PPTX używają podpisanej integracji ONLYOFFICE.
+Serwisowe URL wymagają podpisu przypisanego do dokumentu/właściciela/Workspace,
+a zapis dodatkowo JWT serwera. Klucze sesji, powtórzone callbacki, podmiana
+plików oraz pobieranie wyników są opisane w [mechanizmie zapisu](OFFICE.md#zapis-i-granice-dostępu).
+Tablice przechowują walidowany JSON Excalidraw w `content`; nie korzystają
+z sanitizera HTML. Ten sam licznik rewizji chroni przed konfliktem okien.
+
+Znacznik `data-app-full-navigation` na edytorze wyłącza częściową nawigację,
+aby `beforeunload` mógł chronić niezapisane zmiany. Anulowanie wyjścia usuwa
+wskaźnik ładowania. `office.js` inicjalizuje obsługę przy starcie i
+`ancore:content-loaded`, usuwając poprzednie listenery przez `AbortController`.
 
 `ancore/urls.py` serwuje `MEDIA_ROOT` bezpośrednio przy DEBUG. Kontrolowany
 endpoint załącznika nie oznacza automatycznie, że każdy inny sposób dostępu

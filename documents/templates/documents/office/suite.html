@@ -1,0 +1,36 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}{{ document.title }} | Dokumenty | ancore{% endblock %}
+{% block html_class %}{% if document.office_type %}office-editor-window{% endif %}{% endblock %}
+{% block app_navigation %}{% if not document.office_type %}{{ block.super }}{% endif %}{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260919">
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260919-tabs">
+<script src="{% static 'js/documents.js' %}?v=20260919-tabs" defer></script>
+<script src="{% static 'js/office-suite.js' %}?v=20260919" defer></script>
+{% endblock %}
+{% block content %}
+<div class="documents-page office-suite" data-app-full-navigation data-office-suite data-kind="{{ document.kind }}" data-state-url="{{ documents_url }}{{ document.pk }}/state/" data-save-url="{{ documents_url }}{{ document.pk }}/save/" data-revision="{{ document.revision }}" data-back-url="{{ folder_url }}">
+    <header class="tasks-topbar tasks-topbar--directory documents-topbar">
+        <div class="tasks-titlebar-left"><a class="tasks-icon-button" href="{{ folder_url }}" aria-label="Wróć do dokumentów" title="Wróć do dokumentów"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title" title="{{ document.title }}">{{ document.title }}</h1><span class="office-file-kind">{{ document.extension }}</span></div>
+        <div class="tasks-titlebar-actions">
+            <span class="documents-muted office-save-status" role="status" data-suite-status>Otwieranie edytora…</span>
+            <a class="tasks-icon-button" href="{{ documents_url }}{{ document.pk }}/" data-document-modal aria-label="Nazwa i folder" title="Nazwa i folder"><i data-icon="pencil" aria-hidden="true"></i></a>
+            <a class="btn btn-secondary" href="{{ documents_url }}{{ document.pk }}/download/" download data-suite-download>Pobierz</a>
+            {% if document.kind == 'board' or office_configured %}<button class="btn btn-primary" type="button" data-suite-save disabled>Zapisz</button>{% endif %}
+        </div>
+    </header>
+    <div class="office-suite-error tasks-modal__errors" role="alert" data-suite-error hidden></div>
+    {% csrf_token %}
+    {% if document.kind == 'board' %}
+        <iframe class="office-suite-frame" src="{{ documents_url }}{{ document.pk }}/board/" title="Edytor tablicy" data-board-frame allow="clipboard-read; clipboard-write"></iframe>
+    {% elif editor_config %}
+        {{ editor_config|json_script:'office-editor-config' }}
+        <div class="office-suite-frame"><div id="office-doc-editor" data-api-url="{{ api_url }}"></div></div>
+    {% else %}
+        <div class="documents-empty office-suite-unavailable"><div><i data-icon="file-text" aria-hidden="true"></i><h3>Edytor biurowy jest niedostępny</h3><p>Połączenie z serwerem edycji wymaga konfiguracji przez administratora Ancore.</p><p>Dokument jest zapisany. Możesz go pobrać lub wrócić do katalogu.</p><a class="btn btn-secondary" href="{{ folder_url }}">Wróć do dokumentów</a></div></div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block page_modals %}{% include 'documents/modal_host.html' %}{% endblock %}

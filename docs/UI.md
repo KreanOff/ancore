@@ -266,6 +266,43 @@ jest wspólny dla Dysku i Wszystkich projektów: wyszukiwanie pola,
 wybór kierunku i zaznaczenie aktualnego ustawienia. Dysk, folder i widok
 stanowią kontekst nawigacji; przycisk „Wyczyść” w panelu filtrów ich nie usuwa.
 
+### Katalog i edytor Dokumentów
+
+Osobna pozycja „Dokumenty” używa ikony `file-text`. Katalog w
+`documents/office/index.html` zachowuje paski `tasks-topbar`/`tasks-filterbar`,
+nawigację `tasks-rail-link`, tabelę i kafelki Dysku. Foldery i upload używają
+tego samego `documents/form.html` oraz obsługi fokusu, Escape i błędów w
+`documents.js`. Wariant uploadu `office_upload` wyświetla wyłącznie formaty dokumentów.
+
+Starszy edytor tekstu jest pełnym ekranem z nazwą, wyborem folderu, paskiem formatowania,
+powierzchnią dokumentu oraz jawnym zapisem. `office.css` dodaje wyłącznie układ
+tej części; kontrolki i kolory pochodzą ze wspólnych komponentów. Szerokości
+dropdownów określa także na wrapperach `AncoreCustomSelect`. Przyciski na telefonie
+zawijają się do szerokości paska. Lokalne reguły dla pogrubienia/kursywy w treści
+autora celowo nadpisują globalną wagę 400; nie zmieniają typografii nawigacji.
+Status zapisu używa `role=status`, błędy `role=alert`, a pole treści jest opisanym
+`contenteditable` z rolą wielowierszowego pola tekstowego. Pobieranie niezapisanych
+zmian jest blokowane komunikatem z prośbą o zapis.
+
+Nowe pliki mają wspólny ekran `office/suite.html`: pasek Ancore z nazwą,
+formatem, metadanymi, pobraniem i statusem zapisu oraz iframe pełnego edytora.
+Pliki ONLYOFFICE otwierają ten ekran w osobnej karcie (`target="_blank"`,
+`rel="noopener"`), również z globalnego wyszukiwania. Wariant
+`office-editor-window` rozszerza `core/base.html`, pomija blok `app_navigation`
+i wykorzystuje pełną szerokość bez bocznego menu i skalowania iframe.
+Tworzenie pliku rezerwuje kartę podczas zatwierdzenia modalu, a po zapisie
+odświeża katalog w pierwotnej karcie. Błąd zamyka pustą kartę; blokada okien
+pokazuje odnośnik do utworzonego pliku. Tablica zachowuje nawigację Ancore.
+ONLYOFFICE zachowuje własny polski interfejs, Excalidraw jest izolowany od
+CSS aplikacji i używa turkusowego akcentu. Katalog dodaje minimalny rząd
+czterech przycisków tworzenia (`office-create-types`), opartych na `btn-secondary`.
+Nie kopiowano układu ani tła referencyjnego zrzutu Bitrix.
+`office-suite.js` inicjalizuje ekran także po `ancore:content-loaded`;
+`data-app-full-navigation` wymusza bezpieczne opuszczanie aktywnych edytorów.
+Statusy zapisu są potwierdzane przez serwer. Tablica przy błędzie zachowuje
+scenę i pozwala pobrać bieżącą kopię; jej iframe przyjmuje wyłącznie komunikaty
+z okna rodzica tego samego originu.
+
 ### Dashboard bieżącego Workspace
 
 `dashboard/home.html` rozszerza `core/base.html` i używa `tasks-topbar`,

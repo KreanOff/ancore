@@ -274,7 +274,39 @@ Upload wymaga dysku, waliduje całą partię przed zapisem i dopuszcza do
 20 plików. Dostępne formaty i limity wynikają ze wspólnego walidatora.
 Folder zawierający pliki, podfoldery lub pliki w koszu nie może zostać usunięty.
 Dysk również musi być pusty. Kosz jest logiczny; nie ma tu endpointu
-trwałego opróżniania kosza, wersjonowania, OCR ani edytora zawartości dokumentów.
+trwałego opróżniania kosza, wersjonowania ani OCR. Edytor treści znajduje się
+w osobnym module Dokumenty opisanym poniżej.
+
+### Dokumenty — osobny katalog i edytor
+
+Źródła: [widoki](../documents/editor_views.py), [formularze](../documents/editor_forms.py),
+[format treści i eksport](../documents/rich_text.py), [routing](../documents/workspace_urls.py),
+[edytor JS](../static/js/office.js).
+
+„Dokumenty” w nawigacji otwierają `/office/` albo
+`/workplaces/<slug>/office/`. Moduł ma własne foldery (`WorkspaceDocumentFolder`)
+i dokumenty (`WorkspaceDocument`), niezależne od Dysku. Katalog od razu
+pokazuje dokumenty i foldery, bez tworzenia osobnego dysku/biblioteki.
+
+- Cztery rodzaje nowych plików: dokument DOCX, arkusz XLSX, prezentacja PPTX
+  i tablica Board. Katalog zachowuje foldery, listę/kafelki, sortowanie,
+  wyszukiwanie, gwiazdki, kosz i globalne szukanie.
+- DOCX/XLSX/PPTX otwierają się w pełnych edytorach ONLYOFFICE w osobnej karcie
+  Ancore, na pełną szerokość bez menu bocznego; katalog zostaje w pierwotnej karcie.
+  Edytory zapisują pliki w prywatnym storage. DOC/XLS/PPT/RTF/TXT/CSV mogą utworzyć osobną
+  kopię OOXML do edycji. PDF ma dotychczasowy podgląd i pobieranie.
+- Tablica Excalidraw obsługuje rysowanie, tekst, kształty, strzałki, obrazy,
+  automatyczny zapis, import i eksport sceny oraz eksport PNG/SVG.
+- Upload: do 20 plików, domyślnie 10 MiB na plik. Nazwę/folder można zmieniać,
+  a przesłany plik podmienić. Pliki w koszu wymagają przywrócenia przed otwarciem.
+- Starsze tekstowe dokumenty Ancore zachowują dotychczasowy edytor, eksport DOCX,
+  konflikt rewizji i możliwość utworzenia kopii w pełnym edytorze.
+
+Pełne edytory biurowe wymagają działającego, skonfigurowanego ONLYOFFICE.
+Tablica działa bez niego. Interfejs i dane pozostają prywatne dla właściciela
+oraz Workspace; nie dodano udostępniania, historii wersji, OCR, VBA ani edycji PDF.
+Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
+[Pełne edytory Dokumentów](OFFICE.md).
 
 ## 9. Start, ustawienia, wyszukiwarka i powiadomienia — Dashboard
 

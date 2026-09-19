@@ -6,6 +6,34 @@ from django.utils import timezone
 
 
 class LibraryMigrationTests(TransactionTestCase):
+    def test_office_migration_keeps_drive_content_separate(self):
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        previous = [node for node in latest if node[0] != 'documents'] + [('documents', '0003_documentlibrary_photo')]
+        executor.migrate(previous)
+        try:
+            apps = executor.loader.project_state(previous).apps
+            User = apps.get_model(settings.AUTH_USER_MODEL)
+            Workplace = apps.get_model('workplaces', 'Workplace')
+            Library = apps.get_model('documents', 'DocumentLibrary')
+            Document = apps.get_model('documents', 'Document')
+            user = User.objects.create(username='office-migration', email='office-migration@example.test')
+            workplace = Workplace.objects.create(owner=user, name='Migracja', slug='migracja')
+            library = Library.objects.create(owner=user, workplace=workplace, name='Istniejący dysk')
+            document = Document.objects.create(owner=user, workplace=workplace, library=library, title='Oryginał',
+                                              filename='Oryginał.txt', file='existing/original.txt', file_size=123)
+            executor = MigrationExecutor(connection)
+            executor.migrate(latest)
+            apps = executor.loader.project_state(latest).apps
+            preserved = apps.get_model('documents', 'Document').objects.get(pk=document.pk)
+            self.assertEqual(preserved.library_id, library.pk)
+            self.assertEqual(preserved.file.name, 'existing/original.txt')
+            self.assertEqual(preserved.file_size, 123)
+            self.assertFalse(apps.get_model('documents', 'WorkspaceDocument').objects.exists())
+            self.assertFalse(apps.get_model('documents', 'WorkspaceDocumentFolder').objects.exists())
+        finally:
+            MigrationExecutor(connection).migrate(latest)
+
     def test_existing_content_keeps_its_files_hierarchy_tags_and_trash_status(self):
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()

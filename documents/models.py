@@ -107,3 +107,94 @@ class Document(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class WorkspaceDocumentFolder(models.Model):
+    """Folders of the Dokumenty module, independent from drives."""
+    name = models.CharField('Nazwa folderu', max_length=120)
+    parent = models.ForeignKey('self', on_delete=models.RESTRICT, null=True, blank=True, related_name='children')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='office_folders')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='office_folders')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+        constraints = [
+            models.UniqueConstraint(fields=['owner', 'workplace', 'parent', 'name'], condition=models.Q(parent__isnull=False), name='office_unique_child_folder'),
+            models.UniqueConstraint(fields=['owner', 'workplace', 'name'], condition=models.Q(parent__isnull=True), name='office_unique_root_folder'),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class WorkspaceDocument(models.Model):
+    class Kind(models.TextChoices):
+        TEXT = 'text', 'Dokument Ancore'
+        FILE = 'file', 'Przesłany dokument'
+        BOARD = 'board', 'Tablica'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField('Nazwa dokumentu', max_length=255)
+    kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.TEXT)
+    content = models.TextField('Treść', blank=True)
+    revision = models.PositiveIntegerField(default=1)
+    office_key = models.UUIDField(default=uuid.uuid4, editable=False)
+    office_save_error = models.BooleanField(default=False, editable=False)
+    file = models.FileField(storage=document_storage, upload_to=document_upload_path, max_length=400, blank=True)
+    filename = models.CharField(max_length=255, blank=True)
+    file_size = models.PositiveBigIntegerField(default=0)
+    folder = models.ForeignKey(WorkspaceDocumentFolder, on_delete=models.RESTRICT, null=True, blank=True, related_name='documents')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='office_documents')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='office_documents')
+    is_starred = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at', 'title', 'pk']
+        indexes = [models.Index(fields=['workplace', 'owner', 'deleted_at'], name='office_workspace_status_idx')]
+
+    @property
+    def extension(self):
+        if self.kind == self.Kind.TEXT:
+            return 'ANCORE'
+        if self.kind == self.Kind.BOARD:
+            return 'BOARD'
+        return Path(self.filename).suffix.lstrip('.').upper()
+
+    @property
+    def office_type(self):
+        return {'DOCX': 'word', 'XLSX': 'cell', 'PPTX': 'slide'}.get(self.extension, '')
+
+    @property
+    def has_full_editor(self):
+        return self.kind == self.Kind.BOARD or bool(self.office_type)
+
+    @property
+    def icon(self):
+        if self.kind == self.Kind.BOARD:
+            return 'layout-grid'
+        if self.office_type == 'cell':
+            return 'file-spreadsheet'
+        if self.office_type == 'slide':
+            return 'monitor'
+        return 'file-text'
+
+    def __str__(self):
+        return self.title
+
+
+@receiver(post_delete, sender=WorkspaceDocument)
+def delete_workspace_document_file(sender, instance, using, **kwargs):
+    if instance.file:
+        storage, name = instance.file.storage, instance.file.name
+        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
+
+
+class OfficeSaveReceipt(models.Model):
+    """Deduplicate signed callbacks, including retries after closing an editor."""
+    document = models.ForeignKey(WorkspaceDocument, on_delete=models.CASCADE, related_name='save_receipts')
+    digest = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)

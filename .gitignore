@@ -178,3 +178,8 @@ ancore/__pycache__/settings.cpython-314.pyc
 
 /platform-develop
 run_lan.sh
+
+# Local office services and board build dependencies
+node_modules/
+.env.office
+static/vendor/board/

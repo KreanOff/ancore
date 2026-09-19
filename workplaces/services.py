@@ -7,7 +7,7 @@ from .models import SidebarFavorite, Workplace, WorkplaceMembership
 ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
 WORKPLACE_URL_SCOPE_SESSION_KEY = 'workspace_url_scope_enabled'
 DEFAULT_WORKPLACE_NAME = 'Moje miejsce pracy'
-SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'contacts', 'calendar', 'documents'}
+SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'contacts', 'calendar', 'documents', 'office'}
 
 
 def workplaces_for_user(user):

@@ -17,6 +17,7 @@ SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'calendar', 'label': 'Kalendarz', 'icon': 'calendar-days', 'app': 'calendar'},
     {'key': 'tags', 'label': 'Tagi', 'icon': 'tag', 'app': 'tasks', 'query': 'view=tags'},
     {'key': 'documents', 'label': 'Dysk', 'icon': 'hard-drive', 'app': 'documents'},
+    {'key': 'office', 'label': 'Dokumenty', 'icon': 'file-text', 'app': 'office'},
 )
 
 SIDEBAR_FAVORITE_KEYS = frozenset(item['key'] for item in SIDEBAR_FAVORITE_DEFINITIONS)
@@ -49,6 +50,9 @@ def sidebar_favorite_is_active(item_key, request, active_view='', active_contact
 
     if item_key == 'documents':
         return app_name in {'documents', 'workplace_documents'}
+
+    if item_key == 'office':
+        return app_name in {'office', 'workplace_office'}
 
     if item_key.startswith('tasks-') or item_key == 'tags':
         if app_name not in {'tasks', 'workplace_tasks', 'kanban', 'workplace_kanban'}:

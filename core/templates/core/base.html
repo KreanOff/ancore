@@ -4,6 +4,7 @@
 {% url 'contacts:contacts' as sidebar_contacts_fallback_url %}
 {% url 'planner:index' as sidebar_calendar_fallback_url %}
 {% url 'documents:library' as sidebar_documents_fallback_url %}
+{% url 'office:index' as sidebar_office_fallback_url %}
 {% url 'home' as sidebar_dashboard_url %}
 {% url 'notifications' as sidebar_notifications_url %}
 {% firstof workplace_app_urls.tasks sidebar_tasks_fallback_url as sidebar_tasks_url %}
@@ -11,8 +12,9 @@
 {% firstof workplace_app_urls.contacts sidebar_contacts_fallback_url as sidebar_contacts_url %}
 {% firstof workplace_app_urls.calendar sidebar_calendar_fallback_url as sidebar_calendar_url %}
 {% firstof workplace_app_urls.documents sidebar_documents_fallback_url as sidebar_documents_url %}
+{% firstof workplace_app_urls.office sidebar_office_fallback_url as sidebar_office_url %}
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" class="{% block html_class %}{% endblock %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -78,6 +80,7 @@
             <span class="app-loading-title">Ładowanie…</span>
         </div>
     </div>
+    {% block app_navigation %}
     <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
     <button type="button" class="mobile-sidebar-toggle" id="sidebar-toggle" aria-label="Otwórz menu" aria-controls="app-sidebar" aria-expanded="false">
         <i data-icon="menu" aria-hidden="true"></i>
@@ -244,6 +247,11 @@
                 <span class="nav-label">Dysk</span>
             </a>
             {% sidebar_favorite_toggle 'documents' 'Dysk' 'hard-drive' sidebar_documents_url %}
+            <a href="{{ sidebar_office_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'office' or request.resolver_match.app_name == 'workplace_office' %}active{% endif %}" aria-label="Dokumenty" title="Dokumenty" data-sidebar-source-item="office" draggable="true">
+                <i class="nav-icon" data-icon="file-text" aria-hidden="true"></i>
+                <span class="nav-label">Dokumenty</span>
+            </a>
+            {% sidebar_favorite_toggle 'office' 'Dokumenty' 'file-text' sidebar_office_url %}
             </section>
 
         </nav>
@@ -323,6 +331,7 @@
         <div class="notifications-panel__content" data-notifications-content tabindex="-1"></div>
         <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-notifications-status></span>
     </aside>
+    {% endblock %}
     <main class="main-content">
         <div class="page-container {% block page_container_class %}{% endblock %}">
             {% block content %}{% endblock %}
@@ -371,8 +380,8 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260905-favorites-collapse-compact-v1"></script>
-    <script src="{% static 'js/global-search.js' %}?v=20260918-flaticon-v1"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260919-office-tabs"></script>
+    <script src="{% static 'js/global-search.js' %}?v=20260919-office-tabs"></script>
     <script src="{% static 'js/notifications-panel.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260918-flaticon-v1"></script>

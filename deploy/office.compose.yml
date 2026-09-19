@@ -1,0 +1,27 @@
+name: ancore-office
+services:
+  docs:
+    image: onlyoffice/documentserver:9.4.0@sha256:e3da62a847b9a5d51a11f73cfea1d9c13c3be3809614490d4edddcf01dcf919b
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:80"
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: ${ONLYOFFICE_JWT_SECRET:?Set ONLYOFFICE_JWT_SECRET in .env.office}
+      JWT_HEADER: Authorization
+      JWT_IN_BODY: "false"
+      ALLOW_PRIVATE_IP_ADDRESS: "true"
+    volumes:
+      - docs-data:/var/www/onlyoffice/Data
+      - docs-lib:/var/lib/onlyoffice
+      - docs-logs:/var/log/onlyoffice
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/healthcheck"]
+      interval: 20s
+      timeout: 5s
+      retries: 15
+      start_period: 90s
+volumes:
+  docs-data:
+  docs-lib:
+  docs-logs:

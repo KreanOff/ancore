@@ -223,3 +223,10 @@ AUTH_USER_MODEL = 'accounts.User'
 USER_PRESENCE_IDLE_SECONDS = 120
 USER_PRESENCE_HEARTBEAT_SECONDS = 30
 USER_PRESENCE_WRITE_THROTTLE_SECONDS = 25
+
+# Optional local office service configuration; never overrides the main environment.
+load_dotenv(BASE_DIR / '.env.office')
+ONLYOFFICE_URL = os.getenv('ONLYOFFICE_URL', '').rstrip('/')
+ONLYOFFICE_INTERNAL_URL = os.getenv('ONLYOFFICE_INTERNAL_URL', ONLYOFFICE_URL).rstrip('/')
+ONLYOFFICE_ANCORE_URL = os.getenv('ONLYOFFICE_ANCORE_URL', '').rstrip('/')
+ONLYOFFICE_JWT_SECRET = os.getenv('ONLYOFFICE_JWT_SECRET', '')

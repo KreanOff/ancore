@@ -6,6 +6,13 @@
                 <a href="{{ modal.folder_url }}" class="tasks-modal__close" aria-label="Zamknij podgląd" data-document-modal-close></a>
             </header>
             <div class="tasks-modal__body documents-preview-body" tabindex="0" aria-label="Zawartość pliku">
+                {% if modal.office_convert_url %}<form method="post" action="{{ modal.office_convert_url }}" target="_blank" rel="noopener" class="office-import-form">{% csrf_token %}<p class="documents-preview-notice">Utwórz kopię w nowym formacie do edycji. Oryginalny plik zostanie zachowany.</p><button type="submit" class="btn btn-primary">Otwórz kopię w pełnym edytorze</button></form>{% endif %}
+                {% if modal.office_import_url %}
+                <form method="post" action="{{ modal.office_import_url }}" class="office-import-form">
+                    {% csrf_token %}<p class="documents-preview-notice">Możesz redagować kopię samego tekstu, bez obrazów i układu oryginału. Oryginalny plik zostanie zachowany.</p>
+                    <button type="submit" class="btn btn-secondary">Utwórz edytowalną kopię</button>
+                </form>
+                {% endif %}
                 {% if modal.preview.note %}<p class="documents-preview-notice">{{ modal.preview.note }}</p>{% endif %}
                 {% if modal.preview.truncated %}<p class="documents-preview-notice" role="status">Wyświetlono część zawartości ze względu na rozmiar pliku. Pobierz plik, aby zobaczyć całość.</p>{% endif %}
                 {% if modal.preview.kind == 'image' %}

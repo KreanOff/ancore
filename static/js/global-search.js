@@ -124,6 +124,10 @@
         const link = document.createElement('a');
         link.className = 'global-search-result';
         link.href = result.url;
+        if (result.new_tab) {
+            link.target = '_blank';
+            link.rel = 'noopener';
+        }
         link.dataset.globalSearchResult = '';
         link.dataset.resultIndex = String(resultIndex);
 
@@ -282,7 +286,7 @@
         const active = results.querySelector('.global-search-result.is-active')
             || results.querySelector('[data-global-search-result]');
         if (!active) return false;
-        window.location.assign(active.href);
+        active.click();
         return true;
     }
 
