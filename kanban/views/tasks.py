@@ -14,6 +14,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
+from core.task_numbering import lock_task_numbers
+from core.task_requests import task_detail_lookup, task_primary_keys
 from core.upload_validation import attachment_download_response, validate_attachment_upload
 from tasks.models import TaskTag, TaskTagNote
 from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanProjectNote, KanbanSection
@@ -1839,8 +1841,9 @@ def reorder_board_columns(request, section_id):
 def update_task_status(request, task_id):
     try:
         workplace = _active_workplace(request)
-        task = _filter_workplace(Kanban.objects.filter(user=request.user), workplace).get(task_id=task_id)
         data = json.loads(request.body)
+        task_pk = task_primary_keys(data)[0]
+        task = _filter_workplace(Kanban.objects.filter(user=request.user), workplace).get(pk=task_pk)
         status = data.get('status')
         column_id = data.get('column_id')
         previous_status = task.status
@@ -1881,16 +1884,22 @@ def update_task_status(request, task_id):
         })
     except Kanban.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Karta nie znaleziona'}, status=404)
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
 
 @login_required
 @require_POST
 def delete_task(request, task_id):
     try:
-        task = _filter_workplace(Kanban.objects.filter(user=request.user), _active_workplace(request)).get(task_id=task_id)
-        task.delete()
+        task_pk = task_primary_keys(json.loads(request.body))[0]
+        with lock_task_numbers(request.user.pk):
+            task = _filter_workplace(Kanban.objects.filter(user=request.user), _active_workplace(request)).get(pk=task_pk)
+            task.delete()
         return JsonResponse({'status': 'success', 'message': 'Karta usunięta pomyślnie'})
     except Kanban.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Karta nie znaleziona'}, status=404)
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
 
 @login_required
 @require_POST
@@ -1924,23 +1933,21 @@ def download_attachment(request, attachment_id):
 def delete_tasks(request):
     try:
         data = json.loads(request.body)
-        task_ids = data.get('task_ids', [])
-        
-        if not task_ids:
-            return JsonResponse({'status': 'error', 'message': 'Nie podano ID kart'}, status=400)
-        
+        task_pks = task_primary_keys(data, many=True)
+
         user = request.user
         workplace = _active_workplace(request)
-        deleted_count = _filter_workplace(Kanban.objects.filter(task_id__in=task_ids, user=user), workplace).delete()[0]
-        Kanban._renumber_user_tasks(user, workplace)
-        
+        with lock_task_numbers(user.pk):
+            deleted_count = _filter_workplace(Kanban.objects.filter(pk__in=task_pks, user=user), workplace).delete()[0]
+            Kanban._renumber_user_tasks(user, workplace)
+
         return JsonResponse({
             'status': 'success', 
             'message': f'{deleted_count} {"kart" if deleted_count != 1 else "karta"} usuniętych pomyślnie',
             'deleted_count': deleted_count
         })
-    except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
     except Exception:
         logger.exception('Failed to delete kanban cards')
         return JsonResponse({'status': 'error', 'message': 'Nie udało się usunąć kart.'}, status=500)
@@ -1950,17 +1957,15 @@ def delete_tasks(request):
 def bulk_update_status(request):
     try:
         data = json.loads(request.body)
-        task_ids = data.get('task_ids', [])
+        task_pks = task_primary_keys(data, many=True)
         status = data.get('status', 'closed')
         
-        if not task_ids:
-            return JsonResponse({'status': 'error', 'message': 'Nie podano ID kart'}, status=400)
         user = request.user
         workplace = _active_workplace(request)
         if status not in _valid_statuses_for_user(user):
             return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
         
-        tasks_to_update = _filter_workplace(Kanban.objects.filter(task_id__in=task_ids, user=user), workplace)
+        tasks_to_update = _filter_workplace(Kanban.objects.filter(pk__in=task_pks, user=user), workplace)
         updated_count = 0
         for task in tasks_to_update:
             _set_task_status(task, status, user)
@@ -1971,8 +1976,8 @@ def bulk_update_status(request):
             'message': f'Zaktualizowano {updated_count} {"kart" if updated_count != 1 else "kartę"}',
             'updated_count': updated_count
         })
-    except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
     except Exception:
         logger.exception('Failed to bulk update kanban status')
         return JsonResponse({'status': 'error', 'message': 'Nie udało się zaktualizować kart.'}, status=500)
@@ -1990,8 +1995,8 @@ def _task_detail_response(request, task_id):
                 queryset=KanbanActivity.objects.select_related('actor').order_by('created_at', 'id'),
             ),
         ),
-        task_id=task_id,
         user=request.user,
+        **task_detail_lookup(request, task_id),
     )
     subtask_status_groups = _status_groups_for_tasks(list(task.subtasks.all()))
     can_add_attachments = not task.parent_id

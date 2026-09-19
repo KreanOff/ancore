@@ -6,10 +6,16 @@ Logowanie korzysta z Django Auth oraz `accounts.User`, gdzie `USERNAME_FIELD`
 to `email`. Profil i publiczny identyfikator są oddzielone od danych wpisu
 `Contact`. Aktualne konto jest w `request.user`.
 
-Sesja zawiera m.in. `switch_account_user_ids`, `active_workplace_id`
+Sesja zawiera m.in. `switch_account_user_ids`, `switch_account_auth_hashes`, `active_workplace_id`
 i `workspace_url_scope_enabled`. Przełączenie konta wykonuje `auth_login()`
 i zachowuje listę uwierzytelnionych kont. Aktywny Workspace jest ponownie
 weryfikowany względem bieżącego użytkownika.
+
+Każde dodane konto ma zapisany hash sesyjny Django. Przed przełączeniem
+jest on porównywany z aktualnym hashem aktywnego użytkownika docelowego.
+Zmiana hasła unieważnia możliwość przełączenia; trzeba ponownie dodać konto
+z aktualnym hasłem. Stare sesje zawierające wyłącznie identyfikatory wymagają
+ponownego uwierzytelnienia pozostałych kont. Wylogowanie czyści cały przełącznik.
 
 Obecność składa się z:
 
@@ -57,8 +63,11 @@ Wariant scoped ma namespace `workplace_tasks`, `workplace_kanban`,
 
 Po włączeniu zakresu URL middleware przekierowuje bazowe GET/HEAD do
 odpowiedniego Workspace i zachowuje query string. POST nie jest w ten sam
-sposób przekierowywany: istniejący JS częściowo używa bazowych endpointów,
-które działają na kontekście sesji.
+sposób przekierowywany, więc bazowy endpoint POST nadal korzysta z sesji.
+Operacje JS zadań, kart i kalendarza używają adresów scoped wygenerowanych
+dla otwartego ekranu. Zmiana Workspace w drugiej karcie nie zmienia ich celu.
+`tasks.js` odczytuje moduł i bazowy adres z `data-task-app` oraz
+`data-task-base-url`, również po częściowej nawigacji.
 
 **Przy nowej funkcji:** sprawdź adres GET, formularz POST, odpowiedź/redirect,
 zachowanie w dwóch Workspace, back/forward i link z wyszukiwania. Parametry
@@ -97,8 +106,22 @@ Przy zmianie uprawnień trzeba świadomie przeanalizować całą ścieżkę,
 `Task.code` i `Task.full_code` zwracają obecnie tekst numeru `task_id`.
 Liczniki grup/zadań korzystają z blokady `select_for_update()` i transakcji.
 Numer `task_id` powstaje z maksimum w zakresie właściciela/Workspace.
+`core/task_numbering.py` blokuje wiersz właściciela przed zapisem, usuwaniem
+i renumeracją; blokada poprzedza blokady grup/zadań. Odroczone ograniczenie
+unikalności w PostgreSQL chroni kombinację użytkownika, Workspace i numeru.
+Migracje Tasks 0047 i Kanban 0034 porządkują istniejące numery przed dodaniem
+ograniczeń, zachowując PK i relacje. Backfill starych rekordów bez Workspace
+również porządkuje numery w tej samej transakcji.
 Po usuwaniu numery są porządkowane. Nie traktuj starego numeru zadania jako
 trwałego klucza dla zewnętrznej integracji.
+
+Operacje JSON wymagają stabilnego `task_pk` (pojedynczy zapis/usunięcie) albo
+listy `task_pks` (akcja zbiorcza). Brak PK lub dawne `task_ids` daje HTTP 400.
+Numer w ścieżce aktualizacji/usuwania nie wyznacza tożsamości rekordu.
+Wiersze i karty przekazują PK także w parametrze linku `?task_pk=`, a formularze
+szczegółów w ukrytym polu. Szczegóły bez tego parametru zachowują historyczne
+wyszukiwanie po numerze. W każdym wariancie obowiązuje właściciel i Workspace.
+Po usunięciu lista jest przeładowywana, aby pokazać aktualną numerację.
 
 Przy zmianie grupy zadania model aktualizuje `code_number` i Workspace na
 podstawie projektu. Kontrola właściciela nadal należy również do widoku/formularza.
@@ -301,6 +324,8 @@ Panel powiadomień bierze ostatnie aktywności Tasks i Kanban właściciela,
 scala i sortuje je, zwracając maksymalnie 12. Obecny helper powiadomień
 nie filtruje po `request.workplace`, ponieważ otrzymuje tylko użytkownika.
 Nie opisuj go jako ściśle ograniczonego do bieżącego Workspace.
+Każdy link powiadomienia zawiera Workspace zadania/karty, dzięki czemu
+otwiera właściwy rekord niezależnie od aktualnego Workspace w sesji.
 
 Panel pobiera dane HTTP przy otwarciu; może otrzymać JSON z liczbą oraz
 fragmentem HTML. Nie jest to push/WebSocket ani system read/unread.

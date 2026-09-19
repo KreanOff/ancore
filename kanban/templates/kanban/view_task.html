@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="tasks-page tasks-issue-page">
+<div class="tasks-page tasks-issue-page" data-task-app="kanban" data-task-base-url="{{ workplace_app_urls.kanban }}">
     <div class="tasks-issue-shell">
         <header class="tasks-issue-header">
             <div class="tasks-issue-breadcrumb">
@@ -55,11 +55,13 @@
 
         <form id="activity-comment-form" method="POST" class="tasks-issue-comment-form">
             {% csrf_token %}
+            <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="action" value="add_activity_comment">
         </form>
 
         <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form">
             {% csrf_token %}
+            <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
 
             <main class="tasks-issue-main">
@@ -140,7 +142,7 @@
                                 </header>
                                 <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
                                     {% for subtask in status_group.tasks %}
-                                    {% include 'kanban/includes/task_issue_row.html' with task=subtask project_code=subtask.section.project.code|default:'TASK' compact=True only %}
+                                    {% include 'kanban/includes/task_issue_row.html' with task=subtask project_code=subtask.section.project.code|default:'TASK' compact=True workplace_app_urls=workplace_app_urls only %}
                                     {% endfor %}
                                 </div>
                             </section>
@@ -442,6 +444,7 @@
     <div class="tasks-modal__dialog tasks-issue-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form">
             {% csrf_token %}
+            <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="action" value="create_subtask_modal">
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
@@ -812,13 +815,13 @@ function updateTaskStatus(isCompleted) {
         cancelText: 'Anuluj',
         confirmClass: isCompleted ? 'btn-success' : 'btn-secondary',
         onConfirm: () => {
-            fetch("{% url 'kanban:update_task_status' task.task_id %}", {
+            fetch("{{ workplace_app_urls.kanban }}update/{{ task.task_id }}/", {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': window.getCookie('csrftoken'),
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ is_completed: isCompleted })
+                body: JSON.stringify({ is_completed: isCompleted, task_pk: {{ task.pk }} })
             })
             .then(r => r.json())
             .then(data => {
@@ -838,14 +841,15 @@ function confirmDelete() {
         cancelText: 'Anuluj',
         confirmClass: 'btn-danger',
         onConfirm: () => {
-            fetch("{% url 'kanban:delete_task' task.task_id %}", {
+            fetch("{{ workplace_app_urls.kanban }}delete/{{ task.task_id }}/", {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': window.getCookie('csrftoken'),
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ task_pk: {{ task.pk }} })
             })
-            .then(r => { if (r.ok) window.location.href = "{% url 'kanban:tasks' %}"; else alert('Błąd usuwania.'); })
+            .then(r => { if (r.ok) window.location.href = "{{ workplace_app_urls.kanban }}"; else alert('Błąd usuwania.'); })
             .catch(() => alert('Błąd połączenia.'));
         }
     });

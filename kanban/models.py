@@ -12,6 +12,8 @@ import os
 import secrets
 import string
 
+from core.task_numbering import lock_task_numbers, renumber_tasks
+
 
 BASE36_ALPHABET = string.digits + string.ascii_uppercase
 KanbanTag = TaskTag
@@ -219,63 +221,70 @@ class Kanban(models.Model):
     tags = models.ManyToManyField(TaskTag, related_name='kanban_cards', blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='subtasks', null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        from django.utils import timezone
-        
-        # Get original status if this is an update
-        if self.pk:
-            try:
-                original_task = Kanban.objects.get(pk=self.pk)
-                original_status = original_task.status
-            except Kanban.DoesNotExist:
-                original_status = None
-        else:
-            original_status = None
-        
-        # Set completion_date when status changes to 'closed'
-        if self.status == 'closed' and original_status != 'closed':
-            self.completion_date = timezone.now()
-            self.is_completed = True
-        elif self.status != 'closed' and original_status == 'closed':
-            self.completion_date = None
-            self.is_completed = False
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'workplace', 'task_id'],
+                name='unique_kanban_number_per_workspace',
+                deferrable=models.Deferrable.DEFERRED,
+            ),
+        ]
 
-        if self.section_id:
-            if self.column_id and self.column.section_id != self.section_id:
+    def save(self, *args, **kwargs):
+        with lock_task_numbers(self.user_id, using=kwargs.get('using') or self._state.db):
+            from django.utils import timezone
+
+            # Get original status and the current number while holding the owner lock.
+            original_task = None
+            if self.pk:
+                try:
+                    original_task = Kanban.objects.get(pk=self.pk)
+                    self.task_id = original_task.task_id
+                    original_status = original_task.status
+                except Kanban.DoesNotExist:
+                    original_status = None
+            else:
+                original_status = None
+
+            # Set completion_date when status changes to 'closed'
+            if self.status == 'closed' and original_status != 'closed':
+                self.completion_date = timezone.now()
+                self.is_completed = True
+            elif self.status != 'closed' and original_status == 'closed':
+                self.completion_date = None
+                self.is_completed = False
+
+            if self.section_id:
+                if self.column_id and self.column.section_id != self.section_id:
+                    self.column = None
+                section_workplace_id = self.section.project.workplace_id
+                if self.workplace_id != section_workplace_id:
+                    self.workplace_id = section_workplace_id
+                    update_fields = kwargs.get('update_fields')
+                    if update_fields is not None:
+                        kwargs['update_fields'] = set(update_fields) | {'workplace'}
+            else:
                 self.column = None
-            section_workplace_id = self.section.project.workplace_id
-            if self.workplace_id != section_workplace_id:
-                self.workplace_id = section_workplace_id
-                update_fields = kwargs.get('update_fields')
-                if update_fields is not None:
-                    kwargs['update_fields'] = set(update_fields) | {'workplace'}
-        else:
-            self.column = None
-            
-        if not self.pk or self.task_id == 0:
-            task_scope = Kanban.objects.filter(user=self.user)
-            if self.workplace_id:
-                task_scope = task_scope.filter(workplace_id=self.workplace_id)
-            max_task_id = task_scope.aggregate(Max('task_id'))['task_id__max'] or 0
-            self.task_id = max_task_id + 1
-        super().save(*args, **kwargs)
+
+            if not self.pk or self.task_id == 0 or (original_task and original_task.workplace_id != self.workplace_id):
+                task_scope = Kanban.objects.filter(user_id=self.user_id, workplace_id=self.workplace_id)
+                max_task_id = task_scope.aggregate(Max('task_id'))['task_id__max'] or 0
+                self.task_id = max_task_id + 1
+                if kwargs.get('update_fields') is not None:
+                    kwargs['update_fields'] = set(kwargs['update_fields']) | {'task_id'}
+            super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        user = self.user
-        workplace = self.workplace
-        super().delete(*args, **kwargs)
-        self._renumber_user_tasks(user, workplace)
+        using = kwargs.get('using') or self._state.db
+        with lock_task_numbers(self.user_id, using=using):
+            user, workplace = self.user, self.workplace
+            result = super().delete(*args, **kwargs)
+            renumber_tasks(type(self), user, workplace, using=using)
+            return result
 
     @classmethod
     def _renumber_user_tasks(cls, user, workplace=None):
-        """Renumber tasks sequentially for a specific user and workplace."""
-        tasks = cls.objects.filter(user=user).order_by('task_id')
-        if workplace is not None:
-            tasks = tasks.filter(workplace=workplace)
-        for index, task in enumerate(tasks, 1):
-            if task.task_id != index:
-                task.task_id = index
-                task.save(update_fields=['task_id'])
+        renumber_tasks(cls, user, workplace)
 
     def __str__(self):
         return self.title

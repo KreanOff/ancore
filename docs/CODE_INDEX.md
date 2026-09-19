@@ -17,11 +17,11 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 8 | 0 | 9 | 19 |
-| [accounts](../accounts) | 14 | 4 | 8 | 23 |
+| [core](../core) | 12 | 0 | 9 | 32 |
+| [accounts](../accounts) | 14 | 4 | 8 | 28 |
 | [workplaces](../workplaces) | 15 | 7 | 4 | 44 |
-| [tasks](../tasks) | 14 | 46 | 24 | 168 |
-| [kanban](../kanban) | 9 | 33 | 9 | 71 |
+| [tasks](../tasks) | 14 | 47 | 24 | 168 |
+| [kanban](../kanban) | 9 | 34 | 9 | 71 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
@@ -803,6 +803,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/apps.py](../core/apps.py) — `CoreConfig`
 - [core/forms.py](../core/forms.py)
 - [core/models.py](../core/models.py)
+- [core/task_numbering.py](../core/task_numbering.py) — `lock_task_numbers`, `renumber_tasks`
+- [core/task_requests.py](../core/task_requests.py) — `task_detail_lookup`, `task_primary_keys`
 - [core/upload_validation.py](../core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `attachment_download_response`
 - [core/views/__init__.py](../core/views/__init__.py)
 
@@ -1108,6 +1110,19 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
+### core/test_task_integrity.py
+
+Źródło: [core/test_task_integrity.py](../core/test_task_integrity.py).
+
+- `TaskIdentityTests`: 10 metod testowych.
+- `ConcurrentTaskNumberTests`: 2 metod testowych.
+
+### core/test_task_number_migrations.py
+
+Źródło: [core/test_task_number_migrations.py](../core/test_task_number_migrations.py).
+
+- `TaskNumberMigrationTests`: 1 metod testowych.
+
 ### core/tests.py
 
 Źródło: [core/tests.py](../core/tests.py).
@@ -1122,7 +1137,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `UserRegistrationFormTests`: 2 metod testowych.
 - `AuthPageViewTests`: 2 metod testowych.
 - `ProfileViewTests`: 13 metod testowych.
-- `AccountSwitcherTests`: 6 metod testowych.
+- `AccountSwitcherTests`: 11 metod testowych.
 
 ### workplaces/tests.py
 
@@ -1302,6 +1317,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0044_taskprojectdeadlinerule.py](../tasks/migrations/0044_taskprojectdeadlinerule.py)
 - [tasks/migrations/0045_project_specific_deadline_rules.py](../tasks/migrations/0045_project_specific_deadline_rules.py)
 - [tasks/migrations/0046_project_source_options.py](../tasks/migrations/0046_project_source_options.py)
+- [tasks/migrations/0047_task_unique_tasks_number_per_workspace.py](../tasks/migrations/0047_task_unique_tasks_number_per_workspace.py)
 
 ### kanban
 
@@ -1338,6 +1354,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [kanban/migrations/0031_remove_kanbantag_unique_kanban_tag_code_and_more.py](../kanban/migrations/0031_remove_kanbantag_unique_kanban_tag_code_and_more.py)
 - [kanban/migrations/0032_kanbanprojectnote_edited_at.py](../kanban/migrations/0032_kanbanprojectnote_edited_at.py)
 - [kanban/migrations/0033_retire_entity_icons.py](../kanban/migrations/0033_retire_entity_icons.py)
+- [kanban/migrations/0034_kanban_unique_kanban_number_per_workspace.py](../kanban/migrations/0034_kanban_unique_kanban_number_per_workspace.py)
 
 ### contacts
 

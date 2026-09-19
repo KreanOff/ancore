@@ -63,19 +63,7 @@ db.sqlite3
 db.sqlite3-journal
 media
 private_documents/
-**/migrations/*.py
-!**/migrations/__init__.py
-!documents/migrations/*.py
-!workplaces/migrations/0004_workplace_code_workplace_description_and_more.py
-!workplaces/migrations/0005_backfill_workplace_codes.py
-!workplaces/migrations/0006_sidebarfavorite.py
-!workplaces/migrations/0007_sidebarfavorite_position.py
-!tasks/migrations/0042_remove_task_task_user_company_status_idx_and_more.py
-!tasks/migrations/0043_retire_entity_icons.py
-!tasks/migrations/0044_taskprojectdeadlinerule.py
-!tasks/migrations/0045_project_specific_deadline_rules.py
-!tasks/migrations/0046_project_source_options.py
-!kanban/migrations/0033_retire_entity_icons.py
+# Django migrations are application source and must be versioned.
 
 # Flask stuff:
 instance/

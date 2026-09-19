@@ -144,7 +144,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="tasks-page tasks-list-page">
+<div class="tasks-page tasks-list-page" data-task-app="tasks" data-task-base-url="{{ workplace_app_urls.tasks }}">
     <section class="tasks-workspace" aria-label="Lista zadań">
         <header class="tasks-topbar{% if not active_project %} tasks-topbar--directory tasks-topbar--project-directory{% endif %}">
             <div class="tasks-titlebar-left{% if active_view == 'project' or active_view == 'section' %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
@@ -795,7 +795,7 @@
                     </header>
                     <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
                         {% for task in status_group.tasks %}
-                        {% include 'tasks/includes/task_issue_row.html' with task=task project_code=active_project.code only %}
+                        {% include 'tasks/includes/task_issue_row.html' with task=task project_code=active_project.code workplace_app_urls=workplace_app_urls only %}
                         {% endfor %}
                     </div>
                     {% include 'tasks/includes/status_pagination.html' with status_group=status_group only %}
@@ -832,7 +832,7 @@
                 </header>
                 <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
                     {% for task in status_group.tasks %}
-                    {% include 'tasks/includes/task_issue_row.html' with task=task project_code=task.section.project.code|default:'TASK' only %}
+                    {% include 'tasks/includes/task_issue_row.html' with task=task project_code=task.section.project.code|default:'TASK' workplace_app_urls=workplace_app_urls only %}
                     {% endfor %}
                 </div>
             </section>

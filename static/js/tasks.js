@@ -327,7 +327,9 @@ function initTasksPage() {
     const projectRenameSourceInput = projectRenameForm ? projectRenameForm.querySelector('[name="source"]') : null;
     const projectRenameCodeValue = document.getElementById('project-rename-code');
 
-    const taskAppSegment = window.location.pathname.split('/').filter(Boolean)[0] === 'kanban' ? 'kanban' : 'tasks';
+    const taskPage = document.querySelector('[data-task-app]');
+    const taskAppSegment = taskPage?.dataset.taskApp || 'tasks';
+    const taskBaseUrl = taskPage?.dataset.taskBaseUrl || `/${taskAppSegment}/`;
     const taskCopy = taskAppSegment === 'kanban'
         ? {
             itemAcc: 'kartę',
@@ -4742,13 +4744,13 @@ function initTasksPage() {
         refreshGroupCounts();
         applyFilters();
 
-        fetch(`/${taskAppSegment}/update/${taskId}/`, {
+        fetch(`${taskBaseUrl}update/${taskId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': window.getCookie('csrftoken')
             },
-            body: JSON.stringify(columnId ? { column_id: columnId } : { status })
+            body: JSON.stringify({ task_pk: Number(row.dataset.taskPk), ...(columnId ? { column_id: columnId } : { status }) })
         })
         .then(response => response.json().then(data => ({ ok: response.ok, data })))
         .then(({ ok, data }) => {
@@ -4775,7 +4777,7 @@ function initTasksPage() {
             }
             this.classList.add('is-dragging');
             event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', this.dataset.taskId || '');
+            event.dataTransfer.setData('text/plain', this.dataset.taskPk || '');
         });
 
         row.addEventListener('dragend', function() {
@@ -4811,7 +4813,7 @@ function initTasksPage() {
             this.classList.remove('is-drag-over');
             const taskId = event.dataTransfer.getData('text/plain');
             const escapedTaskId = window.CSS?.escape ? CSS.escape(taskId) : taskId.replace(/["\\]/g, '\\$&');
-            const row = document.querySelector(`.task-row[data-task-id="${escapedTaskId}"], .tasks-issue-row[data-task-id="${escapedTaskId}"]`);
+            const row = document.querySelector(`.task-row[data-task-pk="${escapedTaskId}"], .tasks-issue-row[data-task-pk="${escapedTaskId}"]`);
             if (isReadonlyTaskRow(row)) return;
             moveTaskRow(row, this);
         });
@@ -5226,7 +5228,7 @@ function initTasksPage() {
         }
 
         const taskId = selectedTaskCheckboxes[0].dataset.taskId;
-        if (taskId) navigateWithinApp(`/${taskAppSegment}/view-task/${taskId}/`);
+        if (taskId) navigateWithinApp(`${taskBaseUrl}view-task/${taskId}/?task_pk=${selectedTaskCheckboxes[0].dataset.taskPk}`);
     }
 
     function openSectionRenameFromDataset(sectionDataset) {
@@ -5398,42 +5400,35 @@ function initTasksPage() {
     function deleteSelectedTasks() {
         const selectedTaskCheckboxes = getSelectedTaskCheckboxes();
         if (!allCheckboxesCanManage(selectedTaskCheckboxes)) return;
-        const taskIds = selectedTaskCheckboxes.map(cb => {
+        const taskPks = selectedTaskCheckboxes.map(cb => {
             const row = cb.closest('.task-row');
-            return row ? row.dataset.taskId : null;
+            return row ? row.dataset.taskPk : null;
         }).filter(id => id !== null);
 
-        if (taskIds.length === 0) return;
+        if (taskPks.length === 0) return;
 
         closeSectionActionMenu();
         window.showConfirmModal({
             title: 'Potwierdź usunięcie',
-            message: `Czy na pewno chcesz usunąć ${taskIds.length} ${taskIds.length === 1 ? taskCopy.itemAcc : taskCopy.itemPluralGen}? Tej operacji nie można cofnąć.`,
+            message: `Czy na pewno chcesz usunąć ${taskPks.length} ${taskPks.length === 1 ? taskCopy.itemAcc : taskCopy.itemPluralGen}? Tej operacji nie można cofnąć.`,
             confirmText: 'Usuń',
             cancelText: 'Anuluj',
             confirmClass: 'btn-danger',
             onConfirm: () => {
-                fetch(`/${taskAppSegment}/delete/`, {
+                fetch(`${taskBaseUrl}delete/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': window.getCookie('csrftoken')
                     },
                     body: JSON.stringify({
-                        task_ids: taskIds.map(id => parseInt(id))
+                        task_pks: taskPks.map(id => parseInt(id))
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        selectedTaskCheckboxes.forEach(cb => {
-                            cb.closest('.task-row')?.remove();
-                        });
-                        updateSelection();
-                        refreshGroupCounts();
-                        updateSubtasksCount();
-                        updateGroupVisibility();
-                        showMessage(data.message, 'success');
+                        window.location.reload();
                     } else {
                         showMessage(data.message || taskCopy.itemDeleteError, 'error');
                     }
@@ -5458,26 +5453,26 @@ function initTasksPage() {
         statusToggleBtn.addEventListener('click', function() {
             const selectedCheckboxes = getSelectedTaskCheckboxes();
             if (!selectedCheckboxes.length || selectedCheckboxes.some(cb => !taskCheckboxCanEdit(cb))) return;
-            const taskIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.taskId));
+            const taskPks = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.taskPk));
             const targetStatus = this.dataset.targetStatus;
             const isClosing = targetStatus === 'closed';
             
-            if (taskIds.length > 0) {
+            if (taskPks.length > 0) {
                 window.showConfirmModal({
                     title: isClosing ? taskCopy.closeMany : taskCopy.reopenMany,
-                    message: `Czy na pewno chcesz ${isClosing ? 'zamknąć' : 'ponownie otworzyć'} ${taskIds.length} ${taskIds.length === 1 ? taskCopy.itemAcc : taskCopy.itemPluralGen}?`,
+                    message: `Czy na pewno chcesz ${isClosing ? 'zamknąć' : 'ponownie otworzyć'} ${taskPks.length} ${taskPks.length === 1 ? taskCopy.itemAcc : taskCopy.itemPluralGen}?`,
                     confirmText: isClosing ? 'Zamknij' : 'Otwórz ponownie',
                     cancelText: 'Anuluj',
                     confirmClass: isClosing ? 'btn-success' : 'btn-secondary',
                     onConfirm: () => {
-                        fetch(`/${taskAppSegment}/bulk-update-status/`, {
+                        fetch(`${taskBaseUrl}bulk-update-status/`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRFToken': window.getCookie('csrftoken')
                             },
                             body: JSON.stringify({
-                                task_ids: taskIds,
+                                task_pks: taskPks,
                                 status: targetStatus
                             })
                         })

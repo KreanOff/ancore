@@ -6,14 +6,17 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.crypto import constant_time_compare
 from django.views.decorators.http import require_POST
 from .avatar import account_avatar as _account_avatar
 from .forms import UserProfileForm, UserRegistrationForm
 from .presence import mark_user_inactive, mark_user_seen
 
 SWITCH_ACCOUNTS_SESSION_KEY = 'switch_account_user_ids'
+SWITCH_ACCOUNTS_HASHES_KEY = 'switch_account_auth_hashes'
 
 
 class AccountLogoutView(LogoutView):
@@ -21,20 +24,24 @@ class AccountLogoutView(LogoutView):
         if request.user.is_authenticated:
             mark_user_inactive(request.user)
         request.session.pop(SWITCH_ACCOUNTS_SESSION_KEY, None)
+        request.session.pop(SWITCH_ACCOUNTS_HASHES_KEY, None)
         return super().post(request, *args, **kwargs)
 
 
 def _normalized_account_ids(request):
     account_ids = request.session.get(SWITCH_ACCOUNTS_SESSION_KEY, [])
     current_id = str(request.user.pk)
-    normalized = []
-
-    for account_id in [current_id, *account_ids]:
-        account_id = str(account_id)
-        if account_id not in normalized:
-            normalized.append(account_id)
-
-    return normalized
+    hashes = request.session.get(SWITCH_ACCOUNTS_HASHES_KEY, {})
+    # A legacy list of IDs alone is not proof of a still-valid login.
+    users = get_user_model().objects.filter(pk__in=account_ids, is_active=True)
+    valid_ids = {
+        str(user.pk) for user in users
+        if isinstance(hashes.get(str(user.pk)), str)
+        and constant_time_compare(hashes[str(user.pk)], user.get_session_auth_hash())
+    }
+    return list(dict.fromkeys([current_id, *(
+        str(account_id) for account_id in account_ids if str(account_id) in valid_ids
+    )]))
 
 
 def _save_account_ids(request, account_ids):
@@ -45,15 +52,29 @@ def _save_account_ids(request, account_ids):
             normalized.append(account_id)
 
     request.session[SWITCH_ACCOUNTS_SESSION_KEY] = normalized
+    hashes = request.session.get(SWITCH_ACCOUNTS_HASHES_KEY, {}).copy()
+    hashes[str(request.user.pk)] = request.user.get_session_auth_hash()
+    request.session[SWITCH_ACCOUNTS_HASHES_KEY] = {
+        key: value for key, value in hashes.items() if key in normalized
+    }
     request.session.modified = True
     return normalized
 
 
-def _login_preserving_switcher(request, user, account_ids):
+def _login_preserving_switcher(request, user, account_ids, *, authenticated=False):
     backend = settings.AUTHENTICATION_BACKENDS[0]
+    hashes = request.session.get(SWITCH_ACCOUNTS_HASHES_KEY, {}).copy()
+    if not authenticated and user.pk != request.user.pk:
+        stored_hash = hashes.get(str(user.pk))
+        if not isinstance(stored_hash, str) or not constant_time_compare(stored_hash, user.get_session_auth_hash()):
+            raise PermissionDenied('Dodaj konto ponownie, podając aktualne hasło.')
+    if request.user.is_authenticated:
+        hashes[str(request.user.pk)] = request.user.get_session_auth_hash()
     if request.user.is_authenticated and request.user.pk != user.pk:
         mark_user_inactive(request.user)
     auth_login(request, user, backend=backend)
+    # auth_login flushes the session when changing users.
+    request.session[SWITCH_ACCOUNTS_HASHES_KEY] = hashes
     mark_user_seen(user, force=True)
     _save_account_ids(request, [user.pk, *account_ids])
 
@@ -160,7 +181,7 @@ def add_account(request):
         if form.is_valid():
             user = form.get_user()
             account_ids = _normalized_account_ids(request)
-            _login_preserving_switcher(request, user, account_ids)
+            _login_preserving_switcher(request, user, account_ids, authenticated=True)
             messages.success(request, f'Konto {user.email} zostało dodane.')
             return redirect('profile')
     else:
@@ -176,7 +197,8 @@ def switch_account(request):
     target_id = str(request.POST.get('user_id', ''))
 
     if target_id not in account_ids:
-        messages.error(request, 'To konto nie jest dodane do przełącznika.')
+        _save_account_ids(request, account_ids)
+        messages.error(request, 'Dodaj konto ponownie, podając aktualne hasło.')
         return redirect('profile')
 
     user = get_object_or_404(get_user_model(), pk=target_id, is_active=True)

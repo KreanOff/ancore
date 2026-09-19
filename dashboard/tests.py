@@ -184,14 +184,14 @@ class DashboardViewTests(TestCase):
         self.assertEqual(task_notification['source_label'], 'Tasks')
         self.assertEqual(task_notification['actor_label'], user.get_username())
         self.assertEqual(task_notification['title'], 'Zadanie z Tasks')
-        self.assertEqual(task_notification['url'], reverse('tasks:view-task', args=[task.task_id]))
+        self.assertEqual(task_notification['url'], reverse('tasks:view-task', args=[task.task_id]) + f'?task_pk={task.pk}')
         self.assertIn('Zadanie z Tasks', task_notification['location_label'])
 
         self.assertEqual(kanban_notification['source'], 'kanban')
         self.assertEqual(kanban_notification['source_label'], 'Kanban')
         self.assertEqual(kanban_notification['actor_label'], user.get_username())
         self.assertEqual(kanban_notification['title'], 'Karta z Kanban')
-        self.assertEqual(kanban_notification['url'], reverse('kanban:view-task', args=[kanban_card.task_id]))
+        self.assertEqual(kanban_notification['url'], reverse('kanban:view-task', args=[kanban_card.task_id]) + f'?task_pk={kanban_card.pk}')
         self.assertNotIn('Zadanie innej osoby', [notification['title'] for notification in notifications])
 
 

@@ -18,7 +18,9 @@ status obecności i przełączanie między kontami dodanymi do jednej sesji.
 nazwisko, telefon, stanowisko, opis, zdjęcie i dane obecności.
 
 Dodanie kolejnego konta wymaga jego uwierzytelnienia. Przełącznik przechowuje
-identyfikatory wcześniej dodanych kont w sesji. „Usuń konto z przełącznika”
+identyfikatory i hashe sesyjne wcześniej uwierzytelnionych kont. Po zmianie hasła
+lub dezaktywacji konto nie może zostać wybrane; zmiana hasła wymaga ponownego
+dodania z aktualnymi danymi logowania. „Usuń konto z przełącznika”
 usuwa wpis z przełącznika; nie usuwa użytkownika z bazy. Nie można w ten sposób
 usunąć jedynego pozostałego konta sesji.
 
@@ -334,6 +336,8 @@ a projekty i wydarzenia PK. `/` nadal używa aktywnego kontekstu z sesji.
 
 Szablon powiadomień to `dashboard/notifications.html`. Powiadomienia nie mają
 oddzielnej tabeli dostarczenia/odczytu ani push/email w sprawdzonej implementacji.
+Obejmują aktywność właściciela z różnych Workspace; link określa Workspace
+konkretnego zadania lub karty, zamiast polegać na sesji.
 
 ## 10. Wspólna powłoka i narzędzia — Core / Static
 

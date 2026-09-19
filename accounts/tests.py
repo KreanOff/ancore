@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from .forms import UserRegistrationForm
 from .presence import sync_stale_presence_statuses
-from .views import SWITCH_ACCOUNTS_SESSION_KEY, _account_avatar
+from .views import SWITCH_ACCOUNTS_SESSION_KEY, SWITCH_ACCOUNTS_HASHES_KEY, _account_avatar
 
 
 class UserRegistrationFormTests(TestCase):
@@ -385,6 +385,9 @@ class AccountSwitcherTests(TestCase):
         self.client.force_login(self.user)
         session = self.client.session
         session[SWITCH_ACCOUNTS_SESSION_KEY] = [str(self.user.pk), str(self.second_user.pk)]
+        session[SWITCH_ACCOUNTS_HASHES_KEY] = {
+            str(user.pk): user.get_session_auth_hash() for user in (self.user, self.second_user)
+        }
         session.save()
 
     def test_add_account_requires_login(self):
@@ -418,6 +421,63 @@ class AccountSwitcherTests(TestCase):
 
         self.assertRedirects(response, reverse('profile'))
         self.assertEqual(self.client.session[SESSION_KEY], str(self.second_user.pk))
+
+    def test_password_change_invalidates_inactive_account(self):
+        self._seed_switcher_session()
+        self.second_user.set_password('replacement-password')
+        self.second_user.save(update_fields=['password'])
+
+        response = self.client.post(reverse('switch_account'), {'user_id': self.second_user.pk})
+
+        self.assertRedirects(response, reverse('profile'))
+        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
+        self.assertNotIn(str(self.second_user.pk), self.client.session[SWITCH_ACCOUNTS_SESSION_KEY])
+        self.assertNotIn(str(self.second_user.pk), self.client.session[SWITCH_ACCOUNTS_HASHES_KEY])
+
+    def test_removing_current_account_cannot_bypass_expired_login(self):
+        self._seed_switcher_session()
+        self.second_user.set_password('replacement-password')
+        self.second_user.save(update_fields=['password'])
+
+        self.client.post(reverse('remove_account'), {'user_id': self.user.pk})
+
+        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
+        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_SESSION_KEY], [str(self.user.pk)])
+
+    def test_legacy_id_only_session_requires_reauthentication(self):
+        self._seed_switcher_session()
+        session = self.client.session
+        del session[SWITCH_ACCOUNTS_HASHES_KEY]
+        session.save()
+
+        self.client.post(reverse('switch_account'), {'user_id': self.second_user.pk})
+
+        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
+        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_SESSION_KEY], [str(self.user.pk)])
+
+    def test_readding_expired_account_with_current_password_restores_switching(self):
+        self._seed_switcher_session()
+        self.second_user.set_password('replacement-password')
+        self.second_user.save(update_fields=['password'])
+
+        self.client.post(reverse('add_account'), {
+            'username': self.second_user.email, 'password': 'replacement-password',
+        })
+        self.assertEqual(self.client.session[SESSION_KEY], str(self.second_user.pk))
+        for user in (self.user, self.second_user):
+            self.client.post(reverse('switch_account'), {'user_id': user.pk})
+            self.assertEqual(self.client.session[SESSION_KEY], str(user.pk))
+        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_HASHES_KEY], {
+            str(user.pk): user.get_session_auth_hash() for user in (self.user, self.second_user)
+        })
+
+    def test_logout_clears_all_switcher_credentials(self):
+        self._seed_switcher_session()
+
+        self.client.post(reverse('logout'))
+
+        self.assertNotIn(SWITCH_ACCOUNTS_SESSION_KEY, self.client.session)
+        self.assertNotIn(SWITCH_ACCOUNTS_HASHES_KEY, self.client.session)
 
     def test_switch_account_rejects_account_not_in_switcher(self):
         third_user = get_user_model().objects.create_user(

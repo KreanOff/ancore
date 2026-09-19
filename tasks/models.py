@@ -13,6 +13,8 @@ import os
 import secrets
 import string
 
+from core.task_numbering import lock_task_numbers, renumber_tasks
+
 
 BASE36_ALPHABET = string.digits + string.ascii_uppercase
 
@@ -735,6 +737,11 @@ class Task(models.Model):
         ]
         constraints = [
             models.UniqueConstraint(
+                fields=['user', 'workplace', 'task_id'],
+                name='unique_tasks_number_per_workspace',
+                deferrable=models.Deferrable.DEFERRED,
+            ),
+            models.UniqueConstraint(
                 fields=['section', 'code_number'],
                 condition=Q(section__isnull=False, code_number__gt=0),
                 name='unique_task_code_per_section',
@@ -751,69 +758,64 @@ class Task(models.Model):
         return next_number
 
     def save(self, *args, **kwargs):
-        from django.utils import timezone
-        
-        # Get original status if this is an update
-        if self.pk:
-            try:
-                original_task = Task.objects.get(pk=self.pk)
-                original_status = original_task.status
-                original_section_id = original_task.section_id
-            except Task.DoesNotExist:
+        with lock_task_numbers(self.user_id, using=kwargs.get('using') or self._state.db):
+            from django.utils import timezone
+
+            # Get original status and the current number while holding the owner lock.
+            original_task = None
+            if self.pk:
+                try:
+                    original_task = Task.objects.get(pk=self.pk)
+                    self.task_id = original_task.task_id
+                    original_status = original_task.status
+                    original_section_id = original_task.section_id
+                except Task.DoesNotExist:
+                    original_status = None
+                    original_section_id = None
+            else:
                 original_status = None
                 original_section_id = None
-        else:
-            original_status = None
-            original_section_id = None
-        
-        # Set completion_date when status changes to 'closed'
-        if self.status == 'closed' and original_status != 'closed':
-            self.completion_date = timezone.now()
-            self.is_completed = True
-        elif self.status != 'closed' and original_status == 'closed':
-            self.completion_date = None
-            self.is_completed = False
 
-        if self.section_id and (not self.pk or not self.code_number or original_section_id != self.section_id):
-            self.code_number = self._claim_next_code_number()
-            _add_update_field(kwargs, 'code_number')
-        elif not self.section_id and self.code_number:
-            self.code_number = 0
-            _add_update_field(kwargs, 'code_number')
+            # Set completion_date when status changes to 'closed'
+            if self.status == 'closed' and original_status != 'closed':
+                self.completion_date = timezone.now()
+                self.is_completed = True
+            elif self.status != 'closed' and original_status == 'closed':
+                self.completion_date = None
+                self.is_completed = False
 
-        if self.section_id:
-            section_workplace_id = self.section.project.workplace_id
-            if self.workplace_id != section_workplace_id:
-                self.workplace_id = section_workplace_id
-                _add_update_field(kwargs, 'workplace')
-            
-        if not self.pk or self.task_id == 0:
-            task_scope = Task.objects.filter(user=self.user)
-            if self.workplace_id:
-                task_scope = task_scope.filter(workplace_id=self.workplace_id)
-            max_task_id = task_scope.aggregate(Max('task_id'))['task_id__max'] or 0
-            self.task_id = max_task_id + 1
-        super().save(*args, **kwargs)
+            if self.section_id and (not self.pk or not self.code_number or original_section_id != self.section_id):
+                self.code_number = self._claim_next_code_number()
+                _add_update_field(kwargs, 'code_number')
+            elif not self.section_id and self.code_number:
+                self.code_number = 0
+                _add_update_field(kwargs, 'code_number')
+
+            if self.section_id:
+                section_workplace_id = self.section.project.workplace_id
+                if self.workplace_id != section_workplace_id:
+                    self.workplace_id = section_workplace_id
+                    _add_update_field(kwargs, 'workplace')
+
+            if not self.pk or self.task_id == 0 or (original_task and original_task.workplace_id != self.workplace_id):
+                task_scope = Task.objects.filter(user_id=self.user_id, workplace_id=self.workplace_id)
+                max_task_id = task_scope.aggregate(Max('task_id'))['task_id__max'] or 0
+                self.task_id = max_task_id + 1
+                if kwargs.get('update_fields') is not None:
+                    kwargs['update_fields'] = set(kwargs['update_fields']) | {'task_id'}
+            super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        user = self.user
-        workplace = self.workplace
-        super().delete(*args, **kwargs)
-        self._renumber_user_tasks(user, workplace)
+        using = kwargs.get('using') or self._state.db
+        with lock_task_numbers(self.user_id, using=using):
+            user, workplace = self.user, self.workplace
+            result = super().delete(*args, **kwargs)
+            renumber_tasks(type(self), user, workplace, using=using)
+            return result
 
     @classmethod
     def _renumber_user_tasks(cls, user, workplace=None):
-        """Renumber tasks sequentially for a specific user and workplace."""
-        tasks = cls.objects.filter(user=user).only('id', 'task_id').order_by('task_id', 'id')
-        if workplace is not None:
-            tasks = tasks.filter(workplace=workplace)
-        tasks_to_update = []
-        for index, task in enumerate(tasks, 1):
-            if task.task_id != index:
-                task.task_id = index
-                tasks_to_update.append(task)
-        if tasks_to_update:
-            cls.objects.bulk_update(tasks_to_update, ['task_id'], batch_size=500)
+        renumber_tasks(cls, user, workplace)
 
     def __str__(self):
         return self.title

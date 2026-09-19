@@ -2,16 +2,16 @@
          draggable="true"
          role="link"
          tabindex="0"
-         data-task-id="{{ task.task_id }}"
+         data-task-id="{{ task.task_id }}" data-task-pk="{{ task.pk }}"
          data-status="{{ task.status }}"
          data-column-id="{{ task.column_id|default:'' }}"
          data-priority="{{ task.priority }}"
          data-created="{{ task.created_at|date:'c' }}"
          data-search-primary="{{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
          data-search-index="{{ task.task_id }} {{ project_code }}-{{ task.task_id }} {{ task.title|default:''|striptags }} {{ task.description|default:''|striptags }} {{ task.get_status_display }} {{ task.get_priority_display }} {{ task.section.title|default:'' }} {{ task.section.project.name|default:'' }} {{ task.section.project.code|default:project_code }} {% for tag in task.tags.all %}{{ tag.name }} {% endfor %}"
-         data-view-url="{% url 'kanban:view-task' task.task_id %}">
+         data-view-url="{{ workplace_app_urls.kanban }}view-task/{{ task.task_id }}/?task_pk={{ task.pk }}">
     <div class="tasks-kanban-card__header">
-        <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" aria-label="Zaznacz {{ task.title }}">
+        <input type="checkbox" class="task-checkbox" data-task-id="{{ task.task_id }}" data-task-pk="{{ task.pk }}" aria-label="Zaznacz {{ task.title }}">
         <div class="tasks-kanban-card__title">{{ task.title }}</div>
     </div>
 

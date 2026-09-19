@@ -21,6 +21,8 @@ from django.contrib import messages
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
+from core.task_numbering import lock_task_numbers
+from core.task_requests import task_detail_lookup, task_primary_keys
 from core.upload_validation import attachment_download_response, validate_attachment_upload
 from ..models import (
     PROJECT_FIELD_OPTION_DEFAULTS,
@@ -3290,7 +3292,7 @@ def _tasks_page(request, active_section=None):
                 get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
             project_count = projects_to_delete.count()
             task_count = _filter_workplace(Task.objects.filter(section__project__in=projects_to_delete, user=request.user), workplace).count()
-            with transaction.atomic():
+            with lock_task_numbers(request.user.pk):
                 projects_to_delete.delete()
                 Task._renumber_user_tasks(request.user, workplace)
             if project_count == 1 and task_count:
@@ -3597,7 +3599,7 @@ def _tasks_page(request, active_section=None):
             section_count = sections_to_delete.count()
             project_id = sections_to_delete.values_list('project_id', flat=True).first()
             task_count = _filter_workplace(Task.objects.filter(section__in=sections_to_delete, user=request.user), workplace).count()
-            with transaction.atomic():
+            with lock_task_numbers(request.user.pk):
                 sections_to_delete.delete()
                 Task._renumber_user_tasks(request.user, workplace)
             if section_count == 1 and task_count:
@@ -4137,20 +4139,8 @@ def update_task_status(request, task_id):
     try:
         workplace = _active_workplace(request)
         data = json.loads(request.body)
-        task_pk = data.get('task_pk')
-        if task_pk:
-            task = Task.objects.select_related('section', 'section__project').filter(
-                _task_access_filter(request.user, workplace),
-                pk=task_pk,
-            ).first()
-            if not task:
-                return JsonResponse({'status': 'error', 'message': 'Zadanie nie znalezione'}, status=404)
-            if task.task_id != task_id:
-                return JsonResponse({'status': 'error', 'message': 'Nieprawidłowe zadanie'}, status=400)
-        else:
-            task = _filter_workplace(Task.objects.filter(user=request.user), workplace).get(task_id=task_id)
-        if not _user_can_edit_task(request.user, task):
-            return JsonResponse({'status': 'error', 'message': 'Brak uprawnień do edycji zadania'}, status=403)
+        task_pk = task_primary_keys(data)[0]
+        task = _filter_workplace(Task.objects.filter(user=request.user), workplace).get(pk=task_pk)
         status = data.get('status')
         previous_status = task.status
 
@@ -4186,16 +4176,22 @@ def update_task_status(request, task_id):
         })
     except Task.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Zadanie nie znalezione'}, status=404)
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
 
 @login_required
 @require_POST
 def delete_task(request, task_id):
     try:
-        task = _filter_workplace(Task.objects.filter(user=request.user), _active_workplace(request)).get(task_id=task_id)
-        task.delete()
+        task_pk = task_primary_keys(json.loads(request.body))[0]
+        with lock_task_numbers(request.user.pk):
+            task = _filter_workplace(Task.objects.filter(user=request.user), _active_workplace(request)).get(pk=task_pk)
+            task.delete()
         return JsonResponse({'status': 'success', 'message': 'Zadanie usunięte pomyślnie'})
     except Task.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Zadanie nie znalezione'}, status=404)
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
 
 @login_required
 @require_POST
@@ -4235,23 +4231,21 @@ def download_attachment(request, attachment_id):
 def delete_tasks(request):
     try:
         data = json.loads(request.body)
-        task_ids = data.get('task_ids', [])
-        
-        if not task_ids:
-            return JsonResponse({'status': 'error', 'message': 'Nie podano ID zadań'}, status=400)
-        
+        task_pks = task_primary_keys(data, many=True)
+
         user = request.user
         workplace = _active_workplace(request)
-        deleted_count = _filter_workplace(Task.objects.filter(task_id__in=task_ids, user=user), workplace).delete()[0]
-        Task._renumber_user_tasks(user, workplace)
-        
+        with lock_task_numbers(user.pk):
+            deleted_count = _filter_workplace(Task.objects.filter(pk__in=task_pks, user=user), workplace).delete()[0]
+            Task._renumber_user_tasks(user, workplace)
+
         return JsonResponse({
             'status': 'success', 
             'message': f'{deleted_count} {"zadań" if deleted_count != 1 else "zadanie"} usuniętych pomyślnie',
             'deleted_count': deleted_count
         })
-    except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
     except Exception:
         logger.exception('Failed to delete tasks')
         return JsonResponse({'status': 'error', 'message': 'Nie udało się usunąć zadań.'}, status=500)
@@ -4261,18 +4255,16 @@ def delete_tasks(request):
 def bulk_update_status(request):
     try:
         data = json.loads(request.body)
-        task_ids = data.get('task_ids', [])
+        task_pks = task_primary_keys(data, many=True)
         status = data.get('status', 'closed')
         
-        if not task_ids:
-            return JsonResponse({'status': 'error', 'message': 'Nie podano ID zadań'}, status=400)
         valid_statuses = {choice for choice, _label in Task.STATUS_CHOICES}
         if status not in valid_statuses:
             return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
         
         user = request.user
         workplace = _active_workplace(request)
-        tasks_to_update = _filter_workplace(Task.objects.filter(task_id__in=task_ids, user=user), workplace)
+        tasks_to_update = _filter_workplace(Task.objects.filter(pk__in=task_pks, user=user), workplace)
         matched_tasks = list(tasks_to_update.values('id', 'status'))
         updated_count = len(matched_tasks)
         task_pks = [task['id'] for task in matched_tasks]
@@ -4305,8 +4297,8 @@ def bulk_update_status(request):
             'message': f'Zaktualizowano {updated_count} {"zadań" if updated_count != 1 else "zadanie"}',
             'updated_count': updated_count
         })
-    except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy JSON'}, status=400)
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
     except Exception:
         logger.exception('Failed to bulk update task status')
         return JsonResponse({'status': 'error', 'message': 'Nie udało się zaktualizować zadań.'}, status=500)
@@ -4331,7 +4323,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     )
     if task_pk is not None:
         raise PermissionDenied
-    task = get_object_or_404(task_queryset, task_id=task_id, user=request.user)
+    task = get_object_or_404(task_queryset, user=request.user, **task_detail_lookup(request, task_id))
 
     can_manage_task = task.user_id == request.user.id
     can_edit_task = _user_can_edit_task(request.user, task)

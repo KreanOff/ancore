@@ -589,7 +589,7 @@ def _activity_notification(activity, app_name, source_label, object_label, subit
         'location_label': _activity_location(task, source_label, object_label),
         'created_at': activity.created_at,
         'sort_key': (activity.created_at, activity.id),
-        'url': reverse(f'{app_name}:{route_name}', args=[task.task_id]),
+        'url': _workspace_app_url(task.workplace, app_name, f'{route_name}/{task.task_id}/?task_pk={task.pk}'),
     }
 
 

@@ -8,6 +8,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from .forms import CalendarEventForm
 from .models import CalendarEvent
+from workplaces.services import scoped_workplace_app_path
 
 
 def _active_workplace(request):
@@ -51,7 +52,6 @@ def _parse_range_param(value):
 @login_required
 def index(request):
     from django.middleware.csrf import get_token
-    from django.urls import reverse
 
     initial_event = None
     event_id = request.GET.get('event')
@@ -75,10 +75,10 @@ def index(request):
         'calendar_config': {
             'csrfToken': get_token(request),
             'urls': {
-                'events': reverse('planner:events'),
-                'create': reverse('planner:create_event'),
-                'update': reverse('planner:update_event', kwargs={'event_id': 0}).replace('/0/', '/__ID__/'),
-                'delete': reverse('planner:delete_event', kwargs={'event_id': 0}).replace('/0/', '/__ID__/'),
+                'events': scoped_workplace_app_path(request.workplace, 'calendar', 'events/'),
+                'create': scoped_workplace_app_path(request.workplace, 'calendar', 'events/create/'),
+                'update': scoped_workplace_app_path(request.workplace, 'calendar', 'events/__ID__/update/'),
+                'delete': scoped_workplace_app_path(request.workplace, 'calendar', 'events/__ID__/delete/'),
             },
             'initialYear': now.year,
             'initialMonth': now.month,

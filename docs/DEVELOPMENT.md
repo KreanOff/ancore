@@ -68,10 +68,11 @@ do panelu `/admin/` służy opcjonalnie `manage.py createsuperuser`.
 Przy DEBUG=false konfiguracja wymaga prawidłowego klucza/hostów i domyślnie
 włącza bezpieczne ciasteczka/HTTPS, co nie pasuje automatycznie do lokalnego HTTP.
 
-**Ważny stan repozytorium:** część migracji istnieje lokalnie, ale nie jest
-śledzona w Git. Przed startem z czystego klona sprawdź kompletność zależności
-migracji. Powyższa procedura zakłada ich dostępność; pierwszy przegląd nie
-potwierdza odtwarzalności czystego klona.
+Migracje są wersjonowane w Git; `.gitignore` nie wyklucza nowych migracji.
+Przed wdrożeniem sprawdź `makemigrations --check --dry-run` i `migrate --plan`.
+Migracje Tasks 0047 i Kanban 0034 naprawiają istniejącą numerację oraz dodają
+unikalność numerów w Workspace. Na czas tej operacji blokują zapisy w tabeli;
+uwzględnij to w oknie wdrożenia dla dużej bazy.
 
 Pełne edytory Dokumentów wymagają dodatkowej konfiguracji opisanej w
 [OFFICE.md](OFFICE.md): lokalnego ONLYOFFICE oraz zbudowania zasobów tablicy.
@@ -116,6 +117,7 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Planner | Wydarzenia i izolacja właściciela |
 | Dashboard | Wyszukiwanie, powiadomienia i integracje |
 | Core | Wspólne mechanizmy i kontrakty UI/uploadu według aktualnych przypadków |
+| Core: `test_task_integrity.py`, `test_task_number_migrations.py` | Stabilne PK, dwie karty/Workspace, uprawnienia, kalendarz, powiadomienia, równoczesne tworzenie, unikalność i naprawa istniejących numerów |
 | Documents | Dyski, foldery, pliki, kosz, izolacja, modale, paginacja, wyszukiwarka, migracja dysków |
 | Documents: `test_suite.py` | Tworzenie czterech typów, osobna karta ONLYOFFICE i katalog po utworzeniu, cel wyników wyszukiwania, podpisane callbacki i źródła, deduplikacja, konflikty tablicy, walidacja OOXML, izolacja właściciela/Workspace, stara sesja po podmianie/koszu |
 | Documents: `test_office.py` | Osobny katalog Dokumentów, edycja i konflikt rewizji, formatowanie/eksport DOCX, import, walidacja/rollback plików, dwa konta i Workspace, globalne szukanie |
@@ -157,7 +159,7 @@ python scripts/update_code_index.py --check
 ```
 
 Nie wymaga zależności aplikacji ani bazy. Uwzględnia wszystkie obecne lokalnie
-źródła w katalogach aplikacji, również migracje ignorowane przez Git.
+źródła w katalogach aplikacji, również nowe pliki przed dodaniem do Git.
 Generuje strukturę, modele/relacje, formularze, routing, definicje widoków,
 szablony, statyczne zasoby i spis testów. Nie analizuje semantycznie, czy
 wszystkie zdefiniowane funkcje są osiągalne.

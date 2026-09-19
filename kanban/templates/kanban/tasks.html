@@ -122,7 +122,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="tasks-page tasks-list-page"
+<div class="tasks-page tasks-list-page" data-task-app="kanban" data-task-base-url="{{ workplace_app_urls.kanban }}"
      data-section-empty-label="Wybierz tablicę"
      data-section-delete-fallback="tę tablicę"
      data-section-delete-title="Usuń tablicę"
@@ -731,7 +731,7 @@
                 </header>
                 <div class="tasks-issue-list tasks-kanban-column__list" data-drop-column-id="{{ column.id }}">
                     {% for task in column.tasks %}
-                    {% include 'kanban/includes/task_board_card.html' with task=task project_code=active_project.code only %}
+                    {% include 'kanban/includes/task_board_card.html' with task=task project_code=active_project.code workplace_app_urls=workplace_app_urls only %}
                     {% endfor %}
                     <button type="button"
                             class="tasks-kanban-column__add-card"
@@ -800,7 +800,7 @@
                 </header>
                 <div class="tasks-issue-list tasks-kanban-column__list"{% if column.id %} data-drop-column-id="{{ column.id }}"{% endif %}>
                     {% for task in column.tasks %}
-                    {% include 'kanban/includes/task_board_card.html' with task=task project_code=task.section.project.code|default:'TASK' only %}
+                    {% include 'kanban/includes/task_board_card.html' with task=task project_code=task.section.project.code|default:'TASK' workplace_app_urls=workplace_app_urls only %}
                     {% endfor %}
                     {% if column.id %}
                     <button type="button"

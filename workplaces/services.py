@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.db import transaction
+from core.task_numbering import lock_task_numbers, renumber_tasks
 
 from .models import SidebarFavorite, Workplace, WorkplaceMembership
 
@@ -74,9 +75,16 @@ def backfill_legacy_records_for_workplace(user, workplace):
 
     for app_label, model_name, owner_field in models_by_owner_field:
         model = apps.get_model(app_label, model_name)
-        model.objects.filter(
+        legacy = model.objects.filter(
             **{f'{owner_field}_id': user.pk, 'workplace__isnull': True},
-        ).update(workplace_id=workplace.pk)
+        )
+        if model_name in {'Task', 'Kanban'}:
+            if legacy.exists():
+                with lock_task_numbers(user.pk):
+                    if legacy.update(workplace_id=workplace.pk):
+                        renumber_tasks(model, user, workplace)
+        else:
+            legacy.update(workplace_id=workplace.pk)
 
 
 def enable_workspace_url_scope(request):

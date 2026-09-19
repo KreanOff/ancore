@@ -1463,7 +1463,7 @@ class KanbanProjectCreationTests(TestCase):
 
         response = self.client.post(
             reverse('kanban:update_task_status', args=[task.task_id]),
-            data=json.dumps({'column_id': column.id}),
+            data=json.dumps({'task_pk': task.pk, 'column_id': column.id}),
             content_type='application/json',
         )
 
@@ -1769,7 +1769,7 @@ class KanbanProjectCreationTests(TestCase):
 
         response = self.client.post(
             reverse('kanban:update_task_status', args=[task.task_id]),
-            data=json.dumps({'status': 'in_progress'}),
+            data=json.dumps({'task_pk': task.pk, 'status': 'in_progress'}),
             content_type='application/json',
         )
 
@@ -1913,7 +1913,7 @@ class KanbanProjectCreationTests(TestCase):
         response = self.client.post(
             reverse('kanban:bulk_update_status'),
             data=json.dumps({
-                'task_ids': [first_task.task_id, second_task.task_id],
+                'task_pks': [first_task.pk, second_task.pk],
                 'status': 'closed',
             }),
             content_type='application/json',
@@ -1937,7 +1937,7 @@ class KanbanProjectCreationTests(TestCase):
         response = self.client.post(
             reverse('kanban:bulk_update_status'),
             data=json.dumps({
-                'task_ids': [task.task_id],
+                'task_pks': [task.pk],
                 'status': 'nie-ma-takiego',
             }),
             content_type='application/json',
