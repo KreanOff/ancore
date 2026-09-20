@@ -22,7 +22,7 @@
                 {% endfor %}
             </div>
             <footer class="tasks-modal__footer">
-                {% if modal.document %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/preview/" class="btn btn-secondary"{% if modal.document.office_type %} target="_blank" rel="noopener"{% elif not modal.document.has_full_editor %} data-document-modal{% endif %}>{% if modal.document.has_full_editor %}Otwórz edytor{% else %}Podgląd pliku{% endif %}</a>{% endif %}
+                {% if modal.document %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/preview/" class="btn btn-secondary"{% if modal.document.office_type or modal.document.has_full_editor %} target="_blank" rel="noopener"{% elif not modal.document.has_full_editor %} data-document-modal{% endif %}>{% if modal.document.has_full_editor %}Otwórz edytor{% else %}Podgląd pliku{% endif %}</a>{% endif %}
                 <a href="{{ modal.folder_url }}" class="btn btn-secondary" data-document-modal-close>Anuluj</a>
                 <button type="submit" class="tasks-modal__submit">{{ modal.submit_label }}</button>
             </footer>

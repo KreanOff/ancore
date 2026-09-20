@@ -346,7 +346,9 @@ pokazuje dokumenty i foldery, bez tworzenia osobnego dysku/biblioteki.
   Edytory zapisują pliki w prywatnym storage. DOC/XLS/PPT/RTF/TXT/CSV mogą utworzyć osobną
   kopię OOXML do edycji. PDF ma dotychczasowy podgląd i pobieranie.
 - Tablica Excalidraw obsługuje rysowanie, tekst, kształty, strzałki, obrazy,
-  automatyczny zapis, import i eksport sceny oraz eksport PNG/SVG.
+  automatyczny zapis, import i eksport sceny oraz eksport PNG/SVG. Otwiera się
+  w osobnej karcie bez menu bocznego, tak samo jak pliki Office: z listy,
+  kafelków, wyszukiwarki, metadanych oraz po utworzeniu w modalu.
 - Upload: do 20 plików, domyślnie 10 MiB na plik. Nazwę/folder można zmieniać,
   a przesłany plik podmienić. Pliki w koszu wymagają przywrócenia przed otwarciem.
 - Starsze tekstowe dokumenty Ancore zachowują dotychczasowy edytor, eksport DOCX,

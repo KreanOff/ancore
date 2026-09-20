@@ -82,7 +82,7 @@ def create(request):
                 item.file.storage.delete(item.file.name)
                 raise
         editor_url = _url(request, f'{item.pk}/editor/')
-        if item.office_type and request.headers.get('X-Document-Modal') == 'true':
+        if item.has_full_editor and request.headers.get('X-Document-Modal') == 'true':
             return JsonResponse({'redirect_url': _url(request, folder=folder.pk if folder else None),
                                  'editor_url': editor_url})
         return _form_success(request, editor_url)

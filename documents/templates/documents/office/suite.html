@@ -1,13 +1,13 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% block title %}{{ document.title }} | {% if drive_editor %}Dysk{% else %}Dokumenty{% endif %} | ancore{% endblock %}
-{% block html_class %}{% if document.office_type %}office-editor-window{% endif %}{% endblock %}
-{% block app_navigation %}{% if not document.office_type %}{{ block.super }}{% endif %}{% endblock %}
+{% block html_class %}office-editor-window{% endblock %}
+{% block app_navigation %}{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-icon-colors">
 <link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260919-catalog-style-v2">
-<script src="{% static 'js/documents.js' %}?v=20260920-icon-colors" defer></script>
+<script src="{% static 'js/documents.js' %}?v=20260920-board-tab" defer></script>
 <script src="{% static 'js/office-suite.js' %}?v=20260919" defer></script>
 {% endblock %}
 {% block content %}

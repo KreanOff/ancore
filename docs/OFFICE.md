@@ -22,10 +22,11 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
 - **Tablica:** tekst, kształty, strzałki, rysowanie, obrazy PNG/JPG/WebP,
   cofanie, powiększenie, import `.excalidraw`, eksport sceny oraz PNG/SVG.
 - Wysłane DOCX/XLSX/PPTX otwierają się bezpośrednio w odpowiednim edytorze.
-  ONLYOFFICE otwiera się w osobnej karcie przeglądarki, na pełną szerokość
-  bez nawigacji bocznej. Dotyczy to katalogu, wyszukiwarki, tworzenia pliku
-  oraz konwersji. Pierwotna karta zachowuje katalog; nowa ma pasek nazwy,
-  metadanych, pobierania i zapisu. Tablica pozostaje w bieżącej karcie Ancore.
+  ONLYOFFICE i tablica BOARD otwierają się w osobnej karcie przeglądarki,
+  na pełną szerokość bez nawigacji bocznej. Dotyczy to listy, kafelków,
+  wyszukiwarki, tworzenia pliku, odnośnika w metadanych oraz konwersji.
+  Pierwotna karta zachowuje katalog; nowa ma pasek nazwy, metadanych,
+  pobierania i zapisu.
   Jeżeli przeglądarka blokuje nową kartę podczas tworzenia, modal pokazuje
   odnośnik do już zapisanego dokumentu, bez ponownego tworzenia pliku.
   DOC/XLS/PPT/RTF/TXT/CSV można przekonwertować do osobnej kopii OOXML;

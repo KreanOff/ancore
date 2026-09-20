@@ -5,7 +5,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-icon-colors">
 <link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260919-catalog-style-v2">
-<script src="{% static 'js/documents.js' %}?v=20260920-icon-colors" defer></script>
+<script src="{% static 'js/documents.js' %}?v=20260920-board-tab" defer></script>
 <script src="{% static 'js/office.js' %}?v=20260920-tags" defer></script>
 {% endblock %}
 {% block content %}
@@ -54,7 +54,7 @@
         <div class="documents-grid-scroll">
         <ul class="documents-grid" aria-label="Dokumenty i foldery — kafelki">
             {% for row in rows %}{% with item=row.item %}<li class="documents-card{% if row.kind == 'folder' %} documents-card--folder{% endif %}">
-                {% if office_view == 'trash' %}<div class="documents-card-entry">{% else %}<a class="documents-card-entry" href="{{ row.url }}" title="{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}"{% if item.office_type %} target="_blank" rel="noopener"{% endif %}{% if item.kind == 'file' and not item.has_full_editor %} data-document-modal{% endif %}>{% endif %}
+                {% if office_view == 'trash' %}<div class="documents-card-entry">{% else %}<a class="documents-card-entry" href="{{ row.url }}" title="{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}"{% if item.has_full_editor %} target="_blank" rel="noopener"{% endif %}{% if item.kind == 'file' and not item.has_full_editor %} data-document-modal{% endif %}>{% endif %}
                     <span class="documents-card-preview" aria-hidden="true">{% if row.kind == 'folder' %}{% include 'documents/includes/folder_icon.html' with has_files=item.has_files color=item.color only %}{% else %}{% include 'documents/includes/file_icon.html' with document=item only %}{% endif %}{% if row.kind == 'document' %}<small>{{ item.extension }}</small>{% endif %}</span>
                     <span class="documents-card-title">{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}</span>
                     <span class="documents-card-meta">{% if row.kind == 'folder' %}Folder{% else %}{{ item.extension }} · {{ item.file_size|filesizeformat }}{% endif %}</span>

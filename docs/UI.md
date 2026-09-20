@@ -417,13 +417,13 @@ zmian jest blokowane komunikatem z prośbą o zapis.
 
 Nowe pliki mają wspólny ekran `office/suite.html`: pasek Ancore z nazwą,
 formatem, metadanymi, pobraniem i statusem zapisu oraz iframe pełnego edytora.
-Pliki ONLYOFFICE otwierają ten ekran w osobnej karcie (`target="_blank"`,
+Pliki ONLYOFFICE i tablice BOARD otwierają ten ekran w osobnej karcie (`target="_blank"`,
 `rel="noopener"`), również z globalnego wyszukiwania. Wariant
 `office-editor-window` rozszerza `core/base.html`, pomija blok `app_navigation`
 i wykorzystuje pełną szerokość bez bocznego menu i skalowania iframe.
 Tworzenie pliku rezerwuje kartę podczas zatwierdzenia modalu, a po zapisie
 odświeża katalog w pierwotnej karcie. Błąd zamyka pustą kartę; blokada okien
-pokazuje odnośnik do utworzonego pliku. Tablica zachowuje nawigację Ancore.
+pokazuje odnośnik do utworzonego pliku. Ten sam mechanizm obejmuje tablice.
 ONLYOFFICE zachowuje własny polski interfejs, Excalidraw jest izolowany od
 CSS aplikacji i używa turkusowego akcentu. Katalog ma dwa wspólne paski:
 tytuł z akcjami oraz narzędzia z wyszukiwaniem i paginacją. „Nowy dokument”

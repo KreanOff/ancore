@@ -69,9 +69,17 @@ class FullEditorTests(TestCase):
             self.assertEqual(item.extension, extension)
             page = self.client.get(response.url)
             self.assertContains(page, 'data-app-full-navigation')
+            self.assertContains(page, 'class="office-editor-window"')
+            self.assertNotContains(page, 'id="app-sidebar"')
+            for base in (self.base, '/office/'):
+                for display in ('list', 'grid'):
+                    catalog = self.client.get(base, {'display': display}, follow=True)
+                    self.assertRegex(catalog.content.decode(),
+                                     rf'<a [^>]*href="{response.url}"[^>]*target="_blank"[^>]*rel="noopener"')
+                metadata = self.client.get(base + f'{item.pk}/', headers={'X-Document-Modal': 'true'}, follow=True)
+                self.assertRegex(metadata.content.decode(),
+                                 rf'<a [^>]*href="{self.base}{item.pk}/preview/"[^>]*target="_blank"[^>]*rel="noopener"')
             if kind != 'board':
-                self.assertContains(page, 'class="office-editor-window"')
-                self.assertNotContains(page, 'id="app-sidebar"')
                 config = page.context['editor_config']
                 decoded = service.verify(config['token'])
                 self.assertEqual(decoded['document']['key'], service.document_key(item))
@@ -81,9 +89,8 @@ class FullEditorTests(TestCase):
                     service.validate_ooxml(file, extension)
             else:
                 self.assertContains(page, 'data-board-frame')
-                self.assertContains(page, 'id="app-sidebar"')
 
-    def test_modal_creation_keeps_catalog_and_opens_onlyoffice_separately(self):
+    def test_modal_creation_keeps_catalog_and_opens_full_editors_separately(self):
         folder = Folder.objects.create(owner=self.user, workplace=self.workplace, name='Umowy')
         for kind in ('word', 'cell', 'slide', 'board'):
             response = self.client.post(self.base + f'create/?folder={folder.pk}',
@@ -91,8 +98,7 @@ class FullEditorTests(TestCase):
             item = Document.objects.get(title=kind)
             editor_url = self.base + f'{item.pk}/editor/'
             self.assertEqual(item.folder, folder)
-            expected = {'redirect_url': editor_url} if kind == 'board' else {
-                'redirect_url': self.base + f'?folder={folder.pk}', 'editor_url': editor_url}
+            expected = {'redirect_url': self.base + f'?folder={folder.pk}', 'editor_url': editor_url}
             self.assertEqual(response.json(), expected)
         invalid = self.client.post(self.base + 'create/', {'kind': 'word', 'title': ''},
                                    headers={'X-Document-Modal': 'true'})
@@ -100,15 +106,17 @@ class FullEditorTests(TestCase):
         self.assertContains(invalid, 'To pole jest wymagane.')
         self.assertEqual(Document.objects.count(), 4)
 
-    def test_search_opens_onlyoffice_in_new_tab_and_preserves_other_results(self):
+    def test_search_opens_full_editors_in_new_tab_and_preserves_other_results(self):
         office = self.file()
         board = self.board(title='Dokument tablicy')
+        text = Document.objects.create(owner=self.user, workplace=self.workplace, title='Dokument Ancore')
         self.client.get(self.base)
         response = self.client.get(reverse('global_search'), {'q': 'Dokument'})
         group = next(group for group in response.json()['groups'] if group['key'] == 'office-documents')
         results = {result['title']: result for result in group['results']}
         self.assertTrue(results[office.title]['new_tab'])
-        self.assertFalse(results[board.title]['new_tab'])
+        self.assertTrue(results[board.title]['new_tab'])
+        self.assertFalse(results[text.title]['new_tab'])
 
     def test_creation_uses_scoped_folder_and_invalid_type_does_not_write(self):
         foreign = Folder.objects.create(owner=self.other, workplace=self.foreign, name='Obce')
