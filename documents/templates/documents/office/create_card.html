@@ -1,0 +1,12 @@
+<li>
+    <a class="documents-card office-create-card" href="{% if action_url %}{{ action_url }}{% else %}{{ create_url }}{% if current_folder %}&amp;{% else %}?{% endif %}type={{ type }}{% endif %}" data-document-modal aria-label="{% if not action_url %}Utwórz plik: {% endif %}{{ label }}">
+        {% if variant == 'folder' %}
+            {% include 'documents/includes/folder_icon.html' only %}
+        {% elif icon %}
+            <i data-icon="{{ icon }}" aria-hidden="true"></i>
+        {% else %}
+            {% include 'documents/includes/file_icon_shape.html' with variant=variant only %}
+        {% endif %}
+        <span class="office-create-card-label"><span class="office-create-card-plus" aria-hidden="true"><i data-icon="{{ action_icon|default:'plus' }}" aria-hidden="true"></i></span>{{ label }}</span>
+    </a>
+</li>

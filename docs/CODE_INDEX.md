@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 33 | 10 | 30 | 188 |
+| [documents](../documents) | 33 | 10 | 31 | 188 |
 
 ## 2. Modele i relacje
 
@@ -1064,6 +1064,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/templates/documents/modal_host.html](../documents/templates/documents/modal_host.html)
 - [documents/templates/documents/office/actions.html](../documents/templates/documents/office/actions.html)
 - [documents/templates/documents/office/board_frame.html](../documents/templates/documents/office/board_frame.html)
+- [documents/templates/documents/office/create_card.html](../documents/templates/documents/office/create_card.html)
 - [documents/templates/documents/office/editor.html](../documents/templates/documents/office/editor.html)
 - [documents/templates/documents/office/index.html](../documents/templates/documents/office/index.html)
 - [documents/templates/documents/office/name.html](../documents/templates/documents/office/name.html)

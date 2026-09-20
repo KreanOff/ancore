@@ -115,6 +115,10 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-upload-hint { display: flex; align-items: center; gap: 12px; margin: 0; padding: 16px; background: var(--secondary-menu-bg); border-radius: var(--radius); font-size: var(--font-size-sm); }
 .documents-upload-hint > svg { width: 24px; height: 24px; flex: 0 0 auto; }
 .documents-upload-hint small { display: block; margin-top: 4px; font-size: var(--font-size-sm); line-height: 1.5; }
+.documents-upload-files { margin: 0; padding: 0; list-style: none; }
+.documents-upload-files[hidden] { display: none; }
+.documents-upload-files .file-details { min-width: 0; }
+.documents-upload-files .file-name { overflow-wrap: anywhere; }
 /* Catalog dragging uses the same accent and modal as ordinary uploads/moves. */
 [data-document-dnd] { position: relative; }
 [data-document-drag] :is(.documents-card-entry, .documents-name) { cursor: grab; }

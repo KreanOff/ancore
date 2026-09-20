@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Dyski | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-row-actions-v2"><script src="{% static 'js/documents.js' %}?v=20260920-row-actions-v2" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-upload-list"><script src="{% static 'js/documents.js' %}?v=20260921-upload-list" defer></script>{% endblock %}
 {% block content %}
 <div class="documents-page documents-library-index" data-document-display="{{ document_display }}" data-document-dnd="drive" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ library_view }}">
     {% include 'documents/toolbar.html' %}

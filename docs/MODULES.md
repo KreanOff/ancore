@@ -331,8 +331,16 @@ przesyłanie całych folderów z komputera nie jest obsługiwane w żadnym z kat
 
 - Cztery rodzaje nowych plików: dokument DOCX, arkusz XLSX, prezentacja PPTX
   i tablica Board. Katalog zachowuje foldery, listę/kafelki, sortowanie,
-  wyszukiwanie, gwiazdki, kosz i globalne szukanie. Typ wybiera się w oknie
-  „Nowy dokument”. Wspólna paginacja pozwala wyświetlić 25, 50 lub 100 pozycji.
+  wyszukiwanie, gwiazdki, kosz i globalne szukanie. Nad listą, poza koszem,
+  są cztery kafelki „Utwórz plik”, które otwierają okno „Nowy dokument”
+  z wybranym typem i fokusem na nazwie. Obok nich są kafelki „Nowy folder”
+  i „Prześlij dokumenty”, otwierające istniejące formularze w bieżącym folderze.
+  Te akcje są dostępne w kafelkach; górny pasek zawiera tylko tytuł i ścieżkę folderów.
+  Kliknięcie nagłówka zwija lub rozwija
+  kafelki; stan jest zapamiętywany w przeglądarce dla konta i Workspace.
+  Plik powstaje w bieżącym folderze
+  i Workspace; typ można jeszcze zmienić w formularzu. Wspólna paginacja
+  pozwala wyświetlić 25, 50 lub 100 pozycji.
 - Foldery można oznaczać gwiazdką i pobierać jako ZIP z listy oraz kafelków.
   Widok „Oznaczone gwiazdką”, jego licznik i filtr gwiazdki obejmują również
   foldery we wszystkich poziomach Workspace. Gwiazdka folderu nie zmienia

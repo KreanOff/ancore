@@ -173,6 +173,35 @@
         let pending = false;
         let inertElements = [];
 
+        function renderUploadFiles() {
+            const input = modal?.querySelector('[data-document-upload-form] input[type="file"]');
+            const list = modal?.querySelector('[data-document-upload-files]');
+            if (!input || !list) return;
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const items = Array.from(input.files, file => {
+                const item = document.createElement('li');
+                item.className = 'file-item';
+                const details = document.createElement('div');
+                details.className = 'file-details';
+                const name = document.createElement('div');
+                name.className = 'file-name';
+                name.textContent = file.name;
+                const size = document.createElement('div');
+                size.className = 'file-size';
+                const unit = file.size ? Math.min(Math.floor(Math.log(file.size) / Math.log(1024)), units.length - 1) : 0;
+                size.textContent = `${(file.size / (1024 ** unit)).toLocaleString('pl-PL', { maximumFractionDigits: 1 })} ${units[unit]}`;
+                details.append(name, size);
+                item.append(details);
+                return item;
+            });
+            list.replaceChildren(...items);
+            list.hidden = !items.length;
+        }
+
+        host.addEventListener('change', event => {
+            if (event.target.matches('[data-document-upload-form] input[type="file"]')) renderUploadFiles();
+        }, options);
+
         function restoreBackground() {
             inertElements.forEach(element => { element.inert = false; });
             inertElements = [];
@@ -192,6 +221,7 @@
             }
             window.AncoreIcons?.render(modal);
             window.AncoreCustomSelect?.refresh(modal);
+            renderUploadFiles();
             const media = modal.querySelector('[data-document-preview-media]');
             if (media) {
                 const finish = success => {
@@ -205,6 +235,7 @@
                 if (media.complete) finish(media.naturalWidth > 0);
             }
             const focusTarget = modal.querySelector('[aria-invalid="true"]')
+                || modal.querySelector('[data-office-create] [autofocus]')
                 || modal.querySelector('input:not([type="hidden"]):not([type="file"]), textarea, select');
             (focusTarget || modal.querySelector('[data-document-modal-close]'))?.focus();
         }

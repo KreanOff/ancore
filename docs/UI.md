@@ -385,6 +385,13 @@ nawigację `tasks-rail-link`, tabelę i kafelki Dysku. Foldery i upload używaj�
 tego samego `documents/form.html` oraz obsługi fokusu, Escape i błędów w
 `documents.js`. Wariant uploadu `office_upload` wyświetla wyłącznie formaty dokumentów.
 
+Upload w Dokumentach i Dysku pokazuje pod polem wyboru listę nazw oraz rozmiarów
+wybranych plików, opartą na wspólnych klasach `file-list`, `file-item` i `file-details`.
+Wariant `documents-upload-files` zawija długie nazwy i ukrywa pustą listę.
+Lista odzwierciedla bieżący wybór oraz przeciągnięte pliki; nazwy są zwykłym tekstem.
+`documents.js` odtwarza ją z zachowanego pola plikowego po błędzie walidacji
+i przy inicjalizacji po `ancore:content-loaded`, bez powielania listenerów.
+
 Lista Dokumentów używa tych samych odstępów co lista plików Dysku: 24px
 od lewej i prawej krawędzi tabeli, także na telefonie oraz w nagłówku.
 Przycisk menu działań jest po lewej stronie ikony pliku lub folderu.
@@ -448,10 +455,35 @@ odświeża katalog w pierwotnej karcie. Błąd zamyka pustą kartę; blokada oki
 pokazuje odnośnik do utworzonego pliku. Ten sam mechanizm obejmuje tablice.
 ONLYOFFICE zachowuje własny polski interfejs, Excalidraw jest izolowany od
 CSS aplikacji i używa turkusowego akcentu. Katalog ma dwa wspólne paski:
-tytuł z akcjami oraz narzędzia z wyszukiwaniem i paginacją. „Nowy dokument”
-jest główną akcją; upload i folder używają wariantu drugorzędnego. Typ pliku
-(dokument, arkusz, prezentacja, tablica) wybiera się w istniejącym modalu tworzenia.
-Nie ma osobnego rzędu powielającego akcje tworzenia.
+tytuł ze ścieżką folderów oraz narzędzia z wyszukiwaniem i paginacją.
+Tworzenie dokumentów i folderów oraz upload są dostępne w sekcji „Utwórz plik”;
+górny pasek nie zawiera przycisków tych akcji. Pod paskiem
+widoków („Wszystkie dokumenty”, ostatnie zmiany, gwiazdki, kosz), nad listą
+plików, sekcja „Utwórz plik” pokazuje sześć skrótów:
+dokument, arkusz kalkulacyjny, prezentację, tablicę, „Nowy folder”
+i „Prześlij dokumenty”. Dwie ostatnie akcje otwierają istniejące modale
+tworzenia folderu i uploadu w bieżącym folderze oraz Workspace.
+Wariant `office-create-card`
+korzysta z powierzchni `documents-card`, istniejących kolorowych ikon plików
+oraz małego plusa z tłem głównego przycisku; folder korzysta ze wspólnej ikony
+folderu, upload z ikony `cloud-upload` i małej ikony `upload` zamiast plusa.
+Na szerokim ekranie ma jeden rząd sześciu kafelków, przy szerokości zawartości
+sekcji do 900px przechodzi do trzech kolumn,
+na telefonie dwie kolumny z mniejszą ikoną obok nazwy i bez dekoracyjnego
+plusa, aby pozostawić miejsce na listę; nie występuje w koszu. Skróty działają także
+w pustym katalogu, wynikach wyszukiwania i widoku kafelków.
+Nagłówek „Utwórz plik” jest przyciskiem `btn-ghost` ze strzałką, który zwija
+i rozwija kafelki. Sekcja ma 8px odstępu nad nagłówkiem na komputerze
+i telefonie; nagłówek używa flex, bez dodatkowego odstępu linii pod przyciskiem.
+Zachowuje `aria-expanded`, `aria-controls` i obsługę
+Enter/Spacji; ukryte kafelki nie są dostępne przez Tab. Domyślnie sekcja jest
+rozwinięta. `office.js` zapamiętuje stan w `localStorage` osobno dla konta
+i Workspace oraz odtwarza go po przeładowaniu i `ancore:content-loaded`.
+Brak dostępu do pamięci przeglądarki nie blokuje przełączania.
+Kliknięcie kafelka typu pliku otwiera wspólny modal z wybranym typem i zachowuje bieżący folder
+oraz Workspace. Fokus od razu trafia do nazwy, błędy mają pierwszeństwo;
+Escape i powrót fokusu obsługuje istniejący `documents.js`.
+Typ nadal można zmienić w formularzu, a zapis otwiera edytor w osobnej karcie.
 `office-suite.js` inicjalizuje ekran także po `ancore:content-loaded`;
 `data-app-full-navigation` wymusza bezpieczne opuszczanie aktywnych edytorów.
 Statusy zapisu są potwierdzane przez serwer. Tablica przy błędzie zachowuje
