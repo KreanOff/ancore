@@ -214,10 +214,16 @@ gwiazdkę oraz datę przeniesienia do kosza.
 
 **Ekrany i funkcje:**
 
-- Katalog dysków z tworzeniem, zmianą nazwy/opisu i usunięciem pustego dysku.
+- Katalog dysków z tworzeniem, zmianą nazwy, koloru ikony i opisu oraz usunięciem pustego dysku.
 - Dyski zawsze używają wspólnej płaskiej ikony z `drive_icon.html` na liście,
-  w kafelkach i panelu bocznym. Formularze zawierają tylko nazwę i opis;
+  w kafelkach i panelu bocznym, w zapisanym kolorze (domyślnie niebieskim).
+  Formularze zawierają nazwę, kolor ikony i opis;
   dodawanie własnego zdjęcia jest wyłączone, a stare zdjęcia nie są wyświetlane.
+- Foldery Dysku i Dokumentów mają własny kolor ikony, wybierany przy tworzeniu
+  lub edycji pod przyciskiem ołówka. Domyślnie pozostają żółte; kolor obejmuje
+  listę i kafelki, zarówno folder pusty, jak i z plikami. Przycisk „Domyślny”
+  przywraca pierwotny kolor. Kolory są zapisywane jako walidowane `#RRGGBB`,
+  w zakresie właściciela i Workspace, bez dziedziczenia przez podfoldery.
 - Zawartość dysku/folderu i ścieżka nawigacyjna.
 - Przełącznik „Lista / Kafelki” na indeksie dysków i w widokach plików.
   Kafelki pokazują typ, rozmiar, datę, lokalizację i tagi pliku oraz te same

@@ -456,7 +456,7 @@ def _save_folder(request, folder=None):
             messages.success(request, 'Zapisano folder.' if folder else 'Utworzono folder.')
             return _form_success(request, _url(request, library=current_library.pk, folder=parent.pk if parent else None))
     context = _context(request, current_library, parent)
-    context.update({'form': form, 'form_title': 'Zmień nazwę folderu' if folder else 'Nowy folder', 'submit_label': 'Zapisz folder'})
+    context.update({'form': form, 'form_title': 'Edytuj folder' if folder else 'Nowy folder', 'submit_label': 'Zapisz folder'})
     return _render_form(request, context)
 
 

@@ -6,6 +6,7 @@
         controller = new AbortController();
         const options = { signal: controller.signal };
         initDocumentSidebar(options);
+        initDocumentColors(options);
         initDocumentModals(options);
         const menu = document.querySelector('[data-documents-columns]');
         if (!menu) return;
@@ -52,6 +53,30 @@
             }
         }, options);
         apply();
+    }
+
+    function initDocumentColors(options) {
+        function update(input) {
+            const picker = input.closest('[data-document-color-picker]');
+            const icon = picker?.querySelector('[data-document-color-preview] svg');
+            if (!icon || !/^#[0-9a-f]{6}$/i.test(input.value)) return;
+            icon.style.setProperty('--documents-icon-color', input.value);
+            if (icon.classList.contains('documents-folder-icon')) {
+                icon.style.setProperty('--documents-folder-tab', input.value.toLowerCase() === picker.dataset.defaultColor
+                    ? '#ffb41f' : `color-mix(in srgb, ${input.value} 82%, #000)`);
+            }
+        }
+        document.addEventListener('input', event => {
+            if (event.target.matches('[data-document-color-input]')) update(event.target);
+        }, options);
+        document.addEventListener('click', event => {
+            const reset = event.target.closest('[data-document-color-reset]');
+            if (!reset) return;
+            const picker = reset.closest('[data-document-color-picker]');
+            const input = picker.querySelector('[data-document-color-input]');
+            input.value = picker.dataset.defaultColor;
+            update(input);
+        }, options);
     }
 
     function initDocumentModals(options) {

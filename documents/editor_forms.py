@@ -4,7 +4,7 @@ from django import forms
 
 from core.upload_validation import validate_attachment_upload
 from tasks.models import TaskTag
-from .forms import MultipleFileField, MultipleFileInput
+from .forms import IconColorForm, MultipleFileField, MultipleFileInput
 from .models import WorkspaceDocument, WorkspaceDocumentFolder
 from .rich_text import clean_content
 
@@ -38,10 +38,10 @@ class OfficeCreateForm(forms.Form):
     title = forms.CharField(label='Nazwa', max_length=240, widget=forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'autofocus': True}))
 
 
-class OfficeFolderForm(forms.ModelForm):
+class OfficeFolderForm(IconColorForm):
     class Meta:
         model = WorkspaceDocumentFolder
-        fields = ['name']
+        fields = ['name', 'color']
         widgets = {'name': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'})}
 
     def __init__(self, *args, owner, workplace, parent=None, **kwargs):

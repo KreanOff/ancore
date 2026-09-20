@@ -191,19 +191,19 @@ metadanymi oraz wspólnymi akcjami z tabeli. Kafelki dysków pokazują standardo
 nazwę i datę, bez opisu oraz liczników plików i folderów. Wspólny komponent
 `documents-card` zachowuje proporcje kwadratu (`aspect-ratio: 1`). Pole podglądu
 wypełnia dostępną wysokość, z minimum 100px, bez osobnego tła — ikony są
-na białej powierzchni kafelka. Ikony plików mają 115,5×115,5px, a folderów
-i dysków 139,755×139,755px — wszystkie powiększone o 5% względem poprzednich
-110px i 133,1px, bez zmiany wymiarów kafelków. Foldery i dyski korzystają
-ze wspólnej reguły rozmiaru w kafelkach.
+na białej powierzchni kafelka. Ikony plików mają 115,5×115,5px,
+a dysków 139,755×139,755px. Ikony pustych i pełnych folderów mają
+149,68×149,68px — są powiększone o kolejne 5% względem poprzednich 142,55px,
+bez zmiany wymiarów kafelków ani pozostałych ikon.
 Wariant `documents-card--library` używa wyłącznie standardowej ikony dysku.
 Nazwa, data i akcje pozostają poniżej. W ciasnych kolumnach lub przy dużej liczbie tagów
 zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
 w tabeli ani panelu bocznym.
 Siatka dopasowuje liczbę kolumn do miejsca z minimalną szerokością kolumny
 248px (lub całą dostępną szerokością, gdy jest węższa), również na telefonie.
-Kafelek zajmuje 85,7375% szerokości kolumny, dzięki czemu jego szerokość i wysokość
-są o kolejne 5% mniejsze względem poprzednich 90,25%, przy tej samej liczbie kolumn.
-Dotyczy Dysków, plików i Dokumentów;
+Kafelek zajmuje całą szerokość kolumny, więc odstępy między kafelkami wynikają
+wyłącznie z `gap`: 16px w obu kierunkach, a na ekranach do 767px — 12px.
+Dotyczy Dysków, plików i Dokumentów. Kafelki pozostają kwadratowe;
 rozmiary tekstu, ikon oraz przycisków pozostają bez zmian.
 Na wąskim ekranie akcje mogą przejść pod datę.
 Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Pasek Dysków nie zawiera
@@ -222,7 +222,7 @@ Lista plików i folderów Dysku (`documents-layout`) ma symetryczne odstępy 24p
 od obu krawędzi tabeli, także na telefonie i w nagłówku. Przyciski działań
 są wyrównane do prawej; ich kolumna ma 168px szerokości, aby zachować miejsce
 na cztery przyciski także przy przewijaniu poziomym.
-Foldery Dysku mają cztery akcje w kolejności zgodnej z plikami: zmiana nazwy,
+Foldery Dysku mają cztery akcje w kolejności zgodnej z plikami: edycja,
 gwiazdka, pobranie ZIP i usunięcie pustego folderu. Wspólny include
 `documents/includes/row_actions.html` obsługuje tabelę i kafelki, z etykietami
 zawierającymi nazwę folderu i `aria-pressed` gwiazdki. W zbiorczym widoku
@@ -233,8 +233,9 @@ ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony nie maj�
 ozdobnych ramek. Foldery na listach i kafelkach Dysku oraz Dokumentów używają
 wspólnego include'a `documents/includes/folder_icon.html` z parametrem `has_files`.
 Pusty folder jest zamknięty, a folder z plikami ma otwartą okładkę i dwie
-widoczne kartki. Oba warianty są płaskimi żółtymi SVG (`#ffd855`) z pomarańczową
-zakładką (`#ffb41f`), bez obrysu. Stan uwzględnia aktywne pliki w podfolderach,
+widoczne kartki. Oba warianty są płaskimi SVG, domyślnie żółtymi (`#ffd855`) z pomarańczową
+zakładką (`#ffb41f`), bez obrysu. Własny kolor folderu zmienia oba warianty;
+zakładka otrzymuje ciemniejszy odcień wybranej barwy. Stan uwzględnia aktywne pliki w podfolderach,
 również dokumenty 0 B; pomija kosz. Same puste podfoldery nie zmieniają ikony.
 Wspólny `folder_stats.py` ustala obecność plików niezależnie od ich rozmiaru
 i aktualnych filtrów listy, w zakresie właściciela, Workspace oraz dysku.
@@ -254,9 +255,9 @@ i zastępczym widoku podglądu. Są dekoracyjne, bez fokusu, zachowują kolory
 po inicjalizacji `AncoreIcons` i podmianie treści. Nie zmieniają obsługi formatów
 ani ikon załączników w innych modułach.
 Ikony plików i folderów w tabelach Dysku i Dokumentów mają 32×32px w polu 32×32px.
-Wszystkie dyski używają płaskiej, poziomej niebieskiej obudowy z include'a
+Wszystkie dyski używają płaskiej, poziomej obudowy z include'a
 `documents/includes/drive_icon.html` na liście, w kafelkach i panelu bocznym.
-SVG zachowuje stałe kolory oparte na `#4285d4` i białych detalach,
+SVG używa zapisanego koloru dysku (domyślnie `#4285d4`) i białych detali,
 nie ma obrysu ani fokusu i jest dekoracyjne.
 Nawigacja, pusty stan, filtry, sortowanie i globalne wyszukiwanie zachowują
 ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków ma rozmiar
@@ -264,7 +265,16 @@ ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków ma rozmiar
 Wiersze dysków mają minimum 44px wysokości, a odstęp między ikoną i nazwą
 wynosi 8px (10px w zwężonej liście).
 
-Formularz tworzenia i ustawień dysku zawiera wyłącznie nazwę i opis.
+Formularz tworzenia i ustawień dysku zawiera nazwę, kolor ikony i opis.
+Tworzenie oraz edycja folderów Dysku i Dokumentów zawierają nazwę i kolor.
+Przycisk ołówka ma etykietę „Edytuj folder”. Wspólny include
+`documents/includes/color_field.html` używa natywnego pola `type="color"`
+z istniejącą klasą `tasks-project-option-color`, podglądu SVG 64×64px
+i przycisku „Domyślny”. Wybrany kolor widać od razu w podglądzie; zapis
+aktualizuje listę, kafelki oraz panel dysków. Formularz zachowuje kolor
+przy błędzie nazwy. `documents.js` obsługuje pole przez delegację zdarzeń
+i `AbortController`, także po `ancore:content-loaded` i otwarciu modala.
+Nazwy pozostają widoczne niezależnie od koloru.
 Nie udostępnia wyboru zdjęcia ani kadrowania. Wcześniej zapisane zdjęcia
 nie są wyświetlane; lista, kafelki i panel boczny zawsze używają wspólnej ikony.
 
@@ -357,7 +367,7 @@ Lista Dokumentów używa tych samych odstępów co lista plików Dysku: 24px
 od lewej i prawej krawędzi tabeli, także na telefonie oraz w nagłówku.
 Kolumna działań ma 168px szerokości i przyciski wyrównane do prawej.
 Foldery Dokumentów używają tej samej kolejności akcji co pliki: gwiazdka,
-zmiana nazwy, pobieranie ZIP i usunięcie pustego folderu. Include
+edycja, pobieranie ZIP i usunięcie pustego folderu. Include
 `documents/office/actions.html` obsługuje listę oraz kafelki, zachowując
 istniejące przyciski ikonowe, etykiety i `aria-pressed` gwiazdki.
 Pusty widok oznaczonych elementów informuje o dokumentach i folderach.

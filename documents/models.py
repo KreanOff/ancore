@@ -3,10 +3,13 @@ import uuid
 
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+
+
+icon_color_validator = RegexValidator(r'^#[0-9a-fA-F]{6}\Z', 'Podaj kolor w formacie #RRGGBB.')
 
 
 def document_storage():
@@ -24,6 +27,7 @@ def library_photo_upload_path(instance, filename):
 
 class DocumentLibrary(models.Model):
     name = models.CharField('Nazwa biblioteki', max_length=120)
+    color = models.CharField('Kolor ikony', max_length=7, default='#4285d4', validators=[icon_color_validator])
     description = models.TextField('Opis', blank=True, max_length=2000)
     photo = models.FileField(
         'Zdjęcie biblioteki', blank=True, storage=document_storage,
@@ -52,6 +56,7 @@ def delete_library_photo(sender, instance, using, **kwargs):
 
 class Folder(models.Model):
     name = models.CharField('Nazwa folderu', max_length=120)
+    color = models.CharField('Kolor ikony', max_length=7, default='#ffd855', validators=[icon_color_validator])
     library = models.ForeignKey(DocumentLibrary, on_delete=models.RESTRICT, related_name='folders')
     parent = models.ForeignKey('self', on_delete=models.RESTRICT, null=True, blank=True, related_name='children')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='document_folders')
@@ -120,6 +125,7 @@ class Document(models.Model):
 class WorkspaceDocumentFolder(models.Model):
     """Folders of the Dokumenty module, independent from drives."""
     name = models.CharField('Nazwa folderu', max_length=120)
+    color = models.CharField('Kolor ikony', max_length=7, default='#ffd855', validators=[icon_color_validator])
     parent = models.ForeignKey('self', on_delete=models.RESTRICT, null=True, blank=True, related_name='children')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='office_folders')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='office_folders')

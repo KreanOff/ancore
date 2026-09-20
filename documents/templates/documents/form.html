@@ -16,6 +16,7 @@
                 {% if modal.upload_form %}<p class="documents-upload-hint"><i data-icon="cloud-upload" aria-hidden="true"></i><span>Wybierz pliki do przesłania<small>{% if modal.office_upload %}Dokumenty, arkusze i prezentacje: PDF, DOCX, XLSX, PPTX, DOC, XLS, PPT, CSV, RTF i TXT.{% else %}Dokumenty, arkusze, obrazy i archiwa.{% endif %} Maks. {{ modal.max_upload_size|filesizeformat }} na plik, do 20 plików jednocześnie.</small></span></p>{% endif %}
                 {% for field in modal.form %}
                 {% if field.is_hidden %}{{ field }}
+                {% elif field.name == 'color' %}{% include 'documents/includes/color_field.html' with form=modal.form field=field only %}
                 {% elif field.name == 'tags' %}<fieldset class="documents-tag-picker"><legend>Tagi</legend>{% if field.field.queryset %}{{ field }}{% else %}<p class="documents-muted">Brak tagów w tym Workspace.</p>{% endif %}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</fieldset>
                 {% else %}<div class="documents-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endif %}
                 {% endfor %}

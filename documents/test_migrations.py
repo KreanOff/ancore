@@ -36,6 +36,10 @@ class LibraryMigrationTests(TransactionTestCase):
             self.assertIsNotNone(preserved.office_key)
             self.assertFalse(preserved.office_save_error)
             self.assertTrue(apps.get_model('documents', 'WorkspaceDocumentFolder').objects.get(pk=office.pk).is_starred)
+            self.assertEqual(apps.get_model('documents', 'DocumentLibrary').objects.get(pk=library.pk).color, '#4285d4')
+            self.assertEqual(Folder.objects.get(pk=parent.pk).color, '#ffd855')
+            self.assertEqual(Folder.objects.get(pk=child.pk).color, '#ffd855')
+            self.assertEqual(apps.get_model('documents', 'WorkspaceDocumentFolder').objects.get(pk=office.pk).color, '#ffd855')
         finally:
             MigrationExecutor(connection).migrate(latest)
 

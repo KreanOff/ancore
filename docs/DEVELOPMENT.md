@@ -259,6 +259,12 @@ są wspólne z Dokumentami. `documents.test_drive_office` obejmuje trzy formaty,
 listę/kafelki/wyszukiwarkę, zwykłe i scoped URL, zapis/konwersję, błędne pliki,
 CSRF, izolację kont/Workspace/modułów, deduplikację oraz unieważnianie sesji.
 
+Migracja `documents/0010_icon_colors.py` dodaje kolor ikony do dysków i obu
+modeli folderów. Istniejące dyski otrzymują `#4285d4`, foldery `#ffd855`;
+hierarchia i pliki pozostają bez zmian. Zastosuj ją przed uruchomieniem wersji
+z wyborem koloru. `documents.test_colors` sprawdza zapis, walidację, przywracanie
+domyślnego koloru, zgodność starych formularzy, listę/kafelki i granice dostępu.
+
 Sprawdzenia funkcji obejmują `manage.py test documents` oraz
 `manage.py test workplaces dashboard core`. Siedem starszych testów Workspace/core
 ma oczekiwania niezgodne z obecną nawigacją i CSS; ten sam zestaw błędów

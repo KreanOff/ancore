@@ -1,15 +1,15 @@
-<svg class="documents-folder-icon documents-folder-icon--{% if has_files %}filled{% else %}empty{% endif %}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false">
+<svg style="--documents-icon-color: {{ color|default:'#ffd855' }};{% if color and color != '#ffd855' %} --documents-folder-tab: color-mix(in srgb, {{ color }} 82%, #000);{% endif %}" class="documents-folder-icon documents-folder-icon--{% if has_files %}filled{% else %}empty{% endif %}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false">
     {% if has_files %}
-    <path fill="#ffb41f" d="M4 17a6 6 0 0 1 6-6h12a6 6 0 0 1 4.2 1.8l4.2 4.2H54a6 6 0 0 1 6 6v27H4Z"/>
+    <path fill="#ffb41f" style="fill: var(--documents-folder-tab, #ffb41f)" d="M4 17a6 6 0 0 1 6-6h12a6 6 0 0 1 4.2 1.8l4.2 4.2H54a6 6 0 0 1 6 6v27H4Z"/>
     <rect fill="#fff" x="14" y="13" width="39" height="35" rx="4"/>
-    <rect fill="#ffd855" opacity=".35" x="14" y="13" width="39" height="35" rx="4"/>
+    <rect fill="#ffd855" style="fill: var(--documents-icon-color)" opacity=".35" x="14" y="13" width="39" height="35" rx="4"/>
     <rect fill="#fff" x="9" y="20" width="40" height="30" rx="4"/>
-    <rect fill="#ffb41f" opacity=".4" x="16" y="25" width="23" height="3" rx="1.5"/>
-    <path fill="#ffd855" d="M7 33h50a5 5 0 0 1 5 5.6l-2.2 13a6 6 0 0 1-6 5.4H10.2a6 6 0 0 1-6-5.4L2 38.6A5 5 0 0 1 7 33Z"/>
+    <rect fill="#ffb41f" style="fill: var(--documents-folder-tab, #ffb41f)" opacity=".4" x="16" y="25" width="23" height="3" rx="1.5"/>
+    <path fill="#ffd855" style="fill: var(--documents-icon-color)" d="M7 33h50a5 5 0 0 1 5 5.6l-2.2 13a6 6 0 0 1-6 5.4H10.2a6 6 0 0 1-6-5.4L2 38.6A5 5 0 0 1 7 33Z"/>
     <rect fill="#fff" opacity=".65" x="11" y="40" width="19" height="4" rx="2"/>
     {% else %}
-    <path fill="#ffb41f" d="M4 17a6 6 0 0 1 6-6h13a6 6 0 0 1 4.2 1.8l4.2 4.2H54a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6Z"/>
-    <path fill="#ffd855" d="M4 25h56v26a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6Z"/>
+    <path fill="#ffb41f" style="fill: var(--documents-folder-tab, #ffb41f)" d="M4 17a6 6 0 0 1 6-6h13a6 6 0 0 1 4.2 1.8l4.2 4.2H54a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6Z"/>
+    <path fill="#ffd855" style="fill: var(--documents-icon-color)" d="M4 25h56v26a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6Z"/>
     <rect fill="#fff" opacity=".65" x="12" y="33" width="19" height="4" rx="2"/>
     {% endif %}
 </svg>

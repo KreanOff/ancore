@@ -232,7 +232,7 @@ def folder_edit(request, pk=None):
         else:
             messages.success(request, 'Zapisano folder.')
             return _form_success(request, _url(request, folder=parent.pk if parent else None))
-    return _modal(request, {**_context(request, parent), 'form': form, 'form_title': 'Zmień nazwę folderu' if instance else 'Nowy folder', 'submit_label': 'Zapisz folder'})
+    return _modal(request, {**_context(request, parent), 'form': form, 'form_title': 'Edytuj folder' if instance else 'Nowy folder', 'submit_label': 'Zapisz folder'})
 
 
 @login_required

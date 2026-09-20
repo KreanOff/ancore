@@ -6,7 +6,7 @@ from core.upload_validation import (
     ATTACHMENT_ALLOWED_EXTENSIONS, validate_attachment_upload,
 )
 from tasks.models import TaskTag
-from .models import Document, DocumentLibrary, Folder
+from .models import Document, DocumentLibrary, Folder, icon_color_validator
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -38,10 +38,37 @@ class UploadForm(forms.Form):
         return files
 
 
-class LibraryForm(forms.ModelForm):
+class IconColorForm(forms.ModelForm):
+    color = forms.CharField(label='Kolor ikony', max_length=7, required=False,
+        validators=[icon_color_validator], widget=forms.TextInput(attrs={
+            'type': 'color', 'class': 'tasks-project-option-color', 'data-document-color-input': '',
+        }))
+    color_icon_template = 'documents/includes/folder_icon.html'
+
+    @property
+    def default_color(self):
+        return self.instance._meta.get_field('color').get_default()
+
+    @property
+    def preview_color(self):
+        value = self['color'].value() or self.default_color
+        try:
+            icon_color_validator(value)
+        except forms.ValidationError:
+            return self.default_color
+        return value.lower()
+
+    def clean_color(self):
+        # Older forms may omit this field; keep the saved color on a name-only edit.
+        return (self.cleaned_data.get('color') or self.instance.color or self.default_color).lower()
+
+
+class LibraryForm(IconColorForm):
+    color_icon_template = 'documents/includes/drive_icon.html'
+
     class Meta:
         model = DocumentLibrary
-        fields = ['name', 'description']
+        fields = ['name', 'color', 'description']
         labels = {'name': 'Nazwa dysku'}
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'}),
@@ -62,10 +89,10 @@ class LibraryForm(forms.ModelForm):
         return name
 
 
-class FolderForm(forms.ModelForm):
+class FolderForm(IconColorForm):
     class Meta:
         model = Folder
-        fields = ['name']
+        fields = ['name', 'color']
         widgets = {'name': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'})}
 
     def __init__(self, *args, owner, workplace, library, parent=None, **kwargs):

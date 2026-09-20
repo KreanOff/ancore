@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 29 | 9 | 26 | 168 |
+| [documents](../documents) | 30 | 10 | 27 | 174 |
 
 ## 2. Modele i relacje
 
@@ -457,7 +457,7 @@ Metody/properties: `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `photo` (FileField), `workplace` (ForeignKey), `owner` (ForeignKey), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `color` (CharField), `description` (TextField), `photo` (FileField), `workplace` (ForeignKey), `owner` (ForeignKey), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -470,7 +470,7 @@ Metody/properties: `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `library` (ForeignKey), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `color` (CharField), `library` (ForeignKey), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -501,7 +501,7 @@ Metody/properties: `extension`, `office_type`, `icon`, `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `color` (CharField), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -631,8 +631,9 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `MultipleFileInput`
 - `MultipleFileField`
 - `UploadForm`
-- `LibraryForm` — Meta.fields: `['name', 'description']`
-- `FolderForm` — Meta.fields: `['name']`
+- `IconColorForm`
+- `LibraryForm` — Meta.fields: `['name', 'color', 'description']`
+- `FolderForm` — Meta.fields: `['name', 'color']`
 - `DocumentForm` — Meta.fields: `['title', 'description', 'folder', 'tags']`
 
 ## 4. Routing
@@ -925,7 +926,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/editor_views.py](../documents/editor_views.py) — `index`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
 - [documents/folder_exports.py](../documents/folder_exports.py) — `folder_archive`
 - [documents/folder_stats.py](../documents/folder_stats.py) — `set_folder_summaries`
-- [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
+- [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `IconColorForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
 - [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`
 - [documents/office_service.py](../documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
 - [documents/previews.py](../documents/previews.py) — `inline_type`, `validate_inline`, `OfficePackage`, `build_preview`
@@ -1039,6 +1040,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [documents/templates/documents/filter_sort.html](../documents/templates/documents/filter_sort.html)
 - [documents/templates/documents/form.html](../documents/templates/documents/form.html)
+- [documents/templates/documents/includes/color_field.html](../documents/templates/documents/includes/color_field.html)
 - [documents/templates/documents/includes/drive_icon.html](../documents/templates/documents/includes/drive_icon.html)
 - [documents/templates/documents/includes/file_icon.html](../documents/templates/documents/includes/file_icon.html)
 - [documents/templates/documents/includes/file_icon_shape.html](../documents/templates/documents/includes/file_icon_shape.html)
@@ -1226,6 +1228,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [planner/tests.py](../planner/tests.py).
 
 - `CalendarEventTests`: 3 metod testowych.
+
+### documents/test_colors.py
+
+Źródło: [documents/test_colors.py](../documents/test_colors.py).
+
+- `IconColorTests`: 6 metod testowych.
 
 ### documents/test_drive_folders.py
 
@@ -1439,3 +1447,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [documents/migrations/0007_workspacedocumentfolder_is_starred.py](../documents/migrations/0007_workspacedocumentfolder_is_starred.py)
 - [documents/migrations/0008_folder_is_starred.py](../documents/migrations/0008_folder_is_starred.py)
 - [documents/migrations/0009_drive_office_editor.py](../documents/migrations/0009_drive_office_editor.py)
+- [documents/migrations/0010_icon_colors.py](../documents/migrations/0010_icon_colors.py)
