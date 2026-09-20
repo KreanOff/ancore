@@ -20,6 +20,7 @@ from core.upload_validation import ATTACHMENT_ALLOWED_EXTENSIONS, attachment_dow
 from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
 from .forms import DocumentForm, FolderForm, LibraryForm, UploadForm
+from .folder_exports import folder_archive
 from .models import Document, DocumentLibrary, Folder
 from .previews import build_preview, inline_type, validate_inline
 from .query import (
@@ -56,24 +57,26 @@ def _libraries(request):
     return DocumentLibrary.objects.filter(owner=request.user, workplace=request.workplace)
 
 
-def _set_folder_sizes(request, library, rows):
+def _set_folder_sizes(request, rows):
     visible = {row['item'].pk: row['item'] for row in rows if row['kind'] == 'folder'}
     if not visible:
         return
     for item in visible.values():
         item.total_size = 0
-    parents = dict(_folders(request).filter(library=library).values_list('pk', 'parent_id'))
+    library_ids = {item.library_id for item in visible.values()}
+    parents = {pk: (parent, library) for pk, parent, library in
+               _folders(request).filter(library_id__in=library_ids).values_list('pk', 'parent_id', 'library_id')}
     sizes = _documents(request).filter(
-        library=library, deleted_at__isnull=True, folder_id__in=parents,
-    ).order_by().values('folder_id').annotate(total=Sum('file_size'))
+        library_id__in=library_ids, deleted_at__isnull=True, folder_id__in=parents,
+    ).order_by().values('folder_id', 'library_id').annotate(total=Sum('file_size'))
     # Roll up each folder's direct files through its accessible ancestors.
     for entry in sizes:
         folder_id, seen = entry['folder_id'], set()
-        while folder_id in parents and folder_id not in seen:
+        while folder_id in parents and folder_id not in seen and parents[folder_id][1] == entry['library_id']:
             seen.add(folder_id)
             if folder_id in visible:
                 visible[folder_id].total_size += entry['total']
-            folder_id = parents[folder_id]
+            folder_id = parents[folder_id][0]
 
 
 def _by_id(queryset, value):
@@ -121,6 +124,7 @@ def _sidebar(request, active_view=None):
         starred=Count('pk', filter=Q(deleted_at__isnull=True, is_starred=True)),
         trash=Count('pk', filter=Q(deleted_at__isnull=False)),
     )
+    counts['starred'] += _folders(request).filter(library__in=_libraries(request), is_starred=True).count()
     return {
         'sidebar_libraries': _libraries(request).only('id', 'name'),
         'sidebar_views': [
@@ -271,18 +275,22 @@ def _library_page(request, form_context=None):
     values = query_state['document_filter_params']
     # Searching/filtering spans nested folders within the current library, as tag search does.
     searching = bool(query or query_state['has_active_filters'])
-    document_only_filter = any(field['active'] and field['param'] not in {'name', 'modified'} for field in fields)
+    document_only_filter = any(field['active'] and field['param'] not in {'name', 'modified', 'starred', 'document_library'} for field in fields)
     documents = _documents(request).filter(deleted_at__isnull=current_view != 'trash')
     if current_library:
         documents = documents.filter(library=current_library)
     elif selected_library:
         documents = documents.filter(library=selected_library)
-    library_folders = _folders(request).filter(library=current_library) if current_library else Folder.objects.none()
-    folders = library_folders if current_view == 'all' and not document_only_filter else Folder.objects.none()
-    if not searching:
+    # Workspace-wide file views include folders for stars, without changing "All files".
+    show_folders = current_library or current_view == 'starred' or values['starred']
+    folders = _folders(request).filter(library__in=_libraries(request)) if show_folders and current_view in {'all', 'starred'} and not document_only_filter else Folder.objects.none()
+    if current_library or selected_library:
+        folders = folders.filter(library=current_library or selected_library)
+    if not searching and current_library and current_view == 'all':
         folders = folders.filter(parent=folder)
     if current_view == 'starred':
         documents = documents.filter(is_starred=True)
+        folders = folders.filter(is_starred=True)
     if query:
         documents = documents.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)).distinct()
         folders = folders.filter(name__icontains=query)
@@ -298,6 +306,7 @@ def _library_page(request, form_context=None):
         documents = documents.filter(filename__iendswith=values['file_type'])
     if values['starred']:
         documents = documents.filter(is_starred=values['starred'] == 'yes')
+        folders = folders.filter(is_starred=values['starred'] == 'yes')
     if values['size'] == 'small':
         documents = documents.filter(file_size__lt=1024 * 1024)
     elif values['size'] == 'medium':
@@ -310,15 +319,15 @@ def _library_page(request, form_context=None):
         {'value': 'name', 'lookup': 'name', 'text': True},
         {'value': 'updated', 'lookup': 'created_at'}, {'value': 'created', 'lookup': 'created_at'},
     )
-    folders = order_results(folders, {**query_state, 'sort_fields': folder_sort_fields, 'sort_field': folder_sort})
+    folders = order_results(folders.select_related('library'), {**query_state, 'sort_fields': folder_sort_fields, 'sort_field': folder_sort})
     folder_count = folders.count()
     page, window = _pagination(request, folder_count + documents.count())
     start, end = (page.start_index() - 1 if page.paginator.count else 0), page.end_index()
     rows = [
-        {'kind': 'folder', 'item': item, 'url': _url(request, library=current_library.pk, folder=item.pk)}
+        {'kind': 'folder', 'item': item, 'url': _url(request, library=item.library_id, folder=item.pk)}
         for item in folders[start:end]
     ] if start < folder_count else []
-    _set_folder_sizes(request, current_library, rows)
+    _set_folder_sizes(request, rows)
     if end > folder_count:
         rows += [
             {'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/preview/')}
@@ -508,6 +517,33 @@ def folder_delete(request, pk):
     else:
         messages.success(request, 'Usunięto pusty folder.')
     return redirect(_url(request, library=library_id, folder=parent_id))
+
+
+@login_required
+@require_POST
+def folder_star(request, pk):
+    with transaction.atomic():
+        folder = get_object_or_404(_folders(request).filter(library__in=_libraries(request)).select_for_update(), pk=pk)
+        folder.is_starred = not folder.is_starred
+        folder.save(update_fields=['is_starred'])
+    return _return_to_library(request, folder)
+
+
+@login_required
+@require_GET
+def folder_download(request, pk):
+    folder = get_object_or_404(_folders(request).filter(library__in=_libraries(request)), pk=pk)
+    try:
+        archive, filename = folder_archive(
+            folder, _folders(request).filter(library_id=folder.library_id),
+            _documents(request).filter(library_id=folder.library_id, deleted_at__isnull=True),
+        )
+    except OSError:
+        raise Http404('Nie można pobrać folderu. Jeden z plików nie jest dostępny.')
+    response = FileResponse(archive, as_attachment=True, filename=filename, content_type='application/zip')
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 @login_required

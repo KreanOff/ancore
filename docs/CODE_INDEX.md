@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 23 | 6 | 27 | 136 |
+| [documents](../documents) | 26 | 8 | 27 | 154 |
 
 ## 2. Modele i relacje
 
@@ -470,7 +470,7 @@ Metody/properties: `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `library` (ForeignKey), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `library` (ForeignKey), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -501,7 +501,7 @@ Metody/properties: `extension`, `icon`, `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -777,6 +777,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'folders/create/'` | `views.folder_create` | 'folder-create' |
 | `'folders/<int:pk>/edit/'` | `views.folder_edit` | 'folder-edit' |
 | `'folders/<int:pk>/delete/'` | `views.folder_delete` | 'folder-delete' |
+| `'folders/<int:pk>/star/'` | `views.folder_star` | 'folder-star' |
+| `'folders/<int:pk>/download/'` | `views.folder_download` | 'folder-download' |
 | `'<uuid:pk>/'` | `views.detail` | 'detail' |
 | `'<uuid:pk>/preview/'` | `views.preview` | 'preview' |
 | `'<uuid:pk>/content/'` | `views.preview_content` | 'preview-content' |
@@ -904,7 +906,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/apps.py](../documents/apps.py) — `DocumentsConfig`
 - [documents/board.py](../documents/board.py) — `clean_scene`
 - [documents/editor_forms.py](../documents/editor_forms.py) — `validate_document`, `DocumentFilesField`, `OfficeUploadForm`, `OfficeCreateForm`, `OfficeFolderForm`, `OfficeDocumentForm`
-- [documents/editor_views.py](../documents/editor_views.py) — `index`, `folder_edit`, `folder_delete`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
+- [documents/editor_views.py](../documents/editor_views.py) — `index`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
+- [documents/folder_exports.py](../documents/folder_exports.py) — `folder_archive`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
 - [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`
 - [documents/office_service.py](../documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
@@ -913,7 +916,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/rich_text.py](../documents/rich_text.py) — `DocumentHTML`, `clean_content`, `text_to_content`, `docx_bytes`
 - [documents/suite_views.py](../documents/suite_views.py) — `create`, `editor`, `board_frame`, `save_board`, `save_office`, `state`, `source`, `callback`, `upgrade_text`, `convert`
 - [documents/urls.py](../documents/urls.py)
-- [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `detail`, `preview`, `preview_content`, `download`, `star`, `trash`, `restore`
+- [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `detail`, `preview`, `preview_content`, `download`, `star`, `trash`, `restore`
 - [documents/workspace_urls.py](../documents/workspace_urls.py)
 
 ## 6. Szablony
@@ -1208,6 +1211,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `CalendarEventTests`: 3 metod testowych.
 
+### documents/test_drive_folders.py
+
+Źródło: [documents/test_drive_folders.py](../documents/test_drive_folders.py).
+
+- `DriveFolderTests`: 7 metod testowych.
+
 ### documents/test_library_photos.py
 
 Źródło: [documents/test_library_photos.py](../documents/test_library_photos.py).
@@ -1218,7 +1227,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [documents/test_migrations.py](../documents/test_migrations.py).
 
-- `LibraryMigrationTests`: 2 metod testowych.
+- `LibraryMigrationTests`: 4 metod testowych.
 
 ### documents/test_office.py
 
@@ -1226,6 +1235,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `RichTextTests`: 3 metod testowych.
 - `OfficeTests`: 22 metod testowych.
+
+### documents/test_office_folders.py
+
+Źródło: [documents/test_office_folders.py](../documents/test_office_folders.py).
+
+- `OfficeFolderTests`: 9 metod testowych.
 
 ### documents/test_office_query.py
 
@@ -1391,3 +1406,5 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [documents/migrations/0004_workspacedocumentfolder_workspacedocument_and_more.py](../documents/migrations/0004_workspacedocumentfolder_workspacedocument_and_more.py)
 - [documents/migrations/0005_workspacedocument_office_key_and_more.py](../documents/migrations/0005_workspacedocument_office_key_and_more.py)
 - [documents/migrations/0006_workspacedocument_tags.py](../documents/migrations/0006_workspacedocument_tags.py)
+- [documents/migrations/0007_workspacedocumentfolder_is_starred.py](../documents/migrations/0007_workspacedocumentfolder_is_starred.py)
+- [documents/migrations/0008_folder_is_starred.py](../documents/migrations/0008_folder_is_starred.py)

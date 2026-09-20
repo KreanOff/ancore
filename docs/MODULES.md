@@ -261,6 +261,13 @@ gwiazdkę oraz datę przeniesienia do kosza.
   Duże podglądy są ograniczane z komunikatem; brakujący, uszkodzony lub
   zaszyfrowany plik ma stan zastępczy. PDF wymaga obsługi tego formatu w przeglądarce.
 - Tworzenie/zmiana nazwy/usunięcie pustego folderu.
+- Foldery mają gwiazdkę i pobieranie ZIP w obu układach. Oznaczone foldery
+  pojawiają się obok plików w widoku „Oznaczone gwiazdką” całego Workspace
+  i jego liczniku; pokazują nazwę dysku oraz prawidłowy link do zawartości.
+  Filtr gwiazdki obejmuje foldery, również zagnieżdżone, i łączy się z wyborem dysku.
+  Gwiazdka nie oznacza automatycznie zawartości. ZIP zachowuje aktywne pliki
+  w oryginalnym formacie i strukturę podfolderów (także pustych); pomija kosz
+  oraz dane innych dysków, kont i Workspace.
 - Przeniesienie do kosza i przywrócenie do poprzedniej lokalizacji.
 
 W widoku Workspace pliki mogą pochodzić z wielu dysków i zagnieżdżonych
@@ -297,6 +304,12 @@ pokazuje dokumenty i foldery, bez tworzenia osobnego dysku/biblioteki.
   i tablica Board. Katalog zachowuje foldery, listę/kafelki, sortowanie,
   wyszukiwanie, gwiazdki, kosz i globalne szukanie. Typ wybiera się w oknie
   „Nowy dokument”. Wspólna paginacja pozwala wyświetlić 25, 50 lub 100 pozycji.
+- Foldery można oznaczać gwiazdką i pobierać jako ZIP z listy oraz kafelków.
+  Widok „Oznaczone gwiazdką”, jego licznik i filtr gwiazdki obejmują również
+  foldery we wszystkich poziomach Workspace. Gwiazdka folderu nie zmienia
+  oznaczenia jego zawartości. ZIP zawiera aktywne dokumenty i podfoldery,
+  w tym puste; pomija kosz. Starsze dokumenty Ancore eksportuje do DOCX,
+  tablice do `.excalidraw`, a przesłane pliki zachowuje w oryginalnym formacie.
 - Filtry i sortowanie korzystają z tych samych paneli co Dysk. Filtry obejmują
   nazwę dokumentu, oryginalną nazwę pliku, tag, typ pliku (także Dokument Ancore
   i tablicę Board), rozmiar, gwiazdkę oraz datę zmiany, a w koszu datę usunięcia.

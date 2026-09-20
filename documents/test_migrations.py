@@ -6,6 +6,63 @@ from django.utils import timezone
 
 
 class LibraryMigrationTests(TransactionTestCase):
+    def test_drive_folder_stars_preserve_files_and_existing_office_stars(self):
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        previous = [node for node in latest if node[0] != 'documents'] + [('documents', '0007_workspacedocumentfolder_is_starred')]
+        executor.migrate(previous)
+        try:
+            apps = executor.loader.project_state(previous).apps
+            user = apps.get_model(settings.AUTH_USER_MODEL).objects.create(username='drive-folder-migration', email='drive-folder-migration@example.test')
+            workplace = apps.get_model('workplaces', 'Workplace').objects.create(owner=user, name='Dysk', slug='dysk')
+            library = apps.get_model('documents', 'DocumentLibrary').objects.create(owner=user, workplace=workplace, name='Materiały')
+            Folder = apps.get_model('documents', 'Folder')
+            parent = Folder.objects.create(owner=user, workplace=workplace, library=library, name='Materiały')
+            child = Folder.objects.create(owner=user, workplace=workplace, library=library, parent=parent, name='Podfolder')
+            document = apps.get_model('documents', 'Document').objects.create(owner=user, workplace=workplace, library=library,
+                folder=child, title='Plik', filename='Plik.txt', file='existing/private.txt', file_size=12, is_starred=True)
+            office = apps.get_model('documents', 'WorkspaceDocumentFolder').objects.create(owner=user, workplace=workplace, name='Dokumenty', is_starred=True)
+            executor = MigrationExecutor(connection)
+            executor.migrate(latest)
+            apps = executor.loader.project_state(latest).apps
+            Folder = apps.get_model('documents', 'Folder')
+            self.assertFalse(Folder.objects.filter(is_starred=True).exists())
+            self.assertEqual(Folder.objects.get(pk=child.pk).parent_id, parent.pk)
+            preserved = apps.get_model('documents', 'Document').objects.get(pk=document.pk)
+            self.assertEqual((preserved.folder_id, preserved.library_id), (child.pk, library.pk))
+            self.assertEqual((preserved.file.name, preserved.file_size), ('existing/private.txt', 12))
+            self.assertTrue(preserved.is_starred)
+            self.assertTrue(apps.get_model('documents', 'WorkspaceDocumentFolder').objects.get(pk=office.pk).is_starred)
+        finally:
+            MigrationExecutor(connection).migrate(latest)
+
+    def test_folder_stars_default_to_false_and_preserve_existing_hierarchy(self):
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        previous = [node for node in latest if node[0] != 'documents'] + [('documents', '0006_workspacedocument_tags')]
+        executor.migrate(previous)
+        try:
+            apps = executor.loader.project_state(previous).apps
+            user = apps.get_model(settings.AUTH_USER_MODEL).objects.create(username='folder-migration', email='folder-migration@example.test')
+            workplace = apps.get_model('workplaces', 'Workplace').objects.create(owner=user, name='Foldery', slug='foldery')
+            Folder = apps.get_model('documents', 'WorkspaceDocumentFolder')
+            parent = Folder.objects.create(owner=user, workplace=workplace, name='Materiały')
+            child = Folder.objects.create(owner=user, workplace=workplace, parent=parent, name='Podfolder')
+            document = apps.get_model('documents', 'WorkspaceDocument').objects.create(
+                owner=user, workplace=workplace, folder=child, title='Notatki', content='<p>Treść</p>', is_starred=True)
+            executor = MigrationExecutor(connection)
+            executor.migrate(latest)
+            apps = executor.loader.project_state(latest).apps
+            Folder = apps.get_model('documents', 'WorkspaceDocumentFolder')
+            self.assertFalse(Folder.objects.filter(is_starred=True).exists())
+            self.assertEqual(Folder.objects.get(pk=child.pk).parent_id, parent.pk)
+            preserved = apps.get_model('documents', 'WorkspaceDocument').objects.get(pk=document.pk)
+            self.assertEqual(preserved.folder_id, child.pk)
+            self.assertEqual(preserved.content, '<p>Treść</p>')
+            self.assertTrue(preserved.is_starred)
+        finally:
+            MigrationExecutor(connection).migrate(latest)
+
     def test_office_migration_keeps_drive_content_separate(self):
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()

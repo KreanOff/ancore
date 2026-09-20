@@ -56,6 +56,7 @@ class Folder(models.Model):
     parent = models.ForeignKey('self', on_delete=models.RESTRICT, null=True, blank=True, related_name='children')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='document_folders')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='document_folders')
+    is_starred = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -115,6 +116,7 @@ class WorkspaceDocumentFolder(models.Model):
     parent = models.ForeignKey('self', on_delete=models.RESTRICT, null=True, blank=True, related_name='children')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='office_folders')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='office_folders')
+    is_starred = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

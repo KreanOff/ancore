@@ -238,6 +238,19 @@ Migracja `documents/0006_workspacedocument_tags.py` dodaje relację Dokumentów
 do wspólnych tagów `tasks.TaskTag`. Należy zastosować ją przed uruchomieniem
 wersji z kolumną „Tagi”; istniejące dokumenty początkowo nie mają tagów.
 
+Migracja `documents/0007_workspacedocumentfolder_is_starred.py` dodaje gwiazdkę
+folderom Dokumentów; istniejące foldery początkowo nie są oznaczone.
+Zastosuj ją przed uruchomieniem wersji z ulubionymi folderami.
+`documents.test_office_folders` sprawdza gwiazdki, filtry, paginację, ZIP,
+eksport formatów natywnych, brakujące pliki i izolację kont/Workspace;
+`documents.test_migrations` sprawdza zachowanie istniejącej hierarchii i treści.
+
+Migracja `documents/0008_folder_is_starred.py` dodaje analogiczne pole folderom
+Dysku z domyślną wartością false, bez zmiany gwiazdek w Dokumentach.
+Wymaga zastosowania przed uruchomieniem nowego widoku Dysku.
+`documents.test_drive_folders` obejmuje listę i kafelki, gwiazdki i filtry
+między dyskami, rozmiary folderów, ZIP oraz granice dostępu do podfolderów.
+
 Sprawdzenia funkcji obejmują `manage.py test documents` oraz
 `manage.py test workplaces dashboard core`. Siedem starszych testów Workspace/core
 ma oczekiwania niezgodne z obecną nawigacją i CSS; ten sam zestaw błędów

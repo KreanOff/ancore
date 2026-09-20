@@ -11,6 +11,8 @@
             {% if row.kind == 'document' %}
                 {% if item.folder or not current_library %}<p class="documents-card-location" title="{{ item.library.name }}{% if item.folder %} / {{ item.folder.name }}{% endif %}">{% if not current_library %}<a href="{{ documents_url }}?library={{ item.library_id }}">{{ item.library.name }}</a>{% if item.folder %} / {% endif %}{% endif %}{% if item.folder %}<a href="{{ documents_url }}?library={{ item.library_id }}&amp;folder={{ item.folder_id }}">{{ item.folder.name }}</a>{% endif %}</p>{% endif %}
                 {% if item.tags.all %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ view_url }}&amp;tag={{ tag.pk }}{% if tag_filter_query %}&amp;{{ tag_filter_query }}{% endif %}">{{ tag.name }}</a>{% endfor %}</div>{% endif %}
+            {% elif not current_library %}
+                <p class="documents-card-location"><a href="{{ documents_url }}?library={{ item.library_id }}">{{ item.library.name }}</a></p>
             {% endif %}
             <div class="documents-card-footer">
                 <span class="documents-card-date" title="{% if row.kind == 'folder' %}Utworzono{% elif library_view == 'trash' %}Usunięto{% else %}Zmodyfikowano{% endif %}">{% if row.kind == 'folder' %}{{ item.created_at|date:'d.m.Y' }}{% elif library_view == 'trash' %}{{ item.deleted_at|date:'d.m.Y' }}{% else %}{{ item.updated_at|date:'d.m.Y' }}{% endif %}</span>

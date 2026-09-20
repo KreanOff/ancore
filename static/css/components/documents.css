@@ -250,16 +250,16 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 248px), 1fr)); gap: 16px; margin: 0; padding: 16px var(--documents-index-padding-x); list-style: none; }
 .documents-grid--libraries { grid-template-columns: repeat(auto-fill, minmax(min(100%, 248px), 1fr)); }
 .documents-library-index .documents-grid { padding-inline: var(--documents-index-padding-x); }
-.documents-card { display: flex; flex-direction: column; min-width: 0; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--bg-main); }
+.documents-card { display: flex; flex-direction: column; min-width: 0; min-height: 0; aspect-ratio: 1; overflow: auto; padding: 14px; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--bg-main); }
 .documents-card:is(:hover, :focus-within) { border-color: var(--system-interaction); }
-.documents-card-entry { display: flex; flex-direction: column; gap: 6px; min-width: 0; color: inherit; text-decoration: none; }
-.documents-card-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; height: 104px; margin-bottom: 6px; border-radius: var(--radius); background: var(--secondary-menu-bg); }
-.documents-card-preview > svg { width: 42px; height: 42px; stroke-width: 1.4; }
+.documents-card-entry { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; color: inherit; text-decoration: none; }
+.documents-card-preview { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 100px; margin-bottom: 6px; border-radius: var(--radius); background: var(--secondary-menu-bg); }
+.documents-card-preview > svg { width: 100px; height: 100px; flex-shrink: 0; stroke-width: 1.4; }
 .documents-card-preview small { font-size: 11px; }
 /* Drive thumbnails use the same preview area and icon scale as file cards. */
-.documents-card--library .documents-library-icon { width: 64px; height: 64px; flex-basis: auto; }
-.documents-card--library .documents-library-icon svg { width: 42px; height: 42px; }
-.documents-card--library .documents-library-photo { width: 64px; height: 64px; }
+.documents-card--library .documents-library-icon { width: 100px; height: 100px; flex: 0 0 auto; }
+.documents-card--library .documents-library-icon svg,
+.documents-card--library .documents-library-photo { width: 100px; height: 100px; }
 .documents-card-title, .documents-card-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; line-height: 1.5; }
 .documents-card-title { font-size: var(--font-size-sm); }
 .documents-card-entry:hover .documents-card-title { text-decoration: underline; }
@@ -273,9 +273,8 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-card-date { white-space: nowrap; }
 .documents-grid-empty { padding: 70px 20px; text-align: center; }
 @media (max-width: 767px) {
-    .documents-grid { padding: 16px; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); }
+    .documents-grid { padding: 16px; gap: 12px; }
     .documents-card { padding: 12px; }
-    .documents-card-preview { height: 88px; }
     .documents-card-footer { flex-wrap: wrap; }
     .documents-card-footer .documents-row-actions { margin-left: auto; }
     .documents-grid-empty { padding: 55px 16px; }

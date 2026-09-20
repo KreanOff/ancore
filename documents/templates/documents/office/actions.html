@@ -1,6 +1,8 @@
 <div class="documents-row-actions">
     {% if row.kind == 'folder' %}
+        <form method="post" action="{{ documents_url }}folders/{{ item.pk }}/star/">{% csrf_token %}<input type="hidden" name="return_query" value="{{ return_query }}"><button type="submit" class="tasks-icon-button documents-icon-button{% if item.is_starred %} is-starred{% endif %}" aria-pressed="{{ item.is_starred|yesno:'true,false' }}" title="{% if item.is_starred %}Usuń gwiazdkę{% else %}Dodaj gwiazdkę{% endif %}" aria-label="{% if item.is_starred %}Usuń gwiazdkę{% else %}Dodaj gwiazdkę{% endif %}"><i data-icon="star" aria-hidden="true"></i></button></form>
         <a href="{{ documents_url }}folders/{{ item.pk }}/edit/" class="tasks-icon-button documents-icon-button" title="Zmień nazwę folderu" aria-label="Zmień nazwę folderu" data-document-modal><i data-icon="pencil" aria-hidden="true"></i></a>
+        <a class="tasks-icon-button documents-icon-button" href="{{ documents_url }}folders/{{ item.pk }}/download/" download title="Pobierz folder ZIP" aria-label="Pobierz folder ZIP"><i data-icon="download" aria-hidden="true"></i></a>
         <form method="post" action="{{ documents_url }}folders/{{ item.pk }}/delete/" data-document-confirm="Usunąć pusty folder?">{% csrf_token %}<button type="submit" class="tasks-icon-button documents-icon-button" title="Usuń pusty folder" aria-label="Usuń pusty folder"><i data-icon="trash-2" aria-hidden="true"></i></button></form>
     {% elif office_view == 'trash' %}
         <form method="post" action="{{ documents_url }}{{ item.pk }}/restore/">{% csrf_token %}<input type="hidden" name="return_query" value="{{ return_query }}"><button type="submit" class="btn btn-secondary btn-sm">Przywróć</button></form>

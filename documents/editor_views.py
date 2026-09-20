@@ -25,6 +25,7 @@ from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
 from .editor_forms import DOCUMENT_EXTENSIONS, OfficeDocumentForm, OfficeFolderForm, OfficeUploadForm
 from .models import WorkspaceDocument as Document, WorkspaceDocumentFolder as Folder
+from .folder_exports import folder_archive
 from .previews import build_preview, validate_inline
 from .query import (
     DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS, SIZE_OPTIONS,
@@ -126,11 +127,12 @@ def _list(request, modal=None):
     query_state = query_context(query_params, fields, sort_fields, 'updated_desc')
     values = query_state['document_filter_params']
     searching = bool(query or query_state['has_active_filters'])
-    document_only_filter = any(field['active'] and field['param'] not in {'name', 'modified'} for field in fields)
+    document_only_filter = any(field['active'] and field['param'] not in {'name', 'modified', 'starred'} for field in fields)
     items = _documents(request).filter(deleted_at__isnull=view != 'trash')
-    folders = _folders(request) if view == 'all' and not document_only_filter else Folder.objects.none()
+    folders = _folders(request) if view in {'all', 'starred'} and not document_only_filter else Folder.objects.none()
     if view == 'starred':
         items = items.filter(is_starred=True)
+        folders = folders.filter(is_starred=True)
     if query:
         items = items.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(tags__name__icontains=query)).distinct()
         folders = folders.filter(name__icontains=query)
@@ -148,6 +150,7 @@ def _list(request, modal=None):
         items = items.filter(kind=Document.Kind.FILE, filename__iendswith=values['file_type'])
     if values['starred']:
         items = items.filter(is_starred=values['starred'] == 'yes')
+        folders = folders.filter(is_starred=values['starred'] == 'yes')
     if values['size'] == 'small':
         items = items.filter(file_size__lt=1024 * 1024)
     elif values['size'] == 'medium':
@@ -176,6 +179,7 @@ def _list(request, modal=None):
         rows += [{'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.has_full_editor else (f'{item.pk}/' if item.kind == Document.Kind.TEXT else f'{item.pk}/preview/'))} for item in items[max(0, start-folder_count):end-folder_count]]
     params = {**values, 'folder': folder.pk if folder else None, 'view': view, 'q': query, 'sort': query_state['sort_param'], 'display': display, 'page_size': size}
     counts = _documents(request).aggregate(all=Count('pk', filter=Q(deleted_at__isnull=True)), starred=Count('pk', filter=Q(deleted_at__isnull=True, is_starred=True)), trash=Count('pk', filter=Q(deleted_at__isnull=False)))
+    counts['starred'] += _folders(request).filter(is_starred=True).count()
     context = _context(request, folder)
     context.update(query_state)
     context.update({
@@ -241,6 +245,30 @@ def folder_delete(request, pk):
     else:
         messages.success(request, 'Usunięto pusty folder.')
     return redirect(_url(request, folder=parent_id))
+
+
+@login_required
+@require_POST
+def folder_star(request, pk):
+    with transaction.atomic():
+        folder = get_object_or_404(_folders(request).select_for_update(), pk=pk)
+        folder.is_starred = not folder.is_starred
+        folder.save(update_fields=['is_starred'])
+    return _action_redirect(request)
+
+
+@login_required
+@require_GET
+def folder_download(request, pk):
+    folder = get_object_or_404(_folders(request), pk=pk)
+    try:
+        archive, filename = folder_archive(folder, _folders(request), _documents(request).filter(deleted_at__isnull=True))
+    except OSError:
+        raise Http404('Nie można pobrać folderu. Jeden z plików nie jest dostępny.')
+    response = FileResponse(archive, as_attachment=True, filename=filename, content_type='application/zip')
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 @login_required
@@ -426,6 +454,10 @@ def action(request, pk, operation):
             messages.success(request, 'Dokument przeniesiono do kosza.' if operation == 'trash' else 'Przywrócono dokument.')
         else:
             raise Http404
+    return _action_redirect(request)
+
+
+def _action_redirect(request):
     # Rebuild the return path locally; never redirect to a posted external URL.
     params = QueryDict(request.POST.get('return_query', ''))
     allowed = {key: params[key] for key in ('folder', 'view', 'q', 'sort', 'display', 'page', 'page_size', *FILTER_PARAMETERS) if key in params}

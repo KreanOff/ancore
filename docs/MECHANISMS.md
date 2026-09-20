@@ -221,6 +221,15 @@ reguł nie powodował ponownego utworzenia domyślnych.
 
 Documents pobiera pliki tylko przez widok właściciela/Workspace,
 wyklucza kosz i ustawia `Cache-Control: private, no-store`.
+Foldery Dysku mają osobne `is_starred`. POST `folders/<pk>/star/` blokuje rekord,
+przełącza gwiazdkę i zachowuje kontekst dysku albo widoku Workspace wraz
+z filtrami, układem i stroną. GET `folders/<pk>/download/` sprawdza także
+właściciela/Workspace dysku i tworzy ZIP przez wspólny
+[folder_exports.py](../documents/folder_exports.py). Zakres obejmuje tylko
+dostępne foldery i aktywne pliki tego samego dysku; błędna relacja między
+dyskami nie pozwala włączyć obcego poddrzewa. Pozostałe zasady archiwizacji
+(bezpieczne nazwy, kolizje, plik tymczasowy i brakujące pliki) są wspólne
+z folderami Dokumentów opisanymi poniżej.
 Te same ograniczenia obowiązują dla `/<uuid>/preview/` (dialog/pełna strona)
 i `/<uuid>/content/` (strumień podglądu). Surowe pliki są serwowane inline
 wyłącznie dla PDF i obrazów rastrowych, z ponownym sprawdzeniem sygnatury,
@@ -257,6 +266,18 @@ w tym samym prywatnym storage co Dysk, z losową nazwą. Każdy odczyt i zapis
 widoków `editor_views.py` ogranicza obiekty do właściciela i aktywnego Workspace;
 formularz folderu nie pozwala wskazać relacji spoza tego zakresu. Kosz blokuje
 edycję, import, podgląd i pobieranie.
+
+Foldery Dokumentów przechowują `is_starred`; POST `folders/<pk>/star/`
+przełącza gwiazdkę pod blokadą rekordu i wraca do katalogu z zachowanymi
+filtrami, układem i paginacją. GET `folders/<pk>/download/` tworzy prywatny ZIP
+przez [folder_exports.py](../documents/folder_exports.py). Każdy poziom hierarchii
+oraz dokument są ograniczone do właściciela i Workspace, a kosz jest pomijany.
+Archiwum zachowuje puste foldery, bezpieczne pojedyncze nazwy i rozróżnia
+kolizje nazw plików/folderów również bez uwzględnienia wielkości liter.
+Nie wypakowuje istniejących archiwów. Dane plików kopiowane są porcjami;
+ZIP powyżej 8 MiB przechodzi z pamięci do pliku tymczasowego, zamykanego po
+odpowiedzi lub błędzie. Brak źródłowego pliku przerywa pobieranie odpowiedzią 404,
+bez udostępniania niepełnego archiwum. Odpowiedź ma `private, no-store` i `nosniff`.
 
 Treść przechodzi przez `rich_text.clean_content`: dopuszczona jest mała lista
 znaczników formatowania bez atrybutów; aktywne elementy, skrypty, style, obrazy,

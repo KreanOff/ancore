@@ -188,12 +188,16 @@ z etykietami „Lista” i „Kafelki” i `aria-current` dla aktywnego układu.
 Serwer renderuje jeden układ, bez ukrytej kopii tabeli. Kafelki tworzą semantyczną
 listę w `documents-grid`, z ikoną, nazwą do dwóch linii i pełnym tekstem w linku,
 metadanymi oraz wspólnymi akcjami z tabeli. Kafelki dysków pokazują zdjęcie/ikonę,
-nazwę i datę, bez opisu oraz liczników plików i folderów. Wariant
-`documents-card--library` używa tego samego pola podglądu co kafelki plików:
-104px wysokości (88px na telefonie), ikony 42×42px lub okrągłego zdjęcia
-64×64px. Nazwa, data i akcje pozostają poniżej. Ten wariant nie zmienia ikon
+nazwę i datę, bez opisu oraz liczników plików i folderów. Wspólny komponent
+`documents-card` zachowuje proporcje kwadratu (`aspect-ratio: 1`). Pole podglądu
+wypełnia dostępną wysokość, z minimum 100px; ikony folderów, plików i dysków
+mają 100×100px. Wariant `documents-card--library` używa okrągłego zdjęcia
+100×100px, w tym samym rozmiarze co ikona dysku. Nazwa, data i akcje pozostają poniżej. Przy dużej liczbie tagów
+zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
 w tabeli ani panelu bocznym.
-Siatka dopasowuje liczbę kolumn do miejsca; na telefonie akcje mogą przejść pod datę.
+Siatka dopasowuje liczbę kolumn do miejsca z minimalną szerokością kafelka
+248px (lub całą dostępną szerokością, gdy jest węższa), również na telefonie.
+Na wąskim ekranie akcje mogą przejść pod datę.
 Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Pasek Dysków nie zawiera
 przycisku „Zarządzaj tabelą”; listy dysków i plików pokazują wszystkie kolumny,
 także przy zapisanych wcześniej preferencjach ich ukrywania. „Nowy folder” używa
@@ -210,6 +214,12 @@ Lista plików i folderów Dysku (`documents-layout`) ma symetryczne odstępy 24p
 od obu krawędzi tabeli, także na telefonie i w nagłówku. Przyciski działań
 są wyrównane do prawej; ich kolumna ma 168px szerokości, aby zachować miejsce
 na cztery przyciski także przy przewijaniu poziomym.
+Foldery Dysku mają cztery akcje w kolejności zgodnej z plikami: zmiana nazwy,
+gwiazdka, pobranie ZIP i usunięcie pustego folderu. Wspólny include
+`documents/includes/row_actions.html` obsługuje tabelę i kafelki, z etykietami
+zawierającymi nazwę folderu i `aria-pressed` gwiazdki. W zbiorczym widoku
+gwiazdek folder pokazuje nazwę dysku jako link, tak jak lokalizacja pliku.
+Pusty stan gwiazdek obejmuje pliki i foldery.
 Pusty stan zachowuje własne wyśrodkowanie i padding. Nazwy mają
 ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony nie mają
 ozdobnych ramek. Foldery na listach i kafelkach Dysku oraz Dokumentów używają
@@ -328,6 +338,11 @@ tego samego `documents/form.html` oraz obsługi fokusu, Escape i błędów w
 Lista Dokumentów używa tych samych odstępów co lista plików Dysku: 24px
 od lewej i prawej krawędzi tabeli, także na telefonie oraz w nagłówku.
 Kolumna działań ma 168px szerokości i przyciski wyrównane do prawej.
+Foldery Dokumentów używają tej samej kolejności akcji co pliki: gwiazdka,
+zmiana nazwy, pobieranie ZIP i usunięcie pustego folderu. Include
+`documents/office/actions.html` obsługuje listę oraz kafelki, zachowując
+istniejące przyciski ikonowe, etykiety i `aria-pressed` gwiazdki.
+Pusty widok oznaczonych elementów informuje o dokumentach i folderach.
 Pusty stan zachowuje własne odstępy i wyśrodkowanie.
 Kolumna „Tagi” między nazwą a datą używa etykiet `documents-tag` z Dysku;
 foldery i dokumenty bez tagów pokazują „—”. Oba katalogi mają tę samą
