@@ -258,6 +258,26 @@ odczytu daje komunikat; oryginał pozostaje dostępny do pobrania, jeśli istnie
 Upload waliduje całą partię, używa transakcji bazy i sprząta już zapisane
 pliki przy błędzie. Transakcja bazy sama nie wycofuje plików na dysku.
 
+Przenoszenie obsługuje [move_views.py](../documents/move_views.py):
+`<uuid>/move/` dla plików i `folders/<pk>/move/` dla folderów, oddzielnie
+w routingu Dysku i Dokumentów, również pod scoped URL. GET renderuje modal,
+POST wymaga CSRF i waliduje cel `folder:<pk>`, `library:<pk>` (Dysk) lub
+`root` (Dokumenty) wyłącznie w zakresie właściciela i aktywnego Workspace.
+Nie przyjmuje dowolnego URL docelowego. Usunięte pliki, cykle i kolizje nazw
+folderów (porównanie `casefold`, także polskie litery) są odrzucane.
+Zmiana dysku folderu aktualizuje atomowo całe poddrzewo oraz pliki aktywne
+i w koszu. Niespójne lub obce relacje w tym poddrzewie blokują zmianę dysku.
+Przenoszenie zachowuje PK, prywatny plik, tagi i klucz edytora; zmiana
+lokalizacji pliku zwiększa rewizję i datę modyfikacji. Nie zmienia jego treści.
+
+[location_lock.py](../documents/location_lock.py) serializuje zapisy lokalizacji
+blokadą wiersza Workspace przed blokadami dokumentów. Obejmuje przenoszenie,
+upload, tworzenie/edycję folderów i dokumentów, usuwanie pustych lokalizacji
+oraz tworzenie kopii przez konwersję. Zapobiega cyklom przy równoczesnym
+przenoszeniu i zapisaniu pliku ze starym dyskiem w właśnie przeniesionym folderze.
+Frontend przesyła dedykowany typ drag-data, sprawdza zgodność modułu/Workspace
+i korzysta z istniejącego uploadu oraz częściowego odświeżenia katalogu.
+
 Sygnały `post_delete` załączników Tasks/Kanban usuwają powiązany plik.
 Historyczne zdjęcia dysków pozostają w prywatnym storage i polu `photo`;
 interfejs ich nie wyświetla. Formularz dysku przyjmuje tylko nazwę i opis,

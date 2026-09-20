@@ -256,8 +256,17 @@ gwiazdkę oraz datę przeniesienia do kosza.
   Warunki tekstowe obsługują zawieranie, wykluczenie i pustą/niepustą wartość.
   Sortowanie ma oba kierunki dla pól tekstowych, liczników dysków, lokalizacji,
   rozmiaru i dat; dostępne pola zależą od listy.
-- Upload wielu plików, pobieranie po autoryzacji, edycja metadanych,
-  przenoszenie pliku między folderami tego samego dysku.
+- Upload wielu plików, pobieranie po autoryzacji i edycja metadanych.
+  Pliki z komputera można upuszczać na kafelek/wiersz dysku, folder,
+  bieżący katalog lub link dysku w panelu bocznym. Upuszczenie w katalogu
+  uruchamia przesyłanie przez wspólny modal z dotychczasową walidacją.
+  Upuszczenie w już otwartym oknie przesyłania wybiera pliki do zatwierdzenia.
+- Przeciąganie pojedynczych plików i folderów (z całym poddrzewem) między
+  folderami i dyskami tego samego Workspace, także na linki ścieżki nadrzędnej.
+  Akcja „Przenieś” otwiera równoważny wybór miejsca docelowego w modalu.
+  Kosz, cykle folderów i konflikty nazw są blokowane. Zawartość kosza w przenoszonym
+  folderze zachowuje relację z folderem i nowym dyskiem. Kolejność kafelków
+  nadal wynika z sortowania; Dysk i Dokumenty pozostają osobnymi katalogami.
 - Kliknięcie nazwy/kafelka DOCX, XLSX lub PPTX albo wyniku globalnego wyszukiwania
   otwiera pełny edytor ONLYOFFICE w osobnej karcie, tak jak w Dokumentach.
   Zapis aktualizuje ten sam plik na Dysku, bez przenoszenia do Dokumentów.
@@ -313,6 +322,12 @@ w osobnym module Dokumenty opisanym poniżej.
 `/workplaces/<slug>/office/`. Moduł ma własne foldery (`WorkspaceDocumentFolder`)
 i dokumenty (`WorkspaceDocument`), niezależne od Dysku. Katalog od razu
 pokazuje dokumenty i foldery, bez tworzenia osobnego dysku/biblioteki.
+
+Katalog Dokumentów korzysta z tego samego przeciągania i modala „Przenieś”:
+pliki z komputera można przesłać do bieżącego katalogu lub wskazanego folderu,
+a dokumenty i foldery przenosić do innych folderów albo katalogu głównego
+przez ścieżkę nawigacyjną. Obowiązują formaty i limity uploadu Dokumentów;
+przesyłanie całych folderów z komputera nie jest obsługiwane w żadnym z katalogów.
 
 - Cztery rodzaje nowych plików: dokument DOCX, arkusz XLSX, prezentacja PPTX
   i tablica Board. Katalog zachowuje foldery, listę/kafelki, sortowanie,

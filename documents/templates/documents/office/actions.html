@@ -1,4 +1,5 @@
 <div class="documents-row-actions">
+    {% include 'documents/includes/move_action.html' %}
     {% if row.kind == 'folder' %}
         <form method="post" action="{{ documents_url }}folders/{{ item.pk }}/star/">{% csrf_token %}<input type="hidden" name="return_query" value="{{ return_query }}"><button type="submit" class="tasks-icon-button documents-icon-button{% if item.is_starred %} is-starred{% endif %}" aria-pressed="{{ item.is_starred|yesno:'true,false' }}" title="{% if item.is_starred %}Usuń gwiazdkę{% else %}Dodaj gwiazdkę{% endif %}" aria-label="{% if item.is_starred %}Usuń gwiazdkę{% else %}Dodaj gwiazdkę{% endif %}"><i data-icon="star" aria-hidden="true"></i></button></form>
         <a href="{{ documents_url }}folders/{{ item.pk }}/edit/" class="tasks-icon-button documents-icon-button" title="Edytuj folder" aria-label="Edytuj folder" data-document-modal><i data-icon="pencil" aria-hidden="true"></i></a>

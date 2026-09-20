@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import suite_views as suite
+from .move_views import move
 
 app_name = 'documents'
 urlpatterns = [
@@ -10,6 +11,8 @@ urlpatterns = [
     path('libraries/<int:pk>/photo/', views.library_photo, name='library-photo'),
     path('libraries/<int:pk>/delete/', views.library_delete, name='library-delete'),
     path('upload/', views.upload, name='upload'),
+    path('folders/<int:pk>/move/', move, {'drive': True, 'kind': 'folder'}, name='folder-move'),
+    path('<uuid:pk>/move/', move, {'drive': True}, name='move'),
     path('folders/create/', views.folder_create, name='folder-create'),
     path('folders/<int:pk>/edit/', views.folder_edit, name='folder-edit'),
     path('folders/<int:pk>/delete/', views.folder_delete, name='folder-delete'),

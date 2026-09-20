@@ -333,6 +333,28 @@ Formularze korzystają z `form-input`, `tasks-inline-input`,
 `tasks-modal__errors`. Lokalne reguły odpowiadają za układ modułu i upload;
 wspólne komponenty za kontrolki, stany interakcji i powłokę okna.
 
+Przeciąganie w Dysku i Dokumentach inicjalizuje `initDocumentDragDrop` w
+`documents.js`, również po `ancore:content-loaded`; poprzednie listenery usuwa
+wspólny `AbortController`. Kafelki i wiersze aktywnych plików/folderów mają
+`data-document-drag`, a miejsca docelowe `data-document-drop` (`folder:<pk>`,
+`library:<pk>` lub `root`). Prawidłowy cel podświetla się istniejącym turkusem
+z przerywanym obrysem; komunikat `role=status` podaje nazwę miejsca docelowego.
+Podczas przenoszenia elementu przy kursorze podąża nieprzezroczysta karta
+`documents-drag-preview` (320px): własna ikona pliku/folderu, nazwa do trzech
+linii, typ i rozmiar oraz wskazany cel. Zastępuje natywną miniaturę linku;
+nie zawiera adresu URL. Nie przechwytuje wskaźnika, uwzględnia skalę UI
+i mieści się w oknie. Źródło przygasa, a ikona folderu docelowego lekko się unosi.
+Po upuszczeniu karta pokazuje „Przenoszenie…”; dopiero po zapisie animuje się
+w stronę celu (180ms), przed odświeżeniem listy. Ustawienie
+`prefers-reduced-motion` wyłącza animacje. Escape, błąd, opuszczenie okna
+i podmiana treści sprzątają podgląd oraz wyróżnienia.
+Upuszczenie plików w katalogu otwiera i wysyła standardowy formularz uploadu;
+błąd pozostawia pliki w oknie. Upuszczenie w otwartym formularzu zastępuje
+bieżący wybór plików, a zapis odbywa się jego przyciskiem.
+Ikonowa akcja „Przenieś” z etykietą dostępną dla czytników otwiera standardowy
+modal z wyborem lokalizacji, także z klawiatury i na telefonie. Pięć akcji
+wiersza mieści się w kolumnie o szerokości 196px. Kosz nie udostępnia przeciągania.
+
 Filtry Dysku używają panelu `tasks-project-filter-builder` i wspólnych
 szablonów warunków tekstowych oraz wyboru wartości. Lista pól i aktywne warunki
 pochodzą z `documents/query.py`; obsługę wyszukiwania, czyszczenia i nawigacji

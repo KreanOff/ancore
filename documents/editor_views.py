@@ -24,6 +24,7 @@ from core.upload_validation import attachment_download_response
 from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
 from .editor_forms import DOCUMENT_EXTENSIONS, OfficeDocumentForm, OfficeFolderForm, OfficeUploadForm
+from .location_lock import location_write
 from .models import WorkspaceDocument as Document, WorkspaceDocumentFolder as Folder
 from .folder_exports import folder_archive
 from .folder_stats import set_folder_summaries
@@ -67,7 +68,7 @@ def _context(request, folder=None):
     breadcrumbs, seen, current = [], set(), folder
     while current and current.pk not in seen:
         seen.add(current.pk)
-        breadcrumbs.append({'name': current.name, 'url': _url(request, folder=current.pk)})
+        breadcrumbs.append({'name': current.name, 'target': f'folder:{current.pk}', 'url': _url(request, folder=current.pk)})
         current = _folder(request, current.parent_id)
     folder_id = folder.pk if folder else None
     return {'documents_url': _url(request), 'folder_url': _url(request, folder=folder_id),
@@ -217,6 +218,7 @@ def _modal(request, context, preview=False):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
+@location_write
 def folder_edit(request, pk=None):
     instance = get_object_or_404(_folders(request), pk=pk) if pk else None
     parent = _folder(request, instance.parent_id if instance else request.GET.get('folder'))
@@ -237,6 +239,7 @@ def folder_edit(request, pk=None):
 
 @login_required
 @require_POST
+@location_write
 def folder_delete(request, pk):
     folder = get_object_or_404(_folders(request), pk=pk)
     parent_id = folder.parent_id
@@ -275,6 +278,7 @@ def folder_download(request, pk):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
+@location_write
 def upload(request):
     folder = _folder(request, request.GET.get('folder'))
     form = OfficeUploadForm(request.POST if request.method == 'POST' else None, request.FILES or None)
@@ -300,6 +304,7 @@ def upload(request):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
+@location_write
 def edit(request, pk=None):
     instance = _item(request, pk) if pk else Document(owner=request.user, workplace=request.workplace, folder=_folder(request, request.GET.get('folder')))
     is_new = pk is None

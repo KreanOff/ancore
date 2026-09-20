@@ -23,6 +23,7 @@ from workplaces.services import scoped_workplace_app_path
 from .forms import DocumentForm, FolderForm, LibraryForm, UploadForm
 from .folder_exports import folder_archive
 from .folder_stats import set_folder_summaries
+from .location_lock import location_write
 from .models import Document, DocumentLibrary, Folder
 from .previews import build_preview, inline_type, validate_inline
 from .query import (
@@ -83,10 +84,10 @@ def _context(request, library=None, folder=None):
     breadcrumbs = []
     ancestor = folder
     while ancestor:
-        breadcrumbs.append({'name': ancestor.name, 'url': _url(request, library=library.pk, folder=ancestor.pk)})
+        breadcrumbs.append({'name': ancestor.name, 'target': f'folder:{ancestor.pk}', 'url': _url(request, library=library.pk, folder=ancestor.pk)})
         ancestor = _folder(request, ancestor.parent_id)
     if library:
-        breadcrumbs.append({'name': library.name, 'url': _url(request, library=library.pk)})
+        breadcrumbs.append({'name': library.name, 'target': f'library:{library.pk}', 'url': _url(request, library=library.pk)})
     params = {'library': library.pk if library else None, 'folder': folder.pk if folder else None}
     return {
         'documents_url': _url(request), 'current_library': library, 'current_folder': folder,
@@ -400,6 +401,7 @@ def library_photo(request, pk):
 
 @login_required
 @require_POST
+@location_write
 def library_delete(request, pk):
     item = get_object_or_404(_libraries(request), pk=pk)
     try:
@@ -413,6 +415,7 @@ def library_delete(request, pk):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
+@location_write
 def upload(request):
     current_library, folder = _location(request)
     form = UploadForm(request.POST if request.method == 'POST' else None, request.FILES or None)
@@ -462,18 +465,21 @@ def _save_folder(request, folder=None):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
+@location_write
 def folder_create(request):
     return _save_folder(request)
 
 
 @login_required
 @require_http_methods(['GET', 'POST'])
+@location_write
 def folder_edit(request, pk):
     return _save_folder(request, get_object_or_404(_folders(request).select_related('library'), pk=pk))
 
 
 @login_required
 @require_POST
+@location_write
 def folder_delete(request, pk):
     folder = get_object_or_404(_folders(request), pk=pk)
     parent_id, library_id = folder.parent_id, folder.library_id
@@ -515,6 +521,7 @@ def folder_download(request, pk):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
+@location_write
 def detail(request, pk):
     document = get_object_or_404(_documents(request).select_related('folder', 'library'), pk=pk, deleted_at__isnull=True)
     form = DocumentForm(request.POST if request.method == 'POST' else None, instance=document, owner=request.user, workplace=request.workplace)

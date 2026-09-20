@@ -1,4 +1,5 @@
 <div class="documents-row-actions">
+    {% include 'documents/includes/move_action.html' %}
                         {% if row.kind == 'folder' %}
                             <a class="tasks-icon-button documents-icon-button" data-document-modal href="{{ documents_url }}folders/{{ item.pk }}/edit/" aria-label="Edytuj folder {{ item.name }}" title="Zmień nazwę"><i data-icon="pencil" aria-hidden="true"></i></a>
                             <form method="post" action="{{ documents_url }}folders/{{ item.pk }}/star/">{% csrf_token %}{% include 'documents/return_filters.html' %}<button class="tasks-icon-button documents-icon-button{% if item.is_starred %} is-starred{% endif %}" type="submit" aria-label="{% if item.is_starred %}Usuń gwiazdkę{% else %}Oznacz gwiazdką{% endif %}: {{ item.name }}" aria-pressed="{{ item.is_starred|yesno:'true,false' }}" title="{% if item.is_starred %}Usuń gwiazdkę{% else %}Oznacz gwiazdką{% endif %}"><i data-icon="star" aria-hidden="true"></i></button></form>

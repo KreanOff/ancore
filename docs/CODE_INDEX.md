@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 30 | 10 | 27 | 174 |
+| [documents](../documents) | 33 | 10 | 29 | 188 |
 
 ## 2. Modele i relacje
 
@@ -787,6 +787,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'libraries/<int:pk>/photo/'` | `views.library_photo` | 'library-photo' |
 | `'libraries/<int:pk>/delete/'` | `views.library_delete` | 'library-delete' |
 | `'upload/'` | `views.upload` | 'upload' |
+| `'folders/<int:pk>/move/'` | `move` | 'folder-move' |
+| `'<uuid:pk>/move/'` | `move` | 'move' |
 | `'folders/create/'` | `views.folder_create` | 'folder-create' |
 | `'folders/<int:pk>/edit/'` | `views.folder_edit` | 'folder-edit' |
 | `'folders/<int:pk>/delete/'` | `views.folder_delete` | 'folder-delete' |
@@ -927,7 +929,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/folder_exports.py](../documents/folder_exports.py) — `folder_archive`
 - [documents/folder_stats.py](../documents/folder_stats.py) — `set_folder_summaries`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `IconColorForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
+- [documents/location_lock.py](../documents/location_lock.py) — `location_write`
 - [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`
+- [documents/move_views.py](../documents/move_views.py) — `MoveForm`, `move`
 - [documents/office_service.py](../documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
 - [documents/previews.py](../documents/previews.py) — `inline_type`, `validate_inline`, `OfficePackage`, `build_preview`
 - [documents/query.py](../documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
@@ -1041,6 +1045,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/templates/documents/filter_sort.html](../documents/templates/documents/filter_sort.html)
 - [documents/templates/documents/form.html](../documents/templates/documents/form.html)
 - [documents/templates/documents/includes/color_field.html](../documents/templates/documents/includes/color_field.html)
+- [documents/templates/documents/includes/drag_attributes.html](../documents/templates/documents/includes/drag_attributes.html)
 - [documents/templates/documents/includes/drive_icon.html](../documents/templates/documents/includes/drive_icon.html)
 - [documents/templates/documents/includes/file_icon.html](../documents/templates/documents/includes/file_icon.html)
 - [documents/templates/documents/includes/file_icon_shape.html](../documents/templates/documents/includes/file_icon_shape.html)
@@ -1051,6 +1056,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/templates/documents/includes/libraries_grid.html](../documents/templates/documents/includes/libraries_grid.html)
 - [documents/templates/documents/includes/library_actions.html](../documents/templates/documents/includes/library_actions.html)
 - [documents/templates/documents/includes/library_avatar.html](../documents/templates/documents/includes/library_avatar.html)
+- [documents/templates/documents/includes/move_action.html](../documents/templates/documents/includes/move_action.html)
 - [documents/templates/documents/includes/row_actions.html](../documents/templates/documents/includes/row_actions.html)
 - [documents/templates/documents/libraries.html](../documents/templates/documents/libraries.html)
 - [documents/templates/documents/library.html](../documents/templates/documents/library.html)
@@ -1266,6 +1272,15 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [documents/test_migrations.py](../documents/test_migrations.py).
 
 - `LibraryMigrationTests`: 4 metod testowych.
+
+### documents/test_moves.py
+
+Źródło: [documents/test_moves.py](../documents/test_moves.py).
+
+- `CatalogMoveTests`: 8 metod testowych.
+- `OfficeMoveTests`: 1 metod testowych.
+- `DriveMoveTests`: 4 metod testowych.
+- `ConcurrentMoveTests`: 1 metod testowych.
 
 ### documents/test_office.py
 

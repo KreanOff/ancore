@@ -25,6 +25,7 @@ from . import office_service as service
 from .board import EMPTY_SCENE, BOARD_LIMIT, clean_scene
 from .editor_forms import OfficeCreateForm
 from .editor_views import _item, _context, _folder, _modal, _url
+from .location_lock import location_write
 from .models import WorkspaceDocument as Document, OfficeSaveReceipt, Document as DriveDocument, DriveOfficeSaveReceipt
 from .rich_text import docx_bytes
 from .views import _form_success
@@ -57,6 +58,7 @@ def _file_queryset(drive=False):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
+@location_write
 def create(request):
     folder = _folder(request, request.GET.get('folder'))
     form = OfficeCreateForm(request.POST if request.method == 'POST' else None,
@@ -272,6 +274,7 @@ def upgrade_text(request, pk):
 
 @login_required
 @require_POST
+@location_write
 def convert(request, pk, drive=False):
     source = _suite_item(request, pk, drive)
     if source.extension not in service.LEGACY_FORMATS or not service.configured():

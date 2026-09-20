@@ -2,9 +2,9 @@
 {% load static %}
 {% block title %}Dyski | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-icon-colors"><script src="{% static 'js/documents.js' %}?v=20260920-board-tab" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-drag-preview"><script src="{% static 'js/documents.js' %}?v=20260920-drag-preview" defer></script>{% endblock %}
 {% block content %}
-<div class="documents-page documents-library-index" data-document-display="{{ document_display }}">
+<div class="documents-page documents-library-index" data-document-display="{{ document_display }}" data-document-dnd="drive" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ library_view }}">
     {% include 'documents/toolbar.html' %}
     <section class="documents-main" aria-label="Dyski">
         {% if document_display == 'grid' %}
@@ -15,7 +15,7 @@
                 <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
                 <tbody>
                     {% for item in libraries %}
-                    <tr>
+                    <tr data-document-drop="library:{{ item.pk }}" data-document-label="{{ item.name }}">
                         <td><a class="documents-library-entry" href="{{ documents_url }}?library={{ item.pk }}" title="Otwórz dysk: {{ item.name }}">
                             {% include 'documents/includes/library_avatar.html' with library=item %}
                             <span class="documents-library-copy"><span class="documents-library-title">{{ item.name }}</span></span>

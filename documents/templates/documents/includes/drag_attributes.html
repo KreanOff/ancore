@@ -1,0 +1,6 @@
+{% if library_view != 'trash' and office_view != 'trash' %}
+draggable="true" data-document-drag data-document-move-url="{{ documents_url }}{% if row.kind == 'folder' %}folders/{% endif %}{{ item.pk }}/move/"
+data-document-title="{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}" data-document-meta="{% if row.kind == 'folder' %}Folder{% else %}{{ item.extension }} · {{ item.file_size|filesizeformat }}{% endif %}"
+data-document-location="{% if row.kind == 'folder' %}{% if item.parent_id %}folder:{{ item.parent_id }}{% elif item.library_id %}library:{{ item.library_id }}{% else %}root{% endif %}{% else %}{% if item.folder_id %}folder:{{ item.folder_id }}{% elif item.library_id %}library:{{ item.library_id }}{% else %}root{% endif %}{% endif %}"
+{% if row.kind == 'folder' %}data-document-drop="folder:{{ item.pk }}" data-document-label="{{ item.name }}"{% endif %}
+{% endif %}

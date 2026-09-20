@@ -2,7 +2,7 @@
     {% if libraries %}
     <ul class="documents-grid documents-grid--libraries" aria-label="Dyski — kafelki">
         {% for item in libraries %}
-        <li class="documents-card documents-card--library">
+        <li class="documents-card documents-card--library" data-document-drop="library:{{ item.pk }}" data-document-label="{{ item.name }}">
             <a class="documents-card-entry" href="{{ documents_url }}?library={{ item.pk }}" title="Otwórz dysk: {{ item.name }}">
                 <span class="documents-card-preview">{% include 'documents/includes/library_avatar.html' with library=item %}</span>
                 <span class="documents-card-title">{{ item.name }}</span>

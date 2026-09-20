@@ -2,7 +2,7 @@
     {% if rows %}
     <ul class="documents-grid" aria-label="Pliki i foldery — kafelki">
         {% for row in rows %}{% with item=row.item %}
-        <li class="documents-card{% if row.kind == 'folder' %} documents-card--folder{% endif %}">
+        <li class="documents-card{% if row.kind == 'folder' %} documents-card--folder{% endif %}" {% include 'documents/includes/drag_attributes.html' %}>
             {% if library_view == 'trash' %}<div class="documents-card-entry">{% else %}<a class="documents-card-entry" href="{{ row.url }}" {% if item.office_type %}target="_blank" rel="noopener"{% elif row.kind == 'document' %}data-document-modal{% endif %} title="{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}">{% endif %}
                 <span class="documents-card-preview" aria-hidden="true">{% if row.kind == 'folder' %}{% include 'documents/includes/folder_icon.html' with has_files=item.has_files color=item.color only %}{% else %}{% include 'documents/includes/file_icon.html' with document=item only %}{% endif %}{% if row.kind == 'document' %}<small>{{ item.extension }}</small>{% endif %}</span>
                 <span class="documents-card-title">{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}</span>

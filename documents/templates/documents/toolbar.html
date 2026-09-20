@@ -3,7 +3,7 @@
         {% if current_library %}
         <nav class="documents-breadcrumbs" aria-label="Ścieżka dysku">
             <a href="{{ documents_url }}" aria-label="Wszystkie dyski">Dyski</a>
-            {% for crumb in breadcrumbs %}<i data-icon="chevron-right" aria-hidden="true"></i>{% if forloop.last %}<h1 class="tasks-topbar-title">{{ crumb.name }}</h1>{% else %}<a href="{{ crumb.url }}">{{ crumb.name }}</a>{% endif %}{% endfor %}
+            {% for crumb in breadcrumbs %}<i data-icon="chevron-right" aria-hidden="true"></i>{% if forloop.last %}<h1 class="tasks-topbar-title">{{ crumb.name }}</h1>{% else %}<a href="{{ crumb.url }}" data-document-drop="{{ crumb.target }}" data-document-label="{{ crumb.name }}">{{ crumb.name }}</a>{% endif %}{% endfor %}
         </nav>
         {% else %}<h1 class="tasks-topbar-title">{{ view_title }}</h1>{% endif %}
     </div>
