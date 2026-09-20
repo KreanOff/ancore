@@ -32,23 +32,27 @@ def verify(token):
 
 
 def capability(document, purpose):
-    return signing.dumps([str(document.pk), document.owner_id, document.workplace_id, str(document.office_key)], salt=f'office.{purpose}')
+    return signing.dumps([str(document.pk), document.owner_id, document.workplace_id, str(document.office_key)], salt=f'{_service_scope(document)}.{purpose}')
 
 
 def check_capability(document, token, purpose):
     try:
-        return signing.loads(token, salt=f'office.{purpose}', max_age=7 * 86400) == [str(document.pk), document.owner_id, document.workplace_id, str(document.office_key)]
+        return signing.loads(token, salt=f'{_service_scope(document)}.{purpose}', max_age=7 * 86400) == [str(document.pk), document.owner_id, document.workplace_id, str(document.office_key)]
     except signing.BadSignature:
         return False
 
 
+def _service_scope(document):
+    return 'drive-office' if document._meta.label_lower == 'documents.document' else 'office'
+
+
 def service_url(document, purpose):
-    path = reverse(f'office-service-{purpose}', args=[document.pk])
+    path = reverse(f'{_service_scope(document)}-service-{purpose}', args=[document.pk])
     return settings.ONLYOFFICE_ANCORE_URL.rstrip('/') + path + '?' + urlencode({'token': capability(document, purpose)})
 
 
 def document_key(document):
-    return salted_hmac('office-editor', f'{document.pk}:{document.office_key}', algorithm='sha256').hexdigest()
+    return salted_hmac(f'{_service_scope(document)}-editor', f'{document.pk}:{document.office_key}', algorithm='sha256').hexdigest()
 
 
 def editor_config(document, user):

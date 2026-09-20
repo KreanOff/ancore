@@ -32,6 +32,9 @@ class LibraryMigrationTests(TransactionTestCase):
             self.assertEqual((preserved.folder_id, preserved.library_id), (child.pk, library.pk))
             self.assertEqual((preserved.file.name, preserved.file_size), ('existing/private.txt', 12))
             self.assertTrue(preserved.is_starred)
+            self.assertEqual(preserved.revision, 1)
+            self.assertIsNotNone(preserved.office_key)
+            self.assertFalse(preserved.office_save_error)
             self.assertTrue(apps.get_model('documents', 'WorkspaceDocumentFolder').objects.get(pk=office.pk).is_starred)
         finally:
             MigrationExecutor(connection).migrate(latest)

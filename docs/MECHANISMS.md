@@ -237,6 +237,16 @@ ustalonym MIME, `nosniff`, `X-Frame-Options: SAMEORIGIN` oraz CSP sandbox
 i `frame-ancestors 'self'`. Globalna ochrona ramek pozostaje bez zmian.
 Podgląd nie korzysta z zewnętrznych usług ani publicznych adresów storage.
 
+DOCX/XLSX/PPTX na Dysku otwierają `/documents/<uuid>/editor/` (także scoped),
+a dawny `preview/` przekierowuje do tego edytora. Wspólne `suite_views.py`
+obsługują edycję, force save, stan i konwersję; parametr routingu wybiera model
+Dysku albo Dokumentów. Sesyjne endpointy sprawdzają właściciela, aktywny Workspace
+i kosz. Podpisane źródło oraz callback Dysku mają osobną przestrzeń URL i podpisu;
+nie korzystają z sesji przeglądarki. Zapis aktualizuje prywatny plik `Document`,
+jego rozmiar, rewizję i datę. Kosz/przywrócenie zmieniają klucz sesji pod blokadą
+rekordu, a zapis metadanych aktualizuje tylko swoje pola. Szczegóły zabezpieczeń
+i uruchomienia: [OFFICE.md](OFFICE.md). Upload Dysku waliduje także pakiety OOXML.
+
 `documents/previews.py` odczytuje pozostałe obsługiwane formaty lokalnie,
 a szablon escapuje cały tekst. Archiwa nie są rozpakowywane na dysk;
 relacje zewnętrzne arkuszy są odrzucane, formuły i makra nie są wykonywane.

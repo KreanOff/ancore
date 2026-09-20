@@ -168,7 +168,10 @@ Dokumenty mają osobne modele w aplikacji `documents`, widoki w
 `documents/editor_views.py` i routing `documents/workspace_urls.py` z przestrzeniami
 nazw `office` oraz `workplace_office`. Nie są filtrem Dysku i nie przenoszą
 jego dotychczasowych danych. Współdzielą prywatny storage, walidację uploadu,
-podglądy i powłokę formularzy/modalów.
+podglądy i powłokę formularzy/modalów. Dysk i Dokumenty korzystają też ze wspólnych
+widoków `suite_views.py`, serwisu ONLYOFFICE i powłoki pełnego edytora dla plików
+DOCX/XLSX/PPTX. Zapis pozostaje w modelu źródłowego modułu; osobne podpisy, URL
+serwisowe i potwierdzenia zapisu rozdzielają dostęp do obu katalogów.
 
 ## 8. Granice tego opisu
 

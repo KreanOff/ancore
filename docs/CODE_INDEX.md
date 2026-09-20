@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 26 | 8 | 27 | 154 |
+| [documents](../documents) | 27 | 9 | 27 | 168 |
 
 ## 2. Modele i relacje
 
@@ -485,7 +485,7 @@ Metody/properties: `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `library` (ForeignKey), `description` (TextField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `library` (ForeignKey), `description` (TextField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -495,7 +495,7 @@ Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `library` (Fore
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='documents' |
 | `tags` | `'tasks.TaskTag'` | related_name='documents' |
 
-Metody/properties: `extension`, `icon`, `__str__`.
+Metody/properties: `extension`, `office_type`, `icon`, `__str__`.
 
 ### `WorkspaceDocumentFolder`
 
@@ -535,6 +535,16 @@ Pola zadeklarowane tutaj: `document` (ForeignKey), `digest` (CharField), `create
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `document` | `WorkspaceDocument` | on_delete=models.CASCADE; related_name='save_receipts' |
+
+### `DriveOfficeSaveReceipt`
+
+Źródło: [documents/models.py](../documents/models.py).
+
+Pola zadeklarowane tutaj: `document` (ForeignKey), `digest` (CharField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `document` | `Document` | on_delete=models.CASCADE; related_name='save_receipts' |
 
 ## 3. Formularze
 
@@ -635,6 +645,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'drive-office-service/<uuid:pk>/source/'` | `suite_views.source` | 'drive-office-service-source' |
+| `'drive-office-service/<uuid:pk>/callback/'` | `suite_views.callback` | 'drive-office-service-callback' |
 | `'office-service/<uuid:pk>/source/'` | `suite_views.source` | 'office-service-source' |
 | `'office-service/<uuid:pk>/callback/'` | `suite_views.callback` | 'office-service-callback' |
 | `'admin/'` | `admin.site.urls` | — |
@@ -781,6 +793,10 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'folders/<int:pk>/download/'` | `views.folder_download` | 'folder-download' |
 | `'<uuid:pk>/'` | `views.detail` | 'detail' |
 | `'<uuid:pk>/preview/'` | `views.preview` | 'preview' |
+| `'<uuid:pk>/editor/'` | `suite.editor` | 'editor' |
+| `'<uuid:pk>/save/'` | `suite.save_office` | 'office-save' |
+| `'<uuid:pk>/state/'` | `suite.state` | 'state' |
+| `'<uuid:pk>/convert/'` | `suite.convert` | 'convert' |
 | `'<uuid:pk>/content/'` | `views.preview_content` | 'preview-content' |
 | `'<uuid:pk>/download/'` | `views.download` | 'download' |
 | `'<uuid:pk>/star/'` | `views.star` | 'star' |
@@ -909,7 +925,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/editor_views.py](../documents/editor_views.py) — `index`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
 - [documents/folder_exports.py](../documents/folder_exports.py) — `folder_archive`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
-- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`
+- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`
 - [documents/office_service.py](../documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
 - [documents/previews.py](../documents/previews.py) — `inline_type`, `validate_inline`, `OfficePackage`, `build_preview`
 - [documents/query.py](../documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
@@ -1217,6 +1233,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DriveFolderTests`: 7 metod testowych.
 
+### documents/test_drive_office.py
+
+Źródło: [documents/test_drive_office.py](../documents/test_drive_office.py).
+
+- `DriveOfficeTests`: 14 metod testowych.
+
 ### documents/test_library_photos.py
 
 Źródło: [documents/test_library_photos.py](../documents/test_library_photos.py).
@@ -1408,3 +1430,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [documents/migrations/0006_workspacedocument_tags.py](../documents/migrations/0006_workspacedocument_tags.py)
 - [documents/migrations/0007_workspacedocumentfolder_is_starred.py](../documents/migrations/0007_workspacedocumentfolder_is_starred.py)
 - [documents/migrations/0008_folder_is_starred.py](../documents/migrations/0008_folder_is_starred.py)
+- [documents/migrations/0009_drive_office_editor.py](../documents/migrations/0009_drive_office_editor.py)

@@ -6,6 +6,13 @@ edytuje lokalny ONLYOFFICE Docs; tablice — lokalnie zbudowany Excalidraw.
 To edytory zgodne z formatami Microsoft Office, a nie oryginalne aplikacje
 Microsoft 365. Zgodność wszystkich funkcji desktopowego Office nie jest gwarantowana.
 
+Dysk korzysta z tych samych edytorów dla DOCX/XLSX/PPTX. Lista, kafelki i globalna
+wyszukiwarka otwierają osobną kartę; zapis aktualizuje istniejący `Document`
+w jego prywatnym storage, z zachowaniem dysku, folderu i tagów. Starszy adres
+podglądu przekierowuje do edytora. DOC/XLS/PPT/RTF/TXT/CSV można otworzyć jako
+kopię OOXML w tym samym dysku i folderze. Nie powstaje rekord w katalogu Dokumentów.
+Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku.
+
 ## Funkcje
 
 - **Dokument:** plik DOCX, formatowanie, tabele, obrazy, układ stron, komentarze
@@ -120,6 +127,11 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   używają sesji ani aktywnego Workspace z ciasteczka. Wymagają podpisanej
   zdolności dostępu do konkretnego pliku/właściciela/Workspace/sesji edytora
   (ważność 7 dni). Po tym czasie należy ponownie otworzyć edytor.
+  Dysk używa analogicznych `/drive-office-service/<uuid>/source/` i `callback/`.
+  Podpisy i klucze edytora rozróżniają oba modele, także przy identycznym UUID.
+  `DriveOfficeSaveReceipt` deduplikuje zapis plików Dysku, a `OfficeSaveReceipt`
+  dokumentów. Rewizja, błędy zapisu oraz unieważnianie sesji po koszu/przywróceniu
+  działają w obu modułach. Zapis metadanych Dysku nie nadpisuje treści z edytora.
 - Callback dodatkowo wymaga poprawnego HS256 JWT z serwera; podpisane dane
   `payload` są jedynym źródłem statusu, klucza i URL wyniku. Token konfiguracji
   przeglądarki nie uprawnia do zapisu. Własne tokeny JWT wygasają po 5 minutach.

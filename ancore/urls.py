@@ -11,6 +11,8 @@ from documents import workspace_urls as office_urls
 from documents import suite_views
 
 urlpatterns = [
+    path('drive-office-service/<uuid:pk>/source/', suite_views.source, {'drive': True}, name='drive-office-service-source'),
+    path('drive-office-service/<uuid:pk>/callback/', suite_views.callback, {'drive': True}, name='drive-office-service-callback'),
     path('office-service/<uuid:pk>/source/', suite_views.source, name='office-service-source'),
     path('office-service/<uuid:pk>/callback/', suite_views.callback, name='office-service-callback'),
     path('admin/', admin.site.urls),

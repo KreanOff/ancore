@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django import forms
 from django.core.files.base import ContentFile
 
@@ -29,6 +31,13 @@ class UploadForm(forms.Form):
         'class': 'form-input',
         'accept': ','.join(sorted(ATTACHMENT_ALLOWED_EXTENSIONS)),
     }))
+
+    def clean_files(self):
+        from .office_service import validate_ooxml
+        files = self.cleaned_data['files']
+        for file in files:
+            validate_ooxml(file, Path(file.name).suffix.lstrip('.'))
+        return files
 
 
 class LibraryForm(forms.ModelForm):

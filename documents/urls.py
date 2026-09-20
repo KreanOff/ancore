@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import suite_views as suite
 
 app_name = 'documents'
 urlpatterns = [
@@ -16,6 +17,10 @@ urlpatterns = [
     path('folders/<int:pk>/download/', views.folder_download, name='folder-download'),
     path('<uuid:pk>/', views.detail, name='detail'),
     path('<uuid:pk>/preview/', views.preview, name='preview'),
+    path('<uuid:pk>/editor/', suite.editor, {'drive': True}, name='editor'),
+    path('<uuid:pk>/save/', suite.save_office, {'drive': True}, name='office-save'),
+    path('<uuid:pk>/state/', suite.state, {'drive': True}, name='state'),
+    path('<uuid:pk>/convert/', suite.convert, {'drive': True}, name='convert'),
     path('<uuid:pk>/content/', views.preview_content, name='preview-content'),
     path('<uuid:pk>/download/', views.download, name='download'),
     path('<uuid:pk>/star/', views.star, name='star'),

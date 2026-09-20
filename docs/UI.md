@@ -245,7 +245,9 @@ Nawigacja, pusty stan, filtry, sortowanie i globalne wyszukiwanie zachowują
 ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków
 ma rozmiar 32×32px w polu 32×32px. Własne zdjęcie zastępuje tę ikonę na liście
 oraz w panelu dysków; miniatura ma 32×32px na liście i 28×28px w panelu
-bocznym, używa `object-fit: cover`. Wspólna szerokość pola ikony i zdjęcia
+bocznym, używa `object-fit: cover`. Ikona dysku w panelu bocznym ma
+30×30px i wypełnia pole miniatury, także w panelu otwieranym na telefonie.
+Wspólne pole ikony i zdjęcia w panelu ma 30×30px; jego stała szerokość
 w każdym wariancie zachowuje wyrównanie nazw dysków. Wiersze dysków mają minimum
 44px wysokości, a odstęp między miniaturą i nazwą wynosi 8px (10px w zwężonej liście).
 Miniatury i podgląd zdjęcia w formularzu są okrągłe (`border-radius: 50%`),
@@ -328,6 +330,19 @@ wybór kierunku i zaznaczenie aktualnego ustawienia. Dysk, folder i widok
 stanowią kontekst nawigacji; przycisk „Wyczyść” w panelu filtrów ich nie usuwa.
 
 ### Katalog i edytor Dokumentów
+
+Pliki DOCX/XLSX/PPTX w Dysku używają tej samej powłoki pełnego edytora
+`documents/office/suite.html` co Dokumenty. Linki nazwy i kafelka otwierają
+osobną kartę (`target="_blank"`, `rel="noopener"`), podobnie jak wyniki wyszukiwania.
+Pasek udostępnia metadane, pobieranie i zapis, a „Wróć do dysku” prowadzi
+do folderu pliku. Pozostałe formaty zachowują modal podglądu. Dla starszych
+formatów biurowych wspólna akcja „Otwórz kopię w pełnym edytorze” tworzy kopię
+w tym samym dysku i otwiera ją w nowej karcie. Stan niedostępnego edytora
+zachowuje pobieranie i powrót. Funkcja nie dodaje nowych stylów ani kontrolek.
+Przycisk powrotu w powłoce pełnego edytora używa tego samego komponentu co
+nagłówek grup: `tasks-issue-close` ze strzałką bez ramki oraz pionowego
+separatora `tasks-issue-divider` w `tasks-issue-breadcrumb tasks-project-breadcrumb`.
+Dotyczy to także tablicy i stanu niedostępnego edytora.
 
 Osobna pozycja „Dokumenty” używa ikony `file-text`. Katalog w
 `documents/office/index.html` zachowuje paski `tasks-topbar`/`tasks-filterbar`,

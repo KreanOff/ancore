@@ -468,8 +468,10 @@ def global_search(request):
                 Q(title__icontains=query) | Q(filename__icontains=query)
                 | Q(description__icontains=query) | Q(tags__name__icontains=query)
             ).select_related('folder', 'library').distinct(),
-            lambda item: _global_search_result(item.title, 'Plik', f'{documents_url}{item.pk}/preview/', item.icon,
-                                                ' / '.join(part for part in (item.library.name, item.folder.name if item.folder else '') if part)),
+            lambda item: _global_search_result(item.title, 'Plik',
+                f'{documents_url}{item.pk}/' + ('editor/' if item.office_type else 'preview/'), item.icon,
+                ' / '.join(part for part in (item.library.name, item.folder.name if item.folder else '') if part),
+                new_tab=bool(item.office_type)),
         ),
         _global_search_group(
             'document-folders', 'Foldery', 'folder',

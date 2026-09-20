@@ -78,6 +78,9 @@ class Document(models.Model):
     file = models.FileField(storage=document_storage, upload_to=document_upload_path, max_length=400)
     filename = models.CharField(max_length=255)
     file_size = models.PositiveBigIntegerField(default=0)
+    revision = models.PositiveIntegerField(default=1)
+    office_key = models.UUIDField(default=uuid.uuid4, editable=False)
+    office_save_error = models.BooleanField(default=False, editable=False)
     folder = models.ForeignKey(Folder, on_delete=models.RESTRICT, null=True, blank=True, related_name='documents')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='documents')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='documents')
@@ -94,6 +97,10 @@ class Document(models.Model):
     @property
     def extension(self):
         return Path(self.filename).suffix.lstrip('.').upper() or 'PLIK'
+
+    @property
+    def office_type(self):
+        return {'DOCX': 'word', 'XLSX': 'cell', 'PPTX': 'slide'}.get(self.extension, '')
 
     @property
     def icon(self):
@@ -199,5 +206,12 @@ def delete_workspace_document_file(sender, instance, using, **kwargs):
 class OfficeSaveReceipt(models.Model):
     """Deduplicate signed callbacks, including retries after closing an editor."""
     document = models.ForeignKey(WorkspaceDocument, on_delete=models.CASCADE, related_name='save_receipts')
+    digest = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DriveOfficeSaveReceipt(models.Model):
+    """Deduplicate editor callbacks for files stored on drives."""
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='save_receipts')
     digest = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)

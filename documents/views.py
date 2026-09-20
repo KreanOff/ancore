@@ -1,5 +1,6 @@
 from copy import copy
 import mimetypes
+import uuid
 from urllib.parse import urlencode, urlsplit
 
 from django.conf import settings
@@ -330,7 +331,7 @@ def _library_page(request, form_context=None):
     _set_folder_sizes(request, rows)
     if end > folder_count:
         rows += [
-            {'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/preview/')}
+            {'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.office_type else f'{item.pk}/preview/')}
             for item in documents[max(0, start - folder_count):end - folder_count]
         ]
     library_id = current_library.pk if current_library else None
@@ -552,7 +553,13 @@ def detail(request, pk):
     document = get_object_or_404(_documents(request).select_related('folder', 'library'), pk=pk, deleted_at__isnull=True)
     form = DocumentForm(request.POST if request.method == 'POST' else None, instance=document, owner=request.user, workplace=request.workplace)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        # Metadata edits must not overwrite a file/revision saved by the editor.
+        with transaction.atomic():
+            locked = get_object_or_404(_documents(request).select_for_update(), pk=pk, deleted_at__isnull=True)
+            for field in ('title', 'description', 'folder'):
+                setattr(locked, field, form.cleaned_data[field])
+            locked.save(update_fields=['title', 'description', 'folder', 'updated_at'])
+            locked.tags.set(form.cleaned_data['tags'])
         messages.success(request, 'Zapisano plik.')
         return _form_success(request, _url(request, library=document.library_id, folder=form.instance.folder_id))
     context = _context(request, document.library, document.folder)
@@ -564,9 +571,14 @@ def detail(request, pk):
 @require_GET
 def preview(request, pk):
     document = get_object_or_404(_documents(request).select_related('folder', 'library'), pk=pk, deleted_at__isnull=True)
+    if document.office_type:
+        return redirect(_url(request, f'{pk}/editor/'))
     context = _context(request, document.library, document.folder)
     context.update({'document': document, 'preview': build_preview(document),
                     'content_url': _url(request, f'{document.pk}/content/')})
+    from .office_service import LEGACY_FORMATS, configured
+    if document.extension in LEGACY_FORMATS and configured():
+        context['office_convert_url'] = _url(request, f'{pk}/convert/')
     response = _render_form(request, context, template='documents/preview.html')
     response['Cache-Control'] = 'private, no-store'
     return response
@@ -632,9 +644,10 @@ def star(request, pk):
 @login_required
 @require_POST
 def trash(request, pk):
-    document = get_object_or_404(_documents(request), pk=pk, deleted_at__isnull=True)
-    document.deleted_at = timezone.now()
-    document.save(update_fields=['deleted_at'])
+    with transaction.atomic():
+        document = get_object_or_404(_documents(request).select_for_update(), pk=pk, deleted_at__isnull=True)
+        document.deleted_at, document.office_key = timezone.now(), uuid.uuid4()
+        document.save(update_fields=['deleted_at', 'office_key'])
     messages.success(request, 'Plik przeniesiono do kosza. Możesz go przywrócić.')
     return _return_to_library(request, document)
 
@@ -642,8 +655,9 @@ def trash(request, pk):
 @login_required
 @require_POST
 def restore(request, pk):
-    document = get_object_or_404(_documents(request), pk=pk, deleted_at__isnull=False)
-    document.deleted_at = None
-    document.save(update_fields=['deleted_at'])
+    with transaction.atomic():
+        document = get_object_or_404(_documents(request).select_for_update(), pk=pk, deleted_at__isnull=False)
+        document.deleted_at, document.office_key = None, uuid.uuid4()
+        document.save(update_fields=['deleted_at', 'office_key'])
     messages.success(request, 'Przywrócono plik do jego folderu.')
     return _return_to_library(request, document)

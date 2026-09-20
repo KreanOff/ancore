@@ -251,6 +251,14 @@ Wymaga zastosowania przed uruchomieniem nowego widoku Dysku.
 `documents.test_drive_folders` obejmuje listę i kafelki, gwiazdki i filtry
 między dyskami, rozmiary folderów, ZIP oraz granice dostępu do podfolderów.
 
+Migracja `documents/0009_drive_office_editor.py` dodaje plikom Dysku rewizję,
+klucz sesji, flagę błędu zapisu oraz tabelę `DriveOfficeSaveReceipt`.
+Zastosuj ją przed uruchomieniem wersji z edycją Office na Dysku; istniejące
+pliki i ich lokalizacja pozostają bez zmian. Serwer ONLYOFFICE i konfiguracja
+są wspólne z Dokumentami. `documents.test_drive_office` obejmuje trzy formaty,
+listę/kafelki/wyszukiwarkę, zwykłe i scoped URL, zapis/konwersję, błędne pliki,
+CSRF, izolację kont/Workspace/modułów, deduplikację oraz unieważnianie sesji.
+
 Sprawdzenia funkcji obejmują `manage.py test documents` oraz
 `manage.py test workplaces dashboard core`. Siedem starszych testów Workspace/core
 ma oczekiwania niezgodne z obecną nawigacją i CSS; ten sam zestaw błędów

@@ -249,15 +249,20 @@ gwiazdkę oraz datę przeniesienia do kosza.
   rozmiaru i dat; dostępne pola zależą od listy.
 - Upload wielu plików, pobieranie po autoryzacji, edycja metadanych,
   przenoszenie pliku między folderami tego samego dysku.
-- Kliknięcie nazwy/kafelka pliku albo wyniku globalnego wyszukiwania otwiera
-  podgląd w aplikacji. PDF i obrazy (JPEG, PNG, GIF, WebP) używają przeglądarki;
-  TXT pokazuje tekst, CSV tabelę, DOCX uproszczony tekst, XLSX arkusze z zapisanymi
-  wartościami, ZIP/TAR listę zawartości. Akcja „Edytuj dane” otwiera dotychczasowy
+- Kliknięcie nazwy/kafelka DOCX, XLSX lub PPTX albo wyniku globalnego wyszukiwania
+  otwiera pełny edytor ONLYOFFICE w osobnej karcie, tak jak w Dokumentach.
+  Zapis aktualizuje ten sam plik na Dysku, bez przenoszenia do Dokumentów.
+  DOC/XLS/PPT/RTF/TXT/CSV mają w podglądzie opcję utworzenia kopii OOXML
+  do edycji, w tym samym dysku i folderze, z opisem oraz tagami oryginału.
+  Wymagania serwera i zapis opisuje [OFFICE.md](OFFICE.md).
+- Pozostałe formaty otwierają podgląd w aplikacji. PDF i obrazy (JPEG, PNG,
+  GIF, WebP) używają przeglądarki; TXT pokazuje tekst, CSV tabelę, ZIP/TAR listę
+  zawartości. Akcja „Edytuj dane” otwiera dotychczasowy
   formularz, a „Pobierz” nadal pobiera oryginał. Zamknięcie dialogu przywraca listę
   z jej filtrami, układem i fokusem; bezpośredni URL wraca do folderu pliku.
-- Podgląd nie jest edytorem ani konwerterem Office: nie odtwarza formatowania,
-  obrazów DOCX, wykresów XLSX ani nie oblicza formuł; daty XLSX mogą być liczbami.
-  DOC, XLS, RTF, RAR, 7Z i GZ mają komunikat o braku podglądu oraz pobieranie.
+- Podgląd CSV nie oblicza formuł. DOC, XLS, PPT, RTF, RAR, 7Z i GZ mają
+  komunikat o braku podglądu oraz pobieranie; formaty biurowe można przekonwertować,
+  gdy skonfigurowany jest ONLYOFFICE.
   Duże podglądy są ograniczane z komunikatem; brakujący, uszkodzony lub
   zaszyfrowany plik ma stan zastępczy. PDF wymaga obsługi tego formatu w przeglądarce.
 - Tworzenie/zmiana nazwy/usunięcie pustego folderu.

@@ -25,9 +25,10 @@ from . import office_service as service
 from .board import EMPTY_SCENE, BOARD_LIMIT, clean_scene
 from .editor_forms import OfficeCreateForm
 from .editor_views import _item, _context, _folder, _modal, _url
-from .models import WorkspaceDocument as Document, OfficeSaveReceipt
+from .models import WorkspaceDocument as Document, OfficeSaveReceipt, Document as DriveDocument, DriveOfficeSaveReceipt
 from .rich_text import docx_bytes
 from .views import _form_success
+from . import views as drive_views
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,21 @@ def _private(response):
     response['X-Content-Type-Options'] = 'nosniff'
     response['Referrer-Policy'] = 'no-referrer'
     return response
+
+
+def _suite_item(request, pk, drive=False):
+    if drive:
+        return get_object_or_404(drive_views._documents(request).select_related('library', 'folder'),
+                                 pk=pk, deleted_at__isnull=True)
+    return _item(request, pk)
+
+
+def _suite_url(request, suffix, drive=False):
+    return drive_views._url(request, suffix) if drive else _url(request, suffix)
+
+
+def _file_queryset(drive=False):
+    return DriveDocument.objects.all() if drive else Document.objects.filter(kind=Document.Kind.FILE)
 
 
 @login_required
@@ -76,11 +92,12 @@ def create(request):
 
 @login_required
 @require_GET
-def editor(request, pk):
-    item = _item(request, pk)
-    if not item.has_full_editor:
-        return redirect(_url(request, f'{pk}/'))
-    context = {**_context(request, item.folder), 'document': item,
+def editor(request, pk, drive=False):
+    item = _suite_item(request, pk, drive)
+    if not item.office_type and (drive or not item.has_full_editor):
+        return redirect(_suite_url(request, f'{pk}/preview/' if drive else f'{pk}/', drive))
+    location = drive_views._context(request, item.library, item.folder) if drive else _context(request, item.folder)
+    context = {**location, 'document': item, 'drive_editor': drive,
                'office_configured': service.configured(),
                'api_url': settings.ONLYOFFICE_URL + '/web-apps/apps/api/documents/api.js'}
     if item.office_type and service.configured():
@@ -125,8 +142,8 @@ def save_board(request, pk):
 
 @login_required
 @require_POST
-def save_office(request, pk):
-    item = _item(request, pk)
+def save_office(request, pk, drive=False):
+    item = _suite_item(request, pk, drive)
     if not item.office_type or not service.configured():
         return JsonResponse({'error': 'Edytor jest niedostępny.'}, status=503)
     if request.headers.get('X-Office-Key') != service.document_key(item):
@@ -142,24 +159,24 @@ def save_office(request, pk):
 
 @login_required
 @require_GET
-def state(request, pk):
-    item = _item(request, pk)
+def state(request, pk, drive=False):
+    item = _suite_item(request, pk, drive)
     return _private(JsonResponse({'revision': item.revision, 'key': service.document_key(item), 'save_error': item.office_save_error,
                                   'saved_at': timezone.localtime(item.updated_at).strftime('%H:%M:%S')}))
 
 
-def _service_item(request, pk, purpose):
+def _service_item(request, pk, purpose, drive=False):
     if not service.configured():
         raise Http404
-    item = get_object_or_404(Document, pk=pk, deleted_at__isnull=True, kind=Document.Kind.FILE)
+    item = get_object_or_404(_file_queryset(drive), pk=pk, deleted_at__isnull=True)
     if not service.check_capability(item, request.GET.get('token', ''), purpose):
         raise Http404
     return item
 
 
 @require_GET
-def source(request, pk):
-    item = _service_item(request, pk, 'source')
+def source(request, pk, drive=False):
+    item = _service_item(request, pk, 'source', drive)
     try:
         response = FileResponse(item.file.open('rb'), as_attachment=True, filename=item.filename)
     except OSError:
@@ -169,7 +186,7 @@ def source(request, pk):
 
 @csrf_exempt
 @require_POST
-def callback(request, pk):
+def callback(request, pk, drive=False):
     """Only a server-signed payload can authorize a save; ignore untrusted body fields."""
     if not service.configured():
         return JsonResponse({'error': 1}, status=503)
@@ -186,11 +203,12 @@ def callback(request, pk):
     except (jwt.PyJWTError, KeyError, TypeError, ValueError):
         return JsonResponse({'error': 1}, status=403)
     digest = service.receipt_digest(payload)
+    receipts = DriveOfficeSaveReceipt if drive else OfficeSaveReceipt
     saved_name = None
     try:
         with transaction.atomic():
-            item = get_object_or_404(Document.objects.select_for_update(), pk=pk, kind=Document.Kind.FILE, deleted_at__isnull=True)
-            if OfficeSaveReceipt.objects.filter(document=item, digest=digest).exists():
+            item = get_object_or_404(_file_queryset(drive).select_for_update(), pk=pk, deleted_at__isnull=True)
+            if receipts.objects.filter(document=item, digest=digest).exists():
                 return JsonResponse({'error': 0})
             if key != service.document_key(item) or not service.check_capability(item, request.GET.get('token', ''), 'callback'):
                 return JsonResponse({'error': 1}, status=409)
@@ -216,13 +234,13 @@ def callback(request, pk):
             if status == 2:
                 item.office_key = uuid.uuid4()
             item.save(update_fields=['file', 'file_size', 'revision', 'office_key', 'office_save_error', 'updated_at'])
-            OfficeSaveReceipt.objects.create(document=item, digest=digest)
+            receipts.objects.create(document=item, digest=digest)
             storage = item.file.storage
             transaction.on_commit(lambda: storage.delete(old_name), robust=True)
     except (URLError, OSError, ValueError, KeyError, ValidationError):
         if saved_name:
             item.file.storage.delete(saved_name)
-        Document.objects.filter(pk=pk, office_key=item.office_key).update(office_save_error=True)
+        _file_queryset(drive).filter(pk=pk, office_key=item.office_key).update(office_save_error=True)
         # Never log callback URLs, bearer tokens or private document content.
         logger.warning('ONLYOFFICE save failed for document %s', pk)
         return JsonResponse({'error': 1}, status=502)
@@ -254,8 +272,8 @@ def upgrade_text(request, pk):
 
 @login_required
 @require_POST
-def convert(request, pk):
-    source = _item(request, pk, kind=Document.Kind.FILE)
+def convert(request, pk, drive=False):
+    source = _suite_item(request, pk, drive)
     if source.extension not in service.LEGACY_FORMATS or not service.configured():
         raise Http404
     try:
@@ -263,15 +281,20 @@ def convert(request, pk):
         service.validate_ooxml(BytesIO(content), extension)
     except (URLError, OSError, ValueError, KeyError, ValidationError):
         messages.error(request, 'Nie udało się przygotować kopii w edytorze. Sprawdź połączenie i spróbuj ponownie.')
-        return redirect(_url(request, f'{pk}/preview/'))
-    item = Document(owner=request.user, workplace=request.workplace, folder=source.folder,
-                    title=source.title[:230] + ' — kopia', kind=Document.Kind.FILE,
-                    filename=source.title[:220] + '.' + extension, file_size=len(content))
+        return redirect(_suite_url(request, f'{pk}/preview/', drive))
+    model = DriveDocument if drive else Document
+    extra = {'library': source.library, 'description': source.description} if drive else {'kind': Document.Kind.FILE}
+    item = model(owner=request.user, workplace=request.workplace, folder=source.folder,
+                 title=source.title[:230] + ' — kopia', filename=source.title[:220] + '.' + extension,
+                 file_size=len(content), **extra)
     item.file.save(item.filename, ContentFile(content), save=False)
     try:
-        item.save()
+        with transaction.atomic():
+            item.save()
+            if drive:
+                item.tags.set(source.tags.filter(user=request.user, workplace=request.workplace))
     except Exception:
         item.file.storage.delete(item.file.name)
         raise
     messages.success(request, 'Utworzono kopię do edycji. Oryginalny plik zachowano.')
-    return redirect(_url(request, f'{item.pk}/editor/'))
+    return redirect(_suite_url(request, f'{item.pk}/editor/', drive))
