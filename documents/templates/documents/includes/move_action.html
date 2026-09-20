@@ -1,3 +1,3 @@
 {% if library_view != 'trash' and office_view != 'trash' %}
-<a class="tasks-icon-button documents-icon-button" data-document-modal href="{{ documents_url }}{% if row.kind == 'folder' %}folders/{% endif %}{{ item.pk }}/move/" title="Przenieś" aria-label="Przenieś: {% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}"><i data-icon="folder-open" aria-hidden="true"></i></a>
+<a class="{{ action_class|default:'tasks-icon-button documents-icon-button' }}" data-document-modal href="{{ documents_url }}{% if row.kind == 'folder' %}folders/{% endif %}{{ item.pk }}/move/" title="Przenieś" aria-label="Przenieś: {% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}"><i data-icon="folder-open" aria-hidden="true"></i>{% if action_menu %}<span>Przenieś</span>{% endif %}</a>
 {% endif %}

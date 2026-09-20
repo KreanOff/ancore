@@ -219,10 +219,10 @@ podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
 drugą linię z lokalizacją. Lista nie wyświetla pod nazwą etykiety „Folder” ani
 typu pliku (np. „PDF”, „JPEG”); bez lokalizacji nie tworzy drugiej linii.
 Lista plików i folderów Dysku (`documents-layout`) ma symetryczne odstępy 24px
-od obu krawędzi tabeli, także na telefonie i w nagłówku. Przyciski działań
-są wyrównane do prawej; ich kolumna ma 168px szerokości, aby zachować miejsce
-na cztery przyciski także przy przewijaniu poziomym.
-Foldery Dysku mają cztery akcje w kolejności zgodnej z plikami: edycja,
+od obu krawędzi tabeli, także na telefonie i w nagłówku. Przed ikoną pliku
+lub folderu znajduje się przycisk trzech pasków otwierający menu działań;
+tabela nie ma osobnej kolumny akcji.
+Foldery Dysku mają akcje w kolejności zgodnej z plikami: przenoszenie, edycja,
 gwiazdka, pobranie ZIP i usunięcie pustego folderu. Wspólny include
 `documents/includes/row_actions.html` obsługuje tabelę i kafelki, z etykietami
 zawierającymi nazwę folderu i `aria-pressed` gwiazdki. W zbiorczym widoku
@@ -296,7 +296,7 @@ dodatkowo kolumnę „Tagi” między nazwą a datą. Używa tych samych etykiet
 `documents-tag` co kafelki; kliknięcie tagu filtruje listę z zachowaniem
 kontekstu dysku/Workspace, wyszukiwania i pozostałych filtrów. Foldery i pliki
 bez tagów pokazują „—”. Kolumna ma 180px, a etykiety zawijają się w komórce.
-Minimalna szerokość tabeli plików wynosi 870px (800px na telefonie);
+Minimalna szerokość tabeli plików z menu w nazwie wynosi 690px;
 węższy obszar zachowuje wszystkie kolumny dzięki przewijaniu poziomemu.
 Rozmiar dysku i folderu sumuje aktywne pliki, również w podfolderach,
 w zakresie właściciela i Workspace. Puste elementy pokazują 0 bajtów.
@@ -352,8 +352,8 @@ Upuszczenie plików w katalogu otwiera i wysyła standardowy formularz uploadu;
 błąd pozostawia pliki w oknie. Upuszczenie w otwartym formularzu zastępuje
 bieżący wybór plików, a zapis odbywa się jego przyciskiem.
 Ikonowa akcja „Przenieś” z etykietą dostępną dla czytników otwiera standardowy
-modal z wyborem lokalizacji, także z klawiatury i na telefonie. Pięć akcji
-wiersza mieści się w kolumnie o szerokości 196px. Kosz nie udostępnia przeciągania.
+modal z wyborem lokalizacji, także z klawiatury i na telefonie. Akcje wiersza
+są dostępne w menu przed ikoną. Kosz nie udostępnia przeciągania.
 
 Filtry Dysku używają panelu `tasks-project-filter-builder` i wspólnych
 szablonów warunków tekstowych oraz wyboru wartości. Lista pól i aktywne warunki
@@ -387,16 +387,16 @@ tego samego `documents/form.html` oraz obsługi fokusu, Escape i błędów w
 
 Lista Dokumentów używa tych samych odstępów co lista plików Dysku: 24px
 od lewej i prawej krawędzi tabeli, także na telefonie oraz w nagłówku.
-Kolumna działań ma 168px szerokości i przyciski wyrównane do prawej.
-Foldery Dokumentów używają tej samej kolejności akcji co pliki: gwiazdka,
+Przycisk menu działań jest po lewej stronie ikony pliku lub folderu.
+Foldery Dokumentów używają tej samej kolejności akcji co pliki: przenoszenie, gwiazdka,
 edycja, pobieranie ZIP i usunięcie pustego folderu. Include
 `documents/office/actions.html` obsługuje listę oraz kafelki, zachowując
-istniejące przyciski ikonowe, etykiety i `aria-pressed` gwiazdki.
+etykiety i `aria-pressed` gwiazdki; na kafelkach pozostają przyciski ikonowe.
 Pusty widok oznaczonych elementów informuje o dokumentach i folderach.
 Pusty stan zachowuje własne odstępy i wyśrodkowanie.
 Kolumna „Tagi” między nazwą a datą używa etykiet `documents-tag` z Dysku;
 foldery i dokumenty bez tagów pokazują „—”. Oba katalogi mają tę samą
-minimalną szerokość tabeli (870px, 800px na telefonie) oraz zawijanie tagów.
+minimalną szerokość tabeli z menu (690px) oraz zawijanie tagów.
 Tagi są widoczne również na kafelkach. Kliknięcie etykiety filtruje dokumenty
 ze wszystkich folderów bieżącego Workspace; aktywny tag i akcja czyszczenia
 pojawiają się nad listą. Filtr pozostaje przy wyszukiwaniu, sortowaniu,
@@ -457,6 +457,21 @@ Nie ma osobnego rzędu powielającego akcje tworzenia.
 Statusy zapisu są potwierdzane przez serwer. Tablica przy błędzie zachowuje
 scenę i pozwala pobrać bieżącą kopię; jej iframe przyjmuje wyłącznie komunikaty
 z okna rodzica tego samego originu.
+
+Na listach plików i folderów Dysku oraz Dokumentów akcje wiersza otwiera
+jeden przycisk z ikoną `menu`
+(trzy poziome paski), po lewej stronie ikony pliku lub folderu. Nie ma osobnej
+kolumny działań; pusty stan ukrywa nagłówki i mieści się na wąskim ekranie.
+`documents/includes/row_menu.html` przyjmuje szablon akcji danego modułu
+w parametrze `actions_template` i korzysta z dotychczasowych formularzy,
+z tekstowymi etykietami w wariancie `action_menu`.
+Kafelki zachowują dotychczasowe przyciski. Menu używa wspólnych klas
+`tasks-section-menu` i `tasks-project-menu-button` oraz natywnego `popover`
+poza obszarem przycinania tabeli. `documents.js` dopasowuje położenie do
+viewportu i skali UI, obsługuje strzałki, Home/End, Escape, kliknięcie poza menu
+oraz zamknięcie przy przewijaniu. Po zamknięciu modala fokus wraca na przycisk
+wiersza. Inicjalizacja działa także po `ancore:content-loaded` bez powielania
+listenerów. Kosz udostępnia w tym samym miejscu akcję przywrócenia.
 
 ### Dashboard bieżącego Workspace
 

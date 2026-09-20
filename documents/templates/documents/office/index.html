@@ -3,9 +3,9 @@
 {% block title %}Dokumenty | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-drag-preview">
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260920-row-actions-v2">
 <link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260919-catalog-style-v2">
-<script src="{% static 'js/documents.js' %}?v=20260920-drag-preview" defer></script>
+<script src="{% static 'js/documents.js' %}?v=20260920-row-actions-v2" defer></script>
 <script src="{% static 'js/office.js' %}?v=20260920-tags" defer></script>
 {% endblock %}
 {% block content %}
@@ -68,15 +68,14 @@
         </ul>
         </div>
         {% else %}
-        <div class="documents-table-scroll"><table class="documents-table">
-            <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="tags"><span class="documents-column-heading">Tagi</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+        <div class="documents-table-scroll"><table class="documents-table documents-table--inline-actions">
+            <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="tags"><span class="documents-column-heading">Tagi</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th></tr></thead>
             <tbody>{% for row in rows %}{% with item=row.item %}<tr {% include 'documents/includes/drag_attributes.html' %}>
-                <td><div class="documents-name"><span class="documents-file-icon">{% if row.kind == 'folder' %}{% include 'documents/includes/folder_icon.html' with has_files=item.has_files color=item.color only %}{% else %}{% include 'documents/includes/file_icon.html' with document=item only %}{% endif %}</span><div>{% include 'documents/office/name.html' %}{% if row.kind == 'document' and item.folder and item.folder_id != current_folder.pk %}<small>{{ item.folder.name }}</small>{% endif %}</div></div></td>
+                <td><div class="documents-name">{% include 'documents/includes/row_menu.html' with actions_template='documents/office/actions.html' %}<span class="documents-file-icon">{% if row.kind == 'folder' %}{% include 'documents/includes/folder_icon.html' with has_files=item.has_files color=item.color only %}{% else %}{% include 'documents/includes/file_icon.html' with document=item only %}{% endif %}</span><div>{% include 'documents/office/name.html' %}{% if row.kind == 'document' and item.folder and item.folder_id != current_folder.pk %}<small>{{ item.folder.name }}</small>{% endif %}</div></div></td>
                 <td data-document-column="tags">{% if row.kind == 'document' %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% empty %}<span class="documents-muted">—</span>{% endfor %}</div>{% else %}<span class="documents-muted">—</span>{% endif %}</td>
                 <td class="documents-date" data-document-column="date" title="{% if row.kind == 'folder' %}Utworzono: {{ item.created_at|date:'d.m.Y, H:i' }}{% else %}Zmodyfikowano: {{ item.updated_at|date:'d.m.Y, H:i' }}{% endif %}">{% if row.kind == 'folder' %}{{ item.created_at|date:'d.m.Y' }}{% else %}{{ item.updated_at|date:'d.m.Y' }}{% endif %}</td>
                 <td class="documents-size" data-document-column="size">{% if row.kind == 'document' %}{{ item.file_size|filesizeformat }}{% else %}—{% endif %}</td>
-                <td>{% include 'documents/office/actions.html' %}</td>
-            </tr>{% endwith %}{% empty %}<tr><td colspan="5" class="documents-empty"><div>
+            </tr>{% endwith %}{% empty %}<tr><td colspan="4" class="documents-empty"><div>
                 <i data-icon="{% if office_view == 'trash' %}trash-2{% else %}file-text{% endif %}" aria-hidden="true"></i>
                 {% if query or has_active_filters %}<h3>Brak pasujących dokumentów</h3><p>Zmień wyszukiwanie lub filtry albo wróć do pełnej listy.</p><a class="btn btn-secondary" href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a>
                 {% elif office_view == 'trash' %}<h3>Kosz jest pusty</h3><p>Tutaj znajdziesz usunięte dokumenty, które możesz przywrócić.</p>

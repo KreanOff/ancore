@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 33 | 10 | 29 | 188 |
+| [documents](../documents) | 33 | 10 | 30 | 188 |
 
 ## 2. Modele i relacje
 
@@ -1058,6 +1058,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/templates/documents/includes/library_avatar.html](../documents/templates/documents/includes/library_avatar.html)
 - [documents/templates/documents/includes/move_action.html](../documents/templates/documents/includes/move_action.html)
 - [documents/templates/documents/includes/row_actions.html](../documents/templates/documents/includes/row_actions.html)
+- [documents/templates/documents/includes/row_menu.html](../documents/templates/documents/includes/row_menu.html)
 - [documents/templates/documents/libraries.html](../documents/templates/documents/libraries.html)
 - [documents/templates/documents/library.html](../documents/templates/documents/library.html)
 - [documents/templates/documents/modal_host.html](../documents/templates/documents/modal_host.html)

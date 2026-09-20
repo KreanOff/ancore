@@ -81,6 +81,18 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 :is(.documents-layout, .office-page) .documents-table .documents-row-actions { justify-content: flex-end; }
 .documents-row-actions .documents-icon-button { width: 28px; height: 28px; }
 .documents-row-actions form { margin: 0; }
+.documents-item-actions { flex: 0 0 auto; }
+.documents-item-actions > .documents-icon-button { width: 28px; height: 28px; }
+.documents-item-actions > [aria-expanded="true"] { background: var(--system-interaction-soft); }
+.documents-item-menu { position: fixed; inset: auto; margin: 0; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; color: var(--text-primary); }
+.documents-item-menu:popover-open, .documents-menu-actions { display: grid; gap: 2px; }
+.documents-menu-actions form { margin: 0; }
+.documents-menu-actions .is-starred svg { color: var(--system-accent); }
+.documents-name .documents-item-menu a { display: inline-flex; text-decoration: none; }
+.documents-page .documents-table.documents-table--inline-actions { min-width: 690px; }
+.documents-page .documents-table.documents-table--inline-actions:has(.documents-empty) { min-width: 0; }
+.documents-table--inline-actions:has(.documents-empty) thead { display: none; }
+.documents-page .documents-table.documents-table--inline-actions :is(th, td)[data-document-column="size"]:last-child { width: 100px; }
 .documents-date, .documents-size { font-size: 13px; white-space: nowrap; }
 .documents-table td.documents-empty { padding: 70px 20px; width: auto; text-align: center; border-bottom: 0; }
 .documents-empty > div { max-width: 420px; margin: 0 auto; }

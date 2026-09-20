@@ -5,6 +5,7 @@
         controller?.abort();
         controller = new AbortController();
         const options = { signal: controller.signal };
+        initDocumentActionMenus(options);
         initDocumentSidebar(options);
         initDocumentColors(options);
         const modals = initDocumentModals(options);
@@ -54,6 +55,89 @@
             }
         }, options);
         apply();
+    }
+
+    function initDocumentActionMenus(options) {
+        const menus = [...document.querySelectorAll('[data-document-actions]')];
+        if (!menus.length) return;
+
+        function closeMenus() {
+            menus.forEach(menu => {
+                const panel = menu.querySelector('[data-document-actions-panel]');
+                if (panel.matches(':popover-open')) panel.hidePopover();
+            });
+        }
+
+        menus.forEach(menu => {
+            const toggle = menu.querySelector('[data-document-actions-toggle]');
+            const panel = menu.querySelector('[data-document-actions-panel]');
+            const items = [...panel.querySelectorAll('a[href], button:not(:disabled)')];
+            // Reinitialization after partial navigation must not leave a stale open menu.
+            if (panel.matches(':popover-open')) panel.hidePopover();
+            toggle.setAttribute('aria-expanded', 'false');
+
+            function position() {
+                const anchor = toggle.getBoundingClientRect();
+                const scale = anchor.width / toggle.offsetWidth || 1;
+                const bounds = panel.getBoundingClientRect();
+                const gap = 6;
+                const margin = 8;
+                const left = Math.max(margin, Math.min(anchor.left, window.innerWidth - bounds.width - margin));
+                const top = anchor.bottom + gap + bounds.height <= window.innerHeight - margin
+                    ? anchor.bottom + gap : Math.max(margin, anchor.top - bounds.height - gap);
+                panel.style.left = `${left / scale}px`;
+                panel.style.top = `${top / scale}px`;
+            }
+
+            toggle.addEventListener('click', event => {
+                event.preventDefault();
+                if (panel.matches(':popover-open')) panel.hidePopover();
+                else {
+                    panel.showPopover();
+                    position();
+                    items[0]?.focus({ preventScroll: true });
+                }
+            }, options);
+            panel.addEventListener('beforetoggle', event => {
+                toggle.setAttribute('aria-expanded', String(event.newState === 'open'));
+            }, options);
+            menu.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && panel.matches(':popover-open')) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    panel.hidePopover();
+                    toggle.focus({ preventScroll: true });
+                    return;
+                }
+                if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                if (!panel.matches(':popover-open')) {
+                    panel.showPopover();
+                    position();
+                }
+                const current = items.indexOf(document.activeElement);
+                const index = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+                    : current === -1 ? (event.key === 'ArrowDown' ? 0 : items.length - 1)
+                    : (current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+                items[index]?.focus({ preventScroll: true });
+            }, options);
+            panel.addEventListener('click', event => {
+                if (event.target.closest('a, button')) {
+                    panel.hidePopover();
+                    toggle.focus({ preventScroll: true });
+                }
+            }, options);
+            menu.addEventListener('focusout', event => {
+                if (event.relatedTarget && !menu.contains(event.relatedTarget) && panel.matches(':popover-open')) {
+                    panel.hidePopover();
+                }
+            }, options);
+        });
+        window.addEventListener('resize', closeMenus, options);
+        document.addEventListener('scroll', event => {
+            if (!event.target.closest?.('[data-document-actions-panel]')) closeMenus();
+        }, { ...options, capture: true });
+        options.signal.addEventListener('abort', closeMenus, { once: true });
     }
 
     function initDocumentColors(options) {
@@ -138,7 +222,8 @@
             restoreBackground();
             if (directLink) navigate(returnUrl);
             else {
-                const returnFocus = previousFocus?.closest('[data-section-actions]')?.querySelector('[data-section-menu-toggle]')
+                const returnFocus = previousFocus?.closest('[data-document-actions]')?.querySelector('[data-document-actions-toggle]')
+                    || previousFocus?.closest('[data-section-actions]')?.querySelector('[data-section-menu-toggle]')
                     || (previousFocus?.closest('[inert]') ? document.querySelector('[data-documents-sidebar-toggle]') : previousFocus);
                 if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
             }
@@ -468,7 +553,7 @@
         page.addEventListener('dragstart', event => {
             const row = event.target.closest('[data-document-drag]');
             if (!row) return;
-            if (moving || modals.isBusy() || event.target.closest('.documents-row-actions, button, input, select, textarea')) {
+            if (moving || modals.isBusy() || event.target.closest('.documents-row-actions, [data-document-actions], button, input, select, textarea')) {
                 event.preventDefault();
                 return;
             }
