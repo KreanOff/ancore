@@ -215,13 +215,13 @@ gwiazdkę oraz datę przeniesienia do kosza.
 **Ekrany i funkcje:**
 
 - Katalog dysków z tworzeniem, zmianą nazwy/opisu i usunięciem pustego dysku.
-- Własne zdjęcie dysku: dodanie, kadrowanie, podmiana i usunięcie w formularzu,
-  przez wspólny edytor zdjęć Workspace. Zdjęcie zastępuje ikonę na liście i w panelu
-  bocznym; bez zdjęcia dysk używa wspólnej płaskiej ikony z `drive_icon.html`.
+- Dyski zawsze używają wspólnej płaskiej ikony z `drive_icon.html` na liście,
+  w kafelkach i panelu bocznym. Formularze zawierają tylko nazwę i opis;
+  dodawanie własnego zdjęcia jest wyłączone, a stare zdjęcia nie są wyświetlane.
 - Zawartość dysku/folderu i ścieżka nawigacyjna.
 - Przełącznik „Lista / Kafelki” na indeksie dysków i w widokach plików.
   Kafelki pokazują typ, rozmiar, datę, lokalizację i tagi pliku oraz te same
-  akcje co lista; dyski pokazują zdjęcie/ikonę, nazwę i datę, bez opisu i liczników.
+  akcje co lista; dyski pokazują ikonę, nazwę i datę, bez opisu i liczników.
   Układ jest zapamiętywany w sesji oddzielnie dla konta, Workspace oraz katalogu
   dysków i plików. Zmiana układu zachowuje wyszukiwanie, filtry i stronę.
   „Nowy folder” jest bezpośrednią akcją w pasku dysku.

@@ -187,17 +187,24 @@ Przełącznik `documents-display-switch` używa dwóch linków `tasks-icon-butto
 z etykietami „Lista” i „Kafelki” i `aria-current` dla aktywnego układu.
 Serwer renderuje jeden układ, bez ukrytej kopii tabeli. Kafelki tworzą semantyczną
 listę w `documents-grid`, z ikoną, nazwą do dwóch linii i pełnym tekstem w linku,
-metadanymi oraz wspólnymi akcjami z tabeli. Kafelki dysków pokazują zdjęcie/ikonę,
+metadanymi oraz wspólnymi akcjami z tabeli. Kafelki dysków pokazują standardową ikonę,
 nazwę i datę, bez opisu oraz liczników plików i folderów. Wspólny komponent
 `documents-card` zachowuje proporcje kwadratu (`aspect-ratio: 1`). Pole podglądu
 wypełnia dostępną wysokość, z minimum 100px, bez osobnego tła — ikony są
-na białej powierzchni kafelka. Ikony folderów, plików i dysków
-mają 100×100px. Wariant `documents-card--library` używa okrągłego zdjęcia
-100×100px, w tym samym rozmiarze co ikona dysku. Nazwa, data i akcje pozostają poniżej. Przy dużej liczbie tagów
+na białej powierzchni kafelka. Ikony plików mają 115,5×115,5px, a folderów
+i dysków 139,755×139,755px — wszystkie powiększone o 5% względem poprzednich
+110px i 133,1px, bez zmiany wymiarów kafelków. Foldery i dyski korzystają
+ze wspólnej reguły rozmiaru w kafelkach.
+Wariant `documents-card--library` używa wyłącznie standardowej ikony dysku.
+Nazwa, data i akcje pozostają poniżej. W ciasnych kolumnach lub przy dużej liczbie tagów
 zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
 w tabeli ani panelu bocznym.
-Siatka dopasowuje liczbę kolumn do miejsca z minimalną szerokością kafelka
+Siatka dopasowuje liczbę kolumn do miejsca z minimalną szerokością kolumny
 248px (lub całą dostępną szerokością, gdy jest węższa), również na telefonie.
+Kafelek zajmuje 85,7375% szerokości kolumny, dzięki czemu jego szerokość i wysokość
+są o kolejne 5% mniejsze względem poprzednich 90,25%, przy tej samej liczbie kolumn.
+Dotyczy Dysków, plików i Dokumentów;
+rozmiary tekstu, ikon oraz przycisków pozostają bez zmian.
 Na wąskim ekranie akcje mogą przejść pod datę.
 Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Pasek Dysków nie zawiera
 przycisku „Zarządzaj tabelą”; listy dysków i plików pokazują wszystkie kolumny,
@@ -247,33 +254,19 @@ i zastępczym widoku podglądu. Są dekoracyjne, bez fokusu, zachowują kolory
 po inicjalizacji `AncoreIcons` i podmianie treści. Nie zmieniają obsługi formatów
 ani ikon załączników w innych modułach.
 Ikony plików i folderów w tabelach Dysku i Dokumentów mają 32×32px w polu 32×32px.
-Dyski bez zdjęcia używają płaskiej, poziomej niebieskiej obudowy z include'a
-`documents/includes/drive_icon.html` na liście, w kafelkach, panelu bocznym
-i edytorze zdjęcia (także po usunięciu zdjęcia). SVG zachowuje stałe kolory
-oparte na `#4285d4` i białych detalach, nie ma obrysu ani fokusu i jest dekoracyjne.
+Wszystkie dyski używają płaskiej, poziomej niebieskiej obudowy z include'a
+`documents/includes/drive_icon.html` na liście, w kafelkach i panelu bocznym.
+SVG zachowuje stałe kolory oparte na `#4285d4` i białych detalach,
+nie ma obrysu ani fokusu i jest dekoracyjne.
 Nawigacja, pusty stan, filtry, sortowanie i globalne wyszukiwanie zachowują
-ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków
-ma rozmiar 32×32px w polu 32×32px. Własne zdjęcie zastępuje tę ikonę na liście
-oraz w panelu dysków; miniatura ma 32×32px na liście i 28×28px w panelu
-bocznym, używa `object-fit: cover`. Ikona dysku w panelu bocznym ma
-30×30px i wypełnia pole miniatury, także w panelu otwieranym na telefonie.
-Wspólne pole ikony i zdjęcia w panelu ma 30×30px; jego stała szerokość
-w każdym wariancie zachowuje wyrównanie nazw dysków. Wiersze dysków mają minimum
-44px wysokości, a odstęp między miniaturą i nazwą wynosi 8px (10px w zwężonej liście).
-Miniatury i podgląd zdjęcia w formularzu są okrągłe (`border-radius: 50%`),
-zgodnie z kadrem edytora Workspace.
+ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków ma rozmiar
+32×32px w polu 32×32px, a w panelu bocznym 30×30px, również na telefonie.
+Wiersze dysków mają minimum 44px wysokości, a odstęp między ikoną i nazwą
+wynosi 8px (10px w zwężonej liście).
 
-Formularz tworzenia i ustawień dysku udostępnia ten sam edytor zdjęcia
-co Workspace: wybór pliku, przesuwanie kadru, zoom 1–4, podgląd oraz akcje
-„Zmień”, „Usuń” i „Zapisz”. Wspólna powłoka jest w
-[photo_crop_dialog.html](../core/templates/core/includes/photo_crop_dialog.html),
-a zachowanie w `profile.js`. Eksport kadru tworzy JPEG 512×512px.
-`AncorePhotoEditors.init(root)` inicjalizuje także formularz pobrany dynamicznie;
-znacznik na kontrolce zapobiega ponownemu podpinaniu obsługi.
-Escape zamyka najpierw kadrowanie i przywraca fokus. Zamknięcie kadrowania
-odrzuca niezapisany wybór; „Zapisz” zatwierdza podgląd, a „Zapisz dysk”
-zapisuje formularz na serwerze. Błąd nazwy zachowuje zatwierdzony kadr;
-błędy pliku pojawiają się obok kontrolki zdjęcia.
+Formularz tworzenia i ustawień dysku zawiera wyłącznie nazwę i opis.
+Nie udostępnia wyboru zdjęcia ani kadrowania. Wcześniej zapisane zdjęcia
+nie są wyświetlane; lista, kafelki i panel boczny zawsze używają wspólnej ikony.
 
 Lista dysków zajmuje całą szerokość treści. Pod tytułem jest pasek narzędzi
 z przełącznikiem widoku, filtrami, sortowaniem, wyszukiwaniem i paginacją.

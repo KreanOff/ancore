@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 29 | 9 | 27 | 171 |
+| [documents](../documents) | 29 | 9 | 26 | 168 |
 
 ## 2. Modele i relacje
 
@@ -631,7 +631,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `MultipleFileInput`
 - `MultipleFileField`
 - `UploadForm`
-- `LibraryForm` — Meta.fields: `['name', 'description', 'photo']`
+- `LibraryForm` — Meta.fields: `['name', 'description']`
 - `FolderForm` — Meta.fields: `['name']`
 - `DocumentForm` — Meta.fields: `['title', 'description', 'folder', 'tags']`
 
@@ -1049,7 +1049,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/templates/documents/includes/libraries_grid.html](../documents/templates/documents/includes/libraries_grid.html)
 - [documents/templates/documents/includes/library_actions.html](../documents/templates/documents/includes/library_actions.html)
 - [documents/templates/documents/includes/library_avatar.html](../documents/templates/documents/includes/library_avatar.html)
-- [documents/templates/documents/includes/library_photo_editor.html](../documents/templates/documents/includes/library_photo_editor.html)
 - [documents/templates/documents/includes/row_actions.html](../documents/templates/documents/includes/row_actions.html)
 - [documents/templates/documents/libraries.html](../documents/templates/documents/libraries.html)
 - [documents/templates/documents/library.html](../documents/templates/documents/library.html)
@@ -1252,7 +1251,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [documents/test_library_photos.py](../documents/test_library_photos.py).
 
-- `LibraryPhotoTests`: 11 metod testowych.
+- `LibraryPhotoTests`: 8 metod testowych.
 
 ### documents/test_migrations.py
 

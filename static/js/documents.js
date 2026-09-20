@@ -64,7 +64,6 @@
         let inertElements = [];
 
         function restoreBackground() {
-            document.body.classList.remove('contacts-photo-editor-open');
             inertElements.forEach(element => { element.inert = false; });
             inertElements = [];
             if (!document.querySelector('.tasks-modal.is-open')) document.body.classList.remove('modal-open');
@@ -83,7 +82,6 @@
             }
             window.AncoreIcons?.render(modal);
             window.AncoreCustomSelect?.refresh(modal);
-            window.AncorePhotoEditors?.init(modal);
             const media = modal.querySelector('[data-document-preview-media]');
             if (media) {
                 const finish = success => {
@@ -125,14 +123,9 @@
             const next = parsed.querySelector('[data-document-dialog]');
             if (!next) throw new Error('Missing document dialog');
             // A validation error must not discard files already selected by the user.
-            const photoEditor = modal?.querySelector('.documents-library-photo-field');
-            const nextPhotoEditor = next.querySelector('.documents-library-photo-field');
-            if (photoEditor && nextPhotoEditor && !nextPhotoEditor.querySelector('[role="alert"]')) {
-                nextPhotoEditor.replaceWith(photoEditor);
-            }
             const files = modal?.querySelector('input[type="file"]');
             const nextFiles = next.querySelector('input[type="file"]');
-            if (files && nextFiles && !photoEditor) {
+            if (files && nextFiles) {
                 for (const attribute of ['aria-invalid', 'aria-describedby']) {
                     if (nextFiles.hasAttribute(attribute)) files.setAttribute(attribute, nextFiles.getAttribute(attribute));
                     else files.removeAttribute(attribute);
@@ -262,7 +255,6 @@
 
         document.addEventListener('keydown', event => {
             if (!modal || event.defaultPrevented) return;
-            if (modal.querySelector('[data-profile-photo-modal]:not([hidden])')) return;
             if (event.key === 'Escape') {
                 event.preventDefault();
                 event.stopImmediatePropagation();

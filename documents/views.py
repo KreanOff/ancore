@@ -350,8 +350,7 @@ def _form_success(request, url):
 
 
 def _save_library(request, instance=None):
-    previous_photo = instance.photo.name if instance and instance.photo else ''
-    form = LibraryForm(request.POST if request.method == 'POST' else None, request.FILES or None,
+    form = LibraryForm(request.POST if request.method == 'POST' else None,
                        instance=instance, owner=request.user, workplace=request.workplace)
     if request.method == 'POST' and form.is_valid():
         item = form.save(commit=False)
@@ -359,25 +358,13 @@ def _save_library(request, instance=None):
         try:
             with transaction.atomic():
                 item.save()
-        except Exception as error:
-            if item.photo and item.photo._committed and item.photo.name != previous_photo:
-                item.photo.storage.delete(item.photo.name)
-            if not isinstance(error, IntegrityError):
-                raise
+        except IntegrityError:
             form.add_error('name', 'Dysk o tej nazwie już istnieje w tym Workspace.')
         else:
-            if previous_photo and previous_photo != item.photo.name:
-                storage = item.photo.storage
-                transaction.on_commit(lambda: storage.delete(previous_photo), robust=True)
             messages.success(request, 'Zapisano dysk.' if instance else 'Utworzono dysk.')
             return _form_success(request, _url(request, library=item.pk))
     context = _context(request, instance)
-    photo_preview_url = _url(request, f'libraries/{instance.pk}/photo/') if previous_photo else ''
-    if form.is_bound and form.cleaned_data.get('photo_crop'):
-        photo_preview_url = form['photo_crop'].value().strip()
-    elif form.is_bound and form.cleaned_data.get('photo_remove'):
-        photo_preview_url = ''
-    context.update({'form': form, 'library_form': True, 'photo_preview_url': photo_preview_url,
+    context.update({'form': form,
                     'form_title': 'Ustawienia dysku' if instance else 'Nowy dysk',
                     'submit_label': 'Zapisz dysk' if instance else 'Utwórz dysk'})
     return _render_form(request, context)
