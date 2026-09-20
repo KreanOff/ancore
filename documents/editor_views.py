@@ -26,6 +26,7 @@ from workplaces.services import scoped_workplace_app_path
 from .editor_forms import DOCUMENT_EXTENSIONS, OfficeDocumentForm, OfficeFolderForm, OfficeUploadForm
 from .models import WorkspaceDocument as Document, WorkspaceDocumentFolder as Folder
 from .folder_exports import folder_archive
+from .folder_stats import set_folder_summaries
 from .previews import build_preview, validate_inline
 from .query import (
     DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS, SIZE_OPTIONS,
@@ -175,6 +176,7 @@ def _list(request, modal=None):
     page = Paginator(range(total), size).get_page(request.GET.get('page'))
     start, end = max(0, page.start_index() - 1), page.end_index()
     rows = [{'kind': 'folder', 'item': item, 'url': _url(request, folder=item.pk)} for item in folders[start:end]] if start < folder_count else []
+    set_folder_summaries(rows, _folders(request), _documents(request))
     if end > folder_count:
         rows += [{'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.has_full_editor else (f'{item.pk}/' if item.kind == Document.Kind.TEXT else f'{item.pk}/preview/'))} for item in items[max(0, start-folder_count):end-folder_count]]
     params = {**values, 'folder': folder.pk if folder else None, 'view': view, 'q': query, 'sort': query_state['sort_param'], 'display': display, 'page_size': size}

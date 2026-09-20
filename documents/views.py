@@ -22,6 +22,7 @@ from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
 from .forms import DocumentForm, FolderForm, LibraryForm, UploadForm
 from .folder_exports import folder_archive
+from .folder_stats import set_folder_summaries
 from .models import Document, DocumentLibrary, Folder
 from .previews import build_preview, inline_type, validate_inline
 from .query import (
@@ -56,28 +57,6 @@ def _folders(request):
 
 def _libraries(request):
     return DocumentLibrary.objects.filter(owner=request.user, workplace=request.workplace)
-
-
-def _set_folder_sizes(request, rows):
-    visible = {row['item'].pk: row['item'] for row in rows if row['kind'] == 'folder'}
-    if not visible:
-        return
-    for item in visible.values():
-        item.total_size = 0
-    library_ids = {item.library_id for item in visible.values()}
-    parents = {pk: (parent, library) for pk, parent, library in
-               _folders(request).filter(library_id__in=library_ids).values_list('pk', 'parent_id', 'library_id')}
-    sizes = _documents(request).filter(
-        library_id__in=library_ids, deleted_at__isnull=True, folder_id__in=parents,
-    ).order_by().values('folder_id', 'library_id').annotate(total=Sum('file_size'))
-    # Roll up each folder's direct files through its accessible ancestors.
-    for entry in sizes:
-        folder_id, seen = entry['folder_id'], set()
-        while folder_id in parents and folder_id not in seen and parents[folder_id][1] == entry['library_id']:
-            seen.add(folder_id)
-            if folder_id in visible:
-                visible[folder_id].total_size += entry['total']
-            folder_id = parents[folder_id][0]
 
 
 def _by_id(queryset, value):
@@ -328,7 +307,7 @@ def _library_page(request, form_context=None):
         {'kind': 'folder', 'item': item, 'url': _url(request, library=item.library_id, folder=item.pk)}
         for item in folders[start:end]
     ] if start < folder_count else []
-    _set_folder_sizes(request, rows)
+    set_folder_summaries(rows, _folders(request), _documents(request), library_scoped=True)
     if end > folder_count:
         rows += [
             {'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.office_type else f'{item.pk}/preview/')}

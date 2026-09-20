@@ -217,7 +217,7 @@ gwiazdkę oraz datę przeniesienia do kosza.
 - Katalog dysków z tworzeniem, zmianą nazwy/opisu i usunięciem pustego dysku.
 - Własne zdjęcie dysku: dodanie, kadrowanie, podmiana i usunięcie w formularzu,
   przez wspólny edytor zdjęć Workspace. Zdjęcie zastępuje ikonę na liście i w panelu
-  bocznym; bez zdjęcia dysk używa ikony `hard-drive`.
+  bocznym; bez zdjęcia dysk używa wspólnej płaskiej ikony z `drive_icon.html`.
 - Zawartość dysku/folderu i ścieżka nawigacyjna.
 - Przełącznik „Lista / Kafelki” na indeksie dysków i w widokach plików.
   Kafelki pokazują typ, rozmiar, datę, lokalizację i tagi pliku oraz te same
@@ -234,6 +234,9 @@ gwiazdkę oraz datę przeniesienia do kosza.
   Dyski i foldery sumują rozmiary aktywnych plików także w podfolderach,
   wyłącznie w zakresie właściciela i Workspace; pliki w koszu są pomijane.
   Data folderu pozostaje datą utworzenia (model nie zapisuje modyfikacji).
+  Dysk i Dokumenty rozróżniają ikoną folder bez plików oraz folder z plikami.
+  Liczą się aktywne pliki także w podfolderach i dokumenty 0 B; kosz i obce dane
+  są pomijane. Same puste podfoldery zachowują ikonę pustego folderu.
   Liczniki plików i folderów pozostają dostępne w filtrach/sortowaniu dysków.
 - Indeks dysków ma skróty do tych widoków nad listą; lista pokazuje nazwy bez opisów.
   Panel przełączania dysków jest dostępny

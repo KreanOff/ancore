@@ -190,7 +190,8 @@ listę w `documents-grid`, z ikoną, nazwą do dwóch linii i pełnym tekstem w 
 metadanymi oraz wspólnymi akcjami z tabeli. Kafelki dysków pokazują zdjęcie/ikonę,
 nazwę i datę, bez opisu oraz liczników plików i folderów. Wspólny komponent
 `documents-card` zachowuje proporcje kwadratu (`aspect-ratio: 1`). Pole podglądu
-wypełnia dostępną wysokość, z minimum 100px; ikony folderów, plików i dysków
+wypełnia dostępną wysokość, z minimum 100px, bez osobnego tła — ikony są
+na białej powierzchni kafelka. Ikony folderów, plików i dysków
 mają 100×100px. Wariant `documents-card--library` używa okrągłego zdjęcia
 100×100px, w tym samym rozmiarze co ikona dysku. Nazwa, data i akcje pozostają poniżej. Przy dużej liczbie tagów
 zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
@@ -223,24 +224,33 @@ Pusty stan gwiazdek obejmuje pliki i foldery.
 Pusty stan zachowuje własne wyśrodkowanie i padding. Nazwy mają
 ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony nie mają
 ozdobnych ramek. Foldery na listach i kafelkach Dysku oraz Dokumentów używają
-wspólnego include'a `documents/includes/folder_icon.html`: pełnej żółtej ikony
-SVG (`#ffd855`) z pomarańczową zakładką (`#ffb41f`), bez obrysu, zgodnie z wzorcem
-użytkownika. Ikona dekoracyjna ma `aria-hidden` i nie podlega zamianie przez
-`AncoreIcons`. Pliki używają podobnej pełnej kartki z zagiętym rogiem:
+wspólnego include'a `documents/includes/folder_icon.html` z parametrem `has_files`.
+Pusty folder jest zamknięty, a folder z plikami ma otwartą okładkę i dwie
+widoczne kartki. Oba warianty są płaskimi żółtymi SVG (`#ffd855`) z pomarańczową
+zakładką (`#ffb41f`), bez obrysu. Stan uwzględnia aktywne pliki w podfolderach,
+również dokumenty 0 B; pomija kosz. Same puste podfoldery nie zmieniają ikony.
+Wspólny `folder_stats.py` ustala obecność plików niezależnie od ich rozmiaru
+i aktualnych filtrów listy, w zakresie właściciela, Workspace oraz dysku.
+Ikona dekoracyjna ma `aria-hidden` i nie podlega zamianie przez
+`AncoreIcons`. Pliki mają jasną kartkę z zagiętym rogiem i kolorowe pole z symbolem:
 `documents/includes/file_icon.html` wybiera wariant według rozszerzenia lub
 natywnego typu dokumentu, a `file_icon_shape.html` rysuje wspólny SVG.
-Word ma niebieską ikonę z „W”, Excel zieloną z „X”, PowerPoint pomarańczową z „P”,
-a PDF czerwoną z „PDF”. Obrazy, archiwa, audio, wideo, kod, tekst i tablice mają
+Dokument tekstowy ma niebieskie wiersze tekstu, arkusz zieloną siatkę,
+prezentacja pomarańczowy wykres, a PDF czerwone pole z „PDF”.
+Obrazy, archiwa, audio, wideo, kod, tekst i tablice mają
 własne symbole oraz kolory; nieznany format otrzymuje szarą kartkę.
+Kolory formatów pochodzą z `--documents-file-color` w `documents.css`,
+a jasna kartka miesza tę samą barwę z bielą. Zestaw używa płaskich wypełnień,
+bez gradientów i cieni.
 Te same ikony występują na listach, kafelkach, w formularzu danych pliku
 i zastępczym widoku podglądu. Są dekoracyjne, bez fokusu, zachowują kolory
 po inicjalizacji `AncoreIcons` i podmianie treści. Nie zmieniają obsługi formatów
 ani ikon załączników w innych modułach.
 Ikony plików i folderów w tabelach Dysku i Dokumentów mają 32×32px w polu 32×32px.
-Dyski bez zdjęcia używają pełnej, dwukolorowej niebieskiej ikony z include'a
+Dyski bez zdjęcia używają płaskiej, poziomej niebieskiej obudowy z include'a
 `documents/includes/drive_icon.html` na liście, w kafelkach, panelu bocznym
 i edytorze zdjęcia (także po usunięciu zdjęcia). SVG zachowuje stałe kolory
-`#7da2bf` i `#4285d4`, nie ma obrysu ani fokusu i jest dekoracyjne.
+oparte na `#4285d4` i białych detalach, nie ma obrysu ani fokusu i jest dekoracyjne.
 Nawigacja, pusty stan, filtry, sortowanie i globalne wyszukiwanie zachowują
 ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków
 ma rozmiar 32×32px w polu 32×32px. Własne zdjęcie zastępuje tę ikonę na liście
@@ -306,8 +316,8 @@ Panel dysków ma białe tło `--bg-main`, takie samo jak lista dysków,
 również w wariancie wysuwanym na wąskich ekranach.
 Panel jest dostępny w widokach plików i wewnątrz dysku.
 Linki poszczególnych dysków używają wariantu `documents-sidebar-library-link`:
-minimum 40px wysokości, pole zdjęcia 28×28px i odstęp 10px od nazwy.
-Zastępcza ikona `hard-drive` ma 18×18px i jest wyśrodkowana w tym samym polu.
+minimum 40px wysokości, pole ikony 30×30px, zdjęcie 28×28px i odstęp 10px od nazwy.
+Zastępczy SVG z `drive_icon.html` jest wyśrodkowany w tym samym polu.
 Pełna nazwa pozostaje w `title`, a długie nazwy skracają się przez ellipsis.
 Przycisk z ikoną `panel-right` na końcu paska filtrów zwija i rozwija cały
 prawy panel, zgodnie ze wzorcem Kalendarza. Na szerokich ekranach zwinięcie

@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 27 | 9 | 27 | 168 |
+| [documents](../documents) | 29 | 9 | 27 | 171 |
 
 ## 2. Modele i relacje
 
@@ -924,6 +924,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/editor_forms.py](../documents/editor_forms.py) — `validate_document`, `DocumentFilesField`, `OfficeUploadForm`, `OfficeCreateForm`, `OfficeFolderForm`, `OfficeDocumentForm`
 - [documents/editor_views.py](../documents/editor_views.py) — `index`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
 - [documents/folder_exports.py](../documents/folder_exports.py) — `folder_archive`
+- [documents/folder_stats.py](../documents/folder_stats.py) — `set_folder_summaries`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
 - [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`
 - [documents/office_service.py](../documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
@@ -1238,6 +1239,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [documents/test_drive_office.py](../documents/test_drive_office.py).
 
 - `DriveOfficeTests`: 14 metod testowych.
+
+### documents/test_folder_icons.py
+
+Źródło: [documents/test_folder_icons.py](../documents/test_folder_icons.py).
+
+- `FolderIconTestsMixin`: 3 metod testowych.
+- `DriveFolderIconTests`: 0 metod testowych.
+- `OfficeFolderIconTests`: 0 metod testowych.
 
 ### documents/test_library_photos.py
 
