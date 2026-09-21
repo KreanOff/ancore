@@ -160,7 +160,8 @@ powielać i nie pomijać pozycji przy przechodzeniu między stronami.
 
 `documents/query.py` normalizuje dozwolone filtry i pola sortowania przed
 wykonaniem zapytań. Warunki są nakładane na zbiory ograniczone właścicielem
-i Workspace; wybór dysku lub tagu również weryfikuje ten zakres.
+i Workspace; wybór dysku również weryfikuje ten zakres. Dawny parametr `tag`
+jest ignorowany, a wyszukiwanie nie używa historycznych tagów dokumentów.
 Foldery Dysku pozostają przed plikami, z kolejnością według nazwy albo daty utworzenia.
 Daty filtrów obejmują dzisiaj lub ostatnie 7/30 dni kalendarzowych w strefie
 aplikacji. W koszu filtr i sortowanie „Usunięto” używają `deleted_at`.
@@ -217,7 +218,7 @@ reguł nie powodował ponownego utworzenia domyślnych.
 | Zdjęcia i załączniki Tasks/Kanban | Standardowy `MEDIA_ROOT`, podkatalog zależny od modelu |
 | Historyczne zdjęcia dysków (upload wyłączony) | `PRIVATE_DOCUMENT_ROOT/library_photos/<workplace_id>/`, losowa nazwa; kontrolowany widok obrazu |
 | Pliki Documents | `FileSystemStorage` w `PRIVATE_DOCUMENT_ROOT`; losowa nazwa pod katalogiem Workspace |
-| Metadane, foldery, tagi, gwiazdki, kosz | PostgreSQL |
+| Metadane, foldery, gwiazdki, kosz | PostgreSQL |
 
 Documents pobiera pliki tylko przez widok właściciela/Workspace,
 wyklucza kosz i ustawia `Cache-Control: private, no-store`.
@@ -267,7 +268,7 @@ Nie przyjmuje dowolnego URL docelowego. Usunięte pliki, cykle i kolizje nazw
 folderów (porównanie `casefold`, także polskie litery) są odrzucane.
 Zmiana dysku folderu aktualizuje atomowo całe poddrzewo oraz pliki aktywne
 i w koszu. Niespójne lub obce relacje w tym poddrzewie blokują zmianę dysku.
-Przenoszenie zachowuje PK, prywatny plik, tagi i klucz edytora; zmiana
+Przenoszenie zachowuje PK, prywatny plik i klucz edytora; zmiana
 lokalizacji pliku zwiększa rewizję i datę modyfikacji. Nie zmienia jego treści.
 
 [location_lock.py](../documents/location_lock.py) serializuje zapisy lokalizacji
@@ -294,8 +295,9 @@ nie ma analogicznego sygnału. Kosz ustawia tylko `deleted_at`.
 
 `WorkspaceDocument` zapisuje natywną treść w PostgreSQL, a przesłany oryginał
 w tym samym prywatnym storage co Dysk, z losową nazwą. Każdy odczyt i zapis
-widoków `editor_views.py` ogranicza obiekty do właściciela i aktywnego Workspace;
-formularz tagów również ogranicza relacje do tego zakresu. Kosz blokuje
+widoków `editor_views.py` ogranicza obiekty do właściciela i aktywnego Workspace.
+Formularze Dysku i Dokumentów nie obsługują pola `tags`; zapis pomija też
+to pole przesłane przez starego klienta. Kosz blokuje
 edycję, import, podgląd i pobieranie.
 
 Katalog Dokumentów filtruje i stronicuje wyłącznie `WorkspaceDocument`, niezależnie

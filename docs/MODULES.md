@@ -141,15 +141,17 @@ i reguł terminu modułu Tasks. UI i JavaScript są częściowo wspólne, dane o
 ## 5. Wspólne tagi
 
 Źródła: `TaskTag`, `TaskTagNote` w [tasks/models.py](../tasks/models.py),
-formularze i katalogi Tasks/Kanban oraz formularze Dysku.
+formularze i katalogi Tasks/Kanban.
 
 Tag ma nazwę, opis, kod, kategorię, kolor, ikonę, priorytet, deklarowany zakres,
 etykietę właściciela, status, powiązane tagi, notatki użycia i tekst reguł.
-Ten sam model jest przypinany do zadań, kart i dokumentów.
+Ten sam model jest przypinany do zadań i kart. Dysk i Dokumenty nie obsługują tagów;
+ich dawne relacje pozostają wyłącznie jako dane historyczne.
 
 `scope` jest zapisaną klasyfikacją; nie jest samoistnym systemem uprawnień.
 `automation_rules` jest tekstem. Nie znaleziono silnika wykonującego te reguły.
-Przy zmianie/usunięciu tagu sprawdź wszystkie trzy moduły i wyszukiwanie.
+Przy zmianie/usunięciu tagu sprawdź Zadania, Kanban, wyszukiwanie i historyczne
+powiązania w Dysku oraz Dokumentach.
 
 ## 6. Kontakty, firmy i goście — Contacts
 
@@ -209,7 +211,7 @@ używają pojęć „dysk”, „folder” i „plik”. Techniczne nazwy `docum
 pozostają kompatybilne; ta zmiana nazewnictwa nie wymaga migracji danych.
 
 Każdy dysk, folder i plik ma właściciela oraz Workspace.
-Plik ma UUID, nazwę, opis, oryginalną nazwę pliku, rozmiar, tagi,
+Plik ma UUID, nazwę, opis, oryginalną nazwę pliku, rozmiar,
 gwiazdkę oraz datę przeniesienia do kosza.
 
 **Ekrany i funkcje:**
@@ -226,15 +228,13 @@ gwiazdkę oraz datę przeniesienia do kosza.
   w zakresie właściciela i Workspace, bez dziedziczenia przez podfoldery.
 - Zawartość dysku/folderu i ścieżka nawigacyjna.
 - Przełącznik „Lista / Kafelki” na indeksie dysków i w widokach plików.
-  Kafelki pokazują typ, rozmiar, datę, lokalizację i tagi pliku oraz te same
+  Kafelki pokazują typ, rozmiar, datę i lokalizację pliku oraz te same
   akcje co lista; dyski pokazują ikonę, nazwę i datę, bez opisu i liczników.
   Układ jest zapamiętywany w sesji oddzielnie dla konta, Workspace oraz katalogu
   dysków i plików. Zmiana układu zachowuje wyszukiwanie, filtry i stronę.
   „Nowy folder” jest bezpośrednią akcją w pasku dysku.
 - Widoki całego Workspace: wszystkie, ostatnio zmienione, oznaczone i kosz.
 - Listy dysków, folderów i plików pokazują „Nazwa”, „Zmodyfikowano” i „Rozmiar”.
-  Lista folderów i plików ma także kolumnę „Tagi” po nazwie. Etykiety plików
-  filtrują listę po kliknięciu; foldery i pliki bez tagów pokazują „—”.
   Lista folderów i plików nie powtarza pod nazwą etykiety „Folder” ani rozszerzenia
   pliku; dodatkowa linia pokazuje jedynie lokalizację, gdy jest dostępna.
   Dyski i foldery sumują rozmiary aktywnych plików także w podfolderach,
@@ -251,12 +251,12 @@ gwiazdkę oraz datę przeniesienia do kosza.
   Panel przełączania dysków jest dostępny
   wewnątrz dysków i w widokach plików; zawiera listę dysków i ich dodawanie,
   nie powtarza listy na indeksie.
-- Wyszukiwanie, sortowanie, filtr tagu i paginacja. Listy dysków i plików
+- Wyszukiwanie, sortowanie, filtry i paginacja. Listy dysków i plików
   pokazują wszystkie kolumny; pasek nie zawiera przycisku „Zarządzaj tabelą”.
 - Panele filtrów i sortowania zgodne z Wszystkimi projektami. Dyski można
   filtrować po nazwie, opisie, obecności plików/folderów i ostatniej zmianie;
   pliki po nazwie, oryginalnej nazwie pliku, opisie, dysku (widok Workspace),
-  tagu, rozszerzeniu, rozmiarze, gwiazdce i dacie zmiany/usunięcia.
+  rozszerzeniu, rozmiarze, gwiazdce i dacie zmiany/usunięcia.
   Warunki tekstowe obsługują zawieranie, wykluczenie i pustą/niepustą wartość.
   Sortowanie ma oba kierunki dla pól tekstowych, liczników dysków, lokalizacji,
   rozmiaru i dat; dostępne pola zależą od listy.
@@ -275,7 +275,7 @@ gwiazdkę oraz datę przeniesienia do kosza.
   otwiera pełny edytor ONLYOFFICE w osobnej karcie, tak jak w Dokumentach.
   Zapis aktualizuje ten sam plik na Dysku, bez przenoszenia do Dokumentów.
   DOC/XLS/PPT/RTF/TXT/CSV mają w podglądzie opcję utworzenia kopii OOXML
-  do edycji, w tym samym dysku i folderze, z opisem oraz tagami oryginału.
+  do edycji, w tym samym dysku i folderze, z opisem oryginału.
   Wymagania serwera i zapis opisuje [OFFICE.md](OFFICE.md).
 - Pozostałe formaty otwierają podgląd w aplikacji. PDF i obrazy (JPEG, PNG,
   GIF, WebP) używają przeglądarki; TXT pokazuje tekst, CSV tabelę, ZIP/TAR listę
@@ -300,9 +300,9 @@ gwiazdkę oraz datę przeniesienia do kosza.
 W widoku Workspace pliki mogą pochodzić z wielu dysków i zagnieżdżonych
 folderów. Liczniki nawigacji są niezależne od aktualnego wyszukiwania.
 Filtry łączą się ze sobą i wyszukiwaniem. Na dysku obejmują także foldery
-zagnieżdżone. Filtry właściwe tylko plikom (np. tag, rozszerzenie, rozmiar)
+zagnieżdżone. Filtry właściwe tylko plikom (np. rozszerzenie, rozmiar)
 pokazują wyłącznie pliki. Zmiana filtra lub sortowania wraca na pierwszą
-stronę; paginacja, kliknięcie tagu i operacje gwiazdki/kosza zachowują warunki.
+stronę; paginacja i operacje gwiazdki/kosza zachowują warunki.
 Formularze tworzenia/edycji działają jako dialog na tle listy także po otwarciu
 bezpośredniego linku; specjalny nagłówek pobiera sam fragment formularza.
 Wyniki wyszukiwania wskazują, że obejmują podfoldery; pusty wynik pozwala
@@ -313,8 +313,10 @@ Upload wymaga dysku, waliduje całą partię przed zapisem i dopuszcza do
 20 plików. Dostępne formaty i limity wynikają ze wspólnego walidatora.
 Folder zawierający pliki, podfoldery lub pliki w koszu nie może zostać usunięty.
 Dysk również musi być pusty. Kosz jest logiczny; nie ma tu endpointu
-trwałego opróżniania kosza, wersjonowania ani OCR. Edytor treści znajduje się
-w osobnym module Dokumenty opisanym poniżej.
+trwałego opróżniania kosza ani OCR. Historia wersji została wycofana zarówno
+z Dysku, jak i Dokumentów: menu i endpointy historii są usunięte, a zapis
+nie tworzy nowych archiwów. Dawne archiwa pozostają zachowane; szczegóły
+opisuje [OFFICE.md](OFFICE.md). Pełne edytory biurowe są wspólne dla obu modułów.
 
 ### Dokumenty — osobny katalog i edytor
 
@@ -348,20 +350,21 @@ formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko D
   Plik powstaje w bieżącym Workspace; typ można jeszcze zmienić w formularzu. Wspólna paginacja
   pozwala wyświetlić 25, 50 lub 100 pozycji.
 - Filtry i sortowanie korzystają z tych samych paneli co Dysk. Filtry obejmują
-  nazwę dokumentu, oryginalną nazwę pliku, tag, typ pliku (także Dokument Ancore
+  nazwę dokumentu, oryginalną nazwę pliku, typ pliku (także Dokument Ancore
   i tablicę Board), rozmiar, gwiazdkę oraz datę zmiany, a w koszu datę usunięcia.
   Warunki tekstowe obsługują zawieranie, wykluczenie i pustą/niepustą wartość.
   Łączą się ze sobą i wyszukiwaniem, obejmując dokumenty bieżącego Workspace.
   Sortowanie pozwala wybrać oba kierunki dla nazwy, oryginalnej nazwy pliku,
   rozmiaru, daty zmiany/usunięcia i daty dodania.
-  Zmiana warunków wraca na pierwszą stronę. Paginacja, zmiana lista/kafelki,
-  kliknięcie tagu oraz akcje gwiazdki/kosza zachowują filtry i sortowanie.
+  Zmiana warunków wraca na pierwszą stronę. Paginacja, zmiana lista/kafelki
+  oraz akcje gwiazdki/kosza zachowują filtry i sortowanie.
   Czyszczenie filtrów w panelu zachowuje układ i widok.
-- Wspólne tagi `TaskTag` można przypisywać w edycji danych dokumentu (także
-  tablicy) oraz w starszym edytorze tekstu. Lista ma kolumnę „Tagi” po nazwie,
-  a kafelki pokazują te same etykiety. Kliknięcie tagu filtruje dokumenty
-  w bieżącym Workspace; wyszukiwanie uwzględnia nazwy tagów.
-  Wybór i filtrowanie tagów są ograniczone do właściciela oraz Workspace.
+- Lista pokazuje kolumny „Nazwa”, „Zmodyfikowano” i „Rozmiar”. Dysk i Dokumenty
+  nie pokazują tagów w formularzach, starszym edytorze, listach ani kafelkach.
+  Filtry i wyszukiwanie (także globalne) nie używają historycznych powiązań
+  z tagami. Stary parametr `tag` jest ignorowany i pomijany w nawigacji;
+  przesłane pole `tags` nie jest zapisywane. Kopie i szablony nie dziedziczą tagów.
+  Relacje w bazie pozostają historyczne, bez zmiany tagów Zadań i Kanbana.
 - DOCX/XLSX/PPTX/PDF otwierają się w pełnych edytorach ONLYOFFICE w osobnej karcie
   Ancore, na pełną szerokość bez menu bocznego; katalog zostaje w pierwotnej karcie.
   Edytory zapisują pliki w prywatnym storage. DOC/XLS/PPT/RTF/TXT/CSV mogą utworzyć osobną

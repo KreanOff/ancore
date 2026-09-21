@@ -466,7 +466,7 @@ def global_search(request):
             'documents', 'Pliki', 'files',
             Document.objects.filter(owner=user, workplace=workplace, deleted_at__isnull=True).filter(
                 Q(title__icontains=query) | Q(filename__icontains=query)
-                | Q(description__icontains=query) | Q(tags__name__icontains=query)
+                | Q(description__icontains=query)
             ).select_related('folder', 'library').distinct(),
             lambda item: _global_search_result(item.title, 'Plik',
                 f'{documents_url}{item.pk}/' + ('editor/' if item.office_type else 'preview/'), item.icon,

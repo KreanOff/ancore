@@ -3,7 +3,6 @@ from pathlib import Path
 from django import forms
 
 from core.upload_validation import validate_attachment_upload
-from tasks.models import TaskTag
 from .forms import MultipleFileField, MultipleFileInput
 from .models import WorkspaceDocument
 from .rich_text import clean_content
@@ -39,6 +38,11 @@ class OfficeCreateForm(forms.Form):
     title = forms.CharField(label='Nazwa', max_length=240, widget=forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'autofocus': True}))
 
 
+class OfficeRenameForm(forms.Form):
+    title = forms.CharField(label='Nazwa pliku', max_length=255,
+                            error_messages={'required': 'Podaj nazwę pliku.'})
+
+
 class OfficeTemplateForm(forms.Form):
     template = forms.ModelChoiceField(label='Szablon', queryset=WorkspaceDocument.objects.none(),
                                      widget=forms.Select(attrs={'class': 'form-select tasks-inline-select'}))
@@ -67,17 +71,15 @@ class OfficeDocumentForm(forms.ModelForm):
 
     class Meta:
         model = WorkspaceDocument
-        fields = ['title', 'tags', 'content', 'is_template']
+        fields = ['title', 'content', 'is_template']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'placeholder': 'Nazwa dokumentu'}),
-            'tags': forms.CheckboxSelectMultiple(),
             'content': forms.Textarea(attrs={'class': 'form-input', 'rows': 20}),
         }
 
     def __init__(self, *args, owner, workplace, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['revision'].initial = self.instance.revision
-        self.fields['tags'].queryset = TaskTag.objects.filter(user=owner, workplace=workplace)
         if self.instance.kind != WorkspaceDocument.Kind.TEXT:
             self.fields.pop('content')
         if self.instance.kind != WorkspaceDocument.Kind.FILE:

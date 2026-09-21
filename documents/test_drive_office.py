@@ -155,8 +155,8 @@ class DriveOfficeTests(TestCase):
             self.assertEqual(item.revision, 2)
             self.assertEqual(item.office_key, original_key)
             self.assertEqual((item.library_id, item.folder_id), (self.library.pk, self.folder.pk))
-            self.assertTrue(item.file.storage.exists(original_name))
-            self.assertEqual(item.versions.get(revision=1).file.name, original_name)
+            self.assertFalse(item.file.storage.exists(original_name))
+            self.assertFalse(item.versions.exists())
             response = self.client.get(f'{self.base}{item.pk}/download/')
             self.assertEqual(b''.join(response.streaming_content), content)
             self.assertEqual(self.callback(item, payload, url).json(), {'error': 0})
@@ -237,7 +237,7 @@ class DriveOfficeTests(TestCase):
         self.assertEqual((item.revision, item.file_size, item.file.name), (2, 123, 'new-version.docx'))
 
     @patch('documents.office_service.convert_file')
-    def test_legacy_conversion_preserves_original_location_and_tags(self, convert):
+    def test_legacy_conversion_preserves_location_without_copying_tags(self, convert):
         item = self.file(filename='Notatki.doc', description='Opis')
         tag = TaskTag.objects.create(user=self.user, workplace=self.workplace, name='Materiały')
         item.tags.add(tag)
@@ -247,7 +247,8 @@ class DriveOfficeTests(TestCase):
         copy = Document.objects.exclude(pk=item.pk).get()
         self.assertRedirects(response, f'{self.base}{copy.pk}/editor/', fetch_redirect_response=False)
         self.assertEqual((copy.library_id, copy.folder_id, copy.description), (item.library_id, item.folder_id, item.description))
-        self.assertEqual(list(copy.tags.all()), [tag])
+        self.assertFalse(copy.tags.exists())
+        self.assertEqual(list(item.tags.all()), [tag])
         item.refresh_from_db()
         self.assertEqual(item.filename, 'Notatki.doc')
         self.assertFalse(WorkspaceDocument.objects.exists())

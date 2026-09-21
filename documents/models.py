@@ -89,6 +89,7 @@ class Document(models.Model):
     folder = models.ForeignKey(Folder, on_delete=models.RESTRICT, null=True, blank=True, related_name='documents')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='documents')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='documents')
+    # Legacy relation retained for existing data; not used by Drive or Documents.
     tags = models.ManyToManyField('tasks.TaskTag', blank=True, related_name='documents', verbose_name='Tagi')
     is_starred = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
@@ -164,6 +165,7 @@ class WorkspaceDocument(models.Model):
     folder = models.ForeignKey(WorkspaceDocumentFolder, on_delete=models.RESTRICT, null=True, blank=True, related_name='documents')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='office_documents')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='office_documents')
+    # Legacy relation retained for existing data; not used by Drive or Documents.
     tags = models.ManyToManyField('tasks.TaskTag', blank=True, related_name='office_documents', verbose_name='Tagi')
     is_starred = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)

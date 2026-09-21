@@ -3,10 +3,10 @@
 {% block title %}Dokumenty | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-shared-view-selector">
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
 <link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-shared-view-selector">
 <script src="{% static 'js/documents.js' %}?v=20260921-menu-focus" defer></script>
-<script src="{% static 'js/office.js' %}?v=20260921-static-create-shortcuts" defer></script>
+<script src="{% static 'js/office.js' %}?v=20260921-no-tags" defer></script>
 {% endblock %}
 {% block content %}
 <div class="documents-page office-page" data-office-catalog data-document-dnd="office" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ office_view }}">
@@ -61,7 +61,7 @@
         </ul>
     </section>
     {% endif %}
-    {% if query or has_active_filters %}<p class="documents-results-hint" role="status">Wyniki ze wszystkich dokumentów w tym Workspace.{% if selected_tag %} Tag: {{ selected_tag.name }}.{% endif %} <a href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a></p>{% endif %}
+    {% if query or has_active_filters %}<p class="documents-results-hint" role="status">Wyniki ze wszystkich dokumentów w tym Workspace. <a href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a></p>{% endif %}
     {% if office_view == 'trash' %}<p class="documents-results-hint">Przywróć dokument, aby go otworzyć lub edytować.</p>{% endif %}
     <section class="documents-main" aria-label="Dokumenty" {% if office_view != 'trash' %}data-document-drop="root" data-document-label="Dokumenty"{% endif %}>
         {% if document_display == 'grid' and rows %}
@@ -73,7 +73,6 @@
                     <span class="documents-card-title">{{ item.title }}</span>
                     <span class="documents-card-meta">{{ item.extension }} · {{ item.file_size|filesizeformat }}</span>
                 {% if office_view == 'trash' %}</div>{% else %}</a>{% endif %}
-                {% if item.tags.all %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% endfor %}</div>{% endif %}
                 <div class="documents-card-footer">
                     <span class="documents-card-date">{{ item.updated_at|date:'d.m.Y' }}</span>
                     {% include 'documents/includes/row_menu.html' with actions_template='documents/office/actions.html' %}
@@ -83,13 +82,12 @@
         </div>
         {% else %}
         <div class="documents-table-scroll"><table class="documents-table documents-table--inline-actions">
-            <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="tags"><span class="documents-column-heading">Tagi</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th></tr></thead>
+            <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th></tr></thead>
             <tbody>{% for row in rows %}{% with item=row.item %}<tr>
                 <td><div class="documents-name">{% include 'documents/includes/row_menu.html' with actions_template='documents/office/actions.html' %}<span class="documents-file-icon">{% include 'documents/includes/file_icon.html' with document=item only %}</span><div>{% include 'documents/office/name.html' %}</div></div></td>
-                <td data-document-column="tags"><div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% empty %}<span class="documents-muted">—</span>{% endfor %}</div></td>
                 <td class="documents-date" data-document-column="date" title="Zmodyfikowano: {{ item.updated_at|date:'d.m.Y, H:i' }}">{{ item.updated_at|date:'d.m.Y' }}</td>
                 <td class="documents-size" data-document-column="size">{{ item.file_size|filesizeformat }}</td>
-            </tr>{% endwith %}{% empty %}<tr><td colspan="4" class="documents-empty"><div>
+            </tr>{% endwith %}{% empty %}<tr><td colspan="3" class="documents-empty"><div>
                 <i data-icon="{% if office_view == 'trash' %}trash-2{% else %}file-text{% endif %}" aria-hidden="true"></i>
                 {% if query or has_active_filters %}<h3>Brak pasujących dokumentów</h3><p>Zmień wyszukiwanie lub filtry albo wróć do pełnej listy.</p><a class="btn btn-secondary" href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a>
                 {% elif office_view == 'trash' %}<h3>Kosz jest pusty</h3><p>Tutaj znajdziesz usunięte dokumenty, które możesz przywrócić.</p>

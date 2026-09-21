@@ -50,11 +50,11 @@ class OfficeQueryTests(TestCase):
         self.assertEqual(self.rows(filename_op='is_empty'), [])
         self.assertEqual(set(self.rows(filename_op='is_not_empty')), {self.alpha.pk, self.zulu.pk})
         self.assertEqual(self.rows(name='alpha', q='Zulu'), [])
-        self.assertEqual(self.rows(name='alpha', q='Klient'), [self.alpha.pk])
+        self.assertEqual(self.rows(name='alpha', q='Klient'), [])
         self.assertEqual(self.rows(view='all', folder=self.folder.pk), [self.zulu.pk, self.alpha.pk])
 
     def test_choice_filters_combine_and_hide_folders(self):
-        filters = {'view': 'all', 'tag': self.tag.pk, 'file_type': '.pdf', 'size': 'medium', 'starred': 'yes'}
+        filters = {'view': 'all', 'file_type': '.pdf', 'size': 'medium', 'starred': 'yes'}
         self.assertEqual(self.rows(**filters), [self.alpha.pk])
         self.assertEqual(self.rows(**{**filters, 'starred': 'no'}), [])
         self.assertEqual(self.rows(view='all', file_type='.txt', starred='no'), [self.zulu.pk])
@@ -75,7 +75,7 @@ class OfficeQueryTests(TestCase):
             Document.objects.filter(pk=self.alpha.pk).update(file_size=size)
             for option in ['small', 'medium', 'large']:
                 with self.subTest(size=size, option=option):
-                    self.assertEqual(self.rows(tag=self.tag.pk, size=option), [self.alpha.pk] if option == expected else [])
+                    self.assertEqual(self.rows(name='alpha', size=option), [self.alpha.pk] if option == expected else [])
 
     def test_date_filters_and_trash_sort_use_deletion_date(self):
         for value in ['today', '7', '30']:
@@ -114,7 +114,8 @@ class OfficeQueryTests(TestCase):
             tag = TaskTag.objects.create(**scope, name='Ukryty tag')
             for base in [self.base, '/office/']:
                 self.client.get(self.base)
-                self.assertEqual(self.client.get(base, {'tag': tag.pk}, follow=True).status_code, 404)
+                response = self.client.get(base, {'tag': tag.pk}, follow=True)
+                self.assertEqual({row['item'].pk for row in response.context['rows']}, {self.alpha.pk, self.zulu.pk})
         for base in [self.base, '/office/']:
             response = self.client.get(base, {'name': 'Ukryty', 'display': 'grid'}, follow=True)
             self.assertEqual(response.context['rows'], [])
@@ -122,19 +123,20 @@ class OfficeQueryTests(TestCase):
             self.assertNotContains(response, 'Ukryty tag')
             self.assertNotContains(response, 'Ukryty folder')
 
-    def test_pagination_display_tags_and_actions_preserve_filters(self):
+    def test_pagination_display_and_actions_preserve_filters_without_legacy_tags(self):
         for number in range(27):
             Document.objects.create(owner=self.user, workplace=self.workspace, kind='file',
                                     title=f'Oferta {number:02}', filename=f'oferta{number}.pdf')
         params = {'view': 'all', 'name': 'Oferta', 'filename': 'secret', 'filename_op': 'not_contains',
                   'file_type': '.pdf', 'sort': 'name_desc', 'page_size': '25', 'display': 'list'}
-        response = self.client.get(self.base, params)
+        response = self.client.get(self.base, {**params, 'tag': self.tag.pk})
         first = [row['item'].pk for row in response.context['rows']]
         second = self.client.get(response.context['document_window']['next_url'])
         last = [row['item'].pk for row in second.context['rows']]
         self.assertEqual((len(first), len(last), len(set(first + last))), (25, 2, 27))
-        for url in [response.context['document_window']['next_url'], response.context['tag_filter_url']]:
+        for url in [response.context['document_window']['next_url']]:
             returned = parse_qs(urlsplit(url).query)
+            self.assertNotIn('tag', returned)
             for key, value in params.items():
                 self.assertEqual(returned[key], [value])
         for option in second.context['display_options']:
@@ -145,9 +147,10 @@ class OfficeQueryTests(TestCase):
                     self.assertEqual(returned[key], [value])
         for operation in ['star', 'trash', 'restore']:
             response = self.client.post(f'{self.base}{last[0]}/{operation}/', {
-                'return_query': urlencode({**params, 'page': '2', 'next': 'https://example.test/'})})
+                'return_query': urlencode({**params, 'page': '2', 'tag': self.tag.pk, 'next': 'https://example.test/'})})
             returned = parse_qs(urlsplit(response.url).query)
             for key, value in params.items():
                 self.assertEqual(returned[key], [value])
             self.assertEqual(returned['page'], ['2'])
             self.assertNotIn('next', returned)
+            self.assertNotIn('tag', returned)

@@ -23,6 +23,9 @@ referencyjny ekran w tej samej szerokości i stanie co ekran zmieniany.
 - Osobny host `#app-page-modals` oraz komunikaty `#app-notifications`.
 - Wspólne panele wyszukiwania i powiadomień oraz Sticker.
 
+Przełącznik Workspace w nagłówku pokazuje avatar i nazwę bez strzałki.
+Kliknięcie avatara lub nazwy nadal otwiera menu wyboru Workspace.
+
 Aktywna ikona w przełączniku domu, powiadomień i wyszukiwania używa
 `color-mix(in srgb, var(--system-accent) 15%, #ffffff)`, także przy zwiniętym
 sidebarze.
@@ -196,8 +199,7 @@ a dysków 139,755×139,755px. Ikony pustych i pełnych folderów mają
 149,68×149,68px — są powiększone o kolejne 5% względem poprzednich 142,55px,
 bez zmiany wymiarów kafelków ani pozostałych ikon.
 Wariant `documents-card--library` używa wyłącznie standardowej ikony dysku.
-Nazwa, data i akcje pozostają poniżej. W ciasnych kolumnach lub przy dużej liczbie tagów
-zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
+Nazwa, data i akcje pozostają poniżej. W ciasnych kolumnach zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
 w tabeli ani panelu bocznym.
 Siatka dopasowuje liczbę kolumn do miejsca z minimalną szerokością kolumny
 248px (lub całą dostępną szerokością, gdy jest węższa), również na telefonie.
@@ -301,16 +303,14 @@ Na komputerze lewy odstęp jest taki sam jak na liście plików.
 
 Lista dysków ma trzy kolumny danych: „Nazwa”, „Zmodyfikowano”, „Rozmiar”,
 z osobnym polem przycisków działań. Lista folderów i plików Dysku pokazuje
-dodatkowo kolumnę „Tagi” między nazwą a datą. Używa tych samych etykiet
-`documents-tag` co kafelki; kliknięcie tagu filtruje listę z zachowaniem
-kontekstu dysku/Workspace, wyszukiwania i pozostałych filtrów. Foldery i pliki
-bez tagów pokazują „—”. Kolumna ma 180px, a etykiety zawijają się w komórce.
+te same trzy kolumny danych, bez kolumny „Tagi”, z menu działań w nazwie.
 Minimalna szerokość tabeli plików z menu w nazwie wynosi 690px;
 węższy obszar zachowuje wszystkie kolumny dzięki przewijaniu poziomemu.
 Rozmiar dysku i folderu sumuje aktywne pliki, również w podfolderach,
 w zakresie właściciela i Workspace. Puste elementy pokazują 0 bajtów.
-Tagi są dostępne także w filtrach, edycji i kafelkach. W koszu kolumna pokazuje datę
-modyfikacji, a data usunięcia jest dostępna w `title` komórki.
+Dysk nie pokazuje tagów w formularzach, filtrach ani kafelkach.
+W koszu kolumna pokazuje datę modyfikacji, a data usunięcia jest
+dostępna w `title` komórki.
 Foldery nadal używają daty utworzenia, ponieważ model nie zapisuje daty modyfikacji.
 Data i rozmiar pozostają widoczne w trybie listy.
 
@@ -381,15 +381,36 @@ stanowią kontekst nawigacji; przycisk „Wyczyść” w panelu filtrów ich nie
 Pliki DOCX/XLSX/PPTX/PDF w Dysku używają tej samej powłoki pełnego edytora
 `documents/office/suite.html` co Dokumenty. Linki nazwy i kafelka otwierają
 osobną kartę (`target="_blank"`, `rel="noopener"`), podobnie jak wyniki wyszukiwania.
-Pasek udostępnia metadane, pobieranie i zapis, a „Wróć do dysku” prowadzi
-do folderu pliku. Pozostałe formaty zachowują modal podglądu. Dla starszych
-formatów biurowych wspólna akcja „Otwórz kopię w pełnym edytorze” tworzy kopię
-w tym samym dysku i otwiera ją w nowej karcie. Stan niedostępnego edytora
-zachowuje pobieranie i powrót. Funkcja nie dodaje nowych stylów ani kontrolek.
-Przycisk powrotu w powłoce pełnego edytora używa tego samego komponentu co
-nagłówek grup: `tasks-issue-close` ze strzałką bez ramki oraz pionowego
-separatora `tasks-issue-divider` w `tasks-issue-breadcrumb tasks-project-breadcrumb`.
-Dotyczy to także tablicy i stanu niedostępnego edytora.
+„Wróć do dysku” prowadzi do folderu pliku. Pozostałe formaty zachowują
+modal podglądu. Dla starszych formatów biurowych wspólna akcja „Otwórz kopię
+w pełnym edytorze” tworzy kopię w tym samym dysku i otwiera nową kartę.
+
+Pasek pełnego edytora (`office-suite-topbar`) ma jeden wiersz i wysokość
+40px (`--control-height` + 8px) także na telefonie. Kontrolki i ikona
+zachowują 32px wysokości. Pasek pokazuje wyłącznie strzałkę
+powrotu `tasks-issue-close`, wspólną ikonę typu pliku oraz nazwę.
+Nie zawiera separatora, rozszerzenia, statusu, ołówka, potwierdzenia ani
+przycisków pobierania, zapisu i menu. Długa nazwa ma ellipsis; pełna pozostaje
+w tekście oraz `title`. Układ obejmuje Dokumenty, Dysk, tablicę i stan
+niedostępnego edytora; katalogi oraz starszy edytor zachowują swoje układy.
+
+Podświetlenie nazwy (`office-suite-title-button`) ma standardowe zaokrąglenie
+6px (`--dropdown-control-radius`) i szare tło `--system-interaction-soft`,
+spójne z kontrolkami aplikacji. Kliknięcie nazwy, Enter lub Spacja odsłania
+płaskie pole `form-input` z cienkim podkreśleniem. Enter i opuszczenie pola
+zapisują nazwę; Escape przywraca ostatnią zapisaną wartość i fokus nazwy.
+Pusta nazwa lub błąd zapisu pozostawiają tekst do poprawienia i pokazują
+alert pod paskiem. Zapis blokuje ponowne wysłanie, aktualizuje tytuł karty
+bez przeładowania iframe i nie wpływa na treść dokumentu.
+
+Statusy nazwy i dokumentu pozostają w regionach `role=status` ukrytych
+wizualnie przez `u-sr-only`. Automatyczny zapis ONLYOFFICE i tablicy działa
+bez przycisku w powłoce. Błędy pozostają widoczne pod paskiem; błędy zapisu
+udostępniają tam „Ponów zapis”. Pobieranie i ręczny zapis są dostępne wewnątrz
+edytora, a historia i dane pliku w katalogu. W stanie niedostępnego edytora
+akcje pobierania i powrotu znajdują się w treści komunikatu.
+`office-suite.js` inicjalizuje obsługę także na `ancore:content-loaded`,
+z istniejącą ochroną przed duplikacją. Nie zależy od usuniętych kontrolek.
 
 Osobna pozycja „Dokumenty” używa ikony `file-text`. Katalog w
 `documents/office/index.html` zachowuje paski `tasks-topbar`/`tasks-filterbar`,
@@ -422,16 +443,12 @@ płaski katalog, bez folderów, ścieżki lokalizacji i akcji „Przenieś”. I
 na kafelkach te same akcje otwiera przycisk z trzema paskami w stopce.
 Pusty widok gwiazdek dotyczy dokumentów.
 Pusty stan zachowuje własne odstępy i wyśrodkowanie.
-Kolumna „Tagi” między nazwą a datą używa etykiet `documents-tag` z Dysku;
-dokumenty bez tagów pokazują „—”. Oba katalogi mają tę samą
-minimalną szerokość tabeli z menu (690px) oraz zawijanie tagów.
-Tagi są widoczne również na kafelkach. Kliknięcie etykiety filtruje dokumenty
-w bieżącym Workspace; aktywny tag i akcja czyszczenia
-pojawiają się nad listą. Filtr pozostaje przy wyszukiwaniu, sortowaniu,
-paginacji, zmianie układu i akcjach gwiazdki/kosza.
-Przypisanie tagów korzysta ze wspólnego pola `documents-tag-picker` w oknie
-„Dane dokumentu” i w metadanych starszego edytora tekstu. Zmiana tagów
-w edytorze tekstu oznacza niezapisane zmiany tak samo jak zmiana treści.
+Lista pokazuje trzy kolumny: „Nazwa”, „Zmodyfikowano” i „Rozmiar”, bez kolumny
+„Tagi”. Oba katalogi mają tę samą minimalną szerokość tabeli z menu (690px).
+Tagi nie są dostępne w kafelkach, filtrach, oknie „Dane dokumentu” ani
+starszym edytorze tekstu. Aktywne filtry pozostałych pól mają nad listą akcję
+czyszczenia i pozostają przy wyszukiwaniu, sortowaniu, paginacji, zmianie
+układu oraz akcjach gwiazdki/kosza.
 
 Oba katalogi korzystają z jednego odstępu bocznego siatki
 (`--documents-index-padding-x` na `.documents-page`). Nagłówki tabel Dysków,
@@ -454,7 +471,7 @@ zmiana lista/kafelki zachowuje stronę. Na telefonie
 wiele akcji nagłówka zawija się do kolejnych rzędów we wspólnym wariancie
 Dysku i Dokumentów; tabela zachowuje własne przewijanie poziome.
 
-Starszy edytor tekstu jest pełnym ekranem z nazwą, tagami, paskiem formatowania,
+Starszy edytor tekstu jest pełnym ekranem z nazwą, paskiem formatowania,
 powierzchnią dokumentu oraz jawnym zapisem. `office.css` dodaje wyłącznie układ
 tej części; kontrolki i kolory pochodzą ze wspólnych komponentów. Szerokości
 dropdownów określa także na wrapperach `AncoreCustomSelect`. Przyciski na telefonie
@@ -525,10 +542,9 @@ zachowując pełny tekst także na telefonie. Po zamknięciu modala fokus wraca 
 wiersza lub kafelka. Inicjalizacja działa także po `ancore:content-loaded` bez powielania
 listenerów. Kosz udostępnia w tym samym miejscu akcję przywrócenia.
 
-Historia wersji używa wspólnej tabeli i przycisków Dysku, z paginacją po 25 wpisów.
-Nazwy plików skracają się jak w katalogu, pusta tabela ukrywa nagłówki, a na telefonie tabela przewija się poziomo. Przywrócenie wyświetla standardowy modal potwierdzenia. Przycisk zegara w edytorze
-otwiera historię w osobnej karcie; komunikat prosi o zapisanie i zamknięcie
-edytora przed przywróceniem. Pusty stan objaśnia moment powstawania wersji.
+Menu plików Dysku i Dokumentów, zarówno na liście, jak i w kafelkach, nie
+udostępniają „Historii wersji”. Ekran historii został wycofany. Pozostałe
+akcje oraz wspólna obsługa menu i modali pozostają bez zmian.
 
 ### Dashboard bieżącego Workspace
 

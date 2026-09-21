@@ -176,7 +176,7 @@ class DocumentLibraryTests(TestCase):
         self.client.post(f'{self.base}folders/{folder.pk}/delete/')
         self.assertFalse(Folder.objects.filter(pk=folder.pk).exists())
 
-    def test_edit_move_tag_filter_and_star(self):
+    def test_edit_move_ignores_posted_tags_and_keeps_star(self):
         self.upload()
         document = Document.objects.get()
         folder = Folder.objects.create(owner=self.user, workplace=self.workspace, library=self.primary_library, name='Umowy')
@@ -185,8 +185,10 @@ class DocumentLibraryTests(TestCase):
         self.assertRedirects(response, f'{self.library_url}&folder={folder.pk}')
         document.refresh_from_db()
         self.assertEqual(document.folder, folder)
-        self.assertEqual(document.tags.get(), tag)
-        self.assertContains(self.client.get(f'{self.library_url}&tag={tag.pk}'), 'Zmieniona nazwa')
+        self.assertFalse(document.tags.exists())
+        document.tags.add(tag)
+        self.assertNotContains(self.client.get(f'{self.base}{document.pk}/'), 'name="tags"')
+        self.assertContains(self.client.get(f'{self.library_url}&folder={folder.pk}&tag={tag.pk}'), 'Zmieniona nazwa')
         self.client.post(f'{self.base}{document.pk}/star/')
         self.assertContains(self.client.get(f'{self.library_url}&view=starred'), 'Zmieniona nazwa')
         self.client.post(f'{self.base}{document.pk}/star/')
@@ -259,7 +261,7 @@ class DocumentLibraryTests(TestCase):
 
     def test_invalid_folder_returns_404(self):
         self.assertEqual(self.client.get(self.base, {'folder': 'abc'}).status_code, 404)
-        self.assertEqual(self.client.get(f'{self.library_url}&tag=abc').status_code, 404)
+        self.assertEqual(self.client.get(f'{self.library_url}&tag=abc').status_code, 200)
 
     def test_nested_destination_folder_has_full_path(self):
         document = self.document()
@@ -447,8 +449,15 @@ class DocumentLibraryTests(TestCase):
         self.assertEqual([row['item'].pk for row in response.context['rows']], [document.pk])
         self.assertContains(response, 'name="scope" value="workspace"')
         grid = self.client.get(f'{self.base}?view=all&q=Instrukcja&tag={tag.pk}&page_size=10&display=grid')
-        self.assertContains(grid, f'{self.base}?view=all&amp;tag={tag.pk}')
-        params = {'scope': 'workspace', 'view': 'all', 'q': 'Instrukcja', 'page_size': 10}
+        self.assertNotContains(grid, tag.name)
+        self.assertNotContains(grid, 'data-project-filter-field="tag"')
+        self.assertEqual(self.client.get(self.base, {'view': 'all', 'q': tag.name}).context['rows'], [])
+        search = self.client.get(reverse('global_search'), {'q': tag.name}).json()
+        groups = {group['key'] for group in search['groups']}
+        self.assertIn('tags', groups)
+        self.assertNotIn('documents', groups)
+        self.assertNotIn('office-documents', groups)
+        params = {'scope': 'workspace', 'view': 'all', 'q': 'Instrukcja', 'page_size': 10, 'tag': tag.pk}
         response = self.client.post(f'{self.base}{document.pk}/star/', params)
         self.assertRedirects(response, f'{self.base}?view=all&q=Instrukcja&page_size=10')
         self.client.post(f'{self.base}{document.pk}/trash/', params)

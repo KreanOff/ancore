@@ -5,7 +5,6 @@ from django import forms
 from core.upload_validation import (
     ATTACHMENT_ALLOWED_EXTENSIONS, validate_attachment_upload,
 )
-from tasks.models import TaskTag
 from .models import Document, DocumentLibrary, Folder, icon_color_validator
 
 
@@ -115,12 +114,11 @@ class FolderForm(IconColorForm):
 class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
-        fields = ['title', 'description', 'folder', 'tags']
+        fields = ['title', 'description', 'folder']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'}),
             'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
             'folder': forms.Select(attrs={'class': 'form-select tasks-inline-select'}),
-            'tags': forms.CheckboxSelectMultiple,
         }
         labels = {'title': 'Nazwa pliku', 'folder': 'Folder'}
 
@@ -139,4 +137,3 @@ class DocumentForm(forms.ModelForm):
             return ' / '.join(reversed(parts))
 
         self.fields['folder'].label_from_instance = folder_label
-        self.fields['tags'].queryset = TaskTag.objects.filter(user=owner, workplace=workplace)

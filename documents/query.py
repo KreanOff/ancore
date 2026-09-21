@@ -28,7 +28,7 @@ SIZE_OPTIONS = (
 )
 FILTER_PARAMETERS = (
     'name', 'name_op', 'filename', 'filename_op', 'description', 'description_op',
-    'tag', 'document_library', 'file_type', 'starred', 'modified', 'size', 'documents', 'folders',
+    'document_library', 'file_type', 'starred', 'modified', 'size', 'documents', 'folders',
 )
 LIBRARY_SORT_FIELDS = (
     {'value': 'name', 'label': 'Nazwa dysku', 'icon': 'hard-drive', 'lookup': 'name', 'text': True},

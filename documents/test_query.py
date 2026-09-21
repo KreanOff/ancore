@@ -62,7 +62,7 @@ class DocumentQueryTests(TestCase):
         self.assertEqual(self.libraries(description='zespołu', description_op='not_contains'), [self.zulu.pk])
 
     def test_choice_filters_compose_and_do_not_include_unrelated_folders(self):
-        params = {'library': self.alpha.pk, 'tag': self.tag.pk, 'file_type': '.pdf', 'size': 'medium', 'starred': 'yes'}
+        params = {'library': self.alpha.pk, 'file_type': '.pdf', 'size': 'medium', 'starred': 'yes'}
         self.assertEqual(self.rows(**params), [self.a.pk])
         self.assertEqual(self.rows(**{**params, 'starred': 'no'}), [])
         self.assertEqual(self.rows(document_library=self.zulu.pk), [self.z.pk])
@@ -135,7 +135,7 @@ class DocumentQueryTests(TestCase):
         tag = TaskTag.objects.create(user=self.other, workplace=self.workspace, name='Secret tag')
         for library in [self.foreign_library, self.outside_library]:
             self.assertEqual(self.client.get(self.base, {'view': 'all', 'document_library': library.pk}).status_code, 404)
-        self.assertEqual(self.client.get(self.base, {'view': 'all', 'tag': tag.pk}).status_code, 404)
+        self.assertEqual(set(self.rows(tag=tag.pk)), {self.a.pk, self.z.pk})
         response = self.client.get(self.base, {'view': 'all'})
         for text in ['Foreign secret', 'Outside secret', 'Secret tag', 'Hidden']:
             self.assertNotContains(response, text)
@@ -146,10 +146,11 @@ class DocumentQueryTests(TestCase):
             Document.objects.create(owner=self.user, workplace=self.workspace, library=self.alpha,
                                     title=f'Oferta {i:02}', filename=f'oferta{i}.PDF')
         params = {'view': 'all', 'name': 'Oferta', 'name_op': 'contains', 'file_type': '.pdf', 'sort': 'name_desc', 'page_size': '10'}
-        response = self.client.get(self.base, params)
+        response = self.client.get(self.base, {**params, 'tag': self.tag.pk})
         first = [row['item'].pk for row in response.context['rows']]
         next_url = response.context['document_window']['next_url']
         query = parse_qs(urlsplit(next_url).query)
+        self.assertNotIn('tag', query)
         self.assertEqual(query['name'], ['Oferta'])
         self.assertEqual(query['sort'], ['name_desc'])
         second = [row['item'].pk for row in self.client.get(next_url).context['rows']]

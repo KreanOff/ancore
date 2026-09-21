@@ -19,9 +19,9 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from core.upload_validation import attachment_download_response
-from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
 from .editor_forms import DOCUMENT_EXTENSIONS, OfficeDocumentForm, OfficeUploadForm
+from .file_cleanup import delete_replaced_file
 from .location_lock import location_write
 from .models import WorkspaceDocument as Document
 from .previews import build_preview, validate_inline
@@ -64,13 +64,6 @@ def _list(request, modal=None):
     if view not in {'all', 'recent', 'starred', 'templates', 'trash'}:
         view = 'all'
     query = request.GET.get('q', '').strip()[:120]
-    tags = TaskTag.objects.filter(user=request.user, workplace=request.workplace)
-    selected_tag = None
-    if request.GET.get('tag'):
-        try:
-            selected_tag = get_object_or_404(tags, pk=int(request.GET['tag']))
-        except (ValueError, TypeError, OverflowError):
-            raise Http404
     display_key = f'office_display:{request.user.pk}:{request.workplace.pk}'
     display = request.GET.get('display', request.session.get(display_key, 'list'))
     if display not in {'list', 'grid'}:
@@ -79,9 +72,6 @@ def _list(request, modal=None):
     fields = [
         text_field(request.GET, 'name', 'Nazwa dokumentu', 'file-text', 'title'),
         text_field(request.GET, 'filename', 'Oryginalna nazwa pliku', 'file', 'filename'),
-        choice_field(request.GET, 'tag', 'Tagi', 'tag', (
-            {'value': str(tag.pk), 'label': tag.name} for tag in tags
-        ), searchable=True),
         choice_field(request.GET, 'file_type', 'Typ pliku', 'file-type', [
             {'value': extension, 'label': extension[1:].upper()} for extension in sorted(DOCUMENT_EXTENSIONS)
         ] + [{'value': 'text', 'label': 'Dokument Ancore'}, {'value': 'board', 'label': 'Tablica — Board'}], searchable=True),
@@ -108,9 +98,7 @@ def _list(request, modal=None):
     if view == 'templates':
         items = items.filter(is_template=True)
     if query:
-        items = items.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(tags__name__icontains=query)).distinct()
-    if selected_tag:
-        items = items.filter(tags=selected_tag)
+        items = items.filter(Q(title__icontains=query) | Q(filename__icontains=query)).distinct()
     items = apply_text_filters(items, fields)
     items = apply_date_filter(items, 'deleted_at' if view == 'trash' else 'updated_at', values['modified'])
     if values['file_type'] in {Document.Kind.TEXT, Document.Kind.BOARD}:
@@ -125,7 +113,7 @@ def _list(request, modal=None):
         items = items.filter(file_size__gte=1024 * 1024, file_size__lte=5 * 1024 * 1024)
     elif values['size'] == 'large':
         items = items.filter(file_size__gt=5 * 1024 * 1024)
-    items = order_results(items.prefetch_related('tags'), query_state)
+    items = order_results(items, query_state)
     try:
         size = int(request.GET.get('page_size', 25))
     except (TypeError, ValueError):
@@ -142,7 +130,6 @@ def _list(request, modal=None):
     context.update({
         'rows': rows, 'query': query, 'office_view': view, 'document_display': display,
         'search_url': _url(request, display=display),
-        'selected_tag': selected_tag, 'tag_filter_url': _url(request, **{**params, 'tag': None}),
         'document_form': modal, 'clear_url': _url(request, view=view),
         'return_query': urlencode({**{key: value for key, value in params.items() if value not in ('', None)}, 'page': page.number}),
         'office_views': [{'value': key, 'label': label, 'icon': icon, 'count': counts.get(key), 'active': view == key,
@@ -221,8 +208,6 @@ def edit(request, pk=None):
                         item.is_pdf_form = locked.is_pdf_form
                     replacement = form.cleaned_data.get('replacement')
                     if replacement:
-                        from .version_service import archive_current
-                        archive_current(locked)
                         item.file.save(replacement.name, replacement, save=False)
                         saved_name = item.file.name
                         item.filename, item.file_size = replacement.name, replacement.size
@@ -233,7 +218,8 @@ def edit(request, pk=None):
                     elif item.kind == Document.Kind.TEXT:
                         item.file_size = len(item.content.encode('utf-8'))
                     item.save()
-                    form.save_m2m()
+                    if replacement:
+                        delete_replaced_file(item, locked.file.name)
         except Exception:
             if saved_name:
                 item.file.storage.delete(saved_name)

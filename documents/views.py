@@ -18,7 +18,6 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from core.upload_validation import ATTACHMENT_ALLOWED_EXTENSIONS, attachment_download_response
-from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
 from .forms import DocumentForm, FolderForm, LibraryForm, UploadForm
 from .folder_exports import folder_archive
@@ -44,7 +43,7 @@ DOCUMENT_VIEW_OPTIONS = (
 
 def _url(request, suffix='', **params):
     base = scoped_workplace_app_path(request.workplace, 'documents', suffix)
-    query = urlencode({key: value for key, value in params.items() if value not in ('', None)})
+    query = urlencode({key: value for key, value in params.items() if key != 'tag' and value not in ('', None)})
     return f'{base}?{query}' if query else base
 
 
@@ -222,8 +221,6 @@ def _library_page(request, form_context=None):
     if current_view not in {'all', 'recent', 'starred', 'trash'}:
         current_view = 'all'
     query = request.GET.get('q', '').strip()[:120]
-    tags = TaskTag.objects.filter(user=request.user, workplace=request.workplace)
-    selected_tag = _by_id(tags, request.GET['tag']) if request.GET.get('tag') else None
     selected_library = None
     if not current_library and request.GET.get('document_library'):
         selected_library = _by_id(_libraries(request), request.GET['document_library'])
@@ -231,9 +228,6 @@ def _library_page(request, form_context=None):
         text_field(request.GET, 'name', 'Nazwa pliku', 'file-text', 'title'),
         text_field(request.GET, 'filename', 'Oryginalna nazwa pliku', 'file', 'filename'),
         text_field(request.GET, 'description', 'Opis', 'align-left', 'description'),
-        choice_field(request.GET, 'tag', 'Tagi', 'tag', (
-            {'value': str(tag.pk), 'label': tag.name} for tag in tags
-        ), searchable=True),
         choice_field(request.GET, 'file_type', 'Typ pliku', 'file-type', (
             {'value': extension, 'label': extension[1:].upper()} for extension in sorted(ATTACHMENT_ALLOWED_EXTENSIONS)
         ), searchable=True),
@@ -254,7 +248,7 @@ def _library_page(request, form_context=None):
     )
     query_state = query_context(request.GET, fields, sort_fields, 'updated_desc')
     values = query_state['document_filter_params']
-    # Searching/filtering spans nested folders within the current library, as tag search does.
+    # Searching/filtering spans nested folders within the current library.
     searching = bool(query or query_state['has_active_filters'])
     document_only_filter = any(field['active'] and field['param'] not in {'name', 'modified', 'starred', 'document_library'} for field in fields)
     documents = _documents(request).filter(deleted_at__isnull=current_view != 'trash')
@@ -273,12 +267,10 @@ def _library_page(request, form_context=None):
         documents = documents.filter(is_starred=True)
         folders = folders.filter(is_starred=True)
     if query:
-        documents = documents.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)).distinct()
+        documents = documents.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(description__icontains=query)).distinct()
         folders = folders.filter(name__icontains=query)
     elif current_library and current_view == 'all' and not searching:
         documents = documents.filter(folder=folder)
-    if selected_tag:
-        documents = documents.filter(tags=selected_tag)
     documents = apply_text_filters(documents, fields)
     folders = apply_text_filters(folders, [{**field, 'lookup': 'name'} for field in fields if field['param'] == 'name'])
     documents = apply_date_filter(documents, 'deleted_at' if current_view == 'trash' else 'updated_at', values['modified'])
@@ -294,7 +286,7 @@ def _library_page(request, form_context=None):
         documents = documents.filter(file_size__gte=1024 * 1024, file_size__lte=5 * 1024 * 1024)
     elif values['size'] == 'large':
         documents = documents.filter(file_size__gt=5 * 1024 * 1024)
-    documents = order_results(documents.select_related('folder', 'owner', 'library').prefetch_related('tags'), query_state)
+    documents = order_results(documents.select_related('folder', 'owner', 'library'), query_state)
     folder_sort = query_state['sort_field'] if query_state['sort_field'] in {'name', 'updated', 'created'} else 'name'
     folder_sort_fields = (
         {'value': 'name', 'lookup': 'name', 'text': True},
@@ -323,11 +315,8 @@ def _library_page(request, form_context=None):
     context.update({
         'clear_url': _url(request, library=library_id, view=current_view, folder=folder.pk if folder else None),
         'view_url': _url(request, library=library_id, view=current_view, folder=folder.pk if folder else None),
-        'tag_filter_query': urlencode({key: value for key, value in {
-            **values, 'q': query, 'sort': query_state['sort_param'], 'page_size': window['page_size'],
-        }.items() if key != 'tag' and value not in ('', None)}),
         'rows': rows, 'page': page, 'query': query, 'document_window': window, 'document_form': form_context,
-        'library_view': current_view, 'tags': tags, 'selected_tag': selected_tag,
+        'library_view': current_view,
         'view_label': view_label,
         'view_title': (folder.name if folder and not searching and current_view == 'all' else current_library.name) if current_library else view_label,
     })
@@ -532,7 +521,6 @@ def detail(request, pk):
             for field in ('title', 'description', 'folder'):
                 setattr(locked, field, form.cleaned_data[field])
             locked.save(update_fields=['title', 'description', 'folder', 'updated_at'])
-            locked.tags.set(form.cleaned_data['tags'])
         messages.success(request, 'Zapisano plik.')
         return _form_success(request, _url(request, library=document.library_id, folder=form.instance.folder_id))
     context = _context(request, document.library, document.folder)
@@ -594,7 +582,7 @@ def download(request, pk):
 
 
 def _return_to_library(request, document):
-    params = {key: request.POST.get(key, '') for key in dict.fromkeys(('view', 'folder', 'q', 'tag', 'sort', 'page', 'page_size', *FILTER_PARAMETERS))}
+    params = {key: request.POST.get(key, '') for key in dict.fromkeys(('view', 'folder', 'q', 'sort', 'page', 'page_size', *FILTER_PARAMETERS))}
     if request.POST.get('display') in {'list', 'grid'}:
         params['display'] = request.POST['display']
     library_id = None if request.POST.get('scope') == 'workspace' else document.library_id

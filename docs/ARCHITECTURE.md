@@ -103,7 +103,6 @@ flowchart LR
     C -->|Company| T
     C -->|Company| K
     T -->|TaskTag| K
-    T -->|TaskTag| D
     T --> H[dashboard: wyszukiwanie i historia]
     K --> H
     C --> H
@@ -117,7 +116,7 @@ flowchart LR
   na właścicielu, mimo że istnieje model członkostwa.
 - Zadania i Kanban mają różne hierarchie i osobne tabele. Kanban nie jest
   jedynie innym sposobem wyświetlenia `Task`.
-- Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach, Kanbanie, Dysku i Dokumentach.
+- Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
   Zadań i Kanbana.
 - `core` dostarcza powłokę interfejsu i upload; `core` i `dashboard` nie mają
@@ -139,11 +138,14 @@ Użytkownik → Workspace
   ├─ Dysk: DocumentLibrary → Folder / Document (foldery mogą być zagnieżdżone)
   └─ Dokumenty: WorkspaceDocument (płaski katalog)
 
-TaskTag ↔ Task / Kanban / Document / WorkspaceDocument
+TaskTag ↔ Task / Kanban
 ```
 
 Model `WorkspaceDocumentFolder` i relacja `WorkspaceDocument.folder` pozostają
 wyłącznie dla zgodności ze starymi danymi; Dokumenty nie udostępniają już folderów.
+Podobnie relacje `Document.tags` i `WorkspaceDocument.tags` przechowują jedynie
+historyczne powiązania. Dysk i Dokumenty nie udostępniają tagów, nie wyszukują
+po nich ani nie przypisują ich przy zapisie lub kopiowaniu.
 
 Diagram pokazuje główną organizację. Niektóre relacje są opcjonalne, np.
 zadanie może nie mieć sekcji, a karta kolumny. Reguły `CASCADE`, `SET_NULL`
@@ -167,8 +169,9 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 Przy rozbudowie modułu trzeba uwzględnić także nawigację Workspace,
 context processor, wyszukiwarkę i ograniczenia częściowej nawigacji.
 
-`DocumentVersion` wiąże poprzedni prywatny plik z dokładnie jednym rekordem
-Dysku albo Dokumentów. `WorkspaceDocument.is_template` oznacza wzorzec w
+`DocumentVersion` zachowuje dawne archiwa powiązane z dokładnie jednym rekordem
+Dysku albo Dokumentów. Historia wersji nie ma aktywnych ekranów ani endpointów;
+nowe zapisy nie tworzą archiwów. `WorkspaceDocument.is_template` oznacza wzorzec w
 katalogu właściciela; kopia nie dziedziczy tego oznaczenia.
 
 Dokumenty mają osobne modele w aplikacji `documents`, widoki w

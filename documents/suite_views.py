@@ -23,8 +23,9 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from core.upload_validation import validate_attachment_upload
 from . import office_service as service
 from .board import EMPTY_SCENE, BOARD_LIMIT, clean_scene
-from .editor_forms import OfficeCreateForm
+from .editor_forms import OfficeCreateForm, OfficeRenameForm
 from .editor_views import _item, _context, _modal, _url
+from .file_cleanup import delete_replaced_file
 from .location_lock import location_write
 from .models import WorkspaceDocument as Document, OfficeSaveReceipt, Document as DriveDocument, DriveOfficeSaveReceipt
 from .rich_text import docx_bytes
@@ -118,6 +119,23 @@ def board_frame(request, pk):
     # Images are data URLs; application assets/fonts and saves stay on this origin.
     response['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; frame-src 'none'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'"
     return _private(response)
+
+
+@login_required
+@require_POST
+def rename(request, pk, drive=False):
+    model = DriveDocument if drive else Document
+    with transaction.atomic():
+        item = get_object_or_404(model.objects.select_for_update(), pk=pk,
+                                 owner=request.user, workplace=request.workplace, deleted_at__isnull=True)
+        form = OfficeRenameForm(request.POST)
+        if not form.is_valid():
+            return _private(JsonResponse({'error': form.errors['title'][0]}, status=400))
+        if item.title != form.cleaned_data['title']:
+            item.title = form.cleaned_data['title']
+            # Renaming must not interfere with content saves or the editor session.
+            item.save(update_fields=['title', 'updated_at'])
+    return _private(JsonResponse({'title': item.title}))
 
 
 @login_required
@@ -229,8 +247,7 @@ def callback(request, pk, drive=False):
             upload = SimpleUploadedFile(item.filename, content)
             validate_attachment_upload(upload)
             service.validate_ooxml(upload, item.extension)
-            from .version_service import archive_current
-            archive_current(item)
+            old_name = item.file.name
             item.file.save(item.filename, ContentFile(content), save=False)
             saved_name = item.file.name
             item.file_size, item.revision, item.office_save_error = len(content), item.revision + 1, False
@@ -238,6 +255,7 @@ def callback(request, pk, drive=False):
                 item.office_key = uuid.uuid4()
             item.save(update_fields=['file', 'file_size', 'revision', 'office_key', 'office_save_error', 'updated_at'])
             receipts.objects.create(document=item, digest=digest)
+            delete_replaced_file(item, old_name)
     except (URLError, OSError, ValueError, KeyError, ValidationError):
         if saved_name:
             item.file.storage.delete(saved_name)
@@ -293,8 +311,6 @@ def convert(request, pk, drive=False):
     try:
         with transaction.atomic():
             item.save()
-            if drive:
-                item.tags.set(source.tags.filter(user=request.user, workplace=request.workplace))
     except Exception:
         item.file.storage.delete(item.file.name)
         raise

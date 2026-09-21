@@ -8,6 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
+from tasks.models import TaskTag
 from workplaces.models import create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from . import office_service as service
@@ -72,6 +73,8 @@ class OfficeExtrasTests(TestCase):
 
     def test_template_copy_is_independent_and_does_not_inherit_template_flag(self):
         source = self.file('form', is_template=True)
+        tag = TaskTag.objects.create(user=self.owner, workplace=self.workplace, name='Historyczna etykieta')
+        source.tags.add(tag)
         response = self.client.post(self.base + 'templates/create/', {'template': source.pk, 'title': 'Kopia'}, headers={'X-Document-Modal': 'true'})
         self.assertEqual(response.status_code, 200)
         item = WorkspaceDocument.objects.get(title='Kopia')
@@ -79,6 +82,7 @@ class OfficeExtrasTests(TestCase):
         self.assertNotEqual(item.office_key, source.office_key)
         self.assertEqual(item.file.read(), source.file.read())
         self.assertFalse(item.is_template)
+        self.assertFalse(item.tags.exists())
         self.assertTrue(item.is_pdf_form)
         self.assertEqual(item.revision, 1)
         self.assertEqual(response.json()['editor_url'], self.base + f'{item.pk}/editor/')
@@ -108,119 +112,158 @@ class OfficeExtrasTests(TestCase):
         self.assertContains(response, 'Nie można odczytać szablonu')
         self.assertEqual(WorkspaceDocument.objects.count(), 1)
 
-    def test_pdf_save_download_restore_and_old_session_rejection_in_both_modules(self):
+    def legacy_version(self, item):
+        parent = {'drive_document': item} if isinstance(item, Document) else {'document': item}
+        return DocumentVersion.objects.create(**parent, revision=item.revision, file=item.file.name,
+                                              filename=item.filename, file_size=item.file_size,
+                                              saved_at=item.updated_at, is_pdf_form=getattr(item, 'is_pdf_form', False))
+
+    def test_pdf_save_replaces_file_without_creating_history_in_both_modules(self):
         for drive in (False, True):
             item = self.file('pdf', drive=drive)
+            original_name, original_key = item.file.name, item.office_key
+            changed = item.file.read() + b'\n% changed'
+            with self.captureOnCommitCallbacks(execute=True):
+                self.assertEqual(self.save_callback(item, content=changed).json(), {'error': 0})
+                self.assertTrue(item.file.storage.exists(original_name))
+            item.refresh_from_db()
+            self.assertEqual(item.file.read(), changed)
+            self.assertEqual(item.revision, 2)
+            self.assertEqual(item.office_key, original_key)
+            self.assertFalse(item.versions.exists())
+            self.assertFalse(item.file.storage.exists(original_name))
             base = self.drive if drive else self.base
-            original = item.file.read()
-            old_url = service.service_url(item, 'callback')
-            old_payload = {'key': service.document_key(item), 'status': 6, 'filetype': 'pdf', 'url': 'http://office.test/cache/files/test'}
-            self.assertEqual(self.save_callback(item, content=original + b'\n% changed').json(), {'error': 0})
-            item.refresh_from_db()
-            snapshot = item.versions.get()
-            response = self.client.get(base + f'{item.pk}/versions/{snapshot.pk}/download/')
-            self.assertEqual(b''.join(response.streaming_content), original)
+            response = self.client.get(base + f'{item.pk}/download/')
+            self.assertEqual(b''.join(response.streaming_content), changed)
             self.assertIn('private', response['Cache-Control'])
-            self.client.post(base + f'{item.pk}/versions/{snapshot.pk}/restore/', {'revision': item.revision})
-            item.refresh_from_db()
-            self.assertEqual(item.file.read(), original)
-            self.assertEqual(item.revision, 3)
-            self.assertEqual(item.versions.count(), 2)
-            self.assertEqual(self.save_callback(item, url=old_url, payload=old_payload).status_code, 409)
-            self.assertEqual(self.client.get(base + f'{item.pk}/history/').status_code, 200)
 
-    def test_callback_replay_does_not_duplicate_history(self):
+    def test_callback_replay_does_not_create_history_or_repeat_save(self):
         item = self.file()
         self.save_callback(item)
         self.save_callback(item)
-        self.assertEqual(item.versions.count(), 1)
+        item.refresh_from_db()
+        self.assertEqual(item.revision, 2)
+        self.assertEqual(item.save_receipts.count(), 1)
+        self.assertFalse(item.versions.exists())
 
     def test_failed_callback_leaves_original_and_no_history(self):
         item = self.file('pdf')
         original = item.file.name
-        self.assertEqual(self.save_callback(item, content=b'not a pdf').json(), {'error': 1})
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(self.save_callback(item, content=b'not a pdf').json(), {'error': 1})
         item.refresh_from_db()
         self.assertEqual(item.file.name, original)
-        self.assertEqual(item.versions.count(), 0)
+        self.assertTrue(item.file.storage.exists(original))
+        self.assertFalse(item.versions.exists())
 
-    def test_restore_conflict_missing_file_and_csrf_leave_current_untouched(self):
+    def test_template_actions_still_require_csrf(self):
         item = self.file()
-        self.save_callback(item)
-        item.refresh_from_db()
-        snapshot = item.versions.get()
-        target = self.base + f'{item.pk}/versions/{snapshot.pk}/restore/'
-        self.assertEqual(self.client.get(target).status_code, 405)
-        self.client.post(target, {'revision': 1})
-        item.refresh_from_db()
-        self.assertEqual(item.revision, 2)
         strict = Client(enforce_csrf_checks=True)
         strict.force_login(self.owner)
-        self.assertEqual(strict.post(target, {'revision': 2}).status_code, 403)
         self.assertEqual(strict.post(self.base + 'templates/create/', {}).status_code, 403)
         self.assertEqual(strict.post(self.base + f'{item.pk}/template/').status_code, 403)
-        snapshot.file.storage.delete(snapshot.file.name)
-        self.assertEqual(self.client.get(target.replace('restore/', 'download/')).status_code, 404)
-        response = self.client.post(target, {'revision': 2}, follow=True)
-        self.assertContains(response, 'Bieżący plik pozostał bez zmian')
-        item.refresh_from_db()
-        self.assertEqual(item.revision, 2)
 
-    def test_history_boundaries_include_parent_version_owner_workspace_and_trash(self):
+    def test_retired_history_routes_cannot_read_or_restore_existing_versions(self):
+        for drive in (False, True):
+            item = self.file('pdf', drive=drive)
+            snapshot = self.legacy_version(item)
+            original_name, original_key = item.file.name, item.office_key
+            bases = [self.drive, '/documents/'] if drive else [self.base, '/office/']
+            for base in bases:
+                for suffix in ['history/', f'versions/{snapshot.pk}/download/', f'versions/{snapshot.pk}/restore/']:
+                    for method in [self.client.get, self.client.post]:
+                        with self.subTest(drive=drive, base=base, suffix=suffix, method=method.__name__):
+                            response = method(base + f'{item.pk}/{suffix}', {'revision': item.revision}, follow=True)
+                            self.assertEqual(response.status_code, 404)
+            item.refresh_from_db()
+            self.assertEqual((item.file.name, item.revision, item.office_key), (original_name, 1, original_key))
+            self.assertEqual(item.versions.get().pk, snapshot.pk)
+            self.assertTrue(snapshot.file.storage.exists(snapshot.file.name))
+
+    def test_catalogs_and_editors_have_no_history_actions_in_both_layouts(self):
         for drive in (False, True):
             item = self.file(drive=drive)
-            self.save_callback(item)
-            snapshot = item.versions.get()
-            base = self.drive if drive else self.base
-            sibling = self.file(drive=drive)
-            self.assertEqual(self.client.get(base + f'{sibling.pk}/versions/{snapshot.pk}/download/').status_code, 404)
-            for field, value in [('owner', self.other), ('workplace', self.second), ('deleted_at', timezone.now())]:
-                original = getattr(item, field)
-                setattr(item, field, value)
-                item.save(update_fields=[field])
-                for suffix in ['history/', f'versions/{snapshot.pk}/download/']:
-                    self.assertEqual(self.client.get(base + f'{item.pk}/{suffix}').status_code, 404)
-                self.assertEqual(self.client.post(base + f'{item.pk}/versions/{snapshot.pk}/restore/', {'revision': 2}).status_code, 404)
-                setattr(item, field, original)
-                item.save(update_fields=[field])
+            bases = [self.drive, '/documents/'] if drive else [self.base, '/office/']
+            for base in bases:
+                for display in ['list', 'grid']:
+                    query = {'display': display, **({'library': self.library.pk} if drive else {})}
+                    response = self.client.get(base, query, follow=True)
+                    self.assertContains(response, item.title)
+                    self.assertContains(response, 'Edytuj dane')
+                    self.assertContains(response, 'Pobierz')
+                    self.assertNotContains(response, 'Historia wersji')
+                    self.assertNotContains(response, '/history/')
+                response = self.client.get(base + f'{item.pk}/editor/', follow=True)
+                self.assertContains(response, 'office-editor-window')
+                self.assertNotContains(response, '/history/')
 
-    def test_replacement_preserves_file_in_history_and_resets_form_type(self):
+    def test_replacement_cleans_file_after_commit_and_resets_form_type(self):
         item = self.file('form', is_template=True)
-        old_name = item.file.name
-        self.client.post(self.base + f'{item.pk}/', {'title': item.title, 'revision': item.revision,
-                         'replacement': SimpleUploadedFile('tekst.txt', b'new content')})
+        old_name, old_key = item.file.name, item.office_key
+        old_url = service.service_url(item, 'callback')
+        old_payload = {'key': service.document_key(item), 'status': 6, 'filetype': 'pdf',
+                       'url': 'http://office.test/cache/files/test'}
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(self.base + f'{item.pk}/', {'title': item.title, 'revision': item.revision,
+                             'replacement': SimpleUploadedFile('tekst.txt', b'new content')})
+            self.assertTrue(item.file.storage.exists(old_name))
         item.refresh_from_db()
-        self.assertEqual(item.versions.get().file.name, old_name)
-        self.assertTrue(item.file.storage.exists(old_name))
+        self.assertFalse(item.versions.exists())
+        self.assertFalse(item.file.storage.exists(old_name))
+        self.assertEqual(item.file.read(), b'new content')
+        self.assertEqual(item.revision, 2)
+        self.assertNotEqual(item.office_key, old_key)
         self.assertFalse(item.is_pdf_form)
         self.assertFalse(item.is_template)
+        self.assertFalse(item.tags.exists())
+        self.assertEqual(self.save_callback(item, content=b'%PDF old session', url=old_url, payload=old_payload).status_code, 409)
 
-    def test_version_storage_failure_rolls_back_snapshot(self):
-        item = self.file()
-        original = item.file.name
-        with patch.object(item.file.storage, 'save', side_effect=OSError('Disk full')):
-            self.assertEqual(self.save_callback(item).json(), {'error': 1})
-        item.refresh_from_db()
-        self.assertEqual(item.file.name, original)
-        self.assertEqual(item.versions.count(), 0)
+    def test_storage_failure_keeps_current_file(self):
+        for drive in (False, True):
+            item = self.file(drive=drive)
+            original = item.file.name
+            with self.captureOnCommitCallbacks(execute=True):
+                with patch.object(item.file.storage, 'save', side_effect=OSError('Disk full')):
+                    self.assertEqual(self.save_callback(item).json(), {'error': 1})
+            item.refresh_from_db()
+            self.assertEqual(item.file.name, original)
+            self.assertEqual(item.revision, 1)
+            self.assertTrue(item.file.storage.exists(original))
+            self.assertFalse(item.versions.exists())
 
-    def test_empty_history_pagination_and_normal_urls(self):
-        item = self.file()
-        response = self.client.get(self.base + f'{item.pk}/history/')
-        self.assertContains(response, 'Brak wcześniejszych wersji')
-        self.assertEqual(response['Referrer-Policy'], 'same-origin')
-        for revision in range(1, 28):
-            # Separate objects are needed here: snapshots own their file paths.
-            DocumentVersion.objects.create(document=item, revision=revision, file=f'versions/{revision}.docx',
-                                           filename=f'{revision}.docx', file_size=1, saved_at=timezone.now())
-        self.assertEqual(len(self.client.get(self.base + f'{item.pk}/history/').context['versions']), 25)
-        self.assertEqual(len(self.client.get(self.base + f'{item.pk}/history/?page=2').context['versions']), 2)
-        self.assertRedirects(self.client.get(f'/office/{item.pk}/history/'), self.base + f'{item.pk}/history/')
+    def test_database_failure_keeps_original_and_removes_new_file(self):
+        for drive in (False, True):
+            item = self.file(drive=drive)
+            original = item.file.name
+            before = set(item.file.storage.listdir(str(item.workplace_id))[1])
+            with self.captureOnCommitCallbacks(execute=True):
+                with patch.object(type(item), 'save', side_effect=RuntimeError('Database write failed')):
+                    with self.assertRaises(RuntimeError):
+                        self.save_callback(item)
+            item.refresh_from_db()
+            self.assertEqual(item.file.name, original)
+            self.assertEqual(item.revision, 1)
+            self.assertTrue(item.file.storage.exists(original))
+            self.assertFalse(item.versions.exists())
+            self.assertEqual(set(item.file.storage.listdir(str(item.workplace_id))[1]), before)
 
-    def test_delete_cleans_current_and_archived_files_after_commit(self):
+    def test_save_preserves_existing_archived_files_without_new_versions(self):
+        for drive in (False, True):
+            item = self.file('pdf', drive=drive)
+            snapshot = self.legacy_version(item)
+            archived_content = item.file.read()
+            with self.captureOnCommitCallbacks(execute=True):
+                self.assertEqual(self.save_callback(item, content=archived_content + b'\n% changed').json(), {'error': 0})
+            self.assertEqual(item.versions.count(), 1)
+            snapshot.refresh_from_db()
+            self.assertEqual(snapshot.file.read(), archived_content)
+
+    def test_delete_cleans_current_and_legacy_archived_files_after_commit(self):
         item = self.file()
+        snapshot = self.legacy_version(item)
         self.save_callback(item)
         item.refresh_from_db()
-        names = [item.file.name, item.versions.get().file.name]
+        names = [item.file.name, snapshot.file.name]
         storage = item.file.storage
         with self.captureOnCommitCallbacks(execute=True):
             item.delete()

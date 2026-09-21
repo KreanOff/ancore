@@ -3,9 +3,9 @@
 {% block title %}{% if is_new %}Nowy dokument{% else %}{{ document.title }}{% endif %} | Dokumenty | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-shared-view-selector">
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
 <link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-shared-view-selector">
-<script src="{% static 'js/office.js' %}?v=20260921-static-create-shortcuts" defer></script>
+<script src="{% static 'js/office.js' %}?v=20260921-no-tags" defer></script>
 {% endblock %}
 {% block content %}
 <form method="post" class="documents-page office-editor" data-office-editor data-app-full-navigation data-new="{{ is_new|yesno:'true,false' }}">
@@ -22,7 +22,6 @@
     <div class="office-editor-scroll">
         <div class="office-editor-metadata">
             <div class="documents-field"><label for="{{ form.title.id_for_label }}">Nazwa dokumentu</label>{{ form.title }}{{ form.title.errors }}</div>
-            <fieldset class="documents-tag-picker"><legend>Tagi</legend>{% if form.tags.field.queryset %}{{ form.tags }}{% else %}<p class="documents-muted">Brak tagów w tym Workspace.</p>{% endif %}{% if form.tags.errors %}<div class="tasks-modal__errors" role="alert">{{ form.tags.errors }}</div>{% endif %}</fieldset>
         </div>
         <div class="tasks-modal__errors office-editor-errors" role="alert" data-office-errors{% if not form.errors %} hidden{% endif %}>{{ form.non_field_errors }}{{ form.content.errors }}{{ form.revision.errors }}</div>
         <div class="office-paper">

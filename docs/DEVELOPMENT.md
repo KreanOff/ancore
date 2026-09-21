@@ -234,9 +234,11 @@ zmienia rekordów Dysku. Przed wejściem do Dokumentów zastosuj migrację na ba
 danego środowiska; nowa trasa to `/office/` i jej wariant scoped Workspace.
 Nie dodano zależności Python/npm ani usług zewnętrznych.
 
-Migracja `documents/0006_workspacedocument_tags.py` dodaje relację Dokumentów
-do wspólnych tagów `tasks.TaskTag`. Należy zastosować ją przed uruchomieniem
-wersji z kolumną „Tagi”; istniejące dokumenty początkowo nie mają tagów.
+Migracja `documents/0006_workspacedocument_tags.py` dodała historyczną relację
+Dokumentów do `tasks.TaskTag`. Obecnie Dysk i Dokumenty nie obsługują tagów;
+stare relacje pozostają w bazie, więc usunięcie funkcji nie wymaga migracji
+ani kasowania danych. Testy sprawdzają brak pól i filtrów tagów, pomijanie
+starych parametrów i zapisów, wyszukiwanie oraz kopie bez tagów.
 
 Migracja `documents/0007_workspacedocumentfolder_is_starred.py` dodaje gwiazdkę
 folderom Dokumentów; istniejące foldery początkowo nie są oznaczone.
@@ -278,13 +280,16 @@ podaje podsumowanie zadania.
 Migracja `documents/0011_workspacedocument_is_pdf_form_and_more.py` dodaje
 pola formularza PDF i szablonu oraz `DocumentVersion` z wyłącznym powiązaniem
 z Dyskiem albo Dokumentami. Jest addytywna; istniejące pliki nie są przenoszone.
-Zastosuj ją przed uruchomieniem nowych ekranów. Nowe puste PDF-y są wersjonowane
+Zastosuj ją przed uruchomieniem ekranów PDF i szablonów. Nowe puste PDF-y są wersjonowane
 w `documents/blank/`; ich pochodzenie opisuje tamtejszy README. Nie ma nowych
-zależności aplikacji. Historia wymaga uwzględnienia poprzednich plików w backupie
-prywatnego storage i nie ma automatycznej retencji.
+zależności aplikacji. Historia wersji została wycofana z Dysku i Dokumentów;
+model i migracja pozostają dla zgodności z istniejącymi danymi. Nie ma nowej
+migracji ani masowego usuwania archiwów. Dotychczasowe pliki historii nadal
+należy uwzględniać w backupie prywatnego storage.
 
 `documents.test_office_extras` sprawdza PDF/formularze, kopie szablonów, prywatny
-katalog, zapis historii, pobieranie, przywracanie, konflikt rewizji, CSRF,
-izolację kont/Workspace/Dysku, brak plików, błędy storage i cleanup po commit.
-Historia używa `Referrer-Policy: same-origin`, aby natywny formularz POST
-zachowywał origin wymagany przez Django CSRF.
+katalog, brak akcji historii na liście i kafelkach obu modułów, brak aktywnych
+adresów historii/pobierania/przywracania, zapis bez nowych archiwów, cleanup
+po commit, zachowanie dawnych archiwów, błędy storage i rollback zapisu.
+Testy `test_suite`, `test_drive_office` i `test_office` nadal sprawdzają
+rewizje, konflikty, CSRF, granice dostępu oraz unieważnianie sesji edytora.

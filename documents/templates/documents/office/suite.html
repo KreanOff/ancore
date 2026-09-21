@@ -5,29 +5,30 @@
 {% block app_navigation %}{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-shared-view-selector">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-shared-view-selector">
-<script src="{% static 'js/documents.js' %}?v=20260921-menu-focus" defer></script>
-<script src="{% static 'js/office-suite.js' %}?v=20260919" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-suite-title-radius">
+<script src="{% static 'js/office-suite.js' %}?v=20260921-suite-toolbar-minimal" defer></script>
 {% endblock %}
 {% block content %}
 <div class="documents-page office-suite" data-app-full-navigation data-office-suite data-kind="{{ document.kind }}" data-state-url="{{ documents_url }}{{ document.pk }}/state/" data-save-url="{{ documents_url }}{{ document.pk }}/save/" data-revision="{{ document.revision }}" data-back-url="{{ folder_url }}">
-    <header class="tasks-topbar tasks-topbar--directory documents-topbar">
-        <div class="tasks-titlebar-left tasks-issue-breadcrumb tasks-project-breadcrumb">
+    <header class="tasks-topbar tasks-topbar--directory documents-topbar office-suite-topbar" aria-label="Pasek dokumentu">
+        <div class="tasks-titlebar-left tasks-project-breadcrumb">
             <a class="tasks-issue-close" href="{{ folder_url }}" aria-label="{% if drive_editor %}Wróć do dysku{% else %}Wróć do dokumentów{% endif %}" title="{% if drive_editor %}Wróć do dysku{% else %}Wróć do dokumentów{% endif %}"><i data-icon="arrow-left" aria-hidden="true"></i></a>
-            <span class="tasks-issue-divider" aria-hidden="true"></span>
-            <h1 class="tasks-topbar-title" title="{{ document.title }}">{{ document.title }}</h1>
-            <span class="office-file-kind">{{ document.extension }}</span>
-        </div>
-        <div class="tasks-titlebar-actions">
-            <span class="documents-muted office-save-status" role="status" data-suite-status>Otwieranie edytora…</span>
-            {% if document.file %}<a class="tasks-icon-button" href="{{ documents_url }}{{ document.pk }}/history/" target="_blank" rel="noopener" aria-label="Historia wersji" title="Historia wersji"><i data-icon="clock-3" aria-hidden="true"></i></a>{% endif %}
-            <a class="tasks-icon-button" href="{{ documents_url }}{{ document.pk }}/" data-document-modal aria-label="{% if drive_editor %}Nazwa i folder{% else %}Dane dokumentu{% endif %}" title="{% if drive_editor %}Nazwa i folder{% else %}Dane dokumentu{% endif %}"><i data-icon="pencil" aria-hidden="true"></i></a>
-            <a class="btn btn-secondary" href="{{ documents_url }}{{ document.pk }}/download/" download data-suite-download>Pobierz</a>
-            {% if document.kind == 'board' or office_configured %}<button class="btn btn-primary" type="button" data-suite-save disabled>Zapisz</button>{% endif %}
+            <span class="office-suite-file-icon" aria-hidden="true">{% include 'documents/includes/file_icon.html' with document=document only %}</span>
+            <h1 class="tasks-topbar-title office-suite-title" data-suite-title data-rename-url="{{ documents_url }}{{ document.pk }}/rename/" data-page-title-suffix=" | {% if drive_editor %}Dysk{% else %}Dokumenty{% endif %} | ancore">
+                <button type="button" class="office-suite-title-button" data-suite-title-button title="Zmień nazwę: {{ document.title }}" aria-label="Zmień nazwę: {{ document.title }}">{{ document.title }}</button>
+                <input id="suite-title-input" class="form-input office-suite-title-input" data-suite-title-input type="text" value="{{ document.title }}" maxlength="255" aria-label="Nazwa pliku" aria-describedby="suite-title-hint suite-title-error" autocomplete="off" hidden>
+            </h1>
         </div>
     </header>
-    <div class="office-suite-error tasks-modal__errors" role="alert" data-suite-error hidden></div>
+    <span id="suite-title-hint" class="u-sr-only">Enter zapisuje nazwę, Escape anuluje. Kliknięcie poza polem także zapisuje zmianę.</span>
+    <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-suite-title-status data-state="saved">Nazwa zapisana</span>
+    <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-suite-status>Otwieranie edytora…</span>
+    <div id="suite-title-error" class="office-suite-error tasks-modal__errors" role="alert" data-suite-title-error hidden></div>
+    <div class="office-suite-error tasks-modal__errors" role="alert" data-suite-error hidden>
+        <span data-suite-error-message></span>
+        <button class="btn btn-secondary btn-sm" type="button" data-suite-retry hidden>Ponów zapis</button>
+    </div>
     {% csrf_token %}
     {% if document.kind == 'board' %}
         <iframe class="office-suite-frame" src="{{ documents_url }}{{ document.pk }}/board/" title="Edytor tablicy" data-board-frame allow="clipboard-read; clipboard-write"></iframe>
@@ -35,8 +36,7 @@
         {{ editor_config|json_script:'office-editor-config' }}
         <div class="office-suite-frame"><div id="office-doc-editor" data-api-url="{{ api_url }}"></div></div>
     {% else %}
-        <div class="documents-empty office-suite-unavailable"><div><i data-icon="file-text" aria-hidden="true"></i><h3>Edytor biurowy jest niedostępny</h3><p>Połączenie z serwerem edycji wymaga konfiguracji przez administratora Ancore.</p><p>Dokument jest zapisany. Możesz go pobrać lub wrócić do katalogu.</p><a class="btn btn-secondary" href="{{ folder_url }}">{% if drive_editor %}Wróć do dysku{% else %}Wróć do dokumentów{% endif %}</a></div></div>
+        <div class="documents-empty office-suite-unavailable"><div><i data-icon="file-text" aria-hidden="true"></i><h3>Edytor biurowy jest niedostępny</h3><p>Połączenie z serwerem edycji wymaga konfiguracji przez administratora Ancore.</p><p>Dokument jest zapisany. Możesz go pobrać lub wrócić do katalogu.</p><a class="btn btn-secondary" href="{{ documents_url }}{{ document.pk }}/download/" download>Pobierz</a><a class="btn btn-secondary" href="{{ folder_url }}">{% if drive_editor %}Wróć do dysku{% else %}Wróć do dokumentów{% endif %}</a></div></div>
     {% endif %}
 </div>
 {% endblock %}
-{% block page_modals %}{% include 'documents/modal_host.html' %}{% endblock %}

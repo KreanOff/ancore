@@ -8,7 +8,7 @@ Microsoft 365. Zgodność wszystkich funkcji desktopowego Office nie jest gwaran
 
 Dysk korzysta z tych samych edytorów dla DOCX/XLSX/PPTX/PDF. Lista, kafelki i globalna
 wyszukiwarka otwierają osobną kartę; zapis aktualizuje istniejący `Document`
-w jego prywatnym storage, z zachowaniem dysku, folderu i tagów. Starszy adres
+w jego prywatnym storage, z zachowaniem dysku i folderu. Starszy adres
 podglądu przekierowuje do edytora. DOC/XLS/PPT/RTF/TXT/CSV można otworzyć jako
 kopię OOXML w tym samym dysku i folderze. Nie powstaje rekord w katalogu Dokumentów.
 Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku.
@@ -28,8 +28,18 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
   ONLYOFFICE i tablica BOARD otwierają się w osobnej karcie przeglądarki,
   na pełną szerokość bez nawigacji bocznej. Dotyczy to listy, kafelków,
   wyszukiwarki, tworzenia pliku, odnośnika w metadanych oraz konwersji.
-  Pierwotna karta zachowuje katalog; nowa ma pasek nazwy, metadanych,
-  pobierania i zapisu.
+  Pierwotna karta zachowuje katalog; nowa ma jednowierszowy pasek zawierający
+  wyłącznie strzałkę powrotu, ikonę oraz nazwę pliku, również na telefonie.
+  Kliknięcie nazwy pozwala ją zmienić bez przeładowania edytora. Enter lub
+  opuszczenie pola zapisuje nazwę; Escape anuluje edycję i przywraca fokus.
+  Nie ma osobnego ołówka ani potwierdzenia. Aktywne pole ma cienkie podkreślenie.
+  Statusy pozostają dostępne dla czytników ekranu, a błędy pojawiają się pod
+  paskiem. Zapis automatyczny jest niezależny od powłoki; funkcje pobierania
+  i ręcznego zapisu pozostają w edytorze. Dane dokumentu są dostępne w katalogu.
+  Osobny POST `/<uuid>/rename/` w Dokumentach i Dysku, także pod adresem
+  Workspace, wymaga właściciela, aktywnego Workspace, pliku poza koszem
+  i CSRF. Zmienia tylko `title` oraz `updated_at`; zachowuje oryginalne
+  `filename`, treść, rewizję i klucz sesji. Nie tworzy wersji pliku.
   Jeżeli przeglądarka blokuje nową kartę podczas tworzenia, modal pokazuje
   odnośnik do już zapisanego dokumentu, bez ponownego tworzenia pliku.
   DOC/XLS/PPT/RTF/TXT/CSV można przekonwertować do osobnej kopii OOXML;
@@ -39,30 +49,28 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
 - Pliki należą wyłącznie do właściciela i Workspace. Integracja nie włącza
   udostępniania, współpracy pomiędzy kontami ani dostępu członków Workspace.
 
-## Szablony i historia wersji
+## Szablony i wycofana historia wersji
 
 Dokument DOCX/XLSX/PPTX/PDF można oznaczyć jako szablon w danych dokumentu
 lub jego menu. Widok „Szablony” obejmuje tylko aktywne pliki właściciela
 w bieżącym Workspace. „Utwórz kopię szablonu” w menu tworzy niezależny plik
-z ostatnio zapisaną treścią i tagami, nowym UUID i kluczem edytora. Nie ma
+z ostatnio zapisaną treścią, nowym UUID i kluczem edytora. Nie ma
 osobnego kafelka „Z szablonu”. Zmiany niezapisane w edytorze nie trafiają do kopii.
 Odznaczenie szablonu zachowuje dokument. Szablony dotyczą katalogu Dokumentów.
 
-„Historia wersji” jest dostępna w menu pliku Dokumentów/Dysku i w pasku edytora.
-Pokazuje po 25 poprzednich zapisów na stronę, z datą, rozmiarem, pobieraniem
-oraz przywracaniem. Przed poprawnym callbackiem lub podmianą pliku Dokumentów
-aktualna ścieżka storage jest przekazywana do `DocumentVersion` w tej samej
-transakcji. Przywracanie kopiuje wskazaną wersję do nowego pliku, zachowuje
-poprzedni, zwiększa rewizję i unieważnia stare sesje ONLYOFFICE. Konflikt rewizji
-wymaga ponownego sprawdzenia historii; błąd pliku nie zmienia bieżącej treści.
-Metadane i tagi pozostają bieżące. Historia nie obejmuje starszych zapisów
-sprzed migracji, tablic ani dokumentów w starym edytorze tekstowym Ancore.
-To własna lista wersji Ancore, bez porównywania zmian wewnątrz ONLYOFFICE.
+Historia wersji została wycofana z Dysku i Dokumentów. Menu plików nie zawiera
+tej akcji; zwykłe i scoped adresy `history/` oraz `versions/.../download/`
+i `versions/.../restore/` nie mają aktywnego routingu (404, po ewentualnym
+przekierowaniu do Workspace). Zapis ONLYOFFICE i podmiana pliku nie tworzą
+nowych rekordów `DocumentVersion`.
 
-Pobranie/przywrócenie wymaga aktywnego dokumentu, właściciela i Workspace;
-identyfikator wersji musi należeć do wskazanego pliku. Kosz blokuje te akcje.
-Trwałe usunięcie dokumentu usuwa wersje oraz ich pliki po commit. Nie ma
-automatycznego limitu retencji; historia zwiększa wykorzystanie dysku.
+Dotychczasowe rekordy historii i ich prywatne pliki pozostają w bazie/storage,
+bez migracji ani masowego usuwania danych. Po poprawnym zapisie nowego pliku
+`file_cleanup.delete_replaced_file` usuwa poprzedni plik dopiero po commit,
+o ile nie jest nadal przypisany do historycznej wersji. Rollback pozostawia
+bieżący plik bez zmian. Rewizje, wykrywanie konfliktów, deduplikacja callbacków
+i unieważnianie sesji edytora działają nadal. Trwałe usunięcie dokumentu
+zachowuje istniejący cleanup bieżącego pliku i dawnych archiwów po commit.
 
 ## Lokalne uruchomienie na Macu
 
@@ -167,27 +175,29 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
 - Wynik jest pobierany wyłącznie z `/cache/files/` skonfigurowanego ONLYOFFICE,
   bez przekierowań, z limitem rozmiaru i czasem oczekiwania. Błąd nie podmienia
   oryginału. Nowy plik trafia do storage, rekord jest aktualizowany transakcyjnie,
-  a poprzedni plik zachowywany w prywatnej historii wersji.
+  a poprzedni plik usuwany po commit, chyba że należy do istniejącego archiwum.
 - Status 6 zapisuje plik podczas pracy; status 2 kończy sesję i zmienia jej
   klucz. Ponowione callbacki są rozpoznawane przez `OfficeSaveReceipt`.
   Podmiana pliku oraz przeniesienie do/z kosza unieważniają stare sesje.
   Klucz zawiera pośrednio UUID dokumentu i sekret instalacji, więc nie zależy
   wyłącznie od numeru rewizji. Nie zmieniaj pliku w katalogu storage poza Ancore.
-- Zapis w edytorze i przycisk Ancore wyzwalają force save. Po ustaniu zmian
-  aplikacja też zleca zapis. Pasek statusu potwierdza zapis po zwiększeniu rewizji
-  w Django; sam komunikat edytora o synchronizacji nie jest potwierdzeniem
-  zapisu w prywatnym storage. Zamknięcie edytora może zapisać wynik po kilku
+- Zapis w edytorze oraz zapis po ustaniu zmian wyzwalają force save.
+  Usunięcie przycisku z paska Ancore nie zmienia tego mechanizmu.
+  Status dla czytników ekranu potwierdza zapis po zwiększeniu rewizji w Django;
+  sam komunikat edytora o synchronizacji nie potwierdza zapisu w prywatnym
+  storage. Widoczne błędy pod paskiem udostępniają „Ponów zapis”. Zamknięcie edytora może zapisać wynik po kilku
   sekundach, zgodnie z protokołem ONLYOFFICE.
 - Tablica zapisuje scenę po krótkiej przerwie w edycji oraz na żądanie/Ctrl+S.
   Rewizja zapobiega nadpisaniu przez starsze okno (409). Przy błędzie scena
-  pozostaje w przeglądarce; „Pobierz” pobiera bieżącą lokalną kopię. Ochrona
+  pozostaje w przeglądarce; „Pobierz kopię tablicy” w jej menu pobiera lokalną
+  kopię. „Zapisz w Ancore” i Ctrl+S pozostają dostępne wewnątrz tablicy. Ochrona
   przed wyjściem działa, gdy istnieją niezapisane zmiany.
 - Scena tablicy ma limit 10 MiB i 10 000 elementów. Obrazy są walidowanymi
   danymi PNG/JPEG/WebP (do 200 obrazów, po 5 MiB każdy, w ramach limitu sceny).
   Aktywne osadzenia i niebezpieczne schematy odnośników są odrzucane. Iframe ma
   CSP ograniczające połączenia, skrypty i fonty do lokalnej aplikacji.
 
-`DocumentVersion` przechowuje poprzednie pliki; same potwierdzenia callbacków
+`DocumentVersion` zachowuje wyłącznie archiwa sprzed wycofania historii; potwierdzenia callbacków
 i `revision` nadal nie zawierają treści. Nie ma wspólnej edycji pomiędzy
 różnymi użytkownikami, OCR ani VBA.
 Kopia przekonwertowana ze starego formatu może różnić się wizualnie; oryginał
