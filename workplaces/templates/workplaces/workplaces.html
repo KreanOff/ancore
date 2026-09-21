@@ -342,6 +342,7 @@
             }
 
             function closePageSizeDropdown() {
+                window.AncoreDropdownLayer?.hide(pageSizeDropdown?.querySelector('.tasks-project-pagination__size-menu'));
                 pageSizeDropdown?.classList.remove('is-open');
                 pageSizeToggle?.setAttribute('aria-expanded', 'false');
             }
@@ -416,6 +417,7 @@
                 if (isOpen) {
                     pageSizeDropdown?.classList.add('is-open');
                     pageSizeToggle.setAttribute('aria-expanded', 'true');
+                    window.AncoreDropdownLayer?.open(pageSizeDropdown.querySelector('.tasks-project-pagination__size-menu'), pageSizeToggle, closePageSizeDropdown);
                 }
             });
 

@@ -523,6 +523,7 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
 
     function closeActivityDropdown() {
         if (!dropdown || !toggle) return;
+        window.AncoreDropdownLayer?.hide(dropdown.querySelector('.tasks-issue-activity-menu'));
         dropdown.classList.remove('is-open');
         toggle.setAttribute('aria-expanded', 'false');
     }
@@ -556,6 +557,9 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
         const isOpen = !dropdown.classList.contains('is-open');
         dropdown.classList.toggle('is-open', isOpen);
         toggle.setAttribute('aria-expanded', String(isOpen));
+        const menu = dropdown.querySelector('.tasks-issue-activity-menu');
+        if (isOpen) window.AncoreDropdownLayer?.open(menu, toggle, closeActivityDropdown);
+        else window.AncoreDropdownLayer?.hide(menu);
     });
 
     dropdown?.addEventListener('click', (event) => {

@@ -609,10 +609,24 @@
     --app-modal-input-min-height: 84px;
 }
 
-:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(.tasks-modal__body, .profile-edit-body) :is(input, textarea, select):focus:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not(.ancore-custom-select__source) {
+/* Active fields keep their regular border, without an outer glow. This also
+   covers search inputs inside dropdowns, which stay in the modal's DOM. */
+:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(input, textarea, select):is(:hover, :focus):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not(.ancore-custom-select__source):not([aria-invalid="true"]):not(.is-invalid) {
     outline: none;
-    border-color: var(--system-interaction);
-    box-shadow: var(--focus-ring);
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+
+:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(
+    .ancore-custom-select__button, .tasks-issue-dropdown-button,
+    .tasks-company-select__button, .tasks-responsible-select__button,
+    .tasks-picker-chip, .contacts-custom-select__button,
+    .calendar-color-select__button, .profile-status-button
+):is(:hover, :focus, [aria-expanded="true"]):not(:disabled):not([aria-invalid="true"]):not(.is-invalid *) {
+    outline: none;
+    border-color: var(--border-color);
+    background-color: var(--card-bg);
+    box-shadow: none;
 }
 
 .tasks-modal .tasks-modal__body :is(.ancore-custom-select, .tasks-issue-fields),

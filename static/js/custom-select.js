@@ -333,8 +333,11 @@
         const focusedIndex = options.indexOf(document.activeElement);
         const selectedIndex = options.indexOf(selectedOptionButton(wrapper));
         const currentIndex = focusedIndex >= 0 ? focusedIndex : Math.max(0, selectedIndex);
-        const nextIndex = (currentIndex + direction + options.length) % options.length;
+        const inSearch = document.activeElement?.matches(SEARCH_INPUT_SELECTOR);
+        const nextIndex = inSearch ? (direction > 0 ? 0 : options.length - 1)
+            : (currentIndex + direction + options.length) % options.length;
         options[nextIndex]?.focus({ preventScroll: true });
+        options[nextIndex]?.scrollIntoView({ block: 'nearest' });
     }
 
     function enhanceSelect(select) {
@@ -370,7 +373,7 @@
         menu.setAttribute('data-ancore-custom-select-menu', '');
         menu.hidden = true;
 
-        if (select.hasAttribute(SEARCH_ATTR)) {
+        if (select.hasAttribute(SEARCH_ATTR) || select.closest('.tasks-modal, .profile-edit-dialog')) {
             const searchWrap = document.createElement('div');
             searchWrap.className = 'ancore-custom-select__search';
 
@@ -496,11 +499,15 @@
         const wrapper = target?.closest(WRAPPER_SELECTOR);
         if (!wrapper) return;
 
-        if (event.key === 'Enter' && target.matches(SEARCH_INPUT_SELECTOR)
-            && getWrapperParts(wrapper).select?.dataset.ancoreCustomSelectAllowCustom === 'true') {
+        if (event.key === 'Enter' && target.matches(SEARCH_INPUT_SELECTOR)) {
             if (event.isComposing) return;
             event.preventDefault();
-            chooseCustomValue(wrapper);
+            if (getWrapperParts(wrapper).select?.dataset.ancoreCustomSelectAllowCustom === 'true') {
+                chooseCustomValue(wrapper);
+            } else {
+                const first = optionButtons(wrapper)[0];
+                if (first) chooseOption(first);
+            }
             return;
         }
 

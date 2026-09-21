@@ -553,7 +553,11 @@ typu kontaktu zachowują działanie. Pola tekstowe, daty i listy wyboru mają
 tekst 13px, wysokość 36px, ramkę `--border-color` i radius
 `--dropdown-control-radius`. Opisy mają minimum 84px i możliwość zmiany
 wysokości. Kolory, checkboxy, pola ukryte i źródła niestandardowych selectów
-zachowują własną obsługę. Stan fokusu korzysta z szarego obrysu i `--focus-ring`.
+zachowują własną obsługę. Pola tekstowe, opisy, daty, wyszukiwarki wewnątrz
+dropdownów i przyciski list wyboru zachowują zwykłą cienką ramkę podczas
+hover, fokusu i otwarcia listy — bez zewnętrznej poświaty lub dodatkowego
+obrysu. Reguła jest wspólna dla wszystkich okien w `modal-system.css`.
+Oznaczenia błędów walidacji oraz zaznaczenie opcji na liście pozostają widoczne.
 
 Listy wyboru korzystają ze wspólnej warstwy
 [dropdown-layer.js](../static/js/dropdown-layer.js) i
@@ -572,9 +576,25 @@ z przewijanego obszaru lub modal zostaje zamknięty/usunięty, zamyka też menu.
 Escape zamyka najpierw listę i przywraca fokus kontrolce; kliknięcie poza listą,
 przeniesienie fokusu lub `ancore:content-loaded` również ją zamyka.
 Przy własnym zamykaniu kontrolka wywołuje `AncoreDropdownLayer.hide(menu)`.
+Każda lista wyboru w oknie formularza ma wyszukiwarkę, również przy niewielu
+opcjach (np. status, priorytet, kolor). `AncoreCustomSelect` dodaje ją domyślnie
+w oknach; wspólna warstwa uzupełnia pozostałe listy, które nie mają własnego
+wyszukiwania. Pole używa wyglądu `ancore-custom-select__search`, filtruje opcje
+bez zmiany wybranej wartości i pokazuje „Brak wyników”. Strzałki nawigują
+po widocznych opcjach, Enter zatwierdza wybór, a Escape zamyka listę.
+Ponowne otwarcie czyści zapytanie. Istniejące wyszukiwarki firm/osób i źródeł
+zachowują własną obsługę wyszukiwania oraz dodawania wartości.
 Warstwa obejmuje `AncoreCustomSelect`, priorytety/statusy/tagi oraz wybór projektu
 i grupy w zadaniach, listy firm/osób, Kontaktów, Kalendarza i Profilu,
-również w szczegółach zadań/Kanbana. Rozwijane panele edycji firmy/osoby z
+również w szczegółach zadań/Kanbana. Ta sama zasada obowiązuje w listach
+filtrów i prostego sortowania, warunkach tekstowych w panelach filtrów
+(także Dysku i Dokumentów), wyborze liczby wierszy we wszystkich katalogach
+i Workspace oraz filtrze aktywności zadania/karty. Lista filtra w zbiorczym
+panelu otwiera się ponad panelem i zachowuje szerokość kontrolki bez zmiany
+układu pozostałych pól. Wielopolowe panele konfiguracji filtrów/sortowania
+oraz menu działań przy przyciskach ikonowych zachowują własną szerokość;
+zawarte w nich listy wyboru korzystają z tej samej warstwy co formularze.
+Rozwijane panele edycji firmy/osoby z
 `position: static` zachowują swój układ wewnątrz formularza.
 
 `tasks-form-field` łączy widoczną etykietę z kontrolką w pionie z odstępem
@@ -658,6 +678,7 @@ wycofane edytowalne ikony encji — nie przywracaj dawnych pickerów.
 | --- | --- |
 | `AncoreIcons.render(scope)` | Ikony po wstawieniu HTML |
 | `AncoreCustomSelect.init/refresh/closeAll` | Dropdowny i odświeżanie opcji |
+| `AncoreDropdownLayer.open/hide/dismiss` | Wspólna szerokość, pozycjonowanie i najwyższa warstwa list wyboru w całej aplikacji |
 | `AncoreApp.canNavigatePartially(url)` | Sprawdzenie, czy adres obsługuje częściową nawigację |
 | `AncoreApp.navigate(url, options)` | Istniejąca nawigacja aplikacji |
 | `showConfirmModal(options)` | Wspólne potwierdzenie operacji |

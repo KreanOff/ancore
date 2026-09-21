@@ -5,6 +5,86 @@
     let active = null;
     let frame = null;
 
+    // Existing searchable pickers keep their own filtering (including remote
+    // company/person lookups). Add the same search UI to the remaining choices.
+    function addModalSearch(menu, anchor) {
+        if (!anchor.closest('.tasks-modal, .profile-edit-dialog') || menu.querySelector('input:not([type="hidden"])')) return null;
+
+        const options = Array.from(menu.querySelectorAll('button'));
+        const originalHidden = options.map(option => option.hidden);
+        const searchRow = document.createElement('div');
+        searchRow.className = 'ancore-custom-select__search';
+        const icon = document.createElement('i');
+        icon.setAttribute('data-icon', 'search');
+        icon.setAttribute('aria-hidden', 'true');
+        const input = document.createElement('input');
+        input.type = 'search';
+        input.className = 'ancore-custom-select__search-input';
+        input.placeholder = 'Szukaj';
+        input.setAttribute('aria-label', 'Szukaj na liście');
+        input.setAttribute('data-dropdown-search', '');
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+        searchRow.append(icon, input);
+        const empty = document.createElement('span');
+        empty.className = 'ancore-custom-select__empty';
+        empty.textContent = 'Brak wyników';
+        empty.setAttribute('role', 'status');
+        empty.hidden = options.some(option => !option.hidden);
+        menu.prepend(searchRow);
+        menu.append(empty);
+        menu.setAttribute('data-dropdown-searchable', '');
+        window.AncoreIcons?.render(searchRow);
+
+        const normalize = text => text.toLocaleLowerCase('pl').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/ł/g, 'l').trim();
+        input.addEventListener('input', () => {
+            const query = normalize(input.value);
+            options.forEach((option, index) => {
+                option.hidden = originalHidden[index] || !normalize(option.textContent).includes(query);
+            });
+            empty.hidden = options.some(option => !option.hidden);
+            menu.scrollTop = 0;
+            schedulePosition();
+        });
+
+        function handleKeydown(event) {
+            if (event.isComposing) return;
+            const visible = options.filter(option => !option.hidden && !option.disabled);
+            const inSearch = event.target === input;
+            const index = visible.indexOf(event.target);
+            if (!inSearch && index < 0) return;
+            if (inSearch && (event.key === 'Home' || event.key === 'End')) {
+                event.stopPropagation();
+                return;
+            }
+            if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!visible.length) return;
+                const next = event.key === 'Home' ? 0 : event.key === 'End' ? visible.length - 1
+                    : inSearch ? (event.key === 'ArrowDown' ? 0 : visible.length - 1)
+                        : (index + (event.key === 'ArrowDown' ? 1 : -1) + visible.length) % visible.length;
+                visible[next]?.focus({ preventScroll: true });
+                visible[next]?.scrollIntoView({ block: 'nearest' });
+            } else if (event.key === 'Enter' || (!inSearch && event.key === ' ')) {
+                event.preventDefault();
+                event.stopPropagation();
+                (inSearch ? visible[0] : visible[index])?.click();
+            }
+        }
+        menu.addEventListener('keydown', handleKeydown, true);
+        return {
+            input,
+            remove() {
+                menu.removeEventListener('keydown', handleKeydown, true);
+                options.forEach((option, index) => { option.hidden = originalHidden[index]; });
+                searchRow.remove();
+                empty.remove();
+                menu.removeAttribute('data-dropdown-searchable');
+            }
+        };
+    }
+
     function hide(menu) {
         if (!active || active.menu !== menu) return;
         const current = active;
@@ -13,6 +93,7 @@
         frame = null;
         current.observer.disconnect();
         current.resizeObserver.disconnect();
+        current.search?.remove();
         if (menu.matches(':popover-open')) menu.hidePopover();
         menu.removeAttribute('popover');
         menu.classList.remove('ancore-dropdown-layer');
@@ -88,12 +169,13 @@
     function open(menu, anchor, onClose) {
         if (!menu || !anchor || typeof menu.showPopover !== 'function') return;
         // Company/responsible editors also have intentionally inline panels.
-        if (getComputedStyle(menu).position === 'static') return;
+        if (menu.matches('.tasks-company-select__panel, .tasks-responsible-select__panel')) return;
         if (active?.menu === menu) {
             schedulePosition();
             return;
         }
         dismiss();
+        const search = addModalSearch(menu, anchor);
         const scale = anchor.currentCSSZoom || anchor.getBoundingClientRect().width / anchor.offsetWidth || 1;
         const width = anchor.getBoundingClientRect().width / scale;
         const maxHeight = parseFloat(getComputedStyle(menu).maxHeight) || Infinity;
@@ -102,7 +184,7 @@
             else schedulePosition();
         });
         const resizeObserver = new ResizeObserver(schedulePosition);
-        active = { menu, anchor, onClose, maxHeight, observer, resizeObserver };
+        active = { menu, anchor, onClose, maxHeight, observer, resizeObserver, search };
         menu.style.setProperty('--dropdown-layer-width', `${width}px`);
         menu.classList.add('ancore-dropdown-layer');
         menu.setAttribute('popover', 'manual');
@@ -116,6 +198,7 @@
         observer.observe(document.body, { childList: true, subtree: true });
         resizeObserver.observe(anchor);
         resizeObserver.observe(menu);
+        if (active?.menu === menu) search?.input.focus({ preventScroll: true });
     }
 
     window.AncoreDropdownLayer = { open, hide, dismiss };

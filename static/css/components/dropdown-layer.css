@@ -18,3 +18,8 @@
     background: transparent;
     pointer-events: none;
 }
+
+/* Author display rules on legacy options must not override search filtering. */
+.ancore-dropdown-layer[data-dropdown-searchable] button[hidden] {
+    display: none;
+}

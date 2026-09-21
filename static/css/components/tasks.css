@@ -6680,22 +6680,6 @@ body.modal-open::before {
     justify-content: flex-start;
 }
 
-.tasks-directory-filter-aggregate__controls > .tasks-filter-dropdown.is-open {
-    grid-column: 1 / -1;
-    display: grid;
-}
-
-.tasks-directory-filter-aggregate__controls > .tasks-filter-dropdown.is-open > .tasks-filter-menu {
-    position: static;
-    width: 100%;
-    min-width: 0;
-    max-height: 240px;
-    margin-top: 0.35rem;
-    border-color: #e7e9ed;
-    box-shadow: none;
-    overflow-y: auto;
-}
-
 .tasks-task-display-manager {
     display: inline-flex;
 }

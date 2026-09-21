@@ -1676,12 +1676,14 @@ function initTasksPage() {
 
     function closeStatusFilterMenu() {
         if (!statusFilterMenu || !statusFilterToggle) return;
+        window.AncoreDropdownLayer?.hide(statusFilterMenu.querySelector('.tasks-filter-menu'));
         statusFilterMenu.classList.remove('is-open');
         statusFilterToggle.setAttribute('aria-expanded', 'false');
     }
 
     function closePriorityFilterMenu() {
         if (!priorityFilterMenu || !priorityFilterToggle) return;
+        window.AncoreDropdownLayer?.hide(priorityFilterMenu.querySelector('.tasks-filter-menu'));
         priorityFilterMenu.classList.remove('is-open');
         priorityFilterToggle.setAttribute('aria-expanded', 'false');
     }
@@ -1689,12 +1691,14 @@ function initTasksPage() {
     function closeProjectFilterMenus(exceptMenu = null) {
         projectFilterMenus.forEach(menu => {
             if (menu === exceptMenu) return;
+            window.AncoreDropdownLayer?.hide(menu.querySelector('.tasks-filter-menu'));
             menu.classList.remove('is-open');
             menu.querySelector('[data-project-filter-toggle]')?.setAttribute('aria-expanded', 'false');
         });
     }
 
     function closeProjectSortMenu() {
+        window.AncoreDropdownLayer?.hide(projectSortMenu?.querySelector('.tasks-filter-menu[role="menu"]'));
         projectSortMenu?.classList.remove('is-open');
         projectSortToggle?.setAttribute('aria-expanded', 'false');
     }
@@ -1756,6 +1760,7 @@ function initTasksPage() {
     }
 
     function closeProjectPageSizeDropdown() {
+        window.AncoreDropdownLayer?.hide(projectPageSizeDropdown?.querySelector('.tasks-project-pagination__size-menu'));
         projectPageSizeDropdown?.classList.remove('is-open');
         projectPageSizeToggle?.setAttribute('aria-expanded', 'false');
     }
@@ -1763,6 +1768,7 @@ function initTasksPage() {
     function closeTaskStatusPageSizeDropdowns(exceptDropdown = null) {
         document.querySelectorAll('[data-task-status-page-size-dropdown]').forEach(dropdown => {
             if (dropdown === exceptDropdown) return;
+            window.AncoreDropdownLayer?.hide(dropdown.querySelector('.tasks-project-pagination__size-menu'));
             dropdown.classList.remove('is-open');
             dropdown.querySelector('[data-task-status-page-size-toggle]')?.setAttribute('aria-expanded', 'false');
         });
@@ -3083,7 +3089,10 @@ function initTasksPage() {
             closeDirectoryMembersMenus();
             statusFilterMenu.classList.toggle('is-open', isOpen);
             statusFilterToggle.setAttribute('aria-expanded', String(isOpen));
-        });
+            const list = statusFilterMenu.querySelector('.tasks-filter-menu');
+            if (isOpen) window.AncoreDropdownLayer?.open(list, statusFilterToggle, closeStatusFilterMenu);
+            else window.AncoreDropdownLayer?.hide(list);
+        }, pageListenerOptions);
 
         statusFilterMenu.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -3103,7 +3112,10 @@ function initTasksPage() {
             closeDirectoryMembersMenus();
             priorityFilterMenu.classList.toggle('is-open', isOpen);
             priorityFilterToggle.setAttribute('aria-expanded', String(isOpen));
-        });
+            const list = priorityFilterMenu.querySelector('.tasks-filter-menu');
+            if (isOpen) window.AncoreDropdownLayer?.open(list, priorityFilterToggle, closePriorityFilterMenu);
+            else window.AncoreDropdownLayer?.hide(list);
+        }, pageListenerOptions);
 
         priorityFilterMenu.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -6041,6 +6053,7 @@ function initTasksPage() {
             menu.classList.remove('is-open');
             menu.querySelector('[data-project-text-filter-operator-toggle]')?.setAttribute('aria-expanded', 'false');
             const list = menu.querySelector('[data-project-text-filter-operator-list]');
+            window.AncoreDropdownLayer?.hide(list);
             if (list) list.hidden = true;
         });
     }
@@ -6159,8 +6172,9 @@ function initTasksPage() {
             const list = menu.querySelector('[data-project-text-filter-operator-list]');
             if (list) list.hidden = !isOpen;
             if (isOpen) {
+                window.AncoreDropdownLayer?.open(list, this, () => closeProjectTextFilterOperatorMenus());
                 setTimeout(() => menu.querySelector('[data-project-text-filter-operator-option].is-active')?.focus(), 0);
-            }
+            } else window.AncoreDropdownLayer?.hide(list);
         }, pageListenerOptions);
 
         toggle.addEventListener('keydown', function(event) {
@@ -6323,8 +6337,9 @@ function initTasksPage() {
             this.setAttribute('aria-expanded', String(isOpen));
             if (isOpen) {
                 resetProjectFilterMenuSearch(menu);
+                window.AncoreDropdownLayer?.open(menu.querySelector('.tasks-filter-menu'), this, () => closeProjectFilterMenus());
                 setTimeout(() => menu.querySelector('[data-project-filter-search]')?.focus(), 30);
-            }
+            } else window.AncoreDropdownLayer?.hide(menu.querySelector('.tasks-filter-menu'));
         }, pageListenerOptions);
     });
 
@@ -6380,6 +6395,9 @@ function initTasksPage() {
             directoryFilterAggregates.forEach(aggregate => aggregate.removeAttribute('open'));
             projectSortMenu.classList.toggle('is-open', isOpen);
             projectSortToggle.setAttribute('aria-expanded', String(isOpen));
+            const list = projectSortMenu.querySelector('.tasks-filter-menu[role="menu"]');
+            if (isOpen) window.AncoreDropdownLayer?.open(list, projectSortToggle, closeProjectSortMenu);
+            else window.AncoreDropdownLayer?.hide(list);
             if (isOpen && projectSortFieldSearch) {
                 projectSortFieldSearch.value = '';
                 filterProjectBuilderList(
@@ -6484,6 +6502,9 @@ function initTasksPage() {
             directoryFilterAggregates.forEach(aggregate => aggregate.removeAttribute('open'));
             projectPageSizeDropdown.classList.toggle('is-open', isOpen);
             projectPageSizeToggle.setAttribute('aria-expanded', String(isOpen));
+            const list = projectPageSizeDropdown.querySelector('.tasks-project-pagination__size-menu');
+            if (isOpen) window.AncoreDropdownLayer?.open(list, projectPageSizeToggle, closeProjectPageSizeDropdown);
+            else window.AncoreDropdownLayer?.hide(list);
         }, pageListenerOptions);
 
         projectPageSizeDropdown.addEventListener('click', function(e) {
@@ -6595,6 +6616,9 @@ function initTasksPage() {
                 closeTaskStatusPageSizeDropdowns(pageSizeDropdown);
                 pageSizeDropdown.classList.toggle('is-open', isOpen);
                 pageSizeToggle.setAttribute('aria-expanded', String(isOpen));
+                const list = pageSizeDropdown.querySelector('.tasks-project-pagination__size-menu');
+                if (isOpen) window.AncoreDropdownLayer?.open(list, pageSizeToggle, () => closeTaskStatusPageSizeDropdowns());
+                else window.AncoreDropdownLayer?.hide(list);
             }, pageListenerOptions);
 
             pageSizeDropdown.addEventListener('click', function(event) {
