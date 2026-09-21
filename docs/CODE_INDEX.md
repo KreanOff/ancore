@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 33 | 10 | 31 | 188 |
+| [documents](../documents) | 33 | 10 | 31 | 182 |
 
 ## 2. Modele i relacje
 
@@ -924,8 +924,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/__init__.py](../documents/__init__.py)
 - [documents/apps.py](../documents/apps.py) — `DocumentsConfig`
 - [documents/board.py](../documents/board.py) — `clean_scene`
-- [documents/editor_forms.py](../documents/editor_forms.py) — `validate_document`, `DocumentFilesField`, `OfficeUploadForm`, `OfficeCreateForm`, `OfficeFolderForm`, `OfficeDocumentForm`
-- [documents/editor_views.py](../documents/editor_views.py) — `index`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
+- [documents/editor_forms.py](../documents/editor_forms.py) — `validate_document`, `DocumentFilesField`, `OfficeUploadForm`, `OfficeCreateForm`, `OfficeDocumentForm`
+- [documents/editor_views.py](../documents/editor_views.py) — `index`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
 - [documents/folder_exports.py](../documents/folder_exports.py) — `folder_archive`
 - [documents/folder_stats.py](../documents/folder_stats.py) — `set_folder_summaries`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `IconColorForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
@@ -1263,7 +1263,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `FolderIconTestsMixin`: 3 metod testowych.
 - `DriveFolderIconTests`: 0 metod testowych.
-- `OfficeFolderIconTests`: 0 metod testowych.
 
 ### documents/test_library_photos.py
 
@@ -1282,7 +1281,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [documents/test_moves.py](../documents/test_moves.py).
 
 - `CatalogMoveTests`: 8 metod testowych.
-- `OfficeMoveTests`: 1 metod testowych.
 - `DriveMoveTests`: 4 metod testowych.
 - `ConcurrentMoveTests`: 1 metod testowych.
 
@@ -1291,13 +1289,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [documents/test_office.py](../documents/test_office.py).
 
 - `RichTextTests`: 3 metod testowych.
-- `OfficeTests`: 22 metod testowych.
+- `OfficeTests`: 20 metod testowych.
 
 ### documents/test_office_folders.py
 
 Źródło: [documents/test_office_folders.py](../documents/test_office_folders.py).
 
-- `OfficeFolderTests`: 9 metod testowych.
+- `OfficeFlatCatalogTests`: 6 metod testowych.
 
 ### documents/test_office_query.py
 

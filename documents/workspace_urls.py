@@ -1,7 +1,6 @@
 from django.urls import path
 from . import editor_views as views
 from . import suite_views as suite
-from .move_views import move
 
 app_name = 'office'
 urlpatterns = [
@@ -9,13 +8,6 @@ urlpatterns = [
     path('create/', suite.create, name='create'),
     path('create/text/', views.edit, name='create-text'),
     path('upload/', views.upload, name='upload'),
-    path('folders/<int:pk>/move/', move, {'kind': 'folder'}, name='folder-move'),
-    path('<uuid:pk>/move/', move, name='move'),
-    path('folders/create/', views.folder_edit, name='folder-create'),
-    path('folders/<int:pk>/edit/', views.folder_edit, name='folder-edit'),
-    path('folders/<int:pk>/delete/', views.folder_delete, name='folder-delete'),
-    path('folders/<int:pk>/star/', views.folder_star, name='folder-star'),
-    path('folders/<int:pk>/download/', views.folder_download, name='folder-download'),
     path('<uuid:pk>/', views.edit, name='edit'),
     path('<uuid:pk>/editor/', suite.editor, name='editor'),
     path('<uuid:pk>/board/', suite.board_frame, name='board'),

@@ -97,8 +97,8 @@ class FullEditorTests(TestCase):
                                         {'kind': kind, 'title': kind}, headers={'X-Document-Modal': 'true'})
             item = Document.objects.get(title=kind)
             editor_url = self.base + f'{item.pk}/editor/'
-            self.assertEqual(item.folder, folder)
-            expected = {'redirect_url': self.base + f'?folder={folder.pk}', 'editor_url': editor_url}
+            self.assertIsNone(item.folder)
+            expected = {'redirect_url': self.base, 'editor_url': editor_url}
             self.assertEqual(response.json(), expected)
         invalid = self.client.post(self.base + 'create/', {'kind': 'word', 'title': ''},
                                    headers={'X-Document-Modal': 'true'})
@@ -118,11 +118,13 @@ class FullEditorTests(TestCase):
         self.assertTrue(results[board.title]['new_tab'])
         self.assertFalse(results[text.title]['new_tab'])
 
-    def test_creation_uses_scoped_folder_and_invalid_type_does_not_write(self):
+    def test_creation_ignores_legacy_folder_and_invalid_type_does_not_write(self):
         foreign = Folder.objects.create(owner=self.other, workplace=self.foreign, name='Obce')
-        self.assertEqual(self.client.post(self.base + f'create/?folder={foreign.pk}', {'kind': 'word', 'title': 'Test'}).status_code, 404)
+        self.assertEqual(self.client.post(self.base + f'create/?folder={foreign.pk}', {'kind': 'word', 'title': 'Test'}).status_code, 302)
+        item = Document.objects.get()
+        self.assertEqual((item.owner, item.workplace, item.folder), (self.user, self.workplace, None))
         self.client.post(self.base + 'create/', {'kind': 'binary', 'title': 'Test'})
-        self.assertFalse(Document.objects.exists())
+        self.assertEqual(Document.objects.count(), 1)
 
     def test_editors_are_owner_and_workspace_scoped(self):
         items = [self.board(owner=self.other, workplace=self.foreign), self.board(workplace=self.second)]

@@ -121,7 +121,7 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Documents | Dyski, foldery, pliki, kosz, izolacja, modale, paginacja, wyszukiwarka, migracja dysków |
 | Documents: `test_suite.py` | Tworzenie czterech typów, osobna karta ONLYOFFICE/BOARD i katalog po utworzeniu, linki listy/kafelków/metadanych oraz cel wyników wyszukiwania, podpisane callbacki i źródła, deduplikacja, konflikty tablicy, walidacja OOXML, izolacja właściciela/Workspace, stara sesja po podmianie/koszu |
 | Documents: `test_office.py` | Osobny katalog Dokumentów, edycja i konflikt rewizji, formatowanie/eksport DOCX, import, walidacja/rollback plików, dwa konta i Workspace, globalne szukanie |
-| Documents: `test_office_query.py` | Łączenie filtrów katalogu Dokumentów, zakres folderów, typy natywne i uploady, granice rozmiaru, daty kosza, kierunki sortowania, stare linki, izolacja oraz zachowanie warunków w paginacji i akcjach |
+| Documents: `test_office_query.py` | Łączenie filtrów katalogu Dokumentów, płaski katalog i stare parametry folderów, typy natywne i uploady, granice rozmiaru, daty kosza, kierunki sortowania, stare linki, izolacja oraz zachowanie warunków w paginacji i akcjach |
 
 Lista klas i liczba zdefiniowanych metod testowych jest generowana w
 [CODE_INDEX.md](CODE_INDEX.md). Nie jest to raport wykonania testów ani procent pokrycia.
@@ -240,10 +240,12 @@ wersji z kolumną „Tagi”; istniejące dokumenty początkowo nie mają tagów
 
 Migracja `documents/0007_workspacedocumentfolder_is_starred.py` dodaje gwiazdkę
 folderom Dokumentów; istniejące foldery początkowo nie są oznaczone.
-Zastosuj ją przed uruchomieniem wersji z ulubionymi folderami.
-`documents.test_office_folders` sprawdza gwiazdki, filtry, paginację, ZIP,
-eksport formatów natywnych, brakujące pliki i izolację kont/Workspace;
-`documents.test_migrations` sprawdza zachowanie istniejącej hierarchii i treści.
+Jest zachowana jako historyczna migracja. Foldery Dokumentów zostały
+wycofane z interfejsu i routingu; model oraz relacja pozostają w bazie.
+Nie ma nowej migracji ani usuwania danych. `documents.test_office_folders`
+sprawdza płaski katalog, stare odnośniki, brak aktywnych akcji folderów,
+zachowanie treści, upload, wyszukiwanie, paginację i izolację kont/Workspace.
+`documents.test_migrations` nadal sprawdza historyczne migracje.
 
 Migracja `documents/0008_folder_is_starred.py` dodaje analogiczne pole folderom
 Dysku z domyślną wartością false, bez zmiany gwiazdek w Dokumentach.

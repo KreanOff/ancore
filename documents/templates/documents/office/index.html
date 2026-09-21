@@ -4,22 +4,18 @@
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-unified-dialogs">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-quick-actions">
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-no-folders">
 <script src="{% static 'js/documents.js' %}?v=20260921-upload-list" defer></script>
-<script src="{% static 'js/office.js' %}?v=20260921-quick-create-collapse" defer></script>
+<script src="{% static 'js/office.js' %}?v=20260921-no-folders" defer></script>
 {% endblock %}
 {% block content %}
 <div class="documents-page office-page" data-office-catalog data-document-dnd="office" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ office_view }}">
     <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory documents-topbar">
         <div class="tasks-titlebar-left">
-            <nav class="documents-breadcrumbs" aria-label="Ścieżka dokumentów">
-                {% if current_folder %}<a href="{{ documents_url }}" data-document-drop="root" data-document-label="Dokumenty">Dokumenty</a>{% else %}<h1 class="tasks-topbar-title">Dokumenty</h1>{% endif %}
-                {% for crumb in breadcrumbs %}<i data-icon="chevron-right" aria-hidden="true"></i>{% if forloop.last %}<h1 class="tasks-topbar-title">{{ crumb.name }}</h1>{% else %}<a href="{{ crumb.url }}" data-document-drop="{{ crumb.target }}" data-document-label="{{ crumb.name }}">{{ crumb.name }}</a>{% endif %}{% endfor %}
-            </nav>
+            <h1 class="tasks-topbar-title">Dokumenty</h1>
         </div>
     </header>
     <form id="office-search" method="get" action="{{ search_url }}" hidden data-project-search-form data-server-directory-filters="true">
-        <input type="hidden" name="folder" value="{{ current_folder.pk|default:'' }}">
         <input type="hidden" name="view" value="{{ office_view }}">
         {% for param, value in document_filter_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}" data-project-filter-input="{{ param }}">{% endfor %}
         <input type="hidden" name="display" value="{{ document_display }}">
@@ -50,26 +46,25 @@
             {% include 'documents/office/create_card.html' with type='cell' variant='excel' label='Arkusz kalkulacyjny' %}
             {% include 'documents/office/create_card.html' with type='slide' variant='powerpoint' label='Prezentacja' %}
             {% include 'documents/office/create_card.html' with type='board' variant='board' label='Tablica' %}
-            {% include 'documents/office/create_card.html' with action_url=folder_create_url variant='folder' label='Nowy folder' %}
             {% include 'documents/office/create_card.html' with action_url=upload_url icon='cloud-upload' action_icon='upload' label='Prześlij dokumenty' %}
         </ul>
     </section>
     {% endif %}
-    {% if query or has_active_filters %}<p class="documents-results-hint" role="status">Wyniki ze wszystkich folderów w tym Workspace.{% if selected_tag %} Tag: {{ selected_tag.name }}.{% endif %} <a href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a></p>{% endif %}
+    {% if query or has_active_filters %}<p class="documents-results-hint" role="status">Wyniki ze wszystkich dokumentów w tym Workspace.{% if selected_tag %} Tag: {{ selected_tag.name }}.{% endif %} <a href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a></p>{% endif %}
     {% if office_view == 'trash' %}<p class="documents-results-hint">Przywróć dokument, aby go otworzyć lub edytować.</p>{% endif %}
-    <section class="documents-main" aria-label="Dokumenty i foldery" {% if office_view != 'trash' %}data-document-drop="{% if current_folder %}folder:{{ current_folder.pk }}{% else %}root{% endif %}" data-document-label="{{ current_folder.name|default:'Dokumenty' }}"{% endif %}>
+    <section class="documents-main" aria-label="Dokumenty" {% if office_view != 'trash' %}data-document-drop="root" data-document-label="Dokumenty"{% endif %}>
         {% if document_display == 'grid' and rows %}
         <div class="documents-grid-scroll">
-        <ul class="documents-grid" aria-label="Dokumenty i foldery — kafelki">
-            {% for row in rows %}{% with item=row.item %}<li class="documents-card{% if row.kind == 'folder' %} documents-card--folder{% endif %}" {% include 'documents/includes/drag_attributes.html' %}>
-                {% if office_view == 'trash' %}<div class="documents-card-entry">{% else %}<a class="documents-card-entry" href="{{ row.url }}" title="{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}"{% if item.has_full_editor %} target="_blank" rel="noopener"{% endif %}{% if item.kind == 'file' and not item.has_full_editor %} data-document-modal{% endif %}>{% endif %}
-                    <span class="documents-card-preview" aria-hidden="true">{% if row.kind == 'folder' %}{% include 'documents/includes/folder_icon.html' with has_files=item.has_files color=item.color only %}{% else %}{% include 'documents/includes/file_icon.html' with document=item only %}{% endif %}{% if row.kind == 'document' %}<small>{{ item.extension }}</small>{% endif %}</span>
-                    <span class="documents-card-title">{% if row.kind == 'folder' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}</span>
-                    <span class="documents-card-meta">{% if row.kind == 'folder' %}Folder{% else %}{{ item.extension }} · {{ item.file_size|filesizeformat }}{% endif %}</span>
+        <ul class="documents-grid" aria-label="Dokumenty — kafelki">
+            {% for row in rows %}{% with item=row.item %}<li class="documents-card">
+                {% if office_view == 'trash' %}<div class="documents-card-entry">{% else %}<a class="documents-card-entry" href="{{ row.url }}" title="{{ item.title }}"{% if item.has_full_editor %} target="_blank" rel="noopener"{% endif %}{% if item.kind == 'file' and not item.has_full_editor %} data-document-modal{% endif %}>{% endif %}
+                    <span class="documents-card-preview" aria-hidden="true">{% include 'documents/includes/file_icon.html' with document=item only %}<small>{{ item.extension }}</small></span>
+                    <span class="documents-card-title">{{ item.title }}</span>
+                    <span class="documents-card-meta">{{ item.extension }} · {{ item.file_size|filesizeformat }}</span>
                 {% if office_view == 'trash' %}</div>{% else %}</a>{% endif %}
-                {% if row.kind == 'document' and item.tags.all %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% endfor %}</div>{% endif %}
+                {% if item.tags.all %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% endfor %}</div>{% endif %}
                 <div class="documents-card-footer">
-                    <span class="documents-card-date">{% if row.kind == 'folder' %}{{ item.created_at|date:'d.m.Y' }}{% else %}{{ item.updated_at|date:'d.m.Y' }}{% endif %}</span>
+                    <span class="documents-card-date">{{ item.updated_at|date:'d.m.Y' }}</span>
                     {% include 'documents/office/actions.html' %}
                 </div>
             </li>{% endwith %}{% endfor %}
@@ -78,17 +73,17 @@
         {% else %}
         <div class="documents-table-scroll"><table class="documents-table documents-table--inline-actions">
             <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="tags"><span class="documents-column-heading">Tagi</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th></tr></thead>
-            <tbody>{% for row in rows %}{% with item=row.item %}<tr {% include 'documents/includes/drag_attributes.html' %}>
-                <td><div class="documents-name">{% include 'documents/includes/row_menu.html' with actions_template='documents/office/actions.html' %}<span class="documents-file-icon">{% if row.kind == 'folder' %}{% include 'documents/includes/folder_icon.html' with has_files=item.has_files color=item.color only %}{% else %}{% include 'documents/includes/file_icon.html' with document=item only %}{% endif %}</span><div>{% include 'documents/office/name.html' %}{% if row.kind == 'document' and item.folder and item.folder_id != current_folder.pk %}<small>{{ item.folder.name }}</small>{% endif %}</div></div></td>
-                <td data-document-column="tags">{% if row.kind == 'document' %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% empty %}<span class="documents-muted">—</span>{% endfor %}</div>{% else %}<span class="documents-muted">—</span>{% endif %}</td>
-                <td class="documents-date" data-document-column="date" title="{% if row.kind == 'folder' %}Utworzono: {{ item.created_at|date:'d.m.Y, H:i' }}{% else %}Zmodyfikowano: {{ item.updated_at|date:'d.m.Y, H:i' }}{% endif %}">{% if row.kind == 'folder' %}{{ item.created_at|date:'d.m.Y' }}{% else %}{{ item.updated_at|date:'d.m.Y' }}{% endif %}</td>
-                <td class="documents-size" data-document-column="size">{% if row.kind == 'document' %}{{ item.file_size|filesizeformat }}{% else %}—{% endif %}</td>
+            <tbody>{% for row in rows %}{% with item=row.item %}<tr>
+                <td><div class="documents-name">{% include 'documents/includes/row_menu.html' with actions_template='documents/office/actions.html' %}<span class="documents-file-icon">{% include 'documents/includes/file_icon.html' with document=item only %}</span><div>{% include 'documents/office/name.html' %}</div></div></td>
+                <td data-document-column="tags"><div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% empty %}<span class="documents-muted">—</span>{% endfor %}</div></td>
+                <td class="documents-date" data-document-column="date" title="Zmodyfikowano: {{ item.updated_at|date:'d.m.Y, H:i' }}">{{ item.updated_at|date:'d.m.Y' }}</td>
+                <td class="documents-size" data-document-column="size">{{ item.file_size|filesizeformat }}</td>
             </tr>{% endwith %}{% empty %}<tr><td colspan="4" class="documents-empty"><div>
                 <i data-icon="{% if office_view == 'trash' %}trash-2{% else %}file-text{% endif %}" aria-hidden="true"></i>
                 {% if query or has_active_filters %}<h3>Brak pasujących dokumentów</h3><p>Zmień wyszukiwanie lub filtry albo wróć do pełnej listy.</p><a class="btn btn-secondary" href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a>
                 {% elif office_view == 'trash' %}<h3>Kosz jest pusty</h3><p>Tutaj znajdziesz usunięte dokumenty, które możesz przywrócić.</p>
-                {% elif office_view == 'starred' %}<h3>Brak oznaczonych dokumentów i folderów</h3><p>Dodaj gwiazdkę do dokumentu lub folderu, aby łatwo do niego wrócić.</p>
-                {% else %}<h3>{% if current_folder %}Ten folder jest pusty{% else %}Twoje dokumenty w jednym miejscu{% endif %}</h3><p>Twórz dokumenty, arkusze, prezentacje i tablice lub prześlij swoje pliki z komputera.</p><a class="btn btn-primary" href="{{ create_url }}" data-document-modal>Utwórz dokument</a>{% endif %}
+                {% elif office_view == 'starred' %}<h3>Brak oznaczonych dokumentów</h3><p>Dodaj gwiazdkę do dokumentu, aby łatwo do niego wrócić.</p>
+                {% else %}<h3>Twoje dokumenty w jednym miejscu</h3><p>Twórz dokumenty, arkusze, prezentacje i tablice lub prześlij swoje pliki z komputera.</p><a class="btn btn-primary" href="{{ create_url }}" data-document-modal>Utwórz dokument</a>{% endif %}
             </div></td></tr>{% endfor %}</tbody>
         </table></div>
         {% endif %}

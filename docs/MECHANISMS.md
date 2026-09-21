@@ -161,7 +161,7 @@ powielać i nie pomijać pozycji przy przechodzeniu między stronami.
 `documents/query.py` normalizuje dozwolone filtry i pola sortowania przed
 wykonaniem zapytań. Warunki są nakładane na zbiory ograniczone właścicielem
 i Workspace; wybór dysku lub tagu również weryfikuje ten zakres.
-Foldery pozostają przed plikami, z kolejnością według nazwy albo daty utworzenia.
+Foldery Dysku pozostają przed plikami, z kolejnością według nazwy albo daty utworzenia.
 Daty filtrów obejmują dzisiaj lub ostatnie 7/30 dni kalendarzowych w strefie
 aplikacji. W koszu filtr i sortowanie „Usunięto” używają `deleted_at`.
 Puste lokalizacje trafiają na koniec sortowania; `pk` rozstrzyga remisy.
@@ -229,7 +229,7 @@ właściciela/Workspace dysku i tworzy ZIP przez wspólny
 dostępne foldery i aktywne pliki tego samego dysku; błędna relacja między
 dyskami nie pozwala włączyć obcego poddrzewa. Pozostałe zasady archiwizacji
 (bezpieczne nazwy, kolizje, plik tymczasowy i brakujące pliki) są wspólne
-z folderami Dokumentów opisanymi poniżej.
+z historycznymi modelami folderów Dokumentów.
 Te same ograniczenia obowiązują dla `/<uuid>/preview/` (dialog/pełna strona)
 i `/<uuid>/content/` (strumień podglądu). Surowe pliki są serwowane inline
 wyłącznie dla PDF i obrazów rastrowych, z ponownym sprawdzeniem sygnatury,
@@ -259,10 +259,10 @@ Upload waliduje całą partię, używa transakcji bazy i sprząta już zapisane
 pliki przy błędzie. Transakcja bazy sama nie wycofuje plików na dysku.
 
 Przenoszenie obsługuje [move_views.py](../documents/move_views.py):
-`<uuid>/move/` dla plików i `folders/<pk>/move/` dla folderów, oddzielnie
-w routingu Dysku i Dokumentów, również pod scoped URL. GET renderuje modal,
-POST wymaga CSRF i waliduje cel `folder:<pk>`, `library:<pk>` (Dysk) lub
-`root` (Dokumenty) wyłącznie w zakresie właściciela i aktywnego Workspace.
+`<uuid>/move/` dla plików i `folders/<pk>/move/` dla folderów Dysku,
+również pod scoped URL. GET renderuje modal, POST wymaga CSRF i waliduje
+cel `folder:<pk>` lub `library:<pk>` wyłącznie w zakresie właściciela
+i aktywnego Workspace. Dokumenty nie udostępniają tras przenoszenia.
 Nie przyjmuje dowolnego URL docelowego. Usunięte pliki, cykle i kolizje nazw
 folderów (porównanie `casefold`, także polskie litery) są odrzucane.
 Zmiana dysku folderu aktualizuje atomowo całe poddrzewo oraz pliki aktywne
@@ -295,20 +295,18 @@ nie ma analogicznego sygnału. Kosz ustawia tylko `deleted_at`.
 `WorkspaceDocument` zapisuje natywną treść w PostgreSQL, a przesłany oryginał
 w tym samym prywatnym storage co Dysk, z losową nazwą. Każdy odczyt i zapis
 widoków `editor_views.py` ogranicza obiekty do właściciela i aktywnego Workspace;
-formularz folderu nie pozwala wskazać relacji spoza tego zakresu. Kosz blokuje
+formularz tagów również ogranicza relacje do tego zakresu. Kosz blokuje
 edycję, import, podgląd i pobieranie.
 
-Foldery Dokumentów przechowują `is_starred`; POST `folders/<pk>/star/`
-przełącza gwiazdkę pod blokadą rekordu i wraca do katalogu z zachowanymi
-filtrami, układem i paginacją. GET `folders/<pk>/download/` tworzy prywatny ZIP
-przez [folder_exports.py](../documents/folder_exports.py). Każdy poziom hierarchii
-oraz dokument są ograniczone do właściciela i Workspace, a kosz jest pomijany.
-Archiwum zachowuje puste foldery, bezpieczne pojedyncze nazwy i rozróżnia
-kolizje nazw plików/folderów również bez uwzględnienia wielkości liter.
-Nie wypakowuje istniejących archiwów. Dane plików kopiowane są porcjami;
-ZIP powyżej 8 MiB przechodzi z pamięci do pliku tymczasowego, zamykanego po
-odpowiedzi lub błędzie. Brak źródłowego pliku przerywa pobieranie odpowiedzią 404,
-bez udostępniania niepełnego archiwum. Odpowiedź ma `private, no-store` i `nosniff`.
+Katalog Dokumentów filtruje i stronicuje wyłącznie `WorkspaceDocument`, niezależnie
+od historycznej wartości `folder_id`. Stare foldery i ich gwiazdki nie wpływają
+na wyniki ani liczniki. Parametr `folder` nie jest używany ani przekazywany dalej;
+wycofane sortowanie po folderze wraca do domyślnego sortowania po modyfikacji.
+Formularze nie zawierają pola folderu; stare POST-y nie zmieniają tej relacji.
+Nowe pliki, uploady, importy i kopie mają `folder=None`. Edytory wracają do
+katalogu Dokumenty. Model folderu i relacja pozostają w bazie wyłącznie dla
+zgodności ze starymi danymi, bez aktywnych tras CRUD, ZIP, gwiazdek i przenoszenia.
+Usunięcie funkcji nie usuwa treści ani plików z prywatnego storage.
 
 Treść przechodzi przez `rich_text.clean_content`: dopuszczona jest mała lista
 znaczników formatowania bez atrybutów; aktywne elementy, skrypty, style, obrazy,

@@ -1,4 +1,4 @@
-"""Shared, scoped moves for the two independent document catalogs."""
+"""Scoped moves for the Drive catalog."""
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -40,8 +40,10 @@ def _subtree(folders, root):
 @require_http_methods(['GET', 'POST'])
 @location_write
 def move(request, pk, kind='document', drive=False):
-    from . import editor_views, views
-    catalog = views if drive else editor_views
+    if not drive:
+        raise Http404
+    from . import views
+    catalog = views
     scope_folders, documents = catalog._folders(request), catalog._documents(request)
     libraries = {item.pk: item for item in views._libraries(request)} if drive else {}
     if drive:
@@ -134,4 +136,4 @@ def move(request, pk, kind='document', drive=False):
     if request.headers.get('X-Document-Move') == 'true':
         return JsonResponse({'error': ' '.join(str(error) for errors in form.errors.values() for error in errors)}, status=400)
     context.update({'form': form, 'form_title': f'Przenieś: {item.name if kind == "folder" else item.title}', 'submit_label': 'Przenieś'})
-    return views._render_form(request, context) if drive else editor_views._modal(request, context)
+    return views._render_form(request, context)

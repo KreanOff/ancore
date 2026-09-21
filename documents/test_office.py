@@ -193,7 +193,7 @@ class OfficeTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(WorkspaceDocument.objects.exists())
 
-    def test_documents_and_folders_are_scoped_in_forms_and_direct_routes(self):
+    def test_documents_are_scoped_and_legacy_folder_parameters_are_ignored(self):
         for owner, workplace in [(self.user, self.second_workspace), (self.other, self.foreign_workspace), (self.other, self.workspace)]:
             item = self.document(owner=owner, workplace=workplace, title='Niewidoczny dokument')
             folder = self.folder(owner=owner, workplace=workplace)
@@ -201,37 +201,13 @@ class OfficeTests(TestCase):
                 self.assertEqual(self.client.get(self.base + f'{item.pk}/{suffix}').status_code, 404)
             for suffix in ['', 'star/', 'trash/', 'restore/', 'import/']:
                 self.assertEqual(self.client.post(self.base + f'{item.pk}/{suffix}', self.save_payload()).status_code, 404)
-            self.assertEqual(self.client.get(self.base + f'?folder={folder.pk}').status_code, 404)
+            self.assertNotContains(self.client.get(self.base + f'?folder={folder.pk}'), 'Niewidoczny dokument')
             self.assertEqual(self.client.post(self.base + f'folders/{folder.pk}/edit/', {'name': 'Zmiana'}).status_code, 404)
             self.assertEqual(self.client.post(self.base + f'folders/{folder.pk}/delete/').status_code, 404)
             response = self.client.post(self.base + 'create/text/', self.save_payload(folder=folder.pk), headers={'X-Office-Editor': 'true'})
-            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(WorkspaceDocument.objects.filter(owner=self.user, workplace=self.workspace, folder__isnull=False).exists())
         self.assertNotContains(self.client.get(self.base), 'Niewidoczny dokument')
-
-    def test_nested_folders_rename_move_and_delete_restriction(self):
-        parent = self.folder()
-        response = self.client.post(self.base + f'folders/create/?folder={parent.pk}', {'name': 'Umowy'}, headers={'X-Document-Modal': 'true'})
-        child = WorkspaceDocumentFolder.objects.get(parent=parent)
-        self.assertEqual(response.json()['redirect_url'], self.base + f'?folder={parent.pk}')
-        item = self.document(folder=child)
-        self.client.post(self.base + f'folders/{parent.pk}/delete/')
-        self.assertTrue(WorkspaceDocumentFolder.objects.filter(pk=parent.pk).exists())
-        self.client.post(self.base + f'{item.pk}/', self.save_payload(folder=parent.pk))
-        item.refresh_from_db()
-        self.assertEqual(item.folder, parent)
-        self.client.post(self.base + f'folders/{child.pk}/delete/')
-        self.assertFalse(WorkspaceDocumentFolder.objects.filter(pk=child.pk).exists())
-        self.client.post(self.base + f'folders/{parent.pk}/edit/', {'name': 'Zmieniony'})
-        parent.refresh_from_db()
-        self.assertEqual(parent.name, 'Zmieniony')
-
-    def test_duplicate_folder_validation_and_modal_errors(self):
-        self.folder(name='Umowy')
-        response = self.client.post(self.base + 'folders/create/', {'name': 'umowy'}, headers={'X-Document-Modal': 'true'})
-        self.assertContains(response, 'już istnieje')
-        self.assertNotContains(response, '<html')
-        self.assertEqual(WorkspaceDocumentFolder.objects.count(), 1)
-        self.assertContains(self.client.get(self.base + 'upload/'), 'data-document-dialog')
 
     def test_star_trash_restore_and_hidden_downloads(self):
         item = self.document()

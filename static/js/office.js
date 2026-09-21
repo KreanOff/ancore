@@ -84,7 +84,7 @@
         editor.hidden = false;
         toolbar.hidden = false;
         function signature() {
-            return JSON.stringify([form.elements.title.value, form.elements.folder.value, new FormData(form).getAll('tags'), editor.innerHTML]);
+            return JSON.stringify([form.elements.title.value, new FormData(form).getAll('tags'), editor.innerHTML]);
         }
         let savedSignature = errorBox.hidden ? signature() : '';
         let dirty = !errorBox.hidden;

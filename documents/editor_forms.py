@@ -4,8 +4,8 @@ from django import forms
 
 from core.upload_validation import validate_attachment_upload
 from tasks.models import TaskTag
-from .forms import IconColorForm, MultipleFileField, MultipleFileInput
-from .models import WorkspaceDocument, WorkspaceDocumentFolder
+from .forms import MultipleFileField, MultipleFileInput
+from .models import WorkspaceDocument
 from .rich_text import clean_content
 
 DOCUMENT_EXTENSIONS = {'.pdf', '.doc', '.docx', '.rtf', '.txt', '.xls', '.xlsx', '.csv', '.ppt', '.pptx'}
@@ -38,28 +38,6 @@ class OfficeCreateForm(forms.Form):
     title = forms.CharField(label='Nazwa', max_length=240, widget=forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'autofocus': True}))
 
 
-class OfficeFolderForm(IconColorForm):
-    class Meta:
-        model = WorkspaceDocumentFolder
-        fields = ['name', 'color']
-        widgets = {'name': forms.TextInput(attrs={'class': 'form-input tasks-inline-input'})}
-
-    def __init__(self, *args, owner, workplace, parent=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.owner, self.workplace, self.parent = owner, workplace, parent
-
-    def clean_name(self):
-        name = self.cleaned_data['name'].strip()
-        if name in {'.', '..'} or '/' in name or '\\' in name:
-            raise forms.ValidationError('Podaj nazwę folderu bez ukośników.')
-        others = WorkspaceDocumentFolder.objects.filter(owner=self.owner, workplace=self.workplace, parent=self.parent, name__iexact=name)
-        if self.instance.pk:
-            others = others.exclude(pk=self.instance.pk)
-        if others.exists():
-            raise forms.ValidationError('Folder o tej nazwie już istnieje w tym miejscu.')
-        return name
-
-
 class OfficeDocumentForm(forms.ModelForm):
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     replacement = forms.FileField(label='Nowa wersja pliku', required=False, widget=forms.FileInput(attrs={
@@ -68,10 +46,9 @@ class OfficeDocumentForm(forms.ModelForm):
 
     class Meta:
         model = WorkspaceDocument
-        fields = ['title', 'folder', 'tags', 'content']
+        fields = ['title', 'tags', 'content']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'placeholder': 'Nazwa dokumentu'}),
-            'folder': forms.Select(attrs={'class': 'form-select tasks-inline-select'}),
             'tags': forms.CheckboxSelectMultiple(),
             'content': forms.Textarea(attrs={'class': 'form-input', 'rows': 20}),
         }
@@ -80,19 +57,6 @@ class OfficeDocumentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['revision'].initial = self.instance.revision
         self.fields['tags'].queryset = TaskTag.objects.filter(user=owner, workplace=workplace)
-        folders = WorkspaceDocumentFolder.objects.filter(owner=owner, workplace=workplace)
-        self.fields['folder'].queryset = folders
-        self.fields['folder'].empty_label = 'Dokumenty (folder główny)'
-        available = {item.pk: item for item in folders}
-        def label(item):
-            parts, seen = [item.name], {item.pk}
-            parent = available.get(item.parent_id)
-            while parent and parent.pk not in seen:
-                seen.add(parent.pk)
-                parts.append(parent.name)
-                parent = available.get(parent.parent_id)
-            return ' / '.join(reversed(parts))
-        self.fields['folder'].label_from_instance = label
         if self.instance.kind != WorkspaceDocument.Kind.TEXT:
             self.fields.pop('content')
         if self.instance.kind != WorkspaceDocument.Kind.FILE:

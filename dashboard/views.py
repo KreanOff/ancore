@@ -449,10 +449,10 @@ def global_search(request):
             'office-documents', 'Dokumenty', 'file-text',
             WorkspaceDocument.objects.filter(owner=user, workplace=workplace, deleted_at__isnull=True).filter(
                 Q(title__icontains=query) | Q(filename__icontains=query)
-            ).select_related('folder'),
+            ),
             lambda item: _global_search_result(item.title, 'Dokument',
                 f'{office_url}{item.pk}/' + ('editor/' if item.has_full_editor else ('preview/' if item.kind == WorkspaceDocument.Kind.FILE else '')),
-                'file-text', item.folder.name if item.folder else 'Dokumenty', new_tab=item.has_full_editor),
+                'file-text', 'Dokumenty', new_tab=item.has_full_editor),
         ),
         _global_search_group(
             'document-libraries', 'Dyski', 'hard-drive',

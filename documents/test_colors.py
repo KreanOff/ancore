@@ -3,7 +3,7 @@ from django.test import TestCase
 
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
-from .models import Document, DocumentLibrary, Folder, WorkspaceDocument, WorkspaceDocumentFolder
+from .models import Document, DocumentLibrary, Folder
 
 
 class IconColorTests(TestCase):
@@ -15,15 +15,13 @@ class IconColorTests(TestCase):
         cls.outside = create_workplace_for_user(cls.user, 'Inny Workspace')
         cls.library = DocumentLibrary.objects.create(owner=cls.user, workplace=cls.workspace, name='Dysk')
         cls.folder = Folder.objects.create(owner=cls.user, workplace=cls.workspace, library=cls.library, name='Folder')
-        cls.office_folder = WorkspaceDocumentFolder.objects.create(owner=cls.user, workplace=cls.workspace, name='Dokumenty')
 
     def setUp(self):
         self.client.force_login(self.user)
         self.client.get(scoped_workplace_app_path(self.workspace, 'documents'))
 
     def cases(self):
-        return [(self.library, 'documents', 'libraries'), (self.folder, 'documents', 'folders'),
-                (self.office_folder, 'office', 'folders')]
+        return [(self.library, 'documents', 'libraries'), (self.folder, 'documents', 'folders')]
 
     def test_create_and_edit_colors_in_normal_and_scoped_routes(self):
         for item, app, kind in self.cases():
@@ -77,21 +75,17 @@ class IconColorTests(TestCase):
         self.library.save()
         self.folder.color = '#247c53'
         self.folder.save()
-        self.office_folder.color = '#ab12cd'
-        self.office_folder.save()
         for display in ('list', 'grid'):
             for scoped in (False, True):
                 drive = scoped_workplace_app_path(self.workspace, 'documents') if scoped else '/documents/'
-                office = scoped_workplace_app_path(self.workspace, 'office') if scoped else '/office/'
                 with self.subTest(display=display, scoped=scoped):
                     self.assertContains(self.client.get(drive, {'display': display}, follow=True), '--documents-icon-color: #123abc;')
                     response = self.client.get(drive, {'library': self.library.pk, 'display': display}, follow=True)
                     self.assertContains(response, '--documents-icon-color: #123abc;')
                     self.assertContains(response, '--documents-icon-color: #247c53;')
-                    self.assertContains(self.client.get(office, {'display': display}, follow=True), '--documents-icon-color: #ab12cd;')
 
     def test_folder_color_survives_transition_from_empty_to_filled(self):
-        for folder, model, app in ((self.folder, Document, 'documents'), (self.office_folder, WorkspaceDocument, 'office')):
+        for folder, model, app in ((self.folder, Document, 'documents'),):
             folder.color = '#247c53'
             folder.save()
             base = scoped_workplace_app_path(self.workspace, app)

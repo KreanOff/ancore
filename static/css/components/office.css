@@ -5,7 +5,7 @@
 .office-quick-create-toggle:hover { background: var(--system-interaction-soft); }
 .office-quick-create-toggle svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .office-quick-create-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
-.office-quick-create-list { display: grid; grid-template-columns: repeat(6, minmax(0, 184px)); gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
+.office-quick-create-list { display: grid; grid-template-columns: repeat(5, minmax(0, 184px)); gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
 .office-quick-create-list[hidden] { display: none; }
 .office-quick-create-list > li { min-width: 0; }
 .office-quick-create .office-create-card { align-items: center; justify-content: center; gap: 16px; min-height: 136px; height: 100%; aspect-ratio: auto; overflow: visible; padding: 16px 12px; color: inherit; text-align: center; text-decoration: none; }
@@ -28,7 +28,7 @@
 }
 
 .office-editor-scroll { overflow: auto; min-height: 0; flex: 1; padding: 24px; background: var(--secondary-menu-bg); }
-.office-editor-metadata { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; max-width: 900px; margin: 0 auto 20px; }
+.office-editor-metadata { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; max-width: 900px; margin: 0 auto 20px; }
 .office-editor-metadata .documents-tag-picker { grid-column: 1 / -1; }
 .office-editor-errors { max-width: 900px; margin: 0 auto 16px; }
 .office-paper { max-width: 900px; margin: 0 auto; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); }

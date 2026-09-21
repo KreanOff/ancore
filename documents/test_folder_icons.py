@@ -5,7 +5,7 @@ from django.utils import timezone
 from workplaces.models import create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .folder_stats import set_folder_summaries
-from .models import Document, DocumentLibrary, Folder, WorkspaceDocument, WorkspaceDocumentFolder
+from .models import Document, DocumentLibrary, Folder
 
 
 class FolderIconTestsMixin:
@@ -117,9 +117,3 @@ class DriveFolderIconTests(FolderIconTestsMixin, TestCase):
     app = 'documents'
     folder_model = Folder
     document_model = Document
-
-
-class OfficeFolderIconTests(FolderIconTestsMixin, TestCase):
-    app = 'office'
-    folder_model = WorkspaceDocumentFolder
-    document_model = WorkspaceDocument

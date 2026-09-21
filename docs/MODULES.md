@@ -240,7 +240,7 @@ gwiazdkę oraz datę przeniesienia do kosza.
   Dyski i foldery sumują rozmiary aktywnych plików także w podfolderach,
   wyłącznie w zakresie właściciela i Workspace; pliki w koszu są pomijane.
   Data folderu pozostaje datą utworzenia (model nie zapisuje modyfikacji).
-  Dysk i Dokumenty rozróżniają ikoną folder bez plików oraz folder z plikami.
+  Dysk rozróżnia ikoną folder bez plików oraz folder z plikami.
   Liczą się aktywne pliki także w podfolderach i dokumenty 0 B; kosz i obce dane
   są pomijane. Same puste podfoldery zachowują ikonę pustego folderu.
   Liczniki plików i folderów pozostają dostępne w filtrach/sortowaniu dysków.
@@ -319,50 +319,41 @@ w osobnym module Dokumenty opisanym poniżej.
 [edytor JS](../static/js/office.js).
 
 „Dokumenty” w nawigacji otwierają `/office/` albo
-`/workplaces/<slug>/office/`. Moduł ma własne foldery (`WorkspaceDocumentFolder`)
-i dokumenty (`WorkspaceDocument`), niezależne od Dysku. Katalog od razu
-pokazuje dokumenty i foldery, bez tworzenia osobnego dysku/biblioteki.
+`/workplaces/<slug>/office/`. Moduł ma własne dokumenty (`WorkspaceDocument`),
+niezależne od Dysku, i pokazuje je w jednym płaskim katalogu. Dotychczasowe
+pliki ze wszystkich poziomów folderów są widoczne razem. Foldery nie występują
+na liście, w kafelkach, licznikach, formularzach, sortowaniu ani wyszukiwarce.
+Stare parametry `folder` są ignorowane; akcje folderów i przenoszenia zwracają 404.
+Modele i zapisane relacje folderów pozostają dla zgodności ze starymi danymi,
+bez kasowania plików i bez migracji. Nowe pliki, uploady i kopie powstają bez folderu.
 
-Katalog Dokumentów korzysta z tego samego przeciągania i modala „Przenieś”:
-pliki z komputera można przesłać do bieżącego katalogu lub wskazanego folderu,
-a dokumenty i foldery przenosić do innych folderów albo katalogu głównego
-przez ścieżkę nawigacyjną. Obowiązują formaty i limity uploadu Dokumentów;
-przesyłanie całych folderów z komputera nie jest obsługiwane w żadnym z katalogów.
+Przeciągnięcie plików z komputera do katalogu nadal otwiera upload z walidacją
+formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko Dysku.
 
 - Cztery rodzaje nowych plików: dokument DOCX, arkusz XLSX, prezentacja PPTX
-  i tablica Board. Katalog zachowuje foldery, listę/kafelki, sortowanie,
+  i tablica Board. Katalog zachowuje listę/kafelki, sortowanie,
   wyszukiwanie, gwiazdki, kosz i globalne szukanie. Nad listą, poza koszem,
   są cztery kafelki „Utwórz plik”, które otwierają okno „Nowy dokument”
-  z wybranym typem i fokusem na nazwie. Obok nich są kafelki „Nowy folder”
-  i „Prześlij dokumenty”, otwierające istniejące formularze w bieżącym folderze.
-  Te akcje są dostępne w kafelkach; górny pasek zawiera tylko tytuł i ścieżkę folderów.
+  z wybranym typem i fokusem na nazwie. Piąty kafelek „Prześlij dokumenty”
+  otwiera formularz uploadu. Górny pasek zawiera tytuł „Dokumenty”.
   Kliknięcie nagłówka zwija lub rozwija
   kafelki; stan jest zapamiętywany w przeglądarce dla konta i Workspace.
-  Plik powstaje w bieżącym folderze
-  i Workspace; typ można jeszcze zmienić w formularzu. Wspólna paginacja
+  Plik powstaje w bieżącym Workspace; typ można jeszcze zmienić w formularzu. Wspólna paginacja
   pozwala wyświetlić 25, 50 lub 100 pozycji.
-- Foldery można oznaczać gwiazdką i pobierać jako ZIP z listy oraz kafelków.
-  Widok „Oznaczone gwiazdką”, jego licznik i filtr gwiazdki obejmują również
-  foldery we wszystkich poziomach Workspace. Gwiazdka folderu nie zmienia
-  oznaczenia jego zawartości. ZIP zawiera aktywne dokumenty i podfoldery,
-  w tym puste; pomija kosz. Starsze dokumenty Ancore eksportuje do DOCX,
-  tablice do `.excalidraw`, a przesłane pliki zachowuje w oryginalnym formacie.
 - Filtry i sortowanie korzystają z tych samych paneli co Dysk. Filtry obejmują
   nazwę dokumentu, oryginalną nazwę pliku, tag, typ pliku (także Dokument Ancore
   i tablicę Board), rozmiar, gwiazdkę oraz datę zmiany, a w koszu datę usunięcia.
   Warunki tekstowe obsługują zawieranie, wykluczenie i pustą/niepustą wartość.
-  Łączą się ze sobą i wyszukiwaniem, obejmując wszystkie foldery Workspace.
-  Warunki dotyczące wyłącznie dokumentów ukrywają foldery w wynikach.
+  Łączą się ze sobą i wyszukiwaniem, obejmując dokumenty bieżącego Workspace.
   Sortowanie pozwala wybrać oba kierunki dla nazwy, oryginalnej nazwy pliku,
-  folderu, rozmiaru, daty zmiany/usunięcia i daty dodania. Foldery są pierwsze;
-  ich data odpowiada utworzeniu, a dla pól właściwych plikom są sortowane po nazwie.
+  rozmiaru, daty zmiany/usunięcia i daty dodania.
   Zmiana warunków wraca na pierwszą stronę. Paginacja, zmiana lista/kafelki,
   kliknięcie tagu oraz akcje gwiazdki/kosza zachowują filtry i sortowanie.
-  Czyszczenie filtrów w panelu zachowuje bieżący folder, układ i widok.
+  Czyszczenie filtrów w panelu zachowuje układ i widok.
 - Wspólne tagi `TaskTag` można przypisywać w edycji danych dokumentu (także
   tablicy) oraz w starszym edytorze tekstu. Lista ma kolumnę „Tagi” po nazwie,
   a kafelki pokazują te same etykiety. Kliknięcie tagu filtruje dokumenty
-  we wszystkich folderach bieżącego Workspace; wyszukiwanie uwzględnia nazwy tagów.
+  w bieżącym Workspace; wyszukiwanie uwzględnia nazwy tagów.
   Wybór i filtrowanie tagów są ograniczone do właściciela oraz Workspace.
 - DOCX/XLSX/PPTX otwierają się w pełnych edytorach ONLYOFFICE w osobnej karcie
   Ancore, na pełną szerokość bez menu bocznego; katalog zostaje w pierwotnej karcie.
@@ -372,7 +363,7 @@ przesyłanie całych folderów z komputera nie jest obsługiwane w żadnym z kat
   automatyczny zapis, import i eksport sceny oraz eksport PNG/SVG. Otwiera się
   w osobnej karcie bez menu bocznego, tak samo jak pliki Office: z listy,
   kafelków, wyszukiwarki, metadanych oraz po utworzeniu w modalu.
-- Upload: do 20 plików, domyślnie 10 MiB na plik. Nazwę/folder można zmieniać,
+- Upload: do 20 plików, domyślnie 10 MiB na plik. Nazwę można zmieniać,
   a przesłany plik podmienić. Pliki w koszu wymagają przywrócenia przed otwarciem.
 - Starsze tekstowe dokumenty Ancore zachowują dotychczasowy edytor, eksport DOCX,
   konflikt rewizji i możliwość utworzenia kopii w pełnym edytorze.

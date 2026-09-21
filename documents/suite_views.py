@@ -24,7 +24,7 @@ from core.upload_validation import validate_attachment_upload
 from . import office_service as service
 from .board import EMPTY_SCENE, BOARD_LIMIT, clean_scene
 from .editor_forms import OfficeCreateForm
-from .editor_views import _item, _context, _folder, _modal, _url
+from .editor_views import _item, _context, _modal, _url
 from .location_lock import location_write
 from .models import WorkspaceDocument as Document, OfficeSaveReceipt, Document as DriveDocument, DriveOfficeSaveReceipt
 from .rich_text import docx_bytes
@@ -60,12 +60,11 @@ def _file_queryset(drive=False):
 @require_http_methods(['GET', 'POST'])
 @location_write
 def create(request):
-    folder = _folder(request, request.GET.get('folder'))
     form = OfficeCreateForm(request.POST if request.method == 'POST' else None,
                             initial={'kind': request.GET.get('type', 'word')})
     if request.method == 'POST' and form.is_valid():
         kind, title = form.cleaned_data['kind'], form.cleaned_data['title']
-        item = Document(owner=request.user, workplace=request.workplace, folder=folder, title=title)
+        item = Document(owner=request.user, workplace=request.workplace, title=title)
         if kind == 'board':
             item.kind, item.content = Document.Kind.BOARD, json.dumps(EMPTY_SCENE)
             item.filename = title[:240] + '.excalidraw'
@@ -85,10 +84,10 @@ def create(request):
                 raise
         editor_url = _url(request, f'{item.pk}/editor/')
         if item.has_full_editor and request.headers.get('X-Document-Modal') == 'true':
-            return JsonResponse({'redirect_url': _url(request, folder=folder.pk if folder else None),
+            return JsonResponse({'redirect_url': _url(request),
                                  'editor_url': editor_url})
         return _form_success(request, editor_url)
-    return _modal(request, {**_context(request, folder), 'form': form, 'office_create': True,
+    return _modal(request, {**_context(request), 'form': form, 'office_create': True,
                            'form_title': 'Nowy dokument', 'submit_label': 'Utwórz i otwórz'})
 
 
@@ -98,7 +97,7 @@ def editor(request, pk, drive=False):
     item = _suite_item(request, pk, drive)
     if not item.office_type and (drive or not item.has_full_editor):
         return redirect(_suite_url(request, f'{pk}/preview/' if drive else f'{pk}/', drive))
-    location = drive_views._context(request, item.library, item.folder) if drive else _context(request, item.folder)
+    location = drive_views._context(request, item.library, item.folder) if drive else _context(request)
     context = {**location, 'document': item, 'drive_editor': drive,
                'office_configured': service.configured(),
                'api_url': settings.ONLYOFFICE_URL + '/web-apps/apps/api/documents/api.js'}
@@ -257,7 +256,7 @@ def callback(request, pk, drive=False):
 @require_POST
 def upgrade_text(request, pk):
     source = _item(request, pk, kind=Document.Kind.TEXT)
-    item = Document(owner=request.user, workplace=request.workplace, folder=source.folder,
+    item = Document(owner=request.user, workplace=request.workplace,
                     title=source.title[:235] + ' — DOCX', kind=Document.Kind.FILE,
                     filename=source.title[:230] + '.docx')
     content = docx_bytes(source.content)
@@ -286,8 +285,8 @@ def convert(request, pk, drive=False):
         messages.error(request, 'Nie udało się przygotować kopii w edytorze. Sprawdź połączenie i spróbuj ponownie.')
         return redirect(_suite_url(request, f'{pk}/preview/', drive))
     model = DriveDocument if drive else Document
-    extra = {'library': source.library, 'description': source.description} if drive else {'kind': Document.Kind.FILE}
-    item = model(owner=request.user, workplace=request.workplace, folder=source.folder,
+    extra = {'library': source.library, 'folder': source.folder, 'description': source.description} if drive else {'kind': Document.Kind.FILE}
+    item = model(owner=request.user, workplace=request.workplace,
                  title=source.title[:230] + ' — kopia', filename=source.title[:220] + '.' + extension,
                  file_size=len(content), **extra)
     item.file.save(item.filename, ContentFile(content), save=False)

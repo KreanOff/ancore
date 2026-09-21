@@ -43,7 +43,7 @@ class OfficeQueryTests(TestCase):
         self.assertEqual(response.status_code, 200)
         return [row['item'].pk for row in response.context['rows']]
 
-    def test_text_conditions_search_and_nested_folder_scope(self):
+    def test_text_conditions_search_and_legacy_folder_parameter(self):
         self.assertEqual(self.rows(view='all', folder=self.folder.pk, name='UMOWA'), [self.alpha.pk])
         self.assertEqual(self.rows(filename='.PDF', name='alpha'), [self.alpha.pk])
         self.assertEqual(self.rows(name='alpha', name_op='not_contains'), [self.zulu.pk])
@@ -51,7 +51,7 @@ class OfficeQueryTests(TestCase):
         self.assertEqual(set(self.rows(filename_op='is_not_empty')), {self.alpha.pk, self.zulu.pk})
         self.assertEqual(self.rows(name='alpha', q='Zulu'), [])
         self.assertEqual(self.rows(name='alpha', q='Klient'), [self.alpha.pk])
-        self.assertEqual(self.rows(view='all', folder=self.folder.pk), [self.nested.pk])
+        self.assertEqual(self.rows(view='all', folder=self.folder.pk), [self.zulu.pk, self.alpha.pk])
 
     def test_choice_filters_combine_and_hide_folders(self):
         filters = {'view': 'all', 'tag': self.tag.pk, 'file_type': '.pdf', 'size': 'medium', 'starred': 'yes'}
@@ -93,18 +93,18 @@ class OfficeQueryTests(TestCase):
                 self.assertEqual(self.rows(sort=f'{field}_asc'), [self.alpha.pk, self.zulu.pk])
                 self.assertEqual(self.rows(sort=f'{field}_desc'), [self.zulu.pk, self.alpha.pk])
         for direction in ['asc', 'desc']:
-            self.assertEqual(self.rows(sort=f'folder_{direction}'), [self.alpha.pk, self.zulu.pk])
+            self.assertEqual(self.rows(sort=f'folder_{direction}'), self.rows(sort='updated_desc'))
         # Creation and modification order differ: the old alias must keep its meaning.
         Document.objects.filter(pk=self.alpha.pk).update(updated_at=timezone.now() + timedelta(minutes=1))
         for old, current in [('name', 'name_asc'), ('updated', 'updated_desc'), ('oldest', 'updated_asc')]:
             self.assertEqual(self.rows(sort=old), self.rows(sort=current))
 
-    def test_folder_filter_and_order_precede_documents(self):
+    def test_filters_and_order_ignore_legacy_folders(self):
         self.assertEqual(self.rows(view='all', name='l', sort='name_desc'),
-                         [self.nested.pk, self.folder.pk, self.zulu.pk, self.alpha.pk])
-        self.assertEqual(self.rows(view='all', modified='today', sort='created_asc'), [self.nested.pk, self.zulu.pk])
+                         [self.zulu.pk, self.alpha.pk])
+        self.assertEqual(self.rows(view='all', modified='today', sort='created_asc'), [self.zulu.pk])
         response = self.client.get(self.base, {'folder': self.folder.pk, 'name': 'umowa'})
-        self.assertContains(response, '<small>Zulu</small>', html=True)
+        self.assertNotContains(response, '<small>Zulu</small>', html=True)
 
     def test_invalid_filters_and_direct_links_keep_access_boundaries(self):
         self.assertEqual(self.rows(sort='owner__password', file_type='invalid', modified='invalid', size='invalid'),

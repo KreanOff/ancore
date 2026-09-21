@@ -230,7 +230,7 @@ gwiazdek folder pokazuje nazwę dysku jako link, tak jak lokalizacja pliku.
 Pusty stan gwiazdek obejmuje pliki i foldery.
 Pusty stan zachowuje własne wyśrodkowanie i padding. Nazwy mają
 ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony nie mają
-ozdobnych ramek. Foldery na listach i kafelkach Dysku oraz Dokumentów używają
+ozdobnych ramek. Foldery na listach i kafelkach Dysku używają
 wspólnego include'a `documents/includes/folder_icon.html` z parametrem `has_files`.
 Pusty folder jest zamknięty, a folder z plikami ma otwartą okładkę i dwie
 widoczne kartki. Oba warianty są płaskimi SVG, domyślnie żółtymi (`#ffd855`) z pomarańczową
@@ -254,7 +254,7 @@ Te same ikony występują na listach, kafelkach, w formularzu danych pliku
 i zastępczym widoku podglądu. Są dekoracyjne, bez fokusu, zachowują kolory
 po inicjalizacji `AncoreIcons` i podmianie treści. Nie zmieniają obsługi formatów
 ani ikon załączników w innych modułach.
-Ikony plików i folderów w tabelach Dysku i Dokumentów mają 32×32px w polu 32×32px.
+Ikony plików w tabelach Dysku i Dokumentów oraz folderów Dysku mają 32×32px w polu 32×32px.
 Wszystkie dyski używają płaskiej, poziomej obudowy z include'a
 `documents/includes/drive_icon.html` na liście, w kafelkach i panelu bocznym.
 SVG używa zapisanego koloru dysku (domyślnie `#4285d4`) i białych detali,
@@ -266,7 +266,7 @@ Wiersze dysków mają minimum 44px wysokości, a odstęp między ikoną i nazwą
 wynosi 8px (10px w zwężonej liście).
 
 Formularz tworzenia i ustawień dysku zawiera nazwę, kolor ikony i opis.
-Tworzenie oraz edycja folderów Dysku i Dokumentów zawierają nazwę i kolor.
+Tworzenie oraz edycja folderów Dysku zawierają nazwę i kolor.
 Przycisk ołówka ma etykietę „Edytuj folder”. Wspólny include
 `documents/includes/color_field.html` używa natywnego pola `type="color"`
 z istniejącą klasą `tasks-project-option-color`, podglądu SVG 64×64px
@@ -335,9 +335,10 @@ wspólne komponenty za kontrolki, stany interakcji i powłokę okna.
 
 Przeciąganie w Dysku i Dokumentach inicjalizuje `initDocumentDragDrop` w
 `documents.js`, również po `ancore:content-loaded`; poprzednie listenery usuwa
-wspólny `AbortController`. Kafelki i wiersze aktywnych plików/folderów mają
-`data-document-drag`, a miejsca docelowe `data-document-drop` (`folder:<pk>`,
-`library:<pk>` lub `root`). Prawidłowy cel podświetla się istniejącym turkusem
+wspólny `AbortController`. Kafelki i wiersze aktywnych plików/folderów Dysku
+mają `data-document-drag`, a miejsca docelowe `data-document-drop` (`folder:<pk>`
+lub `library:<pk>`). W Dokumentach pozostaje wyłącznie upload do katalogu
+(`root`), bez przeciągania wierszy i kafelków między lokalizacjami. Prawidłowy cel podświetla się istniejącym turkusem
 z przerywanym obrysem; komunikat `role=status` podaje nazwę miejsca docelowego.
 Podczas przenoszenia elementu przy kursorze podąża nieprzezroczysta karta
 `documents-drag-preview` (320px): własna ikona pliku/folderu, nazwa do trzech
@@ -381,7 +382,7 @@ Dotyczy to także tablicy i stanu niedostępnego edytora.
 
 Osobna pozycja „Dokumenty” używa ikony `file-text`. Katalog w
 `documents/office/index.html` zachowuje paski `tasks-topbar`/`tasks-filterbar`,
-nawigację `tasks-rail-link`, tabelę i kafelki Dysku. Foldery i upload używają
+nawigację `tasks-rail-link`, tabelę i kafelki Dysku. Upload używa
 tego samego `documents/form.html` oraz obsługi fokusu, Escape i błędów w
 `documents.js`. Wariant uploadu `office_upload` wyświetla wyłącznie formaty dokumentów.
 
@@ -394,18 +395,16 @@ i przy inicjalizacji po `ancore:content-loaded`, bez powielania listenerów.
 
 Lista Dokumentów używa tych samych odstępów co lista plików Dysku: 24px
 od lewej i prawej krawędzi tabeli, także na telefonie oraz w nagłówku.
-Przycisk menu działań jest po lewej stronie ikony pliku lub folderu.
-Foldery Dokumentów używają tej samej kolejności akcji co pliki: przenoszenie, gwiazdka,
-edycja, pobieranie ZIP i usunięcie pustego folderu. Include
-`documents/office/actions.html` obsługuje listę oraz kafelki, zachowując
-etykiety i `aria-pressed` gwiazdki; na kafelkach pozostają przyciski ikonowe.
-Pusty widok oznaczonych elementów informuje o dokumentach i folderach.
+Przycisk menu działań jest po lewej stronie ikony pliku. Dokumenty mają jeden
+płaski katalog, bez folderów, ścieżki lokalizacji i akcji „Przenieś”. Include
+`documents/office/actions.html` obsługuje gwiazdkę, edycję, pobieranie oraz kosz;
+na kafelkach pozostają przyciski ikonowe. Pusty widok gwiazdek dotyczy dokumentów.
 Pusty stan zachowuje własne odstępy i wyśrodkowanie.
 Kolumna „Tagi” między nazwą a datą używa etykiet `documents-tag` z Dysku;
-foldery i dokumenty bez tagów pokazują „—”. Oba katalogi mają tę samą
+dokumenty bez tagów pokazują „—”. Oba katalogi mają tę samą
 minimalną szerokość tabeli z menu (690px) oraz zawijanie tagów.
 Tagi są widoczne również na kafelkach. Kliknięcie etykiety filtruje dokumenty
-ze wszystkich folderów bieżącego Workspace; aktywny tag i akcja czyszczenia
+w bieżącym Workspace; aktywny tag i akcja czyszczenia
 pojawiają się nad listą. Filtr pozostaje przy wyszukiwaniu, sortowaniu,
 paginacji, zmianie układu i akcjach gwiazdki/kosza.
 Przypisanie tagów korzysta ze wspólnego pola `documents-tag-picker` w oknie
@@ -414,9 +413,8 @@ w edytorze tekstu oznacza niezapisane zmiany tak samo jak zmiana treści.
 
 Oba katalogi korzystają z jednego odstępu bocznego zakładek i siatki
 (`--documents-index-padding-x` na `.documents-page`). Nagłówki tabel Dysków,
-plików Dysku i Dokumentów są tekstowe, bez ikon. Lista Dokumentów pokazuje
-drugą linię tylko dla lokalizacji
-poza bieżącym folderem. Kafelki Dokumentów mają tę samą powierzchnię podglądu,
+plików Dysku i Dokumentów są tekstowe, bez ikon. Lista Dokumentów nie pokazuje historycznej lokalizacji w folderach.
+Kafelki Dokumentów mają tę samą powierzchnię podglądu,
 nazwę, metadane i stopkę co pliki Dysku oraz własny przewijany kontener.
 Dokumenty używają wspólnego z Dyskiem include'a `documents/filter_sort.html`:
 przycisku „Filtruj” z licznikiem, wyszukiwaniem pól, warunkami tekstowymi,
@@ -426,15 +424,15 @@ modułu. Sortowanie używa `directory_sort_builder.html` z wyszukiwaniem pól,
 kierunkiem rosnąco/malejąco i aktualnym ustawieniem w przycisku, identycznie
 jak w Dysku. Pusty wynik filtrów ma akcję czyszczenia.
 Paginacja korzysta z `directory_pagination_toolbar.html` z wyborem 25/50/100 pozycji. `tasks.js`
-obsługuje także wyszukiwanie z opóźnieniem i Enter; układ, folder i widok
+obsługuje także wyszukiwanie z opóźnieniem i Enter; układ i widok
 pozostają zachowane przy zmianie filtrów, sortowania lub liczby pozycji.
-Folder i układ należą do adresu formularza wyszukiwania, a nie do zbioru
+Układ należy do adresu formularza wyszukiwania, a nie do zbioru
 czyszczonych filtrów. Filtry i sortowanie wracają na pierwszą stronę;
 zmiana lista/kafelki zachowuje stronę. Na telefonie
 wiele akcji nagłówka zawija się do kolejnych rzędów we wspólnym wariancie
 Dysku i Dokumentów; tabela zachowuje własne przewijanie poziome.
 
-Starszy edytor tekstu jest pełnym ekranem z nazwą, wyborem folderu, paskiem formatowania,
+Starszy edytor tekstu jest pełnym ekranem z nazwą, tagami, paskiem formatowania,
 powierzchnią dokumentu oraz jawnym zapisem. `office.css` dodaje wyłącznie układ
 tej części; kontrolki i kolory pochodzą ze wspólnych komponentów. Szerokości
 dropdownów określa także na wrapperach `AncoreCustomSelect`. Przyciski na telefonie
@@ -455,19 +453,17 @@ odświeża katalog w pierwotnej karcie. Błąd zamyka pustą kartę; blokada oki
 pokazuje odnośnik do utworzonego pliku. Ten sam mechanizm obejmuje tablice.
 ONLYOFFICE zachowuje własny polski interfejs, Excalidraw jest izolowany od
 CSS aplikacji i używa turkusowego akcentu. Katalog ma dwa wspólne paski:
-tytuł ze ścieżką folderów oraz narzędzia z wyszukiwaniem i paginacją.
-Tworzenie dokumentów i folderów oraz upload są dostępne w sekcji „Utwórz plik”;
+tytuł oraz narzędzia z wyszukiwaniem i paginacją.
+Tworzenie dokumentów oraz upload są dostępne w sekcji „Utwórz plik”;
 górny pasek nie zawiera przycisków tych akcji. Pod paskiem
 widoków („Wszystkie dokumenty”, ostatnie zmiany, gwiazdki, kosz), nad listą
-plików, sekcja „Utwórz plik” pokazuje sześć skrótów:
-dokument, arkusz kalkulacyjny, prezentację, tablicę, „Nowy folder”
-i „Prześlij dokumenty”. Dwie ostatnie akcje otwierają istniejące modale
-tworzenia folderu i uploadu w bieżącym folderze oraz Workspace.
+plików, sekcja „Utwórz plik” pokazuje pięć skrótów:
+dokument, arkusz kalkulacyjny, prezentację, tablicę i „Prześlij dokumenty”.
+Ostatnia akcja otwiera istniejący modal uploadu w bieżącym Workspace.
 Wariant `office-create-card`
 korzysta z powierzchni `documents-card`, istniejących kolorowych ikon plików
-oraz małego plusa z tłem głównego przycisku; folder korzysta ze wspólnej ikony
-folderu, upload z ikony `cloud-upload` i małej ikony `upload` zamiast plusa.
-Na szerokim ekranie ma jeden rząd sześciu kafelków, przy szerokości zawartości
+oraz małego plusa z tłem głównego przycisku; upload korzysta z ikony `cloud-upload` i małej ikony `upload` zamiast plusa.
+Na szerokim ekranie ma jeden rząd pięciu kafelków, przy szerokości zawartości
 sekcji do 900px przechodzi do trzech kolumn,
 na telefonie dwie kolumny z mniejszą ikoną obok nazwy i bez dekoracyjnego
 plusa, aby pozostawić miejsce na listę; nie występuje w koszu. Skróty działają także
@@ -480,8 +476,7 @@ Enter/Spacji; ukryte kafelki nie są dostępne przez Tab. Domyślnie sekcja jest
 rozwinięta. `office.js` zapamiętuje stan w `localStorage` osobno dla konta
 i Workspace oraz odtwarza go po przeładowaniu i `ancore:content-loaded`.
 Brak dostępu do pamięci przeglądarki nie blokuje przełączania.
-Kliknięcie kafelka typu pliku otwiera wspólny modal z wybranym typem i zachowuje bieżący folder
-oraz Workspace. Fokus od razu trafia do nazwy, błędy mają pierwszeństwo;
+Kliknięcie kafelka typu pliku otwiera wspólny modal z wybranym typem i zachowuje bieżący Workspace. Fokus od razu trafia do nazwy, błędy mają pierwszeństwo;
 Escape i powrót fokusu obsługuje istniejący `documents.js`.
 Typ nadal można zmienić w formularzu, a zapis otwiera edytor w osobnej karcie.
 `office-suite.js` inicjalizuje ekran także po `ancore:content-loaded`;
@@ -490,7 +485,7 @@ Statusy zapisu są potwierdzane przez serwer. Tablica przy błędzie zachowuje
 scenę i pozwala pobrać bieżącą kopię; jej iframe przyjmuje wyłącznie komunikaty
 z okna rodzica tego samego originu.
 
-Na listach plików i folderów Dysku oraz Dokumentów akcje wiersza otwiera
+Na listach plików Dysku i Dokumentów oraz folderów Dysku akcje wiersza otwiera
 jeden przycisk z ikoną `menu`
 (trzy poziome paski), po lewej stronie ikony pliku lub folderu. Nie ma osobnej
 kolumny działań; pusty stan ukrywa nagłówki i mieści się na wąskim ekranie.

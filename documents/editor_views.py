@@ -1,7 +1,6 @@
 """Dokumenty: a separate workspace catalog using the shared document infrastructure."""
 from copy import copy
 from io import BytesIO
-import json
 import uuid
 from urllib.parse import urlencode
 
@@ -10,9 +9,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.paginator import Paginator
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.db.models import Count, Q
-from django.db.models.deletion import RestrictedError
 from django.http import FileResponse, Http404, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -23,11 +21,9 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from core.upload_validation import attachment_download_response
 from tasks.models import TaskTag
 from workplaces.services import scoped_workplace_app_path
-from .editor_forms import DOCUMENT_EXTENSIONS, OfficeDocumentForm, OfficeFolderForm, OfficeUploadForm
+from .editor_forms import DOCUMENT_EXTENSIONS, OfficeDocumentForm, OfficeUploadForm
 from .location_lock import location_write
-from .models import WorkspaceDocument as Document, WorkspaceDocumentFolder as Folder
-from .folder_exports import folder_archive
-from .folder_stats import set_folder_summaries
+from .models import WorkspaceDocument as Document
 from .previews import build_preview, validate_inline
 from .query import (
     DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS, SIZE_OPTIONS,
@@ -47,35 +43,13 @@ def _documents(request):
     return Document.objects.filter(owner=request.user, workplace=request.workplace)
 
 
-def _folders(request):
-    return Folder.objects.filter(owner=request.user, workplace=request.workplace)
-
-
-def _folder(request, value):
-    if not value:
-        return None
-    try:
-        return get_object_or_404(_folders(request), pk=int(value))
-    except (ValueError, TypeError, OverflowError):
-        raise Http404
-
-
 def _item(request, pk, **filters):
-    return get_object_or_404(_documents(request).select_related('folder'), pk=pk, deleted_at__isnull=True, **filters)
+    return get_object_or_404(_documents(request), pk=pk, deleted_at__isnull=True, **filters)
 
 
-def _context(request, folder=None):
-    breadcrumbs, seen, current = [], set(), folder
-    while current and current.pk not in seen:
-        seen.add(current.pk)
-        breadcrumbs.append({'name': current.name, 'target': f'folder:{current.pk}', 'url': _url(request, folder=current.pk)})
-        current = _folder(request, current.parent_id)
-    folder_id = folder.pk if folder else None
-    return {'documents_url': _url(request), 'folder_url': _url(request, folder=folder_id),
-            'current_folder': folder, 'breadcrumbs': list(reversed(breadcrumbs)),
-            'create_url': _url(request, 'create/', folder=folder_id),
-            'upload_url': _url(request, 'upload/', folder=folder_id),
-            'folder_create_url': _url(request, 'folders/create/', folder=folder_id)}
+def _context(request):
+    return {'documents_url': _url(request), 'folder_url': _url(request),
+            'create_url': _url(request, 'create/'), 'upload_url': _url(request, 'upload/')}
 
 
 @login_required
@@ -85,7 +59,6 @@ def index(request):
 
 
 def _list(request, modal=None):
-    folder = _folder(request, request.GET.get('folder'))
     view = request.GET.get('view', 'all')
     if view not in {'all', 'recent', 'starred', 'trash'}:
         view = 'all'
@@ -120,7 +93,7 @@ def _list(request, modal=None):
     sort_fields = tuple(
         {**field, 'label': 'Nazwa dokumentu'} if field['value'] == 'name' else
         {**field, 'label': 'Usunięto', 'lookup': 'deleted_at'} if view == 'trash' and field['value'] == 'updated' else field
-        for field in DOCUMENT_SORT_FIELDS if field['value'] not in {'description', 'library'}
+        for field in DOCUMENT_SORT_FIELDS if field['value'] not in {'description', 'library', 'folder'}
     )
     # The old Dokumenty link meant oldest modification, unlike the Drive alias.
     query_params = request.GET.copy()
@@ -128,70 +101,48 @@ def _list(request, modal=None):
         query_params['sort'] = 'updated_asc'
     query_state = query_context(query_params, fields, sort_fields, 'updated_desc')
     values = query_state['document_filter_params']
-    searching = bool(query or query_state['has_active_filters'])
-    document_only_filter = any(field['active'] and field['param'] not in {'name', 'modified', 'starred'} for field in fields)
     items = _documents(request).filter(deleted_at__isnull=view != 'trash')
-    folders = _folders(request) if view in {'all', 'starred'} and not document_only_filter else Folder.objects.none()
     if view == 'starred':
         items = items.filter(is_starred=True)
-        folders = folders.filter(is_starred=True)
     if query:
         items = items.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(tags__name__icontains=query)).distinct()
-        folders = folders.filter(name__icontains=query)
-    elif view == 'all' and not searching:
-        items, folders = items.filter(folder=folder), folders.filter(parent=folder)
     if selected_tag:
         items = items.filter(tags=selected_tag)
     items = apply_text_filters(items, fields)
-    folders = apply_text_filters(folders, [{**field, 'lookup': 'name'} for field in fields if field['param'] == 'name'])
     items = apply_date_filter(items, 'deleted_at' if view == 'trash' else 'updated_at', values['modified'])
-    folders = apply_date_filter(folders, 'created_at', values['modified'])
     if values['file_type'] in {Document.Kind.TEXT, Document.Kind.BOARD}:
         items = items.filter(kind=values['file_type'])
     elif values['file_type']:
         items = items.filter(kind=Document.Kind.FILE, filename__iendswith=values['file_type'])
     if values['starred']:
         items = items.filter(is_starred=values['starred'] == 'yes')
-        folders = folders.filter(is_starred=values['starred'] == 'yes')
     if values['size'] == 'small':
         items = items.filter(file_size__lt=1024 * 1024)
     elif values['size'] == 'medium':
         items = items.filter(file_size__gte=1024 * 1024, file_size__lte=5 * 1024 * 1024)
     elif values['size'] == 'large':
         items = items.filter(file_size__gt=5 * 1024 * 1024)
-    items = order_results(items.select_related('folder').prefetch_related('tags'), query_state)
-    folder_sort = query_state['sort_field'] if query_state['sort_field'] in {'name', 'updated', 'created'} else 'name'
-    folders = order_results(folders, {**query_state, 'sort_field': folder_sort, 'sort_fields': (
-        {'value': 'name', 'lookup': 'name', 'text': True},
-        {'value': 'updated', 'lookup': 'created_at'}, {'value': 'created', 'lookup': 'created_at'},
-    )})
-    # Searches and special views cover all folders in this Workspace.
+    items = order_results(items.prefetch_related('tags'), query_state)
     try:
         size = int(request.GET.get('page_size', 25))
     except (TypeError, ValueError):
         size = 25
     if size not in {25, 50, 100}:
         size = 25
-    folder_count = folders.count()
-    total = folder_count + items.count()
-    page = Paginator(range(total), size).get_page(request.GET.get('page'))
-    start, end = max(0, page.start_index() - 1), page.end_index()
-    rows = [{'kind': 'folder', 'item': item, 'url': _url(request, folder=item.pk)} for item in folders[start:end]] if start < folder_count else []
-    set_folder_summaries(rows, _folders(request), _documents(request))
-    if end > folder_count:
-        rows += [{'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.has_full_editor else (f'{item.pk}/' if item.kind == Document.Kind.TEXT else f'{item.pk}/preview/'))} for item in items[max(0, start-folder_count):end-folder_count]]
-    params = {**values, 'folder': folder.pk if folder else None, 'view': view, 'q': query, 'sort': query_state['sort_param'], 'display': display, 'page_size': size}
+    page = Paginator(items, size).get_page(request.GET.get('page'))
+    total = page.paginator.count
+    rows = [{'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.has_full_editor else (f'{item.pk}/' if item.kind == Document.Kind.TEXT else f'{item.pk}/preview/'))} for item in page]
+    params = {**values, 'view': view, 'q': query, 'sort': query_state['sort_param'], 'display': display, 'page_size': size}
     counts = _documents(request).aggregate(all=Count('pk', filter=Q(deleted_at__isnull=True)), starred=Count('pk', filter=Q(deleted_at__isnull=True, is_starred=True)), trash=Count('pk', filter=Q(deleted_at__isnull=False)))
-    counts['starred'] += _folders(request).filter(is_starred=True).count()
-    context = _context(request, folder)
+    context = _context(request)
     context.update(query_state)
     context.update({
         'rows': rows, 'query': query, 'office_view': view, 'document_display': display,
-        'search_url': _url(request, folder=folder.pk if folder else None, display=display),
+        'search_url': _url(request, display=display),
         'selected_tag': selected_tag, 'tag_filter_url': _url(request, **{**params, 'tag': None}),
-        'document_form': modal, 'clear_url': _url(request, folder=folder.pk if folder else None, view=view),
+        'document_form': modal, 'clear_url': _url(request, view=view),
         'return_query': urlencode({**{key: value for key, value in params.items() if value not in ('', None)}, 'page': page.number}),
-        'office_views': [{'value': key, 'label': label, 'icon': icon, 'count': counts.get(key), 'active': view == key and not folder,
+        'office_views': [{'value': key, 'label': label, 'icon': icon, 'count': counts.get(key), 'active': view == key,
                          'url': _url(request, view=key)} for key, label, icon in [
                              ('all', 'Wszystkie dokumenty', 'files'), ('recent', 'Ostatnio zmienione', 'clock-3'),
                              ('starred', 'Oznaczone gwiazdką', 'star'), ('trash', 'Kosz', 'trash-2')]],
@@ -212,82 +163,20 @@ def _modal(request, context, preview=False):
         return render(request, 'documents/preview.html' if preview else 'documents/form.html', {'modal': context})
     background = copy(request)
     background.GET = request.GET.copy()
-    background.GET['folder'] = str(context['current_folder'].pk) if context.get('current_folder') else ''
     return _list(background, context)
 
 
 @login_required
 @require_http_methods(['GET', 'POST'])
 @location_write
-def folder_edit(request, pk=None):
-    instance = get_object_or_404(_folders(request), pk=pk) if pk else None
-    parent = _folder(request, instance.parent_id if instance else request.GET.get('folder'))
-    form = OfficeFolderForm(request.POST if request.method == 'POST' else None, instance=instance, owner=request.user, workplace=request.workplace, parent=parent)
-    if request.method == 'POST' and form.is_valid():
-        item = form.save(commit=False)
-        item.owner, item.workplace, item.parent = request.user, request.workplace, parent
-        try:
-            with transaction.atomic():
-                item.save()
-        except IntegrityError:
-            form.add_error('name', 'Folder o tej nazwie już istnieje w tym miejscu.')
-        else:
-            messages.success(request, 'Zapisano folder.')
-            return _form_success(request, _url(request, folder=parent.pk if parent else None))
-    return _modal(request, {**_context(request, parent), 'form': form, 'form_title': 'Edytuj folder' if instance else 'Nowy folder', 'submit_label': 'Zapisz folder'})
-
-
-@login_required
-@require_POST
-@location_write
-def folder_delete(request, pk):
-    folder = get_object_or_404(_folders(request), pk=pk)
-    parent_id = folder.parent_id
-    try:
-        folder.delete()
-    except RestrictedError:
-        messages.error(request, 'Można usunąć tylko pusty folder. Zawiera dokumenty, podfoldery lub dokumenty w koszu.')
-    else:
-        messages.success(request, 'Usunięto pusty folder.')
-    return redirect(_url(request, folder=parent_id))
-
-
-@login_required
-@require_POST
-def folder_star(request, pk):
-    with transaction.atomic():
-        folder = get_object_or_404(_folders(request).select_for_update(), pk=pk)
-        folder.is_starred = not folder.is_starred
-        folder.save(update_fields=['is_starred'])
-    return _action_redirect(request)
-
-
-@login_required
-@require_GET
-def folder_download(request, pk):
-    folder = get_object_or_404(_folders(request), pk=pk)
-    try:
-        archive, filename = folder_archive(folder, _folders(request), _documents(request).filter(deleted_at__isnull=True))
-    except OSError:
-        raise Http404('Nie można pobrać folderu. Jeden z plików nie jest dostępny.')
-    response = FileResponse(archive, as_attachment=True, filename=filename, content_type='application/zip')
-    response['Cache-Control'] = 'private, no-store'
-    response['X-Content-Type-Options'] = 'nosniff'
-    return response
-
-
-@login_required
-@require_http_methods(['GET', 'POST'])
-@location_write
 def upload(request):
-    folder = _folder(request, request.GET.get('folder'))
     form = OfficeUploadForm(request.POST if request.method == 'POST' else None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         saved = []
         try:
             with transaction.atomic():
                 for file in form.cleaned_data['files']:
-                    item = Document(owner=request.user, workplace=request.workplace, folder=folder, kind=Document.Kind.FILE,
+                    item = Document(owner=request.user, workplace=request.workplace, kind=Document.Kind.FILE,
                                     title=file.name, filename=file.name, file_size=file.size)
                     item.file.save(file.name, file, save=False)
                     saved.append((item.file.storage, item.file.name))
@@ -297,8 +186,8 @@ def upload(request):
                 storage.delete(name)
             raise
         messages.success(request, f'Przesłano dokumenty: {len(saved)}.')
-        return _form_success(request, _url(request, folder=folder.pk if folder else None))
-    return _modal(request, {**_context(request, folder), 'form': form, 'form_title': 'Prześlij dokumenty', 'submit_label': 'Prześlij dokumenty',
+        return _form_success(request, _url(request))
+    return _modal(request, {**_context(request), 'form': form, 'form_title': 'Prześlij dokumenty', 'submit_label': 'Prześlij dokumenty',
                            'upload_form': True, 'office_upload': True, 'max_upload_size': settings.MAX_ATTACHMENT_SIZE})
 
 
@@ -306,9 +195,8 @@ def upload(request):
 @require_http_methods(['GET', 'POST'])
 @location_write
 def edit(request, pk=None):
-    instance = _item(request, pk) if pk else Document(owner=request.user, workplace=request.workplace, folder=_folder(request, request.GET.get('folder')))
+    instance = _item(request, pk) if pk else Document(owner=request.user, workplace=request.workplace)
     is_new = pk is None
-    original_folder = instance.folder
     form = OfficeDocumentForm(request.POST if request.method == 'POST' else None, request.FILES or None, instance=instance, owner=request.user, workplace=request.workplace)
     conflict = False
     if request.method == 'POST' and form.is_valid():
@@ -346,14 +234,14 @@ def edit(request, pk=None):
             if saved_name and previous_name and previous_name != saved_name:
                 storage = item.file.storage
                 transaction.on_commit(lambda: storage.delete(previous_name), robust=True)
-            target = _url(request, f'{item.pk}/') if item.kind == Document.Kind.TEXT else _url(request, folder=item.folder_id)
+            target = _url(request, f'{item.pk}/') if item.kind == Document.Kind.TEXT else _url(request)
             if request.headers.get('X-Office-Editor') == 'true':
                 return JsonResponse({'url': target, 'revision': item.revision, 'saved_at': timezone.localtime(item.updated_at).strftime('%H:%M'), 'title': item.title})
             messages.success(request, 'Utworzono dokument.' if is_new else 'Zapisano dokument.')
             return _form_success(request, target)
     if request.method == 'POST' and request.headers.get('X-Office-Editor') == 'true':
         return JsonResponse({'errors': form.errors.get_json_data()}, status=409 if conflict else 400)
-    context = {**_context(request, original_folder), 'form': form, 'document': instance, 'is_new': is_new}
+    context = {**_context(request), 'form': form, 'document': instance, 'is_new': is_new}
     if instance.kind != Document.Kind.TEXT:
         context.update({'form_title': 'Dane dokumentu', 'submit_label': 'Zapisz zmiany'})
         return _modal(request, context)
@@ -371,7 +259,7 @@ def preview(request, pk):
     if item.has_full_editor:
         return redirect(_url(request, f'{pk}/editor/'))
     result = build_preview(item)
-    context = {**_context(request, item.folder), 'document': item, 'preview': result, 'content_url': _url(request, f'{pk}/content/')}
+    context = {**_context(request), 'document': item, 'preview': result, 'content_url': _url(request, f'{pk}/content/')}
     from .office_service import LEGACY_FORMATS, configured
     if item.extension in LEGACY_FORMATS and configured():
         context['office_convert_url'] = _url(request, f'{pk}/convert/')
@@ -395,7 +283,7 @@ def import_text(request, pk):
     except ValidationError as error:
         messages.error(request, error.messages[0])
         return redirect(_url(request, f'{pk}/preview/'))
-    item = Document.objects.create(owner=request.user, workplace=request.workplace, folder=source.folder,
+    item = Document.objects.create(owner=request.user, workplace=request.workplace,
                                    title=f'{source.title[:230]} — kopia tekstu', content=content, file_size=len(content.encode('utf-8')))
     messages.success(request, 'Utworzono edytowalną kopię tekstu. Oryginalny plik zachowano.')
     return redirect(_url(request, f'{item.pk}/'))
@@ -467,5 +355,5 @@ def action(request, pk, operation):
 def _action_redirect(request):
     # Rebuild the return path locally; never redirect to a posted external URL.
     params = QueryDict(request.POST.get('return_query', ''))
-    allowed = {key: params[key] for key in ('folder', 'view', 'q', 'sort', 'display', 'page', 'page_size', *FILTER_PARAMETERS) if key in params}
+    allowed = {key: params[key] for key in ('view', 'q', 'sort', 'display', 'page', 'page_size', *FILTER_PARAMETERS) if key in params}
     return redirect(_url(request, **allowed))

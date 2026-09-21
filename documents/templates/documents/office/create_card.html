@@ -1,8 +1,6 @@
 <li>
-    <a class="documents-card office-create-card" href="{% if action_url %}{{ action_url }}{% else %}{{ create_url }}{% if current_folder %}&amp;{% else %}?{% endif %}type={{ type }}{% endif %}" data-document-modal aria-label="{% if not action_url %}Utwórz plik: {% endif %}{{ label }}">
-        {% if variant == 'folder' %}
-            {% include 'documents/includes/folder_icon.html' only %}
-        {% elif icon %}
+    <a class="documents-card office-create-card" href="{% if action_url %}{{ action_url }}{% else %}{{ create_url }}?type={{ type }}{% endif %}" data-document-modal aria-label="{% if not action_url %}Utwórz plik: {% endif %}{{ label }}">
+        {% if icon %}
             <i data-icon="{{ icon }}" aria-hidden="true"></i>
         {% else %}
             {% include 'documents/includes/file_icon_shape.html' with variant=variant only %}

@@ -131,17 +131,6 @@ class CatalogMoveTests:
             self.assertContains(response, f'data-document-drop="folder:{self.parent.pk}"')
 
 
-class OfficeMoveTests(CatalogMoveTests, TestCase):
-    def test_move_rejects_stale_office_metadata_save(self):
-        self.move(self.item, f'folder:{self.target.pk}')
-        response = self.client.post(f'{self.base}{self.item.pk}/', {
-            'title': 'Stara treść', 'folder': '', 'revision': 1, 'content': '',
-        }, headers={'X-Office-Editor': 'true'})
-        self.assertEqual(response.status_code, 409)
-        self.item.refresh_from_db()
-        self.assertEqual(self.item.folder, self.target)
-
-
 class DriveMoveTests(CatalogMoveTests, TestCase):
     drive = True
 
@@ -196,7 +185,7 @@ class ConcurrentMoveTests(TransactionTestCase):
         workspace = create_workplace_for_user(user, 'Równoczesne przenoszenie')
         scope = {'owner': user, 'workplace': workspace}
         library = DocumentLibrary.objects.create(**scope, name='Dysk')
-        for module, model, extra in [('office', WorkspaceDocumentFolder, {}), ('documents', Folder, {'library': library})]:
+        for module, model, extra in [('documents', Folder, {'library': library})]:
             with self.subTest(module=module):
                 first = model.objects.create(**scope, **extra, name='Pierwszy')
                 second = model.objects.create(**scope, **extra, name='Drugi')

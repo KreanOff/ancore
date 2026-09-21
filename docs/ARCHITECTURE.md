@@ -137,10 +137,13 @@ Użytkownik → Workspace
   ├─ Kontakty: Company ← Contact ← UserContact → konto Ancore
   ├─ Kalendarz: CalendarEvent
   ├─ Dysk: DocumentLibrary → Folder / Document (foldery mogą być zagnieżdżone)
-  └─ Dokumenty: WorkspaceDocumentFolder → WorkspaceDocument (także bez folderu)
+  └─ Dokumenty: WorkspaceDocument (płaski katalog)
 
 TaskTag ↔ Task / Kanban / Document / WorkspaceDocument
 ```
+
+Model `WorkspaceDocumentFolder` i relacja `WorkspaceDocument.folder` pozostają
+wyłącznie dla zgodności ze starymi danymi; Dokumenty nie udostępniają już folderów.
 
 Diagram pokazuje główną organizację. Niektóre relacje są opcjonalne, np.
 zadanie może nie mieć sekcji, a karta kolumny. Reguły `CASCADE`, `SET_NULL`
