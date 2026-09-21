@@ -1,12 +1,6 @@
 /* Dokumenty extends the drive catalog and common Ancore controls. */
-.office-quick-create { container: office-quick-create / inline-size; flex: 0 0 auto; min-width: 0; padding: 8px var(--documents-index-padding-x) 16px; border-bottom: 1px solid var(--border-color); }
-.office-quick-create h2 { display: flex; margin: 0; font-size: var(--font-size-sm); line-height: 1.5; }
-.office-quick-create-toggle { min-height: 24px; padding: 0 4px; font-size: inherit; line-height: inherit; }
-.office-quick-create-toggle:hover { background: var(--system-interaction-soft); }
-.office-quick-create-toggle svg { width: 16px; height: 16px; flex: 0 0 auto; }
-.office-quick-create-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
-.office-quick-create-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(144px, 184px)); gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
-.office-quick-create-list[hidden] { display: none; }
+.office-quick-create { container: office-quick-create / inline-size; flex: 0 0 auto; min-width: 0; padding: 8px var(--documents-index-padding-x); border-bottom: 1px solid var(--border-color); }
+.office-quick-create-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 184px), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 .office-quick-create-list > li { min-width: 0; }
 .office-quick-create .office-create-card { align-items: center; justify-content: center; gap: 16px; min-height: 136px; height: 100%; aspect-ratio: auto; overflow: visible; padding: 16px 12px; color: inherit; text-align: center; text-decoration: none; }
 .office-create-card:hover { background: var(--secondary-menu-bg); }
@@ -16,8 +10,7 @@
 .office-create-card-plus svg { width: 14px; height: 14px; }
 .office-create-card:is(:hover, :focus-visible) .office-create-card-plus { background: var(--primary-button-hover-bg); }
 @media (max-width: 767px) {
-    .office-quick-create { padding-block: 8px 12px; }
-    .office-quick-create-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .office-quick-create-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .office-quick-create .office-create-card { flex-direction: row; justify-content: flex-start; min-height: 64px; padding: 10px 8px; gap: 8px; text-align: left; }
     .office-create-card > svg { width: 28px; height: 28px; }
     .office-create-card-label { display: block; min-width: 0; }

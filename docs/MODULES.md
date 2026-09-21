@@ -244,9 +244,13 @@ gwiazdkę oraz datę przeniesienia do kosza.
   Liczą się aktywne pliki także w podfolderach i dokumenty 0 B; kosz i obce dane
   są pomijane. Same puste podfoldery zachowują ikonę pustego folderu.
   Liczniki plików i folderów pozostają dostępne w filtrach/sortowaniu dysków.
-- Indeks dysków ma skróty do tych widoków nad listą; lista pokazuje nazwy bez opisów.
+- Indeks, zawartość dysku i zbiorcze widoki plików mają za sortowaniem przycisk
+  z nazwą bieżącego widoku lub otwartego dysku. Menu zachowuje skróty i liczniki
+  plików całego Workspace, przeniesione z panelu bocznego.
+  Lista pokazuje nazwy bez opisów.
   Panel przełączania dysków jest dostępny
-  wewnątrz dysków i w widokach plików; nie powtarza listy na indeksie.
+  wewnątrz dysków i w widokach plików; zawiera listę dysków i ich dodawanie,
+  nie powtarza listy na indeksie.
 - Wyszukiwanie, sortowanie, filtr tagu i paginacja. Listy dysków i plików
   pokazują wszystkie kolumny; pasek nie zawiera przycisku „Zarządzaj tabelą”.
 - Panele filtrów i sortowania zgodne z Wszystkimi projektami. Dyski można
@@ -330,14 +334,17 @@ bez kasowania plików i bez migracji. Nowe pliki, uploady i kopie powstają bez 
 Przeciągnięcie plików z komputera do katalogu nadal otwiera upload z walidacją
 formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko Dysku.
 
-- Cztery rodzaje nowych plików: dokument DOCX, arkusz XLSX, prezentacja PPTX
-  i tablica Board. Katalog zachowuje listę/kafelki, sortowanie,
+- Sześć rodzajów nowych plików: dokument DOCX, arkusz XLSX, prezentacja PPTX,
+  PDF, formularz PDF i tablica Board. Katalog zachowuje listę/kafelki, sortowanie,
   wyszukiwanie, gwiazdki, kosz i globalne szukanie. Nad listą, poza koszem,
-  są cztery kafelki „Utwórz plik”, które otwierają okno „Nowy dokument”
-  z wybranym typem i fokusem na nazwie. Piąty kafelek „Prześlij dokumenty”
-  otwiera formularz uploadu. Górny pasek zawiera tytuł „Dokumenty”.
-  Kliknięcie nagłówka zwija lub rozwija
-  kafelki; stan jest zapamiętywany w przeglądarce dla konta i Workspace.
+  jest sześć kafelków tworzenia, które otwierają okno „Nowy dokument”
+  z wybranym typem i fokusem na nazwie. Siódmy kafelek „Prześlij dokumenty”
+  otwiera formularz uploadu. Górny pasek zawiera tytuł „Dokumenty”. Na pasku
+  narzędzi za sortowaniem przycisk z nazwą bieżącego widoku otwiera skróty
+  do wszystkich dokumentów, ostatnich zmian, gwiazdek, szablonów i kosza,
+  z zachowanymi licznikami.
+  Kafelki pozostają widoczne bez nagłówka i przycisku zwijania;
+  wcześniej zapisany stan zwinięcia nie jest odczytywany.
   Plik powstaje w bieżącym Workspace; typ można jeszcze zmienić w formularzu. Wspólna paginacja
   pozwala wyświetlić 25, 50 lub 100 pozycji.
 - Filtry i sortowanie korzystają z tych samych paneli co Dysk. Filtry obejmują

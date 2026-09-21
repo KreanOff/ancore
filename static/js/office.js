@@ -1,33 +1,10 @@
 (function () {
     let controller;
 
-    function initQuickCreate(options) {
-        const section = document.querySelector('[data-office-quick-create-key]');
-        const toggle = section?.querySelector('[data-office-quick-create-toggle]');
-        const list = section?.querySelector('.office-quick-create-list');
-        if (!toggle || !list) return;
-        const storageKey = section.dataset.officeQuickCreateKey;
-        let collapsed = false;
-        try { collapsed = localStorage.getItem(storageKey) === 'true'; } catch (_) {}
-
-        function update() {
-            list.hidden = collapsed;
-            toggle.setAttribute('aria-expanded', String(!collapsed));
-            toggle.setAttribute('aria-label', `${collapsed ? 'Rozwiń' : 'Zwiń'} sekcję Utwórz plik`);
-        }
-        update();
-        toggle.addEventListener('click', () => {
-            collapsed = !collapsed;
-            update();
-            try { localStorage.setItem(storageKey, String(collapsed)); } catch (_) {}
-        }, options);
-    }
-
     function initOffice() {
         controller?.abort();
         controller = new AbortController();
         const options = { signal: controller.signal };
-        initQuickCreate(options);
         document.querySelector('[data-office-catalog]')?.addEventListener('submit', event => {
             const target = event.target.closest('[data-document-confirm]');
             if (!target || !window.showConfirmModal) return;

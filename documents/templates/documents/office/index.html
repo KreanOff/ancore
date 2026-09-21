@@ -3,10 +3,10 @@
 {% block title %}Dokumenty | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-unified-dialogs">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-office-extras">
-<script src="{% static 'js/documents.js' %}?v=20260921-office-extras" defer></script>
-<script src="{% static 'js/office.js' %}?v=20260921-no-folders" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-shared-view-selector">
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-shared-view-selector">
+<script src="{% static 'js/documents.js' %}?v=20260921-menu-focus" defer></script>
+<script src="{% static 'js/office.js' %}?v=20260921-static-create-shortcuts" defer></script>
 {% endblock %}
 {% block content %}
 <div class="documents-page office-page" data-office-catalog data-document-dnd="office" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ office_view }}">
@@ -28,6 +28,19 @@
                 {% for option in display_options %}<a class="tasks-icon-button{% if option.active %} is-active{% endif %}" href="{{ option.url }}" aria-label="{{ option.label }}" title="{{ option.label }}"{% if option.active %} aria-current="true"{% endif %}><i data-icon="{{ option.icon }}" aria-hidden="true"></i></a>{% endfor %}
             </nav>
             {% include 'documents/filter_sort.html' with filter_title="Filtrowanie dokumentów" filter_heading="Filtry dokumentów" sort_title="Sortowanie dokumentów" %}
+            <div class="documents-item-actions documents-view-selector" data-document-actions>
+                <button type="button" class="tasks-filter-button tasks-project-query-trigger" data-document-actions-toggle popovertarget="office-views-menu" aria-controls="office-views-menu" aria-haspopup="menu" aria-expanded="false" title="Wybierz widok dokumentów">
+                    {% for view in office_views %}{% if view.active %}<i data-icon="{{ view.icon }}" aria-hidden="true"></i><span>{{ view.label }}</span>{% endif %}{% endfor %}
+                    <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+                </button>
+                <nav id="office-views-menu" class="tasks-section-menu documents-item-menu documents-views-menu" popover="auto" role="menu" aria-label="Widoki dokumentów" data-document-actions-panel>
+                    <div class="documents-menu-actions" role="none">
+                        {% for view in office_views %}
+                        <a class="tasks-project-menu-button" role="menuitem" href="{{ view.url }}"{% if view.active %} aria-current="page"{% endif %} data-document-view="{{ view.value }}"><i data-icon="{{ view.icon }}" aria-hidden="true"></i><span>{{ view.label }}</span>{% if view.count != None %}<small>{{ view.count }}</small>{% endif %}</a>
+                        {% endfor %}
+                    </div>
+                </nav>
+            </div>
             {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-icon="x" aria-hidden="true"></i></a>{% endif %}
         </div>
         <div class="tasks-filterbar-right">
@@ -35,13 +48,9 @@
             {% include 'tasks/includes/directory_pagination_toolbar.html' with window=document_window pages_label='Strony dokumentów' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
         </div>
     </div>
-    <nav class="documents-workspace-nav" aria-label="Widoki dokumentów">
-        {% for view in office_views %}<a class="tasks-rail-link{% if view.active %} is-active{% endif %}" href="{{ view.url }}"{% if view.active %} aria-current="page"{% endif %}><i data-icon="{{ view.icon }}" aria-hidden="true"></i><span>{{ view.label }}</span>{% if view.count != None %}<small>{{ view.count }}</small>{% endif %}</a>{% endfor %}
-    </nav>
     {% if office_view != 'trash' %}
-    <section class="office-quick-create" aria-labelledby="office-quick-create-title" data-office-quick-create-key="ancore:office:quick-create:{{ request.user.pk }}:{{ request.workplace.pk }}:v1">
-        <h2><button type="button" class="btn btn-ghost office-quick-create-toggle" aria-expanded="true" aria-controls="office-quick-create-list" aria-label="Zwiń sekcję Utwórz plik" data-office-quick-create-toggle><i data-icon="chevron-down" aria-hidden="true"></i><span id="office-quick-create-title">Utwórz plik</span></button></h2>
-        <ul id="office-quick-create-list" class="office-quick-create-list">
+    <section class="office-quick-create" aria-label="Tworzenie dokumentów">
+        <ul class="office-quick-create-list">
             {% include 'documents/office/create_card.html' with type='word' variant='word' label='Dokument' %}
             {% include 'documents/office/create_card.html' with type='cell' variant='excel' label='Arkusz kalkulacyjny' %}
             {% include 'documents/office/create_card.html' with type='slide' variant='powerpoint' label='Prezentacja' %}
@@ -67,7 +76,7 @@
                 {% if item.tags.all %}<div class="documents-tags">{% for tag in item.tags.all %}<a class="documents-tag" href="{{ tag_filter_url }}&amp;tag={{ tag.pk }}">{{ tag.name }}</a>{% endfor %}</div>{% endif %}
                 <div class="documents-card-footer">
                     <span class="documents-card-date">{{ item.updated_at|date:'d.m.Y' }}</span>
-                    {% include 'documents/office/actions.html' %}
+                    {% include 'documents/includes/row_menu.html' with actions_template='documents/office/actions.html' %}
                 </div>
             </li>{% endwith %}{% endfor %}
         </ul>

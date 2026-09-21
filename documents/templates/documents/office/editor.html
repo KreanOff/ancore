@@ -3,9 +3,9 @@
 {% block title %}{% if is_new %}Nowy dokument{% else %}{{ document.title }}{% endif %} | Dokumenty | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-unified-dialogs">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-office-extras">
-<script src="{% static 'js/office.js' %}?v=20260921-no-folders" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-shared-view-selector">
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-shared-view-selector">
+<script src="{% static 'js/office.js' %}?v=20260921-static-create-shortcuts" defer></script>
 {% endblock %}
 {% block content %}
 <form method="post" class="documents-page office-editor" data-office-editor data-app-full-navigation data-new="{{ is_new|yesno:'true,false' }}">

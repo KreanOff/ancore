@@ -39,6 +39,22 @@
             {% for option in display_options %}<a class="tasks-icon-button{% if option.active %} is-active{% endif %}" href="{{ option.url }}" aria-label="{{ option.label }}" title="{{ option.label }}" {% if option.active %}aria-current="true"{% endif %} data-document-display="{{ option.value }}"><i data-icon="{{ option.icon }}" aria-hidden="true"></i></a>{% endfor %}
         </nav>
         {% include 'documents/filter_sort.html' %}
+        <div class="documents-item-actions documents-view-selector" data-document-actions>
+            <button type="button" class="tasks-filter-button tasks-project-query-trigger" data-document-actions-toggle popovertarget="documents-views-menu" aria-controls="documents-views-menu" aria-haspopup="menu" aria-expanded="false" title="Wybierz widok Dysku{% if current_library %} — {{ current_library.name }}{% endif %}">
+                {% if is_library_index %}<i data-icon="hard-drive" aria-hidden="true"></i><span>Dyski</span>
+                {% elif current_library %}<i data-icon="hard-drive" aria-hidden="true"></i><span>{{ current_library.name }}</span>
+                {% else %}{% for item in sidebar_views %}{% if item.active %}<i data-icon="{{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span>{% endif %}{% endfor %}{% endif %}
+                <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
+            </button>
+            <nav id="documents-views-menu" class="tasks-section-menu documents-item-menu documents-views-menu" popover="auto" role="menu" aria-label="Widoki Dysku" data-document-actions-panel>
+                <div class="documents-menu-actions" role="none">
+                    <a class="tasks-project-menu-button" role="menuitem" href="{{ documents_url }}"{% if is_library_index %} aria-current="page"{% endif %}><i data-icon="hard-drive" aria-hidden="true"></i><span>Dyski</span></a>
+                    {% for item in sidebar_views %}
+                    <a class="tasks-project-menu-button" role="menuitem" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %} data-document-view="{{ item.value }}"><i data-icon="{{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span>{% if item.count != None %}<small>{{ item.count }}</small>{% endif %}</a>
+                    {% endfor %}
+                </div>
+            </nav>
+        </div>
         {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-icon="x" aria-hidden="true"></i></a>{% endif %}
     </div>
     <div class="tasks-filterbar-right">
@@ -47,11 +63,3 @@
         {% if not is_library_index %}<button type="button" class="tasks-icon-button documents-sidebar-toggle" title="Pokaż lub ukryj panel dysków" aria-label="Pokaż lub ukryj panel dysków" aria-controls="documents-sidebar" aria-expanded="true" data-documents-sidebar-toggle><i data-icon="panel-right" aria-hidden="true"></i></button>{% endif %}
     </div>
 </div>
-{% if is_library_index %}
-<nav class="documents-workspace-nav" aria-label="Widoki Dysku">
-    <a class="tasks-rail-link is-active" href="{{ documents_url }}" aria-current="page"><i data-icon="hard-drive" aria-hidden="true"></i><span>Dyski</span></a>
-    {% for item in sidebar_views %}
-    <a class="tasks-rail-link" href="{{ item.url }}" data-document-view="{{ item.value }}"><i data-icon="{{ item.icon }}" aria-hidden="true"></i><span>{{ item.label }}</span>{% if item.count != None %}<small>{{ item.count }}</small>{% endif %}</a>
-    {% endfor %}
-</nav>
-{% endif %}

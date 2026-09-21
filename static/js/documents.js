@@ -95,7 +95,8 @@
                 else {
                     panel.showPopover();
                     position();
-                    items[0]?.focus({ preventScroll: true });
+                    // Only keyboard/assistive activation moves focus into the menu.
+                    if (event.detail === 0) items[0]?.focus({ preventScroll: true });
                 }
             }, options);
             panel.addEventListener('beforetoggle', event => {

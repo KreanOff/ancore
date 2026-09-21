@@ -205,7 +205,8 @@ Kafelek zajmuje całą szerokość kolumny, więc odstępy między kafelkami wyn
 wyłącznie z `gap`: 16px w obu kierunkach, a na ekranach do 767px — 12px.
 Dotyczy Dysków, plików i Dokumentów. Kafelki pozostają kwadratowe;
 rozmiary tekstu, ikon oraz przycisków pozostają bez zmian.
-Na wąskim ekranie akcje mogą przejść pod datę.
+Akcje plików i folderów są dostępne przez jeden przycisk z trzema paskami
+po prawej stronie daty w stopce kafelka, także na wąskim ekranie.
 Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Pasek Dysków nie zawiera
 przycisku „Zarządzaj tabelą”; listy dysków i plików pokazują wszystkie kolumny,
 także przy zapisanych wcześniej preferencjach ich ukrywania. „Nowy folder” używa
@@ -280,11 +281,19 @@ nie są wyświetlane; lista, kafelki i panel boczny zawsze używają wspólnej i
 
 Lista dysków zajmuje całą szerokość treści. Pod tytułem jest pasek narzędzi
 z przełącznikiem widoku, filtrami, sortowaniem, wyszukiwaniem i paginacją.
-Poniżej pasek `documents-workspace-nav` używa zwartego wariantu `tasks-rail-link`: aktywne „Dyski” oraz
-linki do wszystkich plików, ostatnich zmian, gwiazdek i kosza. Liczniki
-zachowują zakres Workspace i nie zależą od filtrów. Na telefonie pasek przewija
-się poziomo. Indeks nie powtarza listy dysków w panelu bocznym.
-Pasek narzędzi, zakładki i siatka dysków mają wspólny
+Za sortowaniem przycisk `documents-view-selector` pokazuje nazwę bieżącego
+widoku: „Dyski” na indeksie, nazwę otwartego dysku lub nazwę zbiorczego widoku.
+Otwiera `documents-views-menu`: Dyski, Wszystkie pliki, Ostatnio zmienione,
+Oznaczone gwiazdką i Kosz. Skróty i liczniki obejmują cały Workspace,
+także przy otwarciu menu wewnątrz dysku lub folderu.
+Menu zastępuje zakładki oraz skróty z panelu bocznego. Korzysta ze wspólnych
+`tasks-filter-button`, `tasks-project-query-trigger`,
+`tasks-project-menu-button` i istniejącej obsługi `data-document-actions`
+w `documents.js`: natywny popover, pozycjonowanie w granicach ekranu,
+strzałki, Home/End, Escape i powrót fokusu. Aktywny widok ma `aria-current`;
+liczniki zachowują zakres Workspace i nie zależą od filtrów.
+Indeks nie powtarza listy dysków w panelu bocznym.
+Pasek narzędzi i siatka dysków mają wspólny
 odstęp boczny `--documents-index-padding-x: 0.95rem`, zgodny z paskiem narzędzi
 katalogów. Skrajne komórki listy dysków mają symetryczne odstępy od krawędzi tabeli:
 24px na komputerze i 20px na telefonie, również w nagłówku i przy węższej tabeli.
@@ -318,6 +327,8 @@ Pusty wynik ma bezpośrednią akcję wyczyszczenia wyszukiwania i filtrów.
 Panel dysków ma białe tło `--bg-main`, takie samo jak lista dysków,
 również w wariancie wysuwanym na wąskich ekranach.
 Panel jest dostępny w widokach plików i wewnątrz dysku.
+Zawiera nagłówek „Dyski”, dodawanie dysku oraz listę dysków;
+przełączanie widoków plików jest na pasku narzędzi za sortowaniem.
 Linki poszczególnych dysków używają wariantu `documents-sidebar-library-link`:
 minimum 40px wysokości, pole ikony 30×30px, zdjęcie 28×28px i odstęp 10px od nazwy.
 Zastępczy SVG z `drive_icon.html` jest wyśrodkowany w tym samym polu.
@@ -382,7 +393,17 @@ Dotyczy to także tablicy i stanu niedostępnego edytora.
 
 Osobna pozycja „Dokumenty” używa ikony `file-text`. Katalog w
 `documents/office/index.html` zachowuje paski `tasks-topbar`/`tasks-filterbar`,
-nawigację `tasks-rail-link`, tabelę i kafelki Dysku. Upload używa
+tabelę i kafelki Dysku. Na pasku narzędzi, po prawej stronie sortowania,
+przycisk `documents-view-selector` pokazuje ikonę i nazwę bieżącego widoku
+oraz strzałkę. W domyślnym katalogu ma napis „Wszystkie dokumenty”; menu
+zawiera Wszystkie dokumenty, Ostatnio zmienione, Oznaczone gwiazdką, Szablony i Kosz.
+Przycisk używa `tasks-filter-button` i `tasks-project-query-trigger`,
+a wrapper ma `order: 3`, po sortowaniu z `order: 2`. Korzysta
+z tego samego `documents-views-menu` oraz `data-document-actions` co Dysk,
+z licznikami, `aria-current`, obsługą klawiatury i pozycjonowaniem popovera.
+Kliknięcie myszą nie przenosi fokusu na pierwszą pozycję. Otwarcie
+klawiaturą zachowuje fokus wewnątrz menu; aktywny widok oznacza `aria-current`.
+Upload używa
 tego samego `documents/form.html` oraz obsługi fokusu, Escape i błędów w
 `documents.js`. Wariant uploadu `office_upload` wyświetla wyłącznie formaty dokumentów.
 
@@ -398,7 +419,8 @@ od lewej i prawej krawędzi tabeli, także na telefonie oraz w nagłówku.
 Przycisk menu działań jest po lewej stronie ikony pliku. Dokumenty mają jeden
 płaski katalog, bez folderów, ścieżki lokalizacji i akcji „Przenieś”. Include
 `documents/office/actions.html` obsługuje gwiazdkę, edycję, pobieranie oraz kosz;
-na kafelkach pozostają przyciski ikonowe. Pusty widok gwiazdek dotyczy dokumentów.
+na kafelkach te same akcje otwiera przycisk z trzema paskami w stopce.
+Pusty widok gwiazdek dotyczy dokumentów.
 Pusty stan zachowuje własne odstępy i wyśrodkowanie.
 Kolumna „Tagi” między nazwą a datą używa etykiet `documents-tag` z Dysku;
 dokumenty bez tagów pokazują „—”. Oba katalogi mają tę samą
@@ -411,7 +433,7 @@ Przypisanie tagów korzysta ze wspólnego pola `documents-tag-picker` w oknie
 „Dane dokumentu” i w metadanych starszego edytora tekstu. Zmiana tagów
 w edytorze tekstu oznacza niezapisane zmiany tak samo jak zmiana treści.
 
-Oba katalogi korzystają z jednego odstępu bocznego zakładek i siatki
+Oba katalogi korzystają z jednego odstępu bocznego siatki
 (`--documents-index-padding-x` na `.documents-page`). Nagłówki tabel Dysków,
 plików Dysku i Dokumentów są tekstowe, bez ikon. Lista Dokumentów nie pokazuje historycznej lokalizacji w folderach.
 Kafelki Dokumentów mają tę samą powierzchnię podglądu,
@@ -454,10 +476,9 @@ pokazuje odnośnik do utworzonego pliku. Ten sam mechanizm obejmuje tablice.
 ONLYOFFICE zachowuje własny polski interfejs, Excalidraw jest izolowany od
 CSS aplikacji i używa turkusowego akcentu. Katalog ma dwa wspólne paski:
 tytuł oraz narzędzia z wyszukiwaniem i paginacją.
-Tworzenie dokumentów oraz upload są dostępne w sekcji „Utwórz plik”;
-górny pasek nie zawiera przycisków tych akcji. Pod paskiem
-widoków („Wszystkie dokumenty”, ostatnie zmiany, gwiazdki, kosz), nad listą
-plików, sekcja „Utwórz plik” pokazuje siedem skrótów:
+Tworzenie dokumentów oraz upload są dostępne jako kafelki bez nagłówka;
+górny pasek nie zawiera przycisków tych akcji. Pod paskiem narzędzi, nad listą
+plików, sekcja `office-quick-create` pokazuje siedem skrótów:
 dokument, arkusz kalkulacyjny, prezentację, PDF, formularz PDF, tablicę
 i „Prześlij dokumenty”. Nie ma kafelka „Z szablonu”; kopię szablonu
 tworzy się z menu oznaczonego dokumentu w widoku „Szablony”.
@@ -465,18 +486,18 @@ Ostatnia akcja otwiera istniejący modal uploadu w bieżącym Workspace.
 Wariant `office-create-card`
 korzysta z powierzchni `documents-card`, istniejących kolorowych ikon plików
 oraz małego plusa z tłem głównego przycisku; upload korzysta z ikony `cloud-upload` i małej ikony `upload` zamiast plusa.
-Siatka dobiera liczbę kolumn do dostępnego miejsca (144–184px na kafelek),
+Siatka dobiera liczbę kolumn do dostępnego miejsca (minimum 184px na kafelek)
+i rozciąga kolumny równomiernie na całą szerokość, bez pustego pasa po prawej;
 na telefonie ma dwie kolumny z mniejszą ikoną obok nazwy i bez dekoracyjnego
 plusa, aby pozostawić miejsce na listę; nie występuje w koszu. Skróty działają także
 w pustym katalogu, wynikach wyszukiwania i widoku kafelków.
-Nagłówek „Utwórz plik” jest przyciskiem `btn-ghost` ze strzałką, który zwija
-i rozwija kafelki. Sekcja ma 8px odstępu nad nagłówkiem na komputerze
-i telefonie; nagłówek używa flex, bez dodatkowego odstępu linii pod przyciskiem.
-Zachowuje `aria-expanded`, `aria-controls` i obsługę
-Enter/Spacji; ukryte kafelki nie są dostępne przez Tab. Domyślnie sekcja jest
-rozwinięta. `office.js` zapamiętuje stan w `localStorage` osobno dla konta
-i Workspace oraz odtwarza go po przeładowaniu i `ancore:content-loaded`.
-Brak dostępu do pamięci przeglądarki nie blokuje przełączania.
+Sekcja ma dostępną nazwę „Tworzenie dokumentów” przez `aria-label`,
+bez widocznego nagłówka ani przycisku zwijania. Kafelki pozostają widoczne
+po przeładowaniu i `ancore:content-loaded`; wcześniejsze preferencje
+zwinięcia w `localStorage` nie są odczytywane. Sekcja ma równe odstępy nad i pod
+kafelkami: 8px na komputerze i telefonie. Przerwy między kafelkami w obu
+kierunkach wynoszą 16px na komputerze oraz 12px na telefonie. Marginesy boczne korzystają
+z `--documents-index-padding-x`, a lista nie ma dodatkowego marginesu.
 Kliknięcie kafelka typu pliku otwiera wspólny modal z wybranym typem i zachowuje bieżący Workspace. Fokus od razu trafia do nazwy, błędy mają pierwszeństwo;
 Escape i powrót fokusu obsługuje istniejący `documents.js`.
 Typ nadal można zmienić w formularzu, a zapis otwiera edytor w osobnej karcie.
@@ -493,12 +514,15 @@ kolumny działań; pusty stan ukrywa nagłówki i mieści się na wąskim ekrani
 `documents/includes/row_menu.html` przyjmuje szablon akcji danego modułu
 w parametrze `actions_template` i korzysta z dotychczasowych formularzy,
 z tekstowymi etykietami w wariancie `action_menu`.
-Kafelki zachowują dotychczasowe przyciski. Menu używa wspólnych klas
+Kafelki plików i folderów Dysku oraz Dokumentów używają tego samego include'a
+w stopce, po prawej stronie daty, zamiast rzędu ikon. Menu używa wspólnych klas
 `tasks-section-menu` i `tasks-project-menu-button` oraz natywnego `popover`
-poza obszarem przycinania tabeli. `documents.js` dopasowuje położenie do
+poza obszarem przycinania tabeli lub kafelka. `documents.js` dopasowuje położenie do
 viewportu i skali UI, obsługuje strzałki, Home/End, Escape, kliknięcie poza menu
-oraz zamknięcie przy przewijaniu. Po zamknięciu modala fokus wraca na przycisk
-wiersza. Inicjalizacja działa także po `ancore:content-loaded` bez powielania
+oraz zamknięcie przy przewijaniu. Otwarcie myszą pozostawia fokus na przycisku;
+Enter/Spacja przenoszą go na pierwszą akcję. Długie etykiety akcji zawijają się w menu,
+zachowując pełny tekst także na telefonie. Po zamknięciu modala fokus wraca na przycisk
+wiersza lub kafelka. Inicjalizacja działa także po `ancore:content-loaded` bez powielania
 listenerów. Kosz udostępnia w tym samym miejscu akcję przywrócenia.
 
 Historia wersji używa wspólnej tabeli i przycisków Dysku, z paginacją po 25 wpisów.

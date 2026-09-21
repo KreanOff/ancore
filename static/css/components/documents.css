@@ -86,6 +86,9 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-item-actions > [aria-expanded="true"] { background: var(--system-interaction-soft); }
 .documents-item-menu { position: fixed; inset: auto; margin: 0; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; color: var(--text-primary); }
 .documents-item-menu:popover-open, .documents-menu-actions { display: grid; gap: 2px; }
+.documents-menu-actions { min-width: 0; }
+.documents-menu-actions .tasks-project-menu-button > span { white-space: normal; overflow-wrap: anywhere; }
+.documents-menu-actions .tasks-project-menu-button > svg { flex-shrink: 0; }
 .documents-menu-actions form { margin: 0; }
 .documents-menu-actions .is-starred svg { color: var(--system-accent); }
 .documents-name .documents-item-menu a { display: inline-flex; text-decoration: none; }
@@ -251,11 +254,19 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-library-description { margin-top: 2px; font-size: 12px; }
 .documents-libraries-table .documents-row-actions { justify-content: flex-end; }
 .documents-libraries-table:has(.documents-empty) thead { display: none; }
-/* A compact variant of the shared rail links replaces the duplicate index sidebar. */
+/* Shared horizontal navigation remains available for version history. */
 .documents-workspace-nav { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 8px var(--documents-index-padding-x); overflow-x: auto; border-bottom: 1px solid var(--tasks-directory-column-separator, #edf0f3); }
 .documents-workspace-nav .tasks-rail-link { width: auto; flex: 0 0 auto; gap: 8px; white-space: nowrap; }
 .documents-workspace-nav svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .documents-workspace-nav small { font-size: 12px; font-variant-numeric: tabular-nums; }
+/* Drive and Office share the view selector after sorting. */
+.documents-view-selector { order: 3; }
+.documents-view-selector .tasks-filter-button > span { max-width: 180px; }
+.documents-view-selector [aria-expanded="true"] .tasks-project-query-trigger__chevron { transform: rotate(180deg); }
+.documents-views-menu { width: max-content; min-width: var(--dropdown-menu-width); }
+.documents-views-menu .tasks-project-menu-button > span { flex: 1; }
+.documents-views-menu [aria-current="page"] { background: var(--system-interaction-soft); }
+.documents-views-menu small { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
 @media (max-width: 767px) {
     .documents-page .tasks-topbar.documents-topbar { min-height: 45px; height: auto; padding: 8px 16px 8px 56px !important; }
     .documents-page .documents-filterbar .tasks-filterbar-left { flex-wrap: wrap; max-width: 100%; }
@@ -299,8 +310,6 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
 .documents-sidebar-nav a span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .documents-sidebar-nav a small { flex: 0 0 auto; font-size: 12px; font-variant-numeric: tabular-nums; }
-.documents-sidebar-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px 8px 10px; }
-.documents-sidebar-libraries { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-color); }
 .documents-sidebar-empty { margin: 4px 10px; font-size: 13px; line-height: 1.6; }
 .documents-sidebar-close { display: none; }
 .documents-page.is-sidebar-collapsed .documents-layout { grid-template-columns: minmax(0, 1fr); }

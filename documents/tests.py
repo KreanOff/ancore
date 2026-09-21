@@ -415,7 +415,8 @@ class DocumentLibraryTests(TestCase):
             self.assertEqual(views['starred']['url'], f'{self.base}?view=starred')
             self.assertEqual(list(response.context['sidebar_libraries']), [self.primary_library, self.secondary_library])
             if url == self.base:
-                self.assertContains(response, 'documents-workspace-nav')
+                self.assertContains(response, 'id="documents-views-menu"')
+                self.assertNotContains(response, 'documents-workspace-nav')
                 self.assertNotContains(response, 'data-documents-sidebar')
             else:
                 self.assertContains(response, 'data-documents-sidebar')
