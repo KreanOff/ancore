@@ -33,9 +33,30 @@ class OfficeUploadForm(forms.Form):
 
 class OfficeCreateForm(forms.Form):
     kind = forms.ChoiceField(label='Typ', choices=[('word', 'Dokument — DOCX'), ('cell', 'Arkusz — XLSX'),
-                                                  ('slide', 'Prezentacja — PPTX'), ('board', 'Tablica — Board')],
+                                                  ('slide', 'Prezentacja — PPTX'), ('pdf', 'PDF'),
+                                                  ('form', 'Formularz PDF'), ('board', 'Tablica — Board')],
                              widget=forms.Select(attrs={'class': 'form-select tasks-inline-select'}))
     title = forms.CharField(label='Nazwa', max_length=240, widget=forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'autofocus': True}))
+
+
+class OfficeTemplateForm(forms.Form):
+    template = forms.ModelChoiceField(label='Szablon', queryset=WorkspaceDocument.objects.none(),
+                                     widget=forms.Select(attrs={'class': 'form-select tasks-inline-select'}))
+    title = forms.CharField(label='Nazwa nowego dokumentu', max_length=240,
+                            widget=forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'autofocus': True}))
+
+    def __init__(self, *args, owner, workplace, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['template'].queryset = WorkspaceDocument.objects.filter(
+            owner=owner, workplace=workplace, is_template=True, deleted_at__isnull=True,
+            kind=WorkspaceDocument.Kind.FILE,
+        ).order_by('title', 'pk')
+
+    def clean_template(self):
+        item = self.cleaned_data['template']
+        if not item.office_type:
+            raise forms.ValidationError('Szablon musi być plikiem DOCX, XLSX, PPTX lub PDF.')
+        return item
 
 
 class OfficeDocumentForm(forms.ModelForm):
@@ -46,7 +67,7 @@ class OfficeDocumentForm(forms.ModelForm):
 
     class Meta:
         model = WorkspaceDocument
-        fields = ['title', 'tags', 'content']
+        fields = ['title', 'tags', 'content', 'is_template']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-input tasks-inline-input', 'placeholder': 'Nazwa dokumentu'}),
             'tags': forms.CheckboxSelectMultiple(),
@@ -61,6 +82,8 @@ class OfficeDocumentForm(forms.ModelForm):
             self.fields.pop('content')
         if self.instance.kind != WorkspaceDocument.Kind.FILE:
             self.fields.pop('replacement')
+        if not self.instance.office_type:
+            self.fields.pop('is_template')
 
     def clean_content(self):
         return clean_content(self.cleaned_data.get('content', ''))

@@ -9,6 +9,7 @@
             <div class="tasks-modal__body documents-form">
                 <div class="documents-modal-error tasks-modal__errors" role="alert" data-document-modal-error hidden></div>
                 {% if modal.form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
+                {% if modal.template_create %}<p class="documents-muted">{% if modal.has_templates %}Powstanie niezależna kopia ostatnio zapisanej treści szablonu. Najpierw zapisz zmiany w jego edytorze.{% else %}Nie masz jeszcze szablonów. W menu dokumentu DOCX, XLSX, PPTX lub PDF wybierz „Używaj jako szablonu”.{% endif %}</p>{% endif %}
                 {% if modal.current_library or modal.upload_form %}<p class="documents-muted documents-modal-location">{{ modal.current_library.name|default:'Dokumenty' }}{% if modal.current_folder %} / {{ modal.current_folder.name }}{% endif %}</p>{% endif %}
                 {% if modal.document %}
                 <div class="documents-file-summary"><span class="documents-file-icon">{% include 'documents/includes/file_icon.html' with document=modal.document only %}</span><div>{{ modal.document.filename }}<small>{{ modal.document.extension }} · {{ modal.document.file_size|filesizeformat }} · Dodano {{ modal.document.created_at|date:'d.m.Y, H:i' }}</small></div><a class="tasks-icon-button documents-icon-button" href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" download aria-label="Pobierz plik" title="Pobierz plik"><i data-icon="download" aria-hidden="true"></i></a></div>
@@ -33,7 +34,7 @@
             <footer class="tasks-modal__footer">
                 {% if modal.document %}<a href="{{ modal.documents_url }}{{ modal.document.pk }}/preview/" class="btn btn-secondary"{% if modal.document.office_type or modal.document.has_full_editor %} target="_blank" rel="noopener"{% elif not modal.document.has_full_editor %} data-document-modal{% endif %}>{% if modal.document.has_full_editor %}Otwórz edytor{% else %}Podgląd pliku{% endif %}</a>{% endif %}
                 <a href="{{ modal.folder_url }}" class="btn btn-secondary" data-document-modal-close>Anuluj</a>
-                <button type="submit" class="tasks-modal__submit">{{ modal.submit_label }}</button>
+                <button type="submit" class="tasks-modal__submit"{% if modal.template_create and not modal.has_templates %} disabled{% endif %}>{{ modal.submit_label }}</button>
             </footer>
         </form>
     </div>

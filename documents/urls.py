@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import suite_views as suite
+from . import office_extras as extras
 from .move_views import move
 
 app_name = 'documents'
@@ -21,6 +22,9 @@ urlpatterns = [
     path('<uuid:pk>/', views.detail, name='detail'),
     path('<uuid:pk>/preview/', views.preview, name='preview'),
     path('<uuid:pk>/editor/', suite.editor, {'drive': True}, name='editor'),
+    path('<uuid:pk>/history/', extras.history, {'drive': True}, name='history'),
+    path('<uuid:pk>/versions/<int:version>/download/', extras.version_download, {'drive': True}, name='version-download'),
+    path('<uuid:pk>/versions/<int:version>/restore/', extras.version_restore, {'drive': True}, name='version-restore'),
     path('<uuid:pk>/save/', suite.save_office, {'drive': True}, name='office-save'),
     path('<uuid:pk>/state/', suite.state, {'drive': True}, name='state'),
     path('<uuid:pk>/convert/', suite.convert, {'drive': True}, name='convert'),

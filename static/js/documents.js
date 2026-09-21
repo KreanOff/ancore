@@ -341,7 +341,7 @@
             pending = true;
             const formData = new FormData(form);
             let editorTab = null;
-            if (form.hasAttribute('data-office-create') && ['word', 'cell', 'slide', 'board'].includes(formData.get('kind'))) {
+            if (form.hasAttribute('data-office-create')) {
                 // Reserve the tab during the user's click, before the asynchronous save.
                 editorTab = window.open('about:blank', '_blank');
                 if (editorTab) {

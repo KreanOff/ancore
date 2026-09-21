@@ -155,7 +155,8 @@ class DriveOfficeTests(TestCase):
             self.assertEqual(item.revision, 2)
             self.assertEqual(item.office_key, original_key)
             self.assertEqual((item.library_id, item.folder_id), (self.library.pk, self.folder.pk))
-            self.assertFalse(item.file.storage.exists(original_name))
+            self.assertTrue(item.file.storage.exists(original_name))
+            self.assertEqual(item.versions.get(revision=1).file.name, original_name)
             response = self.client.get(f'{self.base}{item.pk}/download/')
             self.assertEqual(b''.join(response.streaming_content), content)
             self.assertEqual(self.callback(item, payload, url).json(), {'error': 0})
@@ -166,7 +167,7 @@ class DriveOfficeTests(TestCase):
             self.assertEqual(item.revision, 3)
             self.assertEqual(self.callback(item, final, url).json(), {'error': 0})
             self.assertEqual(item.save_receipts.count(), 2)
-        self.assertEqual(download.call_count, 6)
+        self.assertEqual(download.call_count, 2 * len(service.OFFICE_FORMATS))
         self.assertFalse(WorkspaceDocument.objects.exists())
 
     @patch('documents.office_service.download_result')

@@ -5,7 +5,7 @@
 .office-quick-create-toggle:hover { background: var(--system-interaction-soft); }
 .office-quick-create-toggle svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .office-quick-create-toggle[aria-expanded="false"] svg { transform: rotate(-90deg); }
-.office-quick-create-list { display: grid; grid-template-columns: repeat(5, minmax(0, 184px)); gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
+.office-quick-create-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(144px, 184px)); gap: 12px; margin: 12px 0 0; padding: 0; list-style: none; }
 .office-quick-create-list[hidden] { display: none; }
 .office-quick-create-list > li { min-width: 0; }
 .office-quick-create .office-create-card { align-items: center; justify-content: center; gap: 16px; min-height: 136px; height: 100%; aspect-ratio: auto; overflow: visible; padding: 16px 12px; color: inherit; text-align: center; text-decoration: none; }
@@ -15,9 +15,6 @@
 .office-create-card-plus { display: grid; place-items: center; flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; background: var(--primary-button-bg); }
 .office-create-card-plus svg { width: 14px; height: 14px; }
 .office-create-card:is(:hover, :focus-visible) .office-create-card-plus { background: var(--primary-button-hover-bg); }
-@container office-quick-create (max-width: 900px) {
-    .office-quick-create-list { grid-template-columns: repeat(3, minmax(0, 184px)); }
-}
 @media (max-width: 767px) {
     .office-quick-create { padding-block: 8px 12px; }
     .office-quick-create-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

@@ -270,7 +270,8 @@ class OfficeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         source.refresh_from_db()
         self.assertEqual(Path(source.file.path).read_bytes(), b'Nowa tresc')
-        self.assertFalse(old_path.exists())
+        self.assertTrue(old_path.exists())
+        self.assertEqual(source.versions.get().filename, 'Tekst.txt')
 
     def test_docx_import_and_truncated_import_rejection(self):
         self.client.post(self.base + 'upload/', {'files': SimpleUploadedFile('Plan.docx', docx_bytes('<h1>Plan</h1><p>Treść dokumentu</p>'))})
@@ -293,7 +294,7 @@ class OfficeTests(TestCase):
         b''.join(response.streaming_content)
         item.file.storage.delete(item.file.name)
         self.assertEqual(self.client.get(self.base + f'{item.pk}/download/').status_code, 404)
-        self.assertContains(self.client.get(self.base + f'{item.pk}/preview/'), 'nie jest dostępny')
+        self.assertRedirects(self.client.get(self.base + f'{item.pk}/preview/'), self.base + f'{item.pk}/editor/', fetch_redirect_response=False)
 
     def test_workspace_deletion_cascades_and_cleans_upload(self):
         parent = self.folder()

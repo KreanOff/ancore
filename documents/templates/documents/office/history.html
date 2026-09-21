@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Historia wersji · {{ document.title }} | ancore{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-unified-dialogs">
+<script src="{% static 'js/documents.js' %}?v=20260921-office-extras" defer></script>
+<script src="{% static 'js/office.js' %}?v=20260921-no-folders" defer></script>
+{% endblock %}
+{% block content %}
+<div class="documents-page" data-office-catalog>
+    <header class="tasks-topbar tasks-topbar--directory documents-topbar">
+        <div class="tasks-titlebar-left">
+            <a class="tasks-icon-button" href="{{ folder_url }}" title="Wróć do katalogu" aria-label="Wróć do katalogu"><i data-icon="arrow-left" aria-hidden="true"></i></a>
+            <h1 class="tasks-topbar-title">Historia wersji · {{ document.title }}</h1>
+        </div>
+        <div class="tasks-titlebar-actions">
+            <a class="btn btn-secondary" href="{{ documents_url }}{{ document.pk }}/download/" download>Pobierz bieżący plik</a>
+            {% if document.office_type %}<a class="btn btn-primary" href="{{ documents_url }}{{ document.pk }}/editor/" target="_blank" rel="noopener">Otwórz edytor</a>{% endif %}
+        </div>
+    </header>
+    <p class="documents-results-hint">Bieżąca wersja: {{ document.revision }}. Historia obejmuje zapisane pliki. Przed przywróceniem zapisz i zamknij edytor. Przywrócenie zachowa bieżący plik jako kolejną pozycję historii.</p>
+    <section class="documents-main" aria-label="Poprzednie wersje">
+        <div class="documents-table-scroll"><table class="documents-table documents-table--inline-actions">
+            <thead><tr><th scope="col">Wersja</th><th scope="col">Plik</th><th scope="col" data-document-column="date">Zapisano</th><th scope="col" data-document-column="size">Rozmiar</th><th scope="col">Działania</th></tr></thead>
+            <tbody>{% for version in versions %}<tr>
+                <td>{{ version.revision }}</td><td><div class="documents-name"><div><span title="{{ version.filename }}">{{ version.filename }}</span></div></div></td><td data-document-column="date">{{ version.saved_at|date:'d.m.Y, H:i' }}</td><td data-document-column="size">{{ version.file_size|filesizeformat }}</td>
+                <td><div class="documents-row-actions">
+                    <a class="btn btn-secondary btn-sm" href="{{ documents_url }}{{ document.pk }}/versions/{{ version.pk }}/download/" download>Pobierz</a>
+                    <form method="post" action="{{ documents_url }}{{ document.pk }}/versions/{{ version.pk }}/restore/" data-document-confirm="Przywrócić tę wersję? Bieżący plik zostanie zachowany w historii, a otwarte sesje edytora utracą możliwość zapisu.">{% csrf_token %}<input type="hidden" name="revision" value="{{ document.revision }}"><button type="submit" class="btn btn-secondary btn-sm">Przywróć</button></form>
+                </div></td>
+            </tr>{% empty %}<tr><td colspan="5" class="documents-empty"><div><i data-icon="clock-3" aria-hidden="true"></i><h3>Brak wcześniejszych wersji</h3><p>Poprzedni plik pojawi się tutaj po zapisaniu zmian lub przesłaniu nowej wersji. Historia nie obejmuje zapisów sprzed włączenia tej funkcji.</p></div></td></tr>{% endfor %}</tbody>
+        </table></div>
+    </section>
+    {% if versions.has_other_pages %}<nav class="documents-workspace-nav" aria-label="Strony historii">{% if versions.has_previous %}<a class="btn btn-secondary" href="?page={{ versions.previous_page_number }}">Poprzednia</a>{% endif %}<span>{{ versions.number }} / {{ versions.paginator.num_pages }}</span>{% if versions.has_next %}<a class="btn btn-secondary" href="?page={{ versions.next_page_number }}">Następna</a>{% endif %}</nav>{% endif %}
+</div>
+{% endblock %}
+{% block page_modals %}{% include 'documents/modal_host.html' %}{% endblock %}

@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
-| [documents](../documents) | 33 | 10 | 31 | 182 |
+| [documents](../documents) | 36 | 11 | 32 | 196 |
 
 ## 2. Modele i relacje
 
@@ -515,7 +515,7 @@ Metody/properties: `__str__`.
 
 Źródło: [documents/models.py](../documents/models.py).
 
-Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `kind` (CharField), `content` (TextField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `kind` (CharField), `content` (TextField), `is_template` (BooleanField), `is_pdf_form` (BooleanField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -545,6 +545,17 @@ Pola zadeklarowane tutaj: `document` (ForeignKey), `digest` (CharField), `create
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `document` | `Document` | on_delete=models.CASCADE; related_name='save_receipts' |
+
+### `DocumentVersion`
+
+Źródło: [documents/models.py](../documents/models.py).
+
+Pola zadeklarowane tutaj: `document` (ForeignKey), `drive_document` (ForeignKey), `revision` (PositiveIntegerField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `is_pdf_form` (BooleanField), `saved_at` (DateTimeField), `archived_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `document` | `WorkspaceDocument` | on_delete=models.CASCADE; related_name='versions'; null=True |
+| `drive_document` | `Document` | on_delete=models.CASCADE; related_name='versions'; null=True |
 
 ## 3. Formularze
 
@@ -797,6 +808,9 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'<uuid:pk>/'` | `views.detail` | 'detail' |
 | `'<uuid:pk>/preview/'` | `views.preview` | 'preview' |
 | `'<uuid:pk>/editor/'` | `suite.editor` | 'editor' |
+| `'<uuid:pk>/history/'` | `extras.history` | 'history' |
+| `'<uuid:pk>/versions/<int:version>/download/'` | `extras.version_download` | 'version-download' |
+| `'<uuid:pk>/versions/<int:version>/restore/'` | `extras.version_restore` | 'version-restore' |
 | `'<uuid:pk>/save/'` | `suite.save_office` | 'office-save' |
 | `'<uuid:pk>/state/'` | `suite.state` | 'state' |
 | `'<uuid:pk>/convert/'` | `suite.convert` | 'convert' |
@@ -924,20 +938,22 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/__init__.py](../documents/__init__.py)
 - [documents/apps.py](../documents/apps.py) — `DocumentsConfig`
 - [documents/board.py](../documents/board.py) — `clean_scene`
-- [documents/editor_forms.py](../documents/editor_forms.py) — `validate_document`, `DocumentFilesField`, `OfficeUploadForm`, `OfficeCreateForm`, `OfficeDocumentForm`
+- [documents/editor_forms.py](../documents/editor_forms.py) — `validate_document`, `DocumentFilesField`, `OfficeUploadForm`, `OfficeCreateForm`, `OfficeTemplateForm`, `OfficeDocumentForm`
 - [documents/editor_views.py](../documents/editor_views.py) — `index`, `upload`, `edit`, `preview`, `import_text`, `download`, `content`, `action`
 - [documents/folder_exports.py](../documents/folder_exports.py) — `folder_archive`
 - [documents/folder_stats.py](../documents/folder_stats.py) — `set_folder_summaries`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `IconColorForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
 - [documents/location_lock.py](../documents/location_lock.py) — `location_write`
-- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`
+- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`, `DocumentVersion`, `delete_document_version_file`
 - [documents/move_views.py](../documents/move_views.py) — `MoveForm`, `move`
+- [documents/office_extras.py](../documents/office_extras.py) — `from_template`, `template_toggle`, `history`, `version_download`, `version_restore`
 - [documents/office_service.py](../documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
 - [documents/previews.py](../documents/previews.py) — `inline_type`, `validate_inline`, `OfficePackage`, `build_preview`
 - [documents/query.py](../documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
 - [documents/rich_text.py](../documents/rich_text.py) — `DocumentHTML`, `clean_content`, `text_to_content`, `docx_bytes`
 - [documents/suite_views.py](../documents/suite_views.py) — `create`, `editor`, `board_frame`, `save_board`, `save_office`, `state`, `source`, `callback`, `upgrade_text`, `convert`
 - [documents/urls.py](../documents/urls.py)
+- [documents/version_service.py](../documents/version_service.py) — `version_parent`, `archive_current`
 - [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `detail`, `preview`, `preview_content`, `download`, `star`, `trash`, `restore`
 - [documents/workspace_urls.py](../documents/workspace_urls.py)
 
@@ -1066,6 +1082,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/templates/documents/office/board_frame.html](../documents/templates/documents/office/board_frame.html)
 - [documents/templates/documents/office/create_card.html](../documents/templates/documents/office/create_card.html)
 - [documents/templates/documents/office/editor.html](../documents/templates/documents/office/editor.html)
+- [documents/templates/documents/office/history.html](../documents/templates/documents/office/history.html)
 - [documents/templates/documents/office/index.html](../documents/templates/documents/office/index.html)
 - [documents/templates/documents/office/name.html](../documents/templates/documents/office/name.html)
 - [documents/templates/documents/office/suite.html](../documents/templates/documents/office/suite.html)
@@ -1291,6 +1308,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `RichTextTests`: 3 metod testowych.
 - `OfficeTests`: 20 metod testowych.
 
+### documents/test_office_extras.py
+
+Źródło: [documents/test_office_extras.py](../documents/test_office_extras.py).
+
+- `OfficeExtrasTests`: 14 metod testowych.
+
 ### documents/test_office_folders.py
 
 Źródło: [documents/test_office_folders.py](../documents/test_office_folders.py).
@@ -1465,3 +1488,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [documents/migrations/0008_folder_is_starred.py](../documents/migrations/0008_folder_is_starred.py)
 - [documents/migrations/0009_drive_office_editor.py](../documents/migrations/0009_drive_office_editor.py)
 - [documents/migrations/0010_icon_colors.py](../documents/migrations/0010_icon_colors.py)
+- [documents/migrations/0011_workspacedocument_is_pdf_form_and_more.py](../documents/migrations/0011_workspacedocument_is_pdf_form_and_more.py)

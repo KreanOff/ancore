@@ -15,7 +15,8 @@ from django.core.files.base import ContentFile
 from django.urls import reverse
 from django.utils.crypto import salted_hmac
 
-OFFICE_FORMATS = {'word': ('docx', 'Dokument'), 'cell': ('xlsx', 'Arkusz'), 'slide': ('pptx', 'Prezentacja')}
+OFFICE_FORMATS = {'word': ('docx', 'Dokument'), 'cell': ('xlsx', 'Arkusz'), 'slide': ('pptx', 'Prezentacja'),
+                  'pdf': ('pdf', 'PDF')}
 
 
 def configured():
@@ -66,6 +67,8 @@ def editor_config(document, user):
                          'customization': {'forcesave': True, 'autosave': True, 'macros': False,
                                            'plugins': False, 'help': False}},
     }
+    if document.extension == 'PDF' and getattr(document, 'is_pdf_form', False):
+        config['document']['isForm'] = True
     config['token'] = sign(config)
     return config
 
@@ -146,8 +149,9 @@ def validate_ooxml(file, extension):
 
 
 def blank_file(kind):
-    extension, _ = OFFICE_FORMATS[kind]
-    return ContentFile((Path(__file__).parent / 'blank' / f'new.{extension}').read_bytes(), name=f'Nowy.{extension}')
+    extension, _ = OFFICE_FORMATS['pdf' if kind == 'form' else kind]
+    filename = 'new-form.pdf' if kind == 'form' else f'new.{extension}'
+    return ContentFile((Path(__file__).parent / 'blank' / filename).read_bytes(), name=f'Nowy.{extension}')
 
 
 def receipt_digest(payload):

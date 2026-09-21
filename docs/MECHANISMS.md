@@ -322,14 +322,14 @@ i kosz są oddzielnymi operacjami. Edytor wyświetla błąd po utracie połącze
 lub sesji, zachowując lokalnie wpisaną treść.
 
 Upload waliduje całą partię przed zapisem i sprząta pliki przy wycofaniu
-transakcji. Podmiana usuwa stary plik dopiero po zatwierdzeniu bazy. Sygnał
+transakcji. Podmiana zachowuje stary plik w `DocumentVersion` w tej samej transakcji. Sygnał
 `WorkspaceDocument.post_delete` usuwa oryginał po commit, także przy usuwaniu
 Workspace. Jest to osobny mechanizm od starszego modelu `Document` Dysku.
 PDF jest serwowany przez autoryzowany endpoint z kontrolą sygnatury,
 `nosniff`, `SAMEORIGIN`, CSP sandbox i `private, no-store`. Pozostałe podglądy
 korzystają z istniejących limitów `previews.py`; import tekstu odrzuca obcięte dane.
 
-Pełne edytory DOCX/XLSX/PPTX używają podpisanej integracji ONLYOFFICE.
+Pełne edytory DOCX/XLSX/PPTX/PDF używają podpisanej integracji ONLYOFFICE.
 Serwisowe URL wymagają podpisu przypisanego do dokumentu/właściciela/Workspace,
 a zapis dodatkowo JWT serwera. Klucze sesji, powtórzone callbacki, podmiana
 plików oraz pobieranie wyników są opisane w [mechanizmie zapisu](OFFICE.md#zapis-i-granice-dostępu).

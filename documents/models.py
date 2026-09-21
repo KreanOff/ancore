@@ -105,7 +105,7 @@ class Document(models.Model):
 
     @property
     def office_type(self):
-        return {'DOCX': 'word', 'XLSX': 'cell', 'PPTX': 'slide'}.get(self.extension, '')
+        return {'DOCX': 'word', 'XLSX': 'cell', 'PPTX': 'slide', 'PDF': 'pdf'}.get(self.extension, '')
 
     @property
     def icon(self):
@@ -153,6 +153,8 @@ class WorkspaceDocument(models.Model):
     title = models.CharField('Nazwa dokumentu', max_length=255)
     kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.TEXT)
     content = models.TextField('Treść', blank=True)
+    is_template = models.BooleanField('Używaj jako szablonu', default=False)
+    is_pdf_form = models.BooleanField(default=False, editable=False)
     revision = models.PositiveIntegerField(default=1)
     office_key = models.UUIDField(default=uuid.uuid4, editable=False)
     office_save_error = models.BooleanField(default=False, editable=False)
@@ -182,7 +184,7 @@ class WorkspaceDocument(models.Model):
 
     @property
     def office_type(self):
-        return {'DOCX': 'word', 'XLSX': 'cell', 'PPTX': 'slide'}.get(self.extension, '')
+        return {'DOCX': 'word', 'XLSX': 'cell', 'PPTX': 'slide', 'PDF': 'pdf'}.get(self.extension, '')
 
     @property
     def has_full_editor(self):
@@ -221,3 +223,32 @@ class DriveOfficeSaveReceipt(models.Model):
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='save_receipts')
     digest = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DocumentVersion(models.Model):
+    """Immutable previous file; access always goes through its scoped parent."""
+    document = models.ForeignKey(WorkspaceDocument, null=True, blank=True, on_delete=models.CASCADE, related_name='versions')
+    drive_document = models.ForeignKey(Document, null=True, blank=True, on_delete=models.CASCADE, related_name='versions')
+    revision = models.PositiveIntegerField()
+    file = models.FileField(storage=document_storage, upload_to=document_upload_path, max_length=400)
+    filename = models.CharField(max_length=255)
+    file_size = models.PositiveBigIntegerField()
+    is_pdf_form = models.BooleanField(default=False)
+    saved_at = models.DateTimeField()
+    archived_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-revision']
+        constraints = [
+            models.CheckConstraint(condition=(models.Q(document__isnull=False, drive_document__isnull=True)
+                                              | models.Q(document__isnull=True, drive_document__isnull=False)), name='version_one_document'),
+            models.UniqueConstraint(fields=['document', 'revision'], name='office_unique_version'),
+            models.UniqueConstraint(fields=['drive_document', 'revision'], name='drive_unique_version'),
+        ]
+
+
+@receiver(post_delete, sender=DocumentVersion)
+def delete_document_version_file(sender, instance, using, **kwargs):
+    if instance.file:
+        storage, name = instance.file.storage, instance.file.name
+        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)

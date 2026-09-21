@@ -6,8 +6,8 @@
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-unified-dialogs">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-no-folders">
-<script src="{% static 'js/documents.js' %}?v=20260921-upload-list" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-office-extras">
+<script src="{% static 'js/documents.js' %}?v=20260921-office-extras" defer></script>
 <script src="{% static 'js/office-suite.js' %}?v=20260919" defer></script>
 {% endblock %}
 {% block content %}
@@ -21,6 +21,7 @@
         </div>
         <div class="tasks-titlebar-actions">
             <span class="documents-muted office-save-status" role="status" data-suite-status>Otwieranie edytora…</span>
+            {% if document.file %}<a class="tasks-icon-button" href="{{ documents_url }}{{ document.pk }}/history/" target="_blank" rel="noopener" aria-label="Historia wersji" title="Historia wersji"><i data-icon="clock-3" aria-hidden="true"></i></a>{% endif %}
             <a class="tasks-icon-button" href="{{ documents_url }}{{ document.pk }}/" data-document-modal aria-label="{% if drive_editor %}Nazwa i folder{% else %}Dane dokumentu{% endif %}" title="{% if drive_editor %}Nazwa i folder{% else %}Dane dokumentu{% endif %}"><i data-icon="pencil" aria-hidden="true"></i></a>
             <a class="btn btn-secondary" href="{{ documents_url }}{{ document.pk }}/download/" download data-suite-download>Pobierz</a>
             {% if document.kind == 'board' or office_configured %}<button class="btn btn-primary" type="button" data-suite-save disabled>Zapisz</button>{% endif %}

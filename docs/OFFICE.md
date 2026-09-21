@@ -1,12 +1,12 @@
 # Pełne edytory Dokumentów
 
 Dokumenty pozostają osobnym modułem obok Dysku. Katalog i metadane używają
-Django, wspólnych szablonów/CSS oraz zwykłego JavaScriptu. DOCX, XLSX i PPTX
+Django, wspólnych szablonów/CSS oraz zwykłego JavaScriptu. DOCX, XLSX, PPTX i PDF
 edytuje lokalny ONLYOFFICE Docs; tablice — lokalnie zbudowany Excalidraw.
 To edytory zgodne z formatami Microsoft Office, a nie oryginalne aplikacje
 Microsoft 365. Zgodność wszystkich funkcji desktopowego Office nie jest gwarantowana.
 
-Dysk korzysta z tych samych edytorów dla DOCX/XLSX/PPTX. Lista, kafelki i globalna
+Dysk korzysta z tych samych edytorów dla DOCX/XLSX/PPTX/PDF. Lista, kafelki i globalna
 wyszukiwarka otwierają osobną kartę; zapis aktualizuje istniejący `Document`
 w jego prywatnym storage, z zachowaniem dysku, folderu i tagów. Starszy adres
 podglądu przekierowuje do edytora. DOC/XLS/PPT/RTF/TXT/CSV można otworzyć jako
@@ -19,9 +19,12 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
   i pozostałe narzędzia dostępne w ONLYOFFICE Document Editor.
 - **Arkusz:** XLSX, komórki, formuły, arkusze, formatowanie i wykresy.
 - **Prezentacja:** PPTX, slajdy, tekst, kształty, obrazy i pokaz slajdów.
+- **PDF:** tworzenie pustego pliku i edycja przesłanych PDF w ONLYOFFICE.
+- **Formularz PDF:** tworzenie na bazie pustego wzorca ONLYOFFICE; `isForm`
+  otwiera projektowanie pól. Zapis zachowuje PDF i dane formularza.
 - **Tablica:** tekst, kształty, strzałki, rysowanie, obrazy PNG/JPG/WebP,
   cofanie, powiększenie, import `.excalidraw`, eksport sceny oraz PNG/SVG.
-- Wysłane DOCX/XLSX/PPTX otwierają się bezpośrednio w odpowiednim edytorze.
+- Wysłane DOCX/XLSX/PPTX/PDF otwierają się bezpośrednio w odpowiednim edytorze.
   ONLYOFFICE i tablica BOARD otwierają się w osobnej karcie przeglądarki,
   na pełną szerokość bez nawigacji bocznej. Dotyczy to listy, kafelków,
   wyszukiwarki, tworzenia pliku, odnośnika w metadanych oraz konwersji.
@@ -30,11 +33,36 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
   Jeżeli przeglądarka blokuje nową kartę podczas tworzenia, modal pokazuje
   odnośnik do już zapisanego dokumentu, bez ponownego tworzenia pliku.
   DOC/XLS/PPT/RTF/TXT/CSV można przekonwertować do osobnej kopii OOXML;
-  oryginał pozostaje w katalogu. PDF zachowuje dotychczasowy podgląd/pobieranie.
+  oryginał pozostaje w katalogu. PDF otwiera pełny edytor, zachowując kontrolowane pobieranie.
 - Starsze dokumenty Ancore nadal używają prostego edytora. Przycisk nad treścią
   tworzy kopię DOCX z obsługiwanym formatowaniem i otwiera pełny edytor.
 - Pliki należą wyłącznie do właściciela i Workspace. Integracja nie włącza
   udostępniania, współpracy pomiędzy kontami ani dostępu członków Workspace.
+
+## Szablony i historia wersji
+
+Dokument DOCX/XLSX/PPTX/PDF można oznaczyć jako szablon w danych dokumentu
+lub jego menu. Widok „Szablony” obejmuje tylko aktywne pliki właściciela
+w bieżącym Workspace. „Utwórz kopię szablonu” w menu tworzy niezależny plik
+z ostatnio zapisaną treścią i tagami, nowym UUID i kluczem edytora. Nie ma
+osobnego kafelka „Z szablonu”. Zmiany niezapisane w edytorze nie trafiają do kopii.
+Odznaczenie szablonu zachowuje dokument. Szablony dotyczą katalogu Dokumentów.
+
+„Historia wersji” jest dostępna w menu pliku Dokumentów/Dysku i w pasku edytora.
+Pokazuje po 25 poprzednich zapisów na stronę, z datą, rozmiarem, pobieraniem
+oraz przywracaniem. Przed poprawnym callbackiem lub podmianą pliku Dokumentów
+aktualna ścieżka storage jest przekazywana do `DocumentVersion` w tej samej
+transakcji. Przywracanie kopiuje wskazaną wersję do nowego pliku, zachowuje
+poprzedni, zwiększa rewizję i unieważnia stare sesje ONLYOFFICE. Konflikt rewizji
+wymaga ponownego sprawdzenia historii; błąd pliku nie zmienia bieżącej treści.
+Metadane i tagi pozostają bieżące. Historia nie obejmuje starszych zapisów
+sprzed migracji, tablic ani dokumentów w starym edytorze tekstowym Ancore.
+To własna lista wersji Ancore, bez porównywania zmian wewnątrz ONLYOFFICE.
+
+Pobranie/przywrócenie wymaga aktywnego dokumentu, właściciela i Workspace;
+identyfikator wersji musi należeć do wskazanego pliku. Kosz blokuje te akcje.
+Trwałe usunięcie dokumentu usuwa wersje oraz ich pliki po commit. Nie ma
+automatycznego limitu retencji; historia zwiększa wykorzystanie dysku.
 
 ## Lokalne uruchomienie na Macu
 
@@ -139,7 +167,7 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
 - Wynik jest pobierany wyłącznie z `/cache/files/` skonfigurowanego ONLYOFFICE,
   bez przekierowań, z limitem rozmiaru i czasem oczekiwania. Błąd nie podmienia
   oryginału. Nowy plik trafia do storage, rekord jest aktualizowany transakcyjnie,
-  a stary plik usuwany dopiero po commit.
+  a poprzedni plik zachowywany w prywatnej historii wersji.
 - Status 6 zapisuje plik podczas pracy; status 2 kończy sesję i zmienia jej
   klucz. Ponowione callbacki są rozpoznawane przez `OfficeSaveReceipt`.
   Podmiana pliku oraz przeniesienie do/z kosza unieważniają stare sesje.
@@ -159,8 +187,9 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   Aktywne osadzenia i niebezpieczne schematy odnośników są odrzucane. Iframe ma
   CSP ograniczające połączenia, skrypty i fonty do lokalnej aplikacji.
 
-`revision` i potwierdzenia callbacków nie są historią wersji do przywracania.
-Nie ma wspólnej edycji pomiędzy różnymi użytkownikami, OCR, edycji PDF ani VBA.
+`DocumentVersion` przechowuje poprzednie pliki; same potwierdzenia callbacków
+i `revision` nadal nie zawierają treści. Nie ma wspólnej edycji pomiędzy
+różnymi użytkownikami, OCR ani VBA.
 Kopia przekonwertowana ze starego formatu może różnić się wizualnie; oryginał
 pozostaje dostępny. Utworzenie pliku nie wymaga działającego serwera, ale jego
 pełna edycja wymaga uruchomionego ONLYOFFICE. Tablica działa niezależnie.

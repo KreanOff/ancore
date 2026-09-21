@@ -71,8 +71,9 @@ def create(request):
             item.file_size = len(item.content.encode())
             item.save()
         else:
-            extension = service.OFFICE_FORMATS[kind][0]
+            extension = service.OFFICE_FORMATS['pdf' if kind == 'form' else kind][0]
             item.kind = Document.Kind.FILE
+            item.is_pdf_form = kind == 'form'
             item.filename = title if title.lower().endswith('.' + extension) else title[:240] + '.' + extension
             data = service.blank_file(kind)
             item.file_size = data.size
@@ -228,7 +229,8 @@ def callback(request, pk, drive=False):
             upload = SimpleUploadedFile(item.filename, content)
             validate_attachment_upload(upload)
             service.validate_ooxml(upload, item.extension)
-            old_name = item.file.name
+            from .version_service import archive_current
+            archive_current(item)
             item.file.save(item.filename, ContentFile(content), save=False)
             saved_name = item.file.name
             item.file_size, item.revision, item.office_save_error = len(content), item.revision + 1, False
@@ -236,8 +238,6 @@ def callback(request, pk, drive=False):
                 item.office_key = uuid.uuid4()
             item.save(update_fields=['file', 'file_size', 'revision', 'office_key', 'office_save_error', 'updated_at'])
             receipts.objects.create(document=item, digest=digest)
-            storage = item.file.storage
-            transaction.on_commit(lambda: storage.delete(old_name), robust=True)
     except (URLError, OSError, ValueError, KeyError, ValidationError):
         if saved_name:
             item.file.storage.delete(saved_name)

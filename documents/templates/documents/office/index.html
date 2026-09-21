@@ -4,8 +4,8 @@
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-unified-dialogs">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-no-folders">
-<script src="{% static 'js/documents.js' %}?v=20260921-upload-list" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-office-extras">
+<script src="{% static 'js/documents.js' %}?v=20260921-office-extras" defer></script>
 <script src="{% static 'js/office.js' %}?v=20260921-no-folders" defer></script>
 {% endblock %}
 {% block content %}
@@ -45,6 +45,8 @@
             {% include 'documents/office/create_card.html' with type='word' variant='word' label='Dokument' %}
             {% include 'documents/office/create_card.html' with type='cell' variant='excel' label='Arkusz kalkulacyjny' %}
             {% include 'documents/office/create_card.html' with type='slide' variant='powerpoint' label='Prezentacja' %}
+            {% include 'documents/office/create_card.html' with type='pdf' variant='pdf' label='PDF' %}
+            {% include 'documents/office/create_card.html' with type='form' variant='pdf' label='Formularz PDF' %}
             {% include 'documents/office/create_card.html' with type='board' variant='board' label='Tablica' %}
             {% include 'documents/office/create_card.html' with action_url=upload_url icon='cloud-upload' action_icon='upload' label='Prześlij dokumenty' %}
         </ul>
@@ -83,6 +85,7 @@
                 {% if query or has_active_filters %}<h3>Brak pasujących dokumentów</h3><p>Zmień wyszukiwanie lub filtry albo wróć do pełnej listy.</p><a class="btn btn-secondary" href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a>
                 {% elif office_view == 'trash' %}<h3>Kosz jest pusty</h3><p>Tutaj znajdziesz usunięte dokumenty, które możesz przywrócić.</p>
                 {% elif office_view == 'starred' %}<h3>Brak oznaczonych dokumentów</h3><p>Dodaj gwiazdkę do dokumentu, aby łatwo do niego wrócić.</p>
+                {% elif office_view == 'templates' %}<h3>Brak szablonów</h3><p>W menu dokumentu wybierz „Używaj jako szablonu”. Potem wybierz „Utwórz kopię szablonu”.</p>
                 {% else %}<h3>Twoje dokumenty w jednym miejscu</h3><p>Twórz dokumenty, arkusze, prezentacje i tablice lub prześlij swoje pliki z komputera.</p><a class="btn btn-primary" href="{{ create_url }}" data-document-modal>Utwórz dokument</a>{% endif %}
             </div></td></tr>{% endfor %}</tbody>
         </table></div>

@@ -49,7 +49,8 @@ def _item(request, pk, **filters):
 
 def _context(request):
     return {'documents_url': _url(request), 'folder_url': _url(request),
-            'create_url': _url(request, 'create/'), 'upload_url': _url(request, 'upload/')}
+            'create_url': _url(request, 'create/'), 'upload_url': _url(request, 'upload/'),
+            'template_create_url': _url(request, 'templates/create/')}
 
 
 @login_required
@@ -60,7 +61,7 @@ def index(request):
 
 def _list(request, modal=None):
     view = request.GET.get('view', 'all')
-    if view not in {'all', 'recent', 'starred', 'trash'}:
+    if view not in {'all', 'recent', 'starred', 'templates', 'trash'}:
         view = 'all'
     query = request.GET.get('q', '').strip()[:120]
     tags = TaskTag.objects.filter(user=request.user, workplace=request.workplace)
@@ -104,6 +105,8 @@ def _list(request, modal=None):
     items = _documents(request).filter(deleted_at__isnull=view != 'trash')
     if view == 'starred':
         items = items.filter(is_starred=True)
+    if view == 'templates':
+        items = items.filter(is_template=True)
     if query:
         items = items.filter(Q(title__icontains=query) | Q(filename__icontains=query) | Q(tags__name__icontains=query)).distinct()
     if selected_tag:
@@ -145,7 +148,7 @@ def _list(request, modal=None):
         'office_views': [{'value': key, 'label': label, 'icon': icon, 'count': counts.get(key), 'active': view == key,
                          'url': _url(request, view=key)} for key, label, icon in [
                              ('all', 'Wszystkie dokumenty', 'files'), ('recent', 'Ostatnio zmienione', 'clock-3'),
-                             ('starred', 'Oznaczone gwiazdką', 'star'), ('trash', 'Kosz', 'trash-2')]],
+                             ('starred', 'Oznaczone gwiazdką', 'star'), ('templates', 'Szablony', 'files'), ('trash', 'Kosz', 'trash-2')]],
         'display_options': [{'label': label, 'icon': icon, 'active': display == key, 'url': _url(request, **{**params, 'display': key, 'page': page.number})}
                             for key, label, icon in [('list', 'Lista', 'list'), ('grid', 'Kafelki', 'layout-grid')]],
         'document_window': {'page': page.number, 'total_pages': page.paginator.num_pages, 'page_size': size, 'page_size_options': [25, 50, 100],
@@ -201,7 +204,6 @@ def edit(request, pk=None):
     conflict = False
     if request.method == 'POST' and form.is_valid():
         item = form.save(commit=False)
-        previous_name = item.file.name
         saved_name = None
         try:
             with transaction.atomic():
@@ -216,12 +218,18 @@ def edit(request, pk=None):
                         item.is_starred = locked.is_starred
                         item.office_key = locked.office_key
                         item.office_save_error = locked.office_save_error
+                        item.is_pdf_form = locked.is_pdf_form
                     replacement = form.cleaned_data.get('replacement')
                     if replacement:
+                        from .version_service import archive_current
+                        archive_current(locked)
                         item.file.save(replacement.name, replacement, save=False)
                         saved_name = item.file.name
                         item.filename, item.file_size = replacement.name, replacement.size
                         item.office_key, item.office_save_error = uuid.uuid4(), False
+                        item.is_pdf_form = False
+                        if not item.office_type:
+                            item.is_template = False
                     elif item.kind == Document.Kind.TEXT:
                         item.file_size = len(item.content.encode('utf-8'))
                     item.save()
@@ -231,9 +239,6 @@ def edit(request, pk=None):
                 item.file.storage.delete(saved_name)
             raise
         if not conflict:
-            if saved_name and previous_name and previous_name != saved_name:
-                storage = item.file.storage
-                transaction.on_commit(lambda: storage.delete(previous_name), robust=True)
             target = _url(request, f'{item.pk}/') if item.kind == Document.Kind.TEXT else _url(request)
             if request.headers.get('X-Office-Editor') == 'true':
                 return JsonResponse({'url': target, 'revision': item.revision, 'saved_at': timezone.localtime(item.updated_at).strftime('%H:%M'), 'title': item.title})

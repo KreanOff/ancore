@@ -273,3 +273,18 @@ ma oczekiwania niezgodne z obecną nawigacją i CSS; ten sam zestaw błędów
 odtworzono na kopii wersji sprzed dodania Dokumentów. Nie należy traktować
 tego jako zielonego wyniku całego zestawu. Szczegóły aktualnego wykonania
 podaje podsumowanie zadania.
+
+
+Migracja `documents/0011_workspacedocument_is_pdf_form_and_more.py` dodaje
+pola formularza PDF i szablonu oraz `DocumentVersion` z wyłącznym powiązaniem
+z Dyskiem albo Dokumentami. Jest addytywna; istniejące pliki nie są przenoszone.
+Zastosuj ją przed uruchomieniem nowych ekranów. Nowe puste PDF-y są wersjonowane
+w `documents/blank/`; ich pochodzenie opisuje tamtejszy README. Nie ma nowych
+zależności aplikacji. Historia wymaga uwzględnienia poprzednich plików w backupie
+prywatnego storage i nie ma automatycznej retencji.
+
+`documents.test_office_extras` sprawdza PDF/formularze, kopie szablonów, prywatny
+katalog, zapis historii, pobieranie, przywracanie, konflikt rewizji, CSRF,
+izolację kont/Workspace/Dysku, brak plików, błędy storage i cleanup po commit.
+Historia używa `Referrer-Policy: same-origin`, aby natywny formularz POST
+zachowywał origin wymagany przez Django CSRF.

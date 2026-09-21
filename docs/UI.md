@@ -367,7 +367,7 @@ stanowią kontekst nawigacji; przycisk „Wyczyść” w panelu filtrów ich nie
 
 ### Katalog i edytor Dokumentów
 
-Pliki DOCX/XLSX/PPTX w Dysku używają tej samej powłoki pełnego edytora
+Pliki DOCX/XLSX/PPTX/PDF w Dysku używają tej samej powłoki pełnego edytora
 `documents/office/suite.html` co Dokumenty. Linki nazwy i kafelka otwierają
 osobną kartę (`target="_blank"`, `rel="noopener"`), podobnie jak wyniki wyszukiwania.
 Pasek udostępnia metadane, pobieranie i zapis, a „Wróć do dysku” prowadzi
@@ -457,15 +457,16 @@ tytuł oraz narzędzia z wyszukiwaniem i paginacją.
 Tworzenie dokumentów oraz upload są dostępne w sekcji „Utwórz plik”;
 górny pasek nie zawiera przycisków tych akcji. Pod paskiem
 widoków („Wszystkie dokumenty”, ostatnie zmiany, gwiazdki, kosz), nad listą
-plików, sekcja „Utwórz plik” pokazuje pięć skrótów:
-dokument, arkusz kalkulacyjny, prezentację, tablicę i „Prześlij dokumenty”.
+plików, sekcja „Utwórz plik” pokazuje siedem skrótów:
+dokument, arkusz kalkulacyjny, prezentację, PDF, formularz PDF, tablicę
+i „Prześlij dokumenty”. Nie ma kafelka „Z szablonu”; kopię szablonu
+tworzy się z menu oznaczonego dokumentu w widoku „Szablony”.
 Ostatnia akcja otwiera istniejący modal uploadu w bieżącym Workspace.
 Wariant `office-create-card`
 korzysta z powierzchni `documents-card`, istniejących kolorowych ikon plików
 oraz małego plusa z tłem głównego przycisku; upload korzysta z ikony `cloud-upload` i małej ikony `upload` zamiast plusa.
-Na szerokim ekranie ma jeden rząd pięciu kafelków, przy szerokości zawartości
-sekcji do 900px przechodzi do trzech kolumn,
-na telefonie dwie kolumny z mniejszą ikoną obok nazwy i bez dekoracyjnego
+Siatka dobiera liczbę kolumn do dostępnego miejsca (144–184px na kafelek),
+na telefonie ma dwie kolumny z mniejszą ikoną obok nazwy i bez dekoracyjnego
 plusa, aby pozostawić miejsce na listę; nie występuje w koszu. Skróty działają także
 w pustym katalogu, wynikach wyszukiwania i widoku kafelków.
 Nagłówek „Utwórz plik” jest przyciskiem `btn-ghost` ze strzałką, który zwija
@@ -499,6 +500,11 @@ viewportu i skali UI, obsługuje strzałki, Home/End, Escape, kliknięcie poza m
 oraz zamknięcie przy przewijaniu. Po zamknięciu modala fokus wraca na przycisk
 wiersza. Inicjalizacja działa także po `ancore:content-loaded` bez powielania
 listenerów. Kosz udostępnia w tym samym miejscu akcję przywrócenia.
+
+Historia wersji używa wspólnej tabeli i przycisków Dysku, z paginacją po 25 wpisów.
+Nazwy plików skracają się jak w katalogu, pusta tabela ukrywa nagłówki, a na telefonie tabela przewija się poziomo. Przywrócenie wyświetla standardowy modal potwierdzenia. Przycisk zegara w edytorze
+otwiera historię w osobnej karcie; komunikat prosi o zapisanie i zamknięcie
+edytora przed przywróceniem. Pusty stan objaśnia moment powstawania wersji.
 
 ### Dashboard bieżącego Workspace
 

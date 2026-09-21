@@ -1,11 +1,17 @@
 from django.urls import path
 from . import editor_views as views
 from . import suite_views as suite
+from . import office_extras as extras
 
 app_name = 'office'
 urlpatterns = [
     path('', views.index, name='index'),
     path('create/', suite.create, name='create'),
+    path('templates/create/', extras.from_template, name='from-template'),
+    path('<uuid:pk>/template/', extras.template_toggle, name='template'),
+    path('<uuid:pk>/history/', extras.history, name='history'),
+    path('<uuid:pk>/versions/<int:version>/download/', extras.version_download, name='version-download'),
+    path('<uuid:pk>/versions/<int:version>/restore/', extras.version_restore, name='version-restore'),
     path('create/text/', views.edit, name='create-text'),
     path('upload/', views.upload, name='upload'),
     path('<uuid:pk>/', views.edit, name='edit'),

@@ -355,10 +355,10 @@ formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko D
   a kafelki pokazują te same etykiety. Kliknięcie tagu filtruje dokumenty
   w bieżącym Workspace; wyszukiwanie uwzględnia nazwy tagów.
   Wybór i filtrowanie tagów są ograniczone do właściciela oraz Workspace.
-- DOCX/XLSX/PPTX otwierają się w pełnych edytorach ONLYOFFICE w osobnej karcie
+- DOCX/XLSX/PPTX/PDF otwierają się w pełnych edytorach ONLYOFFICE w osobnej karcie
   Ancore, na pełną szerokość bez menu bocznego; katalog zostaje w pierwotnej karcie.
   Edytory zapisują pliki w prywatnym storage. DOC/XLS/PPT/RTF/TXT/CSV mogą utworzyć osobną
-  kopię OOXML do edycji. PDF ma dotychczasowy podgląd i pobieranie.
+  kopię OOXML do edycji. PDF obsługuje pełną edycję oraz tworzenie formularzy.
 - Tablica Excalidraw obsługuje rysowanie, tekst, kształty, strzałki, obrazy,
   automatyczny zapis, import i eksport sceny oraz eksport PNG/SVG. Otwiera się
   w osobnej karcie bez menu bocznego, tak samo jak pliki Office: z listy,
@@ -370,7 +370,9 @@ formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko D
 
 Pełne edytory biurowe wymagają działającego, skonfigurowanego ONLYOFFICE.
 Tablica działa bez niego. Interfejs i dane pozostają prywatne dla właściciela
-oraz Workspace; nie dodano udostępniania, historii wersji, OCR, VBA ani edycji PDF.
+oraz Workspace; nie dodano udostępniania, OCR ani VBA. Dokumenty i Dysk mają
+historię poprzednich plików z pobieraniem i przywracaniem. Katalog Dokumentów
+obsługuje oznaczanie szablonów i tworzenie niezależnych kopii z ich menu.
 Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
 [Pełne edytory Dokumentów](OFFICE.md).
 
