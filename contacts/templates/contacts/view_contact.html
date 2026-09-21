@@ -423,7 +423,7 @@
 
                     <div class="tasks-modal__body tasks-issue-modal__body contacts-create-modal__body contacts-edit-modal__body">
                     {% if form.errors %}
-                    <div class="tasks-modal__errors">
+                    <div class="tasks-modal__errors" role="alert">
                         {% for field in form %}
                             {% for error in field.errors %}
                                 <p>{{ field.label }}: {{ error }}</p>
@@ -436,16 +436,24 @@
                     {% endif %}
 
                         <div class="contacts-modal-title-grid">
-                            <label class="u-sr-only" for="{{ form.first_name.id_for_label }}">Imię</label>
-                            {{ form.first_name }}
-                            <label class="u-sr-only" for="{{ form.middle_name.id_for_label }}">Drugie imię</label>
-                            {{ form.middle_name }}
-                            <label class="u-sr-only" for="{{ form.last_name.id_for_label }}">Nazwisko</label>
-                            {{ form.last_name }}
+                            <div class="tasks-form-field">
+                                <label for="{{ form.first_name.id_for_label }}">Imię</label>
+                                {{ form.first_name }}
+                            </div>
+                            <div class="tasks-form-field">
+                                <label for="{{ form.middle_name.id_for_label }}">Drugie imię</label>
+                                {{ form.middle_name }}
+                            </div>
+                            <div class="tasks-form-field">
+                                <label for="{{ form.last_name.id_for_label }}">Nazwisko</label>
+                                {{ form.last_name }}
+                            </div>
                         </div>
 
-                        <label class="u-sr-only" for="{{ form.notes.id_for_label }}">Notatki</label>
-                        {{ form.notes }}
+                        <div class="tasks-form-field">
+                            <label for="{{ form.notes.id_for_label }}">Notatki</label>
+                            {{ form.notes }}
+                        </div>
 
                         <div class="tasks-issue-fields contacts-modal-fields contacts-edit-modal__fields">
                             <label class="contacts-ancore-login-field contacts-edit-readonly-field">

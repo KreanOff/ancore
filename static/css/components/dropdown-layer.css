@@ -1,0 +1,20 @@
+/* Only positioning belongs to the layer; each existing menu keeps its appearance. */
+.ancore-dropdown-layer[popover] {
+    position: fixed !important;
+    inset: auto !important;
+    top: var(--dropdown-layer-top, 0px) !important;
+    left: var(--dropdown-layer-left, 0px) !important;
+    width: var(--dropdown-layer-width) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: var(--dropdown-layer-height, var(--dropdown-menu-max-height)) !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+    overflow: auto;
+    transform: none !important;
+}
+
+.ancore-dropdown-layer[popover]::backdrop {
+    background: transparent;
+    pointer-events: none;
+}

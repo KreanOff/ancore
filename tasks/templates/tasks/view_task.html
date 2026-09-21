@@ -509,7 +509,7 @@
 
             <div class="tasks-modal__body tasks-issue-modal__body">
                 {% if task_modal_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in task_modal_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -521,10 +521,14 @@
                 </div>
                 {% endif %}
 
-                <label class="u-sr-only" for="{{ task_modal_form.title.id_for_label }}">Tytuł podzadania</label>
-                {{ task_modal_form.title }}
-                <label class="u-sr-only" for="{{ task_modal_form.description.id_for_label }}">Opis</label>
-                {{ task_modal_form.description }}
+                <div class="tasks-form-field">
+                    <label for="{{ task_modal_form.title.id_for_label }}">Tytuł podzadania</label>
+                    {{ task_modal_form.title }}
+                </div>
+                <div class="tasks-form-field">
+                    <label for="{{ task_modal_form.description.id_for_label }}">Opis</label>
+                    {{ task_modal_form.description }}
+                </div>
 
                 <div class="tasks-issue-fields">
                     <label>
@@ -554,6 +558,7 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="issue-create-submit">Utwórz podzadanie</button>
             </footer>
         </form>
@@ -764,6 +769,7 @@ function getTaskDetailButtonText(button) {
 function closeTaskDetailDropdowns(exceptDropdown = null) {
     document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
         if (dropdown === exceptDropdown) return;
+        window.AncoreDropdownLayer?.hide(dropdown.querySelector('.tasks-issue-dropdown-menu'));
         dropdown.classList.remove('is-open');
         dropdown.querySelector('[data-task-detail-toggle]')?.setAttribute('aria-expanded', 'false');
     });
@@ -894,6 +900,9 @@ document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
         closeTaskDetailDropdowns(dropdown);
         dropdown.classList.toggle('is-open', isOpen);
         toggle.setAttribute('aria-expanded', String(isOpen));
+        const menu = dropdown.querySelector('.tasks-issue-dropdown-menu');
+        if (isOpen) window.AncoreDropdownLayer?.open(menu, toggle, () => closeTaskDetailDropdowns());
+        else window.AncoreDropdownLayer?.hide(menu);
     });
 
     dropdown.addEventListener('click', (event) => {
@@ -1207,9 +1216,9 @@ function updateTaskStatus(isCompleted) {
             .then(r => r.json())
             .then(data => {
                 if (data.status === 'success') window.location.reload();
-                else alert('Błąd: ' + (data.message || 'Nieznany błąd'));
+                else window.showNotification('Błąd: ' + (data.message || 'Nieznany błąd'), 'error');
             })
-            .catch(() => alert('Błąd połączenia z serwerem.'));
+            .catch(() => window.showNotification('Błąd połączenia z serwerem.', 'error'));
         }
     });
 }
@@ -1230,8 +1239,8 @@ function confirmDelete() {
                 },
                 body: JSON.stringify({ task_pk: {{ task.pk }} })
             })
-            .then(r => { if (r.ok) window.location.href = "{{ workplace_app_urls.tasks }}"; else alert('Błąd usuwania.'); })
-            .catch(() => alert('Błąd połączenia.'));
+            .then(r => { if (r.ok) window.location.href = "{{ workplace_app_urls.tasks }}"; else window.showNotification('Błąd usuwania.', 'error'); })
+            .catch(() => window.showNotification('Błąd połączenia.', 'error'));
         }
     });
 }

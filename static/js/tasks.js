@@ -1749,6 +1749,7 @@ function initTasksPage() {
     function closeInlineSelectDropdowns(exceptDropdown = null) {
         document.querySelectorAll('[data-inline-select-dropdown]').forEach(dropdown => {
             if (dropdown === exceptDropdown) return;
+            window.AncoreDropdownLayer?.hide(dropdown.querySelector('.tasks-issue-dropdown-menu'));
             dropdown.classList.remove('is-open');
             dropdown.querySelector('[data-inline-select-toggle]')?.setAttribute('aria-expanded', 'false');
         });
@@ -1770,6 +1771,7 @@ function initTasksPage() {
     function closeCompanySelectDropdowns(exceptDropdown = null) {
         document.querySelectorAll('[data-company-select-dropdown]').forEach(dropdown => {
             if (dropdown === exceptDropdown) return;
+            window.AncoreDropdownLayer?.hide(getCompanySelectMenu(dropdown));
             dropdown.classList.remove('is-open');
             dropdown.querySelector('[data-company-select-toggle]')?.setAttribute('aria-expanded', 'false');
             getCompanySelectMenu(dropdown)?.classList.remove('is-open');
@@ -1779,6 +1781,7 @@ function initTasksPage() {
     function closeResponsibleSelectDropdowns(exceptDropdown = null) {
         document.querySelectorAll('[data-responsible-select-dropdown]').forEach(dropdown => {
             if (dropdown === exceptDropdown) return;
+            window.AncoreDropdownLayer?.hide(getResponsibleSelectMenu(dropdown));
             dropdown.classList.remove('is-open');
             dropdown.querySelector('[data-responsible-select-toggle]')?.setAttribute('aria-expanded', 'false');
             getResponsibleSelectMenu(dropdown)?.classList.remove('is-open');
@@ -2298,6 +2301,7 @@ function initTasksPage() {
             selectControl.classList.remove('is-open');
             selectControl.querySelector('[data-contact-custom-select-toggle]')?.setAttribute('aria-expanded', 'false');
             const menu = selectControl.querySelector('[data-contact-custom-select-menu]');
+            window.AncoreDropdownLayer?.hide(menu);
             if (menu) menu.hidden = true;
             if (restoreFocus) {
                 selectControl.querySelector('[data-contact-custom-select-toggle]')?.focus();
@@ -2384,6 +2388,7 @@ function initTasksPage() {
         selectControl.querySelector('[data-contact-custom-select-toggle]')?.setAttribute('aria-expanded', 'true');
         const menu = selectControl.querySelector('[data-contact-custom-select-menu]');
         if (menu) menu.hidden = false;
+        window.AncoreDropdownLayer?.open(menu, selectControl.querySelector('[data-contact-custom-select-toggle]'), () => closeContactCustomSelects());
 
         if (focusSelected) {
             const selected = selectControl.querySelector('[data-contact-custom-select-option].is-selected:not(:disabled)')
@@ -2683,6 +2688,7 @@ function initTasksPage() {
     function closeIssuePickers(exceptPicker = null) {
         [issueProjectPicker, issueSectionPicker].forEach(picker => {
             if (!picker || picker === exceptPicker) return;
+            window.AncoreDropdownLayer?.hide(picker.querySelector('.tasks-chip-picker__menu'));
             picker.classList.remove('is-open');
             picker.querySelector('[data-picker-toggle]')?.setAttribute('aria-expanded', 'false');
         });
@@ -2921,8 +2927,13 @@ function initTasksPage() {
         document.getElementById('tasks-project-tree-initial-state')?.remove();
     }
 
+    const modalReturnFocus = new WeakMap();
+
     function openModal(modal, focusTarget, onOpen) {
         if (!modal) return;
+        if (!modal.classList.contains('is-open')) {
+            modalReturnFocus.set(modal, document.activeElement);
+        }
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('modal-open');
@@ -2939,6 +2950,11 @@ function initTasksPage() {
         if (!document.querySelector('.tasks-modal.is-open')) {
             document.body.classList.remove('modal-open');
         }
+        const returnFocus = modalReturnFocus.get(modal);
+        if (returnFocus instanceof HTMLElement && returnFocus.isConnected) {
+            returnFocus.focus({ preventScroll: true });
+        }
+        modalReturnFocus.delete(modal);
     }
 
     function renderAncoreIcons(root) {
@@ -3214,7 +3230,10 @@ function initTasksPage() {
             }
             dropdown.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
-        });
+            const menu = dropdown.querySelector('.tasks-issue-dropdown-menu');
+            if (isOpen) window.AncoreDropdownLayer?.open(menu, toggle, () => closeInlineSelectDropdowns());
+            else window.AncoreDropdownLayer?.hide(menu);
+        }, pageListenerOptions);
 
         dropdown.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -3231,11 +3250,11 @@ function initTasksPage() {
 
             select.dispatchEvent(new Event('change', { bubbles: true }));
             syncInlineSelectDropdown(dropdown);
-        });
+        }, pageListenerOptions);
 
         select?.addEventListener('change', function() {
             syncInlineSelectDropdown(dropdown);
-        });
+        }, pageListenerOptions);
     });
 
     document.querySelectorAll('[data-company-select-dropdown]').forEach(dropdown => {
@@ -3260,24 +3279,26 @@ function initTasksPage() {
             dropdown.classList.toggle('is-open', isOpen);
             menu?.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) window.AncoreDropdownLayer?.open(menu, toggle, () => closeCompanySelectDropdowns());
+            else window.AncoreDropdownLayer?.hide(menu);
             if (isOpen) {
                 if (search) search.value = '';
                 filterCompanySelectOptions(dropdown);
                 setTimeout(() => search?.focus(), 30);
             }
-        });
+        }, pageListenerOptions);
 
         dropdown.addEventListener('click', function(e) {
             e.stopPropagation();
-        });
+        }, pageListenerOptions);
 
         menu?.addEventListener('click', function(e) {
             e.stopPropagation();
-        });
+        }, pageListenerOptions);
 
         search?.addEventListener('input', function() {
             filterCompanySelectOptions(dropdown);
-        });
+        }, pageListenerOptions);
 
         menu?.querySelectorAll('[data-company-select-value]').forEach(button => {
             button.addEventListener('click', function(e) {
@@ -3287,12 +3308,12 @@ function initTasksPage() {
                 select.dispatchEvent(new Event('change', { bubbles: true }));
                 syncCompanySelectDropdown(dropdown);
                 closeCompanySelectDropdowns();
-            });
+            }, pageListenerOptions);
         });
 
         select?.addEventListener('change', function() {
             syncCompanySelectDropdown(dropdown);
-        });
+        }, pageListenerOptions);
     });
 
     document.querySelectorAll('[data-responsible-select-dropdown]').forEach(dropdown => {
@@ -3360,6 +3381,8 @@ function initTasksPage() {
             dropdown.classList.toggle('is-open', isOpen);
             menu?.classList.toggle('is-open', isOpen);
             toggle.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) window.AncoreDropdownLayer?.open(menu, toggle, () => closeResponsibleSelectDropdowns());
+            else window.AncoreDropdownLayer?.hide(menu);
             if (isOpen) {
                 if (search) search.value = '';
                 setResponsibleSelectDraft(dropdown, select?.value || '');
@@ -3367,17 +3390,17 @@ function initTasksPage() {
                 setResponsibleSelectStatus(dropdown);
                 setTimeout(() => search?.focus(), 30);
             }
-        });
+        }, pageListenerOptions);
 
         dropdown.addEventListener('click', function(e) {
             e.stopPropagation();
-        });
+        }, pageListenerOptions);
 
         menu?.addEventListener('click', function(e) {
             e.stopPropagation();
-        });
+        }, pageListenerOptions);
 
-        search?.addEventListener('input', lookupResponsibleUser);
+        search?.addEventListener('input', lookupResponsibleUser, pageListenerOptions);
 
         menu?.addEventListener('click', function(e) {
             const button = e.target.closest('[data-responsible-select-value]');
@@ -3388,12 +3411,12 @@ function initTasksPage() {
             syncResponsibleSelectDropdown(dropdown);
             setResponsibleSelectStatus(dropdown);
             closeResponsibleSelectDropdowns();
-        });
+        }, pageListenerOptions);
 
         cancelButton?.addEventListener('click', function() {
             setResponsibleSelectDraft(dropdown, select?.value || '');
             closeResponsibleSelectDropdowns();
-        });
+        }, pageListenerOptions);
 
         saveButton?.addEventListener('click', function() {
             if (!select) return;
@@ -3401,11 +3424,11 @@ function initTasksPage() {
             select.dispatchEvent(new Event('change', { bubbles: true }));
             syncResponsibleSelectDropdown(dropdown);
             closeResponsibleSelectDropdowns();
-        });
+        }, pageListenerOptions);
 
         select?.addEventListener('change', function() {
             syncResponsibleSelectDropdown(dropdown);
-        });
+        }, pageListenerOptions);
     });
 
     initContactCustomSelects();
@@ -3937,15 +3960,6 @@ function initTasksPage() {
         }
     });
 
-    projectNotesModal?.addEventListener('submit', event => {
-        const form = event.target.closest?.('[data-project-note-delete-form]');
-        if (form) {
-            if (!window.confirm('Usunąć tę notatkę?')) {
-                event.preventDefault();
-            }
-        }
-    });
-
     function openSectionNotesModal(button) {
         if (!sectionNotesModal || !button) return;
 
@@ -3999,14 +4013,6 @@ function initTasksPage() {
         });
     });
 
-    sectionNotesModal?.querySelectorAll('[data-section-note-delete-form]').forEach(form => {
-        form.addEventListener('submit', event => {
-            if (!window.confirm('Usunąć tę notatkę?')) {
-                event.preventDefault();
-            }
-        });
-    });
-
     function openTagNotesModal(button) {
         if (!tagNotesModal || !button) return;
 
@@ -4057,14 +4063,6 @@ function initTasksPage() {
             if (input) input.value = input.defaultValue || '';
             form.hidden = true;
             item?.classList.remove('is-editing');
-        });
-    });
-
-    tagNotesModal?.querySelectorAll('[data-tag-note-delete-form]').forEach(form => {
-        form.addEventListener('submit', event => {
-            if (!window.confirm('Usunąć tę notatkę?')) {
-                event.preventDefault();
-            }
         });
     });
 
@@ -4282,9 +4280,10 @@ function initTasksPage() {
         if (isOpen) {
             hydrateIssuePickerOptions();
             resetPickerSearch(issueProjectPicker);
+            window.AncoreDropdownLayer?.open(issueProjectPicker.querySelector('.tasks-chip-picker__menu'), this, () => closeIssuePickers());
             setTimeout(() => issueProjectPicker.querySelector('[data-picker-search]')?.focus(), 30);
         }
-    });
+    }, pageListenerOptions);
 
     issueSectionPicker?.querySelector('[data-picker-toggle]')?.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -4295,9 +4294,10 @@ function initTasksPage() {
         if (isOpen) {
             hydrateIssuePickerOptions();
             resetPickerSearch(issueSectionPicker);
+            window.AncoreDropdownLayer?.open(issueSectionPicker.querySelector('.tasks-chip-picker__menu'), this, () => closeIssuePickers());
             setTimeout(() => issueSectionPicker.querySelector('[data-picker-search]')?.focus(), 30);
         }
-    });
+    }, pageListenerOptions);
 
     issueProjectPicker?.addEventListener('click', function(e) {
         const option = e.target.closest('[data-project-option]');
@@ -4306,7 +4306,7 @@ function initTasksPage() {
             selectIssueProject(option.dataset.projectId || '', option.dataset.defaultSectionId || '');
             closeIssuePickers();
         }
-    });
+    }, pageListenerOptions);
 
     issueSectionPicker?.addEventListener('click', function(e) {
         const option = e.target.closest('[data-section-option]');
@@ -4315,19 +4315,19 @@ function initTasksPage() {
             selectIssueProject(option.dataset.sectionProjectId || '', option.dataset.sectionId || '');
             closeIssuePickers();
         }
-    });
+    }, pageListenerOptions);
 
     issuePickerSearchInputs.forEach(input => {
-        input.addEventListener('click', e => e.stopPropagation());
+        input.addEventListener('click', e => e.stopPropagation(), pageListenerOptions);
         input.addEventListener('input', function() {
             filterPickerSearch(this);
-        });
+        }, pageListenerOptions);
         input.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 e.stopPropagation();
                 closeIssuePickers();
             }
-        });
+        }, pageListenerOptions);
     });
 
     issuePickerSearchButtons.forEach(button => {
@@ -4337,7 +4337,7 @@ function initTasksPage() {
             if (!input) return;
             filterPickerSearch(input);
             input.focus();
-        });
+        }, pageListenerOptions);
     });
 
     document.querySelectorAll('[data-close-modal]').forEach(button => {
@@ -4509,9 +4509,29 @@ function initTasksPage() {
     });
 
     document.addEventListener('keydown', function(e) {
+        if (document.querySelector('.confirm-modal-overlay.is-visible')) return;
         if (handleContactCustomSelectKeydown(e)) return;
 
+        const openModalEl = document.querySelector('.tasks-modal.is-open');
+        if (e.key === 'Tab' && openModalEl) {
+            const focusable = Array.from(openModalEl.querySelectorAll(
+                'button, a[href], input, select, textarea, [tabindex]'
+            )).filter(element => !element.disabled && element.tabIndex >= 0 && element.getClientRects().length);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (first && (e.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+                e.preventDefault();
+                (e.shiftKey ? last : first).focus();
+            }
+        }
+
         if (e.key === 'Escape') {
+            const selectButton = openModalEl?.querySelector('.ancore-custom-select.is-open .ancore-custom-select__button');
+            if (selectButton) {
+                window.AncoreCustomSelect?.closeAll();
+                selectButton.focus();
+                return;
+            }
             closeCreateMenu();
             closeProjectActionMenus();
             closeSectionActionMenu();
@@ -4523,7 +4543,6 @@ function initTasksPage() {
             closeIssuePickers();
             closeProjectPageSizeDropdown();
             closeContactCustomSelects();
-            const openModalEl = document.querySelector('.tasks-modal.is-open');
             if (openModalEl) closeModal(openModalEl);
         }
     }, pageListenerOptions);
@@ -8271,12 +8290,17 @@ if (!window.ancoreContactActionMenusInitialized) {
     });
 
     document.addEventListener('submit', function(event) {
-        const form = event.target.closest('[data-confirm-delete]');
+        const form = event.target.closest('[data-confirm-delete], [data-project-note-delete-form], [data-section-note-delete-form], [data-tag-note-delete-form]');
         if (!form) return;
 
-        if (!window.confirm(form.dataset.confirmDelete || 'Usunąć element?')) {
-            event.preventDefault();
-        }
+        event.preventDefault();
+        const isNote = !form.hasAttribute('data-confirm-delete');
+        window.showConfirmModal({
+            title: isNote ? 'Usuń notatkę' : 'Potwierdź usunięcie',
+            message: window.escapeHtmlForModal(form.dataset.confirmDelete || 'Usunąć tę notatkę?'),
+            confirmText: 'Usuń',
+            onConfirm: () => HTMLFormElement.prototype.submit.call(form)
+        });
     });
 }
 

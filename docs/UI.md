@@ -523,23 +523,75 @@ prowadzą do odpowiedniego modułu; pełne nazwy pozostają w tekście i `title`
 
 `modal-system.css` wprost wskazuje okna projektów i zadań jako wzorzec
 standardowego okna aplikacji. Powłoka odpowiada za powierzchnię, przyciemnienie,
-szerokość, cień, nagłówek, stopkę i przycisk zamknięcia; moduł odpowiada za pola.
+szerokość, cień, nagłówek, stopkę, przycisk zamknięcia i geometrię kontrolek.
+Moduł odpowiada za treść oraz specjalistyczne układy pól.
 
 | Token powłoki | Wartość bazowa |
 | --- | --- |
-| `--app-modal-surface` | `#ffffff` |
-| `--app-modal-scrim` | `rgba(21, 27, 38, 0.38)` |
-| `--app-modal-scrim-filter` | `blur(2px)` |
-| `--app-modal-radius` | `14px` |
+| `--app-modal-surface` | `var(--card-bg)` — biały |
+| `--app-modal-scrim` | `var(--modal-scrim-bg)` — `rgba(20, 23, 29, 0.24)` |
+| `--app-modal-scrim-filter` | `var(--modal-scrim-filter)` — `blur(1px)` |
+| `--app-modal-radius` | `var(--radius)` — 8px |
+| `--app-modal-shadow` | `var(--shadow-lg)` |
 | `--app-modal-width` | `min(760px, calc(100vw - 2rem))` |
 | `--app-modal-padding-x` | `24px` |
 | `--app-modal-bar-min-height` | `50px` (stała wysokość nagłówka i stopki) |
 | `--app-modal-bar-padding-y` | `4px` |
+| `--app-modal-control-height` | `var(--dropdown-control-height)` — 36px |
+| `--app-modal-field-gap` | `16px` |
 
 Nagłówki i stopki standardowych okien aplikacji mają po 50px wysokości CSS,
 również na telefonie. Wspólny standard obejmuje projekty, grupy, zadania,
 Kanban, kontakty, firmy, Kalendarz, Workspace i Dokumenty, a także edycję
 profilu oraz kadrowanie zdjęć. Paski nie kurczą się przy przewijaniu treści.
+Na ekranach do 600px stopka może zwiększyć wysokość i zawinąć akcje,
+aby ich etykiety pozostały dostępne. Podgląd plików zachowuje pojedynczy rząd.
+
+Nagłówek używa tekstu 15px/400 oraz wspólnego przycisku zamknięcia 34px
+po prawej. Nie dodaje dekoracyjnej ikony walizki; istniejące przełączniki
+typu kontaktu zachowują działanie. Pola tekstowe, daty i listy wyboru mają
+tekst 13px, wysokość 36px, ramkę `--border-color` i radius
+`--dropdown-control-radius`. Opisy mają minimum 84px i możliwość zmiany
+wysokości. Kolory, checkboxy, pola ukryte i źródła niestandardowych selectów
+zachowują własną obsługę. Stan fokusu korzysta z szarego obrysu i `--focus-ring`.
+
+Listy wyboru korzystają ze wspólnej warstwy
+[dropdown-layer.js](../static/js/dropdown-layer.js) i
+[dropdown-layer.css](../static/css/components/dropdown-layer.css).
+`AncoreDropdownLayer.open(menu, button, onClose)` wyświetla menu przez natywne
+`popover="manual"` w najwyższej warstwie przeglądarki, ponad oknem i jego stopką.
+Menu pozostaje w DOM formularza, więc zachowuje delegację zdarzeń i pułapkę fokusu.
+Nie wyłączaj `overflow` przewijanej treści modala ani nie zwiększaj lokalnie
+`z-index`, aby ominąć przycinanie. Warstwa dobiera kierunek góra/dół według
+miejsca w widocznym obszarze ekranu, ogranicza wysokość listy i uwzględnia skalę UI.
+Szerokość listy jest równa aktualnej szerokości otwierającej ją kontrolki,
+także po zmianie rozmiaru okna. Stałe szerokości poszczególnych menu nie
+nadpisują tej zasady; jedynym ograniczeniem jest widoczna szerokość ekranu.
+Aktualizuje pozycję przy przewijaniu i zmianie rozmiaru; gdy kontrolka znika
+z przewijanego obszaru lub modal zostaje zamknięty/usunięty, zamyka też menu.
+Escape zamyka najpierw listę i przywraca fokus kontrolce; kliknięcie poza listą,
+przeniesienie fokusu lub `ancore:content-loaded` również ją zamyka.
+Przy własnym zamykaniu kontrolka wywołuje `AncoreDropdownLayer.hide(menu)`.
+Warstwa obejmuje `AncoreCustomSelect`, priorytety/statusy/tagi oraz wybór projektu
+i grupy w zadaniach, listy firm/osób, Kontaktów, Kalendarza i Profilu,
+również w szczegółach zadań/Kanbana. Rozwijane panele edycji firmy/osoby z
+`position: static` zachowują swój układ wewnątrz formularza.
+
+`tasks-form-field` łączy widoczną etykietę z kontrolką w pionie z odstępem
+6px. Nazwy i opisy używają tego samego wariantu w tworzeniu i edycji.
+Parametry projektów/przestrzeni mają dwie kolumny, do 600px jedną;
+tak samo zawężają się pola zadań, kontaktów i wydarzeń. Przyciski „Anuluj”
+korzystają z dotychczasowych akcji zamykania danego modułu. Upload Dysku
+i Dokumentów grupuje wskazówki oraz wybór plików w `documents-upload-control`,
+z jedną delikatną ramką i listą wybranych plików poniżej.
+
+`showConfirmModal` używa wspólnego nagłówka, treści i stopki opartej na tych
+samych tokenach. Potwierdzenia usunięcia notatki projektu/grupy/tagu i kontaktu
+lub firmy korzystają z niego zamiast natywnego `confirm()`. Delegacja działa
+także dla nowych notatek oraz po `ancore:content-loaded`. Escape zamyka
+najwyższe potwierdzenie, zachowując okno notatek pod nim; ponowne kliknięcie
+potwierdzenia podczas zamykania nie wysyła drugiego żądania. Błędy operacji
+w szczegółach zadań i Kanbana używają wspólnych powiadomień zamiast `alert()`.
 
 Modal ma nazwę dostępną dla czytnika, sensowny fokus po otwarciu, obsługę
 klawiatury i powrót fokusu. Błędy formularza zachowują wpisane dane. Podczas

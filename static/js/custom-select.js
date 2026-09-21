@@ -246,6 +246,7 @@
     function closeWrapper(wrapper, restoreFocus = false) {
         if (!wrapper) return;
         const { button, menu } = getWrapperParts(wrapper);
+        window.AncoreDropdownLayer?.hide(menu);
         wrapper.classList.remove('is-open');
         button?.setAttribute('aria-expanded', 'false');
         if (menu) menu.hidden = true;
@@ -277,23 +278,7 @@
         button.setAttribute('aria-expanded', 'true');
         menu.hidden = false;
 
-        if (select.dataset.ancoreCustomSelectPlacement === 'auto') {
-            menu.style.top = '';
-            menu.style.bottom = '';
-            menu.style.maxHeight = '';
-            const body = wrapper.closest('.tasks-modal__body')?.getBoundingClientRect();
-            const control = button.getBoundingClientRect();
-            const above = Math.max(0, control.top - Math.max(0, body?.top ?? 0) - 8);
-            const below = Math.max(0, Math.min(window.innerHeight, body?.bottom ?? window.innerHeight) - control.bottom - 8);
-            const openAbove = menu.getBoundingClientRect().height > below && above > below;
-            const available = openAbove ? above : below;
-            const maxHeight = parseFloat(window.getComputedStyle(menu).maxHeight);
-            menu.style.maxHeight = `${Math.min(Number.isFinite(maxHeight) ? maxHeight : available, available)}px`;
-            if (openAbove) {
-                menu.style.top = 'auto';
-                menu.style.bottom = 'calc(100% + 4px)';
-            }
-        }
+        window.AncoreDropdownLayer?.open(menu, button, () => closeWrapper(wrapper));
 
         if (focusSelected) {
             selectedOptionButton(wrapper)?.focus({ preventScroll: true });

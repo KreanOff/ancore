@@ -40,7 +40,7 @@
 
             <div class="tasks-modal__body tasks-issue-modal__body contacts-create-modal__body">
                 {% if contact_modal_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in contact_modal_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -53,16 +53,24 @@
                 {% endif %}
 
                 <div class="contacts-modal-title-grid">
-                    <label class="u-sr-only" for="{{ contact_modal_form.first_name.id_for_label }}">Imię</label>
-                    {{ contact_modal_form.first_name }}
-                    <label class="u-sr-only" for="{{ contact_modal_form.middle_name.id_for_label }}">Drugie imię</label>
-                    {{ contact_modal_form.middle_name }}
-                    <label class="u-sr-only" for="{{ contact_modal_form.last_name.id_for_label }}">Nazwisko</label>
-                    {{ contact_modal_form.last_name }}
+                    <div class="tasks-form-field">
+                        <label for="{{ contact_modal_form.first_name.id_for_label }}">Imię</label>
+                        {{ contact_modal_form.first_name }}
+                    </div>
+                    <div class="tasks-form-field">
+                        <label for="{{ contact_modal_form.middle_name.id_for_label }}">Drugie imię</label>
+                        {{ contact_modal_form.middle_name }}
+                    </div>
+                    <div class="tasks-form-field">
+                        <label for="{{ contact_modal_form.last_name.id_for_label }}">Nazwisko</label>
+                        {{ contact_modal_form.last_name }}
+                    </div>
                 </div>
 
-                <label class="u-sr-only" for="{{ contact_modal_form.notes.id_for_label }}">Notatki</label>
-                {{ contact_modal_form.notes }}
+                <div class="tasks-form-field">
+                    <label for="{{ contact_modal_form.notes.id_for_label }}">Notatki</label>
+                    {{ contact_modal_form.notes }}
+                </div>
 
                 <div class="tasks-issue-fields contacts-modal-fields">
                     <label class="contacts-ancore-login-field">
@@ -104,6 +112,7 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="contact-create-submit">Utwórz kontakt</button>
             </footer>
         </form>
@@ -153,7 +162,7 @@
 
             <div class="tasks-modal__body tasks-issue-modal__body contacts-create-modal__body contacts-company-create-modal__body" data-profile-photo-layout>
                 {% if company_modal_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in company_modal_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -168,11 +177,15 @@
                 {% include 'contacts/includes/company_photo_editor.html' with company=company form=company_modal_form avatar_class='contacts-avatar contacts-avatar--large contacts-company-avatar' photo_button_label='Dodaj' only %}
 
                 <div class="contacts-company-create-fields">
-                    <label class="u-sr-only" for="{{ company_modal_form.name.id_for_label }}">Nazwa firmy</label>
-                    {{ company_modal_form.name }}
+                    <div class="tasks-form-field">
+                        <label for="{{ company_modal_form.name.id_for_label }}">Nazwa firmy</label>
+                        {{ company_modal_form.name }}
+                    </div>
 
-                    <label class="u-sr-only" for="{{ company_modal_form.notes.id_for_label }}">Notatki</label>
-                    {{ company_modal_form.notes }}
+                    <div class="tasks-form-field">
+                        <label for="{{ company_modal_form.notes.id_for_label }}">Notatki</label>
+                        {{ company_modal_form.notes }}
+                    </div>
 
                     <div class="tasks-issue-fields contacts-modal-fields">
                         <label>
@@ -196,6 +209,7 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="company-create-submit">Utwórz firmę</button>
             </footer>
         </form>

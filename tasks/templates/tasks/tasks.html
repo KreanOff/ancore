@@ -1225,7 +1225,7 @@
 
             <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
                 {% if tag_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in tag_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -1237,10 +1237,14 @@
                 </div>
                 {% endif %}
 
-                <label class="u-sr-only" for="{{ tag_form.name.id_for_label }}">Nazwa tagu</label>
-                {{ tag_form.name }}
-                <label class="u-sr-only" for="{{ tag_form.description.id_for_label }}">Opis</label>
-                {{ tag_form.description }}
+                <div class="tasks-form-field">
+                    <label for="{{ tag_form.name.id_for_label }}">Nazwa tagu</label>
+                    {{ tag_form.name }}
+                </div>
+                <div class="tasks-form-field">
+                    <label for="{{ tag_form.description.id_for_label }}">Opis</label>
+                    {{ tag_form.description }}
+                </div>
 
                 <section class="tasks-tag-parameters" aria-labelledby="tag-meaning-title">
                     <h3 class="u-sr-only" id="tag-meaning-title">Parametry tagu</h3>
@@ -1302,13 +1306,14 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="tag-create-submit">{% if tag_edit_mode %}Zapisz zmiany{% else %}Utwórz tag{% endif %}</button>
             </footer>
         </form>
     </div>
 </div>
 
-<div class="tasks-modal tasks-project-modal tasks-project-create-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal tasks-form-modal tasks-project-modal tasks-project-create-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-create-modal__dialog tasks-issue-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form" id="project-create-form">
             {% csrf_token %}
@@ -1325,7 +1330,7 @@
 
             <div class="tasks-modal__body tasks-project-modal__body tasks-project-create-modal__body tasks-issue-modal__body">
                 {% if project_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in project_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -1337,10 +1342,14 @@
                 </div>
                 {% endif %}
 
-                <label class="u-sr-only" for="{{ project_form.name.id_for_label }}">Nazwa projektu</label>
+                <div class="tasks-form-field">
+                    <label for="{{ project_form.name.id_for_label }}">Nazwa projektu</label>
                 {{ project_form.name }}
-                <label class="u-sr-only" for="{{ project_form.description.id_for_label }}">Opis</label>
+                </div>
+                <div class="tasks-form-field">
+                    <label for="{{ project_form.description.id_for_label }}">Opis</label>
                 {{ project_form.description }}
+                </div>
 
                 <section class="tasks-project-parameters" aria-labelledby="project-create-parameters-title">
                     <h3 class="u-sr-only" id="project-create-parameters-title">Parametry projektu</h3>
@@ -1417,13 +1426,14 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-project-create-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="project-create-submit">Utwórz projekt</button>
             </footer>
         </form>
     </div>
 </div>
 
-<div class="tasks-modal tasks-project-modal tasks-project-edit-modal {% if project_rename_modal_open %}is-open{% endif %}" id="project-rename-modal" role="dialog" aria-modal="true" aria-labelledby="project-rename-modal-title" aria-hidden="{% if project_rename_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal tasks-form-modal tasks-project-modal tasks-project-edit-modal {% if project_rename_modal_open %}is-open{% endif %}" id="project-rename-modal" role="dialog" aria-modal="true" aria-labelledby="project-rename-modal-title" aria-hidden="{% if project_rename_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form" id="project-rename-form">
             {% csrf_token %}
@@ -1443,7 +1453,7 @@
 
             <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
                 {% if project_rename_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in project_rename_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -1455,11 +1465,15 @@
                 </div>
                 {% endif %}
 
-                <label class="u-sr-only" for="project-rename-name">Nazwa projektu</label>
+                <div class="tasks-form-field">
+                    <label for="project-rename-name">Nazwa projektu</label>
                 <input type="text" id="project-rename-name" name="name" class="tasks-inline-input" placeholder="Nazwa projektu" value="{{ project_rename_form.name.value|default_if_none:'' }}" required>
+                </div>
 
-                <label class="u-sr-only" for="project-rename-description">Opis</label>
+                <div class="tasks-form-field">
+                    <label for="project-rename-description">Opis</label>
                 <textarea id="project-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ project_rename_form.description.value|default_if_none:'' }}</textarea>
+                </div>
 
                 <section class="tasks-project-parameters" aria-labelledby="project-rename-parameters-title">
                     <h3 class="u-sr-only" id="project-rename-parameters-title">Parametry projektu</h3>
@@ -1529,6 +1543,7 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="project-rename-submit">Zapisz zmiany</button>
             </footer>
         </form>
@@ -1560,8 +1575,10 @@
                     <input type="hidden" name="action" value="add_project_note">
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     <input type="hidden" name="project_id" value="" data-project-notes-id>
-                    <label class="u-sr-only" for="project-notes-message">Nowa notatka</label>
-                    <textarea id="project-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-project-notes-message></textarea>
+                    <div class="tasks-form-field">
+                        <label for="project-notes-message">Nowa notatka</label>
+                        <textarea id="project-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-project-notes-message></textarea>
+                    </div>
                     <div class="tasks-project-notes-compose__footer">
                         <button type="submit" class="tasks-project-note__primary" id="project-notes-submit">
                             <i data-icon="plus" aria-hidden="true"></i>
@@ -1612,8 +1629,10 @@
                                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                                     <input type="hidden" name="project_id" value="{{ project.id }}">
                                     <input type="hidden" name="note_id" value="{{ note.id }}">
-                                    <label class="u-sr-only" for="project-note-edit-{{ note.id }}">Treść notatki</label>
-                                    <textarea id="project-note-edit-{{ note.id }}" name="message" class="tasks-project-note__edit-input" rows="3" data-project-note-edit-input>{{ note.message }}</textarea>
+                                    <div class="tasks-form-field">
+                                        <label for="project-note-edit-{{ note.id }}">Treść notatki</label>
+                                        <textarea id="project-note-edit-{{ note.id }}" name="message" class="tasks-project-note__edit-input" rows="3" data-project-note-edit-input>{{ note.message }}</textarea>
+                                    </div>
                                     <div class="tasks-project-note__edit-actions">
                                         <button type="button" class="tasks-project-note__secondary" data-project-note-edit-cancel>Anuluj</button>
                                         <button type="submit" class="tasks-project-note__primary">Zapisz</button>
@@ -1658,8 +1677,10 @@
                     <input type="hidden" name="action" value="add_section_note">
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     <input type="hidden" name="section_id" value="" data-section-notes-id>
-                    <label class="u-sr-only" for="section-notes-message">Nowa notatka</label>
-                    <textarea id="section-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-section-notes-message></textarea>
+                    <div class="tasks-form-field">
+                        <label for="section-notes-message">Nowa notatka</label>
+                        <textarea id="section-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-section-notes-message></textarea>
+                    </div>
                     <div class="tasks-project-notes-compose__footer">
                         <button type="submit" class="tasks-project-note__primary" id="section-notes-submit">
                             <i data-icon="plus" aria-hidden="true"></i>
@@ -1705,8 +1726,10 @@
                     <input type="hidden" name="action" value="add_tag_note">
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     <input type="hidden" name="tag_id" value="" data-tag-notes-id>
-                    <label class="u-sr-only" for="tag-notes-message">Nowa notatka</label>
-                    <textarea id="tag-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-tag-notes-message></textarea>
+                    <div class="tasks-form-field">
+                        <label for="tag-notes-message">Nowa notatka</label>
+                        <textarea id="tag-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-tag-notes-message></textarea>
+                    </div>
                     <div class="tasks-project-notes-compose__footer">
                         <button type="submit" class="tasks-project-note__primary" id="tag-notes-submit">
                             <i data-icon="plus" aria-hidden="true"></i>
@@ -1746,7 +1769,7 @@
 
             <div class="tasks-modal__body tasks-project-modal__body tasks-project-create-modal__body tasks-issue-modal__body">
                 {% if section_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in section_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -1758,10 +1781,14 @@
                 </div>
                 {% endif %}
 
-                <label class="u-sr-only" for="{{ section_form.title.id_for_label }}">Nazwa grupy</label>
-                {{ section_form.title }}
-                <label class="u-sr-only" for="{{ section_form.description.id_for_label }}">Opis</label>
-                {{ section_form.description }}
+                <div class="tasks-form-field">
+                    <label for="{{ section_form.title.id_for_label }}">Nazwa grupy</label>
+                    {{ section_form.title }}
+                </div>
+                <div class="tasks-form-field">
+                    <label for="{{ section_form.description.id_for_label }}">Opis</label>
+                    {{ section_form.description }}
+                </div>
 
                 <section class="tasks-project-parameters" aria-labelledby="section-create-parameters-title">
                     <h3 class="u-sr-only" id="section-create-parameters-title">Parametry grupy</h3>
@@ -1812,6 +1839,7 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-project-create-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="section-create-submit">Utwórz grupę</button>
             </footer>
         </form>
@@ -1836,7 +1864,7 @@
 
             <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
                 {% if section_rename_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in section_rename_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -1848,11 +1876,15 @@
                 </div>
                 {% endif %}
 
-                <label class="u-sr-only" for="section-rename-title">Nazwa grupy</label>
-                <input type="text" id="section-rename-title" name="title" class="tasks-inline-input" placeholder="Nazwa grupy" value="{{ section_rename_form.title.value|default_if_none:'' }}" required>
+                <div class="tasks-form-field">
+                    <label for="section-rename-title">Nazwa grupy</label>
+                    <input type="text" id="section-rename-title" name="title" class="tasks-inline-input" placeholder="Nazwa grupy" value="{{ section_rename_form.title.value|default_if_none:'' }}" required>
+                </div>
 
-                <label class="u-sr-only" for="section-rename-description">Opis</label>
-                <textarea id="section-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ section_rename_form.description.value|default_if_none:'' }}</textarea>
+                <div class="tasks-form-field">
+                    <label for="section-rename-description">Opis</label>
+                    <textarea id="section-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ section_rename_form.description.value|default_if_none:'' }}</textarea>
+                </div>
 
                 <section class="tasks-project-parameters" aria-labelledby="section-rename-parameters-title">
                     <h3 id="section-rename-parameters-title">Parametry grupy</h3>
@@ -1890,6 +1922,7 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="section-rename-submit">Zapisz zmiany</button>
             </footer>
         </form>
@@ -1915,7 +1948,7 @@
 
             <div class="tasks-modal__body tasks-issue-modal__body">
                 {% if task_modal_form.errors %}
-                <div class="tasks-modal__errors">
+                <div class="tasks-modal__errors" role="alert">
                     {% for field in task_modal_form %}
                         {% for error in field.errors %}
                             <p>{{ error }}</p>
@@ -1927,10 +1960,14 @@
                 </div>
                 {% endif %}
 
-                <label class="u-sr-only" for="{{ task_modal_form.title.id_for_label }}">Tytuł zadania</label>
-                {{ task_modal_form.title }}
-                <label class="u-sr-only" for="{{ task_modal_form.description.id_for_label }}">Opis</label>
-                {{ task_modal_form.description }}
+                <div class="tasks-form-field">
+                    <label for="{{ task_modal_form.title.id_for_label }}">Tytuł zadania</label>
+                    {{ task_modal_form.title }}
+                </div>
+                <div class="tasks-form-field">
+                    <label for="{{ task_modal_form.description.id_for_label }}">Opis</label>
+                    {{ task_modal_form.description }}
+                </div>
 
                 <div class="tasks-issue-fields">
                     <label class="u-sr-only">
@@ -2071,6 +2108,7 @@
             </div>
 
             <footer class="tasks-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="issue-create-submit">Utwórz zadanie</button>
             </footer>
         </form>

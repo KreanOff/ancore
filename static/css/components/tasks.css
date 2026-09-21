@@ -5382,8 +5382,8 @@ body.modal-open::before {
 }
 
 .tasks-issue-modal__header #issue-modal-title {
-    font-size: 16px !important;
-    font-weight: 500 !important;
+    font-size: var(--font-size-lg);
+    font-weight: 400;
 }
 
 .tasks-issue-modal__header .tasks-picker-chip [data-picker-label],
@@ -5412,24 +5412,6 @@ body.modal-open::before {
 .tasks-issue-modal__footer #issue-create-submit {
     height: 36px;
     min-height: 36px;
-}
-
-.tasks-modal__dialog:has(.ancore-custom-select.is-open),
-.tasks-modal__form:has(.ancore-custom-select.is-open),
-.tasks-modal__body:has(.ancore-custom-select.is-open),
-.tasks-issue-modal__dialog:has(.tasks-issue-dropdown.is-open),
-.tasks-issue-modal__dialog:has(.tasks-issue-chip-picker.is-open),
-.tasks-issue-modal__dialog:has(.contacts-custom-select.is-open),
-.tasks-issue-modal__dialog:has(.ancore-custom-select.is-open),
-.tasks-issue-modal__form:has(.tasks-issue-dropdown.is-open),
-.tasks-issue-modal__form:has(.tasks-issue-chip-picker.is-open),
-.tasks-issue-modal__form:has(.contacts-custom-select.is-open),
-.tasks-issue-modal__form:has(.ancore-custom-select.is-open),
-.tasks-issue-modal__body:has(.tasks-issue-dropdown.is-open),
-.tasks-issue-modal__body:has(.tasks-issue-chip-picker.is-open),
-.tasks-issue-modal__body:has(.contacts-custom-select.is-open),
-.tasks-issue-modal__body:has(.ancore-custom-select.is-open) {
-    overflow: visible;
 }
 
 .tasks-issue-modal__body .tasks-inline-input[name="title"] {

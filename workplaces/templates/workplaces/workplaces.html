@@ -191,14 +191,18 @@
                         {% include 'workplaces/includes/workplace_photo_editor.html' with form=form photo_button_label='Dodaj' %}
 
                         <div class="workplace-modal__details">
-                            <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>
-                            {{ form.name }}
+                            <div class="tasks-form-field">
+                                <label for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>
+                                {{ form.name }}
+                            </div>
                             <span id="workplace-create-name-hint" class="u-sr-only">Będzie widoczna dla wszystkich członków miejsca pracy.</span>
                             <span id="workplace-create-name-counter" class="u-sr-only" aria-live="polite"><span data-workplace-name-count>{{ form.name.value|default:''|length }}</span>/140</span>
                             {% for error in form.name.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
 
-                            <label class="u-sr-only" for="{{ form.description.id_for_label }}">Opis</label>
-                            {{ form.description }}
+                            <div class="tasks-form-field">
+                                <label for="{{ form.description.id_for_label }}">Opis</label>
+                                {{ form.description }}
+                            </div>
                             {% for error in form.description.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
 
                             <section class="tasks-project-parameters workplace-modal__parameters" aria-labelledby="workplace-create-parameters-title">
@@ -219,6 +223,7 @@
                 </div>
 
                 <footer class="tasks-modal__footer tasks-project-create-modal__footer tasks-issue-modal__footer workplace-create-modal__footer">
+                    <button type="button" class="btn btn-secondary" data-close-workplace-create-modal>Anuluj</button>
                     <button type="submit" class="tasks-modal__submit workplace-create-modal__submit" id="workplace-create-submit" data-default-label="Utwórz miejsce pracy">Utwórz miejsce pracy</button>
                 </footer>
             </form>
@@ -248,10 +253,14 @@
                         {% include 'workplaces/includes/workplace_photo_editor.html' with workplace=workplace workplace_logo=workplace_logo photo_button_label='Zmień' %}
 
                         <div class="workplace-modal__details">
-                            <label class="u-sr-only" for="workplace-edit-name-{{ workplace.id }}">Nazwa miejsca pracy</label>
-                            <input id="workplace-edit-name-{{ workplace.id }}" type="text" name="name" value="{{ workplace.name }}" class="tasks-inline-input" placeholder="Nazwa miejsca pracy" autocomplete="off" required data-workplace-edit-autofocus>
-                            <label class="u-sr-only" for="workplace-edit-description-{{ workplace.id }}">Opis</label>
-                            <textarea id="workplace-edit-description-{{ workplace.id }}" name="description" class="tasks-inline-input tasks-modal-textarea" rows="3" placeholder="Dodaj krótki opis miejsca pracy…">{{ workplace.description }}</textarea>
+                            <div class="tasks-form-field">
+                                <label for="workplace-edit-name-{{ workplace.id }}">Nazwa miejsca pracy</label>
+                                <input id="workplace-edit-name-{{ workplace.id }}" type="text" name="name" value="{{ workplace.name }}" class="tasks-inline-input" placeholder="Nazwa miejsca pracy" autocomplete="off" required data-workplace-edit-autofocus>
+                            </div>
+                            <div class="tasks-form-field">
+                                <label for="workplace-edit-description-{{ workplace.id }}">Opis</label>
+                                <textarea id="workplace-edit-description-{{ workplace.id }}" name="description" class="tasks-inline-input tasks-modal-textarea" rows="3" placeholder="Dodaj krótki opis miejsca pracy…">{{ workplace.description }}</textarea>
+                            </div>
 
                             <section class="tasks-project-parameters workplace-modal__parameters" aria-labelledby="workplace-edit-parameters-title-{{ workplace.id }}">
                                 <h3 class="u-sr-only" id="workplace-edit-parameters-title-{{ workplace.id }}">Parametry miejsca pracy</h3>
@@ -267,6 +276,7 @@
                 </div>
 
                 <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer workplace-edit-modal__footer">
+                    <button type="button" class="btn btn-secondary" data-close-workplace-modal>Anuluj</button>
                     <button type="submit" class="tasks-modal__submit">Zapisz zmiany</button>
                 </footer>
             </form>

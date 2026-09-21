@@ -798,6 +798,7 @@ function initCalendarPage() {
     function closeEventColorSelect(restoreFocus = false) {
         if (!eventColorSelect) return;
 
+        window.AncoreDropdownLayer?.hide(eventColorMenu);
         eventColorSelect.classList.remove('is-open');
         eventColorToggle?.setAttribute('aria-expanded', 'false');
         if (eventColorMenu) eventColorMenu.hidden = true;
@@ -811,6 +812,7 @@ function initCalendarPage() {
         eventColorSelect.classList.add('is-open');
         eventColorToggle?.setAttribute('aria-expanded', 'true');
         if (eventColorMenu) eventColorMenu.hidden = false;
+        window.AncoreDropdownLayer?.open(eventColorMenu, eventColorToggle, () => closeEventColorSelect());
 
         if (focusSelected) {
             selectedEventColorOption()?.focus({ preventScroll: true });

@@ -30,6 +30,7 @@
         const toggle = dropdown.querySelector('[data-profile-status-toggle]');
         const menu = dropdown.querySelector('[data-profile-status-menu]');
 
+        window.AncoreDropdownLayer?.hide(menu);
         dropdown.classList.remove('is-open');
         toggle?.setAttribute('aria-expanded', 'false');
         if (menu) {
@@ -84,6 +85,7 @@
         if (menu) {
             menu.hidden = false;
         }
+        window.AncoreDropdownLayer?.open(menu, toggle, () => closeDropdown(dropdown));
     }
 
     function selectedOption(dropdown) {

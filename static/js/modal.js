@@ -55,12 +55,14 @@ window.showConfirmModal = function (options) {
     modal.setAttribute('aria-labelledby', titleId);
     modal.setAttribute('aria-describedby', messageId);
     modal.innerHTML = `
-        <div class="confirm-modal__body">
+        <header class="confirm-modal__header">
             <div class="confirm-modal__icon">
                 <i data-icon="${iconName}" aria-hidden="true"></i>
             </div>
+            <h3 class="confirm-modal__title" id="${titleId}">${title}</h3>
+        </header>
+        <div class="confirm-modal__body">
             <div class="confirm-modal__content">
-                <h3 class="confirm-modal__title" id="${titleId}">${title}</h3>
                 <p class="confirm-modal__message" id="${messageId}">${message}</p>
             </div>
         </div>
@@ -83,7 +85,10 @@ window.showConfirmModal = function (options) {
         confirmButton?.focus();
     });
 
+    let isClosing = false;
     const closeModal = () => {
+        if (isClosing) return false;
+        isClosing = true;
         document.removeEventListener('keydown', handleKeyDown);
         overlay.classList.remove('is-visible');
         modal.classList.remove('is-visible');
@@ -93,13 +98,13 @@ window.showConfirmModal = function (options) {
                 previouslyFocused.focus({ preventScroll: true });
             }
         }, 150);
+        return true;
     };
 
     cancelButton?.addEventListener('click', closeModal);
 
     confirmButton?.addEventListener('click', () => {
-        closeModal();
-        onConfirm();
+        if (closeModal()) onConfirm();
     });
 
     const handleKeyDown = (e) => {
@@ -110,8 +115,7 @@ window.showConfirmModal = function (options) {
             closeModal();
         } else if (e.key === 'Enter' && document.activeElement === confirmButton) {
             e.preventDefault();
-            closeModal();
-            onConfirm();
+            if (closeModal()) onConfirm();
         } else if (e.key === 'Tab' && cancelButton && confirmButton) {
             if (e.shiftKey && document.activeElement === cancelButton) {
                 e.preventDefault();

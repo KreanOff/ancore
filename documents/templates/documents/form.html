@@ -1,4 +1,4 @@
-<div class="tasks-modal documents-modal is-open" role="dialog" aria-modal="true" aria-labelledby="documents-modal-title" data-document-dialog data-return-url="{{ modal.folder_url }}">
+<div class="tasks-modal tasks-form-modal documents-modal is-open" role="dialog" aria-modal="true" aria-labelledby="documents-modal-title" data-document-dialog data-return-url="{{ modal.folder_url }}">
     <div class="tasks-modal__dialog">
         <form method="post" action="{{ modal.form_action }}" {% if modal.form.is_multipart %}enctype="multipart/form-data"{% endif %} class="tasks-modal__form" data-document-form{% if modal.upload_form %} data-document-upload-form{% endif %}{% if modal.office_create %} data-office-create{% endif %}>
             {% csrf_token %}
@@ -13,13 +13,18 @@
                 {% if modal.document %}
                 <div class="documents-file-summary"><span class="documents-file-icon">{% include 'documents/includes/file_icon.html' with document=modal.document only %}</span><div>{{ modal.document.filename }}<small>{{ modal.document.extension }} · {{ modal.document.file_size|filesizeformat }} · Dodano {{ modal.document.created_at|date:'d.m.Y, H:i' }}</small></div><a class="tasks-icon-button documents-icon-button" href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" download aria-label="Pobierz plik" title="Pobierz plik"><i data-icon="download" aria-hidden="true"></i></a></div>
                 {% endif %}
-                {% if modal.upload_form %}<p class="documents-upload-hint"><i data-icon="cloud-upload" aria-hidden="true"></i><span>Przeciągnij pliki tutaj lub wybierz je z komputera<small>{% if modal.office_upload %}Dokumenty, arkusze i prezentacje: PDF, DOCX, XLSX, PPTX, DOC, XLS, PPT, CSV, RTF i TXT.{% else %}Dokumenty, arkusze, obrazy i archiwa.{% endif %} Maks. {{ modal.max_upload_size|filesizeformat }} na plik, do 20 plików jednocześnie.</small></span></p>{% endif %}
                 {% for field in modal.form %}
                 {% if field.is_hidden %}{{ field }}
                 {% elif field.name == 'color' %}{% include 'documents/includes/color_field.html' with form=modal.form field=field only %}
                 {% elif field.name == 'tags' %}<fieldset class="documents-tag-picker"><legend>Tagi</legend>{% if field.field.queryset %}{{ field }}{% else %}<p class="documents-muted">Brak tagów w tym Workspace.</p>{% endif %}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}</fieldset>
-                {% else %}<div class="documents-field">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}
+                {% else %}<div class="documents-field tasks-form-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>
+                    {% if modal.upload_form and field.name == 'files' %}
+                    <div class="documents-upload-control">
+                        <p class="documents-upload-hint" id="documents-upload-hint"><i data-icon="cloud-upload" aria-hidden="true"></i><span>Przeciągnij pliki tutaj lub wybierz je z komputera<small>{% if modal.office_upload %}Dokumenty, arkusze i prezentacje: PDF, DOCX, XLSX, PPTX, DOC, XLS, PPT, CSV, RTF i TXT.{% else %}Dokumenty, arkusze, obrazy i archiwa.{% endif %} Maks. {{ modal.max_upload_size|filesizeformat }} na plik, do 20 plików jednocześnie.</small></span></p>
+                        {{ field }}
+                    </div>
+                    {% else %}{{ field }}{% endif %}
                     {% if modal.upload_form and field.name == 'files' %}<ul class="file-list documents-upload-files" data-document-upload-files aria-label="Wybrane pliki" aria-live="polite" aria-atomic="true" hidden></ul>{% endif %}
                     {% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}
                 </div>{% endif %}

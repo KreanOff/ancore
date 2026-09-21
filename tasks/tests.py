@@ -1623,7 +1623,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('aria-label="Wybierz priorytet projektu"', modal_html)
         self.assertIn('data-inline-priority-icon', modal_html)
         self.assertIn('data-project-priority-caret', modal_html)
-        self.assertIn('class="u-sr-only" for="project-rename-name"', modal_html)
+        self.assertIn('<label for="project-rename-name">Nazwa projektu</label>', modal_html)
 
     def test_edit_project_modal_matches_create_project_field_layout(self):
         response = self.client.get(reverse('tasks:tasks'))

@@ -297,7 +297,7 @@
 
                         <div class="profile-edit-fields contacts-company-edit-fields">
                             {% if form.errors %}
-                            <div class="tasks-modal__errors">
+                            <div class="tasks-modal__errors" role="alert">
                                 {% for field in form %}
                                     {% for error in field.errors %}
                                         <p>{{ field.label }}: {{ error }}</p>
@@ -310,12 +310,16 @@
                             {% endif %}
 
                             <div class="contacts-company-modal-title">
-                                <label class="u-sr-only" for="{{ form.name.id_for_label }}">Nazwa firmy</label>
-                                {{ form.name }}
+                                <div class="tasks-form-field">
+                                    <label for="{{ form.name.id_for_label }}">Nazwa firmy</label>
+                                    {{ form.name }}
+                                </div>
                             </div>
 
-                            <label class="u-sr-only" for="{{ form.notes.id_for_label }}">Notatki</label>
-                            {{ form.notes }}
+                            <div class="tasks-form-field">
+                                <label for="{{ form.notes.id_for_label }}">Notatki</label>
+                                {{ form.notes }}
+                            </div>
 
                             <div class="tasks-issue-fields contacts-modal-fields contacts-edit-modal__fields contacts-company-edit-modal__fields">
                                 <label>
