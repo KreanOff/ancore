@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
+from workplaces.services import workplace_people
+
 from contacts.models import Company
 from tasks.models import TaskTag
 from .models import Kanban, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
@@ -36,14 +38,8 @@ def _filter_workplace(queryset, workplace):
     return queryset.filter(workplace=workplace)
 
 
-def _crm_user_queryset(user):
-    if not user:
-        return get_user_model().objects.none()
-    return (
-        get_user_model().objects.filter(is_active=True)
-        .distinct()
-        .order_by('first_name', 'middle_name', 'last_name', 'email', 'username')
-    )
+def _crm_user_queryset(user, workplace=None):
+    return workplace_people(workplace, user)
 
 
 def _company_queryset(user, workplace=None):
@@ -56,7 +52,8 @@ def _replace_optional_model_choice(form, field_name, queryset, empty_label):
     if field_name not in form.fields:
         return
     current = form.fields[field_name]
-    form.fields[field_name] = LenientModelChoiceField(
+    field_class = forms.ModelChoiceField if field_name in {'assignee', 'responsible_user', 'owner'} else LenientModelChoiceField
+    form.fields[field_name] = field_class(
         queryset=queryset,
         required=False,
         label=current.label,
@@ -208,7 +205,7 @@ class KanbanProjectBaseForm(forms.ModelForm):
             self.fields['company'].widget.attrs['data-ancore-custom-select-search'] = 'true'
             self.fields['company'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj firmy'
         if 'responsible_user' in self.fields:
-            _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user), 'Brak osoby')
+            _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user, workplace), 'Brak osoby')
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search'] = 'true'
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         for field_name in ('status', 'stage', 'health', 'currency'):

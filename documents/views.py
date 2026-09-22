@@ -17,6 +17,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
+from workplaces.services import workspace_owner
+
 from core.upload_validation import ATTACHMENT_ALLOWED_EXTENSIONS, attachment_download_response
 from workplaces.services import scoped_workplace_app_path
 from .forms import DocumentForm, FolderForm, LibraryForm, UploadForm
@@ -48,15 +50,15 @@ def _url(request, suffix='', **params):
 
 
 def _documents(request):
-    return Document.objects.filter(owner=request.user, workplace=request.workplace)
+    return Document.objects.filter(owner=workspace_owner(request), workplace=request.workplace)
 
 
 def _folders(request):
-    return Folder.objects.filter(owner=request.user, workplace=request.workplace)
+    return Folder.objects.filter(owner=workspace_owner(request), workplace=request.workplace)
 
 
 def _libraries(request):
-    return DocumentLibrary.objects.filter(owner=request.user, workplace=request.workplace)
+    return DocumentLibrary.objects.filter(owner=workspace_owner(request), workplace=request.workplace)
 
 
 def _by_id(queryset, value):
@@ -175,8 +177,8 @@ def _library_index(request, form_context=None):
         library_id=OuterRef('pk'), deleted_at__isnull=True,
     ).order_by().values('library_id').annotate(total=Sum('file_size')).values('total')
     libraries = _libraries(request).filter(Q(name__icontains=query) | Q(description__icontains=query)).annotate(
-        document_count=Count('documents', filter=Q(documents__deleted_at__isnull=True, documents__owner=request.user, documents__workplace=request.workplace), distinct=True),
-        folder_count=Count('folders', filter=Q(folders__owner=request.user, folders__workplace=request.workplace), distinct=True),
+        document_count=Count('documents', filter=Q(documents__deleted_at__isnull=True, documents__owner=workspace_owner(request), documents__workplace=request.workplace), distinct=True),
+        folder_count=Count('folders', filter=Q(folders__owner=workspace_owner(request), folders__workplace=request.workplace), distinct=True),
         total_size=Coalesce(Subquery(library_sizes), 0, output_field=BigIntegerField()),
     )
     libraries = apply_text_filters(libraries, fields)
@@ -341,10 +343,10 @@ def _form_success(request, url):
 
 def _save_library(request, instance=None):
     form = LibraryForm(request.POST if request.method == 'POST' else None,
-                       instance=instance, owner=request.user, workplace=request.workplace)
+                       instance=instance, owner=workspace_owner(request), workplace=request.workplace)
     if request.method == 'POST' and form.is_valid():
         item = form.save(commit=False)
-        item.owner, item.workplace = request.user, request.workplace
+        item.owner, item.workplace = workspace_owner(request), request.workplace
         try:
             with transaction.atomic():
                 item.save()
@@ -413,7 +415,7 @@ def upload(request):
         try:
             with transaction.atomic():
                 for file in form.cleaned_data['files']:
-                    document = Document(owner=request.user, workplace=request.workplace, library=current_library, folder=folder,
+                    document = Document(owner=workspace_owner(request), workplace=request.workplace, library=current_library, folder=folder,
                                         title=file.name, filename=file.name, file_size=file.size)
                     document.file.save(file.name, file, save=False)
                     saved_files.append((document.file.storage, document.file.name))
@@ -435,10 +437,10 @@ def _save_folder(request, folder=None):
         current_library, parent = folder.library, _folder(request, folder.parent_id)
     else:
         current_library, parent = _location(request)
-    form = FolderForm(request.POST if request.method == 'POST' else None, instance=folder, owner=request.user, workplace=request.workplace, library=current_library, parent=parent)
+    form = FolderForm(request.POST if request.method == 'POST' else None, instance=folder, owner=workspace_owner(request), workplace=request.workplace, library=current_library, parent=parent)
     if request.method == 'POST' and form.is_valid():
         item = form.save(commit=False)
-        item.owner, item.workplace, item.parent, item.library = request.user, request.workplace, parent, current_library
+        item.owner, item.workplace, item.parent, item.library = workspace_owner(request), request.workplace, parent, current_library
         try:
             with transaction.atomic():
                 item.save()
@@ -513,7 +515,7 @@ def folder_download(request, pk):
 @location_write
 def detail(request, pk):
     document = get_object_or_404(_documents(request).select_related('folder', 'library'), pk=pk, deleted_at__isnull=True)
-    form = DocumentForm(request.POST if request.method == 'POST' else None, instance=document, owner=request.user, workplace=request.workplace)
+    form = DocumentForm(request.POST if request.method == 'POST' else None, instance=document, owner=workspace_owner(request), workplace=request.workplace)
     if request.method == 'POST' and form.is_valid():
         # Metadata edits must not overwrite a file/revision saved by the editor.
         with transaction.atomic():

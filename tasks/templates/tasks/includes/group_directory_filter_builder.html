@@ -27,11 +27,13 @@
                     <span><strong>Typ</strong>{% for option in group_filter_options.kinds %}{% if option.value == group_kind_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
                     <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
+                {% if active_view != 'project' %}
                 <button type="button" data-project-filter-field="group_project" data-project-filter-field-search-text="projekt">
                     <span class="tasks-project-query-field-icon"><i data-icon="folder-kanban" aria-hidden="true"></i></span>
                     <span><strong>Projekt</strong>{% for option in group_filter_options.projects %}{% if option.value == group_project_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
                     <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
+                {% endif %}
                 <button type="button" data-project-filter-field="owner" data-project-filter-field-search-text="odpowiedzialny osoba właściciel">
                     <span class="tasks-project-query-field-icon"><i data-icon="circle-user-round" aria-hidden="true"></i></span>
                     <span><strong>Odpowiedzialny</strong>{% for option in group_filter_options.owners %}{% if option.value == group_owner_filter %}<small>{{ option.label }}</small>{% endif %}{% endfor %}</span>
@@ -48,7 +50,9 @@
 
         {% include 'tasks/includes/project_choice_filter_detail.html' with field='status' label='Status' icon='circle-dot' current=group_status_filter options=group_filter_options.statuses %}
         {% include 'tasks/includes/project_choice_filter_detail.html' with field='kind' label='Typ' icon='layers-3' current=group_kind_filter options=group_filter_options.kinds %}
+        {% if active_view != 'project' %}
         {% include 'tasks/includes/project_choice_filter_detail.html' with field='group_project' label='Projekt' icon='folder-kanban' current=group_project_filter options=group_filter_options.projects searchable=True %}
+        {% endif %}
         {% include 'tasks/includes/project_choice_filter_detail.html' with field='owner' label='Odpowiedzialny' icon='circle-user-round' current=group_owner_filter options=group_filter_options.owners searchable=True %}
         {% include 'tasks/includes/project_choice_filter_detail.html' with field='priority' label='Priorytet' icon='chart-no-axes-column-increasing' current=group_priority_filter options=project_priority_options %}
     </div>

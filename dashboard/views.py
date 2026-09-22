@@ -9,20 +9,23 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
+
+from workplaces.services import workspace_owner
 
 from accounts.avatar import account_avatar
 from accounts.views import _switch_account_context
 from contacts.models import Company, Contact
 from documents.models import Document, DocumentLibrary, Folder, WorkspaceDocument
-from kanban.models import Kanban, KanbanActivity, KanbanProject, KanbanSection
+from kanban.models import Kanban, KanbanProject, KanbanSection
 from planner.models import CalendarEvent
-from tasks.models import Task, TaskActivity, TaskProject, TaskSection, TaskTag
+from tasks.models import Task, TaskProject, TaskSection, TaskTag
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
 from .overview import dashboard_overview
+from .notification_service import DASHBOARD_NOTIFICATION_LIMIT, _dashboard_notifications
+from .notification_service import change_notification_state, notification_filters, notification_page, notification_summary
 
 
-DASHBOARD_NOTIFICATION_LIMIT = 12
 GLOBAL_SEARCH_QUERY_LIMIT = 120
 
 
@@ -130,7 +133,7 @@ def global_search(request):
             'minimum_query_length': 2,
         })
 
-    user = request.user
+    user = workspace_owner(request)
     workplace = getattr(request, 'workplace', None)
     tasks_url = _workspace_app_url(workplace, 'tasks')
     kanban_url = _workspace_app_url(workplace, 'kanban')
@@ -491,144 +494,6 @@ def global_search(request):
     return response
 
 
-def _actor_label(actor):
-    if not actor:
-        return 'System'
-    return actor.get_full_name() or actor.get_username()
-
-
-def _display_label(value, fallback='Zmiana'):
-    if not value:
-        return fallback
-    value = str(value)
-    return f'{value[:1].upper()}{value[1:]}'
-
-
-def _activity_action_message(activity):
-    if activity.kind == 'comment':
-        return 'dodał komentarz'
-    return activity.message or activity.get_action_display().lower()
-
-
-def _detail_line(label, value='', from_label='', to_label=''):
-    return {
-        'label': label,
-        'value': value,
-        'from_label': from_label,
-        'to_label': to_label,
-    }
-
-
-def _activity_detail_lines(activity, subitem_label):
-    metadata = activity.metadata or {}
-    detail_lines = []
-
-    for change in metadata.get('changes') or []:
-        detail_lines.append(_detail_line(
-            _display_label(change.get('field')),
-            from_label=change.get('from_label') or '',
-            to_label=change.get('to_label') or '',
-        ))
-
-    if detail_lines:
-        return detail_lines
-
-    if metadata.get('from_label') or metadata.get('to_label'):
-        return [_detail_line(
-            'Zmiana',
-            from_label=metadata.get('from_label') or '',
-            to_label=metadata.get('to_label') or '',
-        )]
-
-    if metadata.get('fields'):
-        return [_detail_line('Zmienione pola', value=', '.join(metadata.get('fields') or []))]
-
-    if activity.kind == 'comment' and activity.message:
-        return [_detail_line('Komentarz', value=activity.message)]
-
-    if activity.action == 'created' and metadata.get('title'):
-        return [_detail_line('Tytuł', value=metadata.get('title'))]
-
-    if 'count' in metadata:
-        return [_detail_line('Liczba', value=metadata.get('count'))]
-
-    if metadata.get('subtask_title'):
-        return [_detail_line(subitem_label, value=metadata.get('subtask_title'))]
-
-    return []
-
-
-def _activity_location(task, source_label, object_label):
-    location_parts = [source_label, f'{object_label} #{task.task_id}', task.title]
-    section = task.section
-    if section:
-        project = section.project
-        if project:
-            location_parts.append(project.name)
-        location_parts.append(section.title)
-
-    column = getattr(task, 'column', None)
-    if column:
-        location_parts.append(column.title)
-
-    return ' · '.join(part for part in location_parts if part)
-
-
-def _activity_notification(activity, app_name, source_label, object_label, subitem_label):
-    task = activity.task
-    route_name = 'view-subtask' if task.parent_id else 'view-task'
-
-    return {
-        'source': app_name,
-        'source_label': source_label,
-        'object_label': object_label,
-        'object_id': task.task_id,
-        'title': task.title,
-        'actor_label': _actor_label(activity.actor),
-        'actor_avatar': account_avatar(activity.actor),
-        'action_message': _activity_action_message(activity),
-        'detail_lines': _activity_detail_lines(activity, subitem_label),
-        'location_label': _activity_location(task, source_label, object_label),
-        'created_at': activity.created_at,
-        'sort_key': (activity.created_at, activity.id),
-        'url': _workspace_app_url(task.workplace, app_name, f'{route_name}/{task.task_id}/?task_pk={task.pk}'),
-    }
-
-
-def _dashboard_notifications(user):
-    task_activities = TaskActivity.objects.filter(
-        task__user=user,
-    ).select_related(
-        'task',
-        'task__section',
-        'task__section__project',
-        'actor',
-    ).order_by('-created_at', '-id')[:DASHBOARD_NOTIFICATION_LIMIT]
-    kanban_activities = KanbanActivity.objects.filter(
-        task__user=user,
-    ).select_related(
-        'task',
-        'task__section',
-        'task__section__project',
-        'task__column',
-        'actor',
-    ).order_by('-created_at', '-id')[:DASHBOARD_NOTIFICATION_LIMIT]
-
-    notifications = [
-        _activity_notification(activity, 'tasks', 'Tasks', 'Zadanie', 'Podzadanie')
-        for activity in task_activities
-    ] + [
-        _activity_notification(activity, 'kanban', 'Kanban', 'Karta', 'Podkarta')
-        for activity in kanban_activities
-    ]
-
-    return sorted(
-        notifications,
-        key=lambda notification: notification['sort_key'],
-        reverse=True,
-    )[:DASHBOARD_NOTIFICATION_LIMIT]
-
-
 @login_required
 def settings(request):
     return render(request, 'dashboard/settings.html', {
@@ -645,7 +510,7 @@ def home(request):
     if workplace is None:
         return redirect('workplaces:workplaces')
     response = render(request, 'dashboard/home.html', dashboard_overview(
-        request.user, workplace, request.GET.get('focus'),
+        workspace_owner(request), workplace, request.GET.get('focus'),
     ))
     response['Cache-Control'] = 'no-store'
     return response
@@ -654,14 +519,25 @@ def home(request):
 @login_required
 @require_GET
 def notifications(request):
-    dashboard_notifications = _dashboard_notifications(request.user)
-    context = {
-        'dashboard_notifications': dashboard_notifications,
-        'dashboard_notification_count': len(dashboard_notifications),
-    }
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    summary = notification_summary(request.user)
+    if request.GET.get('summary') == '1':
+        response = JsonResponse(summary)
+        response['Cache-Control'] = 'no-store'
+        return response
+    try:
+        context = notification_page(request.user, notification_filters(request.user, request.GET), request.GET.get('cursor', ''))
+    except ValueError as error:
+        return JsonResponse({'error': str(error)}, status=400)
+    context.update(summary)
+    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            and 'text/html' not in request.headers.get('Accept', '')):
         response = JsonResponse({
-            'count': context['dashboard_notification_count'],
+            **summary,
+            'count': len(context['dashboard_notifications']),
+            'total': context['dashboard_notification_count'],
+            'filtered_unread_count': context['filtered_unread_count'],
+            'snapshot': context['snapshot'],
+            'next_cursor': context['next_cursor'],
             'html': render_to_string(
                 'dashboard/includes/notification_list.html',
                 context,
@@ -671,4 +547,18 @@ def notifications(request):
         response['Cache-Control'] = 'no-store'
         return response
 
-    return render(request, 'dashboard/notifications.html', context)
+    response = render(request, 'dashboard/notifications.html', context)
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+@login_required
+@require_POST
+def notification_action(request):
+    try:
+        change_notification_state(request.user, request.POST)
+    except ValueError as error:
+        return JsonResponse({'error': str(error)}, status=400)
+    response = JsonResponse({'ok': True, **notification_summary(request.user)})
+    response['Cache-Control'] = 'no-store'
+    return response

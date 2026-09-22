@@ -32,24 +32,33 @@ def verify(token):
     return jwt.decode(token, settings.ONLYOFFICE_JWT_SECRET, algorithms=['HS256'], options={'verify_aud': False})
 
 
-def capability(document, purpose):
-    return signing.dumps([str(document.pk), document.owner_id, document.workplace_id, str(document.office_key)], salt=f'{_service_scope(document)}.{purpose}')
+def capability(document, purpose, actor=None):
+    return signing.dumps([str(document.pk), document.owner_id, document.workplace_id, str(document.office_key), actor.pk if actor else document.owner_id], salt=f'{_service_scope(document)}.{purpose}')
 
 
 def check_capability(document, token, purpose):
+    from django.contrib.auth import get_user_model
+    from workplaces.services import workplace_role
     try:
-        return signing.loads(token, salt=f'{_service_scope(document)}.{purpose}', max_age=7 * 86400) == [str(document.pk), document.owner_id, document.workplace_id, str(document.office_key)]
+        payload = signing.loads(token, salt=f'{_service_scope(document)}.{purpose}', max_age=7 * 86400)
     except signing.BadSignature:
         return False
+    expected = [str(document.pk), document.owner_id, document.workplace_id, str(document.office_key)]
+    if payload == expected:
+        payload = [*payload, document.owner_id]
+    if not isinstance(payload, list) or len(payload) != 5 or payload[:4] != expected:
+        return False
+    actor = get_user_model().objects.filter(pk=payload[4], is_active=True).first()
+    return bool(actor and workplace_role(actor, document.workplace))
 
 
 def _service_scope(document):
     return 'drive-office' if document._meta.label_lower == 'documents.document' else 'office'
 
 
-def service_url(document, purpose):
+def service_url(document, purpose, actor=None):
     path = reverse(f'{_service_scope(document)}-service-{purpose}', args=[document.pk])
-    return settings.ONLYOFFICE_ANCORE_URL.rstrip('/') + path + '?' + urlencode({'token': capability(document, purpose)})
+    return settings.ONLYOFFICE_ANCORE_URL.rstrip('/') + path + '?' + urlencode({'token': capability(document, purpose, actor)})
 
 
 def document_key(document):
@@ -60,9 +69,9 @@ def editor_config(document, user):
     config = {
         'documentType': document.office_type, 'type': 'desktop', 'width': '100%', 'height': '100%',
         'document': {'fileType': document.extension.lower(), 'key': document_key(document),
-                     'title': document.filename, 'url': service_url(document, 'source'),
+                     'title': document.filename, 'url': service_url(document, 'source', user),
                      'permissions': {'edit': True, 'download': True, 'print': True, 'chat': False}},
-        'editorConfig': {'lang': 'pl', 'mode': 'edit', 'callbackUrl': service_url(document, 'callback'),
+        'editorConfig': {'lang': 'pl', 'mode': 'edit', 'callbackUrl': service_url(document, 'callback', user),
                          'user': {'id': str(user.pk), 'name': user.get_full_name() or user.username},
                          'customization': {'forcesave': True, 'autosave': True, 'macros': False,
                                            'plugins': False, 'help': False}},

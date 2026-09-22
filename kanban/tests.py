@@ -1797,6 +1797,10 @@ class KanbanProjectCreationTests(TestCase):
         project = KanbanProject.objects.create(user=self.user, name='Stara nazwa', description='Stary opis', code='OLD')
         old_code = project.code
 
+        from workplaces.models import WorkplaceMembership
+        from workplaces.services import ensure_default_workplace
+        WorkplaceMembership.objects.create(workplace=ensure_default_workplace(self.user), user=responsible, role='member')
+
         response = self.client.post(reverse('kanban:tasks'), {
             'action': 'edit_project',
             'project_id': project.id,

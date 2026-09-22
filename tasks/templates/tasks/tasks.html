@@ -146,7 +146,7 @@
 {% block content %}
 <div class="tasks-page tasks-list-page" data-task-app="tasks" data-task-base-url="{{ workplace_app_urls.tasks }}">
     <section class="tasks-workspace" aria-label="Lista zadań">
-        <header class="tasks-topbar{% if not active_project %} tasks-topbar--directory tasks-topbar--project-directory{% endif %}">
+        <header class="tasks-topbar{% if not active_project or active_view == 'project' %} tasks-topbar--directory tasks-topbar--project-directory{% endif %}">
             <div class="tasks-titlebar-left{% if active_view == 'project' or active_view == 'section' %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
                 {% if active_view == 'project' and active_project %}
                 <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" title="Wróć do wszystkich projektów" aria-label="Wróć do wszystkich projektów" data-projects-back-link>
@@ -191,13 +191,7 @@
                 {% endif %}
             </div>
             {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' or active_view == 'all_tasks' or active_view == 'my_tasks' %}
-            <form{% if not active_project %} hidden id="projects-search-form"{% else %} class="tasks-titlebar-search tasks-search-actions"{% endif %} method="get" action="{% url 'tasks:tasks' %}" data-project-search-form{% if active_view == 'all_tasks' or active_view == 'my_tasks' %} data-server-directory-filters="true"{% endif %}>
-                {% if active_project %}
-                <label class="tasks-search-field" for="filter-search">
-                    <i data-icon="search" aria-hidden="true"></i>
-                    <input id="filter-search" type="search" name="q" value="{% if active_view == 'project' %}{{ project_section_query }}{% elif active_view == 'all_groups' %}{{ group_query }}{% elif active_view == 'tags' %}{{ tag_query }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}{{ task_query }}{% else %}{{ project_query }}{% endif %}" placeholder="Szukaj" autocomplete="off">
-                </label>
-                {% endif %}
+            <form hidden id="projects-search-form" method="get" action="{% url 'tasks:tasks' %}" data-project-search-form{% if active_view == 'all_tasks' or active_view == 'my_tasks' %} data-server-directory-filters="true"{% endif %}>
                 {% if active_view == 'project' and active_project %}
                 <input type="hidden" name="project" value="{{ active_project.id }}">
                 {% elif active_view == 'all_groups' %}
@@ -227,7 +221,7 @@
                 <input type="hidden" name="task_due" value="{{ task_due_filter }}" data-project-filter-input="task_due">
                 <input type="hidden" name="sort" value="{{ task_sort_param }}" data-project-sort-input>
                 {% endif %}
-                {% if active_view == 'all_groups' %}
+                {% if active_view == 'all_groups' or active_view == 'project' %}
                 <input type="hidden" name="status" value="{{ group_status_filter }}" data-project-filter-input="status">
                 <input type="hidden" name="kind" value="{{ group_kind_filter }}" data-project-filter-input="kind">
                 <input type="hidden" name="group_project" value="{{ group_project_filter }}" data-project-filter-input="group_project">
@@ -260,11 +254,15 @@
                 </label>
             </div>
             {% endif %}
-            {% if not active_project %}
+            {% if not active_project or active_view == 'project' %}
             <div class="tasks-titlebar-actions">
                 {% if active_view == 'projects' %}
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj projekt" aria-label="Dodaj projekt" aria-haspopup="dialog" aria-controls="project-modal" data-open-project>
                     <span aria-hidden="true"><i data-icon="plus"></i></span><span>Dodaj projekt</span>
+                </button>
+                {% elif active_view == 'project' and active_project.can_manage %}
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}">
+                    <span aria-hidden="true"><i data-icon="plus"></i></span><span>Dodaj grupę</span>
                 </button>
                 {% elif active_view == 'all_groups' %}
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create>
@@ -284,7 +282,7 @@
             {% endif %}
         </header>
 
-        <div class="tasks-filterbar{% if not active_project %} tasks-filterbar--directory{% endif %}{% if active_view == 'projects' %} tasks-filterbar--project-directory{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %} tasks-filterbar--task-directory{% endif %}">
+        <div class="tasks-filterbar{% if not active_project or active_view == 'project' %} tasks-filterbar--directory{% endif %}{% if active_view == 'projects' %} tasks-filterbar--project-directory{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %} tasks-filterbar--task-directory{% endif %}">
             <div class="tasks-filterbar-left">
                 {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' %}
                 {% include 'tasks/includes/directory_column_manager.html' %}
@@ -294,7 +292,7 @@
                 {% endif %}
                 {% if active_view == 'projects' %}
                 {% include 'tasks/includes/project_directory_filter_sort.html' %}
-                {% elif active_view == 'all_groups' %}
+                {% elif active_view == 'all_groups' or active_view == 'project' %}
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ group_default_sort }}">
                     <button type="button" class="tasks-filter-button tasks-project-query-trigger tasks-sort-button{% if group_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ group_sort_label }}" title="Sortowanie: {{ group_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if group_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ group_sort_direction }}">
                         <i data-icon="{% if group_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
@@ -349,7 +347,7 @@
                     <i data-icon="arrow-up-wide-narrow" aria-hidden="true" data-task-sort-icon></i>
                 </button>
                 {% endif %}
-                {% if active_view == 'all_groups' %}
+                {% if active_view == 'all_groups' or active_view == 'project' %}
                 {% include 'tasks/includes/group_directory_filter_builder.html' %}
                 {% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}
                 {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=task_has_active_filters only %}
@@ -472,7 +470,7 @@
                     </div>
                 </div>
                 {% endif %}
-                {% if active_view != 'tags' and active_view != 'projects' and active_view != 'all_groups' %}
+                {% if active_view != 'tags' and active_view != 'projects' and active_view != 'all_groups' and active_view != 'project' %}
                 <div class="tasks-filter-dropdown" data-priority-filter-menu>
                     <button type="button" class="tasks-filter-button" aria-haspopup="menu" aria-expanded="false" data-priority-filter-toggle>
                         <i data-icon="chart-no-axes-column-increasing" aria-hidden="true"></i>
@@ -617,14 +615,14 @@
             </div>
             <div class="tasks-filterbar-center"></div>
             <div class="tasks-filterbar-right">
-                {% if not active_project %}
+                {% if not active_project or active_view == 'project' %}
                 <label class="tasks-search-field tasks-project-search" for="filter-search">
                     <i data-icon="search" aria-hidden="true"></i>
-                    <input id="filter-search" type="search" name="q" form="projects-search-form" value="{% if active_view == 'all_groups' %}{{ group_query }}{% elif active_view == 'tags' %}{{ tag_query }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}{{ task_query }}{% else %}{{ project_query }}{% endif %}" placeholder="{% if active_view == 'all_groups' %}Szukaj grup{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}Szukaj zadań{% else %}Szukaj projektów{% endif %}" aria-label="{% if active_view == 'all_groups' %}Szukaj grup{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}Szukaj zadań{% else %}Szukaj projektów{% endif %}" autocomplete="off">
+                    <input id="filter-search" type="search" name="q" form="projects-search-form" value="{% if active_view == 'all_groups' or active_view == 'project' %}{{ group_query }}{% elif active_view == 'tags' %}{{ tag_query }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}{{ task_query }}{% else %}{{ project_query }}{% endif %}" placeholder="{% if active_view == 'all_groups' or active_view == 'project' %}Szukaj grup{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}Szukaj zadań{% else %}Szukaj projektów{% endif %}" aria-label="{% if active_view == 'all_groups' or active_view == 'project' %}Szukaj grup{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}Szukaj zadań{% else %}Szukaj projektów{% endif %}" autocomplete="off">
                 </label>
                 {% if active_view == 'projects' %}
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=project_window items_exist=projects pages_label='Strony projektów' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
-                {% elif active_view == 'all_groups' %}
+                {% elif active_view == 'all_groups' or active_view == 'project' %}
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=group_window items_exist=all_sections pages_label='Strony grup' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' include_page_items=True only %}
                 {% elif active_view == 'tags' %}
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=tag_window items_exist=tags pages_label='Strony tagów' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' include_page_items=True only %}
@@ -632,12 +630,7 @@
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=task_window items_exist=total_task_count pages_label='Strony zadań' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
                 {% endif %}
                 {% else %}
-                {% if active_project and active_project.can_manage and not active_section %}
-                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj grupę" aria-label="Dodaj grupę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create data-project-id="{{ active_project.id }}" data-project-name="{{ active_project.name|escape }}">
-                    <span aria-hidden="true"><i data-icon="plus"></i></span>
-                    <span>Dodaj grupę</span>
-                </button>
-                {% elif active_section %}
+                {% if active_section %}
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj zadanie" aria-label="Dodaj zadanie" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue {% if not can_create_issue %}disabled{% endif %}>
                     <span aria-hidden="true"><i data-icon="plus"></i></span>
                     <span>Dodaj zadanie</span>
@@ -734,51 +727,15 @@
                 </article>
                 {% empty %}
                 <div class="tasks-empty-state">
+                    {% if group_query or group_has_active_filters %}
+                    <p>Brak grup pasujących do wyszukiwania lub filtrów.</p>
+                    {% else %}
                     <p>Ten projekt nie ma jeszcze grup. Dodaj pierwszą grupę, a potem zadania w środku.</p>
+                    {% endif %}
                 </div>
                 {% endfor %}
                 </div>
             </section>
-        </div>
-        <div class="tasks-project-pagination" data-project-pagination data-server-pagination="true" data-project-current-page="{{ project_section_window.page }}" data-project-total-pages="{{ project_section_window.total_pages }}">
-            <div class="tasks-project-pagination__size">
-                <span>Na stronie</span>
-                <div class="tasks-filter-dropdown tasks-project-pagination__size-control" data-project-page-size-dropdown>
-                    <select aria-label="Liczba grup na stronie" data-project-page-size hidden>
-                        {% for page_size in project_section_window.page_size_options %}
-                        <option value="{{ page_size }}" {% if project_section_window.page_size == page_size %}selected{% endif %}>{{ page_size }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="button" class="tasks-project-pagination__size-button" aria-label="Liczba grup na stronie" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
-                        <span data-project-page-size-label>{{ project_section_window.page_size }}</span>
-                        <i data-icon="chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba grup na stronie">
-                    {% for page_size in project_section_window.page_size_options %}
-                        <button type="button" role="menuitemradio" aria-checked="{% if project_section_window.page_size == page_size %}true{% else %}false{% endif %}" {% if project_section_window.page_size == page_size %}class="is-active"{% endif %} data-project-page-size-value="{{ page_size }}">{{ page_size }}</button>
-                    {% endfor %}
-                    </div>
-                </div>
-                <span>grup</span>
-            </div>
-            <span class="tasks-project-pagination__summary" data-project-pagination-summary>{{ project_section_window.summary }}</span>
-            <nav class="tasks-project-pagination__pages" aria-label="Strony grup projektu">
-                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie grupy" data-project-page-prev data-project-page-url="{{ project_section_window.previous_url }}" {% if not project_section_window.has_previous %}disabled{% endif %}>
-                    <i data-icon="chevron-left" aria-hidden="true"></i>
-                </button>
-                <span class="tasks-project-pagination__numbers" data-project-pagination-pages>
-                    {% for page_item in project_section_window.page_items %}
-                    {% if page_item.is_ellipsis %}
-                    <span class="tasks-project-pagination__ellipsis" aria-hidden="true">...</span>
-                    {% else %}
-                    <button type="button" class="tasks-project-pagination__button{% if page_item.is_current %} is-active{% endif %}" data-project-page="{{ page_item.page }}" {% if not page_item.is_current %}data-project-page-url="{{ page_item.url }}"{% endif %} aria-label="Strona {{ page_item.page }}" {% if page_item.is_current %}aria-current="page"{% endif %}>{{ page_item.page }}</button>
-                    {% endif %}
-                    {% endfor %}
-                </span>
-                <button type="button" class="tasks-project-pagination__button" aria-label="Następne grupy" data-project-page-next data-project-page-url="{{ project_section_window.next_url }}" {% if not project_section_window.has_next %}disabled{% endif %}>
-                    <i data-icon="chevron-right" aria-hidden="true"></i>
-                </button>
-            </nav>
         </div>
         {% elif active_project %}
         <div class="tasks-table-wrap tasks-board">

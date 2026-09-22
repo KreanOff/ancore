@@ -1,0 +1,32 @@
+<div class="tasks-modal tasks-form-modal{% if invitation_modal_open %} is-open{% endif %}" id="workspace-invitation-modal" role="dialog" aria-modal="true" aria-labelledby="workspace-invitation-title" aria-describedby="workspace-invitation-description" aria-hidden="{{ invitation_modal_open|yesno:'false,true' }}" data-team-modal data-invitation-response-modal>
+    <div class="tasks-modal__dialog">
+        <form method="post" action="{% url 'workplaces:invitation-response' response_invitation.pk %}" class="tasks-modal__form" data-team-response-form>
+            {% csrf_token %}
+            <header class="tasks-modal__header">
+                <h2 id="workspace-invitation-title">Zaproszenie do Workspace</h2>
+                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button>
+            </header>
+            <div class="tasks-modal__body">
+                <dl class="workplace-invitation__details">
+                    <dt>Workspace</dt><dd>{{ response_invitation.workplace.name }}</dd>
+                    <dt>Zaprasza</dt><dd>{{ response_invitation.invited_by.get_full_name|default:response_invitation.invited_by.username|default:'System' }}</dd>
+                    <dt>Twoja rola</dt><dd>{{ response_invitation.get_role_display }}</dd>
+                    <dt>Ważne do</dt><dd>{{ response_invitation.expires_at|date:'d.m.Y' }}</dd>
+                </dl>
+                <p id="workspace-invitation-description" class="workplace-team__hint">Po przyjęciu uzyskasz dostęp do danych zespołu w tym Workspace.</p>
+                {% if pending_invitations|length > 1 %}
+                <nav class="tasks-project-pagination__pages" aria-label="Przeglądanie zaproszeń">
+                    {% if previous_invitation %}<a class="tasks-project-pagination__button" href="{% url 'workplaces:workplaces' %}?invitation={{ previous_invitation.pk }}" aria-label="Poprzednie zaproszenie"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% else %}<button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie zaproszenie" disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>{% endif %}
+                    <span>{{ invitation_position }} z {{ pending_invitations|length }}</span>
+                    {% if next_invitation %}<a class="tasks-project-pagination__button" href="{% url 'workplaces:workplaces' %}?invitation={{ next_invitation.pk }}" aria-label="Następne zaproszenie"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% else %}<button type="button" class="tasks-project-pagination__button" aria-label="Następne zaproszenie" disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>{% endif %}
+                </nav>
+                {% endif %}
+            </div>
+            <footer class="tasks-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Później</button>
+                <button type="submit" class="btn btn-secondary" name="action" value="decline">Odrzuć</button>
+                <button type="submit" class="tasks-modal__submit" name="action" value="accept">Przyjmij</button>
+            </footer>
+        </form>
+    </div>
+</div>

@@ -11,6 +11,8 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST, require_http_methods
 
+from workplaces.services import workspace_owner
+
 from . import editor_views
 from .editor_forms import OfficeTemplateForm, validate_document
 from .location_lock import location_write
@@ -22,7 +24,7 @@ from .models import WorkspaceDocument
 @location_write
 def from_template(request):
     form = OfficeTemplateForm(request.POST if request.method == 'POST' else None,
-                              owner=request.user, workplace=request.workplace,
+                              owner=workspace_owner(request), workplace=request.workplace,
                               initial={'template': request.GET.get('template')})
     if request.method == 'POST' and form.is_valid():
         saved = None
@@ -34,7 +36,7 @@ def from_template(request):
                 validate_document(SimpleUploadedFile(source.filename, content))
                 title = form.cleaned_data['title']
                 extension = source.extension.lower()
-                item = WorkspaceDocument(owner=request.user, workplace=request.workplace, kind=WorkspaceDocument.Kind.FILE,
+                item = WorkspaceDocument(owner=workspace_owner(request), workplace=request.workplace, kind=WorkspaceDocument.Kind.FILE,
                                          title=title, filename=title if title.lower().endswith('.' + extension) else title + '.' + extension,
                                          file_size=len(content), is_pdf_form=source.is_pdf_form)
                 item.file.save(item.filename, ContentFile(content), save=False)

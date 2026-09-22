@@ -3,6 +3,8 @@ from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils.text import slugify
+from django.utils import timezone
+from datetime import timedelta
 
 
 POLISH_CODE_TRANSLATION = str.maketrans({
@@ -15,7 +17,7 @@ class Workplace(models.Model):
     name = models.CharField(max_length=140)
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
-    slug = models.SlugField(max_length=160, blank=True)
+    slug = models.SlugField(max_length=160, blank=True, unique=True)
     workplace_photo = models.FileField(
         blank=True,
         upload_to='workplace_photos/',
@@ -53,13 +55,13 @@ class Workplace(models.Model):
         base_slug = self._base_slug()
         candidate = base_slug
         counter = 2
-        queryset = Workplace.objects.filter(owner=self.owner, slug=candidate)
+        queryset = Workplace.objects.filter(slug=candidate)
         if self.pk:
             queryset = queryset.exclude(pk=self.pk)
         while queryset.exists():
             suffix = f'-{counter}'
             candidate = f'{base_slug[:160 - len(suffix)]}{suffix}'
-            queryset = Workplace.objects.filter(owner=self.owner, slug=candidate)
+            queryset = Workplace.objects.filter(slug=candidate)
             if self.pk:
                 queryset = queryset.exclude(pk=self.pk)
             counter += 1
@@ -121,6 +123,7 @@ class WorkplaceMembership(models.Model):
     workplace = models.ForeignKey(Workplace, on_delete=models.CASCADE, related_name='memberships')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workplace_memberships')
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -131,6 +134,32 @@ class WorkplaceMembership(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.workplace}'
+
+
+def invitation_expiry():
+    return timezone.now() + timedelta(days=7)
+
+
+class WorkplaceInvitation(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Oczekuje'
+        ACCEPTED = 'accepted', 'Przyjęte'
+        DECLINED = 'declined', 'Odrzucone'
+        REVOKED = 'revoked', 'Anulowane'
+
+    workplace = models.ForeignKey(Workplace, on_delete=models.CASCADE, related_name='invitations')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workplace_invitations')
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_workplace_invitations')
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek')], default='member')
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=invitation_expiry)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['workplace', 'recipient'], condition=Q(status='pending'), name='unique_pending_workplace_invite'),
+        ]
+        ordering = ['-created_at', '-pk']
 
 
 class SidebarFavorite(models.Model):

@@ -59,7 +59,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260921-dropdown-search">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260922-notification-center">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -147,8 +147,10 @@
                 <a href="{{ sidebar_dashboard_url }}" class="sidebar-view-switcher__item{% if request.resolver_match.url_name != 'notifications' %} is-active{% endif %}" aria-label="Widok domyślny"{% if request.resolver_match.url_name != 'notifications' %} aria-current="page"{% endif %} title="Widok domyślny" data-sidebar-default-view>
                     <i data-icon="house" aria-hidden="true"></i>
                 </a>
-                <a href="{{ sidebar_notifications_url }}" class="sidebar-view-switcher__item{% if request.resolver_match.url_name == 'notifications' %} is-active{% endif %}" aria-label="Powiadomienia"{% if request.resolver_match.url_name == 'notifications' %} aria-current="page"{% endif %} aria-controls="notifications-panel" aria-expanded="false" title="Powiadomienia" data-notifications-toggle>
+                <a href="{{ sidebar_notifications_url }}" class="sidebar-view-switcher__item{% if request.resolver_match.url_name == 'notifications' %} is-active{% endif %}" aria-label="Powiadomienia"{% if request.resolver_match.url_name == 'notifications' %} aria-current="page"{% endif %} aria-controls="notifications-panel" aria-expanded="false" aria-describedby="notifications-invitation-status" title="Powiadomienia" data-notifications-toggle>
                     <i data-icon="bell" aria-hidden="true"></i>
+                    <span class="notifications-toggle__indicator" data-notifications-pending aria-hidden="true"{% if not pending_workspace_invitation_count %} hidden{% endif %}></span>
+                    <span id="notifications-invitation-status" class="u-sr-only" data-notifications-invitation-status>{% if pending_workspace_invitation_count %}Oczekujące zaproszenia do Workspace: {{ pending_workspace_invitation_count }}.{% endif %}</span>
                 </a>
                 <button type="button" class="sidebar-view-switcher__item sidebar-view-switcher__item--search" aria-label="Wyszukaj w Ancore" title="Wyszukaj w Ancore" aria-controls="global-search-panel" aria-expanded="false" data-global-search-toggle>
                     <i data-icon="search" aria-hidden="true"></i>
@@ -313,22 +315,26 @@
         <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-global-search-status></span>
     </aside>
     <div class="global-search-backdrop notifications-panel-backdrop" data-notifications-backdrop hidden></div>
-    <aside class="global-search-panel notifications-panel" id="notifications-panel" role="dialog" aria-modal="true" aria-labelledby="notifications-panel-title" aria-describedby="notifications-panel-description" data-notifications-panel data-notifications-url="{{ sidebar_notifications_url }}" hidden>
+    <aside class="global-search-panel notifications-panel" id="notifications-panel" role="dialog" aria-modal="true" aria-labelledby="notifications-panel-title" aria-describedby="notifications-panel-description" data-notifications-panel data-notifications-center data-notifications-url="{{ sidebar_notifications_url }}" data-notifications-action-url="{% url 'notification_action' %}" hidden>
         <header class="global-search-panel__header">
             <div class="global-search-panel__heading">
                 <span class="global-search-panel__mark" aria-hidden="true"><i data-icon="bell"></i></span>
                 <div>
                     <h2 id="notifications-panel-title">Powiadomienia</h2>
-                    <p id="notifications-panel-description">Ostatnia aktywność w Twojej przestrzeni.</p>
+                    <p id="notifications-panel-description">Twój zespół, zadania i ważne zmiany.</p>
                 </div>
-                <span class="dashboard-rail-badge notifications-panel__count" aria-label="Liczba powiadomień" data-notifications-count hidden>0</span>
+                <span class="dashboard-rail-badge notifications-panel__count" aria-label="Nieprzeczytane" data-notifications-count hidden>0</span>
             </div>
             <button type="button" class="global-search-panel__close" aria-label="Zamknij powiadomienia" title="Zamknij powiadomienia" data-notifications-close>
                 <i data-icon="x" aria-hidden="true"></i>
             </button>
         </header>
+        {% include 'dashboard/includes/notification_controls.html' with notification_filters=None unread_count=0 filtered_unread_count=0 %}
         <div class="notifications-panel__content" data-notifications-content tabindex="-1"></div>
+        {% include 'dashboard/includes/notification_pagination.html' with next_cursor='' %}
+        <footer class="notifications-panel__footer"><span>Aktywność z Twoich Workspace</span><a href="{{ sidebar_notifications_url }}">Otwórz pełny widok <i data-icon="arrow-up-right" aria-hidden="true"></i></a></footer>
         <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-notifications-status></span>
+        <div hidden>{% csrf_token %}</div>
     </aside>
     {% endblock %}
     <main class="main-content">
@@ -381,9 +387,10 @@
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/layout.js' %}?v=20260919-office-tabs"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260919-office-tabs"></script>
-    <script src="{% static 'js/notifications-panel.js' %}?v=20260918-flaticon-v1"></script>
+    <script src="{% static 'js/notifications-panel.js' %}?v=20260922-notification-center"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260918-flaticon-v1"></script>
+    <script src="{% static 'js/row-actions.js' %}?v=20260922-shared-row-actions"></script>
     <script src="{% static 'js/modal.js' %}?v=20260921-unified-dialogs"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20260921-dropdown-search"></script>
     <script src="{% static 'js/tasks.js' %}?v=20260921-dropdown-app"></script>

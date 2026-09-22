@@ -210,3 +210,11 @@ pełna edycja wymaga uruchomionego ONLYOFFICE. Tablica działa niezależnie.
 - [ONLYOFFICE — podpisy żądań](https://api.onlyoffice.com/docs/docs-api/additional-api/signature/request/token-in-header/)
 - [ONLYOFFICE — callback zapisu](https://api.onlyoffice.com/docs/docs-api/usage-api/callback-handler/)
 - [Excalidraw — instalacja i lokalne fonty](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/installation)
+
+## Dostęp zespołu
+
+Członkowie Workspace korzystają z tych samych prywatnych katalogów co właściciel.
+Zapisy zachowują właściciela Workspace; tożsamość w edytorze odpowiada zalogowanej
+osobie. Podpisy źródła i callbacku ponownie sprawdzają jej członkostwo.
+Odebranie dostępu unieważnia klucze otwartych sesji Office w całym Workspace,
+więc pozostali członkowie ponownie otwierają pliki. Szczegóły: [TEAMWORK.md](TEAMWORK.md).

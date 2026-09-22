@@ -7,5 +7,6 @@ urlpatterns = [
     path('settings/', views.settings, name='settings'),
     path('settings/project-fields/', project_field_settings, name='project_field_settings'),
     path('notifications/', views.notifications, name='notifications'),
+    path('notifications/action/', views.notification_action, name='notification_action'),
     path('', views.home, name='home'),
 ]

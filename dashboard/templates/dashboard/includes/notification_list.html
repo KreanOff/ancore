@@ -1,27 +1,41 @@
-<div class="dashboard-notifications-list" role="list">
+<div class="dashboard-notifications-list" role="list" data-notification-list>
     {% for notification in dashboard_notifications %}
-    <a href="{{ notification.url }}" class="dashboard-notification dashboard-notification--{{ notification.source }}" role="listitem" data-notification-item>
+    {% ifchanged notification.group_label %}<div class="notifications-group-label" role="presentation">{{ notification.group_label }}</div>{% endifchanged %}
+    <article class="notification-card{% if not notification.is_read %} is-unread{% endif %}{% if notification.source == 'workplace' %} notification-card--invitation{% endif %}" role="listitem" data-notification-item data-notification-key="{{ notification.key }}">
         {% include 'accounts/includes/user_avatar.html' with avatar=notification.actor_avatar avatar_class='dashboard-notification-avatar' only %}
-        <span class="dashboard-notification-body">
-            <span class="dashboard-notification-line">
-                <strong>{{ notification.actor_label }}</strong>
-                <span>{{ notification.action_message }}</span>
-            </span>
-            {% for detail in notification.detail_lines %}
-            <span class="dashboard-notification-note">
-                {{ detail.label }}:
-                {% if detail.from_label %}<strong>{{ detail.from_label }}</strong> &rarr; {% endif %}<strong>{% if detail.to_label %}{{ detail.to_label }}{% else %}{{ detail.value }}{% endif %}</strong>
-            </span>
+        <div class="notification-card__body">
+            <div class="notification-card__meta">
+                <span>{{ notification.event_label }}</span>
+                <time datetime="{{ notification.created_at|date:'c' }}" title="{{ notification.full_date }}">{{ notification.created_at|date:'H:i' }}</time>
+                {% if not notification.is_read %}<span class="notification-card__dot" title="Nieprzeczytane"><span class="u-sr-only">Nieprzeczytane</span></span>{% endif %}
+            </div>
+            <a href="{{ notification.url }}" class="notification-card__link" data-notification-open>
+                <span class="notification-card__actor">{{ notification.actor_label }} {{ notification.action_message }}</span>
+                <span class="notification-card__title">{{ notification.title }}</span>
+            </a>
+            {% for detail in notification.detail_lines|slice:':3' %}
+            <div class="notification-card__detail{% if detail.label == 'Komentarz' %} notification-card__detail--comment{% endif %}">
+                {% if detail.label != 'Komentarz' %}{{ detail.label }}: {% endif %}
+                {% if detail.from_label %}{{ detail.from_label }} &rarr; {% endif %}{% if detail.to_label %}{{ detail.to_label|truncatechars:240 }}{% else %}{{ detail.value|truncatechars:240 }}{% endif %}
+            </div>
             {% endfor %}
-            <span class="dashboard-notification-location">Gdzie: <strong>{{ notification.location_label }}</strong></span>
-            <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"d.m, H:i" }}</time>
-        </span>
-    </a>
+            <div class="notification-card__footer">
+                <span class="notification-card__location" title="{{ notification.location_label }}">{{ notification.workplace_label }}{% if notification.source != 'workplace' %} · {{ notification.source_label }} · #{{ notification.object_id }}{% endif %}</span>
+                <div class="notification-card__actions">
+                    <button type="button" class="tasks-icon-button" data-notification-action="{% if notification.is_read %}unread{% else %}read{% endif %}" aria-label="{% if notification.is_read %}Oznacz jako nieprzeczytane{% else %}Oznacz jako przeczytane{% endif %}: {{ notification.title }}" title="{% if notification.is_read %}Oznacz jako nieprzeczytane{% else %}Oznacz jako przeczytane{% endif %}"><i data-icon="{% if notification.is_read %}mail{% else %}check{% endif %}" aria-hidden="true"></i></button>
+                    {% if notification.source != 'workplace' %}<button type="button" class="tasks-icon-button" data-notification-action="{% if notification.is_archived %}restore{% else %}archive{% endif %}" aria-label="{% if notification.is_archived %}Przywróć z archiwum{% else %}Archiwizuj{% endif %}: {{ notification.title }}" title="{% if notification.is_archived %}Przywróć z archiwum{% else %}Archiwizuj{% endif %}"><i data-icon="{% if notification.is_archived %}rotate-ccw{% else %}archive{% endif %}" aria-hidden="true"></i></button>{% endif %}
+                </div>
+            </div>
+            {% if notification.action_label %}<a href="{{ notification.url }}" class="btn btn-primary btn-sm notification-card__decision" data-notification-open>{{ notification.action_label }}<i data-icon="arrow-right" aria-hidden="true"></i></a>{% endif %}
+        </div>
+    </article>
     {% empty %}
     <div class="global-search-state notifications-panel__empty">
-        <span class="global-search-state__icon" aria-hidden="true"><i data-icon="bell-off"></i></span>
-        <h3>Brak nowych powiadomień.</h3>
-        <p>Gdy pojawi się nowa aktywność, zobaczysz ją w tym miejscu.</p>
+        <span class="global-search-state__icon" aria-hidden="true"><i data-icon="{% if notification_filters.view == 'archived' %}archive{% else %}bell-off{% endif %}"></i></span>
+        {% if notification_filters.view == 'unread' %}<h3>Wszystko przeczytane</h3><p>Jesteś na bieżąco. Nowe powiadomienia pojawią się tutaj.</p>
+        {% elif notification_filters.view == 'invitations' %}<h3>Brak oczekujących zaproszeń</h3><p>Tutaj znajdziesz zaproszenia do zespołów, które czekają na Twoją decyzję.</p>
+        {% elif notification_filters.view == 'archived' %}<h3>Archiwum jest puste</h3><p>Zarchiwizowane powiadomienia możesz w każdej chwili przywrócić.</p>
+        {% else %}<h3>Brak nowych powiadomień.</h3><p>Zaproszenia, komentarze i zmiany w zadaniach pojawią się w tym miejscu.</p>{% endif %}
     </div>
     {% endfor %}
 </div>

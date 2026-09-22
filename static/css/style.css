@@ -12,7 +12,7 @@
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20260921-dropdown-app';
+@import 'components/tasks.css?v=20260922-group-toolbar';
 @import 'components/contacts.css?v=20260906-row-highlight-v2';
 @import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
@@ -27,7 +27,7 @@
 @import 'components/modal-system.css?v=20260921-plain-fields';
 @import 'components/dropdown-layer.css?v=20260921-dropdown-search';
 @import 'components/global-search.css?v=20260903-global-search-panel-parity-v1';
-@import 'components/notifications-panel.css?v=20260903-notifications-panel-divider-v1';
+@import 'components/notifications-panel.css?v=20260922-notification-center';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
 body :where(

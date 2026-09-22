@@ -127,7 +127,7 @@ class LibraryPhotoTests(TestCase):
         self.assertEqual(response['Cache-Control'], 'private, no-store')
         self.assertEqual(response['X-Content-Type-Options'], 'nosniff')
 
-    def test_photo_and_changes_require_owner_and_active_workspace(self):
+    def test_photo_and_metadata_require_membership_and_active_workspace(self):
         self.save_legacy_photo()
         original = self.library.photo.name
         self.assertEqual(Client().get(self.photo_url).status_code, 302)
@@ -136,8 +136,10 @@ class LibraryPhotoTests(TestCase):
         self.assertEqual(response.status_code, 404)
         WorkplaceMembership.objects.create(workplace=self.workspace, user=self.other, role=WorkplaceMembership.Role.ADMIN)
         self.client.force_login(self.other)
-        self.assertRedirects(self.client.get(self.photo_url), '/workplaces/', fetch_redirect_response=False)
-        self.assertEqual(self.client.get(f'/documents/libraries/{self.library.pk}/photo/', follow=True).status_code, 404)
+        for url in (self.photo_url, f'/documents/libraries/{self.library.pk}/photo/'):
+            response = self.client.get(url, follow=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(b''.join(response.streaming_content))
         self.assertEqual(self.client.post(self.edit_url, {'name': self.library.name, 'photo_crop': CROP}).status_code, 302)
         self.library.refresh_from_db()
         self.assertEqual(self.library.photo.name, original)

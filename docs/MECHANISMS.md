@@ -36,7 +36,7 @@ osobnego workera obecności.
 Źródło: [workplaces/services.py](../workplaces/services.py).
 
 1. Middleware sprawdza, czy adres zawiera `/workplaces/<slug>/<app>/`.
-2. Wyszukuje Workspace w zbiorze należącym do bieżącego użytkownika.
+2. Wyszukuje Workspace w zbiorze właściciela i członkostw bieżącego użytkownika.
 3. Ustawia sesję oraz `request.workplace`, albo wraca do wyboru Workspace.
 4. Dla zwykłych adresów korzysta z sesji; jeśli potrzeba, wybiera/tworzy domyślny.
 5. Wybrane modele ze starym `workplace=NULL` mogą zostać przypisane do aktywnego
@@ -45,7 +45,9 @@ osobnego workera obecności.
 Backfill obejmuje stare projekty, zadania, tagi, karty, firmy, kontakty,
 powiązania kontaktów i wydarzenia. Nie jest ogólną migracją wszystkich modeli.
 
-Typowy filtr jest dwuczęściowy: właściciel rekordu **i** Workspace.
+Typowy filtr jest dwuczęściowy: właściciel Workspace **i** Workspace.
+`workspace_owner(request)` sprawdza członkostwo i wyznacza właściciela danych,
+a `request.user` zachowuje tożsamość autora. Pełne zasady: [Praca zespołowa](TEAMWORK.md).
 Dla grupy/tablicy kontekst wynika z projektu, dla kolumny z tablicy.
 Formularz musi ograniczać także listy wyboru relacji, aby POST nie przypinał
 obiektu innego użytkownika/Workspace.
@@ -77,8 +79,9 @@ użyteczności danego ekranu, a nie przypadkowym dodatkiem URL.
 ## 4. Dostęp i historyczne udostępnianie
 
 Aktywne zapytania Tasks/Kanban/Contacts/Planner/Documents ograniczają rekordy
-do właściciela i odpowiedniego kontekstu. W Tasks helpery uprawnień zwracają
-`owner` dla właściciela i pustą wartość dla innych kont.
+do właściciela Workspace i odpowiedniego kontekstu. `workspace_owner(request)`
+weryfikuje rzeczywiste członkostwo przed przekazaniem właściciela danych do
+istniejących helperów Tasks/Kanban. Komentarze i historia zachowują rzeczywistego autora.
 
 W `tasks/views/tasks.py` są starsze funkcje udostępniania i linków, ale:
 
@@ -88,7 +91,8 @@ W `tasks/views/tasks.py` są starsze funkcje udostępniania i linków, ale:
 - aktywny `tasks/urls.py` nie rejestruje endpointów tworzenia/akceptacji linków.
 
 Samo istnienie `SharedItem`, `SharedItemLink`, `CompanyMembership`,
-`WorkplaceMembership`, `assignee` czy `responsible_user` nie daje dostępu.
+`assignee` czy `responsible_user` nie daje dostępu. Aktywne członkostwo
+`WorkplaceMembership` nadaje dostęp do całego Workspace zgodnie z [TEAMWORK.md](TEAMWORK.md).
 Przy zmianie uprawnień trzeba świadomie przeanalizować całą ścieżkę,
 łącznie z formularzami, wyszukiwaniem, plikami i akcjami zbiorczymi.
 
@@ -137,10 +141,9 @@ ustawiając `is_completed` i `completion_date`. Aktywności początkowe powstaj�
 przez `post_save`; zmiany pól i komentarze zapisują także helpery widoków.
 Notatki projektów/grup/tagów mają osobne modele i kontrolę autora przy edycji.
 
-Operacje zbiorcze mają własne ścieżki. Tasks używa zbiorczych aktualizacji
-z jawnym odtworzeniem reguł zakończenia. Nie wszystkie operacje zbiorcze
-zapisują identyczną historię jak pojedynczy zapis. Przy rozszerzaniu tego
-mechanizmu sprawdź zarówno stan danych, jak i spodziewane zdarzenia.
+Zbiorcza zmiana statusu w Tasks i Kanban korzysta z zapisu modelu pod blokadą
+numeracji właściciela i wierszy. Zachowuje datę zakończenia już zamkniętej pozycji,
+a dla każdej faktycznej zmiany dodaje historię z autorem `request.user`.
 
 Kolumna Kanban jest oddzielona od statusu. `_set_task_column()` sprawdza,
 czy kolumna należy do tablicy karty i właściciela, a następnie zapisuje relację.
@@ -358,7 +361,7 @@ tekst jest ograniczany do 120 znaków. Wyszukiwanie obejmuje zadania i ich
 historię, projekty/grupy, karty/tablice/przestrzenie Kanban, tagi, kontakty,
 firmy, wydarzenia, Workspace, miejsca nawigacji oraz dyski/foldery/pliki.
 Zakres konkretnych querysetów uwzględnia właściciela i tam, gdzie przewidziano,
-aktywny Workspace; lista samych Workspace dotyczy przestrzeni właściciela.
+aktywny Workspace; lista Workspace obejmuje własne przestrzenie i członkostwa.
 
 Wybrane grupy porządkują dopasowanie dokładne, początek nazwy i fragment nazwy.
 Wynik zawiera grupy z `title`, `type`, `url`, `icon`, `meta`, `eyebrow`.
@@ -372,16 +375,43 @@ stany pusty/ładowanie/błąd oraz nawigację po wynikach.
 ## 11. Historia a powiadomienia
 
 `TaskActivity`, `KanbanActivity` i `ContactActivity` są historią obiektów.
-Panel powiadomień bierze ostatnie aktywności Tasks i Kanban właściciela,
-scala i sortuje je, zwracając maksymalnie 12. Obecny helper powiadomień
-nie filtruje po `request.workplace`, ponieważ otrzymuje tylko użytkownika.
-Nie opisuj go jako ściśle ograniczonego do bieżącego Workspace.
-Każdy link powiadomienia zawiera Workspace zadania/karty, dzięki czemu
-otwiera właściwy rekord niezależnie od aktualnego Workspace w sesji.
+Centrum powiadomień (`dashboard/notification_service.py`) odczytuje aktywności
+Zadań i Kanbana oraz ważne oczekujące zaproszenia adresowane do zalogowanego
+konta. Nie kopiuje historii i nie tworzy rekordów podczas GET.
+`dashboard.NotificationState` przechowuje jedynie osobisty stan odczytu i archiwum,
+z FK do dokładnie jednego źródła oraz unikalnością użytkownik + źródło.
+Usunięcie źródła usuwa jego stan przez CASCADE.
 
-Panel pobiera dane HTTP przy otwarciu; może otrzymać JSON z liczbą oraz
-fragmentem HTML. Nie jest to push/WebSocket ani system read/unread.
-`notifications.js` obsługuje również osobne krótkie komunikaty z Django Messages.
+Domyślny zakres obejmuje wszystkie dostępne Workspace oraz własne starsze rekordy
+bez Workspace; filtr pozwala wybrać pojedynczą dostępną przestrzeń.
+Każde pobranie i każda akcja ponownie sprawdzają członkostwo oraz właściciela
+rekordu zgodnego z właścicielem Workspace. Sam wpis `NotificationState` nie daje
+dostępu. Zaproszenia korzystają z `pending_invitations_for_user()` i są widoczne
+przed dołączeniem, wyłącznie dla odbiorcy. Zakończone i wygasłe znikają.
+
+Własna aktywność jest domyślnie przeczytana; działania innych osób i zaproszenia
+są nieprzeczytane. Można ręcznie zmienić ten stan. Archiwizacja oznacza wpis jako
+przeczytany i ukrywa go w głównej liście; przywrócenie zachowuje odczyt.
+Oczekujących zaproszeń nie można archiwizować. Ich odczyt nie zastępuje decyzji.
+Link `/workplaces/?invitation=<pk>` otwiera istniejący modal „Przyjmij / Odrzuć”.
+Link zadania/karty określa Workspace, aktualny numer i stabilne `task_pk`.
+
+Lista ma filtry wszystkie / nieprzeczytane / zaproszenia / archiwum, grupy dat
+oraz po 12 wpisów na stronę. Zaproszenia poprzedzają aktywność. Podpisany kursor
+wiąże użytkownika, filtry, czas otwarcia i ostatni wpis; sortowanie rozstrzyga
+remisy dat przez PK i źródło. Nowe wpisy nie przesuwają już doczytywanych stron.
+`POST /notifications/action/` wymaga sesji i CSRF. Akcja zbiorczego odczytu
+obejmuje cały wybrany filtr do podpisanego czasu otwarcia, także dalsze strony;
+nie oznacza nowszych zdarzeń. Tokeny wygasają po 24 godzinach.
+
+Endpoint `?summary=1` zwraca globalny licznik nieprzeczytanych, oczekujących
+zaproszeń i identyfikatory najnowszych dostępnych zdarzeń. Odpowiedzi mają
+`Cache-Control: no-store`. Dzwonek odświeża stan po uruchomieniu, po powrocie
+do karty, po `ancore:content-loaded` i co 30 sekund w widocznej karcie.
+Otwarta lista sygnalizuje zmianę przyciskiem odświeżenia, bez przestawiania
+czytanej treści. Błędy sieci zachowują ostatni licznik; panel udostępnia ponowienie.
+To powiadomienia wewnątrz aplikacji przez HTTP, bez push, e-maila, workera,
+automatycznych przypomnień o terminach i wzmianek.
 
 ## 12. Częściowa nawigacja i cykl życia frontendowej strony
 

@@ -14,6 +14,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
+
+from workplaces.services import workspace_owner
 from core.task_numbering import lock_task_numbers
 from core.task_requests import task_detail_lookup, task_primary_keys
 from core.upload_validation import attachment_download_response, validate_attachment_upload
@@ -579,7 +581,7 @@ def _project_window_for_request(request):
     sort = _project_sort_value((request.GET.get('sort') or '').strip())
     queryset = _project_sort_queryset(
         _project_filter_queryset(
-            request.user,
+            workspace_owner(request),
             query=query,
             priority=priority,
             status=status,
@@ -643,7 +645,7 @@ def _project_window_for_request(request):
         'sort_param': '' if sort == PROJECT_DEFAULT_SORT else sort,
         'sort_label': PROJECT_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[sort]['direction'],
-        'filters': _project_filter_options(request.user, workplace=workplace),
+        'filters': _project_filter_options(workspace_owner(request), workplace=workplace),
         'page': current_page,
         'total_pages': total_pages,
         'total_projects': total_projects,
@@ -681,7 +683,7 @@ def _section_window_for_request(request):
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
-    queryset = _section_filter_queryset(request.user, query=query, workplace=_active_workplace(request))
+    queryset = _section_filter_queryset(workspace_owner(request), query=query, workplace=_active_workplace(request))
     project_filter = (request.GET.get('board_project') or '').strip()
     if project_filter.isdigit():
         queryset = queryset.filter(project_id=int(project_filter))
@@ -728,7 +730,7 @@ def _section_window_for_request(request):
     return {
         'sections': sections,
         'project_filter': project_filter,
-        'project_options': _filter_workplace(KanbanProject.objects.filter(user=request.user), _active_workplace(request)).order_by('name'),
+        'project_options': _filter_workplace(KanbanProject.objects.filter(user=workspace_owner(request)), _active_workplace(request)).order_by('name'),
         'sort': sort,
         'sort_label': 'Tablica Z–A' if sort == 'name_desc' else 'Tablica A–Z',
         'sort_direction': 'desc' if sort == 'name_desc' else 'asc',
@@ -903,7 +905,7 @@ def _tag_window_for_request(request):
     owner = (request.GET.get('owner') or '').strip()
     sort = _tag_sort_value((request.GET.get('sort') or '').strip())
     queryset = _tag_filter_queryset(
-        request.user,
+        workspace_owner(request),
         query=query,
         priority=priority,
         status=status,
@@ -914,7 +916,7 @@ def _tag_window_for_request(request):
     ).annotate(
         total_tasks=Count(
             'kanban_cards',
-            filter=_tag_card_count_filter(request.user, workplace),
+            filter=_tag_card_count_filter(workspace_owner(request), workplace),
             distinct=True,
         )
     )
@@ -972,7 +974,7 @@ def _tag_window_for_request(request):
         'sort_param': '' if sort == TAG_DEFAULT_SORT else sort,
         'sort_label': TAG_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': TAG_SORT_OPTION_MAP[sort]['direction'],
-        'filters': _tag_filter_options(request.user, workplace=workplace),
+        'filters': _tag_filter_options(workspace_owner(request), workplace=workplace),
         'page': current_page,
         'total_pages': total_pages,
         'total_tags': total_tags,
@@ -1180,7 +1182,7 @@ def tasks(request):
 @login_required
 def task_group(request, section_id):
     active_section = get_object_or_404(
-        _filter_workplace(KanbanSection.objects.filter(project__user=request.user), _active_workplace(request), field_name='project__workplace'),
+        _filter_workplace(KanbanSection.objects.filter(project__user=workspace_owner(request)), _active_workplace(request), field_name='project__workplace'),
         id=section_id,
     )
     return _tasks_page(request, active_section=active_section)
@@ -1188,9 +1190,9 @@ def task_group(request, section_id):
 
 def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
-    project_form = KanbanProjectForm(user=request.user, workplace=workplace)
+    project_form = KanbanProjectForm(user=workspace_owner(request), workplace=workplace)
     section_form = KanbanSectionForm()
-    tag_form = KanbanTagForm(user=request.user, workplace=workplace)
+    tag_form = KanbanTagForm(user=workspace_owner(request), workplace=workplace)
     board_column_form = KanbanBoardColumnForm()
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
@@ -1203,11 +1205,11 @@ def _tasks_page(request, active_section=None):
         active_project_id = active_section.project_id
     active_project_for_form = None
     if active_project_id:
-        active_project_for_form = _filter_workplace(KanbanProject.objects.filter(id=active_project_id, user=request.user), workplace).first()
-    task_modal_form = KanbanModalForm(user=request.user, workplace=workplace, project=active_project_for_form, section=active_section)
+        active_project_for_form = _filter_workplace(KanbanProject.objects.filter(id=active_project_id, user=workspace_owner(request)), workplace).first()
+    task_modal_form = KanbanModalForm(user=workspace_owner(request), workplace=workplace, project=active_project_for_form, section=active_section)
     project_modal_open = False
     project_rename_modal_open = False
-    project_rename_form = KanbanProjectRenameForm(user=request.user, workplace=workplace)
+    project_rename_form = KanbanProjectRenameForm(user=workspace_owner(request), workplace=workplace)
     project_rename_project_id = ''
     section_create_modal_open = False
     section_create_project_id = active_project_id or ''
@@ -1235,11 +1237,11 @@ def _tasks_page(request, active_section=None):
             return redirect('kanban:tasks')
 
         if action == 'create_project':
-            project_form = KanbanProjectForm(request.POST, user=request.user, workplace=workplace)
+            project_form = KanbanProjectForm(request.POST, user=workspace_owner(request), workplace=workplace)
             if project_form.is_valid():
                 with transaction.atomic():
                     project = project_form.save(commit=False)
-                    project.user = request.user
+                    project.user = workspace_owner(request)
                     project.workplace = workplace
                     project.save()
                     section_title = project_form.cleaned_data.get('section_title') or 'Nowa Tablica'
@@ -1256,11 +1258,11 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_project':
             project_ids = _posted_ids(request, 'project_ids', 'project_id')
-            projects_to_delete = _filter_workplace(KanbanProject.objects.filter(id__in=project_ids, user=request.user), workplace)
+            projects_to_delete = _filter_workplace(KanbanProject.objects.filter(id__in=project_ids, user=workspace_owner(request)), workplace)
             if not projects_to_delete.exists():
-                get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
+                get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
             project_count = projects_to_delete.count()
-            task_count = _filter_workplace(Kanban.objects.filter(section__project_id__in=project_ids, user=request.user), workplace).count()
+            task_count = _filter_workplace(Kanban.objects.filter(section__project_id__in=project_ids, user=workspace_owner(request)), workplace).count()
             projects_to_delete.delete()
             if project_count == 1:
                 if task_count:
@@ -1272,8 +1274,8 @@ def _tasks_page(request, active_section=None):
             return redirect('kanban:tasks')
 
         if action in ('edit_project', 'rename_project'):
-            project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
-            project_rename_form = KanbanProjectRenameForm(request.POST, instance=project, user=request.user, workplace=workplace)
+            project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
+            project_rename_form = KanbanProjectRenameForm(request.POST, instance=project, user=workspace_owner(request), workplace=workplace)
             if project_rename_form.is_valid():
                 project_rename_form.save()
                 messages.success(request, 'Przestrzeń robocza zaktualizowana.')
@@ -1285,7 +1287,7 @@ def _tasks_page(request, active_section=None):
 
         if action in ('add_project_note', 'update_project_notes'):
             project = get_object_or_404(
-                _filter_workplace(KanbanProject.objects.filter(user=request.user), workplace),
+                _filter_workplace(KanbanProject.objects.filter(user=workspace_owner(request)), workplace),
                 id=request.POST.get('project_id'),
             )
             message = (request.POST.get('message') or request.POST.get('description') or '').strip()
@@ -1315,7 +1317,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'edit_project_note':
             note_queryset = _filter_workplace(
-                KanbanProjectNote.objects.filter(author=request.user, project__user=request.user),
+                KanbanProjectNote.objects.filter(author=request.user, project__user=workspace_owner(request)),
                 workplace,
                 field_name='project__workplace',
             )
@@ -1346,7 +1348,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_project_note':
             note_queryset = _filter_workplace(
-                KanbanProjectNote.objects.filter(author=request.user, project__user=request.user),
+                KanbanProjectNote.objects.filter(author=request.user, project__user=workspace_owner(request)),
                 workplace,
                 field_name='project__workplace',
             )
@@ -1356,7 +1358,7 @@ def _tasks_page(request, active_section=None):
             return redirect(_kanban_next_url(request))
 
         if action == 'create_section':
-            project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace), id=request.POST.get('project_id'))
+            project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
             section_form = KanbanSectionForm(request.POST)
             if section_form.is_valid():
                 section = section_form.save(commit=False)
@@ -1370,14 +1372,14 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się dodać tablicy.')
 
         if action == 'create_tag':
-            tag_form = KanbanTagForm(request.POST, user=request.user, workplace=workplace)
+            tag_form = KanbanTagForm(request.POST, user=workspace_owner(request), workplace=workplace)
             if tag_form.is_valid():
                 tag_name = tag_form.cleaned_data['name']
-                if _filter_workplace(TaskTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exists():
+                if _filter_workplace(TaskTag.objects.filter(user=workspace_owner(request), name__iexact=tag_name), workplace).exists():
                     tag_form.add_error('name', 'Taki tag już istnieje.')
                 else:
                     tag = tag_form.save(commit=False)
-                    tag.user = request.user
+                    tag.user = workspace_owner(request)
                     tag.workplace = workplace
                     tag.save()
                     tag_form.save_m2m()
@@ -1387,11 +1389,11 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się dodać tagu.')
 
         if action == 'edit_tag':
-            tag = get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=request.user), workplace), id=request.POST.get('tag_id'))
-            tag_form = KanbanTagForm(request.POST, instance=tag, user=request.user, workplace=workplace)
+            tag = get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('tag_id'))
+            tag_form = KanbanTagForm(request.POST, instance=tag, user=workspace_owner(request), workplace=workplace)
             if tag_form.is_valid():
                 tag_name = tag_form.cleaned_data['name']
-                if _filter_workplace(TaskTag.objects.filter(user=request.user, name__iexact=tag_name), workplace).exclude(pk=tag.pk).exists():
+                if _filter_workplace(TaskTag.objects.filter(user=workspace_owner(request), name__iexact=tag_name), workplace).exclude(pk=tag.pk).exists():
                     tag_form.add_error('name', 'Taki tag już istnieje.')
                 else:
                     tag_form.save()
@@ -1404,7 +1406,7 @@ def _tasks_page(request, active_section=None):
 
         if action in ('add_tag_note', 'update_tag_notes'):
             tag = get_object_or_404(
-                _filter_workplace(TaskTag.objects.filter(user=request.user), workplace),
+                _filter_workplace(TaskTag.objects.filter(user=workspace_owner(request)), workplace),
                 id=request.POST.get('tag_id'),
             )
             message = (request.POST.get('message') or request.POST.get('description') or '').strip()
@@ -1417,7 +1419,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'edit_tag_note':
             note_queryset = _filter_workplace(
-                TaskTagNote.objects.filter(author=request.user, tag__user=request.user),
+                TaskTagNote.objects.filter(author=request.user, tag__user=workspace_owner(request)),
                 workplace,
                 field_name='tag__workplace',
             )
@@ -1448,7 +1450,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_tag_note':
             note_queryset = _filter_workplace(
-                TaskTagNote.objects.filter(author=request.user, tag__user=request.user),
+                TaskTagNote.objects.filter(author=request.user, tag__user=workspace_owner(request)),
                 workplace,
                 field_name='tag__workplace',
             )
@@ -1459,9 +1461,9 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_tag':
             tag_ids = _posted_ids(request, 'tag_ids', 'tag_id')
-            tags_to_delete = _filter_workplace(TaskTag.objects.filter(id__in=tag_ids, user=request.user), workplace)
+            tags_to_delete = _filter_workplace(TaskTag.objects.filter(id__in=tag_ids, user=workspace_owner(request)), workplace)
             if not tags_to_delete.exists():
-                get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=request.user), workplace), id=request.POST.get('tag_id'))
+                get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('tag_id'))
             tag_count = tags_to_delete.count()
             tags_to_delete.delete()
             if tag_count == 1:
@@ -1487,7 +1489,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'rename_board_column':
             column = get_object_or_404(
-                _filter_workplace(KanbanBoardColumn.objects.filter(section__project__user=request.user), workplace, field_name='section__project__workplace'),
+                _filter_workplace(KanbanBoardColumn.objects.filter(section__project__user=workspace_owner(request)), workplace, field_name='section__project__workplace'),
                 id=request.POST.get('column_id'),
             )
             title = (request.POST.get('title') or '').strip()
@@ -1500,14 +1502,14 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_board_column':
             column = get_object_or_404(
-                _filter_workplace(KanbanBoardColumn.objects.filter(section__project__user=request.user), workplace, field_name='section__project__workplace'),
+                _filter_workplace(KanbanBoardColumn.objects.filter(section__project__user=workspace_owner(request)), workplace, field_name='section__project__workplace'),
                 id=request.POST.get('column_id'),
             )
             section = column.section
             if not KanbanBoardColumn.objects.filter(section=section).exclude(id=column.id).exists():
                 messages.error(request, 'Kanban musi mieć przynajmniej jedną kolumnę.')
                 return current_board_redirect()
-            _filter_workplace(Kanban.objects.filter(user=request.user, section=section, column=column), workplace).delete()
+            _filter_workplace(Kanban.objects.filter(user=workspace_owner(request), section=section, column=column), workplace).delete()
             column.delete()
             for order, remaining_column in enumerate(KanbanBoardColumn.objects.filter(section=section)):
                 if remaining_column.order != order:
@@ -1518,7 +1520,7 @@ def _tasks_page(request, active_section=None):
 
         if action in ('edit_section', 'rename_section'):
             section = get_object_or_404(
-                _filter_workplace(KanbanSection.objects.filter(project__user=request.user), workplace, field_name='project__workplace'),
+                _filter_workplace(KanbanSection.objects.filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
                 id=request.POST.get('section_id'),
             )
             section_rename_form = KanbanSectionRenameForm(request.POST, instance=section)
@@ -1536,11 +1538,11 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_section':
             section = get_object_or_404(
-                _filter_workplace(KanbanSection.objects.filter(project__user=request.user), workplace, field_name='project__workplace'),
+                _filter_workplace(KanbanSection.objects.filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
                 id=request.POST.get('section_id'),
             )
             project_id = section.project_id
-            task_count = _filter_workplace(Kanban.objects.filter(section=section, user=request.user), workplace).count()
+            task_count = _filter_workplace(Kanban.objects.filter(section=section, user=workspace_owner(request)), workplace).count()
             section.delete()
             if task_count:
                 messages.success(request, 'Tablica usunięta. Karty przeniesiono do sekcji „Bez przestrzeni roboczej”.')
@@ -1552,7 +1554,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'create_task':
             section = get_object_or_404(
-                _filter_workplace(KanbanSection.objects.filter(project__user=request.user), workplace, field_name='project__workplace'),
+                _filter_workplace(KanbanSection.objects.filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
                 id=request.POST.get('section_id'),
             )
             form = QuickKanbanForm(request.POST)
@@ -1562,10 +1564,11 @@ def _tasks_page(request, active_section=None):
                     messages.error(request, 'Najpierw dodaj kolumnę, a potem utwórz kartę.')
                     return redirect('kanban:task_group', section_id=section.id)
                 task = form.save(commit=False)
-                task.user = request.user
+                task.user = workspace_owner(request)
                 task.section = section
                 task.column = column
                 task.workplace = workplace
+                task._activity_actor = request.user
                 task.save()
                 messages.success(request, 'Karta dodana.')
                 return redirect('kanban:task_group', section_id=section.id)
@@ -1575,19 +1578,20 @@ def _tasks_page(request, active_section=None):
             project = None
             project_id = request.POST.get('project_id')
             if project_id:
-                project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace), id=project_id)
-            task_modal_form = KanbanModalForm(request.POST, user=request.user, workplace=workplace, project=project, section=active_section)
+                project = get_object_or_404(_filter_workplace(KanbanProject.objects.filter(user=workspace_owner(request)), workplace), id=project_id)
+            task_modal_form = KanbanModalForm(request.POST, user=workspace_owner(request), workplace=workplace, project=project, section=active_section)
             if task_modal_form.is_valid():
                 task = task_modal_form.save(commit=False)
-                task.user = request.user
+                task.user = workspace_owner(request)
                 task.workplace = workplace
                 column = KanbanBoardColumn.objects.filter(
                     id=request.POST.get('column_id'),
                     section=task.section,
-                    section__project__user=request.user,
+                    section__project__user=workspace_owner(request),
                 ).first()
                 if column:
                     task.column = column
+                task._activity_actor = request.user
                 task.save()
                 task_modal_form.save_m2m()
                 task.activities.filter(action='created').update(metadata={'title': task.title})
@@ -1596,7 +1600,7 @@ def _tasks_page(request, active_section=None):
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać karty.')
 
-    tasks_qs = _filter_workplace(Kanban.objects.filter(user=request.user, parent__isnull=True), workplace).select_related('section', 'section__project', 'column').prefetch_related('tags').annotate(
+    tasks_qs = _filter_workplace(Kanban.objects.filter(user=workspace_owner(request), parent__isnull=True), workplace).select_related('section', 'section__project', 'column').prefetch_related('tags').annotate(
         is_closed_sort=Case(
             When(status='closed', then=Value(1)),
             default=Value(0),
@@ -1604,8 +1608,8 @@ def _tasks_page(request, active_section=None):
         )
     ).order_by('is_closed_sort', 'task_id')
 
-    projects = list(_filter_workplace(KanbanProject.objects.filter(user=request.user), workplace).annotate(
-        total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=request.user, sections__tasks__workplace=workplace, sections__tasks__parent__isnull=True))
+    projects = list(_filter_workplace(KanbanProject.objects.filter(user=workspace_owner(request)), workplace).annotate(
+        total_tasks=Count('sections__tasks', filter=Q(sections__tasks__user=workspace_owner(request), sections__tasks__workplace=workplace, sections__tasks__parent__isnull=True))
     ).prefetch_related(
         Prefetch(
             'project_notes',
@@ -1632,15 +1636,15 @@ def _tasks_page(request, active_section=None):
     orphan_tasks = tasks_qs.filter(section__isnull=True)
     orphan_status_groups = _decorate_status_groups(projects, orphan_tasks)
     all_status_groups = _status_groups_for_tasks(list(tasks_qs))
-    all_task_board_columns = _all_task_board_columns(request.user, tasks_qs, workplace=workplace)
+    all_task_board_columns = _all_task_board_columns(workspace_owner(request), tasks_qs, workplace=workplace)
     all_sections = _sections_for_projects(projects)
-    total_tag_count = _filter_workplace(TaskTag.objects.filter(user=request.user), workplace).count()
+    total_tag_count = _filter_workplace(TaskTag.objects.filter(user=workspace_owner(request)), workplace).count()
     if active_section:
         can_create_issue = True
     elif active_project:
         can_create_issue = active_project.sections.exists()
     else:
-        can_create_issue = _filter_workplace(KanbanSection.objects.filter(project__user=request.user), workplace, field_name='project__workplace').exists()
+        can_create_issue = _filter_workplace(KanbanSection.objects.filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace').exists()
 
     if active_section:
         active_view = 'section'
@@ -1780,7 +1784,7 @@ def _tasks_page(request, active_section=None):
         'section_form': section_form,
         'tag_form': tag_form,
         'board_column_form': board_column_form,
-        'status_filter_options': _status_filter_options_for_user(request.user),
+        'status_filter_options': _status_filter_options_for_user(workspace_owner(request)),
         'section_create_modal_open': section_create_modal_open,
         'section_create_project_id': section_create_project_id,
         'section_rename_form': section_rename_form,
@@ -1802,7 +1806,7 @@ def _tasks_page(request, active_section=None):
 @require_POST
 def reorder_board_columns(request, section_id):
     section = get_object_or_404(
-        _filter_workplace(KanbanSection.objects.filter(project__user=request.user), _active_workplace(request), field_name='project__workplace'),
+        _filter_workplace(KanbanSection.objects.filter(project__user=workspace_owner(request)), _active_workplace(request), field_name='project__workplace'),
         id=section_id,
     )
 
@@ -1843,21 +1847,21 @@ def update_task_status(request, task_id):
         workplace = _active_workplace(request)
         data = json.loads(request.body)
         task_pk = task_primary_keys(data)[0]
-        task = _filter_workplace(Kanban.objects.filter(user=request.user), workplace).get(pk=task_pk)
+        task = _filter_workplace(Kanban.objects.filter(user=workspace_owner(request)), workplace).get(pk=task_pk)
         status = data.get('status')
         column_id = data.get('column_id')
         previous_status = task.status
-        status_labels = _status_labels_for_user(request.user)
+        status_labels = _status_labels_for_user(workspace_owner(request))
 
         if column_id:
-            if not _set_task_column(task, column_id, request.user):
+            if not _set_task_column(task, column_id, workspace_owner(request)):
                 return JsonResponse({'status': 'error', 'message': 'Nieprawidłowa kolumna'}, status=400)
         elif status:
-            if not _set_task_status(task, status, request.user):
+            if not _set_task_status(task, status, workspace_owner(request)):
                 return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
         else:
             is_completed = data.get('is_completed', False)
-            _set_task_status(task, 'closed' if is_completed else 'reopened', request.user)
+            _set_task_status(task, 'closed' if is_completed else 'reopened', workspace_owner(request))
 
         if previous_status != task.status:
             _record_task_activity(
@@ -1892,8 +1896,8 @@ def update_task_status(request, task_id):
 def delete_task(request, task_id):
     try:
         task_pk = task_primary_keys(json.loads(request.body))[0]
-        with lock_task_numbers(request.user.pk):
-            task = _filter_workplace(Kanban.objects.filter(user=request.user), _active_workplace(request)).get(pk=task_pk)
+        with lock_task_numbers(workspace_owner(request).pk):
+            task = _filter_workplace(Kanban.objects.filter(user=workspace_owner(request)), _active_workplace(request)).get(pk=task_pk)
             task.delete()
         return JsonResponse({'status': 'success', 'message': 'Karta usunięta pomyślnie'})
     except Kanban.DoesNotExist:
@@ -1906,7 +1910,7 @@ def delete_task(request, task_id):
 def delete_attachment(request, attachment_id):
     try:
         attachment = get_object_or_404(
-            _filter_workplace(KanbanAttachment.objects.filter(task__user=request.user), _active_workplace(request), field_name='task__workplace'),
+            _filter_workplace(KanbanAttachment.objects.filter(task__user=workspace_owner(request)), _active_workplace(request), field_name='task__workplace'),
             id=attachment_id,
         )
         attachment.delete()
@@ -1922,7 +1926,7 @@ def download_attachment(request, attachment_id):
             KanbanAttachment.objects.select_related('task'),
             _active_workplace(request),
             field_name='task__workplace',
-        ).filter(task__user=request.user),
+        ).filter(task__user=workspace_owner(request)),
         id=attachment_id,
     )
     return attachment_download_response(attachment)
@@ -1935,7 +1939,7 @@ def delete_tasks(request):
         data = json.loads(request.body)
         task_pks = task_primary_keys(data, many=True)
 
-        user = request.user
+        user = workspace_owner(request)
         workplace = _active_workplace(request)
         with lock_task_numbers(user.pk):
             deleted_count = _filter_workplace(Kanban.objects.filter(pk__in=task_pks, user=user), workplace).delete()[0]
@@ -1960,16 +1964,25 @@ def bulk_update_status(request):
         task_pks = task_primary_keys(data, many=True)
         status = data.get('status', 'closed')
         
-        user = request.user
+        user = workspace_owner(request)
         workplace = _active_workplace(request)
         if status not in _valid_statuses_for_user(user):
             return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
         
         tasks_to_update = _filter_workplace(Kanban.objects.filter(pk__in=task_pks, user=user), workplace)
         updated_count = 0
-        for task in tasks_to_update:
-            _set_task_status(task, status, user)
-            updated_count += 1
+        with lock_task_numbers(user.pk):
+            for task in tasks_to_update.select_for_update():
+                previous_status = task.status
+                _set_task_status(task, status, user)
+                updated_count += 1
+                if previous_status != status:
+                    labels = dict(Kanban.STATUS_CHOICES)
+                    _record_task_activity(task, request.user, 'status_changed', 'zmienił status', metadata={
+                        'from_label': labels.get(previous_status, previous_status),
+                        'to_label': labels[status],
+                        'changes': [{'field': 'status', 'from_label': labels.get(previous_status, previous_status), 'to_label': labels[status]}],
+                    })
         
         return JsonResponse({
             'status': 'success', 
@@ -1995,25 +2008,26 @@ def _task_detail_response(request, task_id):
                 queryset=KanbanActivity.objects.select_related('actor').order_by('created_at', 'id'),
             ),
         ),
-        user=request.user,
+        user=workspace_owner(request),
         **task_detail_lookup(request, task_id),
     )
     subtask_status_groups = _status_groups_for_tasks(list(task.subtasks.all()))
     can_add_attachments = not task.parent_id
-    form = KanbanForm(instance=task, user=request.user, workplace=workplace)
-    task_modal_form = SubKanbanModalForm(user=request.user)
+    form = KanbanForm(instance=task, user=workspace_owner(request), workplace=workplace)
+    task_modal_form = SubKanbanModalForm(user=workspace_owner(request))
     task_modal_open = False
 
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'create_subtask_modal':
-            task_modal_form = SubKanbanModalForm(request.POST, user=request.user)
+            task_modal_form = SubKanbanModalForm(request.POST, user=workspace_owner(request))
             if task_modal_form.is_valid():
                 subtask = task_modal_form.save(commit=False)
-                subtask.user = request.user
+                subtask.user = workspace_owner(request)
                 subtask.parent = task
                 subtask.section = task.section
                 subtask.workplace = workplace
+                subtask._activity_actor = request.user
                 subtask.save()
                 _record_task_activity(
                     task,
@@ -2068,7 +2082,7 @@ def _task_detail_response(request, task_id):
             files = request.FILES.getlist('attachments') if can_add_attachments else []
             file_errors = _attachment_validation_errors(files)
             before = _task_activity_snapshot(task)
-            form = KanbanForm(request.POST, request.FILES, instance=task, user=request.user, workplace=workplace)
+            form = KanbanForm(request.POST, request.FILES, instance=task, user=workspace_owner(request), workplace=workplace)
             if form.is_valid() and not file_errors:
                 form.save()
 
@@ -2123,7 +2137,7 @@ def _task_detail_response(request, task_id):
                     for error in errors:
                         messages.error(request, f"{field}: {error}")
     else:
-        form = KanbanForm(instance=task, user=request.user, workplace=workplace)
+        form = KanbanForm(instance=task, user=workspace_owner(request), workplace=workplace)
 
     context = {
         'form': form,
@@ -2134,7 +2148,7 @@ def _task_detail_response(request, task_id):
         'activity_items': task.activities.order_by('-created_at', '-id'),
         'subtask_status_groups': subtask_status_groups,
         **_tasks_navigation_context(
-            request.user,
+            workspace_owner(request),
             active_section=task.section,
             active_view='section' if task.section_id else 'all_tasks',
             workplace=workplace,

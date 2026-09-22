@@ -293,3 +293,25 @@ adresów historii/pobierania/przywracania, zapis bez nowych archiwów, cleanup
 po commit, zachowanie dawnych archiwów, błędy storage i rollback zapisu.
 Testy `test_suite`, `test_drive_office` i `test_office` nadal sprawdzają
 rewizje, konflikty, CSRF, granice dostępu oraz unieważnianie sesji edytora.
+
+## Wdrożenie pracy zespołowej
+
+Przed uruchomieniem nowego ekranu zespołu zastosuj migrację Workspace 0008.
+Sprawdź zduplikowane slugi: migracja rozróżnia adresy przestrzeni różnych właścicieli.
+Szczegóły zakresu, przechowywania danych i testów: [TEAMWORK.md](TEAMWORK.md).
+
+## Centrum powiadomień
+
+Przed uruchomieniem zastosuj addytywną migrację `dashboard/0001_initial.py`.
+Dodaje osobisty stan odczytu i archiwum bez kopiowania lub zmiany historii.
+Nie wymaga nowych zależności ani workera. Migracja zależy od Workspace 0008,
+Tasks 0047 i Kanban 0034. Testy historycznych migracji wycofują również
+Dashboard, aby stan modeli odpowiadał schematowi sprzed tych zależności.
+
+Zakres sprawdzeń: `manage.py test dashboard workplaces.test_team
+core.test_task_integrity core.test_task_number_migrations`.
+`dashboard.test_notifications` obejmuje odczyt, archiwizację, idempotencję,
+izolację kont i Workspace, cofnięcie członkostwa, CSRF, zaproszenia, stabilną
+paginację, podpisane snapshoty zbiorczego odczytu, nowe zdarzenia, escapowanie
+HTML, CASCADE i ograniczenia bazy. Przeglądarka powinna sprawdzić panel i pełny
+widok, telefon, klawiaturę, pusty stan, błąd/ponowienie i częściową nawigację.

@@ -1,0 +1,4 @@
+<div class="notifications-pagination" data-notification-pagination{% if not next_cursor %} hidden{% endif %}>
+    <button type="button" class="btn btn-secondary btn-sm" data-notification-more>Pokaż starsze</button>
+    <span data-notification-progress>{{ dashboard_notifications|length }} z {{ dashboard_notification_count }}</span>
+</div>

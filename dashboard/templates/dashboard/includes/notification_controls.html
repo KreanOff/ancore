@@ -1,0 +1,18 @@
+<div class="notifications-controls">
+    <div class="notifications-tabs" role="group" aria-label="Filtr powiadomień">
+        <button type="button" data-notification-filter="all" aria-pressed="{% if not notification_filters.view or notification_filters.view == 'all' %}true{% else %}false{% endif %}">Wszystkie</button>
+        <button type="button" data-notification-filter="unread" aria-pressed="{% if notification_filters.view == 'unread' %}true{% else %}false{% endif %}">Nieprzeczytane <span data-notifications-unread-count>{{ unread_count|default:0 }}</span></button>
+        <button type="button" data-notification-filter="invitations" aria-pressed="{% if notification_filters.view == 'invitations' %}true{% else %}false{% endif %}">Zaproszenia</button>
+        <button type="button" data-notification-filter="archived" aria-pressed="{% if notification_filters.view == 'archived' %}true{% else %}false{% endif %}">Archiwum</button>
+    </div>
+    <div class="notifications-toolbar">
+        <select class="form-select" aria-label="Workspace powiadomień" data-notification-workspace>
+            <option value="">Wszystkie Workspace</option>
+            {% for workplace in available_workplaces %}<option value="{{ workplace.pk }}"{% if notification_filters.workspace == workplace.pk|stringformat:'s' %} selected{% endif %}>{{ workplace.name }}</option>{% endfor %}
+        </select>
+        <button type="button" class="btn btn-secondary btn-sm" data-notification-read-all{% if not filtered_unread_count %} disabled{% endif %} title="Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane"><i data-icon="check" aria-hidden="true"></i><span>Przeczytaj wszystkie</span></button>
+        <button type="button" class="tasks-icon-button" data-notification-refresh title="Odśwież powiadomienia" aria-label="Odśwież powiadomienia"><i data-icon="refresh-cw" aria-hidden="true"></i></button>
+    </div>
+</div>
+<button type="button" class="notifications-new-items" data-notification-new-items hidden>Są nowe powiadomienia — pokaż</button>
+<p class="notifications-error" data-notification-error role="alert" hidden></p>

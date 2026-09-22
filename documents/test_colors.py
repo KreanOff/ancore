@@ -98,7 +98,7 @@ class IconColorTests(TestCase):
             self.assertContains(response, 'documents-folder-icon--filled')
             self.assertContains(response, '--documents-icon-color: #247c53;')
 
-    def test_other_workspace_and_membership_cannot_change_colors(self):
+    def test_members_can_change_colors_only_in_their_workspace(self):
         WorkplaceMembership.objects.create(workplace=self.workspace, user=self.other, role=WorkplaceMembership.Role.ADMIN)
         for item, app, kind in self.cases():
             original = item.color
@@ -108,7 +108,7 @@ class IconColorTests(TestCase):
             base = scoped_workplace_app_path(self.workspace, app)
             self.assertEqual(self.client.post(f'{base}{kind}/{item.pk}/edit/', {'name': item.name, 'color': '#112233'}).status_code, 302)
             response = self.client.post(f'/{app}/{kind}/{item.pk}/edit/', {'name': item.name, 'color': '#112233'}, follow=True)
-            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.status_code, 200)
             item.refresh_from_db()
-            self.assertEqual(item.color, original)
+            self.assertEqual(item.color, '#112233')
             self.client.force_login(self.user)

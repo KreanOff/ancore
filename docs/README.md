@@ -22,6 +22,8 @@ nie był ustalany. Przy zmianie zachowania aktualizuj odpowiedni rozdział.
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
 do szczegółowych opisów i wymaga zachowania istniejących wzorców.
 
+Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
+
 ## Co czytać przed konkretnym zadaniem
 
 | Zadanie | Opis i punkty wejścia |

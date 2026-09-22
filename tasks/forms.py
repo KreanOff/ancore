@@ -3,6 +3,8 @@ import re
 from django import forms
 from django.contrib.auth import get_user_model
 
+from workplaces.services import workplace_people
+
 from contacts.models import Company
 from .models import (
     PROJECT_FIELD_OPTION_DEFAULTS,
@@ -95,14 +97,8 @@ class MultipleFileInput(forms.ClearableFileInput):
 DATETIME_LOCAL_INPUT_FORMATS = ['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S']
 
 
-def _crm_user_queryset(user):
-    if not user:
-        return get_user_model().objects.none()
-    return (
-        get_user_model().objects.filter(is_active=True)
-        .distinct()
-        .order_by('first_name', 'middle_name', 'last_name', 'email', 'username')
-    )
+def _crm_user_queryset(user, workplace=None):
+    return workplace_people(workplace, user)
 
 
 def _filter_workplace(queryset, workplace):
@@ -121,7 +117,8 @@ def _replace_optional_model_choice(form, field_name, queryset, empty_label):
     if field_name not in form.fields:
         return
     current = form.fields[field_name]
-    form.fields[field_name] = LenientModelChoiceField(
+    field_class = forms.ModelChoiceField if field_name in {'assignee', 'responsible_user', 'owner'} else LenientModelChoiceField
+    form.fields[field_name] = field_class(
         queryset=queryset,
         required=False,
         label=current.label,
@@ -177,7 +174,7 @@ class TaskForm(forms.ModelForm):
             self.fields['section'].queryset = sections
             self.fields['parent'].queryset = parents
             self.fields['tags'].queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
-            _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user), 'Brak osoby')
+            _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user, workplace), 'Brak osoby')
         else:
             _replace_optional_model_choice(self, 'assignee', get_user_model().objects.none(), 'Brak osoby')
         current_section = section or getattr(self.instance, 'section', None)
@@ -342,7 +339,7 @@ class TaskProjectBaseForm(forms.ModelForm):
             self.fields['company'].widget.attrs['data-ancore-custom-select-search'] = 'true'
             self.fields['company'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj firmy'
         if 'responsible_user' in self.fields:
-            _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user), 'Brak osoby')
+            _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user, workplace), 'Brak osoby')
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search'] = 'true'
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         if field_options is None and user:
@@ -660,10 +657,12 @@ class TaskSectionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         self.project_for_validation = kwargs.pop('project', None)
+        workplace = kwargs.pop('workplace', None)
         super().__init__(*args, **kwargs)
         if self.project_for_validation is None:
             self.project_for_validation = getattr(self.instance, 'project', None)
-        _replace_optional_model_choice(self, 'owner', _crm_user_queryset(user), 'Brak osoby')
+        workplace = workplace or getattr(self.project_for_validation, 'workplace', None)
+        _replace_optional_model_choice(self, 'owner', _crm_user_queryset(user, workplace), 'Brak osoby')
         self.fields['owner'].widget.attrs['data-ancore-custom-select-search'] = 'true'
         self.fields['owner'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         self.fields['kind'].required = False
@@ -748,10 +747,12 @@ class TaskSectionRenameForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         self.project_for_validation = kwargs.pop('project', None)
+        workplace = kwargs.pop('workplace', None)
         super().__init__(*args, **kwargs)
         if self.project_for_validation is None:
             self.project_for_validation = getattr(self.instance, 'project', None)
-        _replace_optional_model_choice(self, 'owner', _crm_user_queryset(user), 'Brak osoby')
+        workplace = workplace or getattr(self.project_for_validation, 'workplace', None)
+        _replace_optional_model_choice(self, 'owner', _crm_user_queryset(user, workplace), 'Brak osoby')
         self.fields['owner'].widget.attrs['data-ancore-custom-select-search'] = 'true'
         self.fields['owner'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
         self.fields['kind'].required = False
@@ -1030,7 +1031,7 @@ class TaskModalForm(forms.ModelForm):
             self.fields['section'].queryset = sections
         if user:
             self.fields['tags'].queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
-            _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user), 'Brak osoby')
+            _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user, workplace), 'Brak osoby')
         else:
             _replace_optional_model_choice(self, 'assignee', get_user_model().objects.none(), 'Brak osoby')
         self.fields['section'].required = True

@@ -39,9 +39,11 @@ nazwa, opis, kod, slug i obraz; ulubione miejsca w nawigacji oraz ich kolejnoś�
 Po zalogowaniu, jeśli nie ma Workspace, usługa może utworzyć domyślne
 „Moje miejsce pracy”.
 
-`WorkplaceMembership` przechowuje role owner/admin/member, ale
-`workplaces_for_user()` zwraca obecnie wyłącznie Workspace, których konto jest
-właścicielem. Nie jest to aktywny system współdzielonych przestrzeni zespołowych.
+`WorkplaceMembership` udostępnia wspólny Workspace rolom owner/admin/member.
+Ekran zespołu, zaproszenia w aplikacji do istniejących kont, zmiany ról oraz
+odebranie dostępu opisuje [Praca zespołowa](TEAMWORK.md). Członkostwo obejmuje
+wszystkie moduły danego Workspace. Dane są zapisywane z właścicielem Workspace;
+autorzy komentarzy i historii pozostają faktycznymi użytkownikami.
 
 `SidebarFavorite` zapisuje w bazie parę użytkownik–Workspace, klucz miejsca
 nawigacji i pozycję. Katalog dozwolonych miejsc jest w
@@ -49,7 +51,7 @@ nawigacji i pozycję. Katalog dozwolonych miejsc jest w
 
 **Scenariusz:** wybierz Workspace → otwórz moduł pod jego adresem → pracuj na
 danych tego kontekstu. Zmiana Workspace zmienia kontekst list, formularzy,
-tagów i wyszukiwania. Konto wykonawcy i członkostwo nie zastępują kontroli właściciela.
+tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane jest członkostwo.
 
 ## 3. Projekty, grupy i zadania — Tasks
 
@@ -70,6 +72,11 @@ serwera. UI ma wybór widocznych kolumn, zmianę szerokości/kolejności oraz ak
 zbiorcze. Zakres funkcji różni się między typami list; nie należy automatycznie
 przenosić każdej funkcji jednego katalogu do wszystkich pozostałych.
 
+Lista grup projektu współdzieli z „Wszystkie grupy” wyszukiwanie, sortowanie,
+filtry statusu, typu, odpowiedzialnego i priorytetu oraz paginację w pasku
+narzędzi. Wyniki i opcje odpowiedzialnych pozostają ograniczone do otwartego
+projektu w bieżącym Workspace; czyszczenie filtrów nie usuwa tego kontekstu.
+
 ### Dane
 
 | Obiekt | Zawartość i powiązania |
@@ -81,8 +88,8 @@ przenosić każdej funkcji jednego katalogu do wszystkich pozostałych.
 | `TaskActivity` | Historia i komentarze zadania; aktor, akcja, wiadomość i metadane zmian |
 | `TaskAttachment` | Plik przypisany do zadania, nazwa i rozmiar |
 
-„Moje zadania” korzystają z przypisania, nadal wewnątrz dostępnych danych
-właściciela. Przypisanie innego użytkownika nie udostępnia mu rekordu.
+„Moje zadania” pokazują zadania przypisane zalogowanej osobie w aktywnym Workspace.
+Wykonawcy i odpowiedzialni są ograniczeni do aktywnych kont zespołu.
 
 ### Podstawowy scenariusz
 
@@ -172,8 +179,8 @@ Widok katalogu użytkowników odnosi się do dodanych kontaktów, a nie pełnego
 publicznego katalogu wszystkich kont.
 
 **Scenariusz:** utwórz firmę → utwórz kontakt, opcjonalnie wskaż ID Ancore →
-obejrzyj szczegóły → edytuj dane lub dopisz komentarz. Relacja z użytkownikiem
-nie nadaje mu dostępu do prywatnych projektów właściciela.
+obejrzyj szczegóły → edytuj dane lub dopisz komentarz. Relacja kontaktu z użytkownikiem
+nie nadaje mu dostępu; dostęp zespołowy wynika z członkostwa Workspace.
 
 Modele `SharedItem` i `SharedItemLink` nadal istnieją, lecz nie opisują
 obecnie aktywnej funkcji udostępniania w interfejsie. Patrz Mechanizmy.
@@ -379,8 +386,8 @@ formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko D
   konflikt rewizji i możliwość utworzenia kopii w pełnym edytorze.
 
 Pełne edytory biurowe wymagają działającego, skonfigurowanego ONLYOFFICE.
-Tablica działa bez niego. Interfejs i dane pozostają prywatne dla właściciela
-oraz Workspace; nie dodano udostępniania, OCR ani VBA. Dokumenty i Dysk mają
+Tablica działa bez niego. Interfejs i dane są dostępne właścicielowi i członkom Workspace
+zgodnie z [zasadami zespołu](TEAMWORK.md); nie dodano publicznych linków, OCR ani VBA. Dokumenty i Dysk mają
 historię poprzednich plików z pobieraniem i przywracaniem. Katalog Dokumentów
 obsługuje oznaczanie szablonów i tworzenie niezależnych kopii z ich menu.
 Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
@@ -399,7 +406,8 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
 - **Ustawienia:** centrum linków do profilu, kont, Workspace, pól projektów
   i preferencji dostępnych na ekranie.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
-- **Powiadomienia:** panel/strona ostatniej aktywności Zadań i Kanbana.
+- **Powiadomienia:** centrum zaproszeń oraz aktywności Zadań i Kanbana,
+  z odczytem, archiwum, filtrami Workspace i doczytywaniem starszych wpisów.
 
 Podsumowanie z [overview.py](../dashboard/overview.py) liczy główne zadania
 i karty, bez podzadań/podkart. Zamknięcie oznacza status `closed`; `resolved`
@@ -410,10 +418,14 @@ najnowszych; postęp liczy zamknięte zadania tego samego właściciela i Worksp
 Linki do modułów mają scoped URL, szczegóły zadań/kart używają `task_id`,
 a projekty i wydarzenia PK. `/` nadal używa aktywnego kontekstu z sesji.
 
-Szablon powiadomień to `dashboard/notifications.html`. Powiadomienia nie mają
-oddzielnej tabeli dostarczenia/odczytu ani push/email w sprawdzonej implementacji.
-Obejmują aktywność właściciela z różnych Workspace; link określa Workspace
-konkretnego zadania lub karty, zamiast polegać na sesji.
+Szablon pełnego centrum to `dashboard/notifications.html`; panel w powłoce
+używa tych samych kontrolek, listy i JavaScriptu. `NotificationState` zapisuje
+odczyt i archiwum osobno dla konta. Własna aktywność jest domyślnie przeczytana.
+Zaproszenia czekają na decyzję także po odczytaniu. Centrum obejmuje dostępne
+Workspace; link określa przestrzeń konkretnego zadania/karty. Licznik odświeża
+się co 30 sekund w widocznej karcie. Szczegóły uprawnień, paginacji i zbiorczego
+odczytu: [Mechanizmy](MECHANISMS.md#11-historia-a-powiadomienia).
+Powiadomienia nie wysyłają push/e-mail ani automatycznych przypomnień.
 
 ## 10. Wspólna powłoka i narzędzia — Core / Static
 
@@ -429,7 +441,7 @@ Pozostałe lokalne preferencje UI opisuje [MECHANISMS.md](MECHANISMS.md).
 
 | Element w kodzie | Faktyczny zakres |
 | --- | --- |
-| Role członkostwa Workspace/firmy | Są w modelach; obecne widoki biznesowe opierają się na właścicielu |
+| Role Workspace / firmy | Członkostwo Workspace daje dostęp zespołowy; członkostwo firmy nadal nie nadaje dostępu do Workspace |
 | `SharedItem`, funkcje share i tokeny | Pozostałości; aktywny routing Tasks nie rejestruje endpointów linków udostępniania, helpery dostępu zwracają puste wartości |
 | `reminder_at` | Termin przechowywany w zadaniu; nie znaleziono harmonogramu wysyłania przypomnień |
 | `automation_rules` tagu | Tekst opisu; nie znaleziono wykonawcy reguł |

@@ -19,11 +19,11 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
 | [core](../core) | 12 | 0 | 9 | 32 |
 | [accounts](../accounts) | 14 | 4 | 8 | 28 |
-| [workplaces](../workplaces) | 15 | 7 | 4 | 44 |
-| [tasks](../tasks) | 14 | 47 | 24 | 168 |
+| [workplaces](../workplaces) | 17 | 8 | 6 | 66 |
+| [tasks](../tasks) | 15 | 47 | 24 | 171 |
 | [kanban](../kanban) | 9 | 34 | 9 | 71 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 9 | 0 | 6 | 23 |
+| [dashboard](../dashboard) | 12 | 1 | 8 | 50 |
 | [planner](../planner) | 8 | 2 | 2 | 3 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 
@@ -62,7 +62,7 @@ Metody/properties: `_base_slug`, `_unique_slug`, `_base_code`, `_unique_code`, `
 
 Źródło: [workplaces/models.py](../workplaces/models.py).
 
-Pola zadeklarowane tutaj: `workplace` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `workplace` (ForeignKey), `user` (ForeignKey), `role` (CharField), `is_active` (BooleanField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -70,6 +70,18 @@ Pola zadeklarowane tutaj: `workplace` (ForeignKey), `user` (ForeignKey), `role` 
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='workplace_memberships' |
 
 Metody/properties: `__str__`.
+
+### `WorkplaceInvitation`
+
+Źródło: [workplaces/models.py](../workplaces/models.py).
+
+Pola zadeklarowane tutaj: `workplace` (ForeignKey), `recipient` (ForeignKey), `invited_by` (ForeignKey), `role` (CharField), `status` (CharField), `created_at` (DateTimeField), `expires_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `workplace` | `Workplace` | on_delete=models.CASCADE; related_name='invitations' |
+| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='workplace_invitations' |
+| `invited_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='sent_workplace_invitations'; null=True |
 
 ### `SidebarFavorite`
 
@@ -434,7 +446,18 @@ Metody/properties: `save`, `deactivate`, `__str__`.
 
 ## Modele: dashboard
 
-Brak zadeklarowanych modeli domenowych w tym pliku.
+### `NotificationState`
+
+Źródło: [dashboard/models.py](../dashboard/models.py).
+
+Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+| `task_activity` | `'tasks.TaskActivity'` | on_delete=models.CASCADE; null=True |
+| `kanban_activity` | `'kanban.KanbanActivity'` | on_delete=models.CASCADE; null=True |
+| `invitation` | `'workplaces.WorkplaceInvitation'` | on_delete=models.CASCADE; null=True |
 
 ## Modele: planner
 
@@ -700,6 +723,10 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'<int:workplace_id>/team/'` | `team_views.team` | 'team' |
+| `'<int:workplace_id>/team/<int:member_id>/'` | `team_views.member_update` | 'member-update' |
+| `'<int:workplace_id>/invitations/<int:invitation_id>/cancel/'` | `team_views.invitation_cancel` | 'invitation-cancel' |
+| `'invitations/<int:invitation_id>/respond/'` | `team_views.invitation_response` | 'invitation-response' |
 | `''` | `views.workplaces` | 'workplaces' |
 | `'<int:workplace_id>/switch/'` | `views.switch_workplace` | 'switch' |
 | `'<int:workplace_id>/favorites/toggle/'` | `views.toggle_sidebar_favorite` | 'toggle-sidebar-favorite' |
@@ -772,6 +799,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'settings/'` | `views.settings` | 'settings' |
 | `'settings/project-fields/'` | `project_field_settings` | 'project_field_settings' |
 | `'notifications/'` | `views.notifications` | 'notifications' |
+| `'notifications/action/'` | `views.notification_action` | 'notification_action' |
 | `''` | `views.home` | 'home' |
 
 ### planner/urls.py
@@ -866,9 +894,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [workplaces/context_processors.py](../workplaces/context_processors.py) — `current_workplace`
 - [workplaces/forms.py](../workplaces/forms.py) — `WorkplaceForm`
 - [workplaces/middleware.py](../workplaces/middleware.py) — `ActiveWorkplaceMiddleware`
-- [workplaces/models.py](../workplaces/models.py) — `Workplace`, `WorkplaceMembership`, `SidebarFavorite`, `create_workplace_for_user`
+- [workplaces/models.py](../workplaces/models.py) — `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `SidebarFavorite`, `create_workplace_for_user`
 - [workplaces/navigation.py](../workplaces/navigation.py) — `sidebar_favorite_catalog`, `sidebar_favorite_is_active`, `sidebar_favorites_for_request`
-- [workplaces/services.py](../workplaces/services.py) — `workplaces_for_user`, `ensure_default_workplace`, `set_active_workplace`, `backfill_legacy_records_for_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
+- [workplaces/services.py](../workplaces/services.py) — `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `backfill_legacy_records_for_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
+- [workplaces/team_views.py](../workplaces/team_views.py) — `InvitationForm`, `team`, `invitation_response`, `member_update`, `invitation_cancel`
 - [workplaces/templatetags/__init__.py](../workplaces/templatetags/__init__.py)
 - [workplaces/templatetags/sidebar_favorites.py](../workplaces/templatetags/sidebar_favorites.py) — `sidebar_favorite_toggle`
 - [workplaces/templatetags/workplace_avatar.py](../workplaces/templatetags/workplace_avatar.py) — `workplace_avatar_seed`, `workplace_avatar`
@@ -916,10 +945,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/__init__.py](../dashboard/__init__.py)
 - [dashboard/admin.py](../dashboard/admin.py)
 - [dashboard/apps.py](../dashboard/apps.py) — `DashboardConfig`
-- [dashboard/models.py](../dashboard/models.py)
+- [dashboard/models.py](../dashboard/models.py) — `NotificationState`
+- [dashboard/notification_service.py](../dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [dashboard/overview.py](../dashboard/overview.py) — `dashboard_overview`
 - [dashboard/urls.py](../dashboard/urls.py)
-- [dashboard/views.py](../dashboard/views.py) — `global_search`, `settings`, `home`, `notifications`
+- [dashboard/views.py](../dashboard/views.py) — `global_search`, `settings`, `home`, `notifications`, `notification_action`
 
 ### planner
 
@@ -982,9 +1012,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### workplaces
 
+- [workplaces/templates/workplaces/includes/invitation_response_modal.html](../workplaces/templates/workplaces/includes/invitation_response_modal.html)
 - [workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html](../workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html)
 - [workplaces/templates/workplaces/includes/sidebar_favorites.html](../workplaces/templates/workplaces/includes/sidebar_favorites.html)
 - [workplaces/templates/workplaces/includes/workplace_photo_editor.html](../workplaces/templates/workplaces/includes/workplace_photo_editor.html)
+- [workplaces/templates/workplaces/team.html](../workplaces/templates/workplaces/team.html)
 - [workplaces/templates/workplaces/workplaces.html](../workplaces/templates/workplaces/workplaces.html)
 
 ### tasks
@@ -1043,7 +1075,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### dashboard
 
 - [dashboard/templates/dashboard/home.html](../dashboard/templates/dashboard/home.html)
+- [dashboard/templates/dashboard/includes/notification_controls.html](../dashboard/templates/dashboard/includes/notification_controls.html)
 - [dashboard/templates/dashboard/includes/notification_list.html](../dashboard/templates/dashboard/includes/notification_list.html)
+- [dashboard/templates/dashboard/includes/notification_pagination.html](../dashboard/templates/dashboard/includes/notification_pagination.html)
 - [dashboard/templates/dashboard/includes/settings_row.html](../dashboard/templates/dashboard/includes/settings_row.html)
 - [dashboard/templates/dashboard/notifications.html](../dashboard/templates/dashboard/notifications.html)
 - [dashboard/templates/dashboard/project_field_settings.html](../dashboard/templates/dashboard/project_field_settings.html)
@@ -1121,6 +1155,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/task-edit.css](../static/css/components/task-edit.css)
 - [static/css/components/tasks.css](../static/css/components/tasks.css)
 - [static/css/components/toolbar.css](../static/css/components/toolbar.css)
+- [static/css/components/workplace-team.css](../static/css/components/workplace-team.css)
 - [static/css/components/workplaces.css](../static/css/components/workplaces.css)
 - [static/css/layout/main.css](../static/css/layout/main.css)
 - [static/css/layout/responsive.css](../static/css/layout/responsive.css)
@@ -1147,9 +1182,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/office.js](../static/js/office.js)
 - [static/js/presence.js](../static/js/presence.js)
 - [static/js/profile.js](../static/js/profile.js)
+- [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
 - [static/js/tasks.js](../static/js/tasks.js)
+- [static/js/workplace-team.js](../static/js/workplace-team.js)
 
 ### img
 
@@ -1189,11 +1226,24 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `ProfileViewTests`: 13 metod testowych.
 - `AccountSwitcherTests`: 11 metod testowych.
 
+### workplaces/test_team.py
+
+Źródło: [workplaces/test_team.py](../workplaces/test_team.py).
+
+- `TeamAccessTests`: 21 metod testowych.
+- `TeamSlugMigrationTests`: 1 metod testowych.
+
 ### workplaces/tests.py
 
 Źródło: [workplaces/tests.py](../workplaces/tests.py).
 
 - `WorkplaceSelectionTests`: 44 metod testowych.
+
+### tasks/test_group_directory.py
+
+Źródło: [tasks/test_group_directory.py](../tasks/test_group_directory.py).
+
+- `ProjectGroupDirectoryTests`: 3 metod testowych.
 
 ### tasks/test_project_deadline_overrides.py
 
@@ -1234,11 +1284,23 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `ContactDirectoryStyleTests`: 1 metod testowych.
 - `ContactCollaborationTests`: 27 metod testowych.
 
+### dashboard/test_notifications.py
+
+Źródło: [dashboard/test_notifications.py](../dashboard/test_notifications.py).
+
+- `NotificationCenterTests`: 17 metod testowych.
+
 ### dashboard/test_overview.py
 
 Źródło: [dashboard/test_overview.py](../dashboard/test_overview.py).
 
 - `DashboardOverviewTests`: 10 metod testowych.
+
+### dashboard/test_workspace_invitations.py
+
+Źródło: [dashboard/test_workspace_invitations.py](../dashboard/test_workspace_invitations.py).
+
+- `WorkspaceInvitationNotificationTests`: 10 metod testowych.
 
 ### dashboard/tests.py
 
@@ -1375,6 +1437,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [workplaces/migrations/0005_backfill_workplace_codes.py](../workplaces/migrations/0005_backfill_workplace_codes.py)
 - [workplaces/migrations/0006_sidebarfavorite.py](../workplaces/migrations/0006_sidebarfavorite.py)
 - [workplaces/migrations/0007_sidebarfavorite_position.py](../workplaces/migrations/0007_sidebarfavorite_position.py)
+- [workplaces/migrations/0008_team_invitations.py](../workplaces/migrations/0008_team_invitations.py)
 
 ### tasks
 
@@ -1473,6 +1536,10 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [contacts/migrations/0006_shareditemlink.py](../contacts/migrations/0006_shareditemlink.py)
 - [contacts/migrations/0007_alter_shareditem_permission_and_more.py](../contacts/migrations/0007_alter_shareditem_permission_and_more.py)
 - [contacts/migrations/0008_remove_company_unique_company_name_per_owner_and_more.py](../contacts/migrations/0008_remove_company_unique_company_name_per_owner_and_more.py)
+
+### dashboard
+
+- [dashboard/migrations/0001_initial.py](../dashboard/migrations/0001_initial.py)
 
 ### planner
 

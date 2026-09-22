@@ -133,6 +133,19 @@ Referencje pokazują bieżące wzorce kodu, a nie polecenie skopiowania całych
 ekranów. Szablony mają wymagany kontekst i kontrakt z JS. Przy użyciu include'a
 sprawdź wszystkie jego zmienne oraz miejsca wywołania.
 
+### Paski listy grup
+
+Lista grup otwartego projektu używa tych samych dwóch pasków co „Wszystkie
+grupy”: `tasks-topbar--directory` z tytułem i akcjami oraz
+`tasks-filterbar--directory` z kolumnami, „Filtruj”, „Sortuj”, wyszukiwaniem
+i wspólnym `directory_pagination_toolbar.html`. Projekt zachowuje nazwę
+i strzałkę powrotu. Paginacja występuje wyłącznie w drugim pasku.
+Filtry i sortowanie używają wspólnego mechanizmu grup; wewnątrz projektu
+nie ma dodatkowego wyboru projektu w filtrach. Czyszczenie filtrów,
+wyszukiwanie i zmiana strony zachowują otwarty projekt oraz Workspace.
+Na telefonie nagłówek projektu pozostawia miejsce po lewej na przycisk
+nawigacji aplikacji, aby strzałka powrotu pozostała dostępna.
+
 ### Krótkie powiadomienia
 
 Komunikaty Django Messages i `showNotification(message, type, options)` używają
@@ -151,7 +164,7 @@ i informacji, dotychczasowy czerwony `#c94f45` dla błędu, bursztynowy `#c18a34
 dla ostrzeżenia, szary `--system-interaction` dla komunikatu bez typu.
 Animacje wejścia/wyjścia respektują `prefers-reduced-motion`.
 Zachowane są automatyczne wygaszanie, role `status`/`alert` i inicjalizacja
-po `ancore:content-loaded`. Panel historii aktywności pozostaje osobnym komponentem.
+po `ancore:content-loaded`. Centrum powiadomień pozostaje osobnym komponentem.
 
 ### Przyciski akcji w paskach narzędzi
 
@@ -291,7 +304,7 @@ także przy otwarciu menu wewnątrz dysku lub folderu.
 Menu zastępuje zakładki oraz skróty z panelu bocznego. Korzysta ze wspólnych
 `tasks-filter-button`, `tasks-project-query-trigger`,
 `tasks-project-menu-button` i istniejącej obsługi `data-document-actions`
-w `documents.js`: natywny popover, pozycjonowanie w granicach ekranu,
+w `row-actions.js`: natywny popover, pozycjonowanie w granicach ekranu,
 strzałki, Home/End, Escape i powrót fokusu. Aktywny widok ma `aria-current`;
 liczniki zachowują zakres Workspace i nie zależą od filtrów.
 Indeks nie powtarza listy dysków w panelu bocznym.
@@ -534,7 +547,7 @@ z tekstowymi etykietami w wariancie `action_menu`.
 Kafelki plików i folderów Dysku oraz Dokumentów używają tego samego include'a
 w stopce, po prawej stronie daty, zamiast rzędu ikon. Menu używa wspólnych klas
 `tasks-section-menu` i `tasks-project-menu-button` oraz natywnego `popover`
-poza obszarem przycinania tabeli lub kafelka. `documents.js` dopasowuje położenie do
+poza obszarem przycinania tabeli lub kafelka. `row-actions.js` dopasowuje położenie do
 viewportu i skali UI, obsługuje strzałki, Home/End, Escape, kliknięcie poza menu
 oraz zamknięcie przy przewijaniu. Otwarcie myszą pozostawia fokus na przycisku;
 Enter/Spacja przenoszą go na pierwszą akcję. Długie etykiety akcji zawijają się w menu,
@@ -774,3 +787,88 @@ wąski ekran oraz duży desktop. Istnieją również reguły dla ograniczenia ru
 
 Wynik weryfikacji zapisuj w podsumowaniu zadania. Jeśli nie oglądano ekranu
 w przeglądarce, nazwij weryfikację przeglądem kodu, a nie wizualnym testem.
+
+## 12. Zespół Workspace
+
+Oczekujące zaproszenia odbiorcy są widoczne w istniejącym panelu powiadomień,
+przed aktywnością zadań. Karta podaje autora, Workspace, rolę, termin i przycisk
+„Przyjmij lub odrzuć zaproszenie”. Dzwonek ma turkusową kropkę
+`notifications-toggle__indicator`, gdy są nieprzeczytane wpisy lub oczekujące
+zaproszenia. Opis czytnika ekranu rozróżnia obie liczby.
+
+Link powiadomienia `?invitation=<pk>` otwiera okno konkretnego zaproszenia na
+stronie Workspace. Przycisk „Zaproszenia (N)” w toolbarze otwiera to samo okno.
+Include `workplaces/includes/invitation_response_modal.html` korzysta z
+`tasks-modal`, standardowej stopki i kompaktowej listy szczegółów
+`workplace-invitation__details`. Akcje „Później”, „Odrzuć” i „Przyjmij” są razem
+w stopce; wspólne przyciski paginacji pozwalają przejść do innych zaproszeń.
+`workplace-team.js` obsługuje ten modal także na stronie Workspace przez
+`data-team-modal-page`, zachowując inert, fokus i inicjalizację po częściowej
+nawigacji. Zamknięcie usuwa parametr zaproszenia z adresu i przywraca fokus
+przyciskowi w toolbarze. Formularz nadal wymaga POST i CSRF.
+
+Strona zespołu rozszerza `core/base.html`. Nagłówek używa wzorca powrotu
+z projektu: `tasks-issue-close` bez ramki, `tasks-issue-divider` oraz kontenera
+`tasks-issue-breadcrumb tasks-project-breadcrumb`; link prowadzi do Workspace.
+Zespół używa `data-app-full-navigation`, ponieważ jego adres nie jest objęty
+częściową nawigacją; pełne przejście zachowuje powrót historią przeglądarki.
+Tabela używa bezpośrednio
+`documents-table` i `documents-name` z katalogu Dokumentów. Nagłówki mają 35px,
+wiersze 36px, tekst 13px/400, białe tło i cienką siatkę kolumn. Kolumny to
+„Nazwa”, „E-mail”, „Rola” i „Dołączono” (w zaproszeniach „Ważne do”). Nazwa
+z avatarem mieści się w jednym wierszu; długie wartości mają ellipsis i pełny
+tekst w `title`. Na telefonie pozostaje tabela przewijana poziomo we własnym
+kontenerze, bez zmiany wierszy na karty.
+
+Pod standardowym paskiem tytułu `tasks-filterbar` zawiera linki „Członkowie”
+i „Zaproszenia” z licznikami. Parametr `?view=invitations` wybiera zaproszenia;
+po wysłaniu lub anulowaniu zaproszenia użytkownik wraca do tej listy.
+Przycisk informacji otwiera standardowe okno z opisem uprawnień.
+
+Menu trzech pasków przed avatarem korzysta z tych samych klas i zachowania
+co lista Dokumentów. Wspólny `row-actions.js`, ładowany w `core/base.html`,
+obsługuje zarówno `data-document-actions`, jak i `data-row-actions`. Zachowuje
+popover, pozycjonowanie względem viewportu i skali UI, obsługę klawiatury,
+zamykanie przy przewijaniu oraz inicjalizację po `ancore:content-loaded`.
+W Zespole menu zawiera zmianę roli, odebranie dostępu lub anulowanie zaproszenia,
+zależnie od uprawnień. Właściciel nie ma akcji zmiany swojej roli ani usunięcia.
+
+Zaproszenie i zmiana roli używają wspólnej powłoki `tasks-modal`, pól
+`tasks-form-field` i stopki z `tasks-modal__submit`. `workplace-team.js` zarządza
+otwarciem, `inert` tła, fokusem i blokadą ponownego wysłania; `tasks.js` obsługuje
+zamykanie i pułapkę fokusu, a listy wyboru korzystają z `AncoreCustomSelect`
+i `AncoreDropdownLayer`. Błąd zaproszenia otwiera ten sam modal z wpisanymi danymi.
+Odebranie dostępu wymaga `showConfirmModal` wyjaśniającego wpływ na Office.
+Zapis nadal używa POST, CSRF i komunikatów aplikacji.
+
+Lista Workspace oraz Ustawienia prowadzą do Zespołu. Funkcje i role opisuje
+[TEAMWORK.md](TEAMWORK.md).
+
+## 13. Centrum powiadomień
+
+Panel dzwonka i pełna strona `/notifications/` współdzielą include'y
+`notification_controls.html`, `notification_list.html`, `notification_pagination.html`
+oraz `notifications-panel.js` i `notifications-panel.css`. Zachowują powłokę panelu
+wyszukiwania, avatary kont, standardowe przyciski, ikony i tokeny kolorów Ancore.
+Białe karty mają delikatne ramki; nieprzeczytane dodatkowo kropkę i 5% akcentu
+w tle. Zaproszenia mają przycisk prowadzący do istniejącego modala decyzji.
+
+Zakładki „Wszystkie”, „Nieprzeczytane”, „Zaproszenia”, „Archiwum” używają
+przycisków z `aria-pressed`; filtr Workspace korzysta ze wspólnego selecta.
+Karty grupują się według daty, pokazują podgląd komentarza lub do trzech zmian,
+Workspace, moduł, numer rekordu i czas z pełną datą w tooltipie.
+Akcje odczytu/archiwum są widoczne również bez hover. „Przeczytaj wszystkie”
+obejmuje bieżący filtr, również starsze strony. „Pokaż starsze” doczytuje listę.
+Pełny widok dostępny jest także w stopce panelu.
+
+Stan odczytu zmienia się po potwierdzonym zapisie; samo otwarcie panelu niczego
+nie oznacza. Nowe zdarzenia sygnalizuje przycisk nad listą, bez automatycznego
+przesuwania treści. Stany puste mają opis zależny od filtra. Błąd pobrania ma
+akcję ponowienia; błąd zapisu pozostawia wpis i komunikat `role=alert`.
+Żądania mają limit czasu, a zmiana filtra anuluje starsze pobranie.
+
+Panel blokuje interakcje z tłem przez `inert`, utrzymuje fokus, obsługuje Tab,
+Shift+Tab i Escape oraz przywraca fokus dzwonkowi. Na telefonie zajmuje ekran,
+a na najwęższym układzie toolbar przechodzi do dwóch wierszy.
+Inicjalizacja po `ancore:content-loaded` nie powiela listenerów; polling działa
+wyłącznie w widocznej karcie. Dane są prywatne dla konta i nie trafiają do localStorage.

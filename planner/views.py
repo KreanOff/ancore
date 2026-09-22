@@ -6,6 +6,8 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
+from workplaces.services import workspace_owner
+
 from .forms import CalendarEventForm
 from .models import CalendarEvent
 from workplaces.services import scoped_workplace_app_path
@@ -57,7 +59,7 @@ def index(request):
     event_id = request.GET.get('event')
     if event_id and event_id.isdigit():
         initial_event = _filter_workplace(
-            CalendarEvent.objects.filter(user=request.user, pk=int(event_id)),
+            CalendarEvent.objects.filter(user=workspace_owner(request), pk=int(event_id)),
             _active_workplace(request),
         ).first()
 
@@ -97,7 +99,7 @@ def events_list(request):
         return JsonResponse({'status': 'error', 'message': 'Zakres dat jest wymagany.'}, status=400)
 
     events = _filter_workplace(CalendarEvent.objects.filter(
-        user=request.user,
+        user=workspace_owner(request),
         start__lte=end,
         end__gte=start,
     ), _active_workplace(request))
@@ -115,7 +117,7 @@ def create_event(request):
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
     event = form.save(commit=False)
-    event.user = request.user
+    event.user = workspace_owner(request)
     event.workplace = _active_workplace(request)
     event.save()
     return JsonResponse({'status': 'success', 'event': _event_payload(event)})
@@ -124,7 +126,7 @@ def create_event(request):
 @login_required
 @require_POST
 def update_event(request, event_id):
-    event = get_object_or_404(_filter_workplace(CalendarEvent.objects.filter(user=request.user), _active_workplace(request)), id=event_id)
+    event = get_object_or_404(_filter_workplace(CalendarEvent.objects.filter(user=workspace_owner(request)), _active_workplace(request)), id=event_id)
     form = CalendarEventForm(request.POST, instance=event)
     if not form.is_valid():
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
@@ -136,6 +138,6 @@ def update_event(request, event_id):
 @login_required
 @require_POST
 def delete_event(request, event_id):
-    event = get_object_or_404(_filter_workplace(CalendarEvent.objects.filter(user=request.user), _active_workplace(request)), id=event_id)
+    event = get_object_or_404(_filter_workplace(CalendarEvent.objects.filter(user=workspace_owner(request)), _active_workplace(request)), id=event_id)
     event.delete()
     return JsonResponse({'status': 'success'})

@@ -18,6 +18,8 @@ from django.utils.text import get_valid_filename
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
+from workplaces.services import workspace_owner
+
 from core.upload_validation import attachment_download_response
 from workplaces.services import scoped_workplace_app_path
 from .editor_forms import DOCUMENT_EXTENSIONS, OfficeDocumentForm, OfficeUploadForm
@@ -40,7 +42,7 @@ def _url(request, suffix='', **params):
 
 
 def _documents(request):
-    return Document.objects.filter(owner=request.user, workplace=request.workplace)
+    return Document.objects.filter(owner=workspace_owner(request), workplace=request.workplace)
 
 
 def _item(request, pk, **filters):
@@ -166,7 +168,7 @@ def upload(request):
         try:
             with transaction.atomic():
                 for file in form.cleaned_data['files']:
-                    item = Document(owner=request.user, workplace=request.workplace, kind=Document.Kind.FILE,
+                    item = Document(owner=workspace_owner(request), workplace=request.workplace, kind=Document.Kind.FILE,
                                     title=file.name, filename=file.name, file_size=file.size)
                     item.file.save(file.name, file, save=False)
                     saved.append((item.file.storage, item.file.name))
@@ -185,9 +187,9 @@ def upload(request):
 @require_http_methods(['GET', 'POST'])
 @location_write
 def edit(request, pk=None):
-    instance = _item(request, pk) if pk else Document(owner=request.user, workplace=request.workplace)
+    instance = _item(request, pk) if pk else Document(owner=workspace_owner(request), workplace=request.workplace)
     is_new = pk is None
-    form = OfficeDocumentForm(request.POST if request.method == 'POST' else None, request.FILES or None, instance=instance, owner=request.user, workplace=request.workplace)
+    form = OfficeDocumentForm(request.POST if request.method == 'POST' else None, request.FILES or None, instance=instance, owner=workspace_owner(request), workplace=request.workplace)
     conflict = False
     if request.method == 'POST' and form.is_valid():
         item = form.save(commit=False)
@@ -274,7 +276,7 @@ def import_text(request, pk):
     except ValidationError as error:
         messages.error(request, error.messages[0])
         return redirect(_url(request, f'{pk}/preview/'))
-    item = Document.objects.create(owner=request.user, workplace=request.workplace,
+    item = Document.objects.create(owner=workspace_owner(request), workplace=request.workplace,
                                    title=f'{source.title[:230]} — kopia tekstu', content=content, file_size=len(content.encode('utf-8')))
     messages.success(request, 'Utworzono edytowalną kopię tekstu. Oryginalny plik zachowano.')
     return redirect(_url(request, f'{item.pk}/'))

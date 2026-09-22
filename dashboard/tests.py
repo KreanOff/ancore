@@ -181,7 +181,7 @@ class DashboardViewTests(TestCase):
         kanban_notification = next(notification for notification in notifications if notification['object_id'] == kanban_card.task_id)
 
         self.assertEqual(task_notification['source'], 'tasks')
-        self.assertEqual(task_notification['source_label'], 'Tasks')
+        self.assertEqual(task_notification['source_label'], 'Zadania')
         self.assertEqual(task_notification['actor_label'], user.get_username())
         self.assertEqual(task_notification['title'], 'Zadanie z Tasks')
         self.assertEqual(task_notification['url'], reverse('tasks:view-task', args=[task.task_id]) + f'?task_pk={task.pk}')

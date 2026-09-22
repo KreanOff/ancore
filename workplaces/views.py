@@ -3,7 +3,8 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Case, IntegerField, Max, Value, When
+from django.core.exceptions import PermissionDenied
+from django.db.models import Case, Count, IntegerField, Max, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -13,12 +14,20 @@ from django.views.decorators.http import require_POST
 from .forms import WorkplaceForm
 from .models import SidebarFavorite, create_workplace_for_user
 from .navigation import SIDEBAR_FAVORITE_KEYS, sidebar_favorites_for_request
-from .services import enable_workspace_url_scope, scoped_workplace_app_path, set_active_workplace, workplaces_for_user
+from .services import can_manage_team, enable_workspace_url_scope, pending_invitations_for_user, scoped_workplace_app_path, set_active_workplace, workplaces_for_user
 
 
 @login_required
 def workplaces(request):
     enable_workspace_url_scope(request)
+    pending_invitations = list(pending_invitations_for_user(request.user).select_related('workplace', 'invited_by'))
+    selected_invitation_id = request.GET.get('invitation') if request.method == 'GET' else None
+    invitation_index = next((index for index, invitation in enumerate(pending_invitations)
+                             if str(invitation.pk) == selected_invitation_id), None)
+    if selected_invitation_id is not None and invitation_index is None:
+        messages.info(request, 'To zaproszenie nie jest już dostępne.')
+        return redirect('workplaces:workplaces')
+    invitation_index = invitation_index if invitation_index is not None else 0
     form = WorkplaceForm(user=request.user)
     workplace_create_modal_open = False
 
@@ -56,7 +65,18 @@ def workplaces(request):
             'name',
             'id',
         )
+    user_workplaces = user_workplaces.prefetch_related('memberships').annotate(
+        team_member_count=Count('memberships', filter=Q(memberships__is_active=True), distinct=True),
+    )
+    for workplace in user_workplaces:
+        workplace.can_manage_team = can_manage_team(request.user, workplace)
     return render(request, 'workplaces/workplaces.html', {
+        'pending_invitations': pending_invitations,
+        'response_invitation': pending_invitations[invitation_index] if pending_invitations else None,
+        'invitation_modal_open': selected_invitation_id is not None,
+        'invitation_position': invitation_index + 1,
+        'previous_invitation': pending_invitations[invitation_index - 1] if invitation_index > 0 else None,
+        'next_invitation': pending_invitations[invitation_index + 1] if invitation_index + 1 < len(pending_invitations) else None,
         'workplaces': user_workplaces,
         'form': form,
         'active_workplace': active_workplace,
@@ -209,7 +229,9 @@ def workplace_home(request, workplace_slug):
 @require_POST
 def update_workplace(request, workplace_id):
     workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
-    form = WorkplaceForm(request.POST, request.FILES, instance=workplace, user=request.user)
+    if not can_manage_team(request.user, workplace):
+        raise PermissionDenied
+    form = WorkplaceForm(request.POST, request.FILES, instance=workplace, user=workplace.owner)
     if form.is_valid():
         form.save()
         messages.success(request, 'Ustawienia miejsca pracy zapisane.')
@@ -225,7 +247,7 @@ def update_workplace(request, workplace_id):
 @login_required
 @require_POST
 def delete_workplace(request, workplace_id):
-    workplaces = workplaces_for_user(request.user)
+    workplaces = workplaces_for_user(request.user).filter(owner=request.user)
     workplace = get_object_or_404(workplaces, pk=workplace_id)
     replacement = workplaces.exclude(pk=workplace.pk).first()
     if replacement is None:

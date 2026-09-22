@@ -1,0 +1,22 @@
+/* Same semantic table, row menu and controls as the Documents catalogue. */
+.workplace-team .tasks-topbar-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workplace-team .tasks-filter-button { text-decoration: none; white-space: nowrap; }
+.workplace-team__scroll:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: -2px; }
+.workplace-team .workplace-team__table { min-width: 850px; }
+.workplace-team__table :is(th, td)[data-team-column="person"] { width: 36%; padding-left: 24px; }
+.workplace-team__table :is(th, td)[data-team-column="role"] { width: 160px; }
+.workplace-team__table :is(th, td)[data-team-column="date"]:last-child { width: 150px; padding-right: 24px; }
+.workplace-team__table td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workplace-team__table .documents-name { height: 32px; }
+.workplace-team__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workplace-team__action-space { width: 28px; flex: 0 0 28px; }
+.workplace-team__table .tasks-directory-avatar { flex: 0 0 22px; }
+.workplace-team__hint { margin: 0 0 var(--app-modal-field-gap); font-size: var(--font-size-sm); line-height: 1.5; }
+.workplace-invitation__details { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: var(--app-modal-field-gap); margin: 0 0 var(--app-modal-padding-y); font-size: var(--font-size-sm); }
+.workplace-invitation__details :is(dt, dd) { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+    .workplace-team .tasks-topbar { padding-left: 60px; }
+    .workplace-team .tasks-filterbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+    .workplace-team .tasks-filterbar-left { min-width: 0; width: auto; flex-wrap: wrap; }
+    .workplace-team .tasks-filterbar-right { grid-column: 2; width: auto; }
+}

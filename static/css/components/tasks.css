@@ -14440,6 +14440,10 @@ body.is-resizing-directory-columns {
 }
 
 @media (max-width: 767px) {
+    .tasks-list-page .tasks-topbar--directory:has(.tasks-project-breadcrumb) {
+        padding-left: 3.5rem;
+    }
+
     .tasks-filterbar--directory .tasks-filterbar-right {
         flex-basis: 100%;
         flex-wrap: wrap;

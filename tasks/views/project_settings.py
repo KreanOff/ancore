@@ -8,6 +8,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
+from workplaces.services import workspace_owner
+
 from ..forms import TaskProjectDeadlineRuleForm, TaskProjectFieldOptionForm
 from ..models import TaskProject, TaskProjectDeadlineRule, TaskProjectFieldOption
 from .tasks import _active_workplace, _project_field_configuration
@@ -19,10 +21,10 @@ def _save_deadline_settings(request, workplace, project_id, default_rules):
         project = None
         if project_id:
             project = get_object_or_404(
-                TaskProject.objects.select_for_update().filter(user=request.user, workplace=workplace),
+                TaskProject.objects.select_for_update().filter(user=workspace_owner(request), workplace=workplace),
                 pk=project_id,
             )
-        scoped_rules = TaskProjectDeadlineRule.for_scope(request.user, workplace, project)
+        scoped_rules = TaskProjectDeadlineRule.for_scope(workspace_owner(request), workplace, project)
         if action == 'enable_project_deadline_rules':
             if project is None:
                 raise PermissionDenied
@@ -30,7 +32,7 @@ def _save_deadline_settings(request, workplace, project_id, default_rules):
                 scoped_rules.delete()
                 TaskProjectDeadlineRule.objects.bulk_create([
                     TaskProjectDeadlineRule(
-                        owner=request.user, workplace=workplace, project=project,
+                        owner=workspace_owner(request), workplace=workplace, project=project,
                         days=rule.days, color=rule.color,
                     )
                     for rule in default_rules
@@ -49,7 +51,7 @@ def _save_deadline_settings(request, workplace, project_id, default_rules):
             if project and not project.use_custom_deadline_rules:
                 raise PermissionDenied
             if action == 'create_project_deadline_rule':
-                rule = TaskProjectDeadlineRule(owner=request.user, workplace=workplace, project=project)
+                rule = TaskProjectDeadlineRule(owner=workspace_owner(request), workplace=workplace, project=project)
             else:
                 rule = get_object_or_404(scoped_rules.filter(is_active=True), id=request.POST.get('rule_id'))
             if action == 'delete_project_deadline_rule':
@@ -75,8 +77,8 @@ def _save_deadline_settings(request, workplace, project_id, default_rules):
 @require_http_methods(['GET', 'POST'])
 def project_field_settings(request):
     workplace = _active_workplace(request)
-    configuration = _project_field_configuration(request.user, workplace)
-    projects = TaskProject.objects.filter(user=request.user, workplace=workplace).order_by('name', 'id')
+    configuration = _project_field_configuration(workspace_owner(request), workplace)
+    projects = TaskProject.objects.filter(user=workspace_owner(request), workplace=workplace).order_by('name', 'id')
     project_id = (request.POST if request.method == 'POST' else request.GET).get('project_id')
     if project_id:
         try:
@@ -101,26 +103,26 @@ def project_field_settings(request):
             if field_type not in dict(TaskProjectFieldOption.FIELD_CHOICES):
                 raise PermissionDenied
             option = TaskProjectFieldOption(
-                owner=request.user,
+                owner=workspace_owner(request),
                 workplace=workplace,
                 field_type=field_type,
             )
             option_form = TaskProjectFieldOptionForm(
                 request.POST,
                 instance=option,
-                owner=request.user,
+                owner=workspace_owner(request),
                 workplace=workplace,
             )
             if option_form.is_valid():
                 option = option_form.save(commit=False)
                 option.value = TaskProjectFieldOption.unique_value_for_label(
-                    request.user,
+                    workspace_owner(request),
                     workplace,
                     field_type,
                     option.label,
                 )
                 option.position = (
-                    TaskProjectFieldOption.for_scope(request.user, workplace)
+                    TaskProjectFieldOption.for_scope(workspace_owner(request), workplace)
                     .filter(field_type=field_type)
                     .aggregate(last_position=Max('position'))['last_position']
                     or 0
@@ -138,13 +140,13 @@ def project_field_settings(request):
 
         if action == 'update_project_field_option':
             option = get_object_or_404(
-                TaskProjectFieldOption.for_scope(request.user, workplace).filter(is_active=True),
+                TaskProjectFieldOption.for_scope(workspace_owner(request), workplace).filter(is_active=True),
                 id=request.POST.get('option_id'),
             )
             option_form = TaskProjectFieldOptionForm(
                 request.POST,
                 instance=option,
-                owner=request.user,
+                owner=workspace_owner(request),
                 workplace=workplace,
             )
             if option_form.is_valid():
@@ -161,10 +163,10 @@ def project_field_settings(request):
 
         if action == 'delete_project_field_option':
             option = get_object_or_404(
-                TaskProjectFieldOption.for_scope(request.user, workplace).filter(is_active=True),
+                TaskProjectFieldOption.for_scope(workspace_owner(request), workplace).filter(is_active=True),
                 id=request.POST.get('option_id'),
             )
-            active_count = TaskProjectFieldOption.for_scope(request.user, workplace).filter(
+            active_count = TaskProjectFieldOption.for_scope(workspace_owner(request), workplace).filter(
                 field_type=option.field_type,
                 is_active=True,
             ).count()
@@ -187,7 +189,7 @@ def project_field_settings(request):
     deadline_rules = configuration['deadline_rules']
     if deadline_project and not inherited:
         deadline_rules = list(TaskProjectDeadlineRule.for_scope(
-            request.user, workplace, deadline_project,
+            workspace_owner(request), workplace, deadline_project,
         ).filter(is_active=True))
     return render(request, 'dashboard/project_field_settings.html', {
         'project_field_groups': configuration['groups'],

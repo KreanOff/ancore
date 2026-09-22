@@ -1,8 +1,12 @@
 from django.apps import apps
+from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
 from core.task_numbering import lock_task_numbers, renumber_tasks
 
-from .models import SidebarFavorite, Workplace, WorkplaceMembership
+from .models import SidebarFavorite, Workplace, WorkplaceInvitation, WorkplaceMembership
 
 
 ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
@@ -11,16 +15,68 @@ DEFAULT_WORKPLACE_NAME = 'Moje miejsce pracy'
 SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'contacts', 'calendar', 'documents', 'office'}
 
 
+def pending_invitations_for_user(user):
+    """Incoming invitations are visible before membership, across Workspaces."""
+    if not user or not getattr(user, 'is_authenticated', False) or not user.is_active:
+        return WorkplaceInvitation.objects.none()
+    return WorkplaceInvitation.objects.filter(
+        recipient=user, status=WorkplaceInvitation.Status.PENDING,
+        expires_at__gt=timezone.now(),
+    )
+
+
 def workplaces_for_user(user):
-    if not user or not getattr(user, 'is_authenticated', False):
+    if not user or not getattr(user, 'is_authenticated', False) or not user.is_active:
         return Workplace.objects.none()
     return (
         Workplace.objects
-        .filter(owner=user)
+        .filter(Q(owner=user) | Q(pk__in=WorkplaceMembership.objects.filter(
+            user=user, is_active=True, role__in=['admin', 'member'],
+        ).values('workplace_id')))
         .select_related('owner')
         .distinct()
         .order_by('name', 'id')
     )
+
+
+def workplace_role(user, workplace):
+    if not user or not user.is_authenticated or not user.is_active or not workplace:
+        return ''
+    if workplace.owner_id == user.pk:
+        return WorkplaceMembership.Role.OWNER
+    role = workplace.memberships.filter(user=user, is_active=True).values_list('role', flat=True).first()
+    return role if role in {'admin', 'member'} else ''
+
+
+def can_manage_team(user, workplace):
+    return workplace_role(user, workplace) in {'owner', 'admin'}
+
+
+def workspace_owner(request):
+    """Storage principal for team data; request.user remains the actual actor.
+
+    Existing owner + Workspace constraints and numbering stay intact. Joining a
+    Workspace grants access to its owner's data in that Workspace only.
+    """
+    workplace = getattr(request, 'workplace', None)
+    if workplace is None:
+        return request.user
+    key = (request.user.pk, workplace.pk)
+    if getattr(request, '_workspace_owner_key', None) != key:
+        if not workplace_role(request.user, workplace):
+            raise PermissionDenied
+        request._workspace_owner_key = key
+        request._workspace_owner = workplace.owner
+    return request._workspace_owner
+
+
+def workplace_people(workplace, user=None):
+    users = get_user_model().objects.filter(is_active=True)
+    if workplace is None:
+        return users.filter(pk=getattr(user, 'pk', None))
+    return users.filter(
+        Q(pk=workplace.owner_id) | Q(workplace_memberships__workplace=workplace, workplace_memberships__is_active=True),
+    ).distinct().order_by('first_name', 'last_name', 'email')
 
 
 def ensure_default_workplace(user):
@@ -59,6 +115,9 @@ def set_active_workplace(request, workplace):
 
 def backfill_legacy_records_for_workplace(user, workplace):
     if not user or not getattr(user, 'is_authenticated', False) or workplace is None:
+        return
+    # A member's old personal records must never move into another team's space.
+    if workplace.owner_id != user.pk:
         return
 
     models_by_owner_field = [

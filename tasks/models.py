@@ -977,7 +977,7 @@ def create_task_activity_on_create(sender, instance, created, **kwargs):
     if created:
         TaskActivity.objects.create(
             task=instance,
-            actor=instance.user,
+            actor=getattr(instance, '_activity_actor', instance.user),
             kind='system',
             action='created',
             message='utworzył zadanie',

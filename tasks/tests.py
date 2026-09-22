@@ -737,6 +737,10 @@ class TaskProjectCreationTests(TestCase):
             last_name='Projektowa',
             password='test-pass-123',
         )
+        from workplaces.models import WorkplaceMembership
+        from workplaces.services import ensure_default_workplace
+        WorkplaceMembership.objects.create(workplace=ensure_default_workplace(self.user), user=responsible_user, role='member')
+
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'create_project',
             'name': 'Projekt z metadanymi',
@@ -919,6 +923,10 @@ class TaskProjectCreationTests(TestCase):
             last_name='Spoza Kontaktow',
             password='test-pass-123',
         )
+
+        from workplaces.models import WorkplaceMembership
+        from workplaces.services import ensure_default_workplace
+        WorkplaceMembership.objects.create(workplace=ensure_default_workplace(self.user), user=target, role='member')
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'edit_project',

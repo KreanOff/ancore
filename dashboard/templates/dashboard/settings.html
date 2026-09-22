@@ -48,6 +48,10 @@
                             <span class="settings-row-copy"><strong>Przestrzenie robocze</strong><span>{% if current_workplace %}{{ current_workplace.name }} · Bieżący Workspace{% else %}Utwórz lub wybierz przestrzeń do wspólnej pracy.{% endif %}</span></span>
                             <i class="settings-row-arrow" data-icon="chevron-right" aria-hidden="true"></i>
                         </a>
+                        {% if current_workplace %}
+                        {% url 'workplaces:team' current_workplace.pk as team_url %}
+                        {% include 'dashboard/includes/settings_row.html' with href=team_url icon='users' title='Zespół i zaproszenia' description='Członkowie bieżącego Workspace i ich role.' only %}
+                        {% endif %}
                         {% url 'project_field_settings' as project_fields_url %}
                         {% include 'dashboard/includes/settings_row.html' with href=project_fields_url icon='list-filter' title='Wartości pól projektu' description='Statusy, etapy, kondycja i kolory terminów.' only %}
                         {% if request.user.is_staff %}

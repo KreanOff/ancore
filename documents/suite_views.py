@@ -20,6 +20,8 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
+from workplaces.services import workspace_owner
+
 from core.upload_validation import validate_attachment_upload
 from . import office_service as service
 from .board import EMPTY_SCENE, BOARD_LIMIT, clean_scene
@@ -65,7 +67,7 @@ def create(request):
                             initial={'kind': request.GET.get('type', 'word')})
     if request.method == 'POST' and form.is_valid():
         kind, title = form.cleaned_data['kind'], form.cleaned_data['title']
-        item = Document(owner=request.user, workplace=request.workplace, title=title)
+        item = Document(owner=workspace_owner(request), workplace=request.workplace, title=title)
         if kind == 'board':
             item.kind, item.content = Document.Kind.BOARD, json.dumps(EMPTY_SCENE)
             item.filename = title[:240] + '.excalidraw'
@@ -127,7 +129,7 @@ def rename(request, pk, drive=False):
     model = DriveDocument if drive else Document
     with transaction.atomic():
         item = get_object_or_404(model.objects.select_for_update(), pk=pk,
-                                 owner=request.user, workplace=request.workplace, deleted_at__isnull=True)
+                                 owner=workspace_owner(request), workplace=request.workplace, deleted_at__isnull=True)
         form = OfficeRenameForm(request.POST)
         if not form.is_valid():
             return _private(JsonResponse({'error': form.errors['title'][0]}, status=400))
@@ -151,7 +153,7 @@ def save_board(request, pk):
     except (ValidationError, ValueError, KeyError, TypeError, RecursionError) as error:
         return _private(JsonResponse({'error': error.messages[0] if isinstance(error, ValidationError) else 'Nieprawidłowe dane tablicy.'}, status=400))
     with transaction.atomic():
-        item = get_object_or_404(Document.objects.select_for_update(), pk=item.pk, owner=request.user, workplace=request.workplace, deleted_at__isnull=True)
+        item = get_object_or_404(Document.objects.select_for_update(), pk=item.pk, owner=workspace_owner(request), workplace=request.workplace, deleted_at__isnull=True)
         if item.revision != revision:
             return _private(JsonResponse({'error': 'Tablica zmieniła się w innym oknie. Pobierz swoją kopię przed ponownym otwarciem.'}, status=409))
         item.content, item.file_size = scene, len(scene.encode())
@@ -274,7 +276,7 @@ def callback(request, pk, drive=False):
 @require_POST
 def upgrade_text(request, pk):
     source = _item(request, pk, kind=Document.Kind.TEXT)
-    item = Document(owner=request.user, workplace=request.workplace,
+    item = Document(owner=workspace_owner(request), workplace=request.workplace,
                     title=source.title[:235] + ' — DOCX', kind=Document.Kind.FILE,
                     filename=source.title[:230] + '.docx')
     content = docx_bytes(source.content)
@@ -304,7 +306,7 @@ def convert(request, pk, drive=False):
         return redirect(_suite_url(request, f'{pk}/preview/', drive))
     model = DriveDocument if drive else Document
     extra = {'library': source.library, 'folder': source.folder, 'description': source.description} if drive else {'kind': Document.Kind.FILE}
-    item = model(owner=request.user, workplace=request.workplace,
+    item = model(owner=workspace_owner(request), workplace=request.workplace,
                  title=source.title[:230] + ' — kopia', filename=source.title[:220] + '.' + extension,
                  file_size=len(content), **extra)
     item.file.save(item.filename, ContentFile(content), save=False)

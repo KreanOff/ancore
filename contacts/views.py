@@ -10,6 +10,8 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET
 from django.views.decorators.http import require_POST
 
+from workplaces.services import workspace_owner
+
 from accounts.models import normalize_public_username
 from .forms import CompanyForm, CompanyModalForm, ContactForm, ContactModalForm
 from .models import Company, CompanyMembership, Contact, ContactActivity, UserContact
@@ -342,7 +344,7 @@ def _record_contact_activity(contact, actor, action, message='', kind='system', 
     )
 
 
-def _save_new_contact(form, user, workplace=None):
+def _save_new_contact(form, user, workplace=None, actor=None):
     contact = form.save(commit=False)
     contact.user = user
     contact.workplace = workplace
@@ -360,7 +362,7 @@ def _save_new_contact(form, user, workplace=None):
             user_contact.save(update_fields=['linked_contact'])
     _record_contact_activity(
         contact,
-        user,
+        actor or user,
         'created',
         'utworzył kontakt',
         metadata={'title': contact.display_name},
@@ -368,7 +370,7 @@ def _save_new_contact(form, user, workplace=None):
     if ancore_user is not None and ancore_user != user:
         _record_contact_activity(
             contact,
-            user,
+            actor or user,
             'linked_user',
             'dodał użytkownika aplikacji do kontaktów',
             metadata={'email': ancore_user.email, 'username': ancore_user.username},
@@ -464,7 +466,7 @@ def lookup_ancore_login(request):
     user = (
         user_model.objects
         .filter(is_active=True, username__iexact=login)
-        .exclude(pk=request.user.pk)
+        .exclude(pk=workspace_owner(request).pk)
         .first()
     )
     if user is None:
@@ -493,7 +495,7 @@ def contacts(request):
     status = (request.GET.get('status') or 'all').strip()
     contact_status = (request.GET.get('contact_status') or '').strip()
     sort = _contact_sort_value((request.GET.get('sort') or '').strip())
-    contact_modal_form = ContactModalForm(user=request.user, workplace=workplace)
+    contact_modal_form = ContactModalForm(user=workspace_owner(request), workplace=workplace)
     company_modal_form = CompanyModalForm()
     contact_modal_open = False
     company_modal_open = False
@@ -501,9 +503,9 @@ def contacts(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'create_contact_modal':
-            contact_modal_form = ContactModalForm(request.POST, user=request.user, workplace=workplace)
+            contact_modal_form = ContactModalForm(request.POST, user=workspace_owner(request), workplace=workplace)
             if contact_modal_form.is_valid():
-                contact = _save_new_contact(contact_modal_form, request.user, workplace)
+                contact = _save_new_contact(contact_modal_form, workspace_owner(request), workplace, actor=request.user)
                 messages.success(request, 'Kontakt dodany.')
                 return redirect('contacts:view-contact', contact_id=contact.pk)
             contact_modal_open = True
@@ -512,13 +514,13 @@ def contacts(request):
         if action == 'create_company_modal':
             company_modal_form = CompanyModalForm(request.POST, request.FILES)
             if company_modal_form.is_valid():
-                company = _save_new_company(company_modal_form, request.user, workplace)
+                company = _save_new_company(company_modal_form, workspace_owner(request), workplace)
                 messages.success(request, 'Firma utworzona.')
                 return redirect('contacts:view-company', company_id=company.pk)
             company_modal_open = True
             messages.error(request, 'Nie udało się utworzyć firmy.')
 
-    contacts_qs = _ancore_contacts_queryset(request.user, workplace)
+    contacts_qs = _ancore_contacts_queryset(workspace_owner(request), workplace)
 
     if query:
         contacts_qs = contacts_qs.filter(
@@ -549,7 +551,7 @@ def contacts(request):
     )
 
     context = {
-        **_contacts_navigation_context(request.user, active_status=status, workplace=workplace),
+        **_contacts_navigation_context(workspace_owner(request), active_status=status, workplace=workplace),
         'contacts': contact_window['contacts'],
         'contact_window': contact_window,
         'query': query,
@@ -579,7 +581,7 @@ def guest_contacts(request):
     query = (request.GET.get('q') or '').strip()
     contact_status = (request.GET.get('contact_status') or '').strip()
     sort = _contact_sort_value((request.GET.get('sort') or '').strip())
-    contact_modal_form = ContactModalForm(user=request.user, workplace=workplace)
+    contact_modal_form = ContactModalForm(user=workspace_owner(request), workplace=workplace)
     company_modal_form = CompanyModalForm()
     contact_modal_open = False
     company_modal_open = False
@@ -587,9 +589,9 @@ def guest_contacts(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'create_contact_modal':
-            contact_modal_form = ContactModalForm(request.POST, user=request.user, workplace=workplace)
+            contact_modal_form = ContactModalForm(request.POST, user=workspace_owner(request), workplace=workplace)
             if contact_modal_form.is_valid():
-                contact = _save_new_contact(contact_modal_form, request.user, workplace)
+                contact = _save_new_contact(contact_modal_form, workspace_owner(request), workplace, actor=request.user)
                 messages.success(request, 'Kontakt dodany.')
                 return redirect('contacts:view-contact', contact_id=contact.pk)
             contact_modal_open = True
@@ -598,13 +600,13 @@ def guest_contacts(request):
         if action == 'create_company_modal':
             company_modal_form = CompanyModalForm(request.POST, request.FILES)
             if company_modal_form.is_valid():
-                company = _save_new_company(company_modal_form, request.user, workplace)
+                company = _save_new_company(company_modal_form, workspace_owner(request), workplace)
                 messages.success(request, 'Firma utworzona.')
                 return redirect('contacts:view-company', company_id=company.pk)
             company_modal_open = True
             messages.error(request, 'Nie udało się utworzyć firmy.')
 
-    contacts_qs = _guest_contacts_queryset(request.user, workplace)
+    contacts_qs = _guest_contacts_queryset(workspace_owner(request), workplace)
 
     if query:
         contacts_qs = contacts_qs.filter(
@@ -633,7 +635,7 @@ def guest_contacts(request):
     )
 
     context = {
-        **_contacts_navigation_context(request.user, active_status='guests', workplace=workplace),
+        **_contacts_navigation_context(workspace_owner(request), active_status='guests', workplace=workplace),
         'contacts': contact_window['contacts'],
         'contact_window': contact_window,
         'query': query,
@@ -676,8 +678,8 @@ def _contact_detail_queryset(user, workplace=None):
 @login_required
 def view_contact(request, contact_id):
     workplace = _active_workplace(request)
-    contact = get_object_or_404(_contact_detail_queryset(request.user, workplace), pk=contact_id)
-    can_edit_contact = _has_edit_access(request.user, contact)
+    contact = get_object_or_404(_contact_detail_queryset(workspace_owner(request), workplace), pk=contact_id)
+    can_edit_contact = _has_edit_access(workspace_owner(request), contact)
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -698,7 +700,7 @@ def view_contact(request, contact_id):
         'can_edit_contact': can_edit_contact,
         'contact_shares': [],
         'activity_items': contact.activities.select_related('actor'),
-        **_contacts_navigation_context(request.user, active_status=contact.status, workplace=workplace),
+        **_contacts_navigation_context(workspace_owner(request), active_status=contact.status, workplace=workplace),
     }
     return render(request, 'contacts/view_contact.html', context)
 
@@ -706,14 +708,14 @@ def view_contact(request, contact_id):
 @login_required
 def edit_contact(request, contact_id):
     workplace = _active_workplace(request)
-    contact = get_object_or_404(_contact_detail_queryset(request.user, workplace), pk=contact_id)
-    can_edit_contact = _has_edit_access(request.user, contact)
+    contact = get_object_or_404(_contact_detail_queryset(workspace_owner(request), workplace), pk=contact_id)
+    can_edit_contact = _has_edit_access(workspace_owner(request), contact)
 
     if not can_edit_contact:
         messages.error(request, 'Nie masz uprawnień do edycji tego kontaktu.')
         return redirect('contacts:view-contact', contact_id=contact.pk)
 
-    form = ContactForm(request.POST or None, instance=contact, user=request.user, workplace=workplace)
+    form = ContactForm(request.POST or None, instance=contact, user=workspace_owner(request), workplace=workplace)
 
     if request.method == 'POST':
         before = _contact_snapshot(contact)
@@ -738,7 +740,7 @@ def edit_contact(request, contact_id):
         'can_edit_contact': can_edit_contact,
         'contact_shares': [],
         'activity_items': contact.activities.select_related('actor'),
-        **_contacts_navigation_context(request.user, active_status=contact.status, workplace=workplace),
+        **_contacts_navigation_context(workspace_owner(request), active_status=contact.status, workplace=workplace),
     }
     return render(request, 'contacts/view_contact.html', context)
 
@@ -746,7 +748,7 @@ def edit_contact(request, contact_id):
 @login_required
 @require_POST
 def delete_contact(request, contact_id):
-    contact = get_object_or_404(_filter_workplace(Contact.objects.filter(user=request.user), _active_workplace(request)), pk=contact_id)
+    contact = get_object_or_404(_filter_workplace(Contact.objects.filter(user=workspace_owner(request)), _active_workplace(request)), pk=contact_id)
     contact.delete()
     messages.success(request, 'Kontakt usunięty.')
     return redirect(reverse('contacts:contacts'))
@@ -762,9 +764,9 @@ def user_directory(request):
     if presence not in valid_presence_statuses:
         presence = 'all'
 
-    users = user_model.objects.filter(is_active=True).exclude(pk=request.user.pk)
+    users = user_model.objects.filter(is_active=True).exclude(pk=workspace_owner(request).pk)
     if presence != 'all':
-        users = users.filter(added_by_users__owner=request.user)
+        users = users.filter(added_by_users__owner=workspace_owner(request))
         if workplace is not None:
             users = users.filter(added_by_users__workplace=workplace)
         users = users.distinct()
@@ -784,7 +786,7 @@ def user_directory(request):
         users = users.none()
 
     existing_ids = set(
-        _filter_workplace(UserContact.objects.filter(owner=request.user), workplace).values_list('target_user_id', flat=True)
+        _filter_workplace(UserContact.objects.filter(owner=workspace_owner(request)), workplace).values_list('target_user_id', flat=True)
     )
 
     context = {
@@ -792,7 +794,7 @@ def user_directory(request):
         'presence': presence,
         'users': users.order_by('first_name', 'middle_name', 'last_name', 'email')[:50],
         'existing_user_contact_ids': existing_ids,
-        **_contacts_navigation_context(request.user, active_status='users', active_presence=presence, workplace=workplace),
+        **_contacts_navigation_context(workspace_owner(request), active_status='users', active_presence=presence, workplace=workplace),
     }
     return render(request, 'contacts/user_directory.html', context)
 
@@ -802,12 +804,12 @@ def user_directory(request):
 def add_user_contact(request, user_id):
     workplace = _active_workplace(request)
     target_user = get_object_or_404(get_user_model(), pk=user_id, is_active=True)
-    if target_user == request.user:
+    if target_user == workspace_owner(request):
         messages.error(request, 'Nie możesz dodać siebie do kontaktów.')
         return redirect('contacts:user-directory')
 
     contact, _ = Contact.objects.get_or_create(
-        user=request.user,
+        user=workspace_owner(request),
         workplace=workplace,
         email=target_user.email,
         defaults={
@@ -819,7 +821,7 @@ def add_user_contact(request, user_id):
         },
     )
     user_contact, created = UserContact.objects.get_or_create(
-        owner=request.user,
+        owner=workspace_owner(request),
         workplace=workplace,
         target_user=target_user,
         defaults={'linked_contact': contact},
@@ -849,7 +851,7 @@ def companies(request):
     query = (request.GET.get('q') or '').strip()
     contact_filter = (request.GET.get('contact_filter') or '').strip()
     sort = _company_sort_value((request.GET.get('sort') or '').strip())
-    contact_modal_form = ContactModalForm(user=request.user, workplace=workplace)
+    contact_modal_form = ContactModalForm(user=workspace_owner(request), workplace=workplace)
     company_modal_form = CompanyModalForm()
     contact_modal_open = False
     company_modal_open = False
@@ -857,9 +859,9 @@ def companies(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'create_contact_modal':
-            contact_modal_form = ContactModalForm(request.POST, user=request.user, workplace=workplace)
+            contact_modal_form = ContactModalForm(request.POST, user=workspace_owner(request), workplace=workplace)
             if contact_modal_form.is_valid():
-                contact = _save_new_contact(contact_modal_form, request.user, workplace)
+                contact = _save_new_contact(contact_modal_form, workspace_owner(request), workplace, actor=request.user)
                 messages.success(request, 'Kontakt dodany.')
                 return redirect('contacts:view-contact', contact_id=contact.pk)
             contact_modal_open = True
@@ -868,13 +870,13 @@ def companies(request):
         if action == 'create_company_modal':
             company_modal_form = CompanyModalForm(request.POST, request.FILES)
             if company_modal_form.is_valid():
-                company = _save_new_company(company_modal_form, request.user, workplace)
+                company = _save_new_company(company_modal_form, workspace_owner(request), workplace)
                 messages.success(request, 'Firma utworzona.')
                 return redirect('contacts:view-company', company_id=company.pk)
             company_modal_open = True
             messages.error(request, 'Nie udało się utworzyć firmy.')
 
-    companies_qs = _visible_companies_queryset(request.user, workplace).annotate(contact_count=Count('contacts', filter=Q(contacts__workplace=workplace)))
+    companies_qs = _visible_companies_queryset(workspace_owner(request), workplace).annotate(contact_count=Count('contacts', filter=Q(contacts__workplace=workplace)))
     if query:
         companies_qs = companies_qs.filter(
             Q(name__icontains=query)
@@ -897,7 +899,7 @@ def companies(request):
     )
 
     context = {
-        **_contacts_navigation_context(request.user, active_status='companies', workplace=workplace),
+        **_contacts_navigation_context(workspace_owner(request), active_status='companies', workplace=workplace),
         'query': query,
         'companies': company_window['companies'],
         'company_window': company_window,
@@ -923,9 +925,9 @@ def companies(request):
 @login_required
 def view_company(request, company_id):
     workplace = _active_workplace(request)
-    company = get_object_or_404(_visible_companies_queryset(request.user, workplace), pk=company_id)
-    can_edit_company = _has_edit_access(request.user, company)
-    company_contacts = _contacts_queryset(request.user, workplace).filter(company_record=company)
+    company = get_object_or_404(_visible_companies_queryset(workspace_owner(request), workplace), pk=company_id)
+    can_edit_company = _has_edit_access(workspace_owner(request), company)
+    company_contacts = _contacts_queryset(workspace_owner(request), workplace).filter(company_record=company)
 
     if request.method == 'POST':
         messages.error(request, 'Edycja firmy jest dostępna w osobnym widoku.')
@@ -936,7 +938,7 @@ def view_company(request, company_id):
         'can_edit_company': can_edit_company,
         'company_contacts': company_contacts,
         'company_shares': [],
-        **_contacts_navigation_context(request.user, active_status='companies', workplace=workplace),
+        **_contacts_navigation_context(workspace_owner(request), active_status='companies', workplace=workplace),
     }
     return render(request, 'contacts/view_company.html', context)
 
@@ -944,8 +946,8 @@ def view_company(request, company_id):
 @login_required
 def edit_company(request, company_id):
     workplace = _active_workplace(request)
-    company = get_object_or_404(_visible_companies_queryset(request.user, workplace), pk=company_id)
-    can_edit_company = _has_edit_access(request.user, company)
+    company = get_object_or_404(_visible_companies_queryset(workspace_owner(request), workplace), pk=company_id)
+    can_edit_company = _has_edit_access(workspace_owner(request), company)
 
     if not can_edit_company:
         messages.error(request, 'Nie masz uprawnień do edycji tej firmy.')
@@ -960,7 +962,7 @@ def edit_company(request, company_id):
             return redirect('contacts:view-company', company_id=company.pk)
         messages.error(request, 'Nie udało się zaktualizować firmy.')
 
-    company_contacts = _contacts_queryset(request.user, workplace).filter(company_record=company)
+    company_contacts = _contacts_queryset(workspace_owner(request), workplace).filter(company_record=company)
 
     context = {
         'company': company,
@@ -969,7 +971,7 @@ def edit_company(request, company_id):
         'can_edit_company': can_edit_company,
         'company_contacts': company_contacts,
         'company_shares': [],
-        **_contacts_navigation_context(request.user, active_status='companies', workplace=workplace),
+        **_contacts_navigation_context(workspace_owner(request), active_status='companies', workplace=workplace),
     }
     return render(request, 'contacts/view_company.html', context)
 
@@ -977,7 +979,7 @@ def edit_company(request, company_id):
 @login_required
 @require_POST
 def delete_company(request, company_id):
-    company = get_object_or_404(_filter_workplace(Company.objects.filter(owner=request.user), _active_workplace(request)), pk=company_id)
+    company = get_object_or_404(_filter_workplace(Company.objects.filter(owner=workspace_owner(request)), _active_workplace(request)), pk=company_id)
     company.delete()
     messages.success(request, 'Firma usunięta.')
     return redirect('contacts:companies')

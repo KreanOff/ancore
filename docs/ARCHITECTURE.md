@@ -112,15 +112,17 @@ flowchart LR
 
 - `User` jest wspólnym modelem konta. Pola `user`/`owner` w domenach oznaczają
   właściciela rekordu; pola wykonawcy/osoby odpowiedzialnej to osobne relacje.
-- `Workplace` jest kontekstem danych; obecny dostęp do Workspace opiera się
-  na właścicielu, mimo że istnieje model członkostwa.
+- `Workplace` jest kontekstem danych zespołu. Właściciel i członkowie mają wspólny
+  dostęp; role i zakres pierwszej wersji opisuje [Praca zespołowa](TEAMWORK.md).
+  Dane zachowują właściciela Workspace, a autor operacji to `request.user`.
 - Zadania i Kanban mają różne hierarchie i osobne tabele. Kanban nie jest
   jedynie innym sposobem wyświetlenia `Task`.
 - Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
   Zadań i Kanbana.
-- `core` dostarcza powłokę interfejsu i upload; `core` i `dashboard` nie mają
-  własnych modeli domenowych w obecnym kodzie.
+- `core` dostarcza powłokę interfejsu i upload; `core` nie ma własnych modeli domenowych. `dashboard.NotificationState`
+  zapisuje osobisty odczyt i archiwum powiadomień, odwołując się do istniejących
+  aktywności i zaproszeń.
 
 ## 6. Hierarchie danych
 

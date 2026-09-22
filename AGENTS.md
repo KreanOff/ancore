@@ -31,9 +31,11 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   `kanban/views/tasks.py`. Pusty `tasks/views.py` nie jest miejscem implementacji.
 - `tasks.Task` i `kanban.Kanban` to osobne modele. Współdzielą m.in.
   `tasks.TaskTag`, część szablonów oraz `static/js/tasks.js`.
-- Dane biznesowe ograniczaj zgodnie z istniejącym kodem do właściciela
-  i aktywnego `request.workplace`; formularze także muszą ograniczać relacje.
-  Sam wpis członkostwa albo przypisanie wykonawcy nie daje dostępu do danych.
+- Dane biznesowe ograniczaj do właściciela Workspace wyznaczonego przez
+  `workplaces.services.workspace_owner(request)` i aktywnego `request.workplace`.
+  Członkostwo daje dostęp do całego Workspace; formularze także ograniczają relacje.
+  `request.user` pozostaje faktycznym autorem operacji, komentarzy i historii.
+  Samo przypisanie wykonawcy nie daje dostępu. Zasady ról: `docs/TEAMWORK.md`.
 - Korzystaj z mechanizmów `workplaces.services` do ustalania Workspace
   i budowania adresów. Sprawdź zwykłe oraz scoped adresy aplikacji.
 - Zachowaj różnicę między kluczem bazy `pk`, numerem `task_id` i kodami
