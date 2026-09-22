@@ -19,7 +19,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
 | [core](../core) | 12 | 0 | 9 | 32 |
 | [accounts](../accounts) | 14 | 4 | 8 | 28 |
-| [workplaces](../workplaces) | 17 | 8 | 6 | 66 |
+| [workplaces](../workplaces) | 18 | 8 | 10 | 78 |
 | [tasks](../tasks) | 15 | 47 | 24 | 171 |
 | [kanban](../kanban) | 9 | 34 | 9 | 71 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
@@ -896,13 +896,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [workplaces/middleware.py](../workplaces/middleware.py) — `ActiveWorkplaceMiddleware`
 - [workplaces/models.py](../workplaces/models.py) — `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `SidebarFavorite`, `create_workplace_for_user`
 - [workplaces/navigation.py](../workplaces/navigation.py) — `sidebar_favorite_catalog`, `sidebar_favorite_is_active`, `sidebar_favorites_for_request`
-- [workplaces/services.py](../workplaces/services.py) — `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `backfill_legacy_records_for_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
-- [workplaces/team_views.py](../workplaces/team_views.py) — `InvitationForm`, `team`, `invitation_response`, `member_update`, `invitation_cancel`
+- [workplaces/services.py](../workplaces/services.py) — `workplace_management_url`, `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `backfill_legacy_records_for_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
+- [workplaces/team_views.py](../workplaces/team_views.py) — `InvitationForm`, `team`, `team_context`, `invitation_response`, `member_update`, `invitation_cancel`
 - [workplaces/templatetags/__init__.py](../workplaces/templatetags/__init__.py)
 - [workplaces/templatetags/sidebar_favorites.py](../workplaces/templatetags/sidebar_favorites.py) — `sidebar_favorite_toggle`
 - [workplaces/templatetags/workplace_avatar.py](../workplaces/templatetags/workplace_avatar.py) — `workplace_avatar_seed`, `workplace_avatar`
 - [workplaces/urls.py](../workplaces/urls.py)
-- [workplaces/views.py](../workplaces/views.py) — `workplaces`, `switch_workplace`, `toggle_sidebar_favorite`, `reorder_sidebar_favorites`, `workplace_home`, `update_workplace`, `delete_workplace`
+- [workplaces/views.py](../workplaces/views.py) — `workplaces`, `render_workplaces`, `switch_workplace`, `toggle_sidebar_favorite`, `reorder_sidebar_favorites`, `workplace_home`, `update_workplace`, `delete_workplace`
 
 ### tasks
 
@@ -1012,11 +1012,15 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### workplaces
 
+- [workplaces/templates/workplaces/includes/invitation_filter.html](../workplaces/templates/workplaces/includes/invitation_filter.html)
 - [workplaces/templates/workplaces/includes/invitation_response_modal.html](../workplaces/templates/workplaces/includes/invitation_response_modal.html)
+- [workplaces/templates/workplaces/includes/management_toolbar.html](../workplaces/templates/workplaces/includes/management_toolbar.html)
+- [workplaces/templates/workplaces/includes/received_invitations.html](../workplaces/templates/workplaces/includes/received_invitations.html)
 - [workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html](../workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html)
 - [workplaces/templates/workplaces/includes/sidebar_favorites.html](../workplaces/templates/workplaces/includes/sidebar_favorites.html)
+- [workplaces/templates/workplaces/includes/team_modals.html](../workplaces/templates/workplaces/includes/team_modals.html)
+- [workplaces/templates/workplaces/includes/team_panel.html](../workplaces/templates/workplaces/includes/team_panel.html)
 - [workplaces/templates/workplaces/includes/workplace_photo_editor.html](../workplaces/templates/workplaces/includes/workplace_photo_editor.html)
-- [workplaces/templates/workplaces/team.html](../workplaces/templates/workplaces/team.html)
 - [workplaces/templates/workplaces/workplaces.html](../workplaces/templates/workplaces/workplaces.html)
 
 ### tasks
@@ -1225,6 +1229,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `AuthPageViewTests`: 2 metod testowych.
 - `ProfileViewTests`: 13 metod testowych.
 - `AccountSwitcherTests`: 11 metod testowych.
+
+### workplaces/test_management.py
+
+Źródło: [workplaces/test_management.py](../workplaces/test_management.py).
+
+- `WorkspaceManagementTests`: 12 metod testowych.
 
 ### workplaces/test_team.py
 

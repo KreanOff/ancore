@@ -34,13 +34,14 @@ obsługuje osobny mechanizm opisany w Mechanizmach.
 [middleware](../workplaces/middleware.py), [widoki](../workplaces/views.py),
 [nawigacja](../workplaces/navigation.py).
 
-**Funkcje:** lista miejsc pracy, utworzenie, edycja, usunięcie i przełączenie;
+**Funkcje:** wspólny panel z zakładkami „Workspace”, „Członkowie” i „Zaproszenia”
+(otrzymane lub wysłane z wybranej przestrzeni); utworzenie, edycja, usunięcie i przełączenie;
 nazwa, opis, kod, slug i obraz; ulubione miejsca w nawigacji oraz ich kolejność.
 Po zalogowaniu, jeśli nie ma Workspace, usługa może utworzyć domyślne
 „Moje miejsce pracy”.
 
 `WorkplaceMembership` udostępnia wspólny Workspace rolom owner/admin/member.
-Ekran zespołu, zaproszenia w aplikacji do istniejących kont, zmiany ról oraz
+Zakładkę członków Workspace, zaproszenia w aplikacji do istniejących kont, zmiany ról oraz
 odebranie dostępu opisuje [Praca zespołowa](TEAMWORK.md). Członkostwo obejmuje
 wszystkie moduły danego Workspace. Dane są zapisywane z właścicielem Workspace;
 autorzy komentarzy i historii pozostają faktycznymi użytkownikami.
@@ -49,7 +50,10 @@ autorzy komentarzy i historii pozostają faktycznymi użytkownikami.
 nawigacji i pozycję. Katalog dozwolonych miejsc jest w
 `SIDEBAR_FAVORITE_DEFINITIONS`. Zwijanie i szerokość nawigacji to lokalny stan UI.
 
-**Scenariusz:** wybierz Workspace → otwórz moduł pod jego adresem → pracuj na
+Wybór do zarządzania (`?workspace=<pk>`) nie zmienia aktywnego kontekstu.
+Utworzenie wraca do katalogu, a zapis ustawień zachowuje zakładkę i wybraną przestrzeń.
+
+**Scenariusz pracy:** przełącz Workspace → otwórz moduł pod jego adresem → pracuj na
 danych tego kontekstu. Zmiana Workspace zmienia kontekst list, formularzy,
 tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane jest członkostwo.
 

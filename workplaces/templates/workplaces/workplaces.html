@@ -1,8 +1,9 @@
 {% extends 'core/base.html' %}
 {% load workplace_avatar static %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260922-invitation-dialog">
-<script src="{% static 'js/workplace-team.js' %}?v=20260922-invitation-dialog" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
+<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260922-workspace-catalog-controls">
+<script src="{% static 'js/workplace-team.js' %}?v=20260922-workspace-catalog-controls" defer></script>
 {% endblock %}
 
 {% block title %}Workspace | ancore{% endblock %}
@@ -16,41 +17,32 @@
 {% endblock %}
 
 {% block content %}
-<div class="workplaces-page workplaces-settings-page" data-team-modal-page>
+<div class="workplaces-page workplaces-settings-page workplaces-management" data-team-modal-page>
     <a class="workplaces-skip-link" href="#workplaces-page-title">Przejdź do listy miejsc pracy</a>
 
     <main class="workplaces-settings-main">
         <section class="workplaces-workspace workplaces-console" aria-labelledby="workplaces-page-title">
             <h1 id="workplaces-page-title" class="u-sr-only">Workspace</h1>
-            <header class="tasks-topbar workplaces-task-topbar">
+            <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory workplaces-task-topbar">
                 <div class="tasks-titlebar-left">
                     <span class="tasks-topbar-title">
                         <span>Workspace</span>
                     </span>
                 </div>
-                <div class="tasks-titlebar-search tasks-search-actions" role="search">
-                    <label class="tasks-search-field" for="workplaces-search-input">
-                        <i data-icon="search" aria-hidden="true"></i>
-                        <input id="workplaces-search-input" type="search" placeholder="Szukaj" autocomplete="off" data-workplaces-search>
-                    </label>
+                {% if management_view == 'workspaces' %}
+                <div class="tasks-titlebar-actions">
+                    <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--project-add workplaces-create-button" aria-haspopup="dialog" aria-expanded="{{ workplace_create_modal_open|yesno:'true,false' }}" aria-controls="workplace-create-modal" data-workplace-create-open><i data-icon="plus" aria-hidden="true"></i><span>Dodaj Workspace</span></button>
                 </div>
+                {% elif management_view != 'received' and can_manage_team %}
+                <div class="tasks-titlebar-actions">
+                    <button type="button" class="tasks-filter-button" data-workplace-edit-open="workplace-edit-modal-{{ team_workplace.pk }}" aria-haspopup="dialog" aria-controls="workplace-edit-modal-{{ team_workplace.pk }}" aria-expanded="false"><i data-icon="settings" aria-hidden="true"></i><span>Ustawienia</span></button>
+                    <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-team-modal-open="team-invite-modal" aria-haspopup="dialog" aria-controls="team-invite-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Zaproś osobę</span></button>
+                </div>
+                {% endif %}
             </header>
+            {% include 'workplaces/includes/management_toolbar.html' %}
 
-            <div class="tasks-filterbar workplaces-task-filterbar">
-                <div class="tasks-filterbar-left">
-                    {% if pending_invitations %}<button type="button" class="tasks-filter-button" data-team-modal-open="workspace-invitation-modal" aria-haspopup="dialog" aria-controls="workspace-invitation-modal" aria-expanded="{{ invitation_modal_open|yesno:'true,false' }}"><i data-icon="mail" aria-hidden="true"></i>Zaproszenia ({{ pending_invitations|length }})</button>{% endif %}
-                </div>
-                <div class="tasks-filterbar-center"></div>
-                <div class="tasks-filterbar-right">
-                    <div class="workplaces-create-actions workplaces-create-actions--filterbar">
-                        <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--project-add workplaces-create-button" aria-haspopup="dialog" aria-expanded="{% if workplace_create_modal_open %}true{% else %}false{% endif %}" aria-controls="workplace-create-modal" data-workplace-create-open>
-                            <span aria-hidden="true"><i data-icon="plus"></i></span>
-                            <span>Dodaj</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
+            {% if management_view == 'workspaces' %}
             <div class="workplaces-console__body">
                 <section class="workplaces-directory" aria-label="Lista miejsc pracy">
                     <div class="workplaces-directory__table tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplaces-project-sheet">
@@ -71,14 +63,14 @@
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code">Kod miejsca pracy<i data-icon="hash" aria-hidden="true"></i></span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description">Opis<i data-icon="align-left" aria-hidden="true"></i></span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members">Członkowie<i data-icon="users" aria-hidden="true"></i></span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context">Kontekst<i data-icon="panels-top-left" aria-hidden="true"></i></span>
+                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context">Twoja rola<i data-icon="panels-top-left" aria-hidden="true"></i></span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="status">Status<i data-icon="circle-dot" aria-hidden="true"></i></span>
                             </div>
 
                             <div class="workplaces-directory__body tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista miejsc pracy">
                                 {% for workplace in workplaces %}
                                 {% with member_count=workplace.team_member_count %}
-                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" role="row"{% if active_workplace and workplace.id == active_workplace.id %} aria-current="true"{% endif %} data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-code="{{ workplace.code }}" data-workplace-description="{{ workplace.description }}" data-workplace-members="{{ member_count }}" data-workplace-context="{% if active_workplace and workplace.id == active_workplace.id %}Bieżące miejsce pracy{% else %}Dostępne miejsce pracy{% endif %}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-edit-modal="workplace-edit-modal-{{ workplace.id }}">
+                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" role="row"{% if active_workplace and workplace.id == active_workplace.id %} aria-current="true"{% endif %} data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-code="{{ workplace.code }}" data-workplace-description="{{ workplace.description }}" data-workplace-members="{{ member_count }}" data-workplace-context="{{ workplace.viewer_role_label }}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-edit-modal="workplace-edit-modal-{{ workplace.id }}">
                                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz miejsce pracy {{ workplace.name }}" data-workplace-id="{{ workplace.id }}" data-workplace-checkbox>
                                     <div class="workplaces-directory__cell workplace-row__open tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                                         {% if active_workplace and workplace.id == active_workplace.id %}
@@ -109,7 +101,7 @@
                                             {% endif %}
                                         </span>
                                         <span class="tasks-row-title-main">
-                                            <span class="tasks-row-title-text">{{ workplace.name }}</span>
+                                            <a class="tasks-row-title-text workplaces-management__select" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}" aria-label="Zarządzaj {{ workplace.name }}">{{ workplace.name }}</a>
                                             {% if active_workplace and workplace.id == active_workplace.id %}
                                             <span class="workplace-row__current-badge" data-workplace-current-badge>Bieżący</span>
                                             {% endif %}
@@ -119,9 +111,9 @@
                                     <span class="workplaces-directory__cell workplace-row__description tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="cell">{{ workplace.description|default:"—" }}</span>
                                     <span class="workplaces-directory__cell workplace-row__members tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" role="cell">
                                         <i data-icon="users" aria-hidden="true"></i>
-                                        <a href="{% url 'workplaces:team' workplace.pk %}" aria-label="Zespół {{ workplace.name }}">{{ member_count }} {% if member_count == 1 %}członek{% else %}członków{% endif %}</a>
+                                        <a href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}" aria-label="Zespół {{ workplace.name }}">{{ member_count }} {% if member_count == 1 %}członek{% else %}członków{% endif %}</a>
                                     </span>
-                                    <span class="workplaces-directory__cell workplace-row__context tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context" role="cell">{% if active_workplace and workplace.id == active_workplace.id %}Bieżące miejsce pracy{% else %}Dostępne miejsce pracy{% endif %}</span>
+                                    <span class="workplaces-directory__cell workplace-row__context tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context" role="cell">{{ workplace.viewer_role_label }}</span>
                                     <span class="workplaces-directory__cell workplace-row__status tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" data-column="status" role="cell">
                                         <span aria-hidden="true"></span>
                                         {% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}
@@ -138,42 +130,20 @@
                         </section>
                     </div>
                 </section>
-                <div class="tasks-project-pagination workplaces-directory__pagination" data-workplaces-pagination{% if not workplaces %} hidden{% endif %}>
-                    <div class="tasks-project-pagination__size">
-                        <span>Na stronie</span>
-                        <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact" data-workplaces-page-size-dropdown>
-                            <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact" aria-label="Liczba miejsc pracy na stronie" aria-haspopup="menu" aria-expanded="false" data-workplaces-page-size-toggle>
-                                <span data-workplaces-page-size-label>50</span>
-                            </button>
-                            <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba miejsc pracy na stronie">
-                                <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="10">10</button>
-                                <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="25">25</button>
-                                <button type="button" role="menuitemradio" aria-checked="true" class="is-active" data-workplaces-page-size-value="50">50</button>
-                                <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="100">100</button>
-                                <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="150">150</button>
-                                <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="200">200</button>
-                            </div>
-                        </div>
-                        <span>miejsc pracy</span>
-                    </div>
-                    <span class="tasks-project-pagination__summary" aria-live="polite" data-workplaces-pagination-summary></span>
-                    <nav class="tasks-project-pagination__pages" aria-label="Strony miejsc pracy">
-                        <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie miejsca pracy" data-workplaces-page-prev disabled>
-                            <i data-icon="chevron-left" aria-hidden="true"></i>
-                        </button>
-                        <span class="tasks-project-pagination__numbers" data-workplaces-pagination-pages></span>
-                        <button type="button" class="tasks-project-pagination__button" aria-label="Następne miejsca pracy" data-workplaces-page-next disabled>
-                            <i data-icon="chevron-right" aria-hidden="true"></i>
-                        </button>
-                    </nav>
-                </div>
+                <div class="workplaces-empty workplaces-management__no-results" data-workplaces-no-results hidden><p>Nie znaleziono Workspace.</p><button type="button" class="btn btn-secondary" data-workplaces-clear-search>Wyczyść wyszukiwanie</button></div>
+
             </div>
+            {% elif management_view == 'received' %}
+                {% include 'workplaces/includes/received_invitations.html' %}
+            {% elif team_workplace %}
+                {% include 'workplaces/includes/team_panel.html' %}
+            {% endif %}
         </section>
     </main>
 
     <div class="tasks-modal tasks-project-modal tasks-project-create-modal tasks-issue-modal workplace-create-modal{% if workplace_create_modal_open %} is-open{% endif %}" id="workplace-create-modal" role="dialog" aria-modal="true" aria-labelledby="workplace-create-modal-title" aria-describedby="workplace-create-modal-description" aria-hidden="{% if workplace_create_modal_open %}false{% else %}true{% endif %}" data-workplace-create-modal>
         <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-create-modal__dialog tasks-issue-modal__dialog workplace-create-modal__dialog">
-            <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form workplace-create-modal__form" id="workplace-create-form" enctype="multipart/form-data">
+            <form method="post" action="{% url 'workplaces:workplaces' %}" class="tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form workplace-create-modal__form" id="workplace-create-form" enctype="multipart/form-data">
                 {% csrf_token %}
                 <header class="tasks-modal__header tasks-project-create-modal__header tasks-issue-modal__header workplace-create-modal__header">
                     <div class="tasks-issue-modal__crumbs">
@@ -225,7 +195,7 @@
                         </div>
                     </div>
 
-                    <p class="u-sr-only">Po utworzeniu przełączymy Cię do nowego miejsca pracy. Adres i członkostwo właściciela ustawimy automatycznie.</p>
+                    <p class="u-sr-only">Po utworzeniu otworzymy panel zarządzania nowym Workspace. Adres i członkostwo właściciela ustawimy automatycznie.</p>
                 </div>
 
                 <footer class="tasks-modal__footer tasks-project-create-modal__footer tasks-issue-modal__footer workplace-create-modal__footer">
@@ -242,6 +212,7 @@
         <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog workplace-edit-modal__dialog">
             <form method="post" action="{% url 'workplaces:update' workplace.id %}" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form workplace-edit-modal__form" enctype="multipart/form-data">
                 {% csrf_token %}
+                <input type="hidden" name="view" value="{{ management_view }}">
                 <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header workplace-edit-modal__header">
                     <div class="tasks-issue-modal__crumbs">
                         <button type="button" class="tasks-issue-close" data-close-workplace-modal aria-label="Zamknij" title="Zamknij">
@@ -302,11 +273,10 @@
             const pageSizeLabel = document.querySelector('[data-workplaces-page-size-label]');
             const pageSizeOptions = Array.from(document.querySelectorAll('[data-workplaces-page-size-value]'));
             const paginationSummary = document.querySelector('[data-workplaces-pagination-summary]');
-            const paginationPages = document.querySelector('[data-workplaces-pagination-pages]');
             const previousPageButton = document.querySelector('[data-workplaces-page-prev]');
             const nextPageButton = document.querySelector('[data-workplaces-page-next]');
-            let currentPage = 1;
             let pageSize = 50;
+            let currentPage = 1;
 
             if (!selectAll) return;
 
@@ -368,27 +338,16 @@
                     row.setAttribute('aria-hidden', String(!isVisible));
                 });
 
+                const noResults = document.querySelector('[data-workplaces-no-results]');
+                if (noResults) noResults.hidden = totalRows > 0 || rows.length === 0;
+
                 if (paginationSummary) {
                     paginationSummary.textContent = totalRows
-                        ? `Pokazano ${firstIndex + 1}-${lastIndex} z ${totalRows} miejsc pracy`
-                        : 'Pokazano 0 z 0 miejsc pracy';
-                }
-
-                if (paginationPages) {
-                    paginationPages.replaceChildren();
-                    for (let page = 1; page <= totalPages; page += 1) {
-                        const button = document.createElement('button');
-                        button.type = 'button';
-                        button.className = `tasks-project-pagination__button${page === currentPage ? ' is-active' : ''}`;
-                        button.textContent = String(page);
-                        button.setAttribute('aria-label', `Strona ${page}`);
-                        if (page === currentPage) button.setAttribute('aria-current', 'page');
-                        button.addEventListener('click', () => {
-                            currentPage = page;
-                            renderPagination();
-                        });
-                        paginationPages.appendChild(button);
-                    }
+                        ? `${firstIndex + 1}–${lastIndex} z ${totalRows}`
+                        : '0 z 0';
+                    paginationSummary.setAttribute('aria-label', totalRows
+                        ? `Pokazano ${firstIndex + 1}–${lastIndex} z ${totalRows} miejsc pracy, strona ${currentPage} z ${totalPages}`
+                        : 'Pokazano 0 z 0 miejsc pracy');
                 }
 
                 if (previousPageButton) previousPageButton.disabled = currentPage <= 1;
@@ -414,6 +373,13 @@
             searchInput?.addEventListener('input', () => {
                 currentPage = 1;
                 renderPagination();
+            });
+
+            document.querySelector('[data-workplaces-clear-search]')?.addEventListener('click', () => {
+                searchInput.value = '';
+                currentPage = 1;
+                renderPagination();
+                searchInput.focus();
             });
 
             pageSizeToggle?.addEventListener('click', event => {
@@ -640,5 +606,6 @@
 {% endblock %}
 
 {% block page_modals %}
+{% if team_workplace %}{% include 'workplaces/includes/team_modals.html' %}{% endif %}
 {% if response_invitation %}{% include 'workplaces/includes/invitation_response_modal.html' %}{% endif %}
 {% endblock %}

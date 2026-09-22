@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.urls import reverse
 from core.task_numbering import lock_task_numbers, renumber_tasks
 
 from .models import SidebarFavorite, Workplace, WorkplaceInvitation, WorkplaceMembership
@@ -13,6 +14,14 @@ ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
 WORKPLACE_URL_SCOPE_SESSION_KEY = 'workspace_url_scope_enabled'
 DEFAULT_WORKPLACE_NAME = 'Moje miejsce pracy'
 SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'contacts', 'calendar', 'documents', 'office'}
+
+
+def workplace_management_url(workplace, view='members'):
+    """Management selection never changes the active business-data Workspace."""
+    url = f'{reverse("workplaces:workplaces")}?workspace={workplace.pk}'
+    if view in {'invitations', 'received', 'workspaces'}:
+        url += f'&view={view}'
+    return url
 
 
 def pending_invitations_for_user(user):

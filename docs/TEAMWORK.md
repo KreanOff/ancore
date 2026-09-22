@@ -20,14 +20,39 @@ wchodzą w zakres tej wersji.
 
 ## Zaproszenia i ekran zespołu
 
-Kliknięcie liczby członków na liście Workspace albo pozycji „Zespół i zaproszenia”
-w Ustawieniach otwiera `/workplaces/<pk>/team/`. Strona używa wspólnego katalogu,
-avatarów kont i kontrolek Ancore. Członek widzi listę; zarządzający widzi dodatkowo
-menu zmiany roli i odbierania dostępu oraz osobny widok oczekujących zaproszeń
-(`?view=invitations`). Tabela korzysta ze stylów listy Dokumentów: niskie wiersze,
-osobne kolumny nazwy, e-maila, roli i daty, menu trzech pasków przed avatarem.
-„Zaproś osobę” i „Zmień rolę” otwierają standardowe modale. Opis uprawnień otwiera
-przycisk informacji; wpływ odebrania dostępu na Office opisuje potwierdzenie operacji.
+Ekran `/workplaces/` ma trzy zakładki: „Workspace”, „Członkowie” i „Zaproszenia”,
+przełączane standardowymi przyciskami katalogu z szarym zaznaczeniem aktywnej opcji.
+Każda renderuje jedną listę i dwa paski: tytuł z akcjami oraz zakładki
+z kontrolkami widoku. W katalogu wyszukiwanie i paginacja są w drugim pasku;
+w członkach i zaproszeniach są tam menu wyboru oraz licznik.
+Domyślnie otwiera się katalog Workspace
+(`view=workspaces`). Kliknięcie nazwy lub liczby członków otwiera „Członkowie”
+dla danej przestrzeni (`?workspace=<pk>`, także `view=members`). Listy wyboru
+pozwalają zarządzać innym Workspace bez zmiany aktywnej sesji ani kontekstu
+modułów. Znacznik „Bieżący” wskazuje przestrzeń pracy; strzałka przełączenia
+nadal otwiera jej Zadania.
+
+W „Zaproszeniach” lista wyboru rozdziela otrzymane (`view=received`, wszystkie
+zaproszenia zalogowanego odbiorcy) i wysłane (`view=invitations`, wskazany
+Workspace). Wysłane zaproszenia są dostępne zarządzającym; wybór Workspace
+bez tej roli nie ujawnia ich. Zakładka pokazuje licznik otrzymanych zaproszeń
+oraz domyślnie wybiera je, gdy wymagają decyzji. Przycisk „Otwórz” przy
+otrzymanym zaproszeniu uruchamia istniejące okno decyzji.
+
+Członek widzi skład zespołu. Właściciel i administrator mają dodatkowo ustawienia
+oraz „Zaproś osobę”. Zmiana ról i odebranie dostępu pozostają w menu wiersza,
+zgodnie z macierzą ról. Po utworzeniu Workspace wracamy do katalogu,
+po zapisie ustawień — do zakładki, z której otwarto modal, po zmianie roli —
+do członków, a po zaproszeniu — do wysłanych zaproszeń tego Workspace.
+Utworzenie nie przełącza kontekstu pracy. Ustawienia aplikacji mają jeden
+link „Zarządzaj Workspace”. Dotychczasowy GET `/workplaces/<pk>/team/`
+przekierowuje do właściwej zakładki; POST nadal waliduje zaproszenie i przy
+błędzie renderuje wspólny ekran z otwartym modalem.
+
+Tabela zespołu korzysta ze stylów Dokumentów: niskie wiersze, kolumny nazwy,
+e-maila, roli i daty, menu trzech pasków przed avatarem. „Zaproś osobę” i „Zmień rolę”
+otwierają standardowe modale. Wpływ
+odebrania dostępu na Office opisuje potwierdzenie operacji.
 
 Zaproszenie wskazuje **istniejące aktywne konto Ancore przez e-mail**. Jest
 zapisywane w aplikacji, bez wysyłania e-maila. Odbiorca widzi je pod dzwonkiem
@@ -37,13 +62,13 @@ zaproszenia; obie liczby są dostępne w opisie przycisku. Stan jest sprawdzany 
 po powrocie do karty i po częściowej nawigacji. Powiadomienie pokazuje autora,
 Workspace, rolę i termin ważności. Kliknięcie otwiera konkretne zaproszenie
 w standardowym oknie na stronie Workspace (`?invitation=<pk>`). To samo okno
-otwiera przycisk „Zaproszenia (N)” w toolbarze Workspace. Pokazuje zapraszającą
+otwiera przycisk „Otwórz” na liście otrzymanych zaproszeń. Pokazuje zapraszającą
 osobę, Workspace, rolę, termin oraz przyciski „Później”, „Odrzuć” i „Przyjmij”.
 Przy kilku zaproszeniach strzałki przechodzą między nimi; zamknięcie nie zmienia
 zaproszenia. Nie ma osobnych szerokich pasków nad listą Workspace.
 Nieaktualny lub cudzy adres pokazuje ogólny komunikat o niedostępności.
 Dotyczy to także wcześniej zapisanych zaproszeń.
-Zakładka „Zaproszenia” w Zespole pokazuje zaproszenia wysłane z tego Workspace.
+Filtr „Wysłane” w zakładce „Zaproszenia” pokazuje zaproszenia wysłane z wybranego Workspace.
 Przyjęcie wymaga POST i sesji właściwego odbiorcy;
 GET nie nadaje dostępu. Zaproszenie wygasa po 7 dniach, może zostać odrzucone
 lub anulowane i nie może zostać wykorzystane ponownie. Zapis jest blokowany
@@ -102,3 +127,7 @@ Adresy z takim zmienionym slugiem trzeba odświeżyć; dane i nazwy pozostają z
 Testy `workplaces/test_team.py` obejmują role, zaproszenia, zakres danych,
 przypisania, historię, oba warianty URL, pobieranie plików, odebranie dostępu,
 Office i osobiste dane bez Workspace. Weryfikacja wymaga PostgreSQL.
+
+Testy `workplaces/test_management.py` obejmują wybór niezależny od aktywnej sesji,
+powroty po zapisie i błędach, stare linki, niedostępne identyfikatory, role, CSRF
+oraz jawne przełączenie kontekstu.

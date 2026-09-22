@@ -1,0 +1,24 @@
+{% if can_manage_team %}
+<div class="tasks-modal tasks-form-modal{% if invite_form.errors %} is-open{% endif %}" id="team-invite-modal" role="dialog" aria-modal="true" aria-labelledby="team-invite-title" aria-describedby="team-invite-description" aria-hidden="{% if invite_form.errors %}false{% else %}true{% endif %}" data-team-modal>
+    <div class="tasks-modal__dialog"><form method="post" action="{% url 'workplaces:team' team_workplace.pk %}?view=invitations" class="tasks-modal__form" data-team-invite-form>
+        {% csrf_token %}
+        <header class="tasks-modal__header"><h2 id="team-invite-title">Zaproś osobę · {{ team_workplace.name }}</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
+        <div class="tasks-modal__body">
+            <p id="team-invite-description" class="workplace-team__hint">Zaproszenie pojawi się na ekranie Workspace wskazanej osoby. Jest ważne przez 7 dni i daje dostęp do całego Workspace.</p>
+            {% if invite_form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{% for error in invite_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+            {% for field in invite_form %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}</div>{% endfor %}
+        </div>
+        <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zaproś do Workspace</button></footer>
+    </form></div>
+</div>
+{% endif %}
+{% if is_team_owner %}
+<div class="tasks-modal tasks-form-modal" id="team-role-modal" role="dialog" aria-modal="true" aria-labelledby="team-role-title" aria-hidden="true" data-team-modal>
+    <div class="tasks-modal__dialog"><form method="post" class="tasks-modal__form" data-team-role-form>
+        {% csrf_token %}<input type="hidden" name="action" value="role">
+        <header class="tasks-modal__header"><h2 id="team-role-title">Zmień rolę</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
+        <div class="tasks-modal__body"><p class="workplace-team__hint" data-team-role-person></p><div class="tasks-form-field"><label for="team-member-role">Rola</label><select id="team-member-role" name="role" class="form-select"><option value="member">Członek</option><option value="admin">Administrator</option></select></div></div>
+        <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zapisz rolę</button></footer>
+    </form></div>
+</div>
+{% endif %}

@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.core.exceptions import PermissionDenied
 from django.db.models import Case, Count, IntegerField, Max, Q, Value, When
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -14,20 +14,13 @@ from django.views.decorators.http import require_POST
 from .forms import WorkplaceForm
 from .models import SidebarFavorite, create_workplace_for_user
 from .navigation import SIDEBAR_FAVORITE_KEYS, sidebar_favorites_for_request
-from .services import can_manage_team, enable_workspace_url_scope, pending_invitations_for_user, scoped_workplace_app_path, set_active_workplace, workplaces_for_user
+from .services import can_manage_team, enable_workspace_url_scope, pending_invitations_for_user, scoped_workplace_app_path, set_active_workplace, workplaces_for_user, workplace_management_url
+from .team_views import team_context
 
 
 @login_required
 def workplaces(request):
     enable_workspace_url_scope(request)
-    pending_invitations = list(pending_invitations_for_user(request.user).select_related('workplace', 'invited_by'))
-    selected_invitation_id = request.GET.get('invitation') if request.method == 'GET' else None
-    invitation_index = next((index for index, invitation in enumerate(pending_invitations)
-                             if str(invitation.pk) == selected_invitation_id), None)
-    if selected_invitation_id is not None and invitation_index is None:
-        messages.info(request, 'To zaproszenie nie jest już dostępne.')
-        return redirect('workplaces:workplaces')
-    invitation_index = invitation_index if invitation_index is not None else 0
     form = WorkplaceForm(user=request.user)
     workplace_create_modal_open = False
 
@@ -48,10 +41,22 @@ def workplaces(request):
             )
             if form.cleaned_data.get('workplace_photo_crop'):
                 form.apply_photo(workplace)
-            set_active_workplace(request, workplace)
             messages.success(request, 'Miejsce pracy utworzone.')
-            return redirect(scoped_workplace_app_path(workplace, 'tasks'))
+            return redirect(workplace_management_url(workplace, 'workspaces'))
         messages.error(request, 'Nie udało się utworzyć miejsca pracy.')
+
+    return render_workplaces(request, form=form, workplace_create_modal_open=workplace_create_modal_open)
+
+
+def render_workplaces(request, *, form=None, workplace_create_modal_open=False, team_workplace=None, invite_form=None):
+    pending_invitations = list(pending_invitations_for_user(request.user).select_related('workplace', 'invited_by'))
+    selected_invitation_id = request.GET.get('invitation') if request.method == 'GET' else None
+    invitation_index = next((index for index, invitation in enumerate(pending_invitations)
+                             if str(invitation.pk) == selected_invitation_id), None)
+    if selected_invitation_id is not None and invitation_index is None:
+        messages.info(request, 'To zaproszenie nie jest już dostępne.')
+        return redirect('workplaces:workplaces')
+    invitation_index = invitation_index if invitation_index is not None else 0
 
     active_workplace = getattr(request, 'workplace', None)
     user_workplaces = workplaces_for_user(request.user)
@@ -69,7 +74,31 @@ def workplaces(request):
         team_member_count=Count('memberships', filter=Q(memberships__is_active=True), distinct=True),
     )
     for workplace in user_workplaces:
-        workplace.can_manage_team = can_manage_team(request.user, workplace)
+        role = ('owner' if workplace.owner_id == request.user.pk else next(
+            (member.role for member in workplace.memberships.all()
+             if member.user_id == request.user.pk and member.is_active), ''
+        ))
+        workplace.can_manage_team = role in {'owner', 'admin'}
+        workplace.viewer_role_label = {'owner': 'Właściciel', 'admin': 'Administrator', 'member': 'Członek'}.get(role, '')
+    selected_id = str(team_workplace.pk) if team_workplace else request.GET.get('workspace')
+    if selected_id is not None:
+        team_workplace = next((workplace for workplace in user_workplaces if str(workplace.pk) == selected_id), None)
+        if team_workplace is None:
+            raise Http404
+    else:
+        team_workplace = next((workplace for workplace in user_workplaces if active_workplace and workplace.pk == active_workplace.pk), None)
+        team_workplace = team_workplace or next(iter(user_workplaces), None)
+    selected_team_context = team_context(request, team_workplace, invite_form) if team_workplace else {}
+    default_view = 'received' if selected_invitation_id else ('members' if selected_id is not None else 'workspaces')
+    management_view = request.GET.get('view', default_view)
+    if management_view not in {'workspaces', 'members', 'invitations', 'received'}:
+        management_view = default_view
+    if workplace_create_modal_open:
+        management_view = 'workspaces'
+    if invite_form is not None:
+        management_view = 'invitations'
+    if management_view == 'invitations' and not selected_team_context.get('can_manage_team'):
+        management_view = 'received'
     return render(request, 'workplaces/workplaces.html', {
         'pending_invitations': pending_invitations,
         'response_invitation': pending_invitations[invitation_index] if pending_invitations else None,
@@ -78,9 +107,15 @@ def workplaces(request):
         'previous_invitation': pending_invitations[invitation_index - 1] if invitation_index > 0 else None,
         'next_invitation': pending_invitations[invitation_index + 1] if invitation_index + 1 < len(pending_invitations) else None,
         'workplaces': user_workplaces,
-        'form': form,
+        'form': form if form is not None else WorkplaceForm(user=request.user),
         'active_workplace': active_workplace,
         'workplace_create_modal_open': workplace_create_modal_open,
+        **selected_team_context,
+        'management_view': management_view,
+        'show_invitations': management_view == 'invitations',
+        'invitation_workplace': team_workplace if selected_team_context.get('can_manage_team') else next(
+            (workplace for workplace in user_workplaces if workplace.can_manage_team), None
+        ),
     })
 
 
@@ -241,7 +276,7 @@ def update_workplace(request, workplace_id):
             request,
             str(name_errors[0]) if name_errors else 'Nie udało się zapisać ustawień miejsca pracy.',
         )
-    return redirect('workplaces:workplaces')
+    return redirect(workplace_management_url(workplace, request.POST.get('view')))
 
 
 @login_required

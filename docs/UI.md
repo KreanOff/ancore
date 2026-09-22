@@ -788,7 +788,7 @@ wąski ekran oraz duży desktop. Istnieją również reguły dla ograniczenia ru
 Wynik weryfikacji zapisuj w podsumowaniu zadania. Jeśli nie oglądano ekranu
 w przeglądarce, nazwij weryfikację przeglądem kodu, a nie wizualnym testem.
 
-## 12. Zespół Workspace
+## 12. Zarządzanie Workspace i zespołem
 
 Oczekujące zaproszenia odbiorcy są widoczne w istniejącym panelu powiadomień,
 przed aktywnością zadań. Karta podaje autora, Workspace, rolę, termin i przycisk
@@ -797,7 +797,7 @@ przed aktywnością zadań. Karta podaje autora, Workspace, rolę, termin i przy
 zaproszenia. Opis czytnika ekranu rozróżnia obie liczby.
 
 Link powiadomienia `?invitation=<pk>` otwiera okno konkretnego zaproszenia na
-stronie Workspace. Przycisk „Zaproszenia (N)” w toolbarze otwiera to samo okno.
+stronie Workspace. Przycisk „Otwórz” przy otrzymanym zaproszeniu otwiera to samo okno.
 Include `workplaces/includes/invitation_response_modal.html` korzysta z
 `tasks-modal`, standardowej stopki i kompaktowej listy szczegółów
 `workplace-invitation__details`. Akcje „Później”, „Odrzuć” i „Przyjmij” są razem
@@ -805,13 +805,45 @@ w stopce; wspólne przyciski paginacji pozwalają przejść do innych zaproszeń
 `workplace-team.js` obsługuje ten modal także na stronie Workspace przez
 `data-team-modal-page`, zachowując inert, fokus i inicjalizację po częściowej
 nawigacji. Zamknięcie usuwa parametr zaproszenia z adresu i przywraca fokus
-przyciskowi w toolbarze. Formularz nadal wymaga POST i CSRF.
+przyciskowi w wierszu lub zakładce „Zaproszenia”. Formularz nadal wymaga POST i CSRF.
 
-Strona zespołu rozszerza `core/base.html`. Nagłówek używa wzorca powrotu
-z projektu: `tasks-issue-close` bez ramki, `tasks-issue-divider` oraz kontenera
-`tasks-issue-breadcrumb tasks-project-breadcrumb`; link prowadzi do Workspace.
-Zespół używa `data-app-full-navigation`, ponieważ jego adres nie jest objęty
-częściową nawigacją; pełne przejście zachowuje powrót historią przeglądarki.
+Ekran `/workplaces/` rozszerza `core/base.html` i ma sekcje „Workspace”,
+„Członkowie” oraz „Zaproszenia”. Przełącznik używa `documents-display-switch`
+i standardowych linków `tasks-filter-button` z ikonami i `aria-current="page"`.
+Aktywna opcja ma klasę `is-active` i wspólne szare tło kontrolek katalogu.
+Licznik przy zaproszeniach używa `tasks-project-query-count` i oznacza
+otrzymane zaproszenia. Pasek ma odstępy, przyciski i menu takie jak Dokumenty.
+Serwer renderuje jedną listę, zamiast łączyć katalog i skład zespołu pionowo.
+Każda zakładka ma dwa wspólne paski katalogu, jak Dokumenty i Projekty:
+`tasks-topbar--directory` z tytułem i akcjami oraz `tasks-filterbar--directory`
+(`management_toolbar.html`) z zakładkami i kontrolkami bieżącego widoku.
+„Ustawienia” i „Zaproś osobę” znajdują się w nagłówku członków i wysłanych
+zaproszeń. Wybór Workspace/rodzaju zaproszeń i licznik są obok zakładek.
+W katalogu wyszukiwanie i kompaktowa paginacja znajdują się po prawej stronie
+drugiego paska. Paginacja używa wspólnych klas `tasks-project-pagination--toolbar`,
+zachowując filtrowanie i zmianę strony w przeglądarce; zakres i liczba wyników
+zastępują osobny dolny pasek z numerami stron. Pod paskami zaczyna się tabela.
+
+„Workspace” pokazuje pełną listę, wyszukiwanie, dodawanie, ustawienia i paginację.
+Znacznik „Bieżący” wskazuje aktywną przestrzeń. Nazwa i liczba członków otwierają
+zakładkę „Członkowie”. `team_panel.html` renderuje tabelę składu lub wysłanych
+zaproszeń; listę wyboru Workspace i licznik zapewnia wspólny drugi pasek.
+`invitation_filter.html` rozdziela „Otrzymane” i „Wysłane”; `received_invitations.html`
+pokazuje Workspace, zapraszającego, rolę, datę i akcję „Otwórz”.
+Wybory Workspace i rodzaju zaproszeń używają `documents-view-selector`,
+`tasks-project-query-trigger` i menu `documents-item-menu`, tak jak wybór
+widoku Dokumentów. Wspólny `row-actions.js` obsługuje popover, strzałki,
+Escape i fokus; linki korzystają z nawigacji aplikacji. Menu wysłanych zaproszeń
+zawiera tylko Workspace, którymi użytkownik może zarządzać. Inicjalizacja po
+`ancore:content-loaded` usuwa stare listenery przez `AbortController`.
+
+Pasek filtrów zachowuje wysokość wiersza z polem wyszukiwania Dokumentów
+(`--dropdown-control-height` plus wspólny padding i ramka) oraz zawijanie
+na telefonie. Nazwa w przycisku wyboru używa ograniczenia 180px ze wspólnego
+`documents-view-selector`; pełna nazwa jest w opisie przycisku i menu.
+`team_modals.html` dostarcza istniejące okna zaproszenia
+i roli. Przełączenie zakładki lub wyboru Workspace nie zmienia aktywnej
+przestrzeni pracy. Ustawienia wracają po zapisie do właściwej zakładki.
 Tabela używa bezpośrednio
 `documents-table` i `documents-name` z katalogu Dokumentów. Nagłówki mają 35px,
 wiersze 36px, tekst 13px/400, białe tło i cienką siatkę kolumn. Kolumny to
@@ -819,11 +851,11 @@ wiersze 36px, tekst 13px/400, białe tło i cienką siatkę kolumn. Kolumny to
 z avatarem mieści się w jednym wierszu; długie wartości mają ellipsis i pełny
 tekst w `title`. Na telefonie pozostaje tabela przewijana poziomo we własnym
 kontenerze, bez zmiany wierszy na karty.
+Pusta tabela na telefonie dopasowuje się do szerokości ekranu i pomija
+nagłówki kolumn, aby komunikat o braku członków lub zaproszeń był widoczny w całości.
 
-Pod standardowym paskiem tytułu `tasks-filterbar` zawiera linki „Członkowie”
-i „Zaproszenia” z licznikami. Parametr `?view=invitations` wybiera zaproszenia;
+Parametr `view=invitations` wybiera wysłane zaproszenia;
 po wysłaniu lub anulowaniu zaproszenia użytkownik wraca do tej listy.
-Przycisk informacji otwiera standardowe okno z opisem uprawnień.
 
 Menu trzech pasków przed avatarem korzysta z tych samych klas i zachowania
 co lista Dokumentów. Wspólny `row-actions.js`, ładowany w `core/base.html`,
@@ -841,7 +873,7 @@ i `AncoreDropdownLayer`. Błąd zaproszenia otwiera ten sam modal z wpisanymi da
 Odebranie dostępu wymaga `showConfirmModal` wyjaśniającego wpływ na Office.
 Zapis nadal używa POST, CSRF i komunikatów aplikacji.
 
-Lista Workspace oraz Ustawienia prowadzą do Zespołu. Funkcje i role opisuje
+Ustawienia prowadzą do wspólnego panelu przez „Zarządzaj Workspace”. Funkcje i role opisuje
 [TEAMWORK.md](TEAMWORK.md).
 
 ## 13. Centrum powiadomień

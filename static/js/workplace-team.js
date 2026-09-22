@@ -47,7 +47,8 @@
                 }
                 const target = state.previousFocus instanceof HTMLElement && state.previousFocus !== document.body
                     && !modal.contains(state.previousFocus) && state.previousFocus.offsetParent !== null
-                    ? state.previousFocus : page.querySelector(`[data-team-modal-open="${modal.id}"]`);
+                    ? state.previousFocus : (page.querySelector(`[data-team-modal-open="${modal.id}"]`)
+                        || page.querySelector('[data-team-invitation-return]'));
                 if (target?.isConnected) target.focus({ preventScroll: true });
             }
         }

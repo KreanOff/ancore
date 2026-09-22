@@ -6,14 +6,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_http_methods
 from django import forms
 
 from .models import Workplace, WorkplaceInvitation, WorkplaceMembership
-from .services import can_manage_team, workplace_role, workplaces_for_user, set_active_workplace, scoped_workplace_app_path
+from .services import can_manage_team, workplace_role, workplaces_for_user, set_active_workplace, scoped_workplace_app_path, workplace_management_url
 
 
 class InvitationForm(forms.Form):
@@ -43,7 +42,8 @@ class InvitationForm(forms.Form):
 @require_http_methods(['GET', 'POST'])
 def team(request, workplace_id):
     workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
-    set_active_workplace(request, workplace)
+    if request.method == 'GET':
+        return redirect(workplace_management_url(workplace, request.GET.get('view')))
     form = InvitationForm(workplace=workplace, actor=request.user)
     if request.method == 'POST':
         with transaction.atomic():
@@ -55,7 +55,13 @@ def team(request, workplace_id):
                 workplace.invitations.filter(recipient=form.recipient, status='pending').update(status='revoked')
                 WorkplaceInvitation.objects.create(workplace=workplace, recipient=form.recipient, invited_by=request.user, role=form.cleaned_data['role'])
                 messages.success(request, 'Zaproszenie dodane. Osoba zobaczy je w powiadomieniach i na ekranie Workspace.')
-                return redirect(reverse('workplaces:team', args=[workplace.pk]) + '?view=invitations')
+                return redirect(workplace_management_url(workplace, 'invitations'))
+    from .views import render_workplaces
+    return render_workplaces(request, team_workplace=workplace, invite_form=form)
+
+
+def team_context(request, workplace, invite_form=None):
+    """Read one accessible team's details for the shared management screen."""
     members = list(workplace.memberships.filter(is_active=True).select_related('user').order_by('role', 'user__email'))
     members.sort(key=lambda member: (member.user_id != workplace.owner_id, member.role != 'admin', member.user.email))
     role = workplace_role(request.user, workplace)
@@ -63,12 +69,13 @@ def team(request, workplace_id):
         member.can_change = member.user_id != workplace.owner_id and (
             role == 'owner' or (role == 'admin' and member.role == 'member')
         )
-    return render(request, 'workplaces/team.html', {
-        'team_workplace': workplace, 'members': members, 'invite_form': form,
+    return {
+        'team_workplace': workplace, 'members': members,
+        'invite_form': invite_form if invite_form is not None else InvitationForm(workplace=workplace, actor=request.user),
         'show_invitations': request.GET.get('view') == 'invitations' and role in {'owner', 'admin'},
         'can_manage_team': role in {'owner', 'admin'}, 'is_team_owner': role == 'owner',
         'team_invitations': workplace.invitations.filter(status='pending', expires_at__gt=timezone.now()).select_related('recipient') if role in {'owner', 'admin'} else [],
-    })
+    }
 
 
 @login_required
@@ -124,7 +131,7 @@ def member_update(request, workplace_id, member_id):
             messages.success(request, 'Rola zmieniona.')
         else:
             raise PermissionDenied
-    return redirect('workplaces:team', workplace_id=workplace.pk)
+    return redirect(workplace_management_url(workplace))
 
 
 @login_required
@@ -139,4 +146,4 @@ def invitation_cancel(request, workplace_id, invitation_id):
         invitation.status = 'revoked'
         invitation.save(update_fields=['status'])
     messages.success(request, 'Zaproszenie anulowane.')
-    return redirect(reverse('workplaces:team', args=[workplace.pk]) + '?view=invitations')
+    return redirect(workplace_management_url(workplace, 'invitations'))

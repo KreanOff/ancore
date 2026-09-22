@@ -23,13 +23,14 @@
     display: flex; gap: 1rem; overflow-x: auto; scrollbar-width: thin;
     border-bottom: 1px solid var(--border-color);
 }
-.notifications-tabs button {
+.notifications-tabs :is(button, a) {
     display: inline-flex; align-items: center; gap: 0.35rem; flex: 0 0 auto;
     min-height: 45px; padding: 0.7rem 0; border: 0; border-bottom: 2px solid transparent;
-    background: transparent; color: var(--text-primary); font: inherit; font-size: 12px; cursor: pointer;
+    background: transparent; color: var(--text-primary); font: inherit; font-size: 12px; cursor: pointer; text-decoration: none;
 }
-.notifications-tabs button[aria-pressed="true"] { border-bottom-color: var(--system-accent); }
-.notifications-tabs button span {
+.notifications-tabs :is(button[aria-pressed="true"], a[aria-current="page"]) { border-bottom-color: var(--system-accent); }
+.notifications-tabs a:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: -2px; }
+.notifications-tabs :is(button, a) span {
     min-width: 19px; padding: 1px 5px; border-radius: 4px;
     background: var(--primary-button-bg); font-size: 10px;
 }
@@ -96,7 +97,7 @@ body.notifications-panel-open { overflow: hidden; }
 }
 @media (max-width: 400px) {
     .notifications-tabs { gap: 0.75rem; }
-    .notifications-tabs button { font-size: 11px; }
+    .notifications-tabs :is(button, a) { font-size: 11px; }
     .notifications-toolbar { flex-wrap: wrap; }
     .notifications-toolbar .form-select { max-width: none; flex-basis: 100%; }
     .notifications-toolbar .btn { margin-left: 0; margin-right: auto; }

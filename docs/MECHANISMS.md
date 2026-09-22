@@ -33,6 +33,15 @@ osobnego workera obecności.
 
 ## 2. Aktywny Workspace i zakres danych
 
+Panel `/workplaces/?workspace=<pk>` wybiera przestrzeń do zarządzania niezależnie
+od aktywnego Workspace. `render_workplaces()` sprawdza wybór w `workplaces_for_user()`;
+`team_context()` buduje skład i akcje według roli w wybranej przestrzeni.
+`management_view` rozdziela katalog, członków i zaproszenia otrzymane/wysłane.
+`workplace_management_url()` zachowuje wybór po zapisie i dopuszcza wyłącznie
+znane wartości `view`; ustawienia odtwarzają zakładkę z formularza. Oglądanie i edycja zespołu
+oraz tworzenie Workspace nie wywołują `set_active_workplace()`; jawne przełączenie,
+scoped URL modułu i przyjęcie zaproszenia zachowują dotychczasowe działanie.
+
 Źródło: [workplaces/services.py](../workplaces/services.py).
 
 1. Middleware sprawdza, czy adres zawiera `/workplaces/<slug>/<app>/`.

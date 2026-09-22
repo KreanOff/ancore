@@ -11,7 +11,7 @@ from django.urls import reverse
 
 from tasks.models import TaskProject
 from .models import SidebarFavorite, WorkplaceMembership, create_workplace_for_user
-from .services import scoped_workplace_app_path
+from .services import scoped_workplace_app_path, workplace_management_url
 from .templatetags.workplace_avatar import workplace_avatar
 
 
@@ -124,7 +124,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-profile-photo-remove-input', count=3)
         self.assertContains(response, 'Edytuj logo miejsca pracy')
         self.assertContains(response, '>Dodaj</button>', count=1)
-        self.assertContains(response, 'Po utworzeniu przełączymy Cię do nowego miejsca pracy.')
+        self.assertContains(response, 'Po utworzeniu otworzymy panel zarządzania nowym Workspace.')
         self.assertNotContains(response, 'class="workplace-create-modal__cancel"')
         self.assertNotContains(response, 'workplaces-create-form--filterbar')
 
@@ -586,18 +586,19 @@ class WorkplaceSelectionTests(TestCase):
             fetch_redirect_response=False,
         )
 
-    def test_create_workplace_redirects_to_scoped_tasks_url(self):
+    def test_create_workplace_opens_management_without_switching(self):
         self.client.force_login(self.user)
+        self._activate(self.first_workplace)
 
         response = self.client.post(reverse('workplaces:workplaces'), {'name': 'Nowy Workplace'})
         workplace = type(self.first_workplace).objects.get(owner=self.user, name='Nowy Workplace')
 
         self.assertRedirects(
             response,
-            scoped_workplace_app_path(workplace, 'tasks'),
+            workplace_management_url(workplace, 'workspaces'),
             fetch_redirect_response=False,
         )
-        self.assertEqual(self.client.session['active_workplace_id'], workplace.pk)
+        self.assertEqual(self.client.session['active_workplace_id'], self.first_workplace.pk)
         membership = workplace.memberships.get(user=self.user)
         self.assertEqual(membership.role, WorkplaceMembership.Role.OWNER)
 
@@ -609,7 +610,7 @@ class WorkplaceSelectionTests(TestCase):
         workplace = type(self.first_workplace).objects.get(owner=self.user, name='Zespół wdrożeniowy')
         self.assertRedirects(
             response,
-            scoped_workplace_app_path(workplace, 'tasks'),
+            workplace_management_url(workplace, 'workspaces'),
             fetch_redirect_response=False,
         )
 
@@ -801,7 +802,7 @@ class WorkplaceSelectionTests(TestCase):
             {'name': 'Nowa nazwa'},
         )
 
-        self.assertRedirects(response, reverse('workplaces:workplaces'))
+        self.assertRedirects(response, workplace_management_url(self.first_workplace))
         self.first_workplace.refresh_from_db()
         self.assertEqual(self.first_workplace.name, 'Nowa nazwa')
 
@@ -817,7 +818,7 @@ class WorkplaceSelectionTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse('workplaces:workplaces'))
+        self.assertRedirects(response, workplace_management_url(self.first_workplace))
         self.first_workplace.refresh_from_db()
         self.assertEqual(self.first_workplace.code, 'DELIVERY-02')
         self.assertEqual(self.first_workplace.description, 'Obsługa wdrożeń klientów')
@@ -840,7 +841,7 @@ class WorkplaceSelectionTests(TestCase):
                 },
             )
 
-            self.assertRedirects(response, reverse('workplaces:workplaces'))
+            self.assertRedirects(response, workplace_management_url(self.first_workplace))
             self.first_workplace.refresh_from_db()
             self.assertTrue(self.first_workplace.workplace_photo.name.startswith('workplace_photos/workplace_'))
 
@@ -857,7 +858,7 @@ class WorkplaceSelectionTests(TestCase):
                 },
             )
 
-            self.assertRedirects(response, reverse('workplaces:workplaces'))
+            self.assertRedirects(response, workplace_management_url(self.first_workplace))
             self.first_workplace.refresh_from_db()
             self.assertFalse(self.first_workplace.workplace_photo)
 
@@ -873,7 +874,7 @@ class WorkplaceSelectionTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse('workplaces:workplaces'))
+        self.assertRedirects(response, workplace_management_url(self.first_workplace))
         self.first_workplace.refresh_from_db()
         self.assertEqual(self.first_workplace.code, 'PIERWSZY-WORKPLACE')
 
@@ -885,7 +886,7 @@ class WorkplaceSelectionTests(TestCase):
             {'name': self.second_workplace.name},
         )
 
-        self.assertRedirects(response, reverse('workplaces:workplaces'))
+        self.assertRedirects(response, workplace_management_url(self.first_workplace))
         self.first_workplace.refresh_from_db()
         self.assertEqual(self.first_workplace.name, 'Pierwszy Workplace')
 
