@@ -54,18 +54,18 @@ class TaskProjectControlStyleTests(SimpleTestCase):
 
         theme_checked_row_rule = re.search(
             r'\.tasks-directory-board \.tasks-directory-list '
-            r'\.tasks-directory-row\.checked,.*?'
+            r'\.tasks-directory-row:is\(\.checked, :has\(\.tasks-row-checkbox:checked\)\),.*?'
             r'\{(?P<body>[^}]*)\}',
             theme,
             re.DOTALL,
         )
         self.assertIsNotNone(theme_checked_row_rule)
         self.assertIn(
-            'background: rgba(var(--system-accent-rgb), 0.08);',
+            'background: color-mix(in srgb, var(--system-accent) 8%, #ffffff);',
             theme_checked_row_rule.group('body'),
         )
         self.assertIn(
-            'border-color: rgba(var(--system-accent-rgb), 0.24);',
+            'border-color: var(--contacts-directory-column-separator, var(--tasks-directory-column-separator, #edf0f3));',
             theme_checked_row_rule.group('body'),
         )
 
@@ -1826,8 +1826,8 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertNotContains(response, 'tasks-project-row-icon')
         self.assertNotContains(response, 'tasks-project-row-icon--fallback')
-        self.assertContains(response, '<span>Projekt z ikoną</span>', html=True)
-        self.assertContains(response, '<span>Projekt bez ikony</span>', html=True)
+        self.assertContains(response, '<span class="tasks-row-title-text">Projekt z ikoną</span>', html=True)
+        self.assertContains(response, '<span class="tasks-row-title-text">Projekt bez ikony</span>', html=True)
         self.assertContains(response, 'KOD PROJEKTU')
         self.assertContains(response, 'OPIS')
         self.assertContains(response, 'FIRMA')
@@ -1852,10 +1852,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Informacje o projekcie')
         self.assertContains(response, 'id="info-selected-project-menu-btn"')
         self.assertContains(response, 'id="notes-selected-project-menu-btn"')
-        self.assertContains(response, 'data-open-project-info', count=4)
+        self.assertContains(response, 'data-open-project-info', count=2)
         self.assertContains(response, 'data-project-notes-icon data-icon="file-text"')
         self.assertContains(response, 'data-project-notes-icon data-icon="file-plus-2"')
-        self.assertContains(response, 'data-open-project-notes', count=4)
+        self.assertContains(response, 'data-open-project-notes', count=2)
         self.assertContains(
             response,
             f'class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button has-notes" title="Notatki projektu — zawiera notatkę" aria-label="Notatki projektu {project.name}, zawiera notatkę"',
@@ -2099,7 +2099,7 @@ class TaskProjectCreationTests(TestCase):
             self.assertContains(response, f'data-project-page-size-value="{page_size}"')
         self.assertIn('data-project-page-url="/tasks/?page_size=50&amp;page=2"', html)
         self.assertNotIn('&amp;after=', html)
-        filterbar_start = html.index('class="tasks-filterbar tasks-filterbar--project-directory"')
+        filterbar_start = html.index('class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory"')
         sort_start = html.index('class="tasks-filter-dropdown tasks-project-sort-builder"')
         pagination_start = html.index('class="tasks-project-pagination tasks-project-pagination--toolbar"')
         page_size_start = html.index('tasks-project-pagination__size-control--toolbar')
@@ -2509,20 +2509,19 @@ class TaskProjectCreationTests(TestCase):
             self.assertIn(field_class, modal_html)
         self.assertIn('data-ancore-custom-select-search-placeholder="Szukaj osoby"', modal_html)
 
-    def test_create_menu_uses_requested_item_order(self):
-        response = self.client.get(reverse('tasks:tasks'))
-        html = response.content.decode()
-        menu_start = html.index('id="create-menu-panel"')
-        menu_end = html.index('</div>', menu_start)
-        menu_html = html[menu_start:menu_end]
-        expected_items = ['Utwórz projekt', 'Utwórz grupę', 'Utwórz zadanie', 'Utwórz tag']
-
-        self.assertEqual([menu_html.count(item) for item in expected_items], [1, 1, 1, 1])
-        self.assertEqual(
-            [menu_html.index(item) for item in expected_items],
-            sorted(menu_html.index(item) for item in expected_items),
-        )
-        self.assertNotIn('Import', menu_html)
+    def test_directory_headers_offer_contextual_creation_actions(self):
+        for query, label, control in [('', 'Dodaj projekt', 'project-modal'),
+                                      ('?view=all-groups', 'Dodaj grupę', 'section-create-modal'),
+                                      ('?view=all-tasks', 'Dodaj zadanie', 'issue-modal'),
+                                      ('?view=tags', 'Dodaj tag', 'tag-modal')]:
+            with self.subTest(view=query):
+                response = self.client.get(reverse('tasks:tasks') + query)
+                html = response.content.decode()
+                start = html.index('<header class="tasks-topbar')
+                header = html[start:html.index('</header>', start)]
+                self.assertIn(f'aria-label="{label}"', header)
+                self.assertIn(f'aria-controls="{control}"', header)
+                self.assertNotContains(response, 'id="create-menu-panel"')
 
     def test_project_and_group_icon_pickers_are_not_rendered(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -2586,7 +2585,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-directory-column-manager')
         self.assertContains(response, 'data-directory-column-manager-toggle')
         self.assertContains(response, 'Zarządzaj tabelą')
-        self.assertContains(response, 'data-priority-filter-menu')
+        self.assertContains(response, 'data-project-filter-field="priority"')
         self.assertNotContains(response, 'data-status-filter-menu')
         self.assertContains(response, 'KOD GRUPY')
         self.assertContains(response, 'STATUS')
@@ -3063,7 +3062,7 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertContains(response, 'Tagi')
-        self.assertContains(response, 'href="/tasks/?view=tags"')
+        self.assertContains(response, f'href="/workplaces/{response.wsgi_request.workplace.slug}/tasks/?view=tags"')
 
     def test_create_tag_from_tasks_page(self):
         related = TaskTag.objects.create(user=self.user, name='Backend')
@@ -3825,18 +3824,16 @@ class TaskProjectCreationTests(TestCase):
     def test_my_tasks_view_is_available_from_secondary_navigation(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
-        Task.objects.create(user=self.user, section=section, title='Moje zadanie testowe')
+        Task.objects.create(user=self.user, section=section, title='Moje zadanie testowe', assignee=self.user)
 
         response = self.client.get(f"{reverse('tasks:tasks')}?view=my-tasks")
 
         self.assertContains(response, 'Moje zadania')
         self.assertContains(response, 'Moje zadanie testowe')
-        self.assertContains(
-            response,
-            f'<a href="{reverse("tasks:tasks")}?view=my-tasks" class="tasks-rail-link is-active">',
-        )
+        self.assertRegex(response.content.decode(),
+                         r'<a[^>]+class="nav-link sidebar-subnav-link active"[^>]+data-sidebar-source-item="tasks-my"')
 
-    def test_secondary_navigation_is_flat_and_limited(self):
+    def test_main_navigation_groups_tasks_and_hides_disabled_sharing(self):
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertContains(response, 'Moje zadania')
@@ -3844,20 +3841,18 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Wszystkie projekty')
         self.assertContains(response, 'Wszystkie grupy')
         self.assertContains(response, 'Tagi')
-        self.assertContains(response, 'tasks-rail-nav-separator')
+        self.assertContains(response, 'id="sidebar-tasks-subnav"')
         self.assertNotContains(response, 'Udostępnione zadania')
         self.assertNotContains(response, 'Udostępnione grupy')
         self.assertNotContains(response, 'Udostępnione projekty')
         self.assertNotContains(response, 'Moje grupy')
-        self.assertNotContains(response, 'data-rail-nav-group')
+        self.assertContains(response, 'data-sidebar-group="tasks"')
         self.assertNotContains(response, 'data-rail-nav-group-toggle')
 
         all_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
 
-        self.assertContains(
-            all_tasks_response,
-            f'<a href="{reverse("tasks:tasks")}?view=all-tasks" class="tasks-rail-link is-active">',
-        )
+        self.assertRegex(all_tasks_response.content.decode(),
+                         r'<a[^>]+class="nav-link sidebar-subnav-link active"[^>]+data-sidebar-source-item="tasks-all"')
 
     def test_edit_project_updates_details_and_manual_code_without_changing_icon(self):
         company = Company.objects.create(owner=self.user, name='Firma projektowa')

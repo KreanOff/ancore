@@ -62,7 +62,7 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260922-notification-center">
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body data-account-id="{{ request.user.pk|default:'' }}">
     <script>
         (function () {
             if (document.documentElement.classList.contains('sidebar-collapsed')) {
@@ -358,7 +358,7 @@
         {% endif %}
     </div>
 
-    <section class="app-sticky-note" id="app-sticky-note" aria-label="Sticker" data-sticky-note hidden>
+    <section class="app-sticky-note" id="app-sticky-note" aria-label="Sticker" data-sticky-note data-sticky-note-user="{{ request.user.pk|default:'' }}" hidden>
         <header class="app-sticky-note__bar" data-sticky-note-handle>
             <span class="app-sticky-note__title">
                 <i data-icon="sticky-note" aria-hidden="true"></i>
@@ -385,7 +385,7 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260919-office-tabs"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260922-account-scope"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260919-office-tabs"></script>
     <script src="{% static 'js/notifications-panel.js' %}?v=20260922-notification-center"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
@@ -398,6 +398,6 @@
     <script src="{% static 'js/custom-select.js' %}?v=20260921-dropdown-search"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>
     <script src="{% static 'js/file-upload.js' %}?v=20260616-task-autosave"></script>
-    <script src="{% static 'js/sticky-note.js' %}?v=20260707-sticker-close-fix"></script>
+    <script src="{% static 'js/sticky-note.js' %}?v=20260922-account-scope"></script>
 </body>
 </html>

@@ -202,12 +202,36 @@ osobnego runnera frontendowych testów ani serwisu zadań w tle. Nie oznacza to,
 
 Projekt ma wejścia WSGI i ASGI. Repozytorium nie dokumentuje konkretnego
 serwera wdrożenia, domeny, pipeline'u ani backupów; ten opis nie zakłada ich
-konfiguracji. `STATIC_ROOT` nie jest obecnie ustawiony w `settings.py`, więc
-produkcyjnej procedury `collectstatic` nie można uznać za kompletną.
+konfiguracji. `STATIC_ROOT` wskazuje `BASE_DIR / 'staticfiles'` (katalog ignorowany
+przez Git). `manage.py collectstatic --noinput` zbiera tam zasoby do serwowania
+przez serwer produkcyjny; `--dry-run` pozwala sprawdzić zbieranie bez zapisu.
+
+Publiczne media ogranicz do `profile_photos/`, `company_photos/` i
+`workplace_photos/` oraz rozszerzeń JPG/JPEG/PNG/WebP. Nie konfiguruj publicznego
+aliasu całego `MEDIA_ROOT`: `task_attachments/` i `kanban_attachments/` są
+prywatne i wymagają pobierania przez widoki aplikacji. Wbudowany routing DEBUG
+egzekwuje tę listę w `core/media.py`. Dysk/Dokumenty pozostają poza publicznym
+storage. Konfiguracja zewnętrznego serwera nie jest częścią repozytorium.
 
 Przy osobnym zadaniu wdrożeniowym ustal konfigurację procesu, statycznych
 zasobów, HTTPS, bazy, migracji oraz publicznych/prywatnych plików. Nie zapisuj
 sekretów ani danych połączenia do tej dokumentacji.
+
+### Naprawy integralności kont i plików
+
+Przed uruchomieniem wersji z unikalnością e-maili wykonaj `manage.py migrate`.
+Migracja `accounts/0008_user_email_case_insensitive.py` dodaje unikalny indeks
+`Lower(email)`. Jeśli wykryje stare duplikaty, zatrzymuje się przed zmianą
+danych: administrator musi wyjaśnić tożsamości i poprawić adresy. Nie scala
+ani nie usuwa kont. Test migracji obejmuje zachowanie danych przy takim błędzie.
+
+Testy `accounts.test_email_identity` i `core.test_file_lifecycle` obejmują
+walidację/rejestrację/profil, konflikt zapisu po walidacji, zaproszenia,
+ograniczenie bazy, migrację, publiczne media, kontrolowane pobieranie oraz
+commit/rollback usuwania załączników, plików Dysku i całego Workspace.
+Sprzątanie dotyczy nowych operacji usuwania; nie kasuje automatycznie plików
+osieroconych przez starszą wersję. Błędy storage po commit są logowane i
+wymagają sprawdzenia logów oraz miejsca na dysku.
 
 ## 9. Granice pierwszej weryfikacji
 

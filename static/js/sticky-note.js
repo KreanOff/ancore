@@ -1,14 +1,15 @@
 (function () {
-    const STORAGE_KEY = 'ancore:sticky-note:v1';
+    const initializedNotes = new WeakSet();
     const DEFAULT_TEXT = '';
     const DEFAULT_OPEN = false;
     const EDGE_GAP = 8;
     const MIN_WIDTH = 180;
     const MIN_HEIGHT = 140;
 
-    function readState() {
+    function readState(storageKey) {
         try {
-            const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}');
+            // The old v1 note has no owner: never assign it to the next login.
+            const parsed = JSON.parse(window.localStorage.getItem(storageKey) || '{}');
             return {
                 open: typeof parsed.open === 'boolean' ? parsed.open : DEFAULT_OPEN,
                 left: Number.isFinite(parsed.left) ? parsed.left : null,
@@ -29,9 +30,9 @@
         }
     }
 
-    function saveState(state) {
+    function persistState(storageKey, state) {
         try {
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            window.localStorage.setItem(storageKey, JSON.stringify(state));
         } catch (error) {
             // localStorage can be disabled; the sticker should still work for this page view.
         }
@@ -91,11 +92,15 @@
         const textInput = note?.querySelector('[data-sticky-note-text]');
         const resizeHandle = note?.querySelector('[data-sticky-note-resize]');
 
-        if (!note || !toggle || !handle || !closeButton || !textInput || !resizeHandle) {
+        if (!note || !toggle || !handle || !closeButton || !textInput || !resizeHandle
+            || !note.dataset.stickyNoteUser || initializedNotes.has(note)) {
             return;
         }
+        initializedNotes.add(note);
 
-        const state = readState();
+        const storageKey = `ancore:sticky-note:v2:user:${note.dataset.stickyNoteUser}`;
+        const state = readState(storageKey);
+        const saveState = (nextState) => persistState(storageKey, nextState);
 
         function applyToggleState() {
             const isOpen = !note.hidden;
@@ -296,6 +301,7 @@
         document.addEventListener('ancore:content-loaded', applyToggleState);
     }
 
+    document.addEventListener('ancore:content-loaded', bootStickyNote);
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', bootStickyNote, { once: true });
     } else {

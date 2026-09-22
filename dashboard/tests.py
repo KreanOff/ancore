@@ -41,7 +41,7 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'sidebar-sticker-toggle')
         self.assertContains(response, 'id="app-sticky-note"')
         self.assertContains(response, 'data-sticky-note-resize')
-        self.assertContains(response, 'sticky-note.js?v=20260707-sticker-close-fix')
+        self.assertContains(response, 'src="/static/js/sticky-note.js?v=')
         self.assertNotContains(response, 'href="/admin/"')
         self.assertContains(response, reverse('profile'))
         self.assertContains(response, 'Profil użytkownika')

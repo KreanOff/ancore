@@ -15,50 +15,27 @@ from .templatetags.company_avatar import company_avatar
 
 
 class ContactDirectoryStyleTests(SimpleTestCase):
-    def test_spreadsheet_rows_use_turquoise_hover_highlight(self):
-        css_path = finders.find('css/components/contacts.css')
-
-        self.assertIsNotNone(css_path)
-        with open(css_path, encoding='utf-8') as css_file:
-            css = css_file.read()
-
+    def test_spreadsheet_rows_use_shared_opaque_hover_highlight(self):
+        theme_path = finders.find('css/theme/elestio.css')
+        with open(theme_path, encoding='utf-8') as source:
+            css = source.read()
         hover_rule = re.search(
-            r'\.tasks-directory-board\.contacts-project-sheet '
-            r'\.contacts-directory-list \.contacts-directory-row'
-            r':not\(\.checked\):not\(:has\(\.tasks-row-checkbox:checked\)\):hover,.*?'
-            r'\{(?P<body>[^}]*)\}',
-            css,
-            re.DOTALL,
+            r'\.tasks-directory-board:is\(\.tasks-project-sheet, \.tasks-tag-sheet, \.contacts-project-sheet\) '
+            r'\.tasks-directory-list \.tasks-directory-row:is\(:hover, :focus-visible\),.*?'
+            r'\{(?P<body>[^}]*)\}', css, re.DOTALL,
         )
         self.assertIsNotNone(hover_rule)
-        self.assertIn(
-            'background: rgba(var(--system-accent-rgb), 0.08);',
-            hover_rule.group('body'),
-        )
-        self.assertIn(
-            'border-color: rgba(var(--system-accent-rgb), 0.24);',
-            hover_rule.group('body'),
-        )
-
-        accent_rule = re.search(
-            r'\.tasks-directory-board\.contacts-project-sheet '
-            r'\.contacts-directory-list \.contacts-directory-row::after '
-            r'\{(?P<body>[^}]*)\}',
-            css,
-            re.DOTALL,
-        )
+        self.assertIn('background: color-mix(in srgb, var(--system-accent) 8%, #ffffff);', hover_rule.group('body'))
+        self.assertIn('border-color: var(--contacts-directory-column-separator, var(--tasks-directory-column-separator, #edf0f3));', hover_rule.group('body'))
+        with open(finders.find('css/components/contacts.css'), encoding='utf-8') as source:
+            css = source.read()
+        accent_rule = re.search(r'\.contacts-directory-row::after \{(?P<body>[^}]*)\}', css)
         self.assertIsNotNone(accent_rule)
         self.assertIn('background: var(--system-accent);', accent_rule.group('body'))
-
-        active_accent_rule = re.search(
-            r'\.contacts-directory-row:not\(\.checked\)'
-            r':not\(:has\(\.tasks-row-checkbox:checked\)\):hover::after,.*?'
-            r'\{(?P<body>[^}]*)\}',
-            css,
-            re.DOTALL,
-        )
-        self.assertIsNotNone(active_accent_rule)
-        self.assertIn('opacity: 1;', active_accent_rule.group('body'))
+        self.assertIn('opacity: 0;', accent_rule.group('body'))
+        active_rule = re.search(r'\.contacts-directory-row:not\(\.checked\).*?:hover::after,.*?\{(?P<body>[^}]*)\}', css, re.DOTALL)
+        self.assertIsNotNone(active_rule)
+        self.assertIn('opacity: 1;', active_rule.group('body'))
 
 
 class ContactCollaborationTests(TestCase):
@@ -215,7 +192,7 @@ class ContactCollaborationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Jan')
         self.assertContains(response, 'Zajęty')
-        self.assertContains(response, 'contacts-presence-list')
+        self.assertContains(response, 'aria-label="Lista osób"')
         self.assertContains(response, 'contacts-user-directory-sheet tasks-project-sheet')
         self.assertContains(response, 'tasks-project-sheet__header')
         self.assertContains(response, 'tasks-project-sheet__cell" data-column="presence"')
@@ -319,7 +296,7 @@ class ContactCollaborationTests(TestCase):
 
         response = self.client.get(reverse('contacts:contacts'))
         html = response.content.decode()
-        topbar_start = html.index('class="tasks-topbar"')
+        topbar_start = html.index('class="tasks-topbar ')
         topbar_end = html.index('</header>', topbar_start)
         topbar_html = html[topbar_start:topbar_end]
         filterbar_start = html.index('class="tasks-filterbar', topbar_end)
@@ -327,16 +304,16 @@ class ContactCollaborationTests(TestCase):
         filterbar_html = html[filterbar_start:filterbar_end]
 
         self.assertIn('Kontakty', topbar_html)
-        self.assertIn('tasks-titlebar-search', topbar_html)
-        self.assertIn('id="filter-search"', topbar_html)
-        self.assertIn('name="q"', topbar_html)
+        self.assertIn('tasks-titlebar-actions', topbar_html)
+        self.assertNotIn('id="filter-search"', topbar_html)
+        self.assertIn('name="q"', filterbar_html)
         self.assertNotIn('data-task-sort', topbar_html)
-        self.assertNotIn('data-open-contact', topbar_html)
+        self.assertIn('data-open-contact', topbar_html)
         self.assertIn('tasks-filterbar--task-directory', filterbar_html)
         self.assertIn('data-task-sort', filterbar_html)
-        self.assertIn('Nowa firma', filterbar_html)
-        self.assertIn('Nowy kontakt', filterbar_html)
-        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertIn('Dodaj firmę', topbar_html)
+        self.assertIn('Dodaj kontakt', topbar_html)
+        self.assertIn('id="filter-search"', filterbar_html)
         self.assertNotIn('data-filter-search-submit', filterbar_html)
 
         self.assertContains(response, 'contacts-project-sheet')
@@ -361,7 +338,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'data-icon="circle-dot"')
         self.assertContains(response, 'data-column="created_at"')
         self.assertContains(response, 'data-icon="calendar-days"')
-        self.assertContains(response, 'class="tasks-project-pagination contacts-project-pagination"')
+        self.assertContains(response, 'class="tasks-project-pagination tasks-project-pagination--toolbar"')
         self.assertContains(response, 'Na stronie')
         self.assertContains(response, 'kontaktów')
 
@@ -414,7 +391,7 @@ class ContactCollaborationTests(TestCase):
 
         response = self.client.get(reverse('contacts:companies'))
         html = response.content.decode()
-        topbar_start = html.index('class="tasks-topbar"')
+        topbar_start = html.index('class="tasks-topbar ')
         topbar_end = html.index('</header>', topbar_start)
         topbar_html = html[topbar_start:topbar_end]
         filterbar_start = html.index('class="tasks-filterbar', topbar_end)
@@ -422,14 +399,14 @@ class ContactCollaborationTests(TestCase):
         filterbar_html = html[filterbar_start:filterbar_end]
 
         self.assertIn('Firmy', topbar_html)
-        self.assertIn('tasks-titlebar-search', topbar_html)
-        self.assertIn('id="filter-search"', topbar_html)
+        self.assertIn('tasks-titlebar-actions', topbar_html)
+        self.assertNotIn('id="filter-search"', topbar_html)
         self.assertNotIn('data-task-sort', topbar_html)
-        self.assertNotIn('data-open-company', topbar_html)
+        self.assertIn('data-open-company', topbar_html)
         self.assertIn('tasks-filterbar--task-directory', filterbar_html)
         self.assertIn('data-task-sort', filterbar_html)
-        self.assertIn('Nowa firma', filterbar_html)
-        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertIn('Dodaj firmę', topbar_html)
+        self.assertIn('id="filter-search"', filterbar_html)
         self.assertNotIn('data-filter-search-submit', filterbar_html)
         self.assertContains(response, 'contacts-project-sheet')
         self.assertContains(response, 'data-column="action"')
@@ -630,7 +607,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'data-icon="ellipsis"')
         self.assertContains(response, 'Opcje kontaktu')
         self.assertContains(response, 'Usuń')
-        self.assertContains(response, 'tasks.js?v=20260802-workplaces-table-sheet')
+        self.assertContains(response, 'src="/static/js/tasks.js?v=')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -761,7 +738,7 @@ class ContactCollaborationTests(TestCase):
         self.assertContains(response, 'tasks-icon-button contacts-actions-menu__toggle')
         self.assertContains(response, 'Opcje firmy')
         self.assertContains(response, 'Usuń')
-        self.assertContains(response, 'tasks.js?v=20260802-workplaces-table-sheet')
+        self.assertContains(response, 'src="/static/js/tasks.js?v=')
         self.assertContains(response, 'profile-summary')
         self.assertContains(response, 'profile-display-name')
         self.assertContains(response, 'profile-issue-sidebar')
@@ -801,8 +778,8 @@ class ContactCollaborationTests(TestCase):
         response = self.client.get(reverse('contacts:edit-company', args=[company.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="company-detail-form"')
-        self.assertContains(response, 'style.css?v=20260903-lightweight-loader-v1-contact-action-headers-v5')
-        self.assertContains(response, 'profile.js?v=20260614-app-wide-navigation')
+        self.assertContains(response, 'href="/static/css/style.css?v=')
+        self.assertContains(response, 'src="/static/js/profile.js?v=')
         self.assertContains(response, 'contacts-company-modal-title')
         self.assertContains(response, 'contacts-edit-modal is-open')
         self.assertContains(response, 'contacts-edit-modal__dialog')

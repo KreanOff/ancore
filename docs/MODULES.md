@@ -13,7 +13,8 @@ Zasady wspólne znajdują się w [MECHANISMS.md](MECHANISMS.md).
 zdjęcie z kadrowaniem/usuwaniem, publiczny identyfikator Ancore, dane kontaktowe,
 status obecności i przełączanie między kontami dodanymi do jednej sesji.
 
-`User` rozszerza `AbstractUser`. E-mail jest unikalny i służy do logowania;
+`User` rozszerza `AbstractUser`. E-mail jest unikalny bez względu na wielkość
+liter (formularze oraz ograniczenie bazy `Lower(email)`) i służy do logowania;
 `username` pozostaje osobnym publicznym identyfikatorem. Profil zawiera imiona,
 nazwisko, telefon, stanowisko, opis, zdjęcie i dane obecności.
 

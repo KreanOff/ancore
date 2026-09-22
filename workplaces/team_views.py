@@ -27,9 +27,14 @@ class InvitationForm(forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip()
-        recipient = get_user_model().objects.filter(email__iexact=email, is_active=True).first()
-        if not recipient:
+        user_model = get_user_model()
+        try:
+            recipient = user_model.objects.get(email__iexact=email, is_active=True)
+        except user_model.DoesNotExist:
             raise forms.ValidationError('Nie znaleziono aktywnego konta Ancore z tym adresem. Poproś tę osobę o rejestrację.')
+        except user_model.MultipleObjectsReturned:
+            # Fail closed for legacy databases awaiting the email constraint.
+            raise forms.ValidationError('Adres e-mail pasuje do kilku kont. Poproś administratora o wyjaśnienie duplikatu.')
         if recipient.pk == self.workplace.owner_id or self.workplace.memberships.filter(user=recipient, is_active=True).exists():
             raise forms.ValidationError('Ta osoba jest już członkiem Workspace.')
         if self.workplace.invitations.filter(recipient=recipient, status='pending', expires_at__gt=timezone.now()).exists():

@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LogoutView
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.crypto import constant_time_compare
@@ -116,11 +117,24 @@ def _presence_status_options(form):
     ]
 
 
+def _save_user_form(form):
+    # Validation and INSERT/UPDATE can race with another account request.
+    try:
+        with transaction.atomic():
+            form.save()
+    except IntegrityError as error:
+        constraint = getattr(getattr(error.__cause__, 'diag', None), 'constraint_name', '')
+        if constraint not in {'accounts_user_email_key', 'accounts_user_email_ci_unique'}:
+            raise
+        form.add_error('email', 'Ten adres email jest już używany.')
+        return False
+    return True
+
+
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            form.save()
+        if form.is_valid() and _save_user_form(form):
             messages.success(request, 'Konto zostało utworzone pomyślnie! Możesz się teraz zalogować.')
             return redirect('login')
     else:
@@ -132,8 +146,7 @@ def register(request):
 def profile(request):
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
+        if form.is_valid() and _save_user_form(form):
             messages.success(request, 'Profil został zaktualizowany.')
             return redirect('profile')
     else:

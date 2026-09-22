@@ -56,6 +56,12 @@ class UserRegistrationForm(UserCreationForm):
             'placeholder': 'Powtórz hasło',
         })
 
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('Ten adres email jest już używany.')
+        return email
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.first_name = self.cleaned_data['first_name']

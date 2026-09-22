@@ -265,7 +265,10 @@
             && nextDocument.querySelector('#app-page-modals')
             && nextDocument.querySelector('#app-notifications');
 
-        if (!hasRequiredRegions) {
+        // A different account may have logged in in another tab. Reload the
+        // whole shell so personal widgets cannot survive an identity change.
+        const sameAccount = document.body.dataset.accountId === nextDocument.body.dataset.accountId;
+        if (!hasRequiredRegions || !sameAccount) {
             window.location.href = url.href;
             return;
         }

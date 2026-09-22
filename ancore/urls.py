@@ -9,6 +9,7 @@ from tasks import urls as tasks_urls
 from documents import urls as documents_urls
 from documents import workspace_urls as office_urls
 from documents import suite_views
+from core.media import public_media
 
 urlpatterns = [
     path('drive-office-service/<uuid:pk>/source/', suite_views.source, {'drive': True}, name='drive-office-service-source'),
@@ -34,4 +35,4 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, view=public_media, document_root=settings.MEDIA_ROOT)

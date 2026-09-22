@@ -123,6 +123,13 @@ class Document(models.Model):
         return self.title
 
 
+@receiver(post_delete, sender=Document)
+def delete_drive_document_file(sender, instance, using, **kwargs):
+    if instance.file:
+        storage, name = instance.file.storage, instance.file.name
+        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
+
+
 class WorkspaceDocumentFolder(models.Model):
     """Folders of the Dokumenty module, independent from drives."""
     name = models.CharField('Nazwa folderu', max_length=120)

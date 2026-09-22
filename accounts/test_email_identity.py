@@ -1,0 +1,89 @@
+from django.contrib.auth import get_user_model
+from django.db import IntegrityError, connection, transaction
+from django.db.migrations.executor import MigrationExecutor
+from django.test import TestCase, TransactionTestCase
+
+from workplaces.models import create_workplace_for_user
+from workplaces.team_views import InvitationForm
+from .forms import UserRegistrationForm, UserProfileForm
+from .views import _save_user_form
+
+
+class EmailIdentityTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(username='email-owner', email='Anna@example.test')
+
+    def registration(self, email='anna@example.test'):
+        return UserRegistrationForm(data={
+            'first_name': 'Anna', 'last_name': 'Nowak', 'email': email,
+            'password1': 'registration-83-long!', 'password2': 'registration-83-long!',
+        })
+
+    def test_registration_rejects_case_duplicate_including_inactive_account(self):
+        for active in (True, False):
+            with self.subTest(active=active):
+                get_user_model().objects.filter(pk=self.user.pk).update(is_active=active)
+                form = self.registration('ANNA@EXAMPLE.TEST')
+                self.assertFalse(form.is_valid())
+                self.assertIn('email', form.errors)
+
+    def test_profile_allows_own_email_case_but_rejects_another_account(self):
+        data = {'first_name': 'Anna', 'last_name': 'Nowak', 'username': '@anna',
+                'email': 'ANNA@example.test', 'presence_status': 'inactive'}
+        form = UserProfileForm(data=data, instance=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        other = get_user_model().objects.create_user(username='other-email', email='other@example.test')
+        form = UserProfileForm(data=data, instance=other)
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
+    def test_database_rejects_case_duplicates_on_insert_and_update(self):
+        User = get_user_model()
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            User.objects.create_user(username='duplicate-email', email='anna@example.test')
+        other = User.objects.create_user(username='other-email', email='other@example.test')
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            User.objects.filter(pk=other.pk).update(email='ANNA@example.test')
+
+    def test_duplicate_created_after_validation_becomes_form_error(self):
+        form = self.registration('new@example.test')
+        self.assertTrue(form.is_valid(), form.errors)
+        get_user_model().objects.create_user(username='race-winner', email='NEW@example.test')
+        self.assertFalse(_save_user_form(form))
+        self.assertIn('email', form.errors)
+        self.assertEqual(get_user_model().objects.filter(email__iexact='new@example.test').count(), 1)
+
+    def test_invitation_finds_unique_recipient_regardless_of_email_case(self):
+        owner = get_user_model().objects.create_user(username='team-owner', email='team@example.test')
+        workspace = create_workplace_for_user(owner, 'Email test')
+        form = InvitationForm(data={'email': 'ANNA@example.test', 'role': 'member'}, workplace=workspace, actor=owner)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.recipient, self.user)
+
+
+class EmailIdentityMigrationTests(TransactionTestCase):
+    def test_legacy_duplicates_block_migration_and_invitation_without_changing_accounts(self):
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        previous = [node for node in latest if node[0] != 'accounts'] + [('accounts', '0007_alter_user_profile_photo')]
+        executor.migrate(previous)
+        duplicate = None
+        try:
+            User = get_user_model()
+            owner = User.objects.create_user(username='migration-owner', email='owner@example.test')
+            first = User.objects.create_user(username='first-email', email='same@example.test')
+            duplicate = User.objects.create_user(username='second-email', email='SAME@example.test')
+            workspace = create_workplace_for_user(owner, 'Legacy email')
+            form = InvitationForm(data={'email': duplicate.email, 'role': 'member'}, workplace=workspace, actor=owner)
+            self.assertFalse(form.is_valid())
+            self.assertIn('email', form.errors)
+            self.assertFalse(workspace.invitations.exists())
+            with self.assertRaisesMessage(RuntimeError, 'Żadne konto nie zostało zmienione'):
+                MigrationExecutor(connection).migrate(latest)
+            self.assertEqual(User.objects.get(pk=first.pk).email, 'same@example.test')
+            self.assertEqual(User.objects.get(pk=duplicate.pk).email, 'SAME@example.test')
+        finally:
+            if duplicate:
+                duplicate.delete()
+            MigrationExecutor(connection).migrate(latest)

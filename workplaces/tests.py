@@ -57,15 +57,15 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'workplaces-page workplaces-settings-page')
-        self.assertContains(response, 'tasks-topbar workplaces-task-topbar')
-        self.assertContains(response, 'tasks-titlebar-search tasks-search-actions')
-        self.assertContains(response, 'tasks-filterbar workplaces-task-filterbar')
+        self.assertContains(response, 'tasks-topbar tasks-topbar--directory tasks-topbar--project-directory workplaces-task-topbar')
+        self.assertContains(response, 'id="workplaces-search-input"')
+        self.assertContains(response, 'tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory workplaces-management__toolbar')
         self.assertContains(response, 'data-workplace-create-open')
         self.assertContains(response, 'id="workplace-create-modal"')
-        self.assertContains(response, 'Nawigacja ustawień')
+        self.assertContains(response, 'aria-label="Zarządzanie Workspace"')
         self.assertContains(response, '<title>Workspace | ancore</title>', html=True)
         self.assertContains(response, '<h1 id="workplaces-page-title" class="u-sr-only">Workspace</h1>', html=True)
-        self.assertContains(response, 'aria-label="Workspace" title="Workspace"')
+        self.assertContains(response, 'workplaces-management__views')
         self.assertNotContains(response, 'Miejsca pracy')
         self.assertContains(response, reverse('settings'))
         self.assertNotContains(response, 'workplaces-shell-header')
@@ -76,9 +76,9 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'data-workplace-inspector-status')
         self.assertNotContains(response, 'is-inspected')
         self.assertContains(response, 'data-workplaces-select-all')
-        self.assertContains(response, 'data-workplace-id=', count=2)
+        self.assertContains(response, 'data-workplace-id=', count=3)
         self.assertNotContains(response, 'data-column="logo"')
-        self.assertContains(response, 'workplace-row__avatar', count=2)
+        self.assertContains(response, 'workplace-row__avatar', count=3)
         self.assertContains(response, 'Kod miejsca pracy')
         self.assertContains(response, 'Opis')
         self.assertContains(response, 'FIRST-01')
@@ -97,7 +97,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'data-workplace-slug=')
         self.assertContains(response, 'Pierwszy Workplace')
         self.assertContains(response, 'Drugi Workplace')
-        self.assertNotContains(response, 'Nie moj Workplace')
+        self.assertContains(response, 'Nie moj Workplace')
 
     def test_workplace_create_renders_in_tasks_project_modal_shell(self):
         self.client.force_login(self.user)
@@ -207,7 +207,7 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="nav-link nav-link--workplace ')
+        self.assertContains(response, 'class="sidebar-workspace-manage"')
         self.assertContains(response, 'data-icon="briefcase"')
         self.assertNotContains(response, 'sidebar-workplace__avatar')
         self.assertContains(response, 'sidebar-workspace-avatar')
@@ -515,7 +515,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-sidebar-source-item="dashboard" draggable="true"')
         self.assertContains(response, '>Dashboard</span>', count=2)
 
-    def test_sidebar_displays_workplace_below_notes_and_above_settings_without_separator(self):
+    def test_sidebar_workspace_management_is_in_header_and_footer_keeps_sticker_and_settings(self):
         self.client.force_login(self.user)
 
         response = self.client.get(reverse('tasks:tasks'))
@@ -526,21 +526,21 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-sidebar-workspace-switcher')
         self.assertContains(response, 'data-sidebar-workspace-toggle')
         self.assertNotContains(response, 'class="nav-separator"')
-        self.assertLess(content.index('class="sidebar-header"'), content.index('class="nav-link nav-link--workplace '))
-        self.assertLess(content.index('data-sticky-note-toggle'), content.index('class="nav-link nav-link--workplace '))
-        self.assertLess(content.index('class="nav-link nav-link--workplace '), content.index('aria-label="Ustawienia Ancore"'))
+        self.assertLess(content.index('class="sidebar-header"'), content.index('class="sidebar-workspace-manage"'))
+        self.assertLess(content.index('class="sidebar-workspace-manage"'), content.index('data-sticky-note-toggle'))
+        self.assertLess(content.index('class="sidebar-workspace-manage"'), content.index('aria-label="Ustawienia Ancore"'))
 
-    def test_sidebar_workplace_button_uses_standard_nav_link_without_photo(self):
+    def test_sidebar_workspace_management_link_has_settings_icon(self):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
         response = self.client.get(reverse('tasks:tasks'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="nav-link nav-link--workplace ')
+        self.assertContains(response, 'class="sidebar-workspace-manage"')
         self.assertContains(
             response,
-            '<i class="nav-icon nav-icon--workplace" data-icon="briefcase" aria-hidden="true"></i>',
+            '<i data-icon="settings-2" aria-hidden="true"></i>',
             html=True,
         )
 
@@ -777,7 +777,7 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.get(scoped_workplace_app_path(self.second_workplace, 'tasks'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'href="/tasks/?view=my-tasks"')
+        self.assertContains(response, f'href="{scoped_workplace_app_path(self.second_workplace, "tasks")}?view=my-tasks"')
         self.assertContains(response, f'data-view-url="/tasks/?project={project.pk}"')
         self.assertNotContains(response, '/workplaces/-/tasks/')
 

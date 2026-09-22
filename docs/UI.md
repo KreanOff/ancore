@@ -23,6 +23,12 @@ referencyjny ekran w tej samej szerokości i stanie co ekran zmieniany.
 - Osobny host `#app-page-modals` oraz komunikaty `#app-notifications`.
 - Wspólne panele wyszukiwania i powiadomień oraz Sticker.
 
+Sticker zachowuje wygląd i kontrolki, ale zapisuje treść oraz geometrię osobno
+dla zalogowanego konta. Po przełączeniu konta pojawia się jego własna notatka
+(pusta przy pierwszym użyciu); powrót przywraca poprzednią. Dane starej notatki
+bez właściciela nie są automatycznie przypisywane ani wyświetlane innemu kontu.
+Powtórna inicjalizacja po nawigacji nie powiela obsługi przycisku.
+
 Przełącznik Workspace w nagłówku pokazuje avatar i nazwę bez strzałki.
 Kliknięcie avatara lub nazwy nadal otwiera menu wyboru Workspace.
 

@@ -962,14 +962,11 @@ class TaskActivity(models.Model):
 
 
 @receiver(post_delete, sender=TaskAttachment)
-def auto_delete_file_on_delete(sender, instance, **kwargs):
-    """
-    Deletes file from filesystem
-    when corresponding TaskAttachment object is deleted.
-    """
+def auto_delete_file_on_delete(sender, instance, using, **kwargs):
+    """Keep the file if the surrounding deletion is rolled back."""
     if instance.file:
-        if os.path.isfile(instance.file.path):
-            os.remove(instance.file.path)
+        storage, name = instance.file.storage, instance.file.name
+        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
 
 
 @receiver(post_save, sender=Task)

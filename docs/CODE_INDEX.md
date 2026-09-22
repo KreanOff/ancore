@@ -17,8 +17,8 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 12 | 0 | 9 | 32 |
-| [accounts](../accounts) | 14 | 4 | 8 | 28 |
+| [core](../core) | 14 | 0 | 9 | 38 |
+| [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 18 | 8 | 10 | 78 |
 | [tasks](../tasks) | 15 | 47 | 24 | 171 |
 | [kanban](../kanban) | 9 | 34 | 9 | 71 |
@@ -864,6 +864,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/admin.py](../core/admin.py)
 - [core/apps.py](../core/apps.py) — `CoreConfig`
 - [core/forms.py](../core/forms.py)
+- [core/media.py](../core/media.py) — `public_media`
 - [core/models.py](../core/models.py)
 - [core/task_numbering.py](../core/task_numbering.py) — `lock_task_numbers`, `renumber_tasks`
 - [core/task_requests.py](../core/task_requests.py) — `task_detail_lookup`, `task_primary_keys`
@@ -973,7 +974,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/folder_stats.py](../documents/folder_stats.py) — `set_folder_summaries`
 - [documents/forms.py](../documents/forms.py) — `MultipleFileInput`, `MultipleFileField`, `UploadForm`, `IconColorForm`, `LibraryForm`, `FolderForm`, `DocumentForm`
 - [documents/location_lock.py](../documents/location_lock.py) — `location_write`
-- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`, `DocumentVersion`, `delete_document_version_file`
+- [documents/models.py](../documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `delete_drive_document_file`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`, `DocumentVersion`, `delete_document_version_file`
 - [documents/move_views.py](../documents/move_views.py) — `MoveForm`, `move`
 - [documents/office_extras.py](../documents/office_extras.py) — `from_template`, `template_toggle`
 - [documents/office_service.py](../documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
@@ -1201,6 +1202,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
+### core/test_file_lifecycle.py
+
+Źródło: [core/test_file_lifecycle.py](../core/test_file_lifecycle.py).
+
+- `FileLifecycleTests`: 5 metod testowych.
+- `PublicMediaTests`: 1 metod testowych.
+
 ### core/test_task_integrity.py
 
 Źródło: [core/test_task_integrity.py](../core/test_task_integrity.py).
@@ -1220,6 +1228,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `UploadValidationTests`: 3 metod testowych.
 - `SidebarActiveStateTests`: 16 metod testowych.
+
+### accounts/test_email_identity.py
+
+Źródło: [accounts/test_email_identity.py](../accounts/test_email_identity.py).
+
+- `EmailIdentityTests`: 5 metod testowych.
+- `EmailIdentityMigrationTests`: 1 metod testowych.
 
 ### accounts/tests.py
 
@@ -1437,6 +1452,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [accounts/migrations/0005_backfill_public_usernames.py](../accounts/migrations/0005_backfill_public_usernames.py)
 - [accounts/migrations/0006_user_last_seen_auto_presence.py](../accounts/migrations/0006_user_last_seen_auto_presence.py)
 - [accounts/migrations/0007_alter_user_profile_photo.py](../accounts/migrations/0007_alter_user_profile_photo.py)
+- [accounts/migrations/0008_user_email_case_insensitive.py](../accounts/migrations/0008_user_email_case_insensitive.py)
 
 ### workplaces
 

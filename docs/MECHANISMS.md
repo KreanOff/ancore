@@ -6,6 +6,12 @@ Logowanie korzysta z Django Auth oraz `accounts.User`, gdzie `USERNAME_FIELD`
 to `email`. Profil i publiczny identyfikator są oddzielone od danych wpisu
 `Contact`. Aktualne konto jest w `request.user`.
 
+Rejestracja i profil sprawdzają e-mail bez względu na wielkość liter.
+Ograniczenie `accounts_user_email_ci_unique` na `Lower(email)` chroni również
+równoczesne zapisy i operacje ORM. Konflikt pomiędzy walidacją a zapisem
+wraca jako błąd pola e-mail, bez błędu HTTP 500. Zaproszenia wymagają
+jednoznacznego odbiorcy; starsze duplikaty są odrzucane.
+
 Sesja zawiera m.in. `switch_account_user_ids`, `switch_account_auth_hashes`, `active_workplace_id`
 i `workspace_url_scope_enabled`. Przełączenie konta wykonuje `auth_login()`
 i zachowuje listę uwierzytelnionych kont. Aktywny Workspace jest ponownie
@@ -222,7 +228,8 @@ reguł nie powodował ponownego utworzenia domyślnych.
   To walidacja formatu, nie skaner antywirusowy ani pełne parsowanie zawartości.
 - Kadrowanie obrazu po stronie klienta współpracuje z walidacją formularzy
   zdjęć po stronie Django.
-- Pobieranie używa `FileResponse(as_attachment=True)` i `nosniff`;
+- Pobieranie używa `FileResponse(as_attachment=True)`, `nosniff` oraz
+  `Cache-Control: private, no-store`;
   widok musi wcześniej zweryfikować właściciela/kontekst.
 
 | Rodzaj danych | Przechowywanie |
@@ -300,8 +307,12 @@ Sygnał `post_delete` nadal usuwa historyczne zdjęcie po zatwierdzeniu
 transakcji usunięcia dysku. Zachowany GET `libraries/<pk>/photo/` sprawdza
 właściciela i aktywny Workspace, zwraca obraz z `nosniff` oraz
 `Cache-Control: private, no-store`; brak zdjęcia daje 404.
-Nie przenoś gwarancji sprzątania automatycznie na pliki: model `Document`
-nie ma analogicznego sygnału. Kosz ustawia tylko `deleted_at`.
+Model `Document` usuwa fizyczny plik po zatwierdzeniu usunięcia rekordu,
+także przy kaskadowym usuwaniu Workspace. Wycofanie transakcji zachowuje plik.
+Kosz ustawia tylko `deleted_at` i pozostawia plik do przywrócenia.
+Załączniki Tasks i Kanbana korzystają z tej samej zasady: sygnał `post_delete`
+rejestruje `storage.delete()` przez `transaction.on_commit` na właściwej bazie.
+Błąd storage jest logowany i nie przerywa kolejnych callbacków sprzątania.
 
 ### Treść i pliki osobnego modułu Dokumenty
 
@@ -355,10 +366,13 @@ aby `beforeunload` mógł chronić niezapisane zmiany. Anulowanie wyjścia usuwa
 wskaźnik ładowania. `office.js` inicjalizuje obsługę przy starcie i
 `ancore:content-loaded`, usuwając poprzednie listenery przez `AbortController`.
 
-`ancore/urls.py` serwuje `MEDIA_ROOT` bezpośrednio przy DEBUG. Kontrolowany
-endpoint załącznika nie oznacza automatycznie, że każdy inny sposób dostępu
-do jego pliku jest zablokowany. Konfiguracja produkcyjnego serwowania mediów
-wymaga sprawdzenia w środowisku wdrożenia.
+Przy DEBUG routing mediów używa `core.media.public_media`: udostępnia tylko
+JPEG/PNG/WebP bezpośrednio w `profile_photos`, `company_photos` i `workplace_photos`.
+Załączniki i próby wyjścia poza te katalogi zwracają 404. Stare ścieżki plików
+pozostają zgodne z kontrolowanym pobieraniem w Tasks/Kanbanie.
+Serwer produkcyjny musi stosować tę samą listę publicznych katalogów;
+nie wolno publicznie mapować całego `MEDIA_ROOT`. Szczegóły wdrożenia:
+[DEVELOPMENT.md](DEVELOPMENT.md#8-wdrożenie).
 
 ## 10. Globalne wyszukiwanie
 
@@ -434,6 +448,10 @@ automatycznych przypomnień o terminach i wzmianek.
 5. Wysyła `ancore:content-loaded`.
 6. Przy nieobsługiwanym adresie lub błędzie stosuje pełną nawigację.
 
+Powłoka oznacza konto przez `body[data-account-id]`. Jeśli odpowiedź częściowej
+nawigacji pochodzi z innego konta, następuje pełne przeładowanie, aby osobiste
+elementy (w tym Sticker) nie pozostały z poprzedniej sesji.
+
 Lista ścieżek nie obejmuje automatycznie wszystkich adresów modułów.
 W sprawdzonej wersji regexy `layout.js` są głównie bazowe; nie zawierają
 scoped ścieżek Workspace ani Dysku. Obsługa `ancore:content-loaded`
@@ -455,12 +473,18 @@ Nie opieraj całej inicjalizacji wyłącznie na jednorazowym `DOMContentLoaded`.
 | Widoczność/szerokość/kolejność kolumn | `localStorage` w `tasks.js` i `documents.js`; klucze zależą od komponentu |
 | Powrót z zadania do listy | `sessionStorage`, klucze modułu Tasks/Kanban |
 | Okładki i tapety Kanban | `localStorage`; wybrana tapeta m.in. wg ścieżki tablicy |
-| Sticker | `ancore:sticky-note:v1`: tekst, geometria, otwarcie |
+| Sticker | `ancore:sticky-note:v2:user:<pk>`: tekst, geometria i otwarcie osobno dla konta |
 | Ostatnia aktywność między kartami | `ancore:lastActivityAt` |
 
 Nie wszystkie klucze zawierają ID użytkownika/Workspace. Lokalny stan nie
 jest automatycznie prywatny dla konta ani synchronizowany z bazą.
 Zmieniając strukturę klucza, uwzględnij odczyt starszych danych i reset preferencji.
+
+Sticker jest osobisty dla konta i wspólny dla jego Workspace w danej przeglądarce.
+Stary klucz `ancore:sticky-note:v1` nie zawiera właściciela: nie importujemy go
+automatycznie ani nie kasujemy. Jego treść nie jest wyświetlana po zalogowaniu.
+Nowy kod inicjalizuje notatkę również na `ancore:content-loaded`, z ochroną
+przed podwójnymi listenerami na tym samym elemencie.
 
 ## 14. Usuwanie i zależności
 

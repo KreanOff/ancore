@@ -30,12 +30,12 @@ class KanbanProjectCreationTests(TestCase):
         self.client.force_login(self.user)
 
     def _rail_link_html(self, response, label):
-        html = response.content.decode()
-        nav_start = html.index('class="tasks-rail-nav-group"')
-        label_start = html.index(label, nav_start)
-        link_start = html.rfind('<a ', nav_start, label_start)
-        link_end = html.index('</a>', label_start) + len('</a>')
-        return html[link_start:link_end]
+        keys = {'Przestrzenie robocze': 'kanban-spaces', 'Tablice': 'kanban-boards', 'Tagi': 'tags'}
+        match = re.search(r'<a\b[^>]*data-sidebar-source-item="' + keys[label] + r'"[^>]*>.*?</a>',
+                          response.content.decode(), re.DOTALL)
+        self.assertIsNotNone(match)
+        self.assertIn(label, match.group())
+        return match.group()
 
     def test_create_project_adds_default_group(self):
         response = self.client.post(reverse('kanban:tasks'), {
@@ -220,12 +220,12 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, 'PRIORYTET')
         self.assertContains(response, 'OSTATNIA AKTYWNOŚĆ')
         self.assertContains(response, 'data-project-type="kanban-space"', count=6)
-        self.assertContains(response, '<span>Projekt z ikoną</span>', html=True)
-        self.assertContains(response, '<span>Projekt bez ikony</span>', html=True)
+        self.assertContains(response, '<span class="tasks-row-title-text">Projekt z ikoną</span>', html=True)
+        self.assertContains(response, '<span class="tasks-row-title-text">Projekt bez ikony</span>', html=True)
         self.assertContains(response, project_with_icon.code)
         self.assertContains(response, project_without_icon.code)
         self.assertContains(response, 'id="notes-selected-project-menu-btn"')
-        self.assertContains(response, 'data-open-project-notes', count=4)
+        self.assertContains(response, 'data-open-project-notes', count=2)
         self.assertContains(response, 'data-project-notes-icon data-icon="file-text"')
         self.assertContains(response, 'data-project-notes-icon data-icon="file-plus-2"')
         self.assertContains(
@@ -473,7 +473,7 @@ class KanbanProjectCreationTests(TestCase):
 
         response = self.client.get(reverse('kanban:tasks'))
         html = response.content.decode()
-        topbar_start = html.index('class="tasks-topbar"')
+        topbar_start = html.index('class="tasks-topbar ')
         topbar_end = html.index('</header>', topbar_start)
         topbar_html = html[topbar_start:topbar_end]
         filterbar_start = html.index('class="tasks-filterbar', topbar_end)
@@ -481,20 +481,20 @@ class KanbanProjectCreationTests(TestCase):
         filterbar_html = html[filterbar_start:filterbar_end]
 
         self.assertIn('Przestrzenie robocze', topbar_html)
-        self.assertIn('tasks-titlebar-search', topbar_html)
-        self.assertIn('id="filter-search"', topbar_html)
+        self.assertIn('tasks-titlebar-actions', topbar_html)
+        self.assertNotIn('id="filter-search"', topbar_html)
         self.assertIn('data-project-search-form', topbar_html)
         self.assertNotIn('name="view" value="all-groups"', topbar_html)
         self.assertNotIn('data-task-sort', topbar_html)
-        self.assertNotIn('data-section-actions', topbar_html)
+        self.assertIn('data-section-actions', topbar_html)
         self.assertIn('tasks-filterbar--task-directory', filterbar_html)
         self.assertIn('data-task-sort', filterbar_html)
-        self.assertIn('data-section-actions', filterbar_html)
-        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertNotIn('data-section-actions', filterbar_html)
+        self.assertIn('id="filter-search"', filterbar_html)
         self.assertNotIn('data-filter-search-submit', filterbar_html)
-        self.assertIn('Dodaj przestrzeń', filterbar_html)
-        self.assertIn('id="edit-selected-project-bar-btn"', filterbar_html)
-        self.assertIn('id="info-selected-project-menu-btn"', filterbar_html)
+        self.assertIn('Dodaj przestrzeń', topbar_html)
+        self.assertIn('id="edit-selected-project-menu-btn"', topbar_html)
+        self.assertIn('id="info-selected-project-menu-btn"', topbar_html)
 
     def test_projects_view_uses_tasks_project_filter_toolbar(self):
         company = Company.objects.create(owner=self.user, name='ACME')
@@ -568,7 +568,7 @@ class KanbanProjectCreationTests(TestCase):
 
         response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
         html = response.content.decode()
-        topbar_start = html.index('class="tasks-topbar"')
+        topbar_start = html.index('class="tasks-topbar ')
         topbar_end = html.index('</header>', topbar_start)
         topbar_html = html[topbar_start:topbar_end]
         filterbar_start = html.index('class="tasks-filterbar', topbar_end)
@@ -576,14 +576,14 @@ class KanbanProjectCreationTests(TestCase):
         filterbar_html = html[filterbar_start:filterbar_end]
 
         self.assertIn('Tablice', topbar_html)
-        self.assertIn('tasks-titlebar-search', topbar_html)
-        self.assertIn('id="filter-search"', topbar_html)
+        self.assertIn('tasks-titlebar-actions', topbar_html)
+        self.assertNotIn('id="filter-search"', topbar_html)
         self.assertNotIn('data-task-sort', topbar_html)
-        self.assertNotIn('data-section-actions', topbar_html)
+        self.assertIn('data-section-actions', topbar_html)
         self.assertIn('tasks-filterbar--task-directory', filterbar_html)
         self.assertIn('data-task-sort', filterbar_html)
-        self.assertIn('data-section-actions', filterbar_html)
-        self.assertNotIn('id="filter-search"', filterbar_html)
+        self.assertNotIn('data-section-actions', filterbar_html)
+        self.assertIn('id="filter-search"', filterbar_html)
         self.assertNotIn('data-filter-search-submit', filterbar_html)
         self.assertNotIn('Dodaj tablicę', filterbar_html)
 
@@ -675,7 +675,7 @@ class KanbanProjectCreationTests(TestCase):
 
         spaces_response = self.client.get(reverse('kanban:tasks'))
         spaces_html = spaces_response.content.decode()
-        spaces_topbar_start = spaces_html.index('<header class="tasks-topbar">')
+        spaces_topbar_start = spaces_html.index('<header class="tasks-topbar ')
         spaces_topbar_end = spaces_html.index('</header>', spaces_topbar_start)
         spaces_topbar_html = spaces_html[spaces_topbar_start:spaces_topbar_end]
 
@@ -967,7 +967,7 @@ class KanbanProjectCreationTests(TestCase):
             "&scope=projects&owner=IT&priority=high&sort=priority_desc"
         )
         html = response.content.decode()
-        topbar_start = html.index('class="tasks-topbar"')
+        topbar_start = html.index('class="tasks-topbar ')
         topbar_end = html.index('</header>', topbar_start)
         topbar_html = html[topbar_start:topbar_end]
         filterbar_start = html.index('class="tasks-filterbar', topbar_end)
@@ -977,10 +977,10 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-project-sort-menu')
         self.assertContains(response, 'data-project-default-sort="name_asc"')
-        self.assertNotIn('data-section-actions', topbar_html)
-        self.assertIn('data-section-actions', filterbar_html)
-        self.assertIn('Dodaj tag', filterbar_html)
-        self.assertLess(filterbar_html.index('Dodaj tag'), filterbar_html.index('data-section-actions'))
+        self.assertIn('data-section-actions', topbar_html)
+        self.assertNotIn('data-section-actions', filterbar_html)
+        self.assertIn('Dodaj tag', topbar_html)
+        self.assertLess(topbar_html.index('Dodaj tag'), topbar_html.index('data-section-actions'))
         self.assertIn('name="sort" value="priority_desc" data-project-sort-input', html)
         self.assertIn('name="status" value="active" data-project-filter-input="status"', html)
         self.assertIn('name="category" value="area" data-project-filter-input="category"', html)

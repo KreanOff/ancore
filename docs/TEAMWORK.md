@@ -57,6 +57,9 @@ odebrania dostępu na Office opisuje potwierdzenie operacji.
 Zaproszenie wskazuje **istniejące aktywne konto Ancore przez e-mail**. Jest
 zapisywane w aplikacji, bez wysyłania e-maila. Odbiorca widzi je pod dzwonkiem
 oraz na stronie Workspace, niezależnie od aktualnie wybranej przestrzeni.
+Wyszukanie nie rozróżnia wielkości liter, ale musi wskazać dokładnie jedno
+konto. Niejednoznaczny adres w starszej bazie daje błąd formularza; nie wybieramy
+pierwszego konta. Migracja Accounts 0008 blokuje tworzenie takich duplikatów.
 Turkusowa kropka przy dzwonku oznacza nieprzeczytane wpisy lub oczekujące
 zaproszenia; obie liczby są dostępne w opisie przycisku. Stan jest sprawdzany co 30 sekund w widocznej karcie,
 po powrocie do karty i po częściowej nawigacji. Powiadomienie pokazuje autora,

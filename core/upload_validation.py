@@ -219,4 +219,5 @@ def attachment_download_response(attachment):
         content_type=content_type or 'application/octet-stream',
     )
     response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'private, no-store'
     return response

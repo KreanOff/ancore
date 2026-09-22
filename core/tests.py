@@ -286,7 +286,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn(
             '.sidebar-view-switcher__item.is-active {\n'
             '    --app-text-color: var(--text-primary);\n\n'
-            '    background: rgba(var(--system-accent-rgb), 0.14);\n'
+            '    background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);\n'
             '    color: var(--app-text-color);\n'
             '}',
             css,
@@ -455,7 +455,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         )
         self.assertIn(
             'html.sidebar-collapsed .sidebar-view-switcher__item.is-active {\n'
-            '        background: rgba(var(--system-accent-rgb), 0.14);',
+            '        background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);',
             css,
         )
         self.assertIn(

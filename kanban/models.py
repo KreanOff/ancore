@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Max
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -411,14 +411,11 @@ class KanbanActivity(models.Model):
 
 
 @receiver(post_delete, sender=KanbanAttachment)
-def auto_delete_file_on_delete(sender, instance, **kwargs):
-    """
-    Deletes file from filesystem
-    when corresponding KanbanAttachment object is deleted.
-    """
+def auto_delete_file_on_delete(sender, instance, using, **kwargs):
+    """Keep the file if the surrounding deletion is rolled back."""
     if instance.file:
-        if os.path.isfile(instance.file.path):
-            os.remove(instance.file.path)
+        storage, name = instance.file.storage, instance.file.name
+        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
 
 
 @receiver(post_save, sender=Kanban)
