@@ -17,17 +17,26 @@
                     {% for field in details_form %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>{% endfor %}
                 </form>
                 <p class="project-template-editor__hint">Zmiany dotyczą kolejnych projektów tworzonych z tego szablonu.</p>
-                <section aria-label="Grupy szablonu">
-                    <div class="tasks-filterbar tasks-filterbar--directory">
-                        <h2 class="tasks-topbar-title">Grupy ({{ sections|length }})</h2>
-                        <button type="button" class="tasks-filter-button" data-open-template-form="section" aria-haspopup="dialog" aria-controls="template-editor-section"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj grupę</span></button>
+                <div class="project-template-editor__navigation">
+                    <div class="notifications-tabs project-template-editor__tabs" role="tablist" aria-label="Struktura szablonu">
+                        <button type="button" id="template-tab-sections" role="tab" aria-selected="true" aria-controls="template-panel-sections" data-template-tab="sections">Grupy</button>
+                        <button type="button" id="template-tab-tasks" role="tab" aria-selected="false" aria-controls="template-panel-tasks" tabindex="-1" data-template-tab="tasks">Zadania</button>
                     </div>
+                    <button type="button" class="tasks-filter-button" data-template-tab-action="sections" data-open-template-form="section" aria-haspopup="dialog" aria-controls="template-editor-section"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj grupę</span></button>
+                    <button type="button" class="tasks-filter-button" data-template-tab-action="tasks" data-open-template-form="task" aria-haspopup="dialog" aria-controls="template-editor-task" hidden{% if not sections %} disabled title="Najpierw dodaj grupę"{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj zadanie</span></button>
+                </div>
+                <section id="template-panel-sections" role="tabpanel" aria-labelledby="template-tab-sections" tabindex="0" data-template-tab-panel="sections">
                     <div class="documents-table-scroll">
                         <table class="documents-table project-template-editor__table" aria-label="Grupy szablonu">
-                            <thead><tr><th>Nazwa grupy</th><th>Opis</th><th>Typ grupy</th><th>Kolejność</th></tr></thead>
+                            <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa grupy</span></th><th scope="col"><span class="documents-column-heading">Opis</span></th><th scope="col"><span class="documents-column-heading">Typ grupy</span></th><th scope="col"><span class="documents-column-heading">Kolejność</span></th></tr></thead>
                             <tbody>
                             {% for item in sections %}
-                                <tr><td><div class="documents-name">{% include 'tasks/includes/template_item_menu.html' with kind='section' %}<span title="{{ item.title }}">{{ item.title }}</span></div></td><td>{{ item.description|default:'Brak opisu' }}</td><td>{{ item.kind_label }}</td><td>{{ item.order }}</td></tr>
+                                <tr>
+                                    <td><div class="documents-name">{% include 'tasks/includes/template_item_menu.html' with kind='section' %}<span title="{{ item.title }}">{{ item.title }}</span></div></td>
+                                    <td title="{{ item.description|default:'Brak opisu' }}">{{ item.description|default:'Brak opisu' }}</td>
+                                    <td title="{{ item.kind_label }}">{{ item.kind_label }}</td>
+                                    <td>{{ item.order }}</td>
+                                </tr>
                             {% empty %}
                                 <tr><td colspan="4" class="documents-empty"><h3>Brak grup</h3><p>Dodaj grupę, aby umieścić w niej zadania szablonu.</p></td></tr>
                             {% endfor %}
@@ -35,17 +44,19 @@
                         </table>
                     </div>
                 </section>
-                <section aria-label="Zadania szablonu">
-                    <div class="tasks-filterbar tasks-filterbar--directory">
-                        <h2 class="tasks-topbar-title">Zadania i podzadania ({{ template_tasks|length }})</h2>
-                        <button type="button" class="tasks-filter-button" data-open-template-form="task" aria-haspopup="dialog" aria-controls="template-editor-task"{% if not sections %} disabled title="Najpierw dodaj grupę"{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj zadanie</span></button>
-                    </div>
+                <section id="template-panel-tasks" role="tabpanel" aria-labelledby="template-tab-tasks" tabindex="0" data-template-tab-panel="tasks" hidden>
                     <div class="documents-table-scroll">
                         <table class="documents-table project-template-editor__table" aria-label="Zadania szablonu">
-                            <thead><tr><th>Tytuł</th><th>Grupa</th><th>Zadanie nadrzędne</th><th>Priorytet</th><th>Czas (min)</th></tr></thead>
+                            <thead><tr><th scope="col"><span class="documents-column-heading">Tytuł</span></th><th scope="col"><span class="documents-column-heading">Grupa</span></th><th scope="col"><span class="documents-column-heading">Zadanie nadrzędne</span></th><th scope="col"><span class="documents-column-heading">Priorytet</span></th><th scope="col"><span class="documents-column-heading">Czas (min)</span></th></tr></thead>
                             <tbody>
                             {% for item in template_tasks %}
-                                <tr><td><div class="documents-name">{% include 'tasks/includes/template_item_menu.html' with kind='task' %}<span title="{{ item.title }}">{{ item.title }}</span></div></td><td>{{ item.section_name }}</td><td>{{ item.parent_name|default:'Brak' }}</td><td>{{ item.priority_label }}</td><td>{{ item.estimated_minutes|default_if_none:'—' }}</td></tr>
+                                <tr>
+                                    <td><div class="documents-name">{% include 'tasks/includes/template_item_menu.html' with kind='task' %}<span title="{{ item.title }}">{{ item.title }}</span></div></td>
+                                    <td title="{{ item.section_name }}">{{ item.section_name }}</td>
+                                    <td title="{{ item.parent_name|default:'Brak' }}">{{ item.parent_name|default:'Brak' }}</td>
+                                    <td title="{{ item.priority_label }}">{{ item.priority_label }}</td>
+                                    <td>{{ item.estimated_minutes|default_if_none:'—' }}</td>
+                                </tr>
                             {% empty %}
                                 <tr><td colspan="5" class="documents-empty"><h3>Brak zadań</h3><p>Dodaj zadania, które mają powstawać w nowych projektach.</p></td></tr>
                             {% endfor %}

@@ -11991,12 +11991,12 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-project-sheet__notes-button.has-notes {
-    --app-text-color: #0f8f8f;
-    color: #0f8f8f !important;
+    --app-text-color: #d4a000;
+    color: #d4a000 !important;
 }
 
 .tasks-project-sheet__notes-button.has-notes svg {
-    color: #0f8f8f;
+    color: #d4a000;
     stroke: currentColor;
     stroke-width: 2.5;
 }
@@ -14578,16 +14578,52 @@ body.is-resizing-directory-columns {
     padding: 0 1rem 1rem;
 }
 
+.project-template-editor__navigation {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.project-template-editor .project-template-editor__tabs {
+    flex: 1 0 auto;
+    border-bottom: 0;
+}
+
+.project-template-editor [data-template-tab-action] {
+    margin-block: 0.35rem;
+}
+
+.project-template-editor :is([data-template-tab-panel], [data-template-tab-action])[hidden] {
+    display: none !important;
+}
+
 .project-template-editor .project-template-editor__table {
     min-width: 900px;
 }
 
-.project-template-editor .project-template-editor__table :is(th, td):first-child {
+.project-template-editor .project-template-editor__table :is(th, td):first-child:not(.documents-empty) {
     width: 300px;
+    padding-left: 24px;
 }
 
-.project-template-editor__table td {
-    overflow-wrap: anywhere;
+.project-template-editor .documents-table.project-template-editor__table :is(th, td):last-child:not(.documents-empty) {
+    width: 120px;
+    padding-right: 24px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.project-template-editor__table td:not(:first-child):not(.documents-empty) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-template-editor__table .documents-name {
+    min-height: 32px;
 }
 
 .project-template-editor__table .documents-name > span {

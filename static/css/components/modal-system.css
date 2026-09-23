@@ -911,12 +911,12 @@
     }
 }
 
-/* Spacious form panel. Explicit opt-in keeps confirmations, note viewers,
+/* Spacious content panel. Explicit opt-in keeps confirmations,
    image croppers and document previews on their existing compact shells. */
 .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
 .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
     --app-panel-gutter: 24px;
-    --app-panel-surface: color-mix(in srgb, var(--system-interaction) 8%, var(--card-bg));
+    --app-panel-surface: var(--secondary-menu-bg);
     --app-panel-motion-duration: 320ms;
     --app-panel-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -1015,6 +1015,12 @@
     justify-content: flex-start;
     padding: 12px var(--app-panel-gutter) max(12px, env(safe-area-inset-bottom));
     background: var(--card-bg);
+}
+
+/* Notes scroll with the composer inside the panel's shared content surface. */
+.tasks-project-notes-modal.app-modal-panel .tasks-project-notes-list {
+    flex: 0 0 auto;
+    overflow: visible;
 }
 
 /* Keep contact controls readable when the form expands across the screen. */

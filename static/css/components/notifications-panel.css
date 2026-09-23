@@ -28,8 +28,8 @@
     min-height: 45px; padding: 0.7rem 0; border: 0; border-bottom: 2px solid transparent;
     background: transparent; color: var(--text-primary); font: inherit; font-size: 12px; cursor: pointer; text-decoration: none;
 }
-.notifications-tabs :is(button[aria-pressed="true"], a[aria-current="page"]) { border-bottom-color: var(--system-accent); }
-.notifications-tabs a:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: -2px; }
+.notifications-tabs :is(button[aria-pressed="true"], button[aria-selected="true"], a[aria-current="page"]) { border-bottom-color: var(--system-accent); }
+.notifications-tabs :is(button, a):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: -2px; }
 .notifications-tabs :is(button, a) span {
     min-width: 19px; padding: 1px 5px; border-radius: 4px;
     background: var(--primary-button-bg); font-size: 10px;

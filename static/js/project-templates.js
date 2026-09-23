@@ -16,11 +16,32 @@
         let initialDetails = '';
         let discardConfirmed = false;
         let inertElements = [];
+        let activeTab = 'sections';
         const mainModal = () => host.querySelector('[data-template-editor-modal]');
         const detailsForm = () => host.querySelector('[data-template-details-form]');
         const detailsValues = () => [...(detailsForm()?.elements || [])]
             .filter(field => field.name.startsWith('details-')).map(field => [field.name, field.value]);
         const hasUnsavedDetails = () => JSON.stringify(detailsValues()) !== initialDetails;
+
+        function selectTab(name, focus = false) {
+            const main = mainModal();
+            const tabs = [...(main?.querySelectorAll('[data-template-tab]') || [])];
+            const selected = tabs.find(tab => tab.dataset.templateTab === name);
+            if (!selected) return;
+            activeTab = name;
+            tabs.forEach(tab => {
+                const active = tab === selected;
+                tab.setAttribute('aria-selected', String(active));
+                tab.tabIndex = active ? 0 : -1;
+            });
+            main.querySelectorAll('[data-template-tab-panel]').forEach(panel => {
+                panel.hidden = panel.dataset.templateTabPanel !== name;
+            });
+            main.querySelectorAll('[data-template-tab-action]').forEach(button => {
+                button.hidden = button.dataset.templateTabAction !== name;
+            });
+            if (focus) selected.focus();
+        }
 
         function restoreBackground() {
             inertElements.forEach(element => { element.inert = false; });
@@ -72,6 +93,7 @@
                 modal.setAttribute('aria-hidden', 'true');
             });
             host.replaceChildren(editor);
+            selectTab(activeTab);
             initialDetails = JSON.stringify(detailsValues());
             for (const [name, value] of preservedDetails || []) {
                 const field = detailsForm()?.elements.namedItem(name);
@@ -90,6 +112,7 @@
         async function openEditor(trigger) {
             if (pending || closing || mainModal()) return;
             previousFocus = trigger.closest('[data-row-actions]')?.querySelector('[data-row-actions-toggle]') || trigger;
+            activeTab = 'sections';
             pending = true;
             trigger.setAttribute('aria-busy', 'true');
             try {
@@ -133,6 +156,11 @@
         }
 
         document.addEventListener('click', event => {
+            const tab = event.target.closest('[data-template-tab]');
+            if (tab && host.contains(tab)) {
+                if (!pending && !closing) selectTab(tab.dataset.templateTab);
+                return;
+            }
             const trigger = event.target.closest('[data-open-project-template]');
             if (trigger) {
                 event.preventDefault();
@@ -155,6 +183,21 @@
             }
             modal.querySelectorAll('.tasks-modal__errors').forEach(box => { box.hidden = true; });
             window.AncoreTaskModals.open(modal, form.querySelector('input:not([type="hidden"])'));
+        }, { signal });
+
+        host.addEventListener('keydown', event => {
+            const tab = event.target.closest('[data-template-tab]');
+            if (!tab || pending || closing) return;
+            const tabs = [...tab.parentElement.querySelectorAll('[data-template-tab]')];
+            const index = tabs.indexOf(tab);
+            let next;
+            if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+            else if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+            else if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = tabs.length - 1;
+            else return;
+            event.preventDefault();
+            selectTab(tabs[next].dataset.templateTab, true);
         }, { signal });
 
         document.addEventListener('submit', event => {

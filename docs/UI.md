@@ -51,8 +51,24 @@ i powrót fokusu. `ancore:modals-loaded` inicjalizuje wspólne menu wierszy
 po wymianie formularzy; ikony i selecty odświeżają istniejące API.
 Inicjalizacja po `ancore:content-loaded` anuluje wcześniejsze listenery i żądania.
 
-Wariant `project-template-editor` zawiera tabele `documents-table`; menu grup
-i zadań otwierają formularze we wspólnej powłoce. Tabela katalogu i nawigacja
+Edytor ma zakładki „Grupy” i „Zadania” bez liczników,
+korzystające z `notifications-tabs`: aktywną pozycję oznacza turkusowe podkreślenie.
+Widoczna jest jedna tabela i odpowiadający jej przycisk dodawania po prawej stronie.
+Domyślnie otwierają się „Grupy”; zapis lub błąd zachowuje wybraną zakładkę.
+Przełączenie nie usuwa niezapisanych danych głównego formularza.
+`tablist`/`tab`/`tabpanel` łączą zakładki z treścią; strzałki, Home i End
+przełączają widok oraz fokus. Obsługa działa także po częściowej nawigacji.
+Wspólny styl `notifications-tabs` obsługuje zarówno `aria-pressed` filtrów,
+jak i `aria-selected` zakładek.
+
+Wariant `project-template-editor` zawiera tabele `documents-table` zgodne z listą
+Dokumentów: wspólne nagłówki, tekst 13px/400, separatory, szare podświetlenie
+oraz odstępy 24px od obu krawędzi. Pole nazwy ma minimum 32px wysokości,
+jak pole ikony Dokumentów. Długie nazwy, opisy i powiązania pozostają w jednym
+wierszu z wielokropkiem i pełną treścią w `title`; nie zwiększają wysokości wierszy.
+Ostatnia kolumna liczbowa ma 120px i wyrównanie do prawej. Tabele zachowują
+wszystkie kolumny i własne przewijanie poziome na wąskich ekranach.
+Menu grup i zadań otwierają formularze we wspólnej powłoce. Tabela katalogu i nawigacja
 są `inert` podczas edycji, a przy otwartym formularzu podrzędnym także główne
 okno edytora. Tab i Escape dotyczą ostatniego otwartego modala. Zamknięcie
 przywraca fokus do przycisku otwierającego. Każda operacja zapisuje się osobno.
@@ -206,6 +222,15 @@ Ważne wyjątki:
 Referencje pokazują bieżące wzorce kodu, a nie polecenie skopiowania całych
 ekranów. Szablony mają wymagany kontekst i kontrakt z JS. Przy użyciu include'a
 sprawdź wszystkie jego zmienne oraz miejsca wywołania.
+
+### Ikony notatek
+
+Przyciski notatek projektów i grup w Zadaniach oraz przestrzeni w Kanbanie
+używają wspólnego stanu `.tasks-project-sheet__notes-button.has-notes`.
+Gdy istnieje wpis, tylko ikona ma ciepły, wyrazisty żółty kolor `#d4a000`.
+Tło i stany interakcji przycisku pozostają standardowe.
+Pusty stan zachowuje szarą ikonę kartki z plusem. Stan wynika z istniejących
+notatek, także po zapisie i ponownym wejściu.
 
 ### Paski listy grup
 
@@ -663,8 +688,9 @@ inicjalizacji JS i działa również po częściowej nawigacji oraz błędach fo
 
 Panel zajmuje prawą część ekranu od 24px pod górną krawędzią do dołu.
 Po lewej pozostaje `clamp(64px, 13.5vw, 280px)` kontekstu aplikacji, po prawej
-16px. Jasnoszara powierzchnia powstaje z 8% `--system-interaction` i bieli
-`--card-bg`; wewnątrz jest biała, przewijana treść z odstępami 24px.
+16px. Jasnoszara powierzchnia używa `--secondary-menu-bg` (`#FBFBFC`),
+tego samego tokenu co boczny pasek nawigacji; wewnątrz jest biała,
+przewijana treść `--card-bg` z odstępami 24px.
 Nagłówek ma 72px i tytuł 20px/400, stopka minimum 68px i akcje po lewej.
 Oba paski pozostają poza przewijaną treścią. Przycisk zamknięcia, turkusowe
 akcje, kontrolki, obsługa fokusu, Escape, list wyboru i zapisu korzystają
@@ -688,8 +714,15 @@ ma 40px odstępu po lewej, a do 600px wypełnia ekran, z odstępami treści 12px
 większą stopką przy zawijaniu akcji i uwzględnieniem bezpiecznego obszaru ekranu.
 Dane kontaktowe mają dwie kolumny, a do 600px jedną; ID Ancore zajmuje pełny wiersz.
 
-Potwierdzenia, okna zespołu, notatki/informacje,
-kadrowanie zdjęć i podglądy plików zachowują swoje dotychczasowe powłoki.
+Okna „Informacje” oraz „Notatki” projektów, grup i tagów w Zadaniach oraz
+przestrzeni i tagów w Kanbanie również używają `app-modal-panel`.
+Wspólny `project_info_modal.html` zachowuje podsumowanie i siatkę danych.
+Notatki zachowują formularz i listę wpisów; cała biała treść przewija się razem,
+bez osobnego przewijania listy. Okna mają stałą stopkę „Zamknij” oraz
+dotychczasowe zamykanie krzyżykiem i Escape, fokus i obsługę zapisu.
+
+Potwierdzenia, okna zespołu, kadrowanie zdjęć i podglądy plików zachowują
+swoje dotychczasowe powłoki.
 Poniższe tokeny opisują bazowy, kompaktowy wariant; nie wyznaczają wysokości
 i szerokości formularza z `app-modal-panel`.
 
