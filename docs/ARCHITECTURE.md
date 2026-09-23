@@ -122,7 +122,9 @@ flowchart LR
   Zadań i Kanbana, zaproszeń oraz osobistych przypomnień `TaskReminder`.
 - `core` dostarcza powłokę interfejsu i upload; `core` nie ma własnych modeli domenowych. `dashboard.NotificationState`
   zapisuje osobisty odczyt, archiwum i usunięcie powiadomień, odwołując się do istniejących
-  aktywności, zaproszeń i dostarczonych przypomnień.
+  aktywności, zaproszeń i dostarczonych przypomnień. `ObjectFollow` przechowuje
+  osobiste subskrypcje zadań/projektów, a `ActivityInterest` wiąże istniejące
+  aktywności z odbiorcami wzmianek i obserwowania, bez kopiowania historii.
 
 ## 6. Hierarchie danych
 

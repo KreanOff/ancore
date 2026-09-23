@@ -1,9 +1,11 @@
 from django.urls import path
+from dashboard.collaboration import follow_object
 from .views import tasks
 
 app_name = 'kanban'
 
 urlpatterns = [
+    path('follow/<str:kind>/<int:object_id>/', follow_object, {'app': 'kanban'}, name='follow_object'),
     path('', tasks.tasks, name='tasks'),
     path('groups/<int:section_id>/', tasks.task_group, name='task_group'),
     path('view-task/<int:task_id>/', tasks.view_task, name='view-task'),

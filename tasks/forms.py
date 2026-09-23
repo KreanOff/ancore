@@ -1,5 +1,3 @@
-import re
-
 from django import forms
 from django.contrib.auth import get_user_model
 
@@ -29,66 +27,11 @@ class LenientModelChoiceField(forms.ModelChoiceField):
             return None
 
 
-class TwoDigitNumberInput(forms.NumberInput):
-    def format_value(self, value):
-        if value in (None, ''):
-            return None
-        try:
-            return f'{int(value):02d}'
-        except (TypeError, ValueError):
-            return super().format_value(value)
-
-
 class DateTimeLocalInput(forms.DateTimeInput):
     input_type = 'datetime-local'
 
     def __init__(self, attrs=None, format=None):
         super().__init__(attrs=attrs, format=format or '%Y-%m-%dT%H:%M')
-
-
-def _format_estimated_duration(total_minutes):
-    if total_minutes in (None, ''):
-        return ''
-    try:
-        total_minutes = int(total_minutes)
-    except (TypeError, ValueError):
-        return ''
-    hours, minutes = divmod(total_minutes, 60)
-    if hours and minutes:
-        return f'{hours} godz. {minutes} min.'
-    if hours:
-        return f'{hours} godz.'
-    return f'{minutes} min.' if minutes else ''
-
-
-def _parse_estimated_duration(value):
-    text = (value or '').strip().lower()
-    if not text:
-        return None
-
-    clock_match = re.fullmatch(r'(\d+)\s*[:.]\s*(\d{1,2})', text)
-    if clock_match:
-        hours = int(clock_match.group(1))
-        minutes = int(clock_match.group(2))
-        if minutes > 59:
-            return None
-        return hours * 60 + minutes
-
-    hours = 0
-    minutes = 0
-    matched = False
-    for amount, unit in re.findall(r'(\d+(?:[,.]\d+)?)\s*(godz\.?|godzina|godziny|godzin|h|min\.?|minuta|minuty|minut|m)(?=\s|$)', text):
-        matched = True
-        number = float(amount.replace(',', '.'))
-        if unit.startswith(('godz', 'h')):
-            hours += int(number)
-            minutes += round((number - int(number)) * 60)
-        else:
-            minutes += int(number)
-
-    if matched:
-        return hours * 60 + minutes
-    return None
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -196,8 +139,6 @@ class TaskForm(forms.ModelForm):
         self.fields['reminder_at'].label = 'Przypomnienie'
         self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
-        self.fields['estimated_minutes'].label = 'Szacowany czas'
-        self.fields['blocked_reason'].label = 'Powód blokady'
         self.fields['assignee'].label = 'Przypisane do'
         self.fields['task_type'].label = 'Typ zadania'
         self.fields['task_type'].required = False
@@ -237,10 +178,6 @@ class TaskForm(forms.ModelForm):
             'status',
             'due_at',
             'reminder_at',
-            'estimated_minutes',
-            'blocked_reason',
-            'time_spent_hours',
-            'time_spent_minutes',
         ]
         widgets = {
             'title': forms.TextInput(attrs={
@@ -276,27 +213,6 @@ class TaskForm(forms.ModelForm):
             }),
             'reminder_at': DateTimeLocalInput(attrs={
                 'class': 'form-input',
-            }),
-            'estimated_minutes': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': 0,
-                'placeholder': 'np. 60',
-            }),
-            'blocked_reason': forms.Textarea(attrs={
-                'placeholder': 'Dlaczego zadanie jest zablokowane?',
-                'rows': 3,
-                'class': 'form-input tasks-modal-textarea',
-            }),
-            'time_spent_hours': TwoDigitNumberInput(attrs={
-                'placeholder': '00',
-                'class': 'form-input',
-                'min': 0,
-            }),
-            'time_spent_minutes': TwoDigitNumberInput(attrs={
-                'placeholder': '00',
-                'class': 'form-input',
-                'min': 0,
-                'max': 59,
             }),
         }
 
@@ -1001,41 +917,6 @@ class QuickTaskForm(forms.ModelForm):
 
 
 class TaskModalForm(forms.ModelForm):
-    estimated_duration = forms.CharField(
-        required=False,
-        label='Szacowany czas',
-        widget=forms.TextInput(attrs={
-            'class': 'tasks-inline-input tasks-estimate-duration-input',
-            'placeholder': '0 godz. 0 min.',
-            'autocomplete': 'off',
-            'inputmode': 'text',
-        }),
-    )
-    estimated_hours = forms.IntegerField(
-        required=False,
-        min_value=0,
-        label='Godziny',
-        widget=forms.NumberInput(attrs={
-            'class': 'tasks-inline-input',
-            'min': 0,
-            'placeholder': '0',
-            'inputmode': 'numeric',
-        }),
-    )
-    estimated_minutes_part = forms.IntegerField(
-        required=False,
-        min_value=0,
-        max_value=59,
-        label='Minuty',
-        widget=forms.NumberInput(attrs={
-            'class': 'tasks-inline-input',
-            'min': 0,
-            'max': 59,
-            'placeholder': '0',
-            'inputmode': 'numeric',
-        }),
-    )
-
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         workplace = kwargs.pop('workplace', None)
@@ -1071,37 +952,14 @@ class TaskModalForm(forms.ModelForm):
         self.fields['reminder_at'].label = 'Przypomnienie'
         self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
-        self.fields['estimated_minutes'].label = 'Szacowany czas'
-        self.fields['blocked_reason'].label = 'Powód blokady'
         self.fields['assignee'].label = 'Przypisane do'
         self.fields['task_type'].label = 'Typ zadania'
         self.fields['task_type'].required = False
         if section:
             self.fields['section'].initial = section
-        estimated_minutes = self.initial.get('estimated_minutes', getattr(self.instance, 'estimated_minutes', None))
-        if not self.is_bound and estimated_minutes:
-            self.fields['estimated_duration'].initial = _format_estimated_duration(estimated_minutes)
-            self.fields['estimated_hours'].initial = estimated_minutes // 60
-            self.fields['estimated_minutes_part'].initial = estimated_minutes % 60
 
     def clean_task_type(self):
         return self.cleaned_data.get('task_type') or 'general'
-
-    def clean(self):
-        cleaned_data = super().clean()
-        duration = cleaned_data.get('estimated_duration')
-        hours = cleaned_data.get('estimated_hours')
-        minutes = cleaned_data.get('estimated_minutes_part')
-        has_split_estimate = hours is not None or minutes is not None
-        if duration:
-            parsed_duration = _parse_estimated_duration(duration)
-            if parsed_duration is None:
-                self.add_error('estimated_duration', 'Wpisz czas w formacie 2 godz. 15 min. albo 2:15.')
-            else:
-                cleaned_data['estimated_minutes'] = parsed_duration
-        elif has_split_estimate:
-            cleaned_data['estimated_minutes'] = (hours or 0) * 60 + (minutes or 0)
-        return cleaned_data
 
     class Meta:
         model = Task
@@ -1116,8 +974,6 @@ class TaskModalForm(forms.ModelForm):
             'status',
             'due_at',
             'reminder_at',
-            'estimated_minutes',
-            'blocked_reason',
         ]
         widgets = {
             'title': forms.TextInput(attrs={
@@ -1133,7 +989,7 @@ class TaskModalForm(forms.ModelForm):
             }),
             'description': forms.Textarea(attrs={
                 'placeholder': 'Dodaj opis...',
-                'rows': 4,
+                'rows': 3,
                 'class': 'tasks-inline-input tasks-modal-textarea',
             }),
             'task_type': forms.Select(attrs={
@@ -1153,12 +1009,6 @@ class TaskModalForm(forms.ModelForm):
             }),
             'reminder_at': DateTimeLocalInput(attrs={
                 'class': 'tasks-inline-input',
-            }),
-            'estimated_minutes': forms.HiddenInput(),
-            'blocked_reason': forms.Textarea(attrs={
-                'placeholder': 'Dlaczego zadanie jest zablokowane?',
-                'rows': 3,
-                'class': 'tasks-inline-input tasks-modal-textarea',
             }),
         }
 

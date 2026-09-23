@@ -243,6 +243,7 @@
                 {% endif %}
             </div>
             {% endif %}
+            {% if active_project %}{% include 'tasks/includes/follow_button.html' %}{% endif %}
         </header>
 
         <div class="tasks-filterbar{% if not active_project %} tasks-filterbar--directory{% endif %}{% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' %} tasks-filterbar--task-directory{% endif %}">

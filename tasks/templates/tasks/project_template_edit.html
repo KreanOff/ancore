@@ -47,7 +47,7 @@
                 <section id="template-panel-tasks" role="tabpanel" aria-labelledby="template-tab-tasks" tabindex="0" data-template-tab-panel="tasks" hidden>
                     <div class="documents-table-scroll">
                         <table class="documents-table project-template-editor__table" aria-label="Zadania szablonu">
-                            <thead><tr><th scope="col"><span class="documents-column-heading">Tytuł</span></th><th scope="col"><span class="documents-column-heading">Grupa</span></th><th scope="col"><span class="documents-column-heading">Zadanie nadrzędne</span></th><th scope="col"><span class="documents-column-heading">Priorytet</span></th><th scope="col"><span class="documents-column-heading">Czas (min)</span></th></tr></thead>
+                            <thead><tr><th scope="col"><span class="documents-column-heading">Tytuł</span></th><th scope="col"><span class="documents-column-heading">Grupa</span></th><th scope="col"><span class="documents-column-heading">Zadanie nadrzędne</span></th><th scope="col"><span class="documents-column-heading">Priorytet</span></th></tr></thead>
                             <tbody>
                             {% for item in template_tasks %}
                                 <tr>
@@ -55,10 +55,9 @@
                                     <td title="{{ item.section_name }}">{{ item.section_name }}</td>
                                     <td title="{{ item.parent_name|default:'Brak' }}">{{ item.parent_name|default:'Brak' }}</td>
                                     <td title="{{ item.priority_label }}">{{ item.priority_label }}</td>
-                                    <td>{{ item.estimated_minutes|default_if_none:'—' }}</td>
                                 </tr>
                             {% empty %}
-                                <tr><td colspan="5" class="documents-empty"><h3>Brak zadań</h3><p>Dodaj zadania, które mają powstawać w nowych projektach.</p></td></tr>
+                                <tr><td colspan="4" class="documents-empty"><h3>Brak zadań</h3><p>Dodaj zadania, które mają powstawać w nowych projektach.</p></td></tr>
                             {% endfor %}
                             </tbody>
                         </table>

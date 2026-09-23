@@ -366,3 +366,18 @@ paginację, podpisane snapshoty zbiorczego odczytu, nowe zdarzenia, escapowanie
 HTML, CASCADE i ograniczenia bazy. Przeglądarka powinna sprawdzić panel,
 przekierowanie z wycofanej strony `/notifications/`, telefon, klawiaturę,
 pusty stan, błąd/ponowienie i częściową nawigację.
+
+## Wzmianki i obserwowanie
+
+Przed uruchomieniem wersji zastosuj migrację
+`dashboard/0004_mentions_and_following.py`. Dodaje `ObjectFollow` oraz
+`ActivityInterest` z FK, ograniczeniem jednego źródła i unikalnością odbiorca
++ źródło. Nie zmienia istniejącej historii, stanów powiadomień ani członkostw.
+Nie dostarcza historycznych komentarzy jako nowych wzmianek.
+
+`dashboard.test_collaboration` sprawdza wzmianki, podpowiedzi osób, pełne nazwy
+powiązane z ID, powtarzające się nazwiska, zakresy Unicode i usunięte wzmianki, oba modele
+i warianty URL, obserwowanie zadań/projektów, wyłączenie i ponowienie,
+deduplikację, własne działania, cofnięcie dostępu, CSRF, rollback, ograniczenia
+bazy, paginację i osobisty odczyt/archiwum. Powiązane regresje obejmują Zadania,
+Kanban, Dashboard, Workspace i Core.

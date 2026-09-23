@@ -3331,7 +3331,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
         self.assertEqual(timezone.localtime(task.due_at).strftime('%Y-%m-%dT%H:%M'), '2026-06-12T14:30')
 
-    def test_create_task_modal_saves_split_estimated_time(self):
+    def test_create_task_modal_ignores_retired_split_estimated_time(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
 
@@ -3350,9 +3350,9 @@ class TaskProjectCreationTests(TestCase):
         task = Task.objects.get(user=self.user, title='Zadanie z estymacją')
 
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
-        self.assertEqual(task.estimated_minutes, 135)
+        self.assertIsNone(task.estimated_minutes)
 
-    def test_create_task_modal_saves_single_estimated_time_field(self):
+    def test_create_task_modal_ignores_retired_estimated_time_fields(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
 
@@ -3365,12 +3365,13 @@ class TaskProjectCreationTests(TestCase):
             'priority': 'medium',
             'status': 'new',
             'estimated_duration': '2 godz. 15 min.',
+            'estimated_minutes': '135',
         })
 
         task = Task.objects.get(user=self.user, title='Zadanie z jednym polem estymacji')
 
         self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
-        self.assertEqual(task.estimated_minutes, 135)
+        self.assertIsNone(task.estimated_minutes)
 
     def test_task_due_urgency_uses_time_remaining(self):
         now = timezone.now()
@@ -3676,7 +3677,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:view-task', args=[task.task_id]))
         self.assertEqual(activity.action, 'updated')
         self.assertEqual(activity.message, 'zaktualizował zadanie')
-        self.assertEqual(activity.metadata['fields'], ['status', 'priorytet', 'tytuł', 'opis', 'termin wykonania', 'czas pracy'])
+        self.assertEqual(activity.metadata['fields'], ['status', 'priorytet', 'tytuł', 'opis', 'termin wykonania'])
         self.assertEqual(activity.metadata['changes'][0]['from_label'], 'Nowe')
         self.assertEqual(activity.metadata['changes'][0]['to_label'], 'Realizowane')
         self.assertEqual(activity.metadata['changes'][1]['from_label'], 'Średni')
@@ -3761,7 +3762,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('Tytuł', response.json()['message'])
         self.assertEqual(task.title, 'Zadanie')
 
-    def test_detail_shows_saved_time_spent_with_staged_delete_button(self):
+    def test_task_forms_omit_retired_detail_controls(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Backend')
         task = Task.objects.create(
@@ -3770,15 +3771,23 @@ class TaskProjectCreationTests(TestCase):
             title='Zadanie',
             time_spent_hours=2,
             time_spent_minutes=5,
+            blocked_reason='Historyczny powód',
         )
 
         response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
 
-        self.assertContains(response, '02:05')
-        self.assertContains(response, 'type="button" title="Usuń czas pracy"')
-        self.assertContains(response, 'data-task-clear-time')
+        self.assertNotContains(response, 'Powód blokady')
+        self.assertNotContains(response, 'Czas pracy')
+        self.assertNotContains(response, 'Historia statusu:')
+        self.assertNotContains(response, 'data-task-clear-time')
+        self.assertNotContains(response, 'Szacowany czas')
+        self.assertContains(response, 'Aktywność')
 
-    def test_clear_time_spent_action_removes_time_and_records_activity(self):
+        create_response = self.client.get(reverse('tasks:tasks'))
+        self.assertNotContains(create_response, 'name="blocked_reason"')
+        self.assertNotContains(create_response, 'Szacowany czas')
+
+    def test_retired_clear_time_action_preserves_saved_time(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Backend')
         task = Task.objects.create(
@@ -3791,17 +3800,47 @@ class TaskProjectCreationTests(TestCase):
 
         response = self.client.post(reverse('tasks:view-task', args=[task.task_id]), {
             'action': 'clear_time_spent',
-        })
+        }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
         task.refresh_from_db()
-        activity = TaskActivity.objects.filter(task=task).exclude(action='created').get()
 
-        self.assertRedirects(response, reverse('tasks:view-task', args=[task.task_id]))
-        self.assertIsNone(task.time_spent_hours)
-        self.assertIsNone(task.time_spent_minutes)
-        self.assertEqual(activity.metadata['fields'], ['czas pracy'])
-        self.assertEqual(activity.metadata['changes'][0]['from_label'], '02:05')
-        self.assertEqual(activity.metadata['changes'][0]['to_label'], '00:00')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(task.time_spent_hours, 2)
+        self.assertEqual(task.time_spent_minutes, 5)
+        self.assertFalse(task.activities.exclude(action='created').exists())
+
+    def test_detail_save_preserves_retired_fields_and_ignores_submitted_values(self):
+        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        section = TaskSection.objects.create(project=project, title='Backend')
+        task = Task.objects.create(
+            user=self.user, section=section, title='Zadanie',
+            time_spent_hours=2, time_spent_minutes=5, blocked_reason='Historyczny powód',
+            estimated_minutes=45,
+        )
+        plain_url = reverse('tasks:view-task', args=[task.task_id])
+        detail = self.client.get(plain_url)
+        scoped_url = f'/workplaces/{detail.wsgi_request.workplace.slug}/tasks/view-task/{task.task_id}/'
+
+        for url in (plain_url, scoped_url):
+            for retired_values in ({}, {'time_spent_hours': 99, 'time_spent_minutes': 10, 'blocked_reason': 'Nowy powód', 'estimated_minutes': 99}):
+                with self.subTest(url=url, submitted=bool(retired_values)):
+                    response = self.client.post(url, {
+                        'task_pk': task.pk,
+                        'title': 'Zmieniony tytuł',
+                        'section': section.pk,
+                        'priority': 'high',
+                        'status': 'closed',
+                        **retired_values,
+                    }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+                    self.assertEqual(response.status_code, 200)
+                    task.refresh_from_db()
+                    self.assertEqual(task.title, 'Zmieniony tytuł')
+                    self.assertTrue(task.is_completed)
+                    self.assertIsNotNone(task.completion_date)
+                    self.assertEqual(task.blocked_reason, 'Historyczny powód')
+                    self.assertEqual(task.time_spent_hours, 2)
+                    self.assertEqual(task.time_spent_minutes, 5)
+                    self.assertEqual(task.estimated_minutes, 45)
 
     def test_update_task_status_records_activity(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')

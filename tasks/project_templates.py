@@ -6,7 +6,7 @@ from core.task_numbering import lock_task_numbers
 from .models import Task, TaskProjectTemplate, TaskSection
 
 SECTION_FIELDS = ('title', 'description', 'priority', 'kind', 'wip_limit', 'order')
-TASK_FIELDS = ('title', 'description', 'priority', 'task_type', 'estimated_minutes')
+TASK_FIELDS = ('title', 'description', 'priority', 'task_type')
 
 
 def template_descendants(structure, item_ids):

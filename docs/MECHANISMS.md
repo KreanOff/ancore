@@ -442,7 +442,7 @@ wpisu są odrzucane. Każda operacja ponownie sprawdza dostęp do źródła.
 Link `/workplaces/?invitation=<pk>` otwiera istniejący modal „Przyjmij / Odrzuć”.
 Link zadania/karty określa Workspace, aktualny numer i stabilne `task_pk`.
 
-Lista ma filtry wszystkie / nieprzeczytane / zaproszenia / przypomnienia / archiwum, grupy dat
+Lista ma filtry wszystkie / nieprzeczytane / zaproszenia / przypomnienia / wzmianki / obserwowane / archiwum, grupy dat
 oraz po 12 wpisów na stronę. Zaproszenia poprzedzają aktywność. Podpisany kursor
 wiąże użytkownika, filtry, czas otwarcia i ostatni wpis; sortowanie rozstrzyga
 remisy dat przez PK i źródło. Nowe wpisy nie przesuwają już doczytywanych stron.
@@ -462,7 +462,54 @@ zaproszeń i identyfikatory najnowszych dostępnych zdarzeń. Odpowiedzi mają
 do karty, po `ancore:content-loaded` i co 30 sekund w widocznej karcie.
 Otwarta lista sygnalizuje zmianę przyciskiem odświeżenia, bez przestawiania
 czytanej treści. Błędy sieci zachowują ostatni licznik; panel udostępnia ponowienie.
-To powiadomienia wewnątrz aplikacji przez HTTP, bez push, e-maila, workera i wzmianek.
+To powiadomienia wewnątrz aplikacji przez HTTP, bez push, e-maila i workera.
+
+### Wzmianki i obserwowanie
+Komentarze zadań, podzadań, kart i podkart wstawiają `@Imię Nazwisko` po
+wyborze osoby z podpowiedzi. `mention_choices()` przekazuje nazwę, e-mail oraz ID
+osoby. E-mail służy rozróżnianiu i wyszukiwaniu osób na liście. Przy braku
+imienia i nazwiska tekstem wzmianki pozostaje login z pojedynczym `@`.
+
+`activity_mentions` przesyła ID i zakres każdej wybranej wzmianki w punktach
+kodowych Unicode. JavaScript przesuwa zakres przy dopisywaniu tekstu przed
+wzmianką i usuwa powiązanie przy jej edycji/usunięciu. `comment_mention_metadata()`
+normalizuje nowe linie i białe znaki, weryfikuje zakres, widoczny tekst, aktywne
+konto i członkostwo; zapisuje zatwierdzone wpisy w `Activity.metadata.mentions`.
+Dwie osoby o tym samym imieniu i nazwisku pozostają osobnymi odbiorcami.
+Zmiana nazwy wybranej osoby przed wysłaniem wymaga ponownego wyboru.
+
+Dostawa ponownie sprawdza odbiorcę i zakres. Widoczna nazwa wybranej osoby nie
+jest interpretowana jako login innego konta. Ręcznie wpisane `@login` nadal są
+obsługiwane dla zgodności; dokładny login uwzględnia wielkość liter, Unicode,
+kropki oraz starsze loginy e-mail. Zwykły adres e-mail nie jest wzmianką.
+Samo wpisanie imienia i nazwiska bez wyboru z listy nie określa odbiorcy.
+Osoby bez dostępu i autor komentarza nie otrzymują wzmianki. Wzmianka
+nie przyznaje dostępu. Istniejąca treść komentarzy pozostaje zachowana.
+
+`dashboard.ObjectFollow` zapisuje osobistą subskrypcję dokładnie jednego
+zadania, karty, projektu Zadań lub przestrzeni Kanbana. Przycisk „Obserwuj”
+w szczegółach albo nagłówku projektu wysyła POST pod
+`/<moduł>/follow/<task|project>/<pk>/`, również w scoped URL. Wymaga CSRF,
+aktywnego Workspace i prawidłowego właściciela danych. Stan `following`
+jest jawny, więc ponowienie żądania nie odwraca subskrypcji.
+
+`dashboard/collaboration.py` odbiera utworzenie `TaskActivity` i `KanbanActivity`.
+Nowe aktywności obserwowanego elementu oraz zadań/kart w obserwowanym projekcie
+otrzymują `ActivityInterest` z odbiorcą i flagami `mentioned`/`followed`.
+Dotyczy to także nowo tworzonych zadań i podzadań projektu oraz historii
+operacji zbiorczych. Zmiany samych metadanych projektu nie mają historii
+`TaskActivity` i nie generują tego typu powiadomień. Własne działania są pomijane.
+Zapis komentarza i jego dostaw odbywa się w jednej transakcji.
+
+Nie powstaje drugi wpis w centrum: filtry „Wzmianki” i „Obserwowane” wybierają
+istniejące aktywności, zachowując wspólny odczyt, archiwum, usunięcie, paginację
+i snapshoty operacji zbiorczych. „Wszystkie” nadal zawierają historię wszystkich
+dostępnych Workspace. Rozpoczęcie obserwowania nie dostarcza wstecz historii;
+wyłączenie zatrzymuje nowe dostawy, zachowując wcześniej dostarczone wpisy.
+Obserwowanie projektu działa niezależnie od obserwowania pojedynczego zadania.
+Cofnięcie członkostwa odcina odczyt i nowe dostawy, nawet gdy subskrypcja
+pozostaje w bazie. FK i unikalność w bazie zapobiegają duplikatom i sprzątają
+powiązania po usunięciu źródła. Powiadomienia działają wewnątrz aplikacji.
 
 ### Przypomnienia zadań
 

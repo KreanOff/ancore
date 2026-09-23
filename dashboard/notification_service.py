@@ -4,7 +4,7 @@ from itertools import islice
 
 from django.core import signing
 from django.db import transaction
-from django.db.models import BooleanField, Case, F, OuterRef, Q, Subquery, Value, When
+from django.db.models import BooleanField, Case, Exists, F, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.urls import reverse
@@ -15,12 +15,12 @@ from accounts.avatar import account_avatar
 from kanban.models import KanbanActivity
 from tasks.models import TaskActivity
 from workplaces.services import pending_invitations_for_user, scoped_workplace_app_path, workplaces_for_user
-from .models import NotificationState
+from .models import ActivityInterest, NotificationState
 from .reminders import reminders_for_user
 
 DASHBOARD_NOTIFICATION_LIMIT = 12
 SOURCES = {'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity', 'reminders': 'reminder'}
-VIEWS = {'all', 'unread', 'invitations', 'reminders', 'archived'}
+VIEWS = {'all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived'}
 SIGNING_SALT = 'dashboard.notifications.v1'
 
 
@@ -159,6 +159,12 @@ def notification_sources(user, workspace='', *, include_deleted=False):
         'reminders': reminders_for_user(user),
     }
     for source, queryset in sources.items():
+        if source in {'tasks', 'kanban'}:
+            interest = ActivityInterest.objects.filter(user=user, **{SOURCES[source]: OuterRef('pk')})
+            queryset = queryset.annotate(
+                inbox_mentioned=Exists(interest.filter(mentioned=True)),
+                inbox_followed=Exists(interest.filter(followed=True)),
+            )
         if workspace:
             field = 'workplace_id' if source == 'workplace' else 'task__workplace_id'
             queryset = queryset.filter(**{field: workspace})
@@ -181,6 +187,10 @@ def filtered_sources(user, filters, asof=None, sources=None):
     if sources is None:
         sources = notification_sources(user, filters['workspace'])
     for source, queryset in sources.items():
+        if view in {'mentions', 'following'}:
+            if source not in {'tasks', 'kanban'}:
+                continue
+            queryset = queryset.filter(**{'inbox_mentioned' if view == 'mentions' else 'inbox_followed': True})
         if view == 'invitations' and source != 'workplace':
             continue
         if view == 'reminders' and source != 'reminders':
@@ -262,6 +272,11 @@ def _serialize(source, row):
         item['group_label'] = ('Dzisiaj' if local_date == today else 'Wczoraj' if local_date == today - timedelta(days=1)
                                else date_format(local_date, 'd E Y'))
         item['event_label'] = 'Komentarz' if row.kind == 'comment' else row.get_action_display()
+        if row.inbox_mentioned:
+            item['event_label'] = 'Wzmianka'
+            item['action_message'] = 'wspomina o Tobie w komentarzu'
+        elif row.inbox_followed:
+            item['event_label'] = 'Obserwowane · ' + item['event_label']
     item.update(key=f'{source}:{row.pk}', is_read=row.inbox_read, is_archived=row.inbox_archived,
                 workplace_label=workplace.name if workplace else 'Osobiste',
                 full_date=date_format(timezone.localtime(row.created_at), 'd.m.Y, H:i'))

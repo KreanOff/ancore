@@ -106,7 +106,9 @@ Backfill starych rekordów bez Workspace działa wyłącznie przy wejściu wła�
 do jego własnej przestrzeni. Nie przenosi prywatnych rekordów członka do zespołu.
 Powiadomienia obejmują aktywność dostępnych Workspace, z faktycznym autorem.
 Osobisty odczyt i archiwum zapisuje `dashboard.NotificationState`.
-Nie ma wzmianek ani dostarczania push/e-mail.
+Wzmianki `@Imię Nazwisko` w komentarzach oraz osobiste obserwowanie zadań i projektów
+korzystają z tego centrum. Dostawy są ograniczone do aktywnych osób zespołu;
+nie nadają dostępu. Nie ma dostarczania push/e-mail.
 Zbiorcza zmiana statusów zachowuje zakończenie, datę i historię każdego zadania
 lub karty oraz blokadę numeracji w kolejności właściciel → rekord.
 

@@ -1,10 +1,12 @@
 from django.urls import path
+from dashboard.collaboration import follow_object
 from .views import tasks
 from .views.project_templates import edit_project_template, project_templates
 
 app_name = 'tasks'
 
 urlpatterns = [
+    path('follow/<str:kind>/<int:object_id>/', follow_object, {'app': 'tasks'}, name='follow_object'),
     path('', tasks.tasks, name='tasks'),
     path('templates/', project_templates, name='project_templates'),
     path('templates/<int:template_id>/edit/', edit_project_template, name='edit_project_template'),

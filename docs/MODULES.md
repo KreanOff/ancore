@@ -69,7 +69,8 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 - Projekt — lista jego grup.
 - Wszystkie grupy oraz widok konkretnej grupy.
 - Wszystkie zadania i Moje zadania.
-- Szczegóły zadania/podzadania, komentarze i historia.
+- Szczegóły zadania/podzadania, komentarze z `@Imię Nazwisko`, historia i osobiste obserwowanie.
+- Obserwowanie projektu: nowe komentarze i zmiany jego zadań w filtrze „Obserwowane”.
 - Katalog tagów oraz formularze tworzenia i edycji.
 
 Katalogi obsługują wyszukiwanie, sortowanie, filtrowanie i paginację po stronie
@@ -107,6 +108,11 @@ Wykonawcy i odpowiedzialni są ograniczeni do aktywnych kont zespołu.
 
 Szczegóły zadania mają jawny zapis. Nazwa starego parametru wersji skryptu
 zawierająca „autosave” nie oznacza aktywnego autozapisu.
+Formularze Zadań nie udostępniają powodu blokady, czasu pracy ani szacowanego czasu, a panel boczny
+nie pokazuje sekcji „Historia statusu”. Dawne wartości pozostają w modelu;
+zapis zadania ich nie zmienia, także gdy stare pola zostaną przesłane w POST.
+Akcja `clear_time_spent` w Zadaniach została wycofana. Historia zmian statusu
+w „Aktywności” pozostaje dostępna. Kanban zachowuje własne kontrolki.
 Podzadanie dziedziczy kontekst rodzica; w obecnych widokach nie można dodawać
 do niego załączników.
 
@@ -156,7 +162,9 @@ zadania — jego podzadania, zawsze po potwierdzeniu. Zmiany wpływają tylko na
 projekty tworzone później z szablonu, nie na źródło ani wcześniej utworzone kopie.
 
 Kopiowane są nazwy, opisy, priorytety, rodzaje grup i zadań, kolejność grup,
-limit WIP i estymaty. Grupy zaczynają jako otwarte, zadania jako nowe;
+limit WIP. Szacowany czas nie jest już dostępny w edytorze ani kopiowany do
+nowych projektów; stare wartości w zapisanych snapshotach pozostają zachowane.
+Grupy zaczynają jako otwarte, zadania jako nowe;
 kopie otrzymują własne PK i numery, a historia utworzenia wskazuje faktycznego
 autora. Terminy, przypomnienia, wykonawcy, odpowiedzialni grup, tagi, czas pracy,
 załączniki i komentarze nie są kopiowane. Parametry nowego projektu ustala
@@ -173,7 +181,7 @@ usuwa projektów. Dane są ograniczone do właściciela i aktywnego Workspace.
 → `KanbanBoardColumn` → `Kanban` (karta), z opcjonalnymi podkartami.
 
 **Funkcje:** katalog przestrzeni, katalog tablic, tablica z kolumnami,
-tworzenie/edycja kart, komentarze, historia, załączniki, czas pracy,
+tworzenie/edycja kart, komentarze ze wzmiankami, obserwowanie kart i przestrzeni, historia, załączniki, czas pracy,
 priorytety, tagi, dodawanie/nazywanie/usuwanie i przestawianie kolumn,
 przenoszenie kart między kolumnami. Ustawienia widoku obejmują m.in.
 okładki i lokalnie przechowywane tapety.
@@ -487,6 +495,10 @@ Zaproszenia czekają na decyzję także po odczytaniu. Centrum obejmuje dostępn
 Workspace; link określa przestrzeń konkretnego zadania/karty. Licznik odświeża
 się co 30 sekund w widocznej karcie. Szczegóły uprawnień, paginacji i zbiorczego
 odczytu: [Mechanizmy](MECHANISMS.md#11-historia-a-powiadomienia).
+Zakładki „Wzmianki” i „Obserwowane” pokazują nowe aktywności kierowane do
+użytkownika przez `@Imię Nazwisko` lub osobistą subskrypcję. Ten sam wpis zachowuje
+wspólny stan we wszystkich filtrach. Wyłączenie obserwowania zatrzymuje nowe
+dostawy, zachowując już otrzymane.
 Zakładka „Przypomnienia” pokazuje zadania z osiągniętym `reminder_at`.
 Odbiorcą jest wykonawca, a gdy go brak — właściciel Workspace.
 Automatyczne sprawdzanie odbywa się co 30 sekund w widocznej karcie oraz

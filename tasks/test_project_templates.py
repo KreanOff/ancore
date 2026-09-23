@@ -53,7 +53,9 @@ class ProjectTemplateTests(TestCase):
         self.assertEqual(tasks.count(), 2)
         parent, child = tasks.get(title='Materiały'), tasks.get(title='Brief')
         self.assertEqual(child.parent, parent)
-        self.assertEqual(parent.estimated_minutes, 45)
+        self.assertIsNone(parent.estimated_minutes)
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.estimated_minutes, 45)
         self.assertEqual(parent.priority, 'high')
         self.assertNotEqual(parent.task_id, self.task.task_id)
         self.assertEqual(parent.status, 'new')
@@ -66,12 +68,17 @@ class ProjectTemplateTests(TestCase):
 
     def test_snapshot_survives_source_edit_and_deletion(self):
         template = self.save_template()
+        template.structure['tasks'][0]['estimated_minutes'] = 45
+        template.save(update_fields=['structure'])
         self.project.delete()
         template.refresh_from_db()
         self.assertEqual(template.structure['tasks'][0]['title'], 'Materiały')
         response = self.client.post(self.url, {'action': 'create_project', 'name': 'Niezależny', 'template': template.pk})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Task.objects.filter(section__project__name='Niezależny').count(), 2)
+        self.assertFalse(Task.objects.filter(section__project__name='Niezależny', estimated_minutes__isnull=False).exists())
+        template.refresh_from_db()
+        self.assertEqual(template.structure['tasks'][0]['estimated_minutes'], 45)
 
     def test_template_choices_and_forged_submission_are_workspace_scoped(self):
         template = self.save_template()
@@ -265,7 +272,7 @@ class ProjectTemplateTests(TestCase):
         self.assertEqual(response.status_code, 302)
         created = TaskProject.objects.get(name='Z edytowanego szablonu')
         copied = Task.objects.get(section__project=created, title='Zmienione zadanie')
-        self.assertEqual((copied.estimated_minutes, copied.task_type, copied.section.wip_limit), (40, 'call', 4))
+        self.assertEqual((copied.estimated_minutes, copied.task_type, copied.section.wip_limit), (None, 'call', 4))
         self.assertEqual(copied.subtasks.get().title, 'Nowe podzadanie')
         self.assertEqual(list(created.sections.values_list('title', flat=True)), ['Nowa grupa', 'Przygotowanie', 'Pusta grupa'])
         self.assertEqual(self.project.sections.count(), 2)

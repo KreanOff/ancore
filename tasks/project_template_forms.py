@@ -49,14 +49,14 @@ class TemplateTaskForm(forms.ModelForm):
         model = Task
         fields = TASK_FIELDS
         labels = {'title': 'Tytuł', 'description': 'Opis', 'priority': 'Priorytet',
-                  'task_type': 'Typ zadania', 'estimated_minutes': 'Szacowany czas (min)'}
+                  'task_type': 'Typ zadania'}
 
     def __init__(self, *args, structure, **kwargs):
         super().__init__(*args, **kwargs)
         self.structure = structure
         self.fields['section'].choices = [('', 'Wybierz grupę')] + [(s['id'], s['title']) for s in structure.get('sections', [])]
         self.fields['parent'].choices = [('', 'Brak — zadanie główne')] + [(t['id'], t['title']) for t in structure.get('tasks', [])]
-        self.order_fields(['title', 'section', 'parent', 'description', 'priority', 'task_type', 'estimated_minutes', 'item_id'])
+        self.order_fields(['title', 'section', 'parent', 'description', 'priority', 'task_type', 'item_id'])
         style_fields(self)
 
     def clean(self):

@@ -2746,14 +2746,16 @@ body.modal-open::before {
 }
 
 #project-create-form .tasks-project-parameters,
-#project-rename-form .tasks-project-parameters {
+#project-rename-form .tasks-project-parameters,
+#issue-create-form .tasks-project-parameters {
     margin-top: 1.15rem;
 }
 
 #project-create-form .tasks-project-create-fields,
 #project-create-form .tasks-project-create-fields.tasks-issue-fields,
 #project-rename-form .tasks-project-create-fields,
-#project-rename-form .tasks-project-create-fields.tasks-issue-fields {
+#project-rename-form .tasks-project-create-fields.tasks-issue-fields,
+#issue-create-form .tasks-project-create-fields.tasks-issue-fields {
     --tasks-detail-control-height: 38px;
     --tasks-detail-control-radius: 7px;
     --tasks-detail-control-border: #dfe3e8;
@@ -2762,14 +2764,19 @@ body.modal-open::before {
     --tasks-detail-control-highlight-border: #b8bec8;
     --tasks-detail-control-highlight-bg: #ffffff;
     --tasks-detail-control-highlight-shadow: var(--focus-ring);
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.7rem 0.75rem;
     margin-top: 0;
 }
 
 #project-create-form .tasks-project-create-fields > label,
-#project-rename-form .tasks-project-create-fields > label {
+#project-rename-form .tasks-project-create-fields > label,
+#issue-create-form .tasks-project-create-fields > :is(label, .tasks-issue-field) {
     align-items: stretch;
+    grid-column: auto;
+    min-width: 0;
+    margin: 0;
 }
 
 #project-create-form .tasks-project-create-fields > label.u-hidden {
@@ -2783,7 +2790,8 @@ body.modal-open::before {
 }
 
 #project-create-form .tasks-project-create-fields > label > span:first-child,
-#project-rename-form .tasks-project-create-fields > label > span:first-child {
+#project-rename-form .tasks-project-create-fields > label > span:first-child,
+#issue-create-form .tasks-project-create-fields > :is(label, .tasks-issue-field) > span:first-child {
     align-self: flex-start;
     text-align: left;
 }
@@ -2863,7 +2871,8 @@ body.modal-open::before {
     #project-create-form .tasks-project-create-fields.tasks-issue-fields,
     #project-rename-form .tasks-project-create-fields.tasks-issue-fields,
     #section-create-form .tasks-project-create-fields.tasks-issue-fields,
-    #section-rename-form .tasks-project-create-fields.tasks-issue-fields {
+    #section-rename-form .tasks-project-create-fields.tasks-issue-fields,
+    #issue-create-form .tasks-project-create-fields.tasks-issue-fields {
         grid-template-columns: 1fr;
     }
 }
@@ -5559,19 +5568,12 @@ body.modal-open::before {
     }
 
     #issue-create-form .tasks-issue-field-group--schedule .tasks-issue-field-grid {
-        grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(260px, 0.9fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     #issue-create-form .tasks-issue-field-group--extras .tasks-issue-field-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-}
-
-#issue-create-form .tasks-issue-field--estimate .tasks-estimate-duration-input {
-    width: 100%;
-    color: #2f343d;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
 }
 
 #issue-create-form .tasks-issue-field-grid > .tasks-issue-field + .tasks-issue-field {
@@ -6448,6 +6450,27 @@ body.modal-open::before {
     position: relative;
     display: inline-flex;
 }
+
+.tasks-mention-composer {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.tasks-issue-comment.tasks-issue-comment--mentions { overflow: visible; }
+
+.tasks-filter-menu.tasks-mention-menu {
+    display: block;
+    top: auto;
+    bottom: calc(100% + 6px);
+    width: 100%;
+    min-width: 0;
+    max-height: var(--dropdown-menu-max-height);
+    overflow-y: auto;
+}
+
+.tasks-filter-menu.tasks-mention-menu[hidden] { display: none; }
+.tasks-filter-menu.tasks-mention-menu button { width: 100%; white-space: normal; overflow-wrap: anywhere; }
 
 .tasks-filter-menu {
     position: absolute;

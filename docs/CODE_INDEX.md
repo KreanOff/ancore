@@ -20,10 +20,10 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 15 | 0 | 9 | 42 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 18 | 8 | 10 | 78 |
-| [tasks](../tasks) | 19 | 49 | 27 | 200 |
+| [tasks](../tasks) | 19 | 49 | 28 | 201 |
 | [kanban](../kanban) | 10 | 35 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 15 | 3 | 7 | 70 |
+| [dashboard](../dashboard) | 17 | 4 | 7 | 91 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 
@@ -459,6 +459,32 @@ Metody/properties: `save`, `deactivate`, `__str__`.
 
 ## Modele: dashboard
 
+### `ObjectFollow`
+
+Źródło: [dashboard/models.py](../dashboard/models.py).
+
+Pola zadeklarowane tutaj: `user` (ForeignKey), `task` (ForeignKey), `kanban` (ForeignKey), `task_project` (ForeignKey), `kanban_project` (ForeignKey), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+| `task` | `'tasks.Task'` | on_delete=models.CASCADE; null=True |
+| `kanban` | `'kanban.Kanban'` | on_delete=models.CASCADE; null=True |
+| `task_project` | `'tasks.TaskProject'` | on_delete=models.CASCADE; null=True |
+| `kanban_project` | `'kanban.KanbanProject'` | on_delete=models.CASCADE; null=True |
+
+### `ActivityInterest`
+
+Źródło: [dashboard/models.py](../dashboard/models.py).
+
+Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `mentioned` (BooleanField), `followed` (BooleanField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+| `task_activity` | `'tasks.TaskActivity'` | on_delete=models.CASCADE; null=True |
+| `kanban_activity` | `'kanban.KanbanActivity'` | on_delete=models.CASCADE; null=True |
+
 ### `TaskReminder`
 
 Źródło: [dashboard/models.py](../dashboard/models.py).
@@ -632,10 +658,9 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 Źródło: [tasks/forms.py](../tasks/forms.py).
 
 - `LenientModelChoiceField`
-- `TwoDigitNumberInput`
 - `DateTimeLocalInput`
 - `MultipleFileInput`
-- `TaskForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at', 'estimated_minutes', 'blocked_reason', 'time_spent_hours', 'time_spent_minutes']`
+- `TaskForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
 - `TaskProjectBaseForm`
 - `TaskProjectDeadlineRuleForm` — Meta.fields: `['days', 'color']`
 - `TaskProjectFieldOptionForm` — Meta.fields: `['label', 'color']`
@@ -646,7 +671,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `TaskSectionRenameForm` — Meta.fields: `['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']`
 - `TaskTagForm` — Meta.fields: `['name', 'description', 'category', 'color', 'icon', 'priority', 'scope', 'owner_label', 'status', 'usage_notes', 'automation_rules', 'related_tags']`
 - `QuickTaskForm` — Meta.fields: `['title']`
-- `TaskModalForm` — Meta.fields: `['title', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at', 'estimated_minutes', 'blocked_reason']`
+- `TaskModalForm` — Meta.fields: `['title', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
 - `SubTaskModalForm` — Meta.fields: `['title', 'description', 'status', 'due_at']`
 
 ### kanban
@@ -767,6 +792,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'follow/<str:kind>/<int:object_id>/'` | `follow_object` | 'follow_object' |
 | `''` | `tasks.tasks` | 'tasks' |
 | `'templates/'` | `project_templates` | 'project_templates' |
 | `'templates/<int:template_id>/edit/'` | `edit_project_template` | 'edit_project_template' |
@@ -786,6 +812,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'follow/<str:kind>/<int:object_id>/'` | `follow_object` | 'follow_object' |
 | `''` | `tasks.tasks` | 'tasks' |
 | `'groups/<int:section_id>/'` | `tasks.task_group` | 'task_group' |
 | `'view-task/<int:task_id>/'` | `tasks.view_task` | 'view-task' |
@@ -938,7 +965,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/__init__.py](../tasks/__init__.py)
 - [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskProjectFieldOptionAdmin`, `TaskSectionAdmin`, `TaskTagAdmin`, `TaskAttachmentAdmin`
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
-- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `TwoDigitNumberInput`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
+- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
 - [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskAttachment`, `TaskActivity`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
 - [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
@@ -977,7 +1004,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/__init__.py](../dashboard/__init__.py)
 - [dashboard/admin.py](../dashboard/admin.py)
 - [dashboard/apps.py](../dashboard/apps.py) — `DashboardConfig`
-- [dashboard/models.py](../dashboard/models.py) — `TaskReminder`, `NotificationState`
+- [dashboard/collaboration.py](../dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`, `follow_context`, `follow_object`, `deliver_activity_interest`
+- [dashboard/models.py](../dashboard/models.py) — `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
 - [dashboard/notification_service.py](../dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [dashboard/overview.py](../dashboard/overview.py) — `dashboard_overview`
 - [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`
@@ -1065,6 +1093,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/directory_members.html](../tasks/templates/tasks/includes/directory_members.html)
 - [tasks/templates/tasks/includes/directory_pagination_toolbar.html](../tasks/templates/tasks/includes/directory_pagination_toolbar.html)
 - [tasks/templates/tasks/includes/directory_sort_builder.html](../tasks/templates/tasks/includes/directory_sort_builder.html)
+- [tasks/templates/tasks/includes/follow_button.html](../tasks/templates/tasks/includes/follow_button.html)
 - [tasks/templates/tasks/includes/group_directory_filter_builder.html](../tasks/templates/tasks/includes/group_directory_filter_builder.html)
 - [tasks/templates/tasks/includes/project_choice_filter_detail.html](../tasks/templates/tasks/includes/project_choice_filter_detail.html)
 - [tasks/templates/tasks/includes/project_deadline_settings.html](../tasks/templates/tasks/includes/project_deadline_settings.html)
@@ -1207,6 +1236,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/attachment-icons.js](../static/js/attachment-icons.js)
 - [static/js/auth.js](../static/js/auth.js)
 - [static/js/calendar.js](../static/js/calendar.js)
+- [static/js/collaboration.js](../static/js/collaboration.js)
 - [static/js/custom-select.js](../static/js/custom-select.js)
 - [static/js/documents.js](../static/js/documents.js)
 - [static/js/dropdown-layer.js](../static/js/dropdown-layer.js)
@@ -1342,7 +1372,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [tasks/tests.py](../tasks/tests.py).
 
 - `TaskProjectControlStyleTests`: 19 metod testowych.
-- `TaskProjectCreationTests`: 118 metod testowych.
+- `TaskProjectCreationTests`: 119 metod testowych.
 
 ### kanban/test_deadlines.py
 
@@ -1362,6 +1392,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ContactDirectoryStyleTests`: 1 metod testowych.
 - `ContactCollaborationTests`: 27 metod testowych.
+
+### dashboard/test_collaboration.py
+
+Źródło: [dashboard/test_collaboration.py](../dashboard/test_collaboration.py).
+
+- `CollaborationTests`: 21 metod testowych.
 
 ### dashboard/test_notifications.py
 
@@ -1643,6 +1679,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [dashboard/migrations/0001_initial.py](../dashboard/migrations/0001_initial.py)
 - [dashboard/migrations/0002_taskreminder_and_more.py](../dashboard/migrations/0002_taskreminder_and_more.py)
 - [dashboard/migrations/0003_notificationstate_is_deleted.py](../dashboard/migrations/0003_notificationstate_is_deleted.py)
+- [dashboard/migrations/0004_mentions_and_following.py](../dashboard/migrations/0004_mentions_and_following.py)
 
 ### planner
 

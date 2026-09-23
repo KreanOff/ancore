@@ -716,7 +716,7 @@
     margin-bottom: var(--app-modal-field-gap);
 }
 
-.tasks-modal :is(.tasks-project-create-fields, .contacts-modal-fields) > label {
+.tasks-modal :is(.tasks-project-create-fields, .contacts-modal-fields) > :is(label, .tasks-issue-field) {
     min-width: 0;
     gap: 6px;
 }
@@ -1069,13 +1069,13 @@
         margin-left: 204px;
     }
 
-    .tasks-modal.app-modal-panel :is(#project-create-form, #project-rename-form, #section-create-form, #section-rename-form) .tasks-project-create-fields > label:not(.u-hidden):not([hidden]) {
+    .tasks-modal.app-modal-panel :is(#project-create-form, #project-rename-form, #section-create-form, #section-rename-form, #issue-create-form) .tasks-project-create-fields > :is(label, .tasks-issue-field):not(.u-hidden):not([hidden]) {
         display: grid;
         grid-template-columns: 128px minmax(0, 1fr);
         gap: 12px;
     }
 
-    .tasks-modal.app-modal-panel :is(#project-create-form, #project-rename-form, #section-create-form, #section-rename-form) .tasks-project-create-fields > label > span:first-child {
+    .tasks-modal.app-modal-panel :is(#project-create-form, #project-rename-form, #section-create-form, #section-rename-form, #issue-create-form) .tasks-project-create-fields > :is(label, .tasks-issue-field) > span:first-child {
         padding-top: 9px;
     }
 }

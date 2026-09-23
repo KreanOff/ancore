@@ -66,7 +66,7 @@ Dokumentów: wspólne nagłówki, tekst 13px/400, separatory, szare podświetlen
 oraz odstępy 24px od obu krawędzi. Pole nazwy ma minimum 32px wysokości,
 jak pole ikony Dokumentów. Długie nazwy, opisy i powiązania pozostają w jednym
 wierszu z wielokropkiem i pełną treścią w `title`; nie zwiększają wysokości wierszy.
-Ostatnia kolumna liczbowa ma 120px i wyrównanie do prawej. Tabele zachowują
+Ostatnia kolumna ma 120px i wyrównanie do prawej. Tabele zachowują
 wszystkie kolumny i własne przewijanie poziome na wąskich ekranach.
 Menu grup i zadań otwierają formularze we wspólnej powłoce. Tabela katalogu i nawigacja
 są `inert` podczas edycji, a przy otwartym formularzu podrzędnym także główne
@@ -699,6 +699,14 @@ prowadzą do odpowiedniego modułu; pełne nazwy pozostają w tekście i `title`
 
 ## 6. Modale
 
+Szczegóły zadania i podzadania w module Zadania nie pokazują „Powodu blokady”,
+„Czasu pracy”, „Szacowanego czasu” ani bocznej „Historii statusu”. Modal tworzenia
+zadania również nie zawiera powodu blokady ani szacowanego czasu; zachowuje
+termin wykonania i przypomnienie. Edytor szablonów projektów nie
+pokazuje pola szacowanego czasu ani kolumny „Czas (min)”. Zmiany statusu są nadal
+widoczne w „Aktywności”.
+Wspólne style czasu pracy i historii są nadal używane przez Kanban.
+
 `modal-system.css` wprost wskazuje okna projektów i zadań jako wzorzec
 standardowego okna aplikacji. Powłoka odpowiada za powierzchnię, przyciemnienie,
 szerokość, cień, nagłówek, stopkę, przycisk zamknięcia i geometrię kontrolek.
@@ -734,7 +742,11 @@ otwierania oraz natychmiastowe zamknięcie.
 Od szerokości 1100px pełne wiersze `tasks-form-field` mają etykietę po lewej
 (180px), a kontrolkę po prawej. Parametry projektu zachowują dwie kolumny,
 z etykietą 128px w każdej; ukryte pola pierwszej grupy nadal są ukryte po
-wybraniu szablonu. Węższe okna zachowują pionowy układ pól. Do 900px panel
+wybraniu szablonu. „Nowe zadanie” używa tej samej sekcji `tasks-project-parameters`
+i siatki `tasks-project-create-fields`: dwie równe kolumny, identyczne odstępy
+i etykiety obok kontrolek. Wspólny wariant wiersza obejmuje także kontrolki
+projektu i grupy w elementach `.tasks-issue-field`. Do 720px parametry projektu
+i zadania przechodzą do jednej kolumny. Węższe okna zachowują pionowy układ pól. Do 900px panel
 ma 40px odstępu po lewej, a do 600px wypełnia ekran, z odstępami treści 12px,
 większą stopką przy zawijaniu akcji i uwzględnieniem bezpiecznego obszaru ekranu.
 Dane kontaktowe mają dwie kolumny, a do 600px jedną; ID Ancore zajmuje pełny wiersz.
@@ -1120,3 +1132,29 @@ fokusu do ukrytego panelu. Na telefonie panel zajmuje ekran,
 a na najwęższym układzie toolbar przechodzi do dwóch wierszy.
 Inicjalizacja po `ancore:content-loaded` nie powiela listenerów; polling działa
 wyłącznie w widocznej karcie. Dane są prywatne dla konta i nie trafiają do localStorage.
+
+### Wzmianki i obserwowanie
+
+W szczegółach zadań/podzadań oraz kart/podkart, a także w nagłówku otwartego
+projektu lub przestrzeni Kanbana, standardowy przycisk `btn-secondary btn-sm`
+przełącza „Obserwuj” / „Obserwujesz”. `aria-pressed` odzwierciedla zapisany
+stan. Błąd zachowuje stan i używa wspólnego komunikatu z możliwością ponowienia.
+
+Podpowiedzi osób z bieżącego Workspace pojawiają się po wpisaniu `@` oraz
+co najmniej jednej litery lub cyfry. Samo `@`, spacje lub znaki interpunkcyjne
+nie otwierają listy. Usunięcie wyszukiwanej frazy ponownie ukrywa podpowiedzi.
+Wybór wstawia `@Imię Nazwisko`. Lista pokazuje `Imię Nazwisko · e-mail`,
+pozwalając rozróżnić osoby o tych samych nazwach; wyszukiwanie obejmuje nazwę
+oraz adres e-mail. Przy braku imienia i nazwiska
+używany jest login z pojedynczym `@`. Ukryte pole komentarza przechowuje ID
+wybranej osoby i pozycję wzmianki. Dopisywanie tekstu przesuwa pozycje,
+a edycja wewnątrz wzmianki lub jej usunięcie odłącza wybór. W takiej sytuacji
+trzeba ponownie wybrać osobę z listy.
+Wspólny wariant `tasks-mention-menu` korzysta z `tasks-filter-menu` i tokenów
+menu; `tasks-issue-comment--mentions` pozwala pokazać listę poza ramką pola.
+Strzałki wybierają osobę, Enter wstawia wzmiankę, Escape zamyka bez utraty treści.
+Działa także wybór myszą. Pusta lista wyświetla komunikat, a nazwy są
+wstawiane jako tekst. Dane osób są przekazywane przez bezpieczne `json_script`.
+`collaboration.js` inicjalizuje UI także po `ancore:content-loaded` i usuwa
+stare listenery przez `AbortController`. Centrum używa istniejących zakładek
+z dodatkowymi filtrami „Wzmianki” i „Obserwowane”, w tym stanami pustymi.

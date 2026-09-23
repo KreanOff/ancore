@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 
+from dashboard.collaboration import comment_mention_metadata, follow_context, mention_choices
 from workplaces.services import workspace_owner
 from core.task_numbering import lock_task_numbers
 from core.task_requests import task_detail_lookup, task_primary_keys
@@ -1083,6 +1084,7 @@ def _set_task_column(task, column_id, user=None):
     return True
 
 
+@transaction.atomic
 def _record_task_activity(task, actor, action, message='', kind='system', metadata=None):
     return KanbanActivity.objects.create(
         task=task,
@@ -1803,6 +1805,7 @@ def _tasks_page(request, active_section=None):
         'tag_edit_tag_id': tag_edit_tag_id,
         'can_create_issue': can_create_issue,
     }
+    context.update(follow_context(request.user, active_project, 'kanban', 'project'))
     return render(request, 'kanban/tasks.html', context)
 
 @login_required
@@ -2049,7 +2052,8 @@ def _task_detail_response(request, task_id):
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać podkarty.')
         elif action == 'add_activity_comment':
-            comment = (request.POST.get('activity_comment') or '').strip()
+            raw_comment = request.POST.get('activity_comment') or ''
+            comment = raw_comment.replace('\r\n', '\n').strip()
             if comment:
                 _record_task_activity(
                     task,
@@ -2057,6 +2061,7 @@ def _task_detail_response(request, task_id):
                     'commented',
                     comment,
                     kind='comment',
+                    metadata=comment_mention_metadata(task, raw_comment, request.POST.get('activity_mentions')),
                 )
                 messages.success(request, 'Komentarz dodany.')
             else:
@@ -2159,6 +2164,8 @@ def _task_detail_response(request, task_id):
             workplace=workplace,
         ),
     }
+    context.update(follow_context(request.user, task, 'kanban', 'task'))
+    context['mention_people'] = mention_choices(task)
     return render(request, 'kanban/view_task.html', context)
 
 

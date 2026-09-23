@@ -47,6 +47,7 @@
             </div>
 
             <div class="tasks-issue-actions">
+                {% include 'tasks/includes/follow_button.html' %}
                 <button type="submit" form="task-detail-form" class="tasks-issue-save" title="Zapisz zmiany">
                     Zapisz
                 </button>
@@ -57,6 +58,7 @@
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="action" value="add_activity_comment">
+            <input type="hidden" name="activity_mentions" value="[]" data-mention-values>
         </form>
 
         <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form">
@@ -174,8 +176,13 @@
                             </div>
                         </div>
 
-                        <div class="tasks-issue-comment">
-                            <textarea class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz wiadomość do karty..." form="activity-comment-form"></textarea>
+                        <div class="tasks-issue-comment tasks-issue-comment--mentions">
+                            {{ mention_people|json_script:"mention-people" }}
+                            <div class="tasks-mention-composer" data-mention-composer>
+                            <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz komentarz; wpisz @ i imię osoby..." form="activity-comment-form"></textarea>
+                            <div id="mention-suggestions" class="tasks-filter-menu tasks-mention-menu" role="listbox" aria-label="Osoby z Workspace" data-mention-menu hidden></div>
+                            <span class="u-sr-only" data-mention-status role="status"></span>
+                            </div>
                             <div class="tasks-issue-comment-tools">
                                 <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
                                     <i data-icon="send" aria-hidden="true"></i>

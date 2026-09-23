@@ -34,6 +34,7 @@
             </div>
 
             <div class="tasks-issue-actions">
+                {% include 'tasks/includes/follow_button.html' %}
                 {% if can_edit_task %}
                 <button type="submit" form="task-detail-form" class="tasks-issue-save" data-task-save data-state="idle" disabled>
                     Zapisz
@@ -46,6 +47,7 @@
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="action" value="add_activity_comment">
+            <input type="hidden" name="activity_mentions" value="[]" data-mention-values>
         </form>
 
         <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}"{% if not can_edit_task %} data-task-readonly="true"{% endif %}>
@@ -186,8 +188,13 @@
                             </div>
                         </div>
 
-                        <div class="tasks-issue-comment">
-                            <textarea class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz wiadomość do zadania..." form="activity-comment-form"></textarea>
+                        <div class="tasks-issue-comment tasks-issue-comment--mentions">
+                            {{ mention_people|json_script:"mention-people" }}
+                            <div class="tasks-mention-composer" data-mention-composer>
+                            <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz komentarz; wpisz @ i imię osoby..." form="activity-comment-form"></textarea>
+                            <div id="mention-suggestions" class="tasks-filter-menu tasks-mention-menu" role="listbox" aria-label="Osoby z Workspace" data-mention-menu hidden></div>
+                            <span class="u-sr-only" data-mention-status role="status"></span>
+                            </div>
                             <div class="tasks-issue-comment-tools">
                                 <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
                                     <i data-icon="send" aria-hidden="true"></i>
@@ -361,47 +368,6 @@
                             </span>
                             {{ form.reminder_at }}
                         </div>
-                        <div class="tasks-issue-field">
-                            <span class="tasks-issue-field-label">
-                                <label for="{{ form.estimated_minutes.id_for_label }}">Szacowany czas</label>
-                            </span>
-                            {{ form.estimated_minutes }}
-                        </div>
-                        <div class="tasks-issue-field">
-                            <span class="tasks-issue-field-label">
-                                <label for="{{ form.blocked_reason.id_for_label }}">Powód blokady</label>
-                            </span>
-                            {{ form.blocked_reason }}
-                        </div>
-                        <div class="tasks-issue-field">
-                            <span class="tasks-issue-field-label">
-                                <span>Czas pracy</span>
-                            </span>
-                            <div class="tasks-issue-time-spent-stack">
-                                <div class="tasks-issue-time-spent">
-                                    <label for="{{ form.time_spent_hours.id_for_label }}">
-                                        {{ form.time_spent_hours }}
-                                        <span>h</span>
-                                    </label>
-                                    <label for="{{ form.time_spent_minutes.id_for_label }}">
-                                        {{ form.time_spent_minutes }}
-                                        <span>min</span>
-                                    </label>
-                                </div>
-                                {% if task.has_time_spent %}
-                                <div class="tasks-issue-time-entries" aria-label="Dodany czas pracy">
-                                    <div class="tasks-issue-time-entry">
-                                        <span>{{ task.time_spent_label }}</span>
-                                        {% if can_edit_task %}
-                                        <button type="button" title="Usuń czas pracy" aria-label="Usuń czas pracy" data-task-clear-time>
-                                            <i data-icon="x" aria-hidden="true"></i>
-                                        </button>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
                     </section>
 
                     <section class="tasks-issue-side-section">
@@ -465,22 +431,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        {% endif %}
-                    </section>
-
-                    <section class="tasks-issue-side-section">
-                        <h2>
-                            <span>Historia statusu:</span>
-                        </h2>
-                        <div class="tasks-issue-history-row">
-                            <span class="status-{{ task.status }}" data-task-current-status-history>{{ task.get_status_display }}</span>
-                            <strong>{{ task.created_at|timesince }}</strong>
-                        </div>
-                        {% if task.status != 'new' %}
-                        <div class="tasks-issue-history-row">
-                            <span class="status-new">Nowe</span>
-                            <strong>{{ task.created_at|date:"d.m" }}</strong>
                         </div>
                         {% endif %}
                     </section>
@@ -1015,24 +965,6 @@ function updateTaskDetailLiveValues(payload) {
         completionDate.textContent = payload.task.completion_date || 'Nie zamknięto';
         completionDate.classList.toggle('tasks-issue-muted', !payload.task.completion_date);
     }
-
-    const currentStatusHistory = document.querySelector('[data-task-current-status-history]');
-    if (currentStatusHistory) {
-        currentStatusHistory.className = `status-${payload.task.status}`;
-        currentStatusHistory.textContent = payload.task.status_label;
-    }
-
-    if (!payload.task.has_time_spent) {
-        document.querySelector('.tasks-issue-time-entries')?.remove();
-    }
-}
-
-function clearTaskDetailTimeSpent() {
-    taskDetailForm?.querySelectorAll('[name="time_spent_hours"], [name="time_spent_minutes"]').forEach((input) => {
-        input.value = '';
-    });
-    document.querySelector('.tasks-issue-time-entries')?.remove();
-    markTaskDetailDirty();
 }
 
 async function saveTaskDetail() {
@@ -1139,7 +1071,6 @@ if (taskDetailForm) {
         event.returnValue = '';
     });
 
-    taskDetailForm.querySelector('[data-task-clear-time]')?.addEventListener('click', clearTaskDetailTimeSpent);
 }
 
 function deleteAttachment(attachmentId) {

@@ -19,6 +19,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 
+from dashboard.collaboration import comment_mention_metadata, follow_context, mention_choices
 from workplaces.services import workspace_owner, scoped_workplace_app_path
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
@@ -2940,6 +2941,7 @@ def _set_task_status(task, status):
     return True
 
 
+@transaction.atomic
 def _record_task_activity(task, actor, action, message='', kind='system', metadata=None):
     return TaskActivity.objects.create(
         task=task,
@@ -2969,10 +2971,6 @@ def _task_activity_snapshot(task):
         'assignee_label': _user_display_name(task.assignee) if task.assignee_id else '',
         'due_at': task.due_at,
         'reminder_at': task.reminder_at,
-        'estimated_minutes': task.estimated_minutes,
-        'blocked_reason': task.blocked_reason,
-        'time_spent_hours': task.time_spent_hours,
-        'time_spent_minutes': task.time_spent_minutes,
         'completion_date': task.completion_date,
         'tags': set(task.tags.values_list('id', flat=True)),
         'tag_labels': list(task.tags.order_by('name').values_list('name', flat=True)),
@@ -3023,16 +3021,6 @@ def _task_change_activities(task, before):
         add_change('termin wykonania', before['due_at'], task.due_at)
     if before['reminder_at'] != task.reminder_at:
         add_change('przypomnienie', before['reminder_at'], task.reminder_at)
-    if before['estimated_minutes'] != task.estimated_minutes:
-        add_change('szacowany czas', before['estimated_minutes'], task.estimated_minutes)
-    if before['blocked_reason'] != task.blocked_reason:
-        add_change('powód blokady', before['blocked_reason'], task.blocked_reason)
-    if (
-        before['time_spent_hours'] != task.time_spent_hours
-        or before['time_spent_minutes'] != task.time_spent_minutes
-    ):
-        previous_time = f"{before['time_spent_hours'] or 0:02d}:{before['time_spent_minutes'] or 0:02d}"
-        add_change('czas pracy', previous_time, task._activity_time_spent())
     if before['completion_date'] != task.completion_date:
         add_change('zamknięto', before['completion_date'], task._activity_datetime(task.completion_date))
     if before['tags'] != set(task.tags.values_list('id', flat=True)):
@@ -3074,8 +3062,6 @@ def _task_detail_payload(task):
         'priority_label': task.get_priority_display(),
         'due_urgency': task.due_urgency,
         'completion_date': task._activity_datetime(task.completion_date) if task.completion_date else '',
-        'time_spent_label': task.time_spent_label,
-        'has_time_spent': task.has_time_spent,
     }
 
 
@@ -4006,6 +3992,7 @@ def _tasks_page(request, active_section=None):
         'tag_edit_tag_id': tag_edit_tag_id,
         'can_create_issue': can_create_issue,
     }
+    context.update(follow_context(request.user, active_project, 'tasks', 'project'))
     return render(request, 'tasks/tasks.html', context)
 
 
@@ -4314,7 +4301,8 @@ def _task_detail_response(request, task_id=None, task_pk=None):
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać podzadania.')
         elif action == 'add_activity_comment':
-            comment = (request.POST.get('activity_comment') or '').strip()
+            raw_comment = request.POST.get('activity_comment') or ''
+            comment = raw_comment.replace('\r\n', '\n').strip()
             if comment:
                 _record_task_activity(
                     task,
@@ -4322,50 +4310,11 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                     'commented',
                     comment,
                     kind='comment',
+                    metadata=comment_mention_metadata(task, raw_comment, request.POST.get('activity_mentions')),
                 )
                 messages.success(request, 'Komentarz dodany.')
             else:
                 messages.error(request, 'Wpisz treść komentarza.')
-            return _redirect_to_task_detail(task, workspace_owner(request))
-        elif action == 'clear_time_spent':
-            if not can_edit_task:
-                raise PermissionDenied
-            if task.has_time_spent:
-                before = _task_activity_snapshot(task)
-                task.time_spent_hours = None
-                task.time_spent_minutes = None
-                task.save(update_fields=['time_spent_hours', 'time_spent_minutes'])
-
-                change_activities = _task_change_activities(task, before)
-                recorded_activities = []
-                for change in change_activities:
-                    recorded_activities.append(
-                        _record_task_activity(
-                            task,
-                            request.user,
-                            change['action'],
-                            change['message'],
-                            metadata=change['metadata'],
-                        )
-                    )
-                message = 'Czas pracy usunięty.'
-                if is_ajax:
-                    return JsonResponse({
-                        'status': 'success',
-                        'message': message,
-                        'task': _task_detail_payload(task),
-                        'activity_html': _task_activity_html(recorded_activities),
-                    })
-                messages.success(request, message)
-            else:
-                message = 'Brak czasu pracy do usunięcia.'
-                if is_ajax:
-                    return JsonResponse({
-                        'status': 'success',
-                        'message': message,
-                        'task': _task_detail_payload(task),
-                    })
-                messages.info(request, message)
             return _redirect_to_task_detail(task, workspace_owner(request))
         else:
             if not can_edit_task:
@@ -4483,6 +4432,8 @@ def _task_detail_response(request, task_id=None, task_pk=None):
             workplace=workplace,
         ),
     }
+    context.update(follow_context(request.user, task, 'tasks', 'task'))
+    context['mention_people'] = mention_choices(task)
     return render(request, 'tasks/view_task.html', context)
 
 

@@ -59,7 +59,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260923-invitation-badge-color">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260924-task-form-layout">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}">
@@ -385,6 +385,7 @@
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/layout.js' %}?v=20260923-notifications-panel-only"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260923-notification-actions"></script>
+    <script src="{% static 'js/collaboration.js' %}?v=20260924-mention-query"></script>
     <script src="{% static 'js/notifications-panel.js' %}?v=20260923-notifications-heading"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260918-flaticon-v1"></script>

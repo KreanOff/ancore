@@ -280,6 +280,7 @@
                 {% include 'tasks/includes/directory_actions_menu.html' %}
             </div>
             {% endif %}
+            {% if active_project %}{% include 'tasks/includes/follow_button.html' %}{% endif %}
         </header>
 
         <div class="tasks-filterbar{% if not active_project or active_view == 'project' %} tasks-filterbar--directory{% endif %}{% if active_view == 'projects' %} tasks-filterbar--project-directory{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %} tasks-filterbar--task-directory{% endif %}">
@@ -1940,142 +1941,116 @@
                     {{ task_modal_form.description }}
                 </div>
 
-                <div class="tasks-issue-fields">
-                    <label class="u-sr-only">
-                        <span>Grupa projektu</span>
-                        {{ task_modal_form.section }}
-                    </label>
-
-                    <div class="tasks-issue-field-group tasks-issue-field-group--primary">
-                        <div class="tasks-issue-field-grid">
-                            <div class="tasks-issue-field tasks-issue-field--picker tasks-issue-field--project">
-                                <span>Projekt</span>
-                                <div class="tasks-chip-picker tasks-issue-chip-picker" data-issue-project-picker>
-                                    <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
-                                        <span data-picker-label>{% if active_project %}{{ active_project.name }}{% else %}Wybierz projekt{% endif %}</span>
-                                        <i data-icon="chevron-down" aria-hidden="true"></i>
+                <label class="u-sr-only">
+                    <span>Grupa projektu</span>
+                    {{ task_modal_form.section }}
+                </label>
+                <section class="tasks-project-parameters" aria-labelledby="issue-create-parameters-title">
+                    <h3 class="u-sr-only" id="issue-create-parameters-title">Parametry zadania</h3>
+                    <div class="tasks-project-create-fields tasks-issue-fields">
+                        <div class="tasks-issue-field tasks-issue-field--picker tasks-issue-field--project">
+                            <span>Projekt</span>
+                            <div class="tasks-chip-picker tasks-issue-chip-picker" data-issue-project-picker>
+                                <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
+                                    <span data-picker-label>{% if active_project %}{{ active_project.name }}{% else %}Wybierz projekt{% endif %}</span>
+                                    <i data-icon="chevron-down" aria-hidden="true"></i>
+                                </button>
+                                <div class="tasks-chip-picker__menu" role="menu">
+                                    <div class="tasks-chip-picker__search">
+                                        <i data-icon="search" aria-hidden="true"></i>
+                                        <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tasks-issue-field tasks-issue-field--picker tasks-issue-field--section">
+                            <span>Grupa</span>
+                            <div class="tasks-chip-picker tasks-issue-chip-picker" data-issue-section-picker>
+                                <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
+                                    <span data-picker-label>{% if active_section %}{{ active_section.title }}{% else %}Wybierz grupę{% endif %}</span>
+                                    <i data-icon="chevron-down" aria-hidden="true"></i>
+                                </button>
+                                <div class="tasks-chip-picker__menu" role="menu">
+                                    <div class="tasks-chip-picker__search">
+                                        <i data-icon="search" aria-hidden="true"></i>
+                                        <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <label class="tasks-issue-field--task-type">
+                            <span>Typ zadania</span>
+                            {{ task_modal_form.task_type }}
+                        </label>
+                        <label class="tasks-issue-field--status">
+                            <span>Status</span>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ task_modal_form.status }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                        <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-inline-status-icon></span>
+                                        <span data-inline-select-label>Status</span>
                                     </button>
-                                    <div class="tasks-chip-picker__menu" role="menu">
-                                        <div class="tasks-chip-picker__search">
-                                            <i data-icon="search" aria-hidden="true"></i>
-                                            <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
-                                        </div>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz status">
+                                        {% for value, label in task_modal_form.status.field.choices %}
+                                        <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
+                                            <span class="status-indicator status-{{ value }}">{{ label }}</span>
+                                        </button>
+                                        {% endfor %}
                                     </div>
                                 </div>
                             </div>
-                            <div class="tasks-issue-field tasks-issue-field--picker tasks-issue-field--section">
-                                <span>Grupa</span>
-                                <div class="tasks-chip-picker tasks-issue-chip-picker" data-issue-section-picker>
-                                    <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
-                                        <span data-picker-label>{% if active_section %}{{ active_section.title }}{% else %}Wybierz grupę{% endif %}</span>
-                                        <i data-icon="chevron-down" aria-hidden="true"></i>
+                        </label>
+                        <label class="tasks-issue-field--priority">
+                            <span>Priorytet</span>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ task_modal_form.priority }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                        <span class="tasks-filter-priority-icon" aria-hidden="true" data-inline-priority-icon></span>
+                                        <span data-inline-select-label>Priorytet</span>
                                     </button>
-                                    <div class="tasks-chip-picker__menu" role="menu">
-                                        <div class="tasks-chip-picker__search">
-                                            <i data-icon="search" aria-hidden="true"></i>
-                                            <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
-                                        </div>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet">
+                                        {% for value, label in task_modal_form.priority.field.choices %}
+                                        <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
+                                            <span class="tasks-row-priority priority-{{ value }}" aria-hidden="true">
+                                                {% include 'core/includes/priority_icon.html' with priority=value only %}
+                                            </span>
+                                            <span>{{ label }}</span>
+                                        </button>
+                                        {% endfor %}
                                     </div>
                                 </div>
                             </div>
-                            <label class="tasks-issue-field--task-type">
-                                <span>Typ zadania</span>
-                                {{ task_modal_form.task_type }}
-                            </label>
-                            <label class="tasks-issue-field--status">
-                                <span>Status</span>
-                                <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
-                                    {{ task_modal_form.status }}
-                                    <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
-                                        <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
-                                            <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-inline-status-icon></span>
-                                            <span data-inline-select-label>Status</span>
-                                        </button>
-                                        <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz status">
-                                            {% for value, label in task_modal_form.status.field.choices %}
-                                            <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
-                                                <span class="status-indicator status-{{ value }}">{{ label }}</span>
-                                            </button>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
+                        </label>
+                        <label class="tasks-issue-field--tags">
+                            <span>Tagi</span>
+                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
+                                {{ task_modal_form.tags }}
+                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown data-inline-select-multiple data-inline-select-lazy data-inline-select-empty-label="Brak tagów">
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
+                                        <i data-icon="tag" aria-hidden="true"></i>
+                                        <span data-inline-select-label>Tagi</span>
+                                    </button>
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi"></div>
                                 </div>
-                            </label>
-                            <label class="tasks-issue-field--priority">
-                                <span>Priorytet</span>
-                                <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
-                                    {{ task_modal_form.priority }}
-                                    <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown>
-                                        <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
-                                            <span class="tasks-filter-priority-icon" aria-hidden="true" data-inline-priority-icon></span>
-                                            <span data-inline-select-label>Priorytet</span>
-                                        </button>
-                                        <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz priorytet">
-                                            {% for value, label in task_modal_form.priority.field.choices %}
-                                            <button type="button" role="menuitem" data-inline-select-value="{{ value }}">
-                                                <span class="tasks-row-priority priority-{{ value }}" aria-hidden="true">
-                                                    {% include 'core/includes/priority_icon.html' with priority=value only %}
-                                                </span>
-                                                <span>{{ label }}</span>
-                                            </button>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="tasks-issue-field-group tasks-issue-field-group--assignment">
-                        <div class="tasks-issue-field-grid">
-                            <label class="tasks-issue-field--tags">
-                                <span>Tagi</span>
-                                <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
-                                    {{ task_modal_form.tags }}
-                                    <div class="tasks-filter-dropdown tasks-issue-dropdown" data-inline-select-dropdown data-inline-select-multiple data-inline-select-lazy data-inline-select-empty-label="Brak tagów">
-                                        <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-inline-select-toggle>
-                                            <i data-icon="tag" aria-hidden="true"></i>
-                                            <span data-inline-select-label>Tagi</span>
-                                        </button>
-                                        <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tagi"></div>
-                                    </div>
-                                    <div class="tasks-issue-selected-tags" data-inline-selected-tags aria-live="polite"></div>
-                                </div>
-                            </label>
-                            <label class="tasks-issue-field--assignee">
-                                <span>Przypisane do</span>
-                                {{ task_modal_form.assignee }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="tasks-issue-field-group tasks-issue-field-group--schedule">
-                        <div class="tasks-issue-field-grid">
-                            <label class="tasks-issue-field--due">
-                                <span>Termin wykonania</span>
-                                {{ task_modal_form.due_at }}
-                            </label>
-                            <label class="tasks-issue-field--reminder">
-                                <span>Przypomnienie</span>
-                                {{ task_modal_form.reminder_at }}
-                            </label>
-                            <div class="tasks-issue-field tasks-issue-field--estimate">
-                                <span>Szacowany czas</span>
-                                {{ task_modal_form.estimated_minutes }}
-                                {{ task_modal_form.estimated_duration }}
+                                <div class="tasks-issue-selected-tags" data-inline-selected-tags aria-live="polite"></div>
                             </div>
-                        </div>
+                        </label>
+                        <label class="tasks-issue-field--assignee">
+                            <span>Przypisane do</span>
+                            {{ task_modal_form.assignee }}
+                        </label>
+                        <label class="tasks-issue-field--due">
+                            <span>Termin wykonania</span>
+                            {{ task_modal_form.due_at }}
+                        </label>
+                        <label class="tasks-issue-field--reminder">
+                            <span>Przypomnienie</span>
+                            {{ task_modal_form.reminder_at }}
+                        </label>
                     </div>
-
-                    <div class="tasks-issue-field-group tasks-issue-field-group--extras">
-                        <div class="tasks-issue-field-grid">
-                            <label class="tasks-issue-field--blocked-reason">
-                                <span>Powód blokady</span>
-                                {{ task_modal_form.blocked_reason }}
-                            </label>
-                        </div>
-                    </div>
-                </div>
+                </section>
             </div>
 
             <footer class="tasks-modal__footer tasks-issue-modal__footer">
