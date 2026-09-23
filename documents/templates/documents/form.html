@@ -1,4 +1,4 @@
-<div class="tasks-modal tasks-form-modal documents-modal is-open" role="dialog" aria-modal="true" aria-labelledby="documents-modal-title" data-document-dialog data-return-url="{{ modal.folder_url }}">
+<div class="tasks-modal app-modal-panel tasks-form-modal documents-modal is-open" role="dialog" aria-modal="true" aria-labelledby="documents-modal-title" data-document-dialog data-return-url="{{ modal.folder_url }}">
     <div class="tasks-modal__dialog">
         <form method="post" action="{{ modal.form_action }}" {% if modal.form.is_multipart %}enctype="multipart/form-data"{% endif %} class="tasks-modal__form" data-document-form{% if modal.upload_form %} data-document-upload-form{% endif %}{% if modal.office_create %} data-office-create{% endif %}>
             {% csrf_token %}

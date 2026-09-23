@@ -4246,7 +4246,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertIsNotNone(first_task.completion_date)
         self.assertIsNotNone(second_task.completion_date)
 
-    def test_bulk_update_status_uses_batched_updates(self):
+    def test_bulk_update_status_preserves_completion_and_records_each_change(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Backend')
         tasks = [
@@ -4262,26 +4262,29 @@ class TaskProjectCreationTests(TestCase):
         original_completion_date = timezone.now() - timedelta(days=2)
         Task.objects.filter(pk=already_closed.pk).update(completion_date=original_completion_date)
 
-        with CaptureQueriesContext(connection) as queries:
-            response = self.client.post(
-                reverse('tasks:bulk_update_status'),
-                data=json.dumps({
-                    'task_pks': [task.pk for task in [*tasks, already_closed]],
-                    'status': 'closed',
-                }),
-                content_type='application/json',
-            )
+        response = self.client.post(
+            reverse('tasks:bulk_update_status'),
+            data=json.dumps({
+                'task_pks': [task.pk for task in [*tasks, already_closed]],
+                'status': 'closed',
+            }),
+            content_type='application/json',
+        )
 
         already_closed.refresh_from_db()
-        task_status_update_queries = [
-            query['sql'] for query in queries
-            if query['sql'].startswith('UPDATE "tasks_task" SET "status"')
-        ]
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['updated_count'], 6)
-        self.assertLessEqual(len(task_status_update_queries), 2)
         self.assertEqual(already_closed.completion_date, original_completion_date)
+        self.assertFalse(already_closed.activities.filter(action='status_changed').exists())
+        for task in tasks:
+            task.refresh_from_db()
+            self.assertEqual(task.status, 'closed')
+            self.assertTrue(task.is_completed)
+            self.assertIsNotNone(task.completion_date)
+            activity = task.activities.get(action='status_changed')
+            self.assertEqual(activity.actor_id, self.user.pk)
+            self.assertEqual(activity.metadata['from_label'], 'Nowe')
+            self.assertEqual(activity.metadata['to_label'], 'Zamknięte')
 
     def test_bulk_update_status_rejects_invalid_status(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')

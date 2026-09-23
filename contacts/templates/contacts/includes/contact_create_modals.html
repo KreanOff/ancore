@@ -1,5 +1,5 @@
 {% if contact_modal_form %}
-<div class="tasks-modal tasks-issue-modal contacts-create-modal {% if contact_modal_open %}is-open{% endif %}" id="contact-create-modal" role="dialog" aria-modal="true" aria-labelledby="contact-create-modal-title" aria-hidden="{% if contact_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-issue-modal contacts-create-modal {% if contact_modal_open %}is-open{% endif %}" id="contact-create-modal" role="dialog" aria-modal="true" aria-labelledby="contact-create-modal-title" aria-hidden="{% if contact_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog contacts-create-modal__dialog">
         <form method="post" action="{% url 'contacts:contacts' %}" class="tasks-modal__form tasks-issue-modal__form" id="contact-create-form" data-ancore-login-url="{% url 'contacts:lookup-ancore-login' %}">
             {% csrf_token %}
@@ -121,7 +121,7 @@
 {% endif %}
 
 {% if company_modal_form %}
-<div class="tasks-modal tasks-issue-modal contacts-create-modal {% if company_modal_open %}is-open{% endif %}" id="company-create-modal" role="dialog" aria-modal="true" aria-labelledby="company-create-modal-title" aria-hidden="{% if company_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-issue-modal contacts-create-modal {% if company_modal_open %}is-open{% endif %}" id="company-create-modal" role="dialog" aria-modal="true" aria-labelledby="company-create-modal-title" aria-hidden="{% if company_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog contacts-create-modal__dialog">
         <form method="post" action="{% url 'contacts:companies' %}" class="tasks-modal__form tasks-issue-modal__form" id="company-create-form" enctype="multipart/form-data">
             {% csrf_token %}

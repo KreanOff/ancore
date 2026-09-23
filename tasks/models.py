@@ -205,6 +205,24 @@ class TaskProject(models.Model):
         return self._field_option_display('health')
 
 
+class TaskProjectTemplate(models.Model):
+    """A reusable snapshot; deleting or editing the source project does not change it."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField(max_length=120)
+    template_name = models.CharField('Nazwa szablonu', max_length=120, default='')
+    description = models.TextField(blank=True)
+    structure = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['template_name', 'pk']
+
+    def __str__(self):
+        return self.template_name or self.name
+
+
 class TaskProjectDeadlineRule(models.Model):
     DEFAULTS = ((2, '#FFE0DC'), (16, '#FFEBC9'), (30, '#DFF1E7'))
 

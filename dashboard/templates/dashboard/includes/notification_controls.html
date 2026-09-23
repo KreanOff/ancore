@@ -3,6 +3,7 @@
         <button type="button" data-notification-filter="all" aria-pressed="{% if not notification_filters.view or notification_filters.view == 'all' %}true{% else %}false{% endif %}">Wszystkie</button>
         <button type="button" data-notification-filter="unread" aria-pressed="{% if notification_filters.view == 'unread' %}true{% else %}false{% endif %}">Nieprzeczytane <span data-notifications-unread-count>{{ unread_count|default:0 }}</span></button>
         <button type="button" data-notification-filter="invitations" aria-pressed="{% if notification_filters.view == 'invitations' %}true{% else %}false{% endif %}">Zaproszenia</button>
+        <button type="button" data-notification-filter="reminders" aria-pressed="{% if notification_filters.view == 'reminders' %}true{% else %}false{% endif %}">Przypomnienia</button>
         <button type="button" data-notification-filter="archived" aria-pressed="{% if notification_filters.view == 'archived' %}true{% else %}false{% endif %}">Archiwum</button>
     </div>
     <div class="notifications-toolbar">

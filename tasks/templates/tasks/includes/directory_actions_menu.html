@@ -32,6 +32,13 @@
         </button>
         {% endif %}
         {% if active_view == 'projects' %}
+        <a href="{{ workplace_app_urls.tasks }}templates/" class="tasks-project-menu-button" role="menuitem">
+            <i data-icon="copy" aria-hidden="true"></i>Szablony projektów
+        </a>
+        <button type="button" class="tasks-project-menu-button" role="menuitem" id="save-selected-project-template-menu-btn" disabled>
+            <i data-icon="copy" aria-hidden="true"></i>
+            Zapisz jako szablon
+        </button>
         <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-project-menu-btn" disabled>
             <i data-icon="pencil" aria-hidden="true"></i>
             Edytuj projekt

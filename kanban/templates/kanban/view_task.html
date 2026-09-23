@@ -276,6 +276,10 @@
                             </div>
                         </div>
                         <div class="tasks-issue-field">
+                            <label for="{{ form.due_at.id_for_label }}">Termin wykonania</label>
+                            {{ form.due_at }}
+                        </div>
+                        <div class="tasks-issue-field">
                             <label for="{{ form.tags.id_for_label }}">Tagi</label>
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ form.tags }}
@@ -440,7 +444,7 @@
     </div>
 </div>
 
-<div class="tasks-modal tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form">
             {% csrf_token %}

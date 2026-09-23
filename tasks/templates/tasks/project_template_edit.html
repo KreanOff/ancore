@@ -1,0 +1,86 @@
+<div data-project-template-editor>
+<div class="tasks-modal app-modal-panel template-page-panel" id="project-template-editor-modal" data-template-editor-modal role="dialog" aria-modal="true" aria-labelledby="template-editor-title" aria-hidden="true">
+    <div class="tasks-modal__dialog">
+        <header class="tasks-modal__header">
+            <h2 id="template-editor-title">Edytuj szablon</h2>
+            <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij edycję szablonu" title="Zamknij"><i data-icon="x" aria-hidden="true"></i></button>
+        </header>
+        <div class="tasks-modal__body template-page-panel__body">
+            <div class="tasks-modal__errors" role="alert" data-template-request-error hidden></div>
+            <div class="tasks-page project-template-editor" data-task-app="tasks">
+                <form method="post" action="{{ editor_url }}" id="template-details-form" class="project-template-editor__details" data-template-details-form>
+                    {% csrf_token %}<input type="hidden" name="action" value="save_details">
+                    <div class="tasks-modal__errors" role="alert"{% if not details_form.errors %} hidden{% endif %}>
+                        {% for error in details_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                        {% for field in details_form %}{% for error in field.errors %}<p>{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}
+                    </div>
+                    {% for field in details_form %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+                </form>
+                <p class="project-template-editor__hint">Zmiany dotyczą kolejnych projektów tworzonych z tego szablonu.</p>
+                <section aria-label="Grupy szablonu">
+                    <div class="tasks-filterbar tasks-filterbar--directory">
+                        <h2 class="tasks-topbar-title">Grupy ({{ sections|length }})</h2>
+                        <button type="button" class="tasks-filter-button" data-open-template-form="section" aria-haspopup="dialog" aria-controls="template-editor-section"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj grupę</span></button>
+                    </div>
+                    <div class="documents-table-scroll">
+                        <table class="documents-table project-template-editor__table" aria-label="Grupy szablonu">
+                            <thead><tr><th>Nazwa grupy</th><th>Opis</th><th>Typ grupy</th><th>Kolejność</th></tr></thead>
+                            <tbody>
+                            {% for item in sections %}
+                                <tr><td><div class="documents-name">{% include 'tasks/includes/template_item_menu.html' with kind='section' %}<span title="{{ item.title }}">{{ item.title }}</span></div></td><td>{{ item.description|default:'Brak opisu' }}</td><td>{{ item.kind_label }}</td><td>{{ item.order }}</td></tr>
+                            {% empty %}
+                                <tr><td colspan="4" class="documents-empty"><h3>Brak grup</h3><p>Dodaj grupę, aby umieścić w niej zadania szablonu.</p></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                <section aria-label="Zadania szablonu">
+                    <div class="tasks-filterbar tasks-filterbar--directory">
+                        <h2 class="tasks-topbar-title">Zadania i podzadania ({{ template_tasks|length }})</h2>
+                        <button type="button" class="tasks-filter-button" data-open-template-form="task" aria-haspopup="dialog" aria-controls="template-editor-task"{% if not sections %} disabled title="Najpierw dodaj grupę"{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj zadanie</span></button>
+                    </div>
+                    <div class="documents-table-scroll">
+                        <table class="documents-table project-template-editor__table" aria-label="Zadania szablonu">
+                            <thead><tr><th>Tytuł</th><th>Grupa</th><th>Zadanie nadrzędne</th><th>Priorytet</th><th>Czas (min)</th></tr></thead>
+                            <tbody>
+                            {% for item in template_tasks %}
+                                <tr><td><div class="documents-name">{% include 'tasks/includes/template_item_menu.html' with kind='task' %}<span title="{{ item.title }}">{{ item.title }}</span></div></td><td>{{ item.section_name }}</td><td>{{ item.parent_name|default:'Brak' }}</td><td>{{ item.priority_label }}</td><td>{{ item.estimated_minutes|default_if_none:'—' }}</td></tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="documents-empty"><h3>Brak zadań</h3><p>Dodaj zadania, które mają powstawać w nowych projektach.</p></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+        <footer class="tasks-modal__footer"><button type="button" class="btn btn-cancel" data-close-modal>Zamknij</button><button type="submit" form="template-details-form" class="btn btn-primary">Zapisz dane</button></footer>
+    </div>
+</div>
+{% for modal in editor_modals %}
+<div class="tasks-modal app-modal-panel tasks-form-modal tasks-project-modal tasks-project-edit-modal{% if modal.active %} is-open{% endif %}" id="template-editor-{{ modal.kind }}" role="dialog" aria-modal="true" aria-labelledby="template-editor-{{ modal.kind }}-title" aria-hidden="{% if modal.active %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" action="{{ editor_url }}" class="tasks-modal__form tasks-project-edit-modal__form tasks-issue-modal__form" data-template-editor-form data-template-form-defaults="{{ modal.defaults }}">
+            {% csrf_token %}<input type="hidden" name="action" value="save_{{ modal.kind }}">
+            {% for field in modal.form.hidden_fields %}{{ field }}{% endfor %}
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs"><button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij"><i data-icon="arrow-left" aria-hidden="true"></i></button><span class="tasks-issue-divider" aria-hidden="true"></span><strong id="template-editor-{{ modal.kind }}-title">{{ modal.title }}</strong></div>
+            </header>
+            <div class="tasks-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
+                <div class="tasks-modal__errors" role="alert" data-template-request-error hidden></div>
+                <div class="tasks-modal__errors" role="alert"{% if not modal.form.errors %} hidden{% endif %}>
+                    {% for error in modal.form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                    {% for field in modal.form %}{% for error in field.errors %}<p>{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}
+                </div>
+                {% for field in modal.form.visible_fields %}
+                <div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+                {% endfor %}
+            </div>
+            <footer class="tasks-modal__footer tasks-issue-modal__footer"><button type="button" class="btn btn-cancel" data-close-modal>Anuluj</button><button type="submit" class="btn btn-primary">Zapisz</button></footer>
+        </form>
+    </div>
+</div>
+{% endfor %}
+</div>

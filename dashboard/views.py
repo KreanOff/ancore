@@ -27,6 +27,7 @@ from .notification_service import change_notification_state, notification_filter
 
 
 GLOBAL_SEARCH_QUERY_LIMIT = 120
+GLOBAL_SEARCH_GROUP_LIMIT = 20
 
 
 def _normalized_search_text(value):
@@ -68,13 +69,13 @@ def _global_search_result(title, type_label, url, icon, meta='', eyebrow='', *, 
 
 
 def _global_search_group(key, label, icon, queryset, serializer):
-    rows = list(queryset)
+    rows = list(queryset[:GLOBAL_SEARCH_GROUP_LIMIT + 1])
     return {
         'key': key,
         'label': label,
         'icon': icon,
-        'results': [serializer(row) for row in rows],
-        'has_more': False,
+        'results': [serializer(row) for row in rows[:GLOBAL_SEARCH_GROUP_LIMIT]],
+        'has_more': len(rows) > GLOBAL_SEARCH_GROUP_LIMIT,
     }
 
 
@@ -139,7 +140,7 @@ def global_search(request):
     kanban_url = _workspace_app_url(workplace, 'kanban')
     contacts_url = _workspace_app_url(workplace, 'contacts')
     calendar_url = _workspace_app_url(workplace, 'calendar')
-    numeric_query = int(query) if query.isdigit() else None
+    numeric_query = int(query) if query.isdecimal() else None
 
     task_filter = (
         Q(title__icontains=query)
@@ -267,7 +268,7 @@ def global_search(request):
             lambda task: _global_search_result(
                 task.title,
                 'Podzadanie' if task.parent_id else 'Zadanie',
-                f'{tasks_url}{"view-subtask" if task.parent_id else "view-task"}/{task.task_id}/',
+                _search_url(f'{tasks_url}{"view-subtask" if task.parent_id else "view-task"}/{task.task_id}/', task_pk=task.pk),
                 '',
                 ' · '.join(part for part in (
                     f'#{task.task_id}',
@@ -369,7 +370,7 @@ def global_search(request):
             lambda card: _global_search_result(
                 card.title,
                 'Podkarta' if card.parent_id else 'Karta Kanban',
-                f'{kanban_url}{"view-subtask" if card.parent_id else "view-task"}/{card.task_id}/',
+                _search_url(f'{kanban_url}{"view-subtask" if card.parent_id else "view-task"}/{card.task_id}/', task_pk=card.pk),
                 '',
                 ' · '.join(part for part in (
                     f'#{card.task_id}',
@@ -429,7 +430,7 @@ def global_search(request):
             'workplaces',
             'Workspace',
             'briefcase',
-            workplaces_for_user(user).filter(
+            workplaces_for_user(request.user).filter(
                 Q(name__icontains=query)
                 | Q(description__icontains=query)
                 | Q(code__icontains=query)

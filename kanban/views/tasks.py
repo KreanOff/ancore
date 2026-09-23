@@ -1065,7 +1065,7 @@ def _set_task_status(task, status, user=None):
     if status not in _valid_statuses_for_user(user):
         return False
     task.status = status
-    task.save()
+    task.save(update_fields=['status', 'is_completed', 'completion_date'])
     return True
 
 
@@ -1109,6 +1109,7 @@ def _task_activity_snapshot(task):
         'parent_id': task.parent_id,
         'time_spent_hours': task.time_spent_hours,
         'time_spent_minutes': task.time_spent_minutes,
+        'due_at': task._activity_datetime(task.due_at),
         'completion_date': task.completion_date,
         'tags': set(task.tags.values_list('id', flat=True)),
         'tag_labels': list(task.tags.order_by('name').values_list('name', flat=True)),
@@ -1144,6 +1145,8 @@ def _task_change_activities(task, before):
         add_change('tytuł', before['title'], task.title)
     if before['description'] != task.description:
         add_change('opis', before['description'], task.description)
+    if before['due_at'] != task._activity_datetime(task.due_at):
+        add_change('termin', before['due_at'], task._activity_datetime(task.due_at))
     if before['project_id'] != (task.section.project_id if task.section_id else None):
         add_change('przestrzeń robocza', before['project_label'], task.section.project.name if task.section_id else '')
     if before['section_id'] != task.section_id:
@@ -1847,39 +1850,41 @@ def update_task_status(request, task_id):
         workplace = _active_workplace(request)
         data = json.loads(request.body)
         task_pk = task_primary_keys(data)[0]
-        task = _filter_workplace(Kanban.objects.filter(user=workspace_owner(request)), workplace).get(pk=task_pk)
-        status = data.get('status')
-        column_id = data.get('column_id')
-        previous_status = task.status
-        status_labels = _status_labels_for_user(workspace_owner(request))
+        user = workspace_owner(request)
+        with lock_task_numbers(user.pk):
+            task = _filter_workplace(Kanban.objects.filter(user=user), workplace).select_for_update().get(pk=task_pk)
+            status = data.get('status')
+            column_id = data.get('column_id')
+            previous_status = task.status
+            status_labels = _status_labels_for_user(user)
 
-        if column_id:
-            if not _set_task_column(task, column_id, workspace_owner(request)):
-                return JsonResponse({'status': 'error', 'message': 'Nieprawidłowa kolumna'}, status=400)
-        elif status:
-            if not _set_task_status(task, status, workspace_owner(request)):
-                return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
-        else:
-            is_completed = data.get('is_completed', False)
-            _set_task_status(task, 'closed' if is_completed else 'reopened', workspace_owner(request))
+            if column_id:
+                if not _set_task_column(task, column_id, user):
+                    return JsonResponse({'status': 'error', 'message': 'Nieprawidłowa kolumna'}, status=400)
+            elif status:
+                if not _set_task_status(task, status, user):
+                    return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
+            else:
+                is_completed = data.get('is_completed', False)
+                _set_task_status(task, 'closed' if is_completed else 'reopened', user)
 
-        if previous_status != task.status:
-            _record_task_activity(
-                task,
-                request.user,
-                'status_changed',
-                'zmienił status',
-                metadata={
-                    'from_label': status_labels.get(previous_status, previous_status),
-                    'to_label': status_labels.get(task.status, task.get_status_display()),
-                    'changes': [{
-                        'field': 'status',
+            if previous_status != task.status:
+                _record_task_activity(
+                    task,
+                    request.user,
+                    'status_changed',
+                    'zmienił status',
+                    metadata={
                         'from_label': status_labels.get(previous_status, previous_status),
                         'to_label': status_labels.get(task.status, task.get_status_display()),
-                    }],
-                },
-            )
-        
+                        'changes': [{
+                            'field': 'status',
+                            'from_label': status_labels.get(previous_status, previous_status),
+                            'to_label': status_labels.get(task.status, task.get_status_display()),
+                        }],
+                    },
+                )
+
         return JsonResponse({
             'status': 'success',
             'new_status_display': status_labels.get(task.status, task.get_status_display()),

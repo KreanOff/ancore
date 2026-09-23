@@ -12,14 +12,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Q, Value, When
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 
-from workplaces.services import workspace_owner
+from workplaces.services import workspace_owner, scoped_workplace_app_path
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
@@ -32,6 +32,7 @@ from ..models import (
     TaskActivity,
     TaskAttachment,
     TaskProject,
+    TaskProjectTemplate,
     TaskProjectDeadlineRule,
     TaskProjectFieldOption,
     TaskProjectNote,
@@ -53,6 +54,8 @@ from ..forms import (
     TaskTagForm,
 )
 
+
+from ..project_templates import populate_project_from_template, save_project_template
 
 logger = logging.getLogger(__name__)
 
@@ -2933,7 +2936,7 @@ def _set_task_status(task, status):
     if status not in valid_statuses:
         return False
     task.status = status
-    task.save()
+    task.save(update_fields=['status', 'is_completed', 'completion_date'])
     return True
 
 
@@ -3113,6 +3116,21 @@ def task_group(request, section_id):
 
 def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
+    if request.method == 'POST' and request.POST.get('action') == 'save_project_template':
+        project_id = request.POST.get('project_id', '')
+        if not project_id.isdecimal() or len(project_id) > 18:
+            raise Http404
+        project = get_object_or_404(
+            TaskProject, user=workspace_owner(request), workplace=workplace, pk=int(project_id),
+        )
+        try:
+            save_project_template(project)
+        except ValidationError as error:
+            messages.error(request, error.messages[0])
+        else:
+            messages.success(request, 'Szablon projektu zapisany.')
+        return redirect(scoped_workplace_app_path(workplace, 'tasks', 'templates/'))
+
     project_field_configuration = _project_field_configuration(workspace_owner(request), workplace)
     project_form = TaskProjectForm(
         user=workspace_owner(request),
@@ -3160,6 +3178,17 @@ def _tasks_page(request, active_section=None):
         sections_queryset=task_modal_sections,
     )
     project_modal_open = False
+    if request.method == 'GET' and request.GET.get('template'):
+        template_id = request.GET['template']
+        if not template_id.isdecimal() or len(template_id) > 18:
+            raise Http404
+        selected_template = get_object_or_404(
+            TaskProjectTemplate, user=workspace_owner(request), workplace=workplace,
+            pk=int(template_id),
+        )
+        project_form.initial.update(template=selected_template.pk, name=selected_template.name,
+                                    description=selected_template.description)
+        project_modal_open = True
     project_rename_modal_open = False
     project_rename_form = TaskProjectRenameForm(
         user=workspace_owner(request),
@@ -3194,17 +3223,20 @@ def _tasks_page(request, active_section=None):
                     project.user = workspace_owner(request)
                     project.workplace = workplace
                     project.save()
-                    section_title = project_form.cleaned_data.get('section_title') or 'Nowa Grupa'
-                    section_code = project_form.cleaned_data.get('section_code') or ''
-                    TaskSection.objects.create(
-                        project=project,
-                        title=section_title,
-                        code=section_code,
-                        kind='custom',
-                        order=0,
-                    )
+                    template = project_form.cleaned_data.get('template')
+                    if template:
+                        populate_project_from_template(project, template, request.user)
+                    else:
+                        section_title = project_form.cleaned_data.get('section_title') or 'Nowa Grupa'
+                        section_code = project_form.cleaned_data.get('section_code') or ''
+                        TaskSection.objects.create(
+                            project=project, title=section_title, code=section_code,
+                            kind='custom', order=0,
+                        )
                 messages.success(request, 'Projekt dodany.')
-                return redirect(f"{reverse('tasks:tasks')}?project={project.id}")
+                project_base_url = (scoped_workplace_app_path(workplace, 'tasks')
+                                    if request.resolver_match.namespace == 'workplace_tasks' else reverse('tasks:tasks'))
+                return redirect(f'{project_base_url}?project={project.id}')
             project_modal_open = True
             messages.error(request, 'Nie udało się dodać projektu.')
 
@@ -4069,35 +4101,37 @@ def update_task_status(request, task_id):
         workplace = _active_workplace(request)
         data = json.loads(request.body)
         task_pk = task_primary_keys(data)[0]
-        task = _filter_workplace(Task.objects.filter(user=workspace_owner(request)), workplace).get(pk=task_pk)
-        status = data.get('status')
-        previous_status = task.status
+        user = workspace_owner(request)
+        with lock_task_numbers(user.pk):
+            task = _filter_workplace(Task.objects.filter(user=user), workplace).select_for_update().get(pk=task_pk)
+            status = data.get('status')
+            previous_status = task.status
 
-        if status:
-            if not _set_task_status(task, status):
-                return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
-        else:
-            is_completed = data.get('is_completed', False)
-            _set_task_status(task, 'closed' if is_completed else 'reopened')
+            if status:
+                if not _set_task_status(task, status):
+                    return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
+            else:
+                is_completed = data.get('is_completed', False)
+                _set_task_status(task, 'closed' if is_completed else 'reopened')
 
-        if previous_status != task.status:
-            status_labels = dict(Task.STATUS_CHOICES)
-            _record_task_activity(
-                task,
-                request.user,
-                'status_changed',
-                'zmienił status',
-                metadata={
-                    'from_label': status_labels.get(previous_status, previous_status),
-                    'to_label': task.get_status_display(),
-                    'changes': [{
-                        'field': 'status',
+            if previous_status != task.status:
+                status_labels = dict(Task.STATUS_CHOICES)
+                _record_task_activity(
+                    task,
+                    request.user,
+                    'status_changed',
+                    'zmienił status',
+                    metadata={
                         'from_label': status_labels.get(previous_status, previous_status),
                         'to_label': task.get_status_display(),
-                    }],
-                },
-            )
-        
+                        'changes': [{
+                            'field': 'status',
+                            'from_label': status_labels.get(previous_status, previous_status),
+                            'to_label': task.get_status_display(),
+                        }],
+                    },
+                )
+
         return JsonResponse({
             'status': 'success',
             'new_status_display': task.get_status_display(),

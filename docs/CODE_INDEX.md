@@ -17,14 +17,14 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 14 | 0 | 9 | 38 |
+| [core](../core) | 15 | 0 | 9 | 42 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 18 | 8 | 10 | 78 |
-| [tasks](../tasks) | 15 | 47 | 24 | 171 |
-| [kanban](../kanban) | 9 | 34 | 9 | 71 |
+| [tasks](../tasks) | 19 | 49 | 27 | 200 |
+| [kanban](../kanban) | 10 | 35 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 12 | 1 | 8 | 50 |
-| [planner](../planner) | 8 | 2 | 2 | 3 |
+| [dashboard](../dashboard) | 15 | 2 | 8 | 63 |
+| [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 
 ## 2. Modele i relacje
@@ -112,6 +112,19 @@ Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` 
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='task_projects'; null=True |
 
 Metody/properties: `_code_scope_models`, `_code_exists`, `_generate_unique_code`, `save`, `__str__`, `_field_option_display`, `get_status_display`, `get_stage_display`, `get_health_display`.
+
+### `TaskProjectTemplate`
+
+Źródło: [tasks/models.py](../tasks/models.py).
+
+Pola zadeklarowane tutaj: `user` (ForeignKey), `workplace` (ForeignKey), `name` (CharField), `template_name` (CharField), `description` (TextField), `structure` (JSONField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; null=True |
+
+Metody/properties: `__str__`.
 
 ### `TaskProjectDeadlineRule`
 
@@ -306,7 +319,7 @@ Metody/properties: `ensure_defaults_for_section`, `__str__`.
 
 Źródło: [kanban/models.py](../kanban/models.py).
 
-Pola zadeklarowane tutaj: `task_id` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `user` (ForeignKey), `workplace` (ForeignKey), `section` (ForeignKey), `column` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
+Pola zadeklarowane tutaj: `task_id` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `user` (ForeignKey), `workplace` (ForeignKey), `section` (ForeignKey), `column` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -446,11 +459,22 @@ Metody/properties: `save`, `deactivate`, `__str__`.
 
 ## Modele: dashboard
 
+### `TaskReminder`
+
+Źródło: [dashboard/models.py](../dashboard/models.py).
+
+Pola zadeklarowane tutaj: `task` (ForeignKey), `recipient` (ForeignKey), `scheduled_at` (DateTimeField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `'tasks.Task'` | on_delete=models.CASCADE |
+| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+
 ### `NotificationState`
 
 Źródło: [dashboard/models.py](../dashboard/models.py).
 
-Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField).
+Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `reminder` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -458,6 +482,7 @@ Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `ka
 | `task_activity` | `'tasks.TaskActivity'` | on_delete=models.CASCADE; null=True |
 | `kanban_activity` | `'kanban.KanbanActivity'` | on_delete=models.CASCADE; null=True |
 | `invitation` | `'workplaces.WorkplaceInvitation'` | on_delete=models.CASCADE; null=True |
+| `reminder` | `TaskReminder` | on_delete=models.CASCADE; null=True |
 
 ## Modele: planner
 
@@ -614,7 +639,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `TaskProjectBaseForm`
 - `TaskProjectDeadlineRuleForm` — Meta.fields: `['days', 'color']`
 - `TaskProjectFieldOptionForm` — Meta.fields: `['label', 'color']`
-- `TaskProjectForm` — Meta.fields: `['name', 'code', 'section_title', 'section_code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
+- `TaskProjectTemplateNameForm` — Meta.fields: `('template_name',)`
+- `TaskProjectForm` — Meta.fields: `['name', 'template', 'code', 'section_title', 'section_code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
 - `TaskProjectRenameForm` — Meta.fields: `['name', 'code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
 - `TaskSectionForm` — Meta.fields: `['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']`
 - `TaskSectionRenameForm` — Meta.fields: `['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']`
@@ -631,7 +657,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `TwoDigitNumberInput`
 - `DynamicStatusFormMixin`
 - `MultipleFileInput`
-- `KanbanForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'time_spent_hours', 'time_spent_minutes']`
+- `KanbanForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'due_at', 'time_spent_hours', 'time_spent_minutes']`
 - `KanbanProjectBaseForm`
 - `KanbanProjectForm` — Meta.fields: `['name', 'section_title', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'budget_amount', 'currency', 'source']`
 - `KanbanProjectRenameForm` — Meta.fields: `['name', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'budget_amount', 'currency', 'source']`
@@ -640,7 +666,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `KanbanTagForm` — Meta.fields: `['name', 'description', 'category', 'color', 'icon', 'priority', 'scope', 'owner_label', 'status', 'usage_notes', 'automation_rules', 'related_tags']`
 - `KanbanBoardColumnForm` — Meta.fields: `['title']`
 - `QuickKanbanForm` — Meta.fields: `['title']`
-- `KanbanModalForm` — Meta.fields: `['title', 'section', 'tags', 'description', 'priority', 'status']`
+- `KanbanModalForm` — Meta.fields: `['title', 'section', 'tags', 'description', 'priority', 'status', 'due_at']`
 - `SubKanbanModalForm` — Meta.fields: `['title', 'description', 'status']`
 
 ### contacts
@@ -742,6 +768,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
 | `''` | `tasks.tasks` | 'tasks' |
+| `'templates/'` | `project_templates` | 'project_templates' |
+| `'templates/<int:template_id>/edit/'` | `edit_project_template` | 'edit_project_template' |
 | `'groups/<int:section_id>/'` | `tasks.task_group` | 'task_group' |
 | `'view-task/<int:task_id>/'` | `tasks.view_task` | 'view-task' |
 | `'view-subtask/<int:task_id>/'` | `tasks.view_subtask` | 'view-subtask' |
@@ -910,11 +938,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/__init__.py](../tasks/__init__.py)
 - [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskProjectFieldOptionAdmin`, `TaskSectionAdmin`, `TaskTagAdmin`, `TaskAttachmentAdmin`
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
-- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `TwoDigitNumberInput`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
-- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskAttachment`, `TaskActivity`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
+- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `TwoDigitNumberInput`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
+- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskAttachment`, `TaskActivity`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
+- [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
+- [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
 - [tasks/urls.py](../tasks/urls.py)
 - [tasks/views/__init__.py](../tasks/views/__init__.py)
 - [tasks/views/project_settings.py](../tasks/views/project_settings.py) — `project_field_settings`
+- [tasks/views/project_templates.py](../tasks/views/project_templates.py) — `project_templates`, `edit_project_template`
 - [tasks/views/tasks.py](../tasks/views/tasks.py) — `tasks`, `task_group`, `create_share_link`, `revoke_share_link`, `accept_share_link`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`
 - [tasks/views.py](../tasks/views.py)
 
@@ -946,9 +977,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/__init__.py](../dashboard/__init__.py)
 - [dashboard/admin.py](../dashboard/admin.py)
 - [dashboard/apps.py](../dashboard/apps.py) — `DashboardConfig`
-- [dashboard/models.py](../dashboard/models.py) — `NotificationState`
+- [dashboard/models.py](../dashboard/models.py) — `TaskReminder`, `NotificationState`
 - [dashboard/notification_service.py](../dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [dashboard/overview.py](../dashboard/overview.py) — `dashboard_overview`
+- [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`
 - [dashboard/urls.py](../dashboard/urls.py)
 - [dashboard/views.py](../dashboard/views.py) — `global_search`, `settings`, `home`, `notifications`, `notification_action`
 
@@ -1048,6 +1080,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/task_issue_row.html](../tasks/templates/tasks/includes/task_issue_row.html)
 - [tasks/templates/tasks/includes/tasks_project_tree_initial_state.html](../tasks/templates/tasks/includes/tasks_project_tree_initial_state.html)
 - [tasks/templates/tasks/includes/tasks_secondary_menu.html](../tasks/templates/tasks/includes/tasks_secondary_menu.html)
+- [tasks/templates/tasks/includes/template_item_menu.html](../tasks/templates/tasks/includes/template_item_menu.html)
+- [tasks/templates/tasks/project_template_edit.html](../tasks/templates/tasks/project_template_edit.html)
+- [tasks/templates/tasks/project_templates.html](../tasks/templates/tasks/project_templates.html)
 - [tasks/templates/tasks/tasks.html](../tasks/templates/tasks/tasks.html)
 - [tasks/templates/tasks/view_task.html](../tasks/templates/tasks/view_task.html)
 
@@ -1187,6 +1222,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/office.js](../static/js/office.js)
 - [static/js/presence.js](../static/js/presence.js)
 - [static/js/profile.js](../static/js/profile.js)
+- [static/js/project-templates.js](../static/js/project-templates.js)
 - [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
@@ -1208,6 +1244,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `FileLifecycleTests`: 5 metod testowych.
 - `PublicMediaTests`: 1 metod testowych.
+
+### core/test_status_updates.py
+
+Źródło: [core/test_status_updates.py](../core/test_status_updates.py).
+
+- `StatusUpdateTests`: 3 metod testowych.
+- `ConcurrentStatusUpdateTests`: 1 metod testowych.
 
 ### core/test_task_integrity.py
 
@@ -1289,12 +1332,24 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ProjectSourceTests`: 12 metod testowych.
 
+### tasks/test_project_templates.py
+
+Źródło: [tasks/test_project_templates.py](../tasks/test_project_templates.py).
+
+- `ProjectTemplateTests`: 29 metod testowych.
+
 ### tasks/tests.py
 
 Źródło: [tasks/tests.py](../tasks/tests.py).
 
 - `TaskProjectControlStyleTests`: 19 metod testowych.
 - `TaskProjectCreationTests`: 118 metod testowych.
+
+### kanban/test_deadlines.py
+
+Źródło: [kanban/test_deadlines.py](../kanban/test_deadlines.py).
+
+- `KanbanDeadlineTests`: 2 metod testowych.
 
 ### kanban/tests.py
 
@@ -1321,6 +1376,18 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DashboardOverviewTests`: 10 metod testowych.
 
+### dashboard/test_reminders.py
+
+Źródło: [dashboard/test_reminders.py](../dashboard/test_reminders.py).
+
+- `TaskReminderTests`: 7 metod testowych.
+
+### dashboard/test_search_regressions.py
+
+Źródło: [dashboard/test_search_regressions.py](../dashboard/test_search_regressions.py).
+
+- `GlobalSearchRegressionTests`: 6 metod testowych.
+
 ### dashboard/test_workspace_invitations.py
 
 Źródło: [dashboard/test_workspace_invitations.py](../dashboard/test_workspace_invitations.py).
@@ -1333,6 +1400,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DashboardViewTests`: 8 metod testowych.
 - `GlobalSearchTests`: 5 metod testowych.
+
+### planner/test_task_calendar.py
+
+Źródło: [planner/test_task_calendar.py](../planner/test_task_calendar.py).
+
+- `TaskCalendarTests`: 4 metod testowych.
 
 ### planner/tests.py
 
@@ -1514,6 +1587,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0045_project_specific_deadline_rules.py](../tasks/migrations/0045_project_specific_deadline_rules.py)
 - [tasks/migrations/0046_project_source_options.py](../tasks/migrations/0046_project_source_options.py)
 - [tasks/migrations/0047_task_unique_tasks_number_per_workspace.py](../tasks/migrations/0047_task_unique_tasks_number_per_workspace.py)
+- [tasks/migrations/0048_taskprojecttemplate.py](../tasks/migrations/0048_taskprojecttemplate.py)
+- [tasks/migrations/0049_taskprojecttemplate_template_name.py](../tasks/migrations/0049_taskprojecttemplate_template_name.py)
 
 ### kanban
 
@@ -1551,6 +1626,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [kanban/migrations/0032_kanbanprojectnote_edited_at.py](../kanban/migrations/0032_kanbanprojectnote_edited_at.py)
 - [kanban/migrations/0033_retire_entity_icons.py](../kanban/migrations/0033_retire_entity_icons.py)
 - [kanban/migrations/0034_kanban_unique_kanban_number_per_workspace.py](../kanban/migrations/0034_kanban_unique_kanban_number_per_workspace.py)
+- [kanban/migrations/0035_kanban_due_at.py](../kanban/migrations/0035_kanban_due_at.py)
 
 ### contacts
 
@@ -1566,6 +1642,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 ### dashboard
 
 - [dashboard/migrations/0001_initial.py](../dashboard/migrations/0001_initial.py)
+- [dashboard/migrations/0002_taskreminder_and_more.py](../dashboard/migrations/0002_taskreminder_and_more.py)
 
 ### planner
 

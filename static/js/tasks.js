@@ -130,6 +130,7 @@ function initTasksPage() {
     const infoSelectedSectionMenuBtn = document.getElementById('info-selected-section-menu-btn');
     const notesSelectedSectionMenuBtn = document.getElementById('notes-selected-section-menu-btn');
     const editSelectedProjectMenuBtn = document.getElementById('edit-selected-project-menu-btn');
+    const saveSelectedProjectTemplateMenuBtn = document.getElementById('save-selected-project-template-menu-btn');
     const infoSelectedProjectMenuBtn = document.getElementById('info-selected-project-menu-btn');
     const notesSelectedProjectMenuBtn = document.getElementById('notes-selected-project-menu-btn');
     const editSelectedProjectBarBtn = document.getElementById('edit-selected-project-bar-btn');
@@ -212,6 +213,9 @@ function initTasksPage() {
     const projectModal = document.getElementById('project-modal');
     const tagModal = document.getElementById('tag-modal');
     const projectRenameModal = document.getElementById('project-rename-modal');
+    const projectTemplateRenameModal = document.getElementById('project-template-rename-modal');
+    const projectTemplateRenameForm = document.getElementById('project-template-rename-form');
+    const projectTemplateRenameName = projectTemplateRenameForm?.elements.namedItem('template_name');
     const projectNotesModal = document.getElementById('project-notes-modal');
     const sectionNotesModal = document.getElementById('section-notes-modal');
     const tagNotesModal = document.getElementById('tag-notes-modal');
@@ -2938,7 +2942,9 @@ function initTasksPage() {
     function openModal(modal, focusTarget, onOpen) {
         if (!modal) return;
         if (!modal.classList.contains('is-open')) {
-            modalReturnFocus.set(modal, document.activeElement);
+            const activeElement = document.activeElement;
+            const rowActionToggle = activeElement?.closest('[data-row-actions]')?.querySelector('[data-row-actions-toggle]');
+            modalReturnFocus.set(modal, rowActionToggle || activeElement);
         }
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
@@ -2946,22 +2952,27 @@ function initTasksPage() {
         closeCreateMenu();
         if (onOpen) onOpen();
         window.AncoreCustomSelect?.refresh(modal);
-        setTimeout(() => focusTarget?.focus(), 50);
+        modal.dispatchEvent(new CustomEvent('ancore:task-modal-opened', { bubbles: true }));
+        setTimeout(() => { if (modal.classList.contains('is-open') && !modal.inert) focusTarget?.focus(); }, 50);
     }
 
     function closeModal(modal) {
-        if (!modal) return;
+        if (!modal || !modal.classList.contains('is-open')) return;
+        if (!modal.dispatchEvent(new CustomEvent('ancore:task-modal-before-close', { bubbles: true, cancelable: true }))) return;
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
         if (!document.querySelector('.tasks-modal.is-open')) {
             document.body.classList.remove('modal-open');
         }
+        modal.dispatchEvent(new CustomEvent('ancore:task-modal-closed', { bubbles: true }));
         const returnFocus = modalReturnFocus.get(modal);
         if (returnFocus instanceof HTMLElement && returnFocus.isConnected) {
             returnFocus.focus({ preventScroll: true });
         }
         modalReturnFocus.delete(modal);
     }
+
+    window.AncoreTaskModals = { open: openModal, close: closeModal };
 
     function renderAncoreIcons(root) {
         window.AncoreIcons?.render(root || document);
@@ -3581,6 +3592,19 @@ function initTasksPage() {
             openModal(projectModal, projectNameInput, updateProjectSubmitState);
         });
     });
+
+    const projectTemplateSelect = document.querySelector('[data-project-template-select]');
+    if (projectTemplateSelect) {
+        const syncTemplateFields = () => {
+            const usingTemplate = Boolean(projectTemplateSelect.value);
+            projectModal.querySelectorAll('.tasks-project-create-field--section-title, .tasks-project-create-field--section-code').forEach(field => {
+                field.classList.toggle('u-hidden', usingTemplate);
+                field.querySelector('input').disabled = usingTemplate;
+            });
+        };
+        projectTemplateSelect.addEventListener('change', syncTemplateFields, pageListenerOptions);
+        syncTemplateFields();
+    }
 
     document.querySelectorAll('[data-project-option-color]').forEach(input => {
         const syncPreview = () => {
@@ -4352,11 +4376,11 @@ function initTasksPage() {
         }, pageListenerOptions);
     });
 
-    document.querySelectorAll('[data-close-modal]').forEach(button => {
-        button.addEventListener('click', function() {
-            closeModal(this.closest('.tasks-modal'));
-        });
-    });
+    document.addEventListener('click', event => {
+        const button = event.target.closest('[data-close-modal]');
+        const modal = button?.closest('.tasks-modal') || (event.target.matches('.tasks-modal') ? event.target : null);
+        if (modal) closeModal(modal);
+    }, pageListenerOptions);
 
     window.addEventListener('resize', repositionOpenDirectorySharePermissionMenus, pageListenerOptions);
     document.addEventListener('scroll', repositionOpenDirectorySharePermissionMenus, pageCaptureListenerOptions);
@@ -4481,10 +4505,20 @@ function initTasksPage() {
         updateSectionRenameSubmitState();
     }
 
+    document.querySelectorAll('[data-open-template-rename]').forEach(button => {
+        button.addEventListener('click', () => {
+            if (!projectTemplateRenameForm) return;
+            projectTemplateRenameForm.elements.namedItem('template_id').value = button.dataset.templateId;
+            projectTemplateRenameName.value = button.dataset.templateName || '';
+            projectTemplateRenameModal.querySelector('.tasks-modal__errors').hidden = true;
+            openModal(projectTemplateRenameModal, projectTemplateRenameName);
+        }, pageListenerOptions);
+    });
+    projectTemplateRenameForm?.addEventListener('submit', () => {
+        projectTemplateRenameForm.querySelector('[type="submit"]').disabled = true;
+    }, pageListenerOptions);
+
     document.querySelectorAll('.tasks-modal').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) closeModal(modal);
-        });
         if (modal.classList.contains('is-open')) {
             let focusTarget = projectNameInput;
             let onOpen = updateProjectSubmitState;
@@ -4499,6 +4533,10 @@ function initTasksPage() {
             if (modal.id === 'project-rename-modal') {
                 focusTarget = projectRenameNameInput;
                 onOpen = updateProjectRenameSubmitState;
+            }
+            if (modal.id === 'project-template-rename-modal') {
+                focusTarget = projectTemplateRenameName;
+                onOpen = null;
             }
             if (modal.id === 'section-create-modal') {
                 focusTarget = sectionCreateTitleInput;
@@ -4516,6 +4554,10 @@ function initTasksPage() {
                 focusTarget = companyNameInput;
                 onOpen = null;
             }
+            if (modal.querySelector('[data-template-editor-form]')) {
+                focusTarget = modal.querySelector('input:not([type="hidden"])');
+                onOpen = null;
+            }
             openModal(modal, focusTarget, onOpen);
         }
     });
@@ -4524,7 +4566,7 @@ function initTasksPage() {
         if (document.querySelector('.confirm-modal-overlay.is-visible')) return;
         if (handleContactCustomSelectKeydown(e)) return;
 
-        const openModalEl = document.querySelector('.tasks-modal.is-open');
+        const openModalEl = Array.from(document.querySelectorAll('.tasks-modal.is-open')).at(-1);
         if (e.key === 'Tab' && openModalEl) {
             const focusable = Array.from(openModalEl.querySelectorAll(
                 'button, a[href], input, select, textarea, [tabindex]'
@@ -4994,6 +5036,11 @@ function initTasksPage() {
             projectDataset
         );
         setMenuButtonState(
+            saveSelectedProjectTemplateMenuBtn,
+            selectedProjectCheckboxes.length === 1 && checkboxCanManage(selectedProjectCheckbox),
+            projectDataset
+        );
+        setMenuButtonState(
             editSelectedProjectBarBtn,
             selectedProjectCheckboxes.length === 1 && checkboxCanManage(selectedProjectCheckbox),
             projectDataset
@@ -5326,6 +5373,15 @@ function initTasksPage() {
         openProjectInfoPanel(selectedProjectCheckbox);
     }
 
+    function saveSelectedProjectTemplate() {
+        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+        if (!selectedProjectCheckbox || !checkboxCanManage(selectedProjectCheckbox)) return;
+
+        saveSelectedProjectTemplateMenuBtn.disabled = true;
+        closeSectionActionMenu();
+        postPageAction('save_project_template', { project_id: selectedProjectCheckbox.dataset.projectId });
+    }
+
     function openSelectedProjectNotes() {
         const selectedProjectCheckbox = getSelectedProjectCheckbox();
         if (!selectedProjectCheckbox) return;
@@ -5579,6 +5635,14 @@ function initTasksPage() {
             if (this.disabled) return;
             editSelectedProject();
         });
+    }
+
+    if (saveSelectedProjectTemplateMenuBtn) {
+        saveSelectedProjectTemplateMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            saveSelectedProjectTemplate();
+        }, pageListenerOptions);
     }
 
     if (editSelectedProjectBarBtn) {
@@ -6753,6 +6817,7 @@ function initTasksPage() {
         const defaultDirectoryColumnMinWidth = 50;
         const columnDefaultWidths = {
             action: 40,
+            delete: 40,
             info: 40,
             project_code: 190,
             project: 320,
@@ -6850,6 +6915,7 @@ function initTasksPage() {
         const columnMinimums = {
             select: 18,
             action: 40,
+            delete: 40,
             info: 40,
             project_code: 150,
             project: 150,
@@ -6896,7 +6962,7 @@ function initTasksPage() {
             status: 120
         };
         const fixedColumns = new Set(['spacer']);
-        const nonResizableColumns = new Set(['action', 'info', 'notes', 'spacer']);
+        const nonResizableColumns = new Set(['action', 'delete', 'info', 'notes', 'spacer']);
         // Persisted column widths belong to the wide desktop layout. On tablets
         // the CSS owns a compact grid so desktop preferences cannot stretch the
         // first columns beyond the visible workspace.
@@ -7140,6 +7206,12 @@ function initTasksPage() {
         function syncDirectoryResizeGrid(board) {
             const header = board.querySelector('.tasks-directory-header');
 
+            if (header && board.classList.contains('tasks-template-sheet') && !resizeMediaQuery.matches) {
+                const cells = getDirectoryHeaderCells(board, header);
+                setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
+                return;
+            }
+
             if (!header || !isDirectoryResizeEnabled(header)) {
                 board.style.removeProperty('--tasks-directory-grid');
                 return;
@@ -7150,6 +7222,11 @@ function initTasksPage() {
 
         function resetDirectoryBoard(board) {
             const header = board.querySelector('.tasks-directory-header');
+            if (header && board.classList.contains('tasks-template-sheet') && !resizeMediaQuery.matches) {
+                removeStoredDirectoryWidths(getDirectoryHeaderCells(board, header));
+                syncDirectoryResizeGrid(board);
+                return;
+            }
             if (!header || !isDirectoryResizeEnabled(header)) return;
 
             const cells = getDirectoryHeaderCells(board, header);
@@ -7279,6 +7356,7 @@ function initTasksPage() {
 
         function isManagedDirectoryBoard(board) {
             return board.classList.contains('tasks-project-sheet--selectable')
+                || board.classList.contains('tasks-template-sheet')
                 || board.classList.contains('tasks-tag-sheet')
                 || board.classList.contains('contacts-project-sheet');
         }

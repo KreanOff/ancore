@@ -119,10 +119,10 @@ flowchart LR
   jedynie innym sposobem wyświetlenia `Task`.
 - Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
-  Zadań i Kanbana.
+  Zadań i Kanbana, zaproszeń oraz osobistych przypomnień `TaskReminder`.
 - `core` dostarcza powłokę interfejsu i upload; `core` nie ma własnych modeli domenowych. `dashboard.NotificationState`
   zapisuje osobisty odczyt i archiwum powiadomień, odwołując się do istniejących
-  aktywności i zaproszeń.
+  aktywności, zaproszeń i dostarczonych przypomnień.
 
 ## 6. Hierarchie danych
 
@@ -136,7 +136,7 @@ Użytkownik → Workspace
   │                                              ├─ KanbanActivity
   │                                              └─ KanbanAttachment
   ├─ Kontakty: Company ← Contact ← UserContact → konto Ancore
-  ├─ Kalendarz: CalendarEvent
+  ├─ Kalendarz: CalendarEvent + terminy Task / Kanban (bez kopiowania rekordów)
   ├─ Dysk: DocumentLibrary → Folder / Document (foldery mogą być zagnieżdżone)
   └─ Dokumenty: WorkspaceDocument (płaski katalog)
 
@@ -189,6 +189,14 @@ serwisowe i potwierdzenia zapisu rozdzielają dostęp do obu katalogów.
 
 Obecność `ASGI_APPLICATION`/pliku ASGI nie oznacza działającej komunikacji
 WebSocket. W sprawdzonych źródłach nie ma workera do automatyzacji tagów,
-wysyłania przypomnień ani synchronizacji kalendarza z zewnętrznym serwisem.
+wysyłania push/e-mail ani synchronizacji kalendarza z zewnętrznym serwisem.
+Przypomnienia w aplikacji materializuje `dashboard/reminders.py` podczas
+odpytywania centrum powiadomień; nie wymagają workera. `TaskProjectTemplate`
+przechowuje niezależny snapshot struktury projektu w JSON, odtwarzany przez
+`tasks/project_templates.py` w transakcji z normalnym zapisem modeli.
+Edytor szablonu otwierany w modalu nad katalogiem zmienia wyłącznie ten snapshot;
+endpoint zwraca formularze i wyniki zapisu bez nawigacji strony. Formularze jego grup
+i zadań nie zapisują żywych modeli. Każda operacja blokuje wiersz szablonu,
+aby równoległe zmiany różnych elementów nie nadpisywały całej struktury.
 Aktualne ograniczenia i pozostałości historyczne są zebrane w
 [MODULES.md](MODULES.md) i [DEVELOPMENT.md](DEVELOPMENT.md).

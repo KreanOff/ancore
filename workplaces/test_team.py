@@ -304,10 +304,11 @@ class TeamSlugMigrationTests(TransactionTestCase):
         from django.db.migrations.executor import MigrationExecutor
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
-        # Dashboard inbox state depends on WorkplaceInvitation (0008), so it
-        # must also be absent when constructing the historical 0007 app state.
-        previous = [node for node in latest if node[0] not in {'workplaces', 'dashboard'}] + [
+        # Inbox state and project templates depend on Workspace 0008. Roll
+        # both back so the historical app state agrees with the database.
+        previous = [node for node in latest if node[0] not in {'workplaces', 'dashboard', 'tasks'}] + [
             ('workplaces', '0007_sidebarfavorite_position'), ('dashboard', None),
+            ('tasks', '0047_task_unique_tasks_number_per_workspace'),
         ]
         executor.migrate(previous)
         try:

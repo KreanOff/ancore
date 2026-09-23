@@ -1,10 +1,13 @@
 from django.urls import path
 from .views import tasks
+from .views.project_templates import edit_project_template, project_templates
 
 app_name = 'tasks'
 
 urlpatterns = [
     path('', tasks.tasks, name='tasks'),
+    path('templates/', project_templates, name='project_templates'),
+    path('templates/<int:template_id>/edit/', edit_project_template, name='edit_project_template'),
     path('groups/<int:section_id>/', tasks.task_group, name='task_group'),
     path('view-task/<int:task_id>/', tasks.view_task, name='view-task'),
     path('view-subtask/<int:task_id>/', tasks.view_subtask, name='view-subtask'),

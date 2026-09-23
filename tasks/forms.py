@@ -11,6 +11,7 @@ from .models import (
     Task,
     TaskAttachment,
     TaskProject,
+    TaskProjectTemplate,
     TaskProjectDeadlineRule,
     TaskProjectFieldOption,
     TaskSection,
@@ -193,6 +194,7 @@ class TaskForm(forms.ModelForm):
         self.fields['due_at'].label = 'Termin wykonania'
         self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['reminder_at'].label = 'Przypomnienie'
+        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['estimated_minutes'].label = 'Szacowany czas'
         self.fields['blocked_reason'].label = 'Powód blokady'
@@ -477,7 +479,32 @@ class TaskProjectFieldOptionForm(forms.ModelForm):
         }
 
 
+class TaskProjectTemplateNameForm(forms.ModelForm):
+    class Meta:
+        model = TaskProjectTemplate
+        fields = ('template_name',)
+        widgets = {
+            'template_name': forms.TextInput(attrs={
+                'class': 'tasks-inline-input', 'id': 'project-template-rename-name',
+                'placeholder': 'Nazwa szablonu',
+            }),
+        }
+
+
 class TaskProjectForm(TaskProjectBaseForm):
+    template = forms.ModelChoiceField(
+        queryset=TaskProjectTemplate.objects.none(), required=False, label='Szablon projektu',
+        empty_label='Bez szablonu',
+        widget=forms.Select(attrs={'class': 'tasks-inline-select', 'data-project-template-select': '',
+                                   'data-ancore-custom-select-search': 'true'}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        user, workplace = kwargs.get('user'), kwargs.get('workplace')
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['template'].queryset = TaskProjectTemplate.objects.filter(user=user, workplace=workplace)
+
     section_title = forms.CharField(
         required=False,
         label='Nazwa grupy',
@@ -508,6 +535,7 @@ class TaskProjectForm(TaskProjectBaseForm):
         model = TaskProject
         fields = [
             'name',
+            'template',
             'code',
             'section_title',
             'section_code',
@@ -1041,6 +1069,7 @@ class TaskModalForm(forms.ModelForm):
         self.fields['due_at'].label = 'Termin wykonania'
         self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['reminder_at'].label = 'Przypomnienie'
+        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['estimated_minutes'].label = 'Szacowany czas'
         self.fields['blocked_reason'].label = 'Powód blokady'

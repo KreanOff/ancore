@@ -137,7 +137,7 @@ trwałego klucza dla zewnętrznej integracji.
 Operacje JSON wymagają stabilnego `task_pk` (pojedynczy zapis/usunięcie) albo
 listy `task_pks` (akcja zbiorcza). Brak PK lub dawne `task_ids` daje HTTP 400.
 Numer w ścieżce aktualizacji/usuwania nie wyznacza tożsamości rekordu.
-Wiersze i karty przekazują PK także w parametrze linku `?task_pk=`, a formularze
+Wiersze, karty i wyniki globalnego wyszukiwania przekazują PK także w parametrze linku `?task_pk=`, a formularze
 szczegółów w ukrytym polu. Szczegóły bez tego parametru zachowują historyczne
 wyszukiwanie po numerze. W każdym wariancie obowiązuje właściciel i Workspace.
 Po usunięciu lista jest przeładowywana, aby pokazać aktualną numerację.
@@ -156,9 +156,13 @@ ustawiając `is_completed` i `completion_date`. Aktywności początkowe powstaj�
 przez `post_save`; zmiany pól i komentarze zapisują także helpery widoków.
 Notatki projektów/grup/tagów mają osobne modele i kontrolę autora przy edycji.
 
-Zbiorcza zmiana statusu w Tasks i Kanban korzysta z zapisu modelu pod blokadą
-numeracji właściciela i wierszy. Zachowuje datę zakończenia już zamkniętej pozycji,
-a dla każdej faktycznej zmiany dodaje historię z autorem `request.user`.
+Pojedyncza i zbiorcza zmiana statusu w Tasks i Kanban blokuje numerację właściciela
+przed odczytem i blokadą wiersza zadania. Odczyt, zapis modelu i historia należą
+do jednej transakcji. Zapis statusu obejmuje tylko `status`, `is_completed`
+i `completion_date`, zachowując pozostałe pola. Powtórne zamknięcie zachowuje
+datę zakończenia; tylko faktyczna zmiana dodaje historię z autorem `request.user`.
+Błąd zapisu historii wycofuje również status. Pojedynczy endpoint Kanbana
+stosuje tę samą blokadę także przy zmianie kolumny.
 
 Kolumna Kanban jest oddzielona od statusu. `_set_task_column()` sprawdza,
 czy kolumna należy do tablicy karty i właściciela, a następnie zapisuje relację.
@@ -384,13 +388,23 @@ tekst jest ograniczany do 120 znaków. Wyszukiwanie obejmuje zadania i ich
 historię, projekty/grupy, karty/tablice/przestrzenie Kanban, tagi, kontakty,
 firmy, wydarzenia, Workspace, miejsca nawigacji oraz dyski/foldery/pliki.
 Zakres konkretnych querysetów uwzględnia właściciela i tam, gdzie przewidziano,
-aktywny Workspace; lista Workspace obejmuje własne przestrzenie i członkostwa.
+aktywny Workspace; lista Workspace obejmuje własne przestrzenie i aktywne
+członkostwa faktycznie zalogowanej osoby (`request.user`), niezależnie od
+właściciela danych bieżącego zespołu. Nie ujawnia nazw, kodów ani opisów
+prywatnych Workspace tego właściciela.
+
+Cyfry dziesiętne Unicode mogą oznaczać numer zadania; pozostałe znaki, np. `²²`,
+są zwykłym zapytaniem tekstowym. Linki do zadań, kart i ich podpozycji zawierają
+stabilne `task_pk`, więc renumeracja po usunięciu nie zmienia celu wyniku.
 
 Wybrane grupy porządkują dopasowanie dokładne, początek nazwy i fragment nazwy.
 Wynik zawiera grupy z `title`, `type`, `url`, `icon`, `meta`, `eyebrow`.
-Odpowiedź ma `Cache-Control: no-store`. Aktualny helper grup nie stronicuje
-wyników i ustawia `has_more=False`; nie zakładaj limitu wyników na podstawie
-samego pola `truncated`.
+Odpowiedź ma `Cache-Control: no-store`. Każda grupa danych zwraca maksymalnie
+20 wyników; zapytanie SQL pobiera najwyżej 21 rekordów, aby ustalić `has_more`.
+`truncated` oznacza przekroczenie limitu w co najmniej jednej grupie, a `total`
+liczbę zwróconych wyników, nie wszystkich dopasowań w bazie. Mały, stały zbiór
+skrótów nawigacji pozostaje kompletny. Panel oznacza obciętą grupę jako „20+”
+i prosi o doprecyzowanie frazy; nie ma paginacji wyników.
 
 Frontend obsługuje opóźnienie wyszukiwania, anulowanie starszego requestu,
 stany pusty/ładowanie/błąd oraz nawigację po wynikach.
@@ -399,8 +413,8 @@ stany pusty/ładowanie/błąd oraz nawigację po wynikach.
 
 `TaskActivity`, `KanbanActivity` i `ContactActivity` są historią obiektów.
 Centrum powiadomień (`dashboard/notification_service.py`) odczytuje aktywności
-Zadań i Kanbana oraz ważne oczekujące zaproszenia adresowane do zalogowanego
-konta. Nie kopiuje historii i nie tworzy rekordów podczas GET.
+Zadań i Kanbana, ważne oczekujące zaproszenia oraz osobiste przypomnienia.
+Nie kopiuje historii; GET może utworzyć brakujące dostawy osiągniętych przypomnień.
 `dashboard.NotificationState` przechowuje jedynie osobisty stan odczytu i archiwum,
 z FK do dokładnie jednego źródła oraz unikalnością użytkownik + źródło.
 Usunięcie źródła usuwa jego stan przez CASCADE.
@@ -419,7 +433,7 @@ Oczekujących zaproszeń nie można archiwizować. Ich odczyt nie zastępuje dec
 Link `/workplaces/?invitation=<pk>` otwiera istniejący modal „Przyjmij / Odrzuć”.
 Link zadania/karty określa Workspace, aktualny numer i stabilne `task_pk`.
 
-Lista ma filtry wszystkie / nieprzeczytane / zaproszenia / archiwum, grupy dat
+Lista ma filtry wszystkie / nieprzeczytane / zaproszenia / przypomnienia / archiwum, grupy dat
 oraz po 12 wpisów na stronę. Zaproszenia poprzedzają aktywność. Podpisany kursor
 wiąże użytkownika, filtry, czas otwarcia i ostatni wpis; sortowanie rozstrzyga
 remisy dat przez PK i źródło. Nowe wpisy nie przesuwają już doczytywanych stron.
@@ -433,8 +447,28 @@ zaproszeń i identyfikatory najnowszych dostępnych zdarzeń. Odpowiedzi mają
 do karty, po `ancore:content-loaded` i co 30 sekund w widocznej karcie.
 Otwarta lista sygnalizuje zmianę przyciskiem odświeżenia, bez przestawiania
 czytanej treści. Błędy sieci zachowują ostatni licznik; panel udostępnia ponowienie.
-To powiadomienia wewnątrz aplikacji przez HTTP, bez push, e-maila, workera,
-automatycznych przypomnień o terminach i wzmianek.
+To powiadomienia wewnątrz aplikacji przez HTTP, bez push, e-maila, workera i wzmianek.
+
+### Przypomnienia zadań
+
+`dashboard/reminders.py` podczas odczytu centrum i jego licznika wyszukuje
+otwarte zadania z `reminder_at <= teraz`. Odbiorcą jest wykonawca albo,
+przy jego braku, właściciel zadania/Workspace. Wymagany jest aktualny dostęp
+do przestrzeni; samo przypisanie wykonawcy go nie nadaje. Zapytania ponownie
+sprawdzają właściciela danych, Workspace i odbiorcę także przy zmianie odczytu.
+
+`TaskReminder` ma unikalność zadanie–odbiorca–zaplanowany termin; powtórne
+odpytywanie nie powiela dostawy. Czas utworzenia oznacza faktyczny moment
+dostarczenia, więc późniejsza dostawa nie jest obejmowana starszym snapshotem
+„Przeczytaj wszystkie”. Odczyt i archiwum korzystają z `NotificationState`.
+Zmiana terminu daje osobne przypomnienie. Zamknięcie, wyczyszczenie lub
+przełożenie przypomnienia, zmiana wykonawcy i odebranie dostępu wycofują
+nieaktualny wpis z aktywnych źródeł. Usunięcie zadania usuwa jego dostawy.
+
+Nie ma osobnego harmonogramu serwerowego: obecny polling co 30 sekund w
+widocznej karcie uruchamia dostarczanie. Przy zamkniętej aplikacji wpis czeka
+do kolejnego odczytu. Przypomnienia nie są wpisami historii wykonanymi przez
+użytkownika i pozostają domyślnie nieprzeczytane również dla właściciela.
 
 ## 12. Częściowa nawigacja i cykl życia frontendowej strony
 

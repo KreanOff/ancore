@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -11,6 +11,8 @@ from workplaces.services import workspace_owner
 from .forms import CalendarEventForm
 from .models import CalendarEvent
 from workplaces.services import scoped_workplace_app_path
+from tasks.models import Task
+from kanban.models import Kanban
 
 
 def _active_workplace(request):
@@ -32,6 +34,22 @@ def _event_payload(event):
         'end': timezone.localtime(event.end).isoformat(),
         'all_day': event.all_day,
         'color': event.color,
+        'source': 'events',
+    }
+
+
+def _task_payload(task, source):
+    due = timezone.localtime(task.due_at)
+    label = ('Podzadanie' if task.parent_id else 'Zadanie') if source == 'tasks' else ('Podkarta' if task.parent_id else 'Karta')
+    route = 'view-subtask' if task.parent_id else 'view-task'
+    return {
+        'id': f'{source}:{task.pk}', 'source': source,
+        'title': f'{label} #{task.task_id} · {task.title}',
+        'description': task.description,
+        'start': due.isoformat(), 'end': due.isoformat(),
+        'all_day': False, 'color': 'blue' if source == 'tasks' else 'green',
+        'status': task.status,
+        'url': scoped_workplace_app_path(task.workplace, source, f'{route}/{task.task_id}/?task_pk={task.pk}'),
     }
 
 
@@ -95,18 +113,27 @@ def index(request):
 def events_list(request):
     start = _parse_range_param(request.GET.get('start'))
     end = _parse_range_param(request.GET.get('end'))
-    if not start or not end:
-        return JsonResponse({'status': 'error', 'message': 'Zakres dat jest wymagany.'}, status=400)
+    if not start or not end or start > end or end - start > timedelta(days=370):
+        return JsonResponse({'status': 'error', 'message': 'Podaj prawidłowy zakres dat, nie dłuższy niż rok.'}, status=400)
 
     events = _filter_workplace(CalendarEvent.objects.filter(
         user=workspace_owner(request),
         start__lte=end,
         end__gte=start,
     ), _active_workplace(request))
-    return JsonResponse({
+    payload = [_event_payload(event) for event in events]
+    for source, model in (('tasks', Task), ('kanban', Kanban)):
+        tasks = model.objects.filter(
+            user=workspace_owner(request), workplace=_active_workplace(request),
+            due_at__gte=start, due_at__lte=end,
+        ).exclude(status='closed').select_related('workplace')
+        payload.extend(_task_payload(task, source) for task in tasks)
+    response = JsonResponse({
         'status': 'success',
-        'events': [_event_payload(event) for event in events],
+        'events': sorted(payload, key=lambda item: (item['start'], str(item['id']))),
     })
+    response['Cache-Control'] = 'no-store'
+    return response
 
 
 @login_required

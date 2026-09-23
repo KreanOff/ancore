@@ -218,7 +218,9 @@
 
         results.replaceChildren(fragment);
         activeResultIndex = -1;
-        status.textContent = `Znaleziono ${payload.total} wyników.`;
+        status.textContent = payload.truncated
+            ? `Pokazano ${payload.total} wyników. Doprecyzuj frazę, aby zawęzić listę.`
+            : `Znaleziono ${payload.total} wyników.`;
         renderIcons(results);
     }
 

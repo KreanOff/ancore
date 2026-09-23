@@ -41,6 +41,7 @@ function initCalendarPage() {
     let selectedDate = cloneDate(anchorDate);
     let agendaMode = 'day';
     let searchQuery = '';
+    let sourceFilter = '';
     const activeColors = new Set(COLORS);
     let saving = false;
     let dialogTrigger = null;
@@ -192,7 +193,7 @@ function initCalendarPage() {
     }
 
     function visibleEvents() {
-        return events.filter((event) => activeColors.has(event.color)
+        return events.filter((event) => (!sourceFilter || event.source === sourceFilter) && activeColors.has(event.color)
             && (!searchQuery || `${event.title} ${event.description || ''}`.toLocaleLowerCase('pl').includes(searchQuery)));
     }
 
@@ -202,8 +203,8 @@ function initCalendarPage() {
     }
 
     function eventCountLabel(count) {
-        if (count === 1) return '1 wydarzenie';
-        return `${count} ${count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14) ? 'wydarzenia' : 'wydarzeń'}`;
+        if (count === 1) return '1 pozycja';
+        return `${count} ${count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14) ? 'pozycje' : 'pozycji'}`;
     }
 
     function dateLabel(date, weekday = false) {
@@ -279,6 +280,7 @@ function initCalendarPage() {
         btn.className = `calendar-event calendar-event--${COLORS.includes(event.color) ? event.color : 'slate'}`;
         const eventStart = new Date(event.start), eventEnd = new Date(event.end);
         btn.title = `${event.title} · ${dateLabel(eventStart)} · ${event.all_day ? 'Cały dzień' : `${pad(eventStart.getHours())}:${pad(eventStart.getMinutes())} – ${!isSameDay(eventStart, eventEnd) ? dateLabel(eventEnd) + ' ' : ''}${pad(eventEnd.getHours())}:${pad(eventEnd.getMinutes())}`}`;
+        if (event.url) btn.title = `${event.title} · Termin: ${dateLabel(eventStart)}, ${formatEventTime(event)} · Otwórz szczegóły`;
         if (showTime) {
             const time = document.createElement('span');
             time.className = 'calendar-event-time';
@@ -590,9 +592,9 @@ function initCalendarPage() {
             const empty = document.createElement('li');
             empty.className = 'calendar-events-empty';
             const title = document.createElement('strong');
-            title.textContent = loading ? 'Wczytywanie wydarzeń…' : loadFailed ? 'Nie udało się wczytać wydarzeń' : searchQuery || activeColors.size < COLORS.length ? 'Brak pasujących wydarzeń' : 'Czas na Twoje plany';
+            title.textContent = loading ? 'Wczytywanie pozycji…' : loadFailed ? 'Nie udało się wczytać pozycji' : searchQuery || sourceFilter || activeColors.size < COLORS.length ? 'Brak pasujących pozycji' : 'Czas na Twoje plany';
             const description = document.createElement('span');
-            description.textContent = loading ? 'Za chwilę pojawi się Twój plan.' : loadFailed ? 'Spróbuj ponownie za pomocą przycisku nad kalendarzem.' : searchQuery || activeColors.size < COLORS.length ? 'Zmień wyszukiwanie lub włącz pozostałe kolory.' : 'Dodaj wydarzenie i zaplanuj ten dzień.';
+            description.textContent = loading ? 'Za chwilę pojawi się Twój plan.' : loadFailed ? 'Spróbuj ponownie za pomocą przycisku nad kalendarzem.' : searchQuery || sourceFilter || activeColors.size < COLORS.length ? 'Zmień wyszukiwanie, rodzaj pozycji lub kolory.' : 'Dodaj wydarzenie i zaplanuj ten dzień.';
             empty.append(title, description);
             eventsList.appendChild(empty);
             return;
@@ -622,6 +624,7 @@ function initCalendarPage() {
             const detail = document.createElement('span');
             detail.className = 'calendar-list-date';
             detail.textContent = !isSameDay(start, end) ? `${dateLabel(start)} – ${dateLabel(end)}` : event.all_day ? 'Cały dzień' : `${pad(start.getHours())}:${pad(start.getMinutes())} – ${pad(end.getHours())}:${pad(end.getMinutes())} · ${Math.round((end - start) / 60000)} min`;
+            if (event.url) detail.textContent = `Termin · ${formatEventTime(event)} · Otwórz szczegóły`;
             body.append(title, detail);
             button.append(time, body);
             button.addEventListener('click', () => openDialog('edit', null, event));
@@ -690,7 +693,7 @@ function initCalendarPage() {
         loadFailed = false;
         events = [];
         statusEl.classList.remove('u-hidden');
-        statusText.textContent = 'Wczytywanie wydarzeń…';
+        statusText.textContent = 'Wczytywanie pozycji…';
         retryButton.classList.add('u-hidden');
         document.querySelector('.calendar-main').setAttribute('aria-busy', 'true');
         renderCurrentView();
@@ -704,7 +707,7 @@ function initCalendarPage() {
         } catch (error) {
             if (error.name === 'AbortError' || token !== fetchToken) return;
             loadFailed = true;
-            statusText.textContent = 'Nie udało się wczytać wydarzeń. Sprawdź połączenie i spróbuj ponownie.';
+            statusText.textContent = 'Nie udało się wczytać pozycji. Sprawdź połączenie i spróbuj ponownie.';
             retryButton.classList.remove('u-hidden');
         } finally {
             if (token === fetchToken && !pageListenersController?.signal.aborted) {
@@ -885,6 +888,10 @@ function initCalendarPage() {
     }
 
     function openDialog(mode, presetDate, event) {
+        if (event?.url) {
+            window.location.assign(event.url);
+            return;
+        }
         if (saving) return;
         dialogTrigger = document.activeElement;
         closeEventColorSelect();
@@ -1075,6 +1082,10 @@ function initCalendarPage() {
     searchInput.addEventListener('input', () => {
         searchQuery = searchInput.value.trim().toLocaleLowerCase('pl');
         if (searchQuery) agendaMode = 'period';
+        renderCurrentView();
+    }, pageListenerOptions);
+    document.getElementById('cal-source-filter').addEventListener('change', (event) => {
+        sourceFilter = event.target.value;
         renderCurrentView();
     }, pageListenerOptions);
     document.querySelectorAll('[data-color-filter]').forEach((button) => {

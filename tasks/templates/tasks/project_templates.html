@@ -1,0 +1,109 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Szablony projektów | ancore{% endblock %}
+{% block page_header %}{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
+<script src="{% static 'js/project-templates.js' %}?v=20260923-template-modal" defer></script>
+{% endblock %}
+{% block content %}
+<div class="tasks-page tasks-list-page project-templates-page" data-task-app="tasks" data-task-base-url="{{ tasks_url }}">
+    <section class="tasks-workspace" aria-label="Szablony projektów">
+        {% if rename_form.errors %}<div class="tasks-modal__errors" role="alert">{{ rename_form.template_name.errors }}<a href="{{ templates_url }}{{ rename_template_id }}/edit/">Edytuj nazwę i dane szablonu</a></div>{% endif %}
+        <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
+            <div class="tasks-titlebar-left tasks-issue-breadcrumb tasks-project-breadcrumb">
+                <a href="{{ tasks_url }}" class="tasks-issue-close" title="Wróć do wszystkich projektów" aria-label="Wróć do wszystkich projektów"><i data-icon="arrow-left" aria-hidden="true"></i></a>
+                <h1 class="tasks-topbar-title">Szablony projektów</h1>
+            </div>
+            <form hidden id="template-search-form" method="get" action="{{ templates_url }}" data-project-search-form data-server-directory-filters="true">
+                <input type="hidden" name="description_filter" value="{{ description_filter }}" data-project-filter-input="description_filter">
+                <input type="hidden" name="sort" value="{{ sort_param }}" data-project-sort-input>
+                <input type="hidden" name="page_size" value="{{ template_window.page_size }}" data-project-search-page-size>
+            </form>
+        </header>
+        <div class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory">
+            <div class="tasks-filterbar-left">
+                {% include 'tasks/includes/directory_column_manager.html' %}
+                {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=description_filter only %}
+                <div class="tasks-filter-dropdown" data-project-filter-menu="description_filter">
+                    <button type="button" class="tasks-filter-button{% if description_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="description_filter">
+                        <i data-icon="align-left" aria-hidden="true"></i><span>Opis{% for option in description_filter_options %}{% if option.value == description_filter %}: {{ option.label }}{% endif %}{% endfor %}</span><i data-icon="chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr opisu szablonu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not description_filter %}true{% else %}false{% endif %}" data-project-filter-option data-project-filter-param="description_filter" data-project-filter-value="">Wszystkie</button>
+                        {% for option in description_filter_options %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if description_filter == option.value %}true{% else %}false{% endif %}" {% if description_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="description_filter" data-project-filter-value="{{ option.value }}">{{ option.label }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% include 'tasks/includes/directory_sort_builder.html' with sort_title='Sortowanie szablonów' %}
+                {% if description_filter %}
+                <button type="button" class="tasks-project-active-filter" title="Usuń filtr opisu" data-project-filter-remove="description_filter"><i data-icon="align-left" aria-hidden="true"></i><span>{% if description_filter == 'with' %}Z opisem{% else %}Bez opisu{% endif %}</span><i data-icon="x" aria-hidden="true"></i></button>
+                {% endif %}
+            </div>
+            <div class="tasks-filterbar-right">
+                <label class="tasks-search-field tasks-project-search" for="filter-search">
+                    <i data-icon="search" aria-hidden="true"></i>
+                    <input id="filter-search" type="search" name="q" form="template-search-form" value="{{ query }}" placeholder="Szukaj szablonów" aria-label="Szukaj szablonów" autocomplete="off">
+                </label>
+                {% include 'tasks/includes/directory_pagination_toolbar.html' with window=template_window pages_label='Strony szablonów' previous_label='Poprzednie szablony' next_label='Następne szablony' page_size_label='Liczba szablonów na stronie' only %}
+            </div>
+        </div>
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-spreadsheet-sheet tasks-template-sheet">
+            <section class="tasks-directory-group" role="table" aria-label="Lista szablonów projektów">
+                <div class="tasks-directory-header" role="row">
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__action" data-column="action" data-column-label="Działania" role="columnheader" aria-label="Działania" title="Działania"><i data-icon="menu" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell" data-column="template_name" role="columnheader">NAZWA SZABLONU<i data-icon="copy" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell" data-column="name" role="columnheader">NAZWA PROJEKTU<i data-icon="briefcase-business" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell" data-column="description" role="columnheader">OPIS<i data-icon="align-left" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell" data-column="sections_count" data-column-label="Grupy" role="columnheader">GRUPY<i data-icon="layers" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell" data-column="tasks_count" data-column-label="Zadania i podzadania" title="Zadania i podzadania" role="columnheader">ZADANIA<i data-icon="list-checks" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell" data-column="created_at" role="columnheader">UTWORZONO<i data-icon="calendar-days" aria-hidden="true"></i></span>
+                </div>
+                <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
+                    {% for template in templates %}
+                    <article class="tasks-issue-row tasks-directory-row" role="row" data-template-id="{{ template.pk }}">
+                        <div class="tasks-directory-sheet__cell tasks-project-sheet__action" data-column="action" role="cell">
+                            <div class="documents-item-actions" data-row-actions>
+                                <button type="button" class="tasks-icon-button documents-icon-button" data-row-actions-toggle popovertarget="project-template-actions-{{ template.pk }}" aria-controls="project-template-actions-{{ template.pk }}" aria-expanded="false" aria-label="Działania: {{ template }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
+                                <div id="project-template-actions-{{ template.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {{ template }}" data-row-actions-panel>
+                                    <div class="documents-menu-actions">
+                                        <button type="button" class="tasks-project-menu-button" data-open-project-template data-template-url="{{ templates_url }}{{ template.pk }}/edit/" aria-haspopup="dialog" aria-controls="project-template-editor-modal"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj szablon</span></button>
+                                        <a class="tasks-project-menu-button" href="{{ tasks_url }}?template={{ template.pk }}" aria-label="Utwórz projekt z szablonu {{ template }}"><i data-icon="plus" aria-hidden="true"></i><span>Utwórz projekt</span></a>
+                                        <form method="post" data-delete-project-template>
+                                            {% csrf_token %}<input type="hidden" name="template_id" value="{{ template.pk }}">
+                                            <button type="submit" class="tasks-project-menu-button">{% include 'core/includes/trash_icon.html' %}<span>Usuń szablon</span></button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="tasks-directory-sheet__cell" data-column="template_name" role="cell" title="{{ template }}"><span class="tasks-row-title-text">{{ template }}</span></span>
+                        <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell"><a href="{{ tasks_url }}?template={{ template.pk }}" title="Utwórz projekt z szablonu {{ template }}">{{ template.name }}</a></span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__description" data-column="description" role="cell" title="{{ template.description }}">{{ template.description|default:'Brak opisu' }}</span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__count" data-column="sections_count" role="cell">{{ template.section_count }}</span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__count" data-column="tasks_count" role="cell" title="Zadania i podzadania">{{ template.task_count }}</span>
+                        <time class="tasks-directory-sheet__cell tasks-project-sheet__date" data-column="created_at" role="cell" datetime="{{ template.created_at|date:'c' }}" title="{{ template.created_at|date:'d.m.Y H:i' }}">{{ template.created_at|date:'d.m.Y' }}</time>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% if not templates %}
+            <div class="tasks-empty-state">
+                <i data-icon="copy" aria-hidden="true"></i>
+                <div>
+                    <h3>{% if has_active_filters %}Brak pasujących szablonów{% else %}Brak szablonów{% endif %}</h3>
+                    <p>{% if has_active_filters %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Zaznacz projekt na liście i w menu „Więcej opcji” wybierz „Zapisz jako szablon”.{% endif %}</p>
+                    <a class="tasks-filter-button" href="{% if has_active_filters %}{{ templates_url }}{% else %}{{ tasks_url }}{% endif %}">{% if has_active_filters %}Wyczyść filtry{% else %}Przejdź do projektów{% endif %}</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block page_modals %}
+<div data-project-template-modal-host>{% if template %}{% include 'tasks/project_template_edit.html' %}{% endif %}</div>
+{% endblock %}

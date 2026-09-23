@@ -1084,7 +1084,7 @@
     </section>
 </div>
 
-<div class="tasks-modal tasks-project-modal tasks-project-edit-modal {% if tag_modal_open %}is-open{% endif %}" id="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title" aria-hidden="{% if tag_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-project-modal tasks-project-edit-modal {% if tag_modal_open %}is-open{% endif %}" id="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title" aria-hidden="{% if tag_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form" id="tag-create-form">
             {% csrf_token %}
@@ -1340,7 +1340,7 @@
 
 {% include 'tasks/includes/project_info_modal.html' %}
 
-<div class="tasks-modal tasks-form-modal tasks-project-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-form-modal tasks-project-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-project-modal__form" id="project-create-form">
             {% csrf_token %}
@@ -1457,7 +1457,7 @@
     </div>
 </div>
 
-<div class="tasks-modal tasks-form-modal tasks-project-modal {% if project_rename_modal_open %}is-open{% endif %}" id="project-rename-modal" role="dialog" aria-modal="true" aria-labelledby="project-rename-modal-title" aria-hidden="{% if project_rename_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-form-modal tasks-project-modal {% if project_rename_modal_open %}is-open{% endif %}" id="project-rename-modal" role="dialog" aria-modal="true" aria-labelledby="project-rename-modal-title" aria-hidden="{% if project_rename_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="project-rename-form">
             {% csrf_token %}
@@ -1575,7 +1575,7 @@
     </div>
 </div>
 
-<div class="tasks-modal tasks-project-modal {% if section_create_modal_open %}is-open{% endif %}" id="section-create-modal" role="dialog" aria-modal="true" aria-labelledby="section-create-modal-title" aria-hidden="{% if section_create_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-project-modal {% if section_create_modal_open %}is-open{% endif %}" id="section-create-modal" role="dialog" aria-modal="true" aria-labelledby="section-create-modal-title" aria-hidden="{% if section_create_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="section-create-form">
             {% csrf_token %}
@@ -1619,7 +1619,7 @@
     </div>
 </div>
 
-<div class="tasks-modal tasks-project-modal {% if section_rename_modal_open %}is-open{% endif %}" id="section-rename-modal" role="dialog" aria-modal="true" aria-labelledby="section-rename-modal-title" aria-hidden="{% if section_rename_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-project-modal {% if section_rename_modal_open %}is-open{% endif %}" id="section-rename-modal" role="dialog" aria-modal="true" aria-labelledby="section-rename-modal-title" aria-hidden="{% if section_rename_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="section-rename-form">
             {% csrf_token %}
@@ -1663,7 +1663,7 @@
     </div>
 </div>
 
-<div class="tasks-modal tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
+<div class="tasks-modal app-modal-panel tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form">
             {% csrf_token %}
@@ -1740,6 +1740,10 @@
                 <div class="tasks-form-field">
                     <label for="{{ task_modal_form.description.id_for_label }}">Opis</label>
                     {{ task_modal_form.description }}
+                </div>
+                <div class="tasks-form-field">
+                    <label for="{{ task_modal_form.due_at.id_for_label }}">Termin wykonania</label>
+                    {{ task_modal_form.due_at }}
                 </div>
 
                 <div class="tasks-issue-fields">

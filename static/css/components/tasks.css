@@ -2809,6 +2809,16 @@ body.modal-open::before {
     align-items: stretch;
 }
 
+#project-create-form .tasks-project-create-fields > label.u-hidden {
+    display: none !important;
+}
+
+@media (max-width: 767px) {
+    .project-templates-page .dashboard-header {
+        padding-left: 3.5rem;
+    }
+}
+
 #project-create-form .tasks-project-create-fields > label > span:first-child,
 #project-rename-form .tasks-project-create-fields > label > span:first-child {
     align-self: flex-start;
@@ -14498,4 +14508,99 @@ body.is-resizing-directory-columns {
 .tasks-task-display-manager[open] > .tasks-directory-column-menu {
     display: flex;
     flex-direction: column;
+}
+
+/* Project templates use the shared directory table with a smaller column set. */
+.tasks-directory-board.tasks-template-sheet {
+    --tasks-directory-grid: 40px 250px 250px 320px 130px 130px 130px;
+}
+
+.tasks-directory-board.tasks-template-sheet .tasks-directory-header,
+.tasks-directory-board.tasks-template-sheet .tasks-directory-list .tasks-directory-row {
+    --tasks-directory-grid: inherit;
+    min-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.tasks-directory-board.tasks-template-sheet .tasks-directory-header > [data-column] {
+    grid-area: auto;
+    gap: 0.4rem;
+}
+
+.tasks-template-sheet .tasks-directory-header > [data-column] > svg {
+    order: -1;
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+}
+
+.tasks-directory-board.tasks-template-sheet .tasks-directory-header > .tasks-directory-sheet__cell[data-column="action"],
+.tasks-directory-board.tasks-template-sheet .tasks-directory-list .tasks-directory-row > [data-column="action"] {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    place-items: center;
+    justify-content: center;
+}
+
+.tasks-template-sheet [data-column="name"] > a {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.tasks-template-name-button.tasks-project-sheet__edit-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    padding-right: 0.5rem;
+    font: inherit;
+    text-align: left;
+}
+
+.tasks-template-name-button > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-template-name-button > svg {
+    flex-shrink: 0;
+}
+
+/* Snapshot editor reuses directory rows and the standard project form modals. */
+.project-template-editor__hint {
+    margin: 0;
+    padding: 0 1rem 1rem;
+}
+
+.project-template-editor .project-template-editor__table {
+    min-width: 900px;
+}
+
+.project-template-editor .project-template-editor__table :is(th, td):first-child {
+    width: 300px;
+}
+
+.project-template-editor__table td {
+    overflow-wrap: anywhere;
+}
+
+.project-template-editor__table .documents-name > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-template-editor__table:has(.documents-empty) {
+    min-width: 0;
+}
+
+.project-template-editor__table:has(.documents-empty) thead {
+    display: none;
 }

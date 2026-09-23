@@ -88,7 +88,7 @@ projektu w bieżącym Workspace; czyszczenie filtrów nie usuwa tego kontekstu.
 | --- | --- |
 | `TaskProject` | Nazwa, opis, kod, priorytet, status, etap, kondycja, początek i termin, budżet/waluta, źródło, firma, osoba odpowiedzialna, właściciel i Workspace |
 | `TaskSection` | Grupa projektu: nazwa, opis, kod, rodzaj, status, właściciel grupy, priorytet, termin, zapisany limit WIP i kolejność |
-| `Task` | Tytuł, opis, status, priorytet, termin i zapisane przypomnienie, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic |
+| `Task` | Tytuł, opis, status, priorytet, termin i przypomnienie w aplikacji, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic |
 | Notatki | Osobne modele dla projektu, grupy i tagu, z autorem i czasem edycji |
 | `TaskActivity` | Historia i komentarze zadania; aktor, akcja, wiadomość i metadane zmian |
 | `TaskAttachment` | Plik przypisany do zadania, nazwa i rozmiar |
@@ -123,6 +123,47 @@ wspólne dla Workspace i opcjonalne reguły konkretnego projektu. Włączenie
 własnych progów kopiuje reguły wspólne; reset przywraca dziedziczenie.
 To osobny mechanizm od `Task.due_urgency`, który ocenia termin zadania w godzinach.
 
+### Szablony projektów Zadań
+
+Po zaznaczeniu jednego projektu na liście opcja „Zapisz jako szablon” w menu
+„Więcej opcji” tworzy niezależny snapshot jego nazwy, opisu, grup, zadań
+i podzadań. Katalog `/tasks/templates/` (także scoped)
+jest dostępny z menu „Więcej opcji” katalogu projektów. Używa tabeli i pasków
+katalogu projektów: wyszukiwania po nazwie szablonu, nazwie projektu i opisie,
+filtra obecności opisu, sortowania po obu nazwach, opisie lub dacie utworzenia
+oraz paginacji 25/50/100. Nazwa szablonu jest edytowalna niezależnie od zapisanej
+nazwy projektu. Przy zapisie i migracji istniejących szablonów otrzymuje nazwę
+projektu. Wybór szablonu pokazuje jego własną nazwę, a nowy projekt nadal
+dostaje podpowiedź nazwy projektu ze snapshotu.
+Pokazuje liczniki struktury. Menu wiersza pod trzema paskami udostępnia utworzenie
+projektu, pełną edycję szablonu oraz usunięcie z potwierdzeniem.
+Szablon można też wybrać w standardowym oknie „Nowy projekt”.
+
+Katalog jest zwykłą stroną z nagłówkiem i strzałką powrotu do projektów.
+Edytor jest modalem wysuwanym od dołu nad katalogiem, jak edycja projektu.
+Otwarcie, zapis i zamknięcie nie zmieniają adresu katalogu. Endpoint
+`/tasks/templates/<id>/edit/` (także scoped) obsługuje pobranie i zapis modala;
+bezpośrednie wejście przekierowuje do katalogu. Edytor udostępnia obie nazwy i opis projektu,
+zapisywane przyciskiem „Zapisz dane”, oraz dodawanie, edycję i usuwanie grup,
+zadań i podzadań. Edytor otwiera akcja „Edytuj szablon” w menu wiersza.
+Nazwa szablonu w tabeli jest zwykłym tekstem; jej zmiana odbywa się w edytorze.
+Formularze w `tasks/project_template_forms.py` walidują pola snapshotu, nie
+zapisują modeli żywych projektów. Każdy POST blokuje wiersz szablonu i zapisuje
+jedną operację w transakcji. Powiązania wybiera się wyłącznie z tego szablonu;
+cykle i podzadania w innej grupie są odrzucane. Przeniesienie zadania do grupy
+przenosi również jego podzadania. Usunięcie grupy usuwa jej zadania, a usunięcie
+zadania — jego podzadania, zawsze po potwierdzeniu. Zmiany wpływają tylko na
+projekty tworzone później z szablonu, nie na źródło ani wcześniej utworzone kopie.
+
+Kopiowane są nazwy, opisy, priorytety, rodzaje grup i zadań, kolejność grup,
+limit WIP i estymaty. Grupy zaczynają jako otwarte, zadania jako nowe;
+kopie otrzymują własne PK i numery, a historia utworzenia wskazuje faktycznego
+autora. Terminy, przypomnienia, wykonawcy, odpowiedzialni grup, tagi, czas pracy,
+załączniki i komentarze nie są kopiowane. Parametry nowego projektu ustala
+formularz; wejście z katalogu szablonów podpowiada nazwę i opis.
+Zmiana lub usunięcie oryginału nie zmienia szablonu, a usunięcie szablonu nie
+usuwa projektów. Dane są ograniczone do właściciela i aktywnego Workspace.
+
 ## 4. Przestrzenie, tablice i karty — Kanban
 
 Źródła: [modele](../kanban/models.py), [formularze](../kanban/forms.py),
@@ -136,6 +177,10 @@ tworzenie/edycja kart, komentarze, historia, załączniki, czas pracy,
 priorytety, tagi, dodawanie/nazywanie/usuwanie i przestawianie kolumn,
 przenoszenie kart między kolumnami. Ustawienia widoku obejmują m.in.
 okładki i lokalnie przechowywane tapety.
+
+Karty i podkarty mają opcjonalny `due_at`. Termin jest dostępny w oknie nowej
+karty i szczegółach, a jego zmiana trafia do historii. Otwarte karty z terminem
+są widoczne w kalendarzu. Przypomnienia dotyczą obecnie modelu `Task`.
 
 Karty mają osobne statusy i relację `column`. Zmiana kolumny w obecnym kodzie
 ustawia relację; nie należy utożsamiać jej ze zmianą statusu na `closed`.
@@ -204,8 +249,14 @@ Formularz sprawdza kolejność dat. Dla wydarzenia całodniowego normalizuje
 godziny do początku i końca dnia. Parametry `date`/`event` pozwalają wejść
 na wybraną datę lub wydarzenie, np. z wyszukiwarki.
 
-To własne wydarzenia aplikacji. Kod nie potwierdza synchronizacji z Google
-Calendar/Outlook ani automatycznej zamiany każdego terminu zadania w wydarzenie.
+Kalendarz dołącza terminy otwartych zadań/podzadań oraz kart/podkart Kanban
+z aktywnego Workspace. Pozycje pobiera z modeli źródłowych, bez tworzenia
+`CalendarEvent`; zamknięte rekordy i rekordy bez terminu są pomijane.
+Filtr rodzaju rozdziela wydarzenia, zadania i karty; wyszukiwanie i kolory
+działają łącznie. Kliknięcie terminu otwiera szczegóły z trwałym `task_pk`.
+Własne wydarzenia nadal otwierają modal edycji. Termin jest punktem w czasie,
+nie blokiem zaplanowanej pracy. API ogranicza zakres do 370 dni. Brak
+synchronizacji z Google Calendar/Outlook.
 
 ## 8. Dysk — Documents
 
@@ -430,7 +481,11 @@ Zaproszenia czekają na decyzję także po odczytaniu. Centrum obejmuje dostępn
 Workspace; link określa przestrzeń konkretnego zadania/karty. Licznik odświeża
 się co 30 sekund w widocznej karcie. Szczegóły uprawnień, paginacji i zbiorczego
 odczytu: [Mechanizmy](MECHANISMS.md#11-historia-a-powiadomienia).
-Powiadomienia nie wysyłają push/e-mail ani automatycznych przypomnień.
+Zakładka „Przypomnienia” pokazuje zadania z osiągniętym `reminder_at`.
+Odbiorcą jest wykonawca, a gdy go brak — właściciel Workspace.
+Automatyczne sprawdzanie odbywa się co 30 sekund w widocznej karcie oraz
+przy powrocie do aplikacji. Przypomnienia z czasu nieobecności pojawiają się
+przy kolejnym odczycie. Nie ma wysyłki push/e-mail poza aplikacją.
 
 ## 10. Wspólna powłoka i narzędzia — Core / Static
 
@@ -448,7 +503,7 @@ Pozostałe lokalne preferencje UI opisuje [MECHANISMS.md](MECHANISMS.md).
 | --- | --- |
 | Role Workspace / firmy | Członkostwo Workspace daje dostęp zespołowy; członkostwo firmy nadal nie nadaje dostępu do Workspace |
 | `SharedItem`, funkcje share i tokeny | Pozostałości; aktywny routing Tasks nie rejestruje endpointów linków udostępniania, helpery dostępu zwracają puste wartości |
-| `reminder_at` | Termin przechowywany w zadaniu; nie znaleziono harmonogramu wysyłania przypomnień |
+| `reminder_at` | Uruchamia osobiste przypomnienie w aplikacji podczas odpytywania powiadomień; bez push/e-mail |
 | `automation_rules` tagu | Tekst opisu; nie znaleziono wykonawcy reguł |
 | `wip_limit` grupy | Zapisane pole; brak potwierdzenia mechanizmu blokującego przekroczenie limitu |
 | `is_done` kolumny Kanban | Pole modelu; przeniesienie do kolumny nie kończy samo karty |

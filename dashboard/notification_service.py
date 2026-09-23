@@ -16,10 +16,11 @@ from kanban.models import KanbanActivity
 from tasks.models import TaskActivity
 from workplaces.services import pending_invitations_for_user, scoped_workplace_app_path, workplaces_for_user
 from .models import NotificationState
+from .reminders import reminders_for_user
 
 DASHBOARD_NOTIFICATION_LIMIT = 12
-SOURCES = {'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity'}
-VIEWS = {'all', 'unread', 'invitations', 'archived'}
+SOURCES = {'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity', 'reminders': 'reminder'}
+VIEWS = {'all', 'unread', 'invitations', 'reminders', 'archived'}
 SIGNING_SALT = 'dashboard.notifications.v1'
 
 
@@ -155,13 +156,14 @@ def notification_sources(user, workspace=''):
         'workplace': pending_invitations_for_user(user),
         'tasks': TaskActivity.objects.filter(access),
         'kanban': KanbanActivity.objects.filter(access),
+        'reminders': reminders_for_user(user),
     }
     for source, queryset in sources.items():
         if workspace:
             field = 'workplace_id' if source == 'workplace' else 'task__workplace_id'
             queryset = queryset.filter(**{field: workspace})
         state = NotificationState.objects.filter(user=user, **{SOURCES[source]: OuterRef('pk')})
-        default_read = Value(False) if source == 'workplace' else Case(
+        default_read = Value(False) if source in {'workplace', 'reminders'} else Case(
             When(actor_id=user.pk, then=Value(True)), default=Value(False), output_field=BooleanField(),
         )
         sources[source] = queryset.annotate(
@@ -171,10 +173,14 @@ def notification_sources(user, workspace=''):
     return sources
 
 
-def filtered_sources(user, filters, asof=None):
+def filtered_sources(user, filters, asof=None, sources=None):
     view = filters['view']
-    for source, queryset in notification_sources(user, filters['workspace']).items():
+    if sources is None:
+        sources = notification_sources(user, filters['workspace'])
+    for source, queryset in sources.items():
         if view == 'invitations' and source != 'workplace':
+            continue
+        if view == 'reminders' and source != 'reminders':
             continue
         if view == 'archived' and source == 'workplace':
             continue
@@ -231,6 +237,19 @@ def _serialize(source, row):
         workplace = row.workplace
         item['group_label'] = 'Wymagają Twojej decyzji'
         item['event_label'] = 'Zaproszenie'
+    elif source == 'reminders':
+        task = row.task
+        workplace = task.workplace
+        route = 'view-subtask' if task.parent_id else 'view-task'
+        item = {
+            'source': source, 'source_label': 'Zadania', 'object_id': task.task_id,
+            'title': task.title, 'actor_label': 'Ancore', 'actor_avatar': account_avatar(None),
+            'action_message': 'przypomina o zadaniu', 'event_label': 'Przypomnienie',
+            'detail_lines': [_detail_line('Termin', value=date_format(timezone.localtime(task.due_at), 'd.m.Y H:i'))] if task.due_at else [],
+            'location_label': _activity_location(task, 'Zadania', 'Zadanie'),
+            'created_at': row.created_at, 'group_label': 'Przypomnienia',
+            'url': _workspace_app_url(workplace, 'tasks', f'{route}/{task.task_id}/?task_pk={task.pk}'),
+        }
     else:
         labels = ('Zadania', 'Zadanie', 'Podzadanie') if source == 'tasks' else ('Kanban', 'Karta', 'Podkarta')
         item = _activity_notification(row, source, *labels)
@@ -247,6 +266,7 @@ def _serialize(source, row):
 
 
 def notification_page(user, filters, cursor=''):
+    sources = notification_sources(user, filters['workspace'])
     data = {'user': user.pk, 'asof': timezone.now().isoformat(), 'filters': filters}
     anchor = None
     if cursor:
@@ -258,7 +278,7 @@ def notification_page(user, filters, cursor=''):
     asof = datetime.fromisoformat(data['asof'])
     candidates = []
     total = unread = 0
-    for source, queryset in filtered_sources(user, filters, asof):
+    for source, queryset in filtered_sources(user, filters, asof, sources=sources):
         total += queryset.count()
         unread += queryset.filter(inbox_read=False).count()
         if anchor:
@@ -276,6 +296,8 @@ def notification_page(user, filters, cursor=''):
         ]
         if source == 'kanban':
             relations.append('task__column')
+        if source == 'reminders':
+            relations.remove('actor')
         rows = queryset.select_related(*relations).order_by('-created_at', '-pk')[:DASHBOARD_NOTIFICATION_LIMIT + 1]
         candidates.extend((source, row) for row in rows)
     candidates.sort(key=lambda pair: _sort_key(*pair))

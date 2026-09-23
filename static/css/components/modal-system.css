@@ -2,8 +2,8 @@
  * App-wide modal shell.
  *
  * Project and task dialogs are the visual source of truth for every standard
- * application window: centered surface, dimmed/softened context, compact
- * header and a persistent action footer. Feature styles keep control of their
+ * application window: dimmed/softened context and a persistent action footer.
+ * Large forms opt into the app-modal-panel variant below. Feature styles own
  * form layouts while this layer owns the window and shared form controls.
  */
 
@@ -908,5 +908,320 @@
 
     .tasks-modal .contacts-company-photo-editor + .contacts-company-create-fields {
         margin-top: var(--app-modal-field-gap);
+    }
+}
+
+/* Spacious form panel. Explicit opt-in keeps confirmations, note viewers,
+   image croppers and document previews on their existing compact shells. */
+.app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
+.page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
+    --app-panel-gutter: 24px;
+    --app-panel-surface: color-mix(in srgb, var(--system-interaction) 8%, var(--card-bg));
+    --app-panel-motion-duration: 320ms;
+    --app-panel-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
+
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 24px 16px 0 clamp(64px, 13.5vw, 280px);
+    box-sizing: border-box;
+}
+
+.tasks-modal.app-modal-panel > .tasks-modal__dialog,
+.page-container.full-width .tasks-modal.app-modal-panel > .tasks-modal__dialog,
+#issue-modal.app-modal-panel > .tasks-modal__dialog,
+.profile-edit-overlay.app-modal-panel > .profile-edit-dialog,
+.page-container.full-width .profile-edit-overlay.app-modal-panel > .profile-edit-dialog {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: 100%;
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid var(--app-modal-border);
+    border-bottom: 0;
+    border-radius: calc(var(--app-modal-radius) * 2) calc(var(--app-modal-radius) * 2) 0 0;
+    background: var(--app-panel-surface);
+    overflow: hidden;
+    animation: var(--app-panel-animation, app-panel-enter var(--app-panel-motion-duration) var(--app-panel-motion-easing));
+    transform: var(--app-panel-transform, none);
+    transition: transform var(--app-panel-motion-duration) var(--app-panel-motion-easing);
+}
+
+.tasks-modal.app-modal-panel .tasks-modal__form,
+.page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__form,
+.profile-edit-overlay.app-modal-panel .profile-edit-form {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+}
+
+.tasks-modal.app-modal-panel .tasks-modal__header,
+.page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__header,
+.profile-edit-overlay.app-modal-panel .profile-edit-header,
+.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header {
+    height: 72px;
+    min-height: 72px;
+    padding: 12px var(--app-panel-gutter);
+    border-bottom: 0;
+    background: transparent;
+}
+
+.tasks-modal.app-modal-panel .tasks-modal__header h2,
+.tasks-modal.app-modal-panel .tasks-issue-modal__crumbs > strong,
+.tasks-modal.app-modal-panel .tasks-project-edit-modal__title-chip,
+.tasks-modal.app-modal-panel #issue-modal-title,
+.page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__header h2,
+.page-container.full-width .tasks-modal.app-modal-panel .tasks-issue-modal__crumbs > strong,
+.profile-edit-overlay.app-modal-panel .profile-edit-header h2,
+.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header h2 {
+    max-width: 100%;
+    min-width: 0;
+    font-size: 20px;
+    line-height: 1.3;
+}
+
+.tasks-modal.app-modal-panel .tasks-modal__body,
+.page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__body,
+.tasks-modal.app-modal-panel :is(#issue-create-form, #tag-create-form) > .tasks-modal__body,
+.profile-edit-overlay.app-modal-panel .profile-edit-body,
+.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-body {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    max-height: none;
+    margin: 0 var(--app-panel-gutter) var(--app-panel-gutter);
+    padding: var(--app-modal-padding-y) var(--app-panel-gutter);
+    border-radius: var(--app-modal-radius);
+    background: var(--card-bg);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scroll-padding-block: var(--app-modal-padding-y);
+    align-content: start;
+}
+
+.tasks-modal.app-modal-panel .tasks-modal__footer,
+.tasks-modal.app-modal-panel #issue-create-form > .tasks-modal__footer,
+.page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__footer,
+.profile-edit-overlay.app-modal-panel .profile-edit-footer,
+.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-footer {
+    height: auto;
+    min-height: 68px;
+    justify-content: flex-start;
+    padding: 12px var(--app-panel-gutter) max(12px, env(safe-area-inset-bottom));
+    background: var(--card-bg);
+}
+
+/* Keep contact controls readable when the form expands across the screen. */
+.tasks-modal.app-modal-panel .contacts-modal-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--app-modal-field-gap);
+}
+
+.tasks-modal.app-modal-panel .contacts-ancore-login-field {
+    grid-column: 1 / -1;
+}
+
+/* Keep the profile error summary bounded so its footer remains reachable. */
+.profile-edit-overlay.app-modal-panel .profile-edit-form > .tasks-error-banner {
+    flex-shrink: 0;
+    max-height: 25%;
+    margin: 0 var(--app-panel-gutter) 16px;
+    overflow-y: auto;
+}
+
+/* Wide forms use the reference's label/control rows. Smaller panels retain
+   the modules' stacked fields and their existing single-column breakpoints. */
+@media (min-width: 1100px) {
+    .tasks-modal.app-modal-panel .tasks-modal__body > .tasks-form-field,
+    .tasks-modal.app-modal-panel .calendar-dialog-body > .calendar-dialog-field:not(.calendar-checkbox-field) {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        column-gap: 24px;
+        row-gap: 6px;
+        align-items: start;
+    }
+
+    .tasks-modal.app-modal-panel .tasks-modal__body > .tasks-form-field > label,
+    .tasks-modal.app-modal-panel .calendar-dialog-body > .calendar-dialog-field > .form-label:not(.form-label--checkbox) {
+        grid-column: 1;
+        padding-top: 9px;
+    }
+
+    .tasks-modal.app-modal-panel .tasks-modal__body > .tasks-form-field > :not(label),
+    .tasks-modal.app-modal-panel .calendar-dialog-body > .calendar-dialog-field:not(.calendar-checkbox-field) > :not(label) {
+        grid-column: 2;
+    }
+
+    .tasks-modal.app-modal-panel .calendar-checkbox-field {
+        margin-left: 204px;
+    }
+
+    .tasks-modal.app-modal-panel :is(#project-create-form, #project-rename-form, #section-create-form, #section-rename-form) .tasks-project-create-fields > label:not(.u-hidden):not([hidden]) {
+        display: grid;
+        grid-template-columns: 128px minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .tasks-modal.app-modal-panel :is(#project-create-form, #project-rename-form, #section-create-form, #section-rename-form) .tasks-project-create-fields > label > span:first-child {
+        padding-top: 9px;
+    }
+}
+
+@media (max-width: 900px) {
+    .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
+    .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
+        --app-panel-gutter: 18px;
+        padding: 16px 0 0 40px;
+    }
+}
+
+@media (max-width: 600px) {
+    .tasks-modal.app-modal-panel .contacts-modal-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
+    .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
+        --app-panel-gutter: 12px;
+        padding: 0;
+    }
+
+    .tasks-modal.app-modal-panel > .tasks-modal__dialog,
+    .page-container.full-width .tasks-modal.app-modal-panel > .tasks-modal__dialog,
+    #issue-modal.app-modal-panel > .tasks-modal__dialog,
+    .profile-edit-overlay.app-modal-panel > .profile-edit-dialog,
+    .page-container.full-width .profile-edit-overlay.app-modal-panel > .profile-edit-dialog {
+        border: 0;
+        border-radius: 0;
+    }
+
+    .tasks-modal.app-modal-panel .tasks-modal__header,
+    .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__header,
+    .profile-edit-overlay.app-modal-panel .profile-edit-header,
+    .page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header {
+        height: auto;
+        min-height: 60px;
+        padding-top: max(12px, env(safe-area-inset-top));
+    }
+
+    .tasks-modal.app-modal-panel .tasks-modal__header h2,
+    .tasks-modal.app-modal-panel .tasks-issue-modal__crumbs > strong,
+    .tasks-modal.app-modal-panel #issue-modal-title,
+    .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__header h2,
+    .page-container.full-width .tasks-modal.app-modal-panel .tasks-issue-modal__crumbs > strong {
+        font-size: 18px;
+    }
+
+    .tasks-modal.app-modal-panel .tasks-modal__footer,
+    .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__footer,
+    .profile-edit-overlay.app-modal-panel .profile-edit-footer,
+    .page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-footer {
+        flex-wrap: wrap;
+        min-height: 60px;
+    }
+}
+
+@keyframes app-panel-enter {
+    from { transform: translateY(100%); }
+    to { transform: none; }
+}
+
+/* Keep the closing overlay rendered until its panel reaches the bottom.
+   Existing is-open/active classes remain the source of truth for each module. */
+@supports (transition-behavior: allow-discrete) {
+    .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
+    .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
+        --app-panel-animation: none;
+        --app-panel-transform: translateY(100%);
+        background-color: transparent;
+        pointer-events: none;
+        transition: display var(--app-panel-motion-duration) allow-discrete,
+            background-color var(--app-panel-motion-duration) ease;
+    }
+
+    .app-modal-panel:is(.tasks-modal, .profile-edit-overlay):is(.is-open, .active),
+    .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay):is(.is-open, .active) {
+        --app-panel-transform: none;
+        background-color: var(--app-modal-scrim);
+        pointer-events: auto;
+    }
+
+    @starting-style {
+        .app-modal-panel:is(.tasks-modal, .profile-edit-overlay):is(.is-open, .active),
+        .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay):is(.is-open, .active) {
+            background-color: transparent;
+        }
+
+        .tasks-modal.app-modal-panel > .tasks-modal__dialog,
+        .page-container.full-width .tasks-modal.app-modal-panel > .tasks-modal__dialog,
+        #issue-modal.app-modal-panel > .tasks-modal__dialog,
+        .profile-edit-overlay.app-modal-panel > .profile-edit-dialog,
+        .page-container.full-width .profile-edit-overlay.app-modal-panel > .profile-edit-dialog {
+            transform: translateY(100%);
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
+    .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
+        --app-panel-motion-duration: 0s;
+        transition: none;
+    }
+
+    .tasks-modal.app-modal-panel > .tasks-modal__dialog,
+    .page-container.full-width .tasks-modal.app-modal-panel > .tasks-modal__dialog,
+    .profile-edit-overlay.app-modal-panel > .profile-edit-dialog,
+    .page-container.full-width .profile-edit-overlay.app-modal-panel > .profile-edit-dialog,
+    #issue-modal.app-modal-panel > .tasks-modal__dialog {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* The routed template editor shares the form panel shell. */
+.tasks-modal.app-modal-panel.template-page-panel .template-page-panel__body {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.template-page-panel__body > .project-template-editor {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+}
+
+.template-page-panel__body > .project-template-editor {
+    display: block;
+    overflow-y: auto;
+}
+
+.project-template-editor__details {
+    display: grid;
+    gap: var(--app-modal-field-gap);
+    padding: var(--app-modal-padding-y) var(--app-panel-gutter);
+}
+
+@media (min-width: 1100px) {
+    .project-template-editor__details > .tasks-form-field {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 24px;
+    }
+
+    .project-template-editor__details > .tasks-form-field > label {
+        padding-top: 9px;
     }
 }

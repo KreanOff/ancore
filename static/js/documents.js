@@ -87,6 +87,7 @@
         let directLink = Boolean(modal);
         let previousFocus;
         let pending = false;
+        let closing = false;
         let inertElements = [];
 
         function renderUploadFiles() {
@@ -161,11 +162,23 @@
             else window.location.assign(url);
         }
 
-        function close() {
-            if (!modal || pending) return;
+        async function close() {
+            if (!modal || pending || closing) return;
+            closing = true;
             const returnUrl = modal.dataset.returnUrl;
+            if (modal.classList.contains('app-modal-panel')) {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+                const panel = modal.querySelector('.tasks-modal__dialog');
+                // getAnimations flushes the closing styles. Wait only for the
+                // shell, never for controls with potentially looping animations.
+                const animations = [...modal.getAnimations(), ...(panel?.getAnimations() || [])];
+                await Promise.allSettled(animations.map(animation => animation.finished));
+                if (options.signal.aborted) return;
+            }
             modal.remove();
             modal = null;
+            closing = false;
             restoreBackground();
             if (directLink) navigate(returnUrl);
             else {
@@ -197,7 +210,7 @@
 
         function setUploadFiles(files) {
             const input = modal?.querySelector('[data-document-upload-form] input[type="file"]');
-            if (!input || pending) return;
+            if (!input || pending || closing) return;
             const transfer = new DataTransfer();
             files.forEach(file => transfer.items.add(file));
             input.files = transfer.files;
@@ -205,7 +218,7 @@
         }
 
         async function openDialog(url, trigger, files) {
-            if (pending || (modal && !modal.contains(trigger))) return;
+            if (pending || closing || (modal && !modal.contains(trigger))) return;
             if (!modal) previousFocus = trigger;
             pending = true;
             trigger?.setAttribute('aria-busy', 'true');
@@ -253,7 +266,7 @@
             if (!form || !host.contains(form)) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            if (pending || form.dataset.saved === 'true') return;
+            if (pending || closing || form.dataset.saved === 'true') return;
             pending = true;
             const formData = new FormData(form);
             let editorTab = null;
@@ -348,7 +361,7 @@
         }, { ...options, capture: true });
         options.signal.addEventListener('abort', restoreBackground, { once: true });
         if (modal) activate();
-        return { openUpload: openDialog, setUploadFiles, isBusy: () => pending };
+        return { openUpload: openDialog, setUploadFiles, isBusy: () => pending || closing };
     }
 
     function initDocumentDragDrop(options, modals) {

@@ -4,6 +4,68 @@
 
 Nowe funkcje mają wyglądać i zachowywać się jak część obecnego Ancore.
 Punktem odniesienia są istniejące ekrany i komponenty opisane poniżej.
+
+Akcja „Zapisz jako szablon” znajduje się w menu „Więcej opcji” listy projektów.
+Jest aktywna po zaznaczeniu dokładnie jednego projektu, którym można zarządzać.
+Szablony projektów używają standardowego okna „Nowy projekt” z dodatkowym
+wyborem szablonu. Po wyborze ukryte i wyłączone są pola pierwszej grupy,
+ponieważ grupy pochodzą ze snapshotu. Katalog szablonów korzysta ze wspólnych
+dwóch pasków katalogu, zarządzania kolumnami, filtra opisu, sortowania,
+wyszukiwania oraz `directory_pagination_toolbar.html` (25/50/100 pozycji).
+Wariant tabeli `tasks-template-sheet` zachowuje wiersze 35px, separatory
+i przewijanie katalogu projektów. Kolumny obejmują osobno nazwę szablonu
+i nazwę projektu, opis, liczbę grup, liczbę zadań z podzadaniami i datę utworzenia.
+Nazwa szablonu w tabeli jest zwykłym tekstem, bez ołówka i akcji edycji.
+Pełna nazwa jest dostępna w `title` komórki. Pierwsza kolumna
+zawiera przycisk z trzema paskami, korzystający z klas menu Dokumentów
+oraz wspólnego `row-actions.js`. Menu udostępnia edycję szablonu, utworzenie
+projektu i usunięcie z potwierdzeniem `showConfirmModal`.
+Nazwa projektu otwiera standardowe okno tworzenia z wybranym szablonem.
+Delegacja w `project-templates.js` obsługuje również częściową nawigację,
+a wybór w `tasks.js` jest inicjalizowany z resztą ekranu.
+Reguła `#project-create-form .tasks-project-create-fields > label.u-hidden`
+zapewnia ukrycie pól mimo późniejszych reguł układu etykiet.
+
+Katalog szablonów jest zwykłą stroną z pełną tabelą, paskiem tytułu
+oraz strzałką powrotu do projektów. „Edytuj szablon” jest przyciskiem w menu
+wiersza. Otwiera modal nad tą tabelą, bez zmiany adresu i historii przeglądarki,
+tak jak edycja projektu. Powłoka `tasks-modal app-modal-panel`
+(`template-page-panel`) zachowuje animację od dołu, nagłówek, przewijaną białą
+treść i stałą stopkę. Krzyżyk, „Zamknij” i Escape zamykają okno lokalnie.
+Nazwa w tabeli pozostaje zwykłym tekstem, bez skrótu do edycji.
+
+`project-templates.js` pobiera formularze do `data-project-template-modal-host`
+i zapisuje je przez fetch. Endpoint `/tasks/templates/<id>/edit/` oraz scoped
+odpowiednik zwracają JSON z HTML modala dla `X-Template-Modal: true`.
+Zwykłe wejście pod dawny adres edytora przekierowuje do katalogu.
+Po zapisie okno pozostaje otwarte; zamknięcie odświeża tabelę z bieżącymi
+parametrami wyszukiwania, sortowania i paginacji, bez nowego wpisu w historii.
+Błąd pobrania pozostawia katalog, a błąd zapisu zachowuje pola i daje możliwość
+ponowienia. Nazwa szablonu, nazwa projektu i opis są polami głównego formularza.
+
+Moduł korzysta ze wspólnego `AncoreTaskModals.open/close` w `tasks.js`.
+Delegowane zamykanie działa także dla doładowanych okien. Zdarzenia
+`ancore:task-modal-opened`, anulowalne `ancore:task-modal-before-close` i
+`ancore:task-modal-closed` pozwalają modułowi obsłużyć `inert`, niezapisane dane
+i powrót fokusu. `ancore:modals-loaded` inicjalizuje wspólne menu wierszy
+po wymianie formularzy; ikony i selecty odświeżają istniejące API.
+Inicjalizacja po `ancore:content-loaded` anuluje wcześniejsze listenery i żądania.
+
+Wariant `project-template-editor` zawiera tabele `documents-table`; menu grup
+i zadań otwierają formularze we wspólnej powłoce. Tabela katalogu i nawigacja
+są `inert` podczas edycji, a przy otwartym formularzu podrzędnym także główne
+okno edytora. Tab i Escape dotyczą ostatniego otwartego modala. Zamknięcie
+przywraca fokus do przycisku otwierającego. Każda operacja zapisuje się osobno.
+Niezapisane nazwy/opis wymagają potwierdzenia przy zamykaniu całego edytora;
+pozostają wpisane po zapisie lub usunięciu elementu struktury. Błędy walidacji
+pozostają we właściwym formularzu; nowy formularz zeruje poprzedni wpis.
+Usuwanie grupy lub zadania używa `showConfirmModal` z informacją o podzadaniach.
+Puste tabele ukrywają nagłówki; dodanie zadania wymaga wcześniejszego dodania grupy.
+
+Kalendarz ma filtr rodzaju pozycji, zachowuje dotychczasowe kolory i widoki.
+Terminy mają etykiety „Zadanie”, „Podzadanie”, „Karta” lub „Podkarta” oraz
+otwierają źródłowe szczegóły. Liczniki obejmują „pozycje”. Centrum powiadomień
+ma zakładkę „Przypomnienia”, używającą istniejących stanów odczytu i archiwum.
 Ten dokument utrwala aktualny styl; zmiana całego stylu wymaga zadania
 obejmującego redesign.
 
@@ -22,6 +84,12 @@ referencyjny ekran w tej samej szerokości i stanie co ekran zmieniany.
   paginacja i przewijana lista.
 - Osobny host `#app-page-modals` oraz komunikaty `#app-notifications`.
 - Wspólne panele wyszukiwania i powiadomień oraz Sticker.
+
+Globalne wyszukiwanie pokazuje najwyżej 20 wyników w każdej kategorii danych.
+Jeśli dopasowań jest więcej, istniejący licznik kategorii pokazuje „20+”,
+a pod wynikami pojawia się prośba o doprecyzowanie frazy. Komunikat czytnika
+ekranu podaje wtedy liczbę pokazanych wyników, nie całkowitą liczbę dopasowań.
+Wygląd panelu, obsługa klawiatury i stany pusty/błąd pozostają wspólne.
 
 Sticker zachowuje wygląd i kontrolki, ale zapisuje treść oraz geometrię osobno
 dla zalogowanego konta. Po przełączeniu konta pojawia się jego własna notatka
@@ -586,6 +654,45 @@ standardowego okna aplikacji. Powłoka odpowiada za powierzchnię, przyciemnieni
 szerokość, cień, nagłówek, stopkę, przycisk zamknięcia i geometrię kontrolek.
 Moduł odpowiada za treść oraz specjalistyczne układy pól.
 
+Duże formularze używają wariantu `app-modal-panel` na istniejącym elemencie
+`tasks-modal` (lub `profile-edit-overlay` w profilu). Dotyczy tworzenia i edycji
+projektów/przestrzeni, grup/tablic, tagów, zadań i podzadań, edytora szablonów
+projektów, kontaktów/firm, wydarzeń, Workspace, profilu oraz formularzy Dysku
+i Dokumentów. Wariant jest jawnie oznaczony w szablonach; nie wymaga nowej
+inicjalizacji JS i działa również po częściowej nawigacji oraz błędach formularza.
+
+Panel zajmuje prawą część ekranu od 24px pod górną krawędzią do dołu.
+Po lewej pozostaje `clamp(64px, 13.5vw, 280px)` kontekstu aplikacji, po prawej
+16px. Jasnoszara powierzchnia powstaje z 8% `--system-interaction` i bieli
+`--card-bg`; wewnątrz jest biała, przewijana treść z odstępami 24px.
+Nagłówek ma 72px i tytuł 20px/400, stopka minimum 68px i akcje po lewej.
+Oba paski pozostają poza przewijaną treścią. Przycisk zamknięcia, turkusowe
+akcje, kontrolki, obsługa fokusu, Escape, list wyboru i zapisu korzystają
+z dotychczasowych mechanizmów. Panel wysuwa się od dołu i chowa w dół
+w 320ms, z łagodnym wyhamowaniem i zmianą przyciemnienia tła. CSS używa
+`@starting-style` oraz dyskretnego przejścia `display`, więc usunięcie
+`is-open`/`active` pozostawia okno widoczne do końca animacji. Szybkie ponowne
+otwarcie odwraca ruch bez opóźnionych callbacków. W Dysku i Dokumentach
+usunięcie formularza z DOM czeka na zakończenie animacji samej powłoki;
+w tym czasie ponowne zamknięcie, zapis i otwarcie są blokowane, a nawigacja
+przerywa oczekiwanie na sprzątanie starego ekranu. Potwierdzenia i podglądy
+plików zachowują własne zachowanie. `prefers-reduced-motion` wyłącza ruch
+i oczekiwanie; starsze przeglądarki bez dyskretnych przejść mają animację
+otwierania oraz natychmiastowe zamknięcie.
+
+Od szerokości 1100px pełne wiersze `tasks-form-field` mają etykietę po lewej
+(180px), a kontrolkę po prawej. Parametry projektu zachowują dwie kolumny,
+z etykietą 128px w każdej; ukryte pola pierwszej grupy nadal są ukryte po
+wybraniu szablonu. Węższe okna zachowują pionowy układ pól. Do 900px panel
+ma 40px odstępu po lewej, a do 600px wypełnia ekran, z odstępami treści 12px,
+większą stopką przy zawijaniu akcji i uwzględnieniem bezpiecznego obszaru ekranu.
+Dane kontaktowe mają dwie kolumny, a do 600px jedną; ID Ancore zajmuje pełny wiersz.
+
+Potwierdzenia, okna zespołu, notatki/informacje,
+kadrowanie zdjęć i podglądy plików zachowują swoje dotychczasowe powłoki.
+Poniższe tokeny opisują bazowy, kompaktowy wariant; nie wyznaczają wysokości
+i szerokości formularza z `app-modal-panel`.
+
 | Token powłoki | Wartość bazowa |
 | --- | --- |
 | `--app-modal-surface` | `var(--card-bg)` — biały |
@@ -600,14 +707,13 @@ Moduł odpowiada za treść oraz specjalistyczne układy pól.
 | `--app-modal-control-height` | `var(--dropdown-control-height)` — 36px |
 | `--app-modal-field-gap` | `16px` |
 
-Nagłówki i stopki standardowych okien aplikacji mają po 50px wysokości CSS,
-również na telefonie. Wspólny standard obejmuje projekty, grupy, zadania,
-Kanban, kontakty, firmy, Kalendarz, Workspace i Dokumenty, a także edycję
-profilu oraz kadrowanie zdjęć. Paski nie kurczą się przy przewijaniu treści.
+Nagłówki i stopki kompaktowych okien aplikacji mają po 50px wysokości CSS,
+również na telefonie. Wariant panelu formularza ma wymiary opisane powyżej.
+Paski nie kurczą się przy przewijaniu treści.
 Na ekranach do 600px stopka może zwiększyć wysokość i zawinąć akcje,
 aby ich etykiety pozostały dostępne. Podgląd plików zachowuje pojedynczy rząd.
 
-Nagłówek używa tekstu 15px/400 oraz wspólnego przycisku zamknięcia 34px
+Kompaktowy nagłówek używa tekstu 15px/400 oraz wspólnego przycisku zamknięcia 34px
 po prawej. Nie dodaje dekoracyjnej ikony walizki; istniejące przełączniki
 typu kontaktu zachowują działanie. Pola tekstowe, daty i listy wyboru mają
 tekst 13px, wysokość 36px, ramkę `--border-color` i radius

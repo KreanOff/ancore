@@ -116,7 +116,9 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Contacts | Osoby, firmy, powiązania z kontami, zakres dostępu i UI szablonów |
 | Planner | Wydarzenia i izolacja właściciela |
 | Dashboard | Wyszukiwanie, powiadomienia i integracje |
+| Dashboard: `test_search_regressions.py` | Lista Workspace według członkostwa odbiorcy, cofnięcie dostępu, trwałe linki zadań/podzadań i kart/podkart po renumeracji/usunięciu, Unicode, limit SQL i granica 20 wyników |
 | Core | Wspólne mechanizmy i kontrakty UI/uploadu według aktualnych przypadków |
+| Core: `test_status_updates.py` | Zapis statusu bez nadpisywania pozostałych pól, zwykłe i scoped URL, autor historii, powtórne zamknięcie, rollback statusu razem z historią oraz dwa równoczesne żądania zamknięcia w PostgreSQL |
 | Core: `test_task_integrity.py`, `test_task_number_migrations.py` | Stabilne PK, dwie karty/Workspace, uprawnienia, kalendarz, powiadomienia, równoczesne tworzenie, unikalność i naprawa istniejących numerów |
 | Documents | Dyski, foldery, pliki, kosz, izolacja, modale, paginacja, wyszukiwarka, migracja dysków |
 | Documents: `test_suite.py` | Tworzenie czterech typów, osobna karta ONLYOFFICE/BOARD i katalog po utworzeniu, linki listy/kafelków/metadanych oraz cel wyników wyszukiwania, podpisane callbacki i źródła, deduplikacja, konflikty tablicy, walidacja OOXML, izolacja właściciela/Workspace, stara sesja po podmianie/koszu |
@@ -325,6 +327,22 @@ Sprawdź zduplikowane slugi: migracja rozróżnia adresy przestrzeni różnych w
 Szczegóły zakresu, przechowywania danych i testów: [TEAMWORK.md](TEAMWORK.md).
 
 ## Centrum powiadomień
+
+Rozszerzenie kalendarza, przypomnień i szablonów wymaga addytywnych migracji
+`dashboard/0002_taskreminder_and_more.py`, `kanban/0035_kanban_due_at.py`
+i `tasks/0048_taskprojecttemplate.py`. Dodają dostawy przypomnień i ich
+osobisty stan, opcjonalny termin kart oraz snapshoty szablonów. Istniejące
+projekty i zadania nie są kopiowane ani przenoszone. Nie ma nowych zależności,
+usług, konfiguracji poczty ani cron — przypomnienia w aplikacji obsługuje polling.
+
+Testy `planner.test_task_calendar`, `dashboard.test_reminders` oraz
+`tasks.test_project_templates` obejmują terminy i linki, izolację Workspace,
+wycofanie dostępu, zegar przypomnień, deduplikację, snapshoty odczytu,
+paginację, kopiowanie hierarchii, reset stanu wykonania i rollback.
+`kanban.test_deadlines` sprawdza tworzenie, edycję, wyczyszczenie i walidację
+terminu karty oraz autora i zawartość historii zmian.
+Historyczny test Workspace wycofuje również Tasks do 0047, ponieważ
+szablony 0048 zależą od Workspace 0008.
 
 Przed uruchomieniem zastosuj addytywną migrację `dashboard/0001_initial.py`.
 Dodaje osobisty stan odczytu i archiwum bez kopiowania lub zmiany historii.

@@ -309,8 +309,8 @@ class GlobalSearchTests(TestCase):
         for key in ('tasks', 'projects', 'groups', 'kanban-projects', 'kanban-boards', 'kanban-cards'):
             with self.subTest(group=key):
                 self.assertTrue(all(result['icon'] == '' for result in groups[key]))
-        self.assertEqual(groups['tasks'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "tasks")}view-task/{task.task_id}/')
-        self.assertEqual(groups['kanban-cards'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "kanban")}view-task/{card.task_id}/')
+        self.assertEqual(groups['tasks'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "tasks")}view-task/{task.task_id}/?task_pk={task.pk}')
+        self.assertEqual(groups['kanban-cards'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "kanban")}view-task/{card.task_id}/?task_pk={card.pk}')
         self.assertIn(f'event={event.id}', groups['calendar'][0]['url'])
         calendar_response = self.client.get(groups['calendar'][0]['url'])
         self.assertEqual(calendar_response.context['calendar_config']['initialEventId'], event.id)
@@ -354,7 +354,7 @@ class GlobalSearchTests(TestCase):
         calendar_result = next(result for result in groups['navigation'] if result['title'] == 'Kalendarz')
         self.assertEqual(calendar_result['url'], scoped_workplace_app_path(self.workplace, 'calendar'))
 
-    def test_global_search_returns_every_matching_task(self):
+    def test_global_search_returns_all_matches_below_limit(self):
         matching_titles = [f'Przygotować materiał {index:02d}' for index in range(12)]
         for title in matching_titles:
             Task.objects.create(

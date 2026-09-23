@@ -5,6 +5,7 @@ from workplaces.services import workplace_people
 
 from contacts.models import Company
 from tasks.models import TaskTag
+from tasks.forms import DateTimeLocalInput, DATETIME_LOCAL_INPUT_FORMATS
 from .models import Kanban, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
 
 
@@ -65,6 +66,9 @@ def _replace_optional_model_choice(form, field_name, queryset, empty_label):
 class DynamicStatusFormMixin:
     def configure_dynamic_status_field(self, user):
         self._dynamic_status_user = user
+        if 'due_at' in self.fields:
+            self.fields['due_at'].label = 'Termin wykonania'
+            self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         if user and 'status' in self.fields:
             self.fields['status'].choices = board_column_status_choices(user)
 
@@ -157,8 +161,9 @@ class KanbanForm(DynamicStatusFormMixin, forms.ModelForm):
 
     class Meta:
         model = Kanban
-        fields = ['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'time_spent_hours', 'time_spent_minutes']
+        fields = ['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'due_at', 'time_spent_hours', 'time_spent_minutes']
         widgets = {
+            'due_at': DateTimeLocalInput(attrs={'class': 'form-input tasks-due-input'}),
             'title': forms.TextInput(attrs={
                 'placeholder': 'Wprowadź tytuł karty...',
                 'class': 'form-input'
@@ -627,8 +632,9 @@ class KanbanModalForm(DynamicStatusFormMixin, forms.ModelForm):
 
     class Meta:
         model = Kanban
-        fields = ['title', 'section', 'tags', 'description', 'priority', 'status']
+        fields = ['title', 'section', 'tags', 'description', 'priority', 'status', 'due_at']
         widgets = {
+            'due_at': DateTimeLocalInput(attrs={'class': 'tasks-inline-input tasks-due-input'}),
             'title': forms.TextInput(attrs={
                 'placeholder': 'Tytuł karty',
                 'class': 'tasks-inline-input',

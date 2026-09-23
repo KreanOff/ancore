@@ -1,0 +1,13 @@
+<div class="documents-item-actions" data-row-actions>
+    <button type="button" class="tasks-icon-button documents-icon-button" data-row-actions-toggle popovertarget="template-{{ kind }}-{{ item.id }}-actions" aria-controls="template-{{ kind }}-{{ item.id }}-actions" aria-expanded="false" aria-label="Działania: {{ item.title }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
+    <div id="template-{{ kind }}-{{ item.id }}-actions" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {{ item.title }}" data-row-actions-panel>
+        <div class="documents-menu-actions">
+            <button type="button" class="tasks-project-menu-button" data-open-template-form="{{ kind }}" data-template-form-values="{{ item.values }}" aria-haspopup="dialog" aria-controls="template-editor-{{ kind }}"><i data-icon="pencil" aria-hidden="true"></i><span>{% if kind == 'section' %}Edytuj grupę{% else %}Edytuj zadanie{% endif %}</span></button>
+            <button type="button" class="tasks-project-menu-button" data-open-template-form="task" data-template-form-values="{% if kind == 'section' %}{{ item.task_values }}{% else %}{{ item.subtask_values }}{% endif %}" aria-haspopup="dialog" aria-controls="template-editor-task"><i data-icon="plus" aria-hidden="true"></i><span>{% if kind == 'section' %}Dodaj zadanie{% else %}Dodaj podzadanie{% endif %}</span></button>
+            <form method="post" action="{{ editor_url }}" data-delete-template-item="{{ kind }}">
+                {% csrf_token %}<input type="hidden" name="action" value="delete_{{ kind }}"><input type="hidden" name="item_id" value="{{ item.id }}">
+                <button type="submit" class="tasks-project-menu-button">{% include 'core/includes/trash_icon.html' %}<span>{% if kind == 'section' %}Usuń grupę{% else %}Usuń zadanie{% endif %}</span></button>
+            </form>
+        </div>
+    </div>
+</div>
