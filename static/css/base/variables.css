@@ -68,7 +68,7 @@
     --checkbox-border-color: #cfcac4;
     --checkbox-hover-border-color: #a99f97;
     --checkbox-checked-color: var(--system-accent);
-    --checkbox-focus-ring: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.18);
+    --checkbox-focus-ring: none;
     --icon-check-white: url("../../vendor/flaticon/check-white.svg");
     --icon-minus-white: url("../../vendor/flaticon/minus-white.svg");
     --icon-chevron-down-gray: url("../../vendor/flaticon/chevron-down-gray.svg");
@@ -99,7 +99,7 @@
     --shadow-sm: 0 1px 2px rgba(63, 59, 56, 0.08);
     --shadow-md: 0 8px 18px rgba(63, 59, 56, 0.08);
     --shadow-lg: 0 18px 40px rgba(63, 59, 56, 0.12);
-    --focus-ring: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.1);
+    --focus-ring: none;
 
     /* Semantic aliases (legacy file-upload.css) */
     --primary-color: var(--accent-red);

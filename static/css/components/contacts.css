@@ -1188,7 +1188,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 .contacts-custom-select__button:focus-visible {
     outline: none;
     border-color: var(--system-interaction);
-    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
+    box-shadow: var(--focus-ring);
 }
 
 .contacts-custom-select__button:disabled {
@@ -1354,7 +1354,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
 .contacts-company-photo-preview-button:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(70, 129, 214, 0.28);
+    box-shadow: var(--focus-ring);
 }
 
 .contacts-photo-editor-open {
@@ -1737,7 +1737,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 .contacts-modal-fields .tasks-inline-select:focus,
 .contacts-edit-modal__body .form-input:focus {
     border-color: var(--system-interaction);
-    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
+    box-shadow: var(--focus-ring);
     outline: none;
 }
 

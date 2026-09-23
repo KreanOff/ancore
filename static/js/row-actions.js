@@ -1,4 +1,4 @@
-/* Shared catalogue action menus: Documents and Workspace teams. */
+/* Shared action menus: Documents, Workspace teams and notifications. */
 (function () {
     let controller;
     function init() {
@@ -94,4 +94,5 @@
     else init();
     document.addEventListener('ancore:content-loaded', init);
     document.addEventListener('ancore:modals-loaded', init);
+    document.addEventListener('ancore:notifications-loaded', init);
 })();

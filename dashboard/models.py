@@ -26,6 +26,7 @@ class NotificationState(models.Model):
     reminder = models.ForeignKey(TaskReminder, null=True, blank=True, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=True)
     is_archived = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

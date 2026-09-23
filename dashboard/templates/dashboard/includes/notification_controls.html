@@ -2,7 +2,7 @@
     <div class="notifications-tabs" role="group" aria-label="Filtr powiadomień">
         <button type="button" data-notification-filter="all" aria-pressed="{% if not notification_filters.view or notification_filters.view == 'all' %}true{% else %}false{% endif %}">Wszystkie</button>
         <button type="button" data-notification-filter="unread" aria-pressed="{% if notification_filters.view == 'unread' %}true{% else %}false{% endif %}">Nieprzeczytane <span data-notifications-unread-count>{{ unread_count|default:0 }}</span></button>
-        <button type="button" data-notification-filter="invitations" aria-pressed="{% if notification_filters.view == 'invitations' %}true{% else %}false{% endif %}">Zaproszenia</button>
+        <button type="button" data-notification-filter="invitations" aria-pressed="{% if notification_filters.view == 'invitations' %}true{% else %}false{% endif %}" title="Oczekujące zaproszenia ze wszystkich Workspace: {{ pending_invitation_count|default:0 }}">Zaproszenia <span data-notifications-invitation-count{% if not pending_invitation_count %} hidden{% endif %}>{{ pending_invitation_count|default:0 }}</span></button>
         <button type="button" data-notification-filter="reminders" aria-pressed="{% if notification_filters.view == 'reminders' %}true{% else %}false{% endif %}">Przypomnienia</button>
         <button type="button" data-notification-filter="archived" aria-pressed="{% if notification_filters.view == 'archived' %}true{% else %}false{% endif %}">Archiwum</button>
     </div>
@@ -11,7 +11,8 @@
             <option value="">Wszystkie Workspace</option>
             {% for workplace in available_workplaces %}<option value="{{ workplace.pk }}"{% if notification_filters.workspace == workplace.pk|stringformat:'s' %} selected{% endif %}>{{ workplace.name }}</option>{% endfor %}
         </select>
-        <button type="button" class="btn btn-secondary btn-sm" data-notification-read-all{% if not filtered_unread_count %} disabled{% endif %} title="Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane"><i data-icon="check" aria-hidden="true"></i><span>Przeczytaj wszystkie</span></button>
+        <button type="button" class="btn btn-secondary btn-sm" data-notification-read-all{% if not filtered_unread_count %} disabled{% endif %} title="Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze"><i data-icon="check" aria-hidden="true"></i><span>Oznacz wszystkie jako przeczytane</span></button>
+        <button type="button" class="tasks-icon-button" data-notification-delete-all disabled title="Usuń wszystkie powiadomienia z wybranego filtra" aria-label="Usuń wszystkie powiadomienia z wybranego filtra"><i data-icon="trash-2" aria-hidden="true"></i></button>
         <button type="button" class="tasks-icon-button" data-notification-refresh title="Odśwież powiadomienia" aria-label="Odśwież powiadomienia"><i data-icon="refresh-cw" aria-hidden="true"></i></button>
     </div>
 </div>

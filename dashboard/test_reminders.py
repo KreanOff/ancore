@@ -48,6 +48,19 @@ class TaskReminderTests(TestCase):
         with patch('django.utils.timezone.now', return_value=future):
             self.assertEqual(self.page()['dashboard_notification_count'], 1)
 
+    def test_deleted_reminder_stays_deleted_after_polling_but_new_schedule_is_visible(self):
+        key = self.page()['dashboard_notifications'][0]['key']
+        change_notification_state(self.member, {'action': 'delete', 'key': key})
+        for _ in range(2):
+            self.assertEqual(self.page()['dashboard_notification_count'], 0)
+        self.assertEqual(TaskReminder.objects.filter(task=self.task).count(), 1)
+        self.assertTrue(NotificationState.objects.get(user=self.member, reminder__task=self.task).is_deleted)
+        self.task.reminder_at -= timedelta(minutes=1)
+        self.task.save()
+        item = self.page()['dashboard_notifications'][0]
+        self.assertNotEqual(item['key'], key)
+        self.assertFalse(item['is_read'])
+
     def test_unassigned_task_reminds_owner(self):
         self.task.assignee = None
         self.task.save()

@@ -121,7 +121,7 @@ flowchart LR
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
   Zadań i Kanbana, zaproszeń oraz osobistych przypomnień `TaskReminder`.
 - `core` dostarcza powłokę interfejsu i upload; `core` nie ma własnych modeli domenowych. `dashboard.NotificationState`
-  zapisuje osobisty odczyt i archiwum powiadomień, odwołując się do istniejących
+  zapisuje osobisty odczyt, archiwum i usunięcie powiadomień, odwołując się do istniejących
   aktywności, zaproszeń i dostarczonych przypomnień.
 
 ## 6. Hierarchie danych

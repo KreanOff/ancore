@@ -50,11 +50,9 @@ class NotificationCenterTests(TestCase):
         self.act('unread')
         self.assertEqual(self.summary()['unread_count'], 1)
 
-    def test_partial_navigation_receives_full_html_instead_of_panel_json(self):
+    def test_partial_navigation_to_retired_page_redirects_home(self):
         response = self.client.get(reverse('notifications'), HTTP_X_REQUESTED_WITH='XMLHttpRequest', HTTP_ACCEPT='text/html')
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'dashboard/notifications.html')
-        self.assertContains(response, 'data-notifications-center')
+        self.assertRedirects(response, reverse('home'))
 
     def test_read_state_is_persistent_idempotent_and_personal(self):
         for _ in range(2):
@@ -114,7 +112,91 @@ class NotificationCenterTests(TestCase):
         invitation = WorkplaceInvitation.objects.create(workplace=self.workspace, invited_by=self.owner, recipient=self.outsider)
         for key in (f'workplace:{invitation.pk}', 'tasks:0', 'tasks:abc', 'tasks:' + '9' * 100, 'users:1'):
             self.assertEqual(self.act('read', key).status_code, 404)
-        self.assertEqual(self.act('delete').status_code, 400)
+        self.assertEqual(self.act('invalid-action').status_code, 400)
+
+    def test_delete_is_personal_persistent_idempotent_and_preserves_sources(self):
+        original_total = self.feed().json()['total']
+        for key in (f'tasks:{self.activity.pk}', f'kanban:{self.kanban_activity.pk}'):
+            for _ in range(2):
+                self.assertEqual(self.act('delete', key).status_code, 200)
+            for action in ('read', 'unread', 'archive', 'restore'):
+                self.assertEqual(self.act(action, key).status_code, 404)
+        self.client.force_login(self.member)
+        self.assertEqual(self.feed().json()['total'], original_total - 2)
+        self.assertEqual(self.feed(view='archived').json()['total'], 0)
+        self.assertEqual(self.summary()['unread_count'], 1)
+        self.assertTrue(TaskActivity.objects.filter(pk=self.activity.pk).exists())
+        self.assertTrue(KanbanActivity.objects.filter(pk=self.kanban_activity.pk).exists())
+        self.client.force_login(self.owner)
+        self.assertIn(f'data-notification-key="tasks:{self.activity.pk}"', self.feed().json()['html'])
+        self.assertFalse(NotificationState.objects.filter(user=self.owner).exists())
+
+    def test_deleted_invitation_remains_available_in_workspace(self):
+        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
+        self.assertEqual(self.act('delete', f'workplace:{invitation.pk}').status_code, 200)
+        self.assertEqual(self.feed(view='invitations').json()['total'], 0)
+        self.assertEqual(self.summary()['pending_invitation_count'], 0)
+        page = self.client.get(reverse('home'))
+        self.assertEqual(page.context['pending_workspace_invitation_count'], 1)
+        self.assertEqual(page.context['pending_notification_invitation_count'], 0)
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.status, 'pending')
+        self.assertFalse(WorkplaceMembership.objects.filter(workplace=self.other_workspace, user=self.member).exists())
+        response = self.client.get(reverse('workplaces:workplaces'), {'invitation': invitation.pk})
+        self.assertEqual(response.context['response_invitation'], invitation)
+
+    def test_delete_rechecks_access_and_rejects_foreign_keys(self):
+        foreign = Task.objects.create(user=self.owner, workplace=self.other_workspace, title='Prywatne')
+        invitation = WorkplaceInvitation.objects.create(workplace=self.workspace, invited_by=self.owner, recipient=self.outsider)
+        for key in (f'tasks:{foreign.activities.first().pk}', f'workplace:{invitation.pk}', 'tasks:bad', 'tasks:' + '9' * 100):
+            self.assertEqual(self.act('delete', key).status_code, 404)
+        snapshot = self.feed(workspace=self.workspace.pk).json()['snapshot']
+        self.membership.is_active = False
+        self.membership.save(update_fields=['is_active'])
+        self.assertEqual(self.act('delete').status_code, 404)
+        self.assertEqual(self.act('delete_all', snapshot=snapshot).status_code, 404)
+        self.assertFalse(NotificationState.objects.filter(user=self.member).exists())
+
+    def test_bulk_delete_covers_all_pages_but_preserves_archived_and_new_items(self):
+        self.act('archive')
+        TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, message=f'Zmiana {i}') for i in range(505)])
+        payload = self.feed(workspace=self.workspace.pk).json()
+        self.assertGreater(payload['total'], 500)
+        new = TaskActivity.objects.create(task=self.task, actor=self.owner, message='Nowsze niż lista')
+        for _ in range(2):
+            self.assertEqual(self.act('delete_all', snapshot=payload['snapshot']).status_code, 200)
+        self.assertEqual(NotificationState.objects.filter(user=self.member, is_deleted=True).count(), payload['total'])
+        self.assertEqual(self.feed().json()['total'], 1)
+        self.assertEqual(self.summary()['unread_count'], 1)
+        self.assertFalse(NotificationState.objects.filter(user=self.member, task_activity=new).exists())
+        self.assertEqual(self.feed(view='archived').json()['total'], 1)
+        archived = self.feed(view='archived').json()
+        self.assertEqual(self.act('delete_all', snapshot=archived['snapshot']).status_code, 200)
+        self.assertEqual(self.feed(view='archived').json()['total'], 0)
+        self.assertTrue(TaskActivity.objects.filter(pk=self.activity.pk).exists())
+
+    def test_bulk_delete_respects_workspace_and_validates_snapshot(self):
+        second = create_workplace_for_user(self.member, 'Osobiste')
+        task = Task.objects.create(user=self.member, workplace=second, title='Pozostawione')
+        payload = self.feed(workspace=self.workspace.pk).json()
+        self.assertEqual(self.act('delete_all', snapshot='invalid').status_code, 400)
+        self.client.force_login(self.outsider)
+        self.assertEqual(self.act('delete_all', snapshot=payload['snapshot']).status_code, 400)
+        self.client.force_login(self.member)
+        self.assertEqual(self.act('delete_all', snapshot=payload['snapshot']).status_code, 200)
+        self.assertIn('Pozostawione', self.feed().json()['html'])
+        self.assertFalse(NotificationState.objects.filter(user=self.member, task_activity__task=task).exists())
+        self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 200)
+        self.assertNotIn('Wdrożenie', self.feed().json()['html'])
+
+    def test_bulk_read_includes_invitation_without_accepting_it(self):
+        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
+        payload = self.feed().json()
+        self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 200)
+        self.assertEqual(self.summary()['unread_count'], 0)
+        self.assertEqual(self.summary()['pending_invitation_count'], 1)
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.status, 'pending')
 
     def test_bulk_read_uses_snapshot_and_filters_and_preserves_new_arrivals(self):
         payload = self.feed(workspace=self.workspace.pk).json()

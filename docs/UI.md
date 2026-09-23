@@ -272,7 +272,7 @@ tła `color-mix(in srgb, var(--system-accent) 17%, #ffffff)` oraz tekstu i ikony
 w kolorze `--text-primary`. Tło jest o 9 punktów procentowych intensywniejsze
 niż podświetlenie wiersza tabeli; przycisk nie ma paska po lewej ani cienia.
 Po najechaniu na aktywny przycisk udział turkusu rośnie do 24%, z przejściem
-koloru wspólnego komponentu; fokus klawiatury dodaje obrys.
+koloru wspólnego komponentu; fokus klawiatury używa tego samego tła, bez obrysu.
 Rozmiar, zaokrąglenie i obsługa modala pochodzą ze wspólnego
 przycisku. Wariant jest stosowany do akcji „Dodaj projekt”, „Dodaj grupę”
 i „Dodaj zadanie” w Zadaniach, „Dodaj przestrzeń” i „Dodaj tablicę” w Kanbanie
@@ -286,10 +286,35 @@ Te same kolory obowiązują we wszystkich głównych przyciskach tworzenia,
 zapisu i potwierdzania: w modalach, formularzach, edycji zdjęć, Workspace
 i uwierzytelnianiu. Wspólne tokeny `--primary-button-bg` (17% akcentu)
 i `--primary-button-hover-bg` (24%) są używane także przez „Dodaj projekt”.
-Reguła w `style.css` ustala ciemny tekst i ikony, usuwa cień, zachowuje
-widoczny obrys fokusu i osłabia przyciski nieaktywne przez opacity 0.55.
-Nie zmienia geometrii przycisków, akcji drugorzędnych ani kolorów stanów
+Reguła w `style.css` ustala ciemny tekst i ikony, usuwa cień, oznacza
+fokus zmianą tła i osłabia przyciski nieaktywne przez opacity 0.55.
+Przyciski usuwania w `showConfirmModal` korzystają z tej samej reguły:
+jasny turkus przechodzi po najechaniu w mocniejszy turkus, z ciemnym tekstem.
+Historyczne style potwierdzeń w `tasks.css` określają ich geometrię,
+bez osobnego szarego tła, białego tekstu ani cienia w stanie hover/focus.
+„Zastosuj” w filtrach tekstowych projektów, Dysku i Dokumentów korzysta
+ze wspólnej klasy `btn-primary` w `project_text_filter_detail.html`.
+Akcje filtrów zachowują własną geometrię, a kolory i stany interakcji pochodzą
+ze wspólnego stylu przycisków. „Wyczyść” pozostaje akcją drugorzędną.
+Wspólna reguła nie zmienia geometrii przycisków, akcji drugorzędnych ani kolorów stanów
 `saved`/`error` przycisku zapisu zadania.
+
+Przyciski drugorzędne `.btn-secondary`, `.btn-cancel` i `.tasks-btn-cancel`
+korzystają w `buttons.css` z szarego tła `--system-interaction-soft` po najechaniu
+i przy fokusie klawiatury. Obramowanie zachowuje zwykły kolor i grubość, bez
+przyciemnienia. Dotyczy to m.in. „Oznacz wszystkie jako przeczytane”, „Pokaż starsze”
+oraz „Anuluj” w modalach. Przyciski wyłączone nie otrzymują podświetlenia.
+Okna potwierdzania usuwania również korzystają z tego wspólnego stylu „Anuluj”,
+bez lokalnego nadpisania tła i obramowania w `tasks.css`.
+
+W całej aplikacji, także na ekranach logowania, interakcja z kontrolką nie
+dodaje zewnętrznego obrysu ani poświaty. Globalna reguła w `style.css` wyłącza
+`outline` dla fokusu, a tokeny `--focus-ring` i `--checkbox-focus-ring` mają
+wartość `none`. Formularze, selecty, checkboxy, nawigacja i przyciski korzystają
+z tej zasady również w modalach oraz po częściowej nawigacji. Nie dodawaj
+lokalnych obrysów ani cieni imitujących ramkę w stanach hover/focus/otwarcia.
+Zwykłe obramowania kontrolek, komunikaty walidacji i cienie paneli pozostają
+częścią ich stylu. Obsługa Tab, Escape i przywracanie fokusu pozostają bez zmian.
 
 ### Tabele i formularze Dysku
 
@@ -937,9 +962,13 @@ w przeglądarce, nazwij weryfikację przeglądem kodu, a nie wizualnym testem.
 
 Oczekujące zaproszenia odbiorcy są widoczne w istniejącym panelu powiadomień,
 przed aktywnością zadań. Karta podaje autora, Workspace, rolę, termin i przycisk
-„Przyjmij lub odrzuć zaproszenie”. Dzwonek ma turkusową kropkę
-`notifications-toggle__indicator`, gdy są nieprzeczytane wpisy lub oczekujące
-zaproszenia. Opis czytnika ekranu rozróżnia obie liczby.
+„Przyjmij lub odrzuć zaproszenie”. Dzwonek pokazuje jasnoturkusowy licznik oczekujących
+zaproszeń `notifications-toggle__invitation-count` (do 9, potem „9+”). Pełna liczba
+jest dostępna w opisie i podpowiedzi. Tło licznika używa `--primary-button-bg`,
+tak jak liczniki zakładek powiadomień, a tekst `--text-primary`.
+Gdy nie ma zaproszeń, nieprzeczytane wpisy
+sygnalizuje kropka `notifications-toggle__indicator`. Opis czytnika ekranu
+rozróżnia obie liczby. Znaczniki zaproszeń są renderowane także przed uruchomieniem JS.
 
 Link powiadomienia `?invitation=<pk>` otwiera okno konkretnego zaproszenia na
 stronie Workspace. Przycisk „Otwórz” przy otrzymanym zaproszeniu otwiera to samo okno.
@@ -971,7 +1000,13 @@ zastępują osobny dolny pasek z numerami stron. Pod paskami zaczyna się tabela
 
 „Workspace” pokazuje pełną listę, wyszukiwanie, dodawanie, ustawienia i paginację.
 Znacznik „Bieżący” wskazuje aktywną przestrzeń. Nazwa i liczba członków otwierają
-zakładkę „Członkowie”. `team_panel.html` renderuje tabelę składu lub wysłanych
+zakładkę „Członkowie”. Ikony przełączania i edycji w tabeli używają podświetlenia
+całej komórki, tak jak ikony projektów: `rgba(var(--system-accent-rgb), 0.24)`
+na delikatnym turkusowym tle wiersza. Hover i fokus klawiatury zachowują
+siatkę tabeli, bez dodatkowego obrysu i cienia. Komórki ikon mają jedną
+kolumnę `minmax(0, 1fr)`, aby przycisk wypełniał ich szerokość. Wyłączone akcje (bieżący
+Workspace lub brak uprawnień do edycji) nie otrzymują tego podświetlenia.
+`team_panel.html` renderuje tabelę składu lub wysłanych
 zaproszeń; listę wyboru Workspace i licznik zapewnia wspólny drugi pasek.
 `invitation_filter.html` rozdziela „Otrzymane” i „Wysłane”; `received_invitations.html`
 pokazuje Workspace, zapraszającego, rolę, datę i akcję „Otwórz”.
@@ -1023,20 +1058,50 @@ Ustawienia prowadzą do wspólnego panelu przez „Zarządzaj Workspace”. Funk
 
 ## 13. Centrum powiadomień
 
-Panel dzwonka i pełna strona `/notifications/` współdzielą include'y
+Powiadomienia są dostępne wyłącznie w panelu dzwonka. Panel używa include'ów
 `notification_controls.html`, `notification_list.html`, `notification_pagination.html`
-oraz `notifications-panel.js` i `notifications-panel.css`. Zachowują powłokę panelu
+oraz `notifications-panel.js` i `notifications-panel.css`. Zachowuje powłokę panelu
 wyszukiwania, avatary kont, standardowe przyciski, ikony i tokeny kolorów Ancore.
+Nagłówek zawiera tytuł „Powiadomienia”, ikonę i zamknięcie, bez licznika ani podtytułu.
 Białe karty mają delikatne ramki; nieprzeczytane dodatkowo kropkę i 5% akcentu
 w tle. Zaproszenia mają przycisk prowadzący do istniejącego modala decyzji.
 
-Zakładki „Wszystkie”, „Nieprzeczytane”, „Zaproszenia”, „Archiwum” używają
+Zakładki „Wszystkie”, „Nieprzeczytane”, „Zaproszenia”, „Przypomnienia”, „Archiwum” używają
 przycisków z `aria-pressed`; filtr Workspace korzysta ze wspólnego selecta.
+„Zaproszenia” pokazuje pełną liczbę oczekujących zaproszeń z centrum powiadomień,
+ze wszystkich Workspace, podobnie jak globalny licznik nieprzeczytanych.
+Licznik na zakładce i dzwonku pozostaje po oznaczeniu zaproszenia jako przeczytane.
+Jest ukryty przy zerze; korzysta z istniejącego `pending_invitation_count`, więc
+nie obejmuje zaproszeń rozpatrzonych, cofniętych, wygasłych ani usuniętych z powiadomień.
+Wspólne odświeżanie aktualizuje oba miejsca po operacji, powrocie na stronę i pollingu;
+zmiana liczby oczekujących także sygnalizuje potrzebę odświeżenia otwartej listy.
+Filtr Workspace zachowuje zwykłą cienką ramkę po najechaniu, uzyskaniu fokusu
+i otwarciu listy, bez dodatkowego obrysu ani poświaty, tak jak pola w modalach.
 Karty grupują się według daty, pokazują podgląd komentarza lub do trzech zmian,
 Workspace, moduł, numer rekordu i czas z pełną datą w tooltipie.
-Akcje odczytu/archiwum są widoczne również bez hover. „Przeczytaj wszystkie”
-obejmuje bieżący filtr, również starsze strony. „Pokaż starsze” doczytuje listę.
-Pełny widok dostępny jest także w stopce panelu.
+Na każdej karcie jest jeden stale widoczny przycisk z trzema paskami (`menu`).
+Otwiera wspólne menu `row-actions.js` z akcją odczytu, archiwizacji/przywrócenia
+i usunięcia; zaproszenia nie mają akcji archiwizacji. Menu korzysta z
+`tasks-section-menu`, `tasks-project-menu-button` i natywnego popovera,
+więc nie jest przycinane przez przewijaną listę. Ma szare stany interakcji,
+obsługuje strzałki, Home/End i Escape z powrotem fokusu na przycisk.
+Zdarzenie `ancore:notifications-loaded` inicjalizuje menu również po doczytaniu
+starszych stron i zmianie stanu. Odświeżenie listy lub zamknięcie panelu zamyka
+otwarte menu; zapis blokuje przyciski i przywraca fokus na widoczny przycisk karty.
+„Oznacz wszystkie jako przeczytane” obejmuje bieżący filtr, również starsze strony;
+przycisk jest nieaktywny, gdy wszystkie wpisy w tym widoku są przeczytane.
+Kosz w pasku usuwa wszystkie powiadomienia z bieżącego filtra, także ze starszych
+stron. „Usuń powiadomienie” w menu karty usuwa tylko ten wpis. Obie akcje otwierają `showConfirmModal`
+z informacją o osobistym zakresie oraz zachowaniu historii i zaproszeń w Workspace.
+Potwierdzenie zbiorcze pokazuje liczbę wpisów i zachowuje snapshot z chwili otwarcia.
+Tab i Escape dotyczą wtedy potwierdzenia, bez zamykania panelu pod spodem.
+Zapis blokuje ponowne wysłanie; błąd zachowuje wpis i umożliwia ponowienie.
+Po potwierdzonym odczycie/usunięciu wyświetla się wspólny komunikat sukcesu.
+„Pokaż starsze” doczytuje listę.
+Panel nie ma dodatkowego dolnego paska z opisem zakresu aktywności.
+Dzwonek jest przyciskiem,
+a skrót w Ustawieniach otwiera ten sam panel. Osobna strona powiadomień
+i jej link w wyszukiwarce zostały usunięte; dawny adres przekierowuje do Dashboardu.
 
 Stan odczytu zmienia się po potwierdzonym zapisie; samo otwarcie panelu niczego
 nie oznacza. Nowe zdarzenia sygnalizuje przycisk nad listą, bez automatycznego
@@ -1044,8 +1109,14 @@ przesuwania treści. Stany puste mają opis zależny od filtra. Błąd pobrania 
 akcję ponowienia; błąd zapisu pozostawia wpis i komunikat `role=alert`.
 Żądania mają limit czasu, a zmiana filtra anuluje starsze pobranie.
 
-Panel blokuje interakcje z tłem przez `inert`, utrzymuje fokus, obsługuje Tab,
-Shift+Tab i Escape oraz przywraca fokus dzwonkowi. Na telefonie zajmuje ekran,
+Panel blokuje treść strony i pozostałe części menu przez `inert`, pozostawiając
+dostępny przełącznik dom–powiadomienia–wyszukiwanie. Domek zamyka panel i przywraca
+bazowy ekran, tak jak w wyszukiwaniu; lupa przełącza bezpośrednio do wyszukiwarki,
+a ponowne kliknięcie dzwonka zamyka powiadomienia. Aktywny stan wskazuje otwarty panel.
+Panel nie deklaruje `aria-modal`, ponieważ przełącznik pozostaje dostępny poza nim.
+Tab i Shift+Tab obejmują panel oraz widoczne kontrolki przełącznika; Escape
+zamyka panel i przywraca fokus. Przejście skrótem do wyszukiwania nie przywraca
+fokusu do ukrytego panelu. Na telefonie panel zajmuje ekran,
 a na najwęższym układzie toolbar przechodzi do dwóch wierszy.
 Inicjalizacja po `ancore:content-loaded` nie powiela listenerów; polling działa
 wyłącznie w widocznej karcie. Dane są prywatne dla konta i nie trafiają do localStorage.

@@ -100,7 +100,7 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'Brak nadchodzących terminów')
         self.assertEqual(response['Cache-Control'], 'no-store')
 
-    def test_notifications_view_renders_notification_center_and_active_switcher(self):
+    def test_retired_notifications_page_redirects_home(self):
         user = get_user_model().objects.create_user(
             username='notifications-user',
             email='notifications-user@example.com',
@@ -110,11 +110,7 @@ class DashboardViewTests(TestCase):
 
         response = self.client.get(reverse('notifications'))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '<h1>Powiadomienia</h1>', html=True)
-        self.assertContains(response, 'href="/notifications/" class="sidebar-view-switcher__item is-active"')
-        self.assertContains(response, 'aria-label="Powiadomienia" aria-current="page"')
-        self.assertContains(response, 'Brak nowych powiadomień.')
+        self.assertRedirects(response, reverse('home'), fetch_redirect_response=False)
 
     def test_notifications_view_returns_panel_content_for_ajax_request(self):
         user = get_user_model().objects.create_user(

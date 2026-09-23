@@ -109,7 +109,6 @@ def _navigation_search_results(query, workplace):
         ('Dysk', 'Dyski, foldery i pliki', _workspace_app_url(workplace, 'documents'), 'hard-drive', 'dysk dyski pliki foldery dokumenty biblioteka'),
         ('Dokumenty', 'Tworzenie, edycja i przechowywanie dokumentów', _workspace_app_url(workplace, 'office'), 'file-text', 'dokumenty edytor tekst pisanie'),
         ('Workspace', 'Miejsca pracy i ich ustawienia', reverse('workplaces:workplaces'), 'briefcase', 'miejsca pracy'),
-        ('Powiadomienia', 'Ostatnia aktywność', reverse('notifications'), 'bell', 'aktywność historia'),
         ('Ustawienia Ancore', 'Konfiguracja aplikacji', reverse('settings'), 'settings', 'preferencje konfiguracja'),
         ('Profil użytkownika', 'Dane konta i status', reverse('profile'), 'circle-user-round', 'konto użytkownik'),
     )
@@ -520,6 +519,10 @@ def home(request):
 @login_required
 @require_GET
 def notifications(request):
+    is_panel_request = (request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+                        and 'text/html' not in request.headers.get('Accept', ''))
+    if request.GET.get('summary') != '1' and not is_panel_request:
+        return redirect('home')
     summary = notification_summary(request.user)
     if request.GET.get('summary') == '1':
         response = JsonResponse(summary)
@@ -530,25 +533,19 @@ def notifications(request):
     except ValueError as error:
         return JsonResponse({'error': str(error)}, status=400)
     context.update(summary)
-    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-            and 'text/html' not in request.headers.get('Accept', '')):
-        response = JsonResponse({
-            **summary,
-            'count': len(context['dashboard_notifications']),
-            'total': context['dashboard_notification_count'],
-            'filtered_unread_count': context['filtered_unread_count'],
-            'snapshot': context['snapshot'],
-            'next_cursor': context['next_cursor'],
-            'html': render_to_string(
-                'dashboard/includes/notification_list.html',
-                context,
-                request=request,
-            ),
-        })
-        response['Cache-Control'] = 'no-store'
-        return response
-
-    response = render(request, 'dashboard/notifications.html', context)
+    response = JsonResponse({
+        **summary,
+        'count': len(context['dashboard_notifications']),
+        'total': context['dashboard_notification_count'],
+        'filtered_unread_count': context['filtered_unread_count'],
+        'snapshot': context['snapshot'],
+        'next_cursor': context['next_cursor'],
+        'html': render_to_string(
+            'dashboard/includes/notification_list.html',
+            context,
+            request=request,
+        ),
+    })
     response['Cache-Control'] = 'no-store'
     return response
 

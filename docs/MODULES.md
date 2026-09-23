@@ -463,7 +463,7 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   i preferencji dostępnych na ekranie.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
 - **Powiadomienia:** centrum zaproszeń oraz aktywności Zadań i Kanbana,
-  z odczytem, archiwum, filtrami Workspace i doczytywaniem starszych wpisów.
+  z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
 
 Podsumowanie z [overview.py](../dashboard/overview.py) liczy główne zadania
 i karty, bez podzadań/podkart. Zamknięcie oznacza status `closed`; `resolved`
@@ -474,9 +474,15 @@ najnowszych; postęp liczy zamknięte zadania tego samego właściciela i Worksp
 Linki do modułów mają scoped URL, szczegóły zadań/kart używają `task_id`,
 a projekty i wydarzenia PK. `/` nadal używa aktywnego kontekstu z sesji.
 
-Szablon pełnego centrum to `dashboard/notifications.html`; panel w powłoce
-używa tych samych kontrolek, listy i JavaScriptu. `NotificationState` zapisuje
-odczyt i archiwum osobno dla konta. Własna aktywność jest domyślnie przeczytana.
+Centrum jest dostępne wyłącznie jako panel w powłoce aplikacji, otwierany
+dzwonkiem lub skrótem w Ustawieniach. Pełna strona została wycofana;
+zwykłe wejście na `/notifications/` przekierowuje do Dashboardu, a żądania
+danych panelu i licznika nadal obsługuje ten sam endpoint. `NotificationState` zapisuje
+odczyt, archiwum i usunięcie osobno dla konta. Własna aktywność jest domyślnie przeczytana.
+„Oznacz wszystkie jako przeczytane” i zbiorcze usuwanie obejmują bieżący filtr
+oraz starsze strony listy. Usunięcie wymaga potwierdzenia i nie ma akcji przywracania;
+historia obiektów oraz powiadomienia innych osób pozostają bez zmian.
+Usunięte powiadomienie o zaproszeniu nie usuwa zaproszenia z katalogu Workspace.
 Zaproszenia czekają na decyzję także po odczytaniu. Centrum obejmuje dostępne
 Workspace; link określa przestrzeń konkretnego zadania/karty. Licznik odświeża
 się co 30 sekund w widocznej karcie. Szczegóły uprawnień, paginacji i zbiorczego

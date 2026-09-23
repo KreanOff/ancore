@@ -25,7 +25,7 @@
 .form-input:focus {
     outline: none;
     border-color: #c3cad4;
-    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.12);
+    box-shadow: var(--focus-ring);
 }
 
 .form-input::placeholder {
@@ -94,13 +94,13 @@ select.form-select {
 .ancore-custom-select__button:hover,
 .ancore-custom-select.is-open .ancore-custom-select__button {
     border-color: #cfd6df;
-    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+    box-shadow: var(--focus-ring);
 }
 
 .ancore-custom-select__button:focus-visible {
     outline: none;
     border-color: #c3cad4;
-    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.14);
+    box-shadow: var(--focus-ring);
 }
 
 .ancore-custom-select__button:disabled {

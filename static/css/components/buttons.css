@@ -56,9 +56,8 @@
     border: 1px solid var(--border-color);
 }
 
-.btn-secondary:hover:not(:disabled) {
-    background-color: var(--background-hover);
-    border-color: var(--text-muted);
+.btn-secondary:is(:hover, :focus-visible):not(:disabled) {
+    background-color: var(--system-interaction-soft);
 }
 
 .btn-ghost {
@@ -105,10 +104,9 @@
     transition: background-color 0.075s, border-color 0.075s;
 }
 
-.btn-cancel:hover,
-.tasks-btn-cancel:hover {
-    background: var(--background-hover);
-    border-color: var(--text-main);
+.btn-cancel:is(:hover, :focus-visible):not(:disabled),
+.tasks-btn-cancel:is(:hover, :focus-visible):not(:disabled) {
+    background: var(--system-interaction-soft);
 }
 
 .btn-block {

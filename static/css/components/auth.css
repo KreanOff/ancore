@@ -11,7 +11,6 @@ body.auth-page {
     --auth-input-bg: #fcfdfd;
     --auth-focus-bg: #f3f4f6;
     --auth-focus-border: #6b7280;
-    --auth-focus-ring: rgba(107, 114, 128, 0.18);
     --auth-placeholder: #8690a1;
     --auth-icon: #727d8d;
     --auth-step-line: #86b3bb;
@@ -380,7 +379,7 @@ body.auth-page .auth-form .form-input:focus {
     outline: none;
     border-color: var(--auth-focus-border);
     background: var(--auth-focus-bg);
-    box-shadow: 0 0 0 3px var(--auth-focus-ring);
+    box-shadow: var(--focus-ring);
 }
 
 body.auth-page .auth-password-control {
@@ -403,7 +402,7 @@ body.auth-page .auth-password-control:hover {
 body.auth-page .auth-password-control:focus-within {
     border-color: var(--auth-focus-border);
     background: var(--auth-focus-bg);
-    box-shadow: 0 0 0 3px var(--auth-focus-ring);
+    box-shadow: var(--focus-ring);
 }
 
 body.auth-page .auth-password-control > .auth-input,

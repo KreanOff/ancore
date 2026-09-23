@@ -1,6 +1,7 @@
 from .services import pending_invitations_for_user, scoped_workplace_app_path, workplaces_for_user
 from .models import SidebarFavorite
 from .navigation import sidebar_favorites_for_request
+from dashboard.models import NotificationState
 
 
 def current_workplace(request):
@@ -40,4 +41,8 @@ def current_workplace(request):
         'sidebar_favorite_keys': sidebar_favorite_keys,
         'sidebar_favorites': sidebar_favorites,
         'pending_workspace_invitation_count': pending_invitations_for_user(user).count(),
+        'pending_notification_invitation_count': pending_invitations_for_user(user).exclude(
+            pk__in=NotificationState.objects.filter(user=user, is_deleted=True, invitation__isnull=False)
+            .values('invitation_id'),
+        ).count(),
     }

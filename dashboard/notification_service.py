@@ -147,7 +147,7 @@ def notification_filters(user, params):
     return {'view': view, 'workspace': workspace}
 
 
-def notification_sources(user, workspace=''):
+def notification_sources(user, workspace='', *, include_deleted=False):
     access = (
         Q(task__user=user, task__workplace__isnull=True)
         | Q(task__user_id=F('task__workplace__owner_id'), task__workplace__in=workplaces_for_user(user))
@@ -169,7 +169,10 @@ def notification_sources(user, workspace=''):
         sources[source] = queryset.annotate(
             inbox_read=Coalesce(Subquery(state.values('is_read')[:1]), default_read),
             inbox_archived=Coalesce(Subquery(state.values('is_archived')[:1]), Value(False)),
+            inbox_deleted=Coalesce(Subquery(state.values('is_deleted')[:1]), Value(False)),
         )
+        if not include_deleted:
+            sources[source] = sources[source].filter(inbox_deleted=False)
     return sources
 
 
@@ -321,23 +324,28 @@ def _dashboard_notifications(user):
 @transaction.atomic
 def change_notification_state(user, params):
     action = params.get('action')
-    if action == 'read_all':
+    if action in {'read_all', 'delete_all'}:
         data = _token_data(params.get('snapshot', ''), user)
+        values = {'is_read': True}
+        if action == 'delete_all':
+            values['is_deleted'] = True
         for source, queryset in filtered_sources(user, data['filters'], data['asof']):
             field = SOURCES[source]
-            ids = queryset.filter(inbox_read=False).order_by('pk').values_list('pk', flat=True).iterator(chunk_size=500)
+            if action == 'read_all':
+                queryset = queryset.filter(inbox_read=False)
+            ids = queryset.order_by('pk').values_list('pk', flat=True).iterator(chunk_size=500)
             while batch := list(islice(ids, 500)):
                 NotificationState.objects.bulk_create(
-                    [NotificationState(user=user, **{field + '_id': pk}, is_read=True) for pk in batch],
-                    update_conflicts=True, unique_fields=['user', field], update_fields=['is_read'],
+                    [NotificationState(user=user, **{field + '_id': pk}, **values) for pk in batch],
+                    update_conflicts=True, unique_fields=['user', field], update_fields=list(values),
                 )
         return
-    if action not in {'read', 'unread', 'archive', 'restore'}:
+    if action not in {'read', 'unread', 'archive', 'restore', 'delete'}:
         raise ValueError('Nieprawidłowa akcja powiadomienia.')
     source, _, pk = str(params.get('key', '')).partition(':')
     if source not in SOURCES or not pk.isdecimal() or len(pk) > 18:
         raise Http404
-    row = notification_sources(user)[source].filter(pk=int(pk)).first()
+    row = notification_sources(user, include_deleted=(action == 'delete'))[source].filter(pk=int(pk)).first()
     if row is None:
         raise Http404
     if source == 'workplace' and action in {'archive', 'restore'}:
@@ -345,4 +353,6 @@ def change_notification_state(user, params):
     values = {'is_read': action == 'read'} if action in {'read', 'unread'} else {'is_archived': action == 'archive'}
     if action == 'archive':
         values['is_read'] = True
+    elif action == 'delete':
+        values = {'is_read': True, 'is_deleted': True}
     NotificationState.objects.update_or_create(user=user, **{SOURCES[source]: row}, defaults=values)

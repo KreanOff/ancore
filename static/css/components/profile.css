@@ -261,7 +261,7 @@
 
 .profile-photo-preview-button:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(70, 129, 214, 0.28);
+    box-shadow: var(--focus-ring);
 }
 
 .profile-photo-button {
@@ -298,7 +298,7 @@
 
 .profile-photo-control:focus-within .profile-photo-button {
     border-color: var(--system-interaction);
-    box-shadow: 0 0 0 3px rgba(250, 230, 220, 0.55);
+    box-shadow: var(--focus-ring);
 }
 
 .profile-photo-cropper {
@@ -474,7 +474,7 @@
 .profile-email-field .form-input:focus,
 .profile-status-button:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(250, 230, 220, 0.55);
+    box-shadow: var(--focus-ring);
 }
 
 .profile-status-dropdown {
@@ -638,7 +638,7 @@
 
 .profile-field-input:focus {
     border-color: var(--system-interaction);
-    box-shadow: 0 0 0 3px rgba(250, 230, 220, 0.5);
+    box-shadow: var(--focus-ring);
 }
 
 .profile-bio-field {
@@ -1070,7 +1070,7 @@
 .profile-edit-form .profile-stacked-field > .form-input:focus,
 .profile-edit-form .profile-email-field .form-input:focus {
     border-color: var(--system-interaction);
-    box-shadow: 0 0 0 3px rgba(250, 230, 220, 0.5);
+    box-shadow: var(--focus-ring);
 }
 
 .profile-edit-form .profile-contact-fields,

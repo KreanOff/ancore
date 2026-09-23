@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 19 | 49 | 27 | 200 |
 | [kanban](../kanban) | 10 | 35 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 15 | 2 | 8 | 63 |
+| [dashboard](../dashboard) | 15 | 3 | 7 | 70 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 
@@ -474,7 +474,7 @@ Pola zadeklarowane tutaj: `task` (ForeignKey), `recipient` (ForeignKey), `schedu
 
 Źródło: [dashboard/models.py](../dashboard/models.py).
 
-Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `reminder` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField).
+Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `reminder` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField), `is_deleted` (BooleanField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -1119,7 +1119,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/templates/dashboard/includes/notification_list.html](../dashboard/templates/dashboard/includes/notification_list.html)
 - [dashboard/templates/dashboard/includes/notification_pagination.html](../dashboard/templates/dashboard/includes/notification_pagination.html)
 - [dashboard/templates/dashboard/includes/settings_row.html](../dashboard/templates/dashboard/includes/settings_row.html)
-- [dashboard/templates/dashboard/notifications.html](../dashboard/templates/dashboard/notifications.html)
 - [dashboard/templates/dashboard/project_field_settings.html](../dashboard/templates/dashboard/project_field_settings.html)
 - [dashboard/templates/dashboard/settings.html](../dashboard/templates/dashboard/settings.html)
 
@@ -1368,7 +1367,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_notifications.py](../dashboard/test_notifications.py).
 
-- `NotificationCenterTests`: 17 metod testowych.
+- `NotificationCenterTests`: 23 metod testowych.
 
 ### dashboard/test_overview.py
 
@@ -1380,7 +1379,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_reminders.py](../dashboard/test_reminders.py).
 
-- `TaskReminderTests`: 7 metod testowych.
+- `TaskReminderTests`: 8 metod testowych.
 
 ### dashboard/test_search_regressions.py
 
@@ -1643,6 +1642,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 
 - [dashboard/migrations/0001_initial.py](../dashboard/migrations/0001_initial.py)
 - [dashboard/migrations/0002_taskreminder_and_more.py](../dashboard/migrations/0002_taskreminder_and_more.py)
+- [dashboard/migrations/0003_notificationstate_is_deleted.py](../dashboard/migrations/0003_notificationstate_is_deleted.py)
 
 ### planner
 

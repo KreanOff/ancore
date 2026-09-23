@@ -415,7 +415,7 @@ stany pusty/ładowanie/błąd oraz nawigację po wynikach.
 Centrum powiadomień (`dashboard/notification_service.py`) odczytuje aktywności
 Zadań i Kanbana, ważne oczekujące zaproszenia oraz osobiste przypomnienia.
 Nie kopiuje historii; GET może utworzyć brakujące dostawy osiągniętych przypomnień.
-`dashboard.NotificationState` przechowuje jedynie osobisty stan odczytu i archiwum,
+`dashboard.NotificationState` przechowuje osobisty stan odczytu, archiwum i usunięcia,
 z FK do dokładnie jednego źródła oraz unikalnością użytkownik + źródło.
 Usunięcie źródła usuwa jego stan przez CASCADE.
 
@@ -430,6 +430,15 @@ Własna aktywność jest domyślnie przeczytana; działania innych osób i zapro
 są nieprzeczytane. Można ręcznie zmienić ten stan. Archiwizacja oznacza wpis jako
 przeczytany i ukrywa go w głównej liście; przywrócenie zachowuje odczyt.
 Oczekujących zaproszeń nie można archiwizować. Ich odczyt nie zastępuje decyzji.
+Usuwanie ustawia `is_deleted=True` i `is_read=True` wyłącznie dla odbiorcy.
+Lista, archiwum, liczniki i polling pomijają te wpisy; ponowna dostawa tego samego
+przypomnienia ich nie odtwarza. Nowy termin przypomnienia tworzy odrębny wpis.
+Źródłowe aktywności, zadania i zaproszenia pozostają w bazie. Zaproszenie nadal
+można obsłużyć w Workspace, choć znika z panelu i jego licznika.
+Stan początkowego dzwonka również pomija usunięte powiadomienia o zaproszeniach;
+licznik zaproszeń w zarządzaniu Workspace nadal obejmuje wszystkie oczekujące decyzje.
+Ponowne usunięcie jest idempotentne; odczyt, archiwizacja i przywrócenie usuniętego
+wpisu są odrzucane. Każda operacja ponownie sprawdza dostęp do źródła.
 Link `/workplaces/?invitation=<pk>` otwiera istniejący modal „Przyjmij / Odrzuć”.
 Link zadania/karty określa Workspace, aktualny numer i stabilne `task_pk`.
 
@@ -440,7 +449,13 @@ remisy dat przez PK i źródło. Nowe wpisy nie przesuwają już doczytywanych s
 `POST /notifications/action/` wymaga sesji i CSRF. Akcja zbiorczego odczytu
 obejmuje cały wybrany filtr do podpisanego czasu otwarcia, także dalsze strony;
 nie oznacza nowszych zdarzeń. Tokeny wygasają po 24 godzinach.
+`delete` usuwa osobisty wpis według klucza, a `delete_all` korzysta z tego samego
+podpisanego snapshotu i zakresu co `read_all`. Zbiorcze akcje przetwarzają po 500
+rekordów w jednej transakcji i nie zmieniają wpisów spoza filtra ani nowszych zdarzeń.
 
+`GET /notifications/` zwraca listę panelu jako JSON dla `X-Requested-With:
+XMLHttpRequest` bez `Accept: text/html`. Wejście przeglądarką oraz dawna częściowa
+nawigacja HTML przekierowują do Dashboardu; osobny pełny widok nie jest renderowany.
 Endpoint `?summary=1` zwraca globalny licznik nieprzeczytanych, oczekujących
 zaproszeń i identyfikatory najnowszych dostępnych zdarzeń. Odpowiedzi mają
 `Cache-Control: no-store`. Dzwonek odświeża stan po uruchomieniu, po powrocie

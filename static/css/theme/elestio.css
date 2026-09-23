@@ -244,12 +244,12 @@ body {
 .tasks-filter-select:focus,
 .form-select:focus {
     border-color: var(--system-interaction);
-    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.12);
+    box-shadow: var(--focus-ring);
 }
 
 .tasks-search-field:focus-within {
     border-color: #8b8f98;
-    box-shadow: 0 0 0 3px rgba(139, 143, 152, 0.18);
+    box-shadow: var(--focus-ring);
 }
 
 .form-input::placeholder,
@@ -500,7 +500,7 @@ body.auth-page,
 
 .auth-card .form-input:focus {
     border-color: var(--system-interaction);
-    box-shadow: 0 0 0 3px rgba(var(--system-interaction-rgb), 0.14);
+    box-shadow: var(--focus-ring);
 }
 
 .auth-input-shell > i,

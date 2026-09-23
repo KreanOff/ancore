@@ -23,7 +23,6 @@
     --primary-color: var(--workplaces-accent);
     --primary-color-dark: var(--workplaces-accent-dark);
     --primary-color-light: var(--workplaces-accent-soft);
-    --focus-ring: 0 0 0 3px var(--workplaces-accent-ring);
 }
 
 .sidebar-workplace {
@@ -269,7 +268,7 @@
 
 .workplaces-search__input:focus {
     border-color: #cfd7e6;
-    box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.08);
+    box-shadow: var(--focus-ring);
     outline: 0;
 }
 
@@ -2302,7 +2301,7 @@
 .workplaces-create-form--console .form-input:focus,
 .workplaces-create-form--console input[type="text"]:focus {
     border-color: rgba(var(--workplaces-accent-rgb), 0.55);
-    box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.09);
+    box-shadow: var(--focus-ring);
     outline: 0;
 }
 
@@ -2665,11 +2664,11 @@
     cursor: pointer;
 }
 
-.workplace-table-icon-button:hover,
-.workplace-table-icon-button:focus-visible,
-.workplace-row__settings .workplace-settings__toggle:hover,
+.workplace-table-icon-button:hover:not(:disabled),
+.workplace-table-icon-button:focus-visible:not(:disabled),
+.workplace-row__settings .workplace-settings__toggle:hover:not(:disabled),
 .workplace-row__settings .workplace-settings[open] .workplace-settings__toggle {
-    background: #eef0f5;
+    background: rgba(var(--system-accent-rgb), 0.24);
     color: #343842;
     outline: 0;
 }
@@ -2750,10 +2749,10 @@
     box-shadow: none;
 }
 
-.workplaces-console .workplace-row__settings .workplace-settings__toggle:hover,
+.workplaces-console .workplace-row__settings .workplace-settings__toggle:hover:not(:disabled),
 .workplaces-console .workplace-row__settings .workplace-settings[open] .workplace-settings__toggle {
     border: 0;
-    background: #eef0f5;
+    background: rgba(var(--system-accent-rgb), 0.24);
     color: #343842;
 }
 
@@ -3014,7 +3013,7 @@
 
 .workplace-create-modal__body .workplace-create-modal__text-input:focus {
     border-color: var(--workplaces-accent-dark);
-    box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.12);
+    box-shadow: var(--focus-ring);
 }
 
 .workplace-create-modal__field.has-error .workplace-create-modal__text-input {
@@ -3075,7 +3074,7 @@
 .workplace-edit-modal__file-input:focus-visible + .workplace-create-modal__dropzone {
     border-color: var(--workplaces-accent-dark);
     background: rgba(var(--workplaces-accent-rgb), 0.045);
-    box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.1);
+    box-shadow: var(--focus-ring);
     outline: none;
 }
 
@@ -3331,7 +3330,7 @@
 .tasks-project-modal__body .workplace-edit-modal__code-field .tasks-inline-input:focus,
 .tasks-project-modal__body .workplace-edit-modal__description-field .tasks-modal-textarea:focus {
     border-color: var(--workplaces-accent-dark);
-    box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.1);
+    box-shadow: var(--focus-ring);
 }
 
 .workplace-edit-modal__photo-control {
@@ -3350,7 +3349,7 @@
 
 .workplace-edit-modal__photo-control:hover {
     background: #f7f8fb;
-    box-shadow: 0 0 0 3px rgba(var(--workplaces-accent-rgb), 0.08);
+    box-shadow: var(--focus-ring);
 }
 
 .workplace-edit-modal__avatar {
@@ -3758,6 +3757,7 @@
     min-width: 0;
     max-width: none;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     place-items: center;
     justify-content: center;
     padding: 0;
@@ -3830,10 +3830,10 @@
     box-shadow: none;
 }
 
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button:hover,
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button:focus-visible,
+.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button:hover:not(:disabled),
+.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button:focus-visible:not(:disabled),
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-row__settings .workplace-settings[open] .workplace-settings__toggle {
-    background: rgb(240, 240, 242);
+    background: rgba(var(--system-accent-rgb), 0.24);
     color: #343842;
     outline: 0;
 }
@@ -4039,7 +4039,7 @@
 .tasks-project-edit-modal__body .workplace-modal__fields .tasks-inline-input:focus {
     border-color: #b8bec8;
     outline: 0;
-    box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+    box-shadow: var(--focus-ring);
 }
 
 .workplace-modal__fields label.workplace-create-modal__dropzone,
@@ -4065,7 +4065,7 @@
     border-color: #b8bec8;
     background: #ffffff;
     outline: 0;
-    box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+    box-shadow: var(--focus-ring);
 }
 
 .workplace-create-modal__avatar,

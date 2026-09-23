@@ -46,7 +46,8 @@ class WorkspaceInvitationNotificationTests(TestCase):
         self.assertNotIn(self.workspace, workplaces_for_user(self.recipient))
         response = self.client.get(reverse('workplaces:team', args=[self.personal.pk]), follow=True)
         self.assertEqual(response.context['pending_workspace_invitation_count'], 1)
-        self.assertContains(response, 'data-notifications-pending aria-hidden="true"></span>')
+        self.assertContains(response, 'data-notifications-invitation-badge aria-hidden="true">1</span>')
+        self.assertContains(response, 'data-notifications-invitation-count>1</span>')
         response = self.client.get(reverse('workplaces:workplaces'))
         self.assertContains(response, 'aria-label="Otrzymane zaproszenia: 1"')
         self.assertNotContains(response, 'workplace-invitations__row')
@@ -57,14 +58,13 @@ class WorkspaceInvitationNotificationTests(TestCase):
         self.assertContains(response, 'data-team-response-form')
         self.assertNotIn(self.workspace, workplaces_for_user(self.recipient))
 
-    def test_invitations_are_recipient_only_in_panel_page_and_summary(self):
+    def test_invitations_are_recipient_only_in_panel_and_summary(self):
         for user in (self.owner, self.other):
             with self.subTest(user=user.username):
                 self.client.force_login(user)
                 self.assertEqual(self.panel().json()['pending_invitation_count'], 0)
                 self.assertNotIn('zaprasza Cię do Workspace', self.panel().json()['html'])
                 self.assertEqual(self.summary().json()['pending_invitation_count'], 0)
-                self.assertNotContains(self.client.get(reverse('notifications')), 'zaprasza Cię do Workspace')
 
     def test_inactive_and_expired_invitations_disappear_from_all_surfaces(self):
         for status in ('accepted', 'declined', 'revoked'):
@@ -76,6 +76,8 @@ class WorkspaceInvitationNotificationTests(TestCase):
                 response = self.client.get(reverse('workplaces:workplaces'))
                 self.assertNotContains(response, 'data-invitation-response-modal')
                 self.assertContains(response, 'data-notifications-pending aria-hidden="true" hidden')
+                self.assertContains(response, 'data-notifications-invitation-badge aria-hidden="true" hidden>0</span>')
+                self.assertContains(response, 'data-notifications-invitation-count hidden>0</span>')
         self.invitation.status = 'pending'
         self.invitation.expires_at = timezone.now() - timedelta(seconds=1)
         self.invitation.save(update_fields=['status', 'expires_at'])
@@ -157,3 +159,6 @@ class WorkspaceInvitationNotificationTests(TestCase):
             WorkplaceInvitation.objects.create(workplace=workplace, recipient=self.recipient, invited_by=self.owner)
         self.assertEqual(self.summary().json()['pending_invitation_count'], DASHBOARD_NOTIFICATION_LIMIT + 1)
         self.assertEqual(self.panel().json()['count'], DASHBOARD_NOTIFICATION_LIMIT)
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'data-notifications-invitation-badge aria-hidden="true">9+</span>')
+        self.assertContains(response, f'data-notifications-invitation-count>{DASHBOARD_NOTIFICATION_LIMIT + 1}</span>')

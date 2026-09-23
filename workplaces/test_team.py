@@ -85,9 +85,10 @@ class TeamAccessTests(TestCase):
         self.assertIn(self.document.title, json.dumps(response.json(), ensure_ascii=False))
         self.assertNotIn(self.other_task.title, json.dumps(response.json(), ensure_ascii=False))
         self.assertEqual(self.client.get(reverse('home')).context['dashboard_totals']['total'], 2)
-        notifications = self.client.get(reverse('notifications'))
-        self.assertContains(notifications, self.task.title)
-        self.assertNotContains(notifications, self.other_task.title)
+        notifications = self.client.get(reverse('notifications'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(notifications.status_code, 200)
+        self.assertIn(self.task.title, notifications.json()['html'])
+        self.assertNotIn(self.other_task.title, notifications.json()['html'])
 
     def test_my_tasks_filters_by_viewer_in_shared_space(self):
         Task.objects.create(user=self.owner, workplace=self.team, section=self.section, title='Dla administratora', assignee=self.admin)

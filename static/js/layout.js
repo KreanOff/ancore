@@ -59,7 +59,6 @@
         const appShellPaths = [
             /^\/$/,
             /^\/settings\/?$/,
-            /^\/notifications\/?$/,
             /^\/workplaces\/?$/,
             /^\/accounts\/profile\/?$/,
             /^\/tasks\/?$/,

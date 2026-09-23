@@ -1123,7 +1123,7 @@
 .calendar-color-select__button:focus-visible {
     outline: none;
     border-color: var(--calendar-selection-border);
-    box-shadow: 0 0 0 3px rgba(123, 132, 147, 0.18);
+    box-shadow: var(--focus-ring);
 }
 
 .calendar-color-select__button [data-calendar-color-label] {

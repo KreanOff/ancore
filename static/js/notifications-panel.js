@@ -4,15 +4,22 @@
     const toggle = document.querySelector('[data-notifications-toggle]');
     const backdrop = document.querySelector('[data-notifications-backdrop]');
     if (!panel || !toggle) return;
+    const switcher = toggle.closest('[data-sidebar-view-switcher]');
+    const defaultView = switcher?.querySelector('[data-sidebar-default-view]');
     const controllers = new Map();
     let summaryRequest = null;
     let refreshTimer = null;
     let restoreFocus = null;
     let revision = null;
     let previousUnread = null;
+    let previousPending = null;
     let inertElements = [];
     const isOpen = () => !panel.hidden;
     const icons = scope => window.AncoreIcons?.render(scope);
+
+    function closeActionMenus() {
+        panel.querySelectorAll('[data-row-actions-panel]:popover-open').forEach(menu => menu.hidePopover());
+    }
 
     function updateSummary(payload) {
         const unread = Number(payload.unread_count);
@@ -20,21 +27,31 @@
         if (!Number.isInteger(unread) || !Number.isInteger(pending)) return;
         const label = `Nieprzeczytane: ${unread}. Oczekujące zaproszenia: ${pending}.`;
         const indicator = document.querySelector('[data-notifications-pending]');
-        if (indicator) indicator.hidden = unread === 0 && pending === 0;
+        if (indicator) indicator.hidden = unread === 0 || pending > 0;
+        const invitationBadge = document.querySelector('[data-notifications-invitation-badge]');
+        if (invitationBadge) {
+            invitationBadge.textContent = pending > 9 ? '9+' : String(pending);
+            invitationBadge.hidden = pending === 0;
+        }
+        document.querySelectorAll('[data-notifications-invitation-count]').forEach(node => {
+            node.textContent = String(pending);
+            node.hidden = pending === 0;
+            node.closest('[data-notification-filter]').title = `Oczekujące zaproszenia ze wszystkich Workspace: ${pending}`;
+        });
         document.querySelector('[data-notifications-invitation-status]').textContent = label;
         toggle.title = `Powiadomienia · ${label}`;
-        document.querySelectorAll('[data-notifications-count], [data-notifications-unread-count]').forEach(node => {
+        document.querySelectorAll('[data-notifications-unread-count]').forEach(node => {
             node.textContent = String(unread);
-            if (node.matches('[data-notifications-count]')) node.hidden = unread === 0;
         });
         const nextRevision = JSON.stringify(payload.revision);
-        if (revision !== null && (revision !== nextRevision || previousUnread !== unread)) {
+        if (revision !== null && (revision !== nextRevision || previousUnread !== unread || previousPending !== pending)) {
             controllers.forEach((controller, root) => {
                 if (!root.hidden && controller.loaded) root.querySelector('[data-notification-new-items]').hidden = false;
             });
         }
         revision = nextRevision;
         previousUnread = unread;
+        previousPending = pending;
     }
 
     async function refreshSummary() {
@@ -70,24 +87,14 @@
         const more = root.querySelector('[data-notification-more]');
         const pagination = root.querySelector('[data-notification-pagination]');
         const readAll = root.querySelector('[data-notification-read-all]');
+        const deleteAll = root.querySelector('[data-notification-delete-all]');
         let request = null;
         let mutating = false;
+        let total = 0;
         let cursor = root.dataset.nextCursor || '';
         let snapshot = root.dataset.snapshot || '';
         let view = root.querySelector('[data-notification-filter][aria-pressed="true"]')?.dataset.notificationFilter || 'all';
         const controller = { loaded: Boolean(snapshot), load, abort: () => request?.abort() };
-
-        function updateLocation() {
-            if (root === panel) return;
-            const url = new URL(location.href);
-            url.searchParams.delete('cursor');
-            if (view === 'all') url.searchParams.delete('view');
-            else url.searchParams.set('view', view);
-            const workspace = root.querySelector('[data-notification-workspace]').value;
-            if (workspace) url.searchParams.set('workspace', workspace);
-            else url.searchParams.delete('workspace');
-            history.replaceState(history.state, '', url);
-        }
 
         function reportError(message) {
             error.textContent = message;
@@ -96,6 +103,7 @@
         }
 
         async function load({ append = false, quiet = false, focusKey = '' } = {}) {
+            closeActionMenus();
             request?.abort();
             request = new AbortController();
             const activeRequest = request;
@@ -104,6 +112,7 @@
             error.hidden = true;
             content.setAttribute('aria-busy', 'true');
             readAll.disabled = true;
+            deleteAll.disabled = true;
             more.disabled = true;
             const scrollTop = content.scrollTop;
             if (!append && !quiet) {
@@ -142,16 +151,23 @@
                 cursor = payload.next_cursor;
                 snapshot = payload.snapshot;
                 controller.loaded = true;
+                total = payload.total;
                 readAll.disabled = payload.filtered_unread_count === 0;
+                readAll.title = payload.filtered_unread_count === 0
+                    ? 'Wszystkie powiadomienia w tym widoku są przeczytane'
+                    : 'Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze';
+                deleteAll.disabled = total === 0;
                 pagination.hidden = !cursor;
                 root.querySelector('[data-notification-progress]').textContent = `${content.querySelectorAll('[data-notification-item]').length} z ${payload.total}`;
                 root.querySelector('[data-notification-new-items]').hidden = true;
                 status.textContent = `Powiadomienia: ${payload.total}. Nieprzeczytane: ${payload.filtered_unread_count}.`;
                 icons(content);
+                document.dispatchEvent(new CustomEvent('ancore:notifications-loaded'));
                 if (focusKey) {
                     const row = Array.from(content.querySelectorAll('[data-notification-item]')).find(item => item.dataset.notificationKey === focusKey);
-                    (row?.querySelector('[data-notification-action]') || content).focus({ preventScroll: true });
+                    (row?.querySelector('[data-row-actions-toggle]') || content).focus({ preventScroll: true });
                 }
+                return true;
             } catch (failure) {
                 if ((failure.name === 'AbortError' && !timedOut) || request !== activeRequest) return;
                 if (!quiet && !append) content.innerHTML = '<div class="global-search-state notifications-panel__state"><span class="global-search-state__icon"><i data-icon="wifi-off" aria-hidden="true"></i></span><h3>Nie udało się pobrać powiadomień</h3><p>Sprawdź połączenie i spróbuj ponownie.</p><button type="button" class="global-search-state__retry" data-notification-refresh>Spróbuj ponownie</button></div>';
@@ -167,19 +183,24 @@
             }
         }
 
-        async function mutate(action, key = '', link = null) {
+        async function mutate(action, key = '', link = null, actionSnapshot = snapshot) {
             if (mutating) return;
+            closeActionMenus();
             mutating = true;
             error.hidden = true;
             request?.abort();
             summaryRequest?.abort();
             summaryRequest = null;
-            const buttons = root.querySelectorAll('[data-notification-action], [data-notification-read-all]');
+            const buttons = root.querySelectorAll('[data-notification-action], [data-row-actions-toggle], [data-notification-read-all], [data-notification-delete-all]');
+            const previousDisabled = new Map(Array.from(buttons, button => [button, button.disabled]));
+            const restoreButtons = () => previousDisabled.forEach((disabled, button) => {
+                if (button.isConnected) button.disabled = disabled;
+            });
             buttons.forEach(button => { button.disabled = true; });
             const mutationRequest = new AbortController();
             const timeout = setTimeout(() => mutationRequest.abort(), 15000);
             try {
-                const body = new URLSearchParams({ action, key, snapshot });
+                const body = new URLSearchParams({ action, key, snapshot: actionSnapshot });
                 const response = await fetch(root.dataset.notificationsActionUrl, {
                     method: 'POST', credentials: 'same-origin', signal: mutationRequest.signal,
                     headers: { 'X-CSRFToken': root.querySelector('[name=csrfmiddlewaretoken]').value, 'X-Requested-With': 'XMLHttpRequest' }, body,
@@ -191,31 +212,57 @@
                     setOpen(false);
                     window.location.assign(link.href);
                 } else {
-                    await load({ quiet: true, focusKey: key });
-                    status.textContent = action === 'archive' ? 'Powiadomienie przeniesione do archiwum.' : action === 'restore' ? 'Powiadomienie przywrócone.' : 'Stan powiadomień zapisany.';
+                    const refreshed = await load({ quiet: true, focusKey: key });
+                    const message = {
+                        archive: 'Powiadomienie przeniesione do archiwum.',
+                        restore: 'Powiadomienie przywrócone.',
+                        delete: 'Powiadomienie usunięte.',
+                        delete_all: 'Powiadomienia z wybranego widoku zostały usunięte.',
+                        read_all: 'Powiadomienia z wybranego widoku oznaczono jako przeczytane.',
+                    }[action] || 'Stan powiadomień zapisany.';
+                    if (refreshed) status.textContent = message;
+                    else restoreButtons();
+                    if (['read_all', 'delete', 'delete_all'].includes(action)) window.showNotification?.(message, 'success');
                 }
             } catch (failure) {
                 reportError(failure.name === 'AbortError' || failure instanceof TypeError ? 'Brak połączenia. Zmiana nie została potwierdzona — spróbuj ponownie.' : failure.message);
-                buttons.forEach(button => { if (button.isConnected) button.disabled = false; });
+                restoreButtons();
             } finally {
                 clearTimeout(timeout);
                 mutating = false;
             }
         }
 
+        function confirmDelete(action, key = '') {
+            if (mutating || document.querySelector('.confirm-modal-overlay')) return;
+            const actionSnapshot = snapshot;
+            window.showConfirmModal({
+                title: action === 'delete_all' ? 'Usunąć wszystkie powiadomienia?' : 'Usunąć powiadomienie?',
+                message: (action === 'delete_all'
+                    ? `Usuniesz wszystkie powiadomienia z wybranego widoku (${total}), również ze starszych stron. `
+                    : 'Usuniesz to powiadomienie ze swojej listy. ')
+                    + 'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian, a zaproszenia nadal znajdziesz w Workspace.',
+                confirmText: action === 'delete_all' ? 'Usuń wszystkie' : 'Usuń',
+                onConfirm: () => mutate(action, key, null, actionSnapshot),
+            });
+        }
+
         root.addEventListener('click', event => {
+            if (mutating) return;
             const filter = event.target.closest('[data-notification-filter]');
             if (filter) {
                 view = filter.dataset.notificationFilter;
                 root.querySelectorAll('[data-notification-filter]').forEach(button => button.setAttribute('aria-pressed', String(button === filter)));
-                updateLocation();
                 load();
             } else if (event.target.closest('[data-notification-refresh], [data-notification-new-items]')) load();
             else if (event.target.closest('[data-notification-more]')) load({ append: true });
             else if (event.target.closest('[data-notification-read-all]')) mutate('read_all');
+            else if (event.target.closest('[data-notification-delete-all]')) confirmDelete('delete_all');
             else if (event.target.closest('[data-notification-action]')) {
                 const button = event.target.closest('[data-notification-action]');
-                mutate(button.dataset.notificationAction, button.closest('[data-notification-item]').dataset.notificationKey);
+                const key = button.closest('[data-notification-item]').dataset.notificationKey;
+                if (button.dataset.notificationAction === 'delete') confirmDelete('delete', key);
+                else mutate(button.dataset.notificationAction, key);
             } else {
                 const link = event.target.closest('[data-notification-open]');
                 if (link && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) {
@@ -224,7 +271,7 @@
                 }
             }
         });
-        root.querySelector('[data-notification-workspace]').addEventListener('change', () => { updateLocation(); load(); });
+        root.querySelector('[data-notification-workspace]').addEventListener('change', () => load());
         return controller;
     }
 
@@ -239,16 +286,24 @@
 
     function setOpen(open) {
         if (open === isOpen()) return;
+        if (!open) closeActionMenus();
         toggle.setAttribute('aria-expanded', String(open));
         document.body.classList.toggle('notifications-panel-open', open);
         panel.hidden = !open;
         backdrop.hidden = !open;
-        const items = toggle.closest('[data-sidebar-view-switcher]')?.querySelectorAll('.sidebar-view-switcher__item') || [];
-        items.forEach(item => item.classList.toggle('is-active', open ? item === toggle : item.getAttribute('aria-current') === 'page'));
+        const items = Array.from(switcher?.querySelectorAll('.sidebar-view-switcher__item') || []);
+        const expandedItem = items.find(item => item.getAttribute('aria-expanded') === 'true');
+        items.forEach(item => item.classList.toggle('is-active', expandedItem ? item === expandedItem : item.getAttribute('aria-current') === 'page'));
         if (open) {
-            restoreFocus = document.activeElement;
+            restoreFocus = document.activeElement.closest('.global-search-panel') ? toggle : document.activeElement;
             window.dispatchEvent(new CustomEvent('ancore:notifications-open'));
-            inertElements = Array.from(document.querySelectorAll('main.main-content, .sidebar')).filter(element => !element.inert);
+            const background = Array.from(document.querySelectorAll('main.main-content'));
+            const sidebar = switcher?.closest('.sidebar');
+            // Keep the shared view switcher usable while blocking the rest of the background.
+            for (let node = switcher; sidebar && node !== sidebar; node = node.parentElement) {
+                background.push(...Array.from(node.parentElement.children).filter(sibling => sibling !== node));
+            }
+            inertElements = background.filter(element => element instanceof HTMLElement && !element.inert);
             inertElements.forEach(element => { element.inert = true; });
             controllers.get(panel).load();
             panel.querySelector('[data-notifications-close]').focus({ preventScroll: true });
@@ -261,18 +316,29 @@
         }
     }
     toggle.addEventListener('click', event => { event.preventDefault(); setOpen(!isOpen()); });
+    defaultView?.addEventListener('click', event => {
+        if (!isOpen()) return;
+        event.preventDefault();
+        setOpen(false);
+    });
     panel.querySelector('[data-notifications-close]').addEventListener('click', () => setOpen(false));
     backdrop.addEventListener('click', () => setOpen(false));
     window.addEventListener('ancore:global-search-open', () => setOpen(false));
     document.addEventListener('keydown', event => {
-        if (!isOpen()) return;
+        if (!isOpen() || document.querySelector('.confirm-modal-overlay')) return;
         if (event.key === 'Escape') { event.preventDefault(); setOpen(false); }
         if (event.key !== 'Tab') return;
-        const elements = Array.from(panel.querySelectorAll('button:not(:disabled), a[href], select:not(:disabled), input:not([type="hidden"]):not(:disabled), [tabindex="0"]'))
-            .filter(element => element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden');
+        const selector = 'button:not(:disabled), a[href], select:not(:disabled), input:not([type="hidden"]):not(:disabled), [tabindex="0"]';
+        const elements = [...(switcher?.querySelectorAll(selector) || []), ...panel.querySelectorAll(selector)]
+            .filter(element => {
+                const rect = element.getBoundingClientRect();
+                return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden'
+                    && !element.closest('[inert]') && rect.right > 0 && rect.left < innerWidth;
+            });
         const first = elements[0], last = elements[elements.length - 1];
-        if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
+        const inFocusArea = panel.contains(document.activeElement) || switcher?.contains(document.activeElement);
+        if (event.shiftKey && (document.activeElement === first || !inFocusArea)) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && (document.activeElement === last || !inFocusArea)) { event.preventDefault(); first?.focus(); }
     });
     document.addEventListener('ancore:content-loaded', () => { setOpen(false); init(); refreshSummary(); scheduleRefresh(); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSummary(); scheduleRefresh(); });

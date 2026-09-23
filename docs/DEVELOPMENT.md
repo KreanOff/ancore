@@ -328,6 +328,14 @@ Szczegóły zakresu, przechowywania danych i testów: [TEAMWORK.md](TEAMWORK.md)
 
 ## Centrum powiadomień
 
+Usuwanie powiadomień wymaga migracji `dashboard/0003_notificationstate_is_deleted.py`.
+Dodaje `is_deleted=False` do istniejących stanów; nie usuwa źródeł ani danych historycznych.
+Testy Dashboardu obejmują usuwanie osobiste i zbiorcze, więcej niż 500 wpisów,
+podpisane snapshoty, nowe zdarzenia, archiwum, izolację kont/Workspace, cofnięty
+dostęp, zaproszenia dostępne po ukryciu oraz ponowne odpytywanie przypomnień.
+Testy przeglądarkowe powinny objąć odczyt wszystkich stron, anulowanie i potwierdzenie
+usunięcia, błąd zapisu/ponowienie, klawiaturę, reload i wąski ekran.
+
 Rozszerzenie kalendarza, przypomnień i szablonów wymaga addytywnych migracji
 `dashboard/0002_taskreminder_and_more.py`, `kanban/0035_kanban_due_at.py`
 i `tasks/0048_taskprojecttemplate.py`. Dodają dostawy przypomnień i ich
@@ -355,5 +363,6 @@ core.test_task_integrity core.test_task_number_migrations`.
 `dashboard.test_notifications` obejmuje odczyt, archiwizację, idempotencję,
 izolację kont i Workspace, cofnięcie członkostwa, CSRF, zaproszenia, stabilną
 paginację, podpisane snapshoty zbiorczego odczytu, nowe zdarzenia, escapowanie
-HTML, CASCADE i ograniczenia bazy. Przeglądarka powinna sprawdzić panel i pełny
-widok, telefon, klawiaturę, pusty stan, błąd/ponowienie i częściową nawigację.
+HTML, CASCADE i ograniczenia bazy. Przeglądarka powinna sprawdzić panel,
+przekierowanie z wycofanej strony `/notifications/`, telefon, klawiaturę,
+pusty stan, błąd/ponowienie i częściową nawigację.

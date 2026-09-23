@@ -319,7 +319,7 @@
         backdrop.hidden = !open;
 
         if (open) {
-            restoreFocusTo = document.activeElement;
+            restoreFocusTo = document.activeElement.closest('.global-search-panel') ? toggle : document.activeElement;
             window.dispatchEvent(new CustomEvent('ancore:global-search-open'));
             window.setTimeout(function () {
                 input.focus({ preventScroll: true });
@@ -383,6 +383,7 @@
     });
 
     document.addEventListener('keydown', function (event) {
+        if (document.querySelector('.confirm-modal-overlay')) return;
         const target = event.target;
         const typing = target instanceof HTMLElement
             && (target.matches('input, textarea, select') || target.isContentEditable);
