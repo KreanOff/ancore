@@ -4332,7 +4332,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
         ),
         Prefetch(
             'activities',
-            queryset=TaskActivity.objects.select_related('actor').order_by('created_at', 'id'),
+            queryset=TaskActivity.objects.select_related('actor').order_by('-created_at', '-id'),
         ),
     )
     if task_pk is not None:
@@ -4348,7 +4348,9 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     task_modal_open = False
     work_log_form = TaskWorkLogForm(prefix='worklog')
     work_log_modal_open = False
-    active_tab = 'work-log' if request.GET.get('tab') == 'work-log' else 'main'
+    active_tab = request.GET.get('tab', 'main')
+    if active_tab not in {'main', 'work-log', 'history'}:
+        active_tab = 'main'
     _decorate_task_directory_members([task], current_user=workspace_owner(request))
 
     if request.method == 'POST':
@@ -4495,6 +4497,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                 for field, errors in form.errors.items():
                     for error in errors:
                         messages.error(request, f"{field}: {error}")
+                active_tab = 'main'
     else:
         form = TaskForm(instance=task, user=task.user, workplace=workplace)
 
@@ -4502,6 +4505,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
         for field in form.fields.values():
             field.disabled = True
 
+    activity_items = list(task.activities.all())
     context = {
         'form': form,
         'work_log_form': work_log_form,
@@ -4516,7 +4520,8 @@ def _task_detail_response(request, task_id=None, task_pk=None):
         'can_edit_task': can_edit_task,
         'can_share_task': False,
         'can_add_attachments': can_add_attachments,
-        'activity_items': task.activities.order_by('-created_at', '-id'),
+        'comment_items': [item for item in activity_items if item.kind == 'comment'],
+        'history_items': [item for item in activity_items if item.kind != 'comment'],
         'subtask_status_groups': subtask_status_groups,
         'tasks_return_path': request.get_full_path(),
         **_tasks_navigation_context(

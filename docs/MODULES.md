@@ -69,7 +69,7 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 - Projekt — lista jego grup.
 - Wszystkie grupy oraz widok konkretnej grupy.
 - Wszystkie zadania i Moje zadania.
-- Szczegóły zadania/podzadania, komentarze z `@Imię Nazwisko`, historia i osobiste obserwowanie.
+- Szczegóły zadania/podzadania, komentarze z `@Imię Nazwisko` i historia; nagłówek nie udostępnia przycisku obserwowania.
 - Obserwowanie projektu: nowe komentarze i zmiany jego zadań w filtrze „Obserwowane”.
 - Katalog tagów oraz formularze tworzenia i edycji.
 
@@ -113,12 +113,13 @@ Główny formularz zadania nie udostępnia powodu blokady, dawnych pól czasu pr
 nie pokazuje sekcji „Historia statusu”. Dawne wartości pozostają w modelu;
 zapis zadania ich nie zmienia, także gdy stare pola zostaną przesłane w POST.
 Akcja `clear_time_spent` w Zadaniach została wycofana. Historia zmian statusu
-w „Aktywności” pozostaje dostępna. Kanban zachowuje własne kontrolki.
+w zakładce „Historia” pozostaje dostępna. Kanban zachowuje własne kontrolki.
 Podzadanie dziedziczy kontekst rodzica; w obecnych widokach nie można dodawać
 do niego załączników.
 
-Szczegóły zadania i podzadania mają drugi pasek z zakładkami „Główna”
-i „Dziennik pracy”. W dzienniku „Dodaj czas” otwiera standardowy modal:
+Szczegóły zadania i podzadania mają drugi pasek z zakładkami „Główna”,
+„Dziennik pracy” i „Historia”. „Główna” pokazuje komentarze w sekcji „Czat”,
+a „Historia” tylko zdarzenia, bez formularza komentarza. W dzienniku „Dodaj czas” otwiera standardowy modal:
 data i godzina rozpoczęcia, data i godzina zakończenia, wymagany opis
 (do 4000 znaków) oraz dwa edytowalne pola czasu poświęconego: „Godziny” i „Minuty”.
 Zmiana dat oblicza godziny i minuty. Wpisanie czasu poświęconego zachowuje
@@ -135,7 +136,7 @@ edycji danych Workspace, również dla członków zespołu. Edycja zachowuje
 pierwotnego autora. Suma obejmuje wszystkie wpisy tego zadania, tabela pokazuje
 25 wpisów na stronę, od najpóźniejszego rozpoczęcia. Podzadania mają osobne
 dzienniki; suma zadania głównego nie obejmuje wpisów podzadań.
-Dodanie, edycja i usunięcie zapisują rzeczywistego wykonawcę operacji w Aktywności.
+Dodanie, edycja i usunięcie zapisują rzeczywistego wykonawcę operacji w Historii.
 Wycofane pola `time_spent_hours` i `time_spent_minutes` pozostają bez zmian;
 historyczne sumy nie są automatycznie zamieniane na wpisy bez dat i autora.
 

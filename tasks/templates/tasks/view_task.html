@@ -4,7 +4,7 @@
 {% block extra_head %}
     {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
     <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
-    <script src="{% static 'js/task-work-log.js' %}?v=20260924-work-log-selection" defer></script>
+    <script src="{% static 'js/task-work-log.js' %}?v=20260925-history-tab" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -36,22 +36,13 @@
             </div>
 
             <div class="tasks-issue-actions">
-                {% include 'tasks/includes/follow_button.html' %}
                 {% if can_edit_task %}
-                <button type="submit" form="task-detail-form" class="tasks-issue-save" data-task-save data-task-main-action data-state="idle" disabled{% if active_task_tab != 'main' %} hidden{% endif %}>
+                <button type="submit" form="task-detail-form" class="tasks-issue-save" data-task-save data-state="idle" disabled>
                     Zapisz
                 </button>
                 {% endif %}
             </div>
         </header>
-
-        <div class="tasks-issue-tabbar">
-            <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Widok zadania">
-                <button type="button" id="task-tab-main" role="tab" aria-controls="task-detail-form" aria-selected="{% if active_task_tab == 'main' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'main' %}0{% else %}-1{% endif %}" data-task-tab="main">Główna</button>
-                <button type="button" id="task-tab-work-log" role="tab" aria-controls="task-work-log" aria-selected="{% if active_task_tab == 'work-log' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'work-log' %}0{% else %}-1{% endif %}" data-task-tab="work-log">Dziennik pracy</button>
-            </div>
-            {% if can_edit_task %}<button type="button" class="tasks-filter-button tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-open-work-log data-task-log-action aria-haspopup="dialog" aria-controls="task-work-log-modal"{% if active_task_tab != 'work-log' %} hidden{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj czas</span></button>{% endif %}
-        </div>
 
         <form id="activity-comment-form" method="POST" class="tasks-issue-comment-form">
             {% csrf_token %}
@@ -60,168 +51,184 @@
             <input type="hidden" name="activity_mentions" value="[]" data-mention-values>
         </form>
 
-        <form id="task-detail-form" role="tabpanel" aria-labelledby="task-tab-main" data-task-tab-panel="main"{% if active_task_tab != 'main' %} hidden{% endif %} method="POST" enctype="multipart/form-data" class="tasks-issue-form{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}"{% if not can_edit_task %} data-task-readonly="true"{% endif %}>
+        <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}"{% if not can_edit_task %} data-task-readonly="true"{% endif %}>
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
 
             <main class="tasks-issue-main">
-                <section class="tasks-issue-content" aria-label="Treść zadania">
-                    {% if form.errors %}
-                    <div class="tasks-error-banner">
-                        <strong>Wystąpiły błędy:</strong>
-                        <ul>
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li>{{ field.label }}: {{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-
-                    <div class="tasks-issue-title-field">
-                        {{ form.title }}
-                    </div>
-
-                    <div class="tasks-issue-description-field">
-                        {{ form.description }}
-                    </div>
-
-                    {% if can_add_attachments %}
-                    <div class="tasks-issue-tool-row" aria-label="Narzędzia zadania">
-                        <label class="tasks-issue-tool tasks-issue-tool--labelled" for="file-input" title="Dodaj załącznik">
-                            <i data-icon="paperclip" aria-hidden="true"></i>
-                            <span>Dodaj załącznik</span>
-                        </label>
-                    </div>
-
-                    <input type="file" name="attachments" id="file-input" multiple hidden
-                           accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.rtf,.zip,.rar,.7z,.tar,.gz">
-                    {% endif %}
-
-                    {% if task.attachments.exists %}
-                    <section class="tasks-issue-attachments" aria-label="Załączniki">
-                        <div class="tasks-attachments-grid">
-                            {% for attachment in task.attachments.all %}
-                            <div class="tasks-attachment-card" id="attachment-{{ attachment.id }}">
-                                <a href="{% url 'tasks:download_attachment' attachment.id %}" class="tasks-attachment-info" title="{{ attachment.filename }}">
-                                    {% include 'core/includes/attachment_icon.html' with type_class=attachment.get_type_class size='lg' %}
-                                    <span class="tasks-attachment-details">
-                                        <span class="tasks-attachment-name">{{ attachment.filename }}</span>
-                                        <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
-                                    </span>
-                                </a>
-                                {% if can_add_attachments %}
-                                <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">
-                                    {% include 'core/includes/trash_icon.html' %}
-                                </button>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
+                <div class="tasks-issue-primary">
+                    <div class="tasks-issue-tabbar">
+                        <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Widok zadania">
+                            <button type="button" id="task-tab-main" role="tab" aria-controls="task-main-content" aria-selected="{% if active_task_tab == 'main' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'main' %}0{% else %}-1{% endif %}" data-task-tab="main">Główna</button>
+                            <button type="button" id="task-tab-work-log" role="tab" aria-controls="task-work-log" aria-selected="{% if active_task_tab == 'work-log' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'work-log' %}0{% else %}-1{% endif %}" data-task-tab="work-log">Dziennik pracy</button>
+                            <button type="button" id="task-tab-history" role="tab" aria-controls="task-history" aria-selected="{% if active_task_tab == 'history' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'history' %}0{% else %}-1{% endif %}" data-task-tab="history">Historia</button>
                         </div>
-                    </section>
-                    {% endif %}
-                    {% if can_add_attachments %}
-                    <div id="file-list" class="tasks-file-list"></div>
-                    {% endif %}
+                        {% if can_edit_task %}<button type="button" class="tasks-filter-button tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-open-work-log data-task-log-action aria-haspopup="dialog" aria-controls="task-work-log-modal"{% if active_task_tab != 'work-log' %} hidden{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj czas</span></button>{% endif %}
+                    </div>
 
-                    {% if not task.parent %}
-                    <section class="tasks-issue-subtasks" aria-label="Podzadania">
-                        <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
-                            <button type="button" class="tasks-subtasks-title" data-subtasks-collapse aria-expanded="true">
-                                <i data-icon="chevron-down" aria-hidden="true"></i>
-                                <span>Podzadania ({{ task.subtasks.count }})</span>
-                            </button>
-                            <div class="tasks-subtasks-actions">
-                                <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-subtasks-sort>
-                                    <i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i>
-                                </button>
-                                {% if can_manage_task %}
-                                <button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-subtasks-delete>
-                                    {% include 'core/includes/trash_icon.html' %}
-                                </button>
-                                {% endif %}
-                                {% if can_edit_task %}
-                                <button type="button" class="tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-open-issue aria-haspopup="dialog" aria-controls="issue-modal">
-                                    <i data-icon="plus" aria-hidden="true"></i>
-                                </button>
-                                {% endif %}
+                    <div class="tasks-issue-primary-body">
+                        <section class="tasks-issue-content tasks-issue-overview" aria-label="Temat i opis zadania" data-task-overview{% if active_task_tab == 'history' %} hidden{% endif %}>
+                            {% if form.errors %}
+                            <div class="tasks-error-banner">
+                                <strong>Wystąpiły błędy:</strong>
+                                <ul>
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li>{{ field.label }}: {{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
-                        </div>
-                        {% if task.subtasks.exists %}
-                        <div class="tasks-table-wrap tasks-board tasks-subtasks-board">
-                            {% for status_group in subtask_status_groups %}
-                            {% if status_group.count %}
-                            <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
-                                <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
-                                    <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
-                                        <i data-icon="chevron-down" aria-hidden="true"></i>
-                                    </button>
-                                    <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
-                                    <span class="tasks-rail-count">{{ status_group.count }}</span>
-                                </header>
-                                <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
-                                    {% for subtask in status_group.tasks %}
-                                    {% include 'tasks/includes/task_issue_row.html' with task=subtask project_code=subtask.section.project.code|default:'TASK' compact=True workplace_app_urls=workplace_app_urls only %}
+                            {% endif %}
+
+                            <div class="tasks-issue-title-field">
+                                {{ form.title }}
+                            </div>
+
+                            <div class="tasks-issue-description-field">
+                                {{ form.description }}
+                            </div>
+
+                        </section>
+
+                        <section id="task-main-content" class="tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-main" data-task-tab-panel="main"{% if active_task_tab != 'main' %} hidden{% endif %}>
+                            {% if can_add_attachments %}
+                            <div class="tasks-issue-tool-row" aria-label="Narzędzia zadania">
+                                <label class="tasks-issue-tool tasks-issue-tool--labelled" for="file-input" title="Dodaj załącznik">
+                                    <i data-icon="paperclip" aria-hidden="true"></i>
+                                    <span>Dodaj załącznik</span>
+                                </label>
+                            </div>
+
+                            <input type="file" name="attachments" id="file-input" multiple hidden
+                                   accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.rtf,.zip,.rar,.7z,.tar,.gz">
+                            {% endif %}
+
+                            {% if task.attachments.exists %}
+                            <section class="tasks-issue-attachments" aria-label="Załączniki">
+                                <div class="tasks-attachments-grid">
+                                    {% for attachment in task.attachments.all %}
+                                    <div class="tasks-attachment-card" id="attachment-{{ attachment.id }}">
+                                        <a href="{% url 'tasks:download_attachment' attachment.id %}" class="tasks-attachment-info" title="{{ attachment.filename }}">
+                                            {% include 'core/includes/attachment_icon.html' with type_class=attachment.get_type_class size='lg' %}
+                                            <span class="tasks-attachment-details">
+                                                <span class="tasks-attachment-name">{{ attachment.filename }}</span>
+                                                <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
+                                            </span>
+                                        </a>
+                                        {% if can_add_attachments %}
+                                        <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">
+                                            {% include 'core/includes/trash_icon.html' %}
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                     {% endfor %}
                                 </div>
                             </section>
                             {% endif %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </section>
-                    {% endif %}
+                            {% if can_add_attachments %}
+                            <div id="file-list" class="tasks-file-list"></div>
+                            {% endif %}
 
-                    <section class="tasks-issue-activity">
-                        <div class="tasks-issue-activity-head">
-                            <h2>
-                                <i data-icon="messages-square" aria-hidden="true"></i>
-                                Aktywność
-                            </h2>
-                            <div class="tasks-issue-activity-filters">
-                                <div class="tasks-filter-dropdown tasks-issue-activity-dropdown" data-activity-dropdown>
-                                    <button type="button" class="tasks-issue-activity-chip" aria-haspopup="menu" aria-expanded="false" data-activity-toggle>
-                                        <span data-activity-label>Wszystko w jednym</span>
+                            {% if not task.parent %}
+                            <section class="tasks-issue-subtasks" aria-label="Podzadania">
+                                <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
+                                    <button type="button" class="tasks-subtasks-title" data-subtasks-collapse aria-expanded="true">
                                         <i data-icon="chevron-down" aria-hidden="true"></i>
+                                        <span>Podzadania ({{ task.subtasks.count }})</span>
                                     </button>
-                                    <div class="tasks-filter-menu tasks-issue-activity-menu" role="menu" aria-label="Filtr aktywności">
-                                        <button type="button" class="is-active" role="menuitemradio" aria-checked="true" data-activity-filter="all">Wszystko w jednym</button>
-                                        <button type="button" role="menuitemradio" aria-checked="false" data-activity-filter="comment">Tylko czat</button>
-                                        <button type="button" role="menuitemradio" aria-checked="false" data-activity-filter="history">Tylko historia</button>
+                                    <div class="tasks-subtasks-actions">
+                                        <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-subtasks-sort>
+                                            <i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i>
+                                        </button>
+                                        {% if can_manage_task %}
+                                        <button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-subtasks-delete>
+                                            {% include 'core/includes/trash_icon.html' %}
+                                        </button>
+                                        {% endif %}
+                                        {% if can_edit_task %}
+                                        <button type="button" class="tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-open-issue aria-haspopup="dialog" aria-controls="issue-modal">
+                                            <i data-icon="plus" aria-hidden="true"></i>
+                                        </button>
+                                        {% endif %}
                                     </div>
                                 </div>
-                            </div>
-                        </div>
+                                {% if task.subtasks.exists %}
+                                <div class="tasks-table-wrap tasks-board tasks-subtasks-board">
+                                    {% for status_group in subtask_status_groups %}
+                                    {% if status_group.count %}
+                                    <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
+                                        <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
+                                            <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
+                                                <i data-icon="chevron-down" aria-hidden="true"></i>
+                                            </button>
+                                            <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
+                                            <span class="tasks-rail-count">{{ status_group.count }}</span>
+                                        </header>
+                                        <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
+                                            {% for subtask in status_group.tasks %}
+                                            {% include 'tasks/includes/task_issue_row.html' with task=subtask project_code=subtask.section.project.code|default:'TASK' compact=True workplace_app_urls=workplace_app_urls only %}
+                                            {% endfor %}
+                                        </div>
+                                    </section>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </section>
+                            {% endif %}
 
-                        <div class="tasks-issue-comment tasks-issue-comment--mentions">
-                            {{ mention_people|json_script:"mention-people" }}
-                            <div class="tasks-mention-composer" data-mention-composer>
-                            <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz komentarz; wpisz @ i imię osoby..." form="activity-comment-form"></textarea>
-                            <div id="mention-suggestions" class="tasks-filter-menu tasks-mention-menu" role="listbox" aria-label="Osoby z Workspace" data-mention-menu hidden></div>
-                            <span class="u-sr-only" data-mention-status role="status"></span>
-                            </div>
-                            <div class="tasks-issue-comment-tools">
-                                <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
-                                    <i data-icon="send" aria-hidden="true"></i>
-                                </button>
-                            </div>
-                        </div>
+                            <section class="tasks-issue-activity">
+                                <div class="tasks-issue-activity-head">
+                                    <h2>
+                                        <i data-icon="messages-square" aria-hidden="true"></i>
+                                        Czat
+                                    </h2>
+                                </div>
 
-                        <div class="tasks-issue-feed" data-activity-feed tabindex="0" aria-label="Historia i czat zadania">
-                            {% for item in activity_items %}
-                            {% include 'tasks/includes/task_activity_item.html' with item=item only %}
-                            {% empty %}
-                            <p class="tasks-issue-empty-feed" data-activity-empty-initial>Brak aktywności w zadaniu.</p>
-                            {% endfor %}
-                            <p class="tasks-issue-empty-feed" data-activity-empty-filter hidden>Brak wpisów dla wybranego filtra.</p>
-                        </div>
-                    </section>
-                </section>
+                                <div class="tasks-issue-comment tasks-issue-comment--mentions">
+                                    {{ mention_people|json_script:"mention-people" }}
+                                    <div class="tasks-mention-composer" data-mention-composer>
+                                    <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz komentarz; wpisz @ i imię osoby..." form="activity-comment-form"></textarea>
+                                    <div id="mention-suggestions" class="tasks-filter-menu tasks-mention-menu" role="listbox" aria-label="Osoby z Workspace" data-mention-menu hidden></div>
+                                    <span class="u-sr-only" data-mention-status role="status"></span>
+                                    </div>
+                                    <div class="tasks-issue-comment-tools">
+                                        <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
+                                            <i data-icon="send" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="tasks-issue-feed" data-activity-feed="comment" tabindex="0" aria-label="Czat zadania">
+                                    {% for item in comment_items %}
+                                    {% include 'tasks/includes/task_activity_item.html' with item=item only %}
+                                    {% empty %}
+                                    <p class="tasks-issue-empty-feed" data-activity-empty-initial>Brak komentarzy w zadaniu.</p>
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        </section>
+
+                        <section id="task-work-log" class="tasks-work-log tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-work-log" tabindex="0" data-task-tab-panel="work-log"{% if active_task_tab != 'work-log' %} hidden{% endif %}>
+                            {% include 'tasks/includes/work_log_list.html' %}
+                        </section>
+
+                        <section id="task-history" class="tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-history" tabindex="0" data-task-tab-panel="history"{% if active_task_tab != 'history' %} hidden{% endif %}>
+                            <div class="tasks-issue-feed" data-activity-feed="history" tabindex="0" aria-label="Historia zadania">
+                                {% for item in history_items %}
+                                {% include 'tasks/includes/task_activity_item.html' with item=item only %}
+                                {% empty %}
+                                <p class="tasks-issue-empty-feed" data-activity-empty-initial>Brak historii zmian w zadaniu.</p>
+                                {% endfor %}
+                            </div>
+                        </section>
+                    </div>
+                </div>
 
                 <aside class="tasks-issue-sidebar" aria-label="Szczegóły zadania">
                     <section class="tasks-issue-side-section">
@@ -448,9 +455,6 @@
                 </aside>
             </main>
         </form>
-        <section id="task-work-log" class="tasks-work-log" role="tabpanel" aria-labelledby="task-tab-work-log" tabindex="0" data-task-tab-panel="work-log"{% if active_task_tab != 'work-log' %} hidden{% endif %}>
-            {% include 'tasks/includes/work_log_list.html' %}
-        </section>
     </div>
 </div>
 
@@ -561,92 +565,23 @@ document.querySelectorAll('[data-history-back]').forEach((link) => {
     });
 });
 
-document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
-    const activitySection = feed.closest('.tasks-issue-activity');
-    const dropdown = activitySection ? activitySection.querySelector('[data-activity-dropdown]') : null;
-    const toggle = dropdown ? dropdown.querySelector('[data-activity-toggle]') : null;
-    const label = dropdown ? dropdown.querySelector('[data-activity-label]') : null;
-    const filterButtons = dropdown ? dropdown.querySelectorAll('[data-activity-filter]') : [];
-    const emptyFilterMessage = feed.querySelector('[data-activity-empty-filter]');
-
-    function closeActivityDropdown() {
-        if (!dropdown || !toggle) return;
-        window.AncoreDropdownLayer?.hide(dropdown.querySelector('.tasks-issue-activity-menu'));
-        dropdown.classList.remove('is-open');
-        toggle.setAttribute('aria-expanded', 'false');
-    }
-
-    function applyActivityFilter(filter) {
-        let visibleCount = 0;
-        const feedItems = feed.querySelectorAll('[data-activity-kind]');
-        feed.dataset.activityFilter = filter;
-
-        feedItems.forEach((item) => {
-            const isVisible = filter === 'all' || item.dataset.activityKind === filter;
-            item.hidden = !isVisible;
-            item.style.display = isVisible ? '' : 'none';
-            if (isVisible) visibleCount += 1;
-        });
-
-        filterButtons.forEach((button) => {
-            const isActive = button.dataset.activityFilter === filter;
-            button.classList.toggle('is-active', isActive);
-            button.setAttribute('aria-checked', String(isActive));
-            if (isActive && label) label.textContent = button.textContent.trim();
-        });
-
-        if (emptyFilterMessage) {
-            const shouldHideEmptyMessage = visibleCount > 0 || feedItems.length === 0;
-            emptyFilterMessage.hidden = shouldHideEmptyMessage;
-            emptyFilterMessage.style.display = shouldHideEmptyMessage ? 'none' : '';
-        }
-    }
-
-    feed.addEventListener('ancore:activity-items-added', () => {
-        applyActivityFilter(feed.dataset.activityFilter || 'all');
-    });
-
-    toggle?.addEventListener('click', (event) => {
-        event.stopPropagation();
-        const isOpen = !dropdown.classList.contains('is-open');
-        dropdown.classList.toggle('is-open', isOpen);
-        toggle.setAttribute('aria-expanded', String(isOpen));
-        const menu = dropdown.querySelector('.tasks-issue-activity-menu');
-        if (isOpen) window.AncoreDropdownLayer?.open(menu, toggle, closeActivityDropdown);
-        else window.AncoreDropdownLayer?.hide(menu);
-    });
-
-    dropdown?.addEventListener('click', (event) => {
-        event.stopPropagation();
-    });
-
-    filterButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-            applyActivityFilter(button.dataset.activityFilter || 'all');
-            closeActivityDropdown();
-        });
-    });
-
-    document.addEventListener('click', closeActivityDropdown);
-    applyActivityFilter('all');
-});
-
 function prependTaskDetailActivityItems(html) {
-    const feed = document.querySelector('[data-activity-feed]');
-    if (!feed || !html) return;
+    if (!html) return;
 
     const template = document.createElement('template');
     template.innerHTML = html.trim();
     const items = Array.from(template.content.children).filter((item) => item.matches?.('[data-activity-kind]'));
-    if (!items.length) return;
 
-    feed.querySelector('[data-activity-empty-initial]')?.remove();
-    const referenceNode = feed.querySelector('[data-activity-kind]') || feed.querySelector('[data-activity-empty-filter]');
-    items.forEach((item) => {
-        feed.insertBefore(item, referenceNode);
+    document.querySelectorAll('.tasks-issue-page[data-task-app="tasks"] [data-activity-feed]').forEach((feed) => {
+        const matchingItems = items.filter((item) => item.dataset.activityKind === feed.dataset.activityFeed);
+        if (!matchingItems.length) return;
+
+        feed.querySelector('[data-activity-empty-initial]')?.remove();
+        const referenceNode = feed.querySelector('[data-activity-kind]');
+        matchingItems.forEach((item) => feed.insertBefore(item, referenceNode));
+        window.AncoreIcons?.render(feed);
+        feed.dispatchEvent(new CustomEvent('ancore:activity-items-added'));
     });
-    window.AncoreIcons?.render(feed);
-    feed.dispatchEvent(new CustomEvent('ancore:activity-items-added'));
 }
 
 function getTaskDetailDueState(value) {

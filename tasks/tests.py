@@ -3637,9 +3637,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(activity.message, 'To jest wiadomość w czacie.')
 
         detail_response = self.client.get(reverse('tasks:view-task', args=[task.task_id]))
-        self.assertContains(detail_response, 'Aktywność')
-        self.assertContains(detail_response, 'Tylko czat')
-        self.assertContains(detail_response, 'Tylko historia')
+        self.assertContains(detail_response, 'Czat zadania')
+        self.assertContains(detail_response, 'data-task-tab="history"')
+        self.assertNotContains(detail_response, 'data-activity-dropdown')
         self.assertContains(detail_response, 'To jest wiadomość w czacie.')
 
     def test_task_activity_feed_shows_newest_items_first(self):
@@ -3781,7 +3781,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'Historia statusu:')
         self.assertNotContains(response, 'data-task-clear-time')
         self.assertNotContains(response, 'Szacowany czas')
-        self.assertContains(response, 'Aktywność')
+        self.assertContains(response, 'Historia zadania')
 
         create_response = self.client.get(reverse('tasks:tasks'))
         self.assertNotContains(create_response, 'name="blocked_reason"')

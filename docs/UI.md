@@ -704,20 +704,50 @@ dawnych kontrolek „Czasu pracy”, „Szacowanego czasu” ani bocznej „Hist
 zadania również nie zawiera powodu blokady ani szacowanego czasu; zachowuje
 termin wykonania i przypomnienie. Edytor szablonów projektów nie
 pokazuje pola szacowanego czasu ani kolumny „Czas (min)”. Zmiany statusu są nadal
-widoczne w „Aktywności”.
+widoczne w zakładce „Historia”.
 Wspólne style czasu pracy i historii są nadal używane przez Kanban.
 
-Drugi pasek szczegółów Zadania (`tasks-issue-tabbar`) ma zakładki „Główna”
-i „Dziennik pracy” oparte na `notifications-tabs`, z turkusowym podkreśleniem.
+Zakładki „Główna”, „Dziennik pracy” i „Historia” (`tasks-issue-tabbar`) znajdują się
+w lewej kolumnie szczegółów (`tasks-issue-primary`), bezpośrednio nad tematem
+zadania i są wyrównane do jego lewej krawędzi, także na telefonie.
+Korzystają z `notifications-tabs`, z turkusowym podkreśleniem. Tekst zakładek
+ma rozmiar `--font-size-lg` (15px); wariant jest ograniczony do szczegółów
+zadania i podzadania. Edytowalny tytuł w treści tych widoków ma 20px,
+także na telefonie, zgodnie z rozmiarem nagłówków standardowych modali.
 Pod paskiem zakładek nie ma poziomej linii oddzielającej go od treści.
-Przełączanie zachowuje niezapisane dane głównego formularza; przycisk „Zapisz”
-dotyczy Głównej, a „Dodaj czas” pojawia się na drugim pasku dziennika.
+Temat i opis (`tasks-issue-overview`) są wspólne dla dwóch pierwszych zakładek: w „Główna”
+poprzedzają załączniki, podzadania i czat, a w „Dzienniku pracy” sumę
+oraz tabelę wpisów. To te same edytowalne pola formularza, bez kopii i osobnego
+zapisu. Przełączanie zachowuje również ich niezapisane zmiany. Wspólny obszar
+`tasks-issue-primary-body` przewija temat, opis i zawartość wybranej zakładki;
+długi opis nie blokuje dostępu do dziennika. Zapis wpisu czasu odświeża tylko
+tabelę i historię, pozostawiając temat i opis.
+Prawy panel szczegółów jest wspólny dla wszystkich zakładek zadania
+i podzadania; na wąskich ekranach pozostaje pod treścią zgodnie ze wspólnym
+układem szczegółów. Przycisk „Zapisz” jest dostępny we wszystkich zakładkach i zapisuje
+ten sam formularz, w tym zmiany z panelu bocznego. „Dodaj czas” pojawia się
+obok zakładek w lewej kolumnie i zapisuje wpisy przez osobny formularz modala.
 ARIA tablist/tab/tabpanel, strzałki, Home i End obsługują klawiaturę.
-Wybrany widok jest zapisywany w parametrze `tab=work-log`, bez przeładowania.
+Wybrany widok jest zapisywany w parametrze `tab=work-log` lub `tab=history`, bez przeładowania.
+
+„Główna” zawiera wyłącznie komentarze w sekcji „Czat”, z dotychczasowym
+formularzem i wzmiankami. Nie ma menu filtrowania aktywności. Trzecia zakładka
+„Historia” pokazuje wyłącznie zdarzenia zadania, bez tematu, opisu ani formularza
+komentarza. Ukrycie pól nie usuwa ich niezapisanych wartości; błąd walidacji
+ukrytego pola przywraca „Główną”, aby umożliwić poprawę. Obie listy korzystają
+z `task_activity_item.html` i pokazują najnowsze wpisy jako pierwsze; mają osobne
+stany puste. Serwer rozdziela komentarze (`kind=comment`) od pozostałych zdarzeń,
+a `prependTaskDetailActivityItems` kieruje nowe wpisy po zapisie zadania lub czasu
+do odpowiedniej listy, również gdy zakładka jest ukryta. Dotyczy to zadań
+oraz podzadań, pod zwykłymi i scoped adresami. Kanban zachowuje własną Aktywność.
 
 `tasks-work-log` wykorzystuje wariant `tasks-work-log-sheet` wspólnej tabeli
-katalogu projektów: pełną szerokość bez bocznych marginesów, wiersze 35px,
+katalogu projektów: wiersze 35px,
 nagłówki z ikonami, separatory oraz turkusowe podświetlenie z paskiem po lewej.
+Cały dziennik korzysta z `tasks-issue-content`: tabela, podsumowanie, pusty stan
+i paginacja mają tę samą szerokość (maksymalnie 980px) oraz boczne marginesy
+co temat i opis, również na telefonie. Podsumowanie i paginacja nie dodają
+własnego poziomego wcięcia. Tabela zachowuje poziome przewijanie kolumn.
 Pierwsza kolumna 40px zawiera wspólne checkboxy katalogu projektów, zawsze
 widoczne. Checkbox w nagłówku zaznacza/odznacza bieżącą stronę i pokazuje
 stan częściowego zaznaczenia. Kliknięcie pustego miejsca w kolumnie wyboru
@@ -748,7 +778,7 @@ określa kierunek obliczeń; nie ma dodatkowego przełącznika.
 `task-work-log.js` obsługuje inicjalizację i `ancore:content-loaded`, sprząta
 listenery i żądania, ustawia `inert` na tle i blokuje ponowny zapis oraz
 zamknięcie w trakcie żądania. Błędy serwera pozostają w formularzu z wpisanymi
-danymi. Zapis odświeża dziennik i Aktywność bez nadpisywania głównego formularza.
+danymi. Zapis odświeża dziennik i Historię bez nadpisywania głównego formularza.
 
 `modal-system.css` wprost wskazuje okna projektów i zadań jako wzorzec
 standardowego okna aplikacji. Powłoka odpowiada za powierzchnię, przyciemnienie,
@@ -1178,8 +1208,9 @@ wyłącznie w widocznej karcie. Dane są prywatne dla konta i nie trafiają do l
 
 ### Wzmianki i obserwowanie
 
-W szczegółach zadań/podzadań oraz kart/podkart, a także w nagłówku otwartego
-projektu lub przestrzeni Kanbana, standardowy przycisk `btn-secondary btn-sm`
+Nagłówek szczegółów zadania i podzadania nie zawiera przycisku „Obserwuj”.
+W szczegółach kart/podkart oraz w nagłówku otwartego projektu lub przestrzeni
+Kanbana standardowy przycisk `btn-secondary btn-sm`
 przełącza „Obserwuj” / „Obserwujesz”. `aria-pressed` odzwierciedla zapisany
 stan. Błąd zachowuje stan i używa wspólnego komunikatu z możliwością ponowienia.
 

@@ -82,7 +82,7 @@
                 if (active && focus) tab.focus();
             });
             page.querySelectorAll('[data-task-tab-panel]').forEach(item => { item.hidden = item.dataset.taskTabPanel !== name; });
-            page.querySelectorAll('[data-task-main-action]').forEach(item => { item.hidden = name !== 'main'; });
+            page.querySelectorAll('[data-task-overview]').forEach(item => { item.hidden = name === 'history'; });
             page.querySelectorAll('[data-task-log-action]').forEach(item => { item.hidden = name !== 'work-log'; });
             if (updateUrl) {
                 const url = new URL(window.location.href);
@@ -95,6 +95,9 @@
             const tab = event.target.closest('[data-task-tab]');
             if (tab) selectTab(tab.dataset.taskTab);
         }, { signal });
+        page.addEventListener('invalid', event => {
+            if (event.target.closest('[data-task-overview]')) selectTab('main');
+        }, { signal, capture: true });
         page.addEventListener('keydown', event => {
             const tab = event.target.closest('[data-task-tab]');
             if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
