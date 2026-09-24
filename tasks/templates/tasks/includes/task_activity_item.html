@@ -2,17 +2,18 @@
 
 <article class="tasks-issue-feed-item {% if item.kind == 'comment' %}tasks-issue-feed-item--comment{% endif %}" data-activity-kind="{% if item.kind == 'comment' %}comment{% else %}history{% endif %}">
     {% user_avatar item.actor as actor_avatar %}
+    {% firstof item.actor.get_full_name item.actor.username 'System' as actor_label %}
     {% include 'accounts/includes/user_avatar.html' with avatar=actor_avatar avatar_class='tasks-issue-avatar' only %}
     <div class="tasks-issue-feed-body">
         {% if item.kind == 'comment' %}
         <p>
-            <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
+            <strong>{{ actor_label }}</strong>
             <time>{{ item.created_at|date:"d.m, H:i" }}</time>
         </p>
         <div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>
         {% else %}
         <p>
-            <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
+            <strong>{{ actor_label }}</strong>
             {{ item.message }}
             <time>{{ item.created_at|date:"d.m, H:i" }}</time>
         </p>

@@ -168,6 +168,37 @@ Kolumna Kanban jest oddzielona od statusu. `_set_task_column()` sprawdza,
 czy kolumna należy do tablicy karty i właściciela, a następnie zapisuje relację.
 Przestawianie kolumn ma osobny endpoint, który waliduje zestaw identyfikatorów.
 
+### Dziennik pracy zadania
+
+`TaskWorkLog` jest powiązany z trwałym PK `Task`. Osobne akcje POST
+`add_work_log`, `edit_work_log` i `delete_work_log` w widoku szczegółów wymagają
+`task_pk`. Widok ogranicza zadanie do właściciela aktywnego Workspace;
+identyfikator edytowanego/usuwanego wpisu jest dodatkowo ograniczony do tego
+zadania. Formularz nie udostępnia autora ani zadania. Dodanie ustawia autora
+na `request.user`, edycja go zachowuje; historia rejestruje aktualnego aktora.
+Zmiana wpisu i zapis Aktywności są jedną transakcją, edycja/usunięcie blokują
+wiersz wpisu. Usunięcie zadania usuwa wpisy, usunięcie autora zachowuje je
+z etykietą „Usunięte konto”. Autor Aktywności bez konta ma etykietę „System”.
+
+Daty są świadome strefy czasowej. Formularz wymaga pełnych minut, dodatniego
+przedziału i opisu; baza dodatkowo wymusza `ended_at > started_at`.
+Czas wynika z różnicy chwil UTC. `TaskWorkLogForm` przyjmuje pomocnicze
+`hours`, `minutes` (0–59) i `calculation_mode`. Przy `interval` (także przy
+braku trybu w starszym POST) ignoruje przesłane godziny/minuty i oblicza je
+z dat. Przy `duration` ignoruje przesłany początek, wymaga dodatniej sumy
+godzin/minut i oblicza początek jako zakończenie minus czas. Pusty koniec
+oznacza bieżącą chwilę zaokrągloną do minuty. Obliczenia po stronie serwera
+odbywają się w UTC również podczas zmiany czasu. Błędne części czasu,
+przepełnienie daty i nieprawidłowy koniec nie zapisują wpisu. Przy błędzie
+opisu formularz zachowuje wpisany czas, wyliczone daty oraz kierunek obliczeń.
+Pola pomocnicze nie są osobno przechowywane w modelu.
+Agregat SQL liczy sumę całego zadania, paginacja pobiera po 25 wpisów
+z autorami. Zakresy nakładające się nie są blokowane; każdy wpis wchodzi do sumy.
+Warianty zwykły i scoped korzystają z tej samej walidacji. Formularz, paginacja
+i przekierowanie po zapisie używają scoped URL z PK, aby inna karta przeglądarki
+ani renumeracja zadania nie zmieniły celu operacji. Stare pola łącznego czasu
+w `Task` nie są synchronizowane z dziennikiem.
+
 ## 7. Katalogi, filtry i wydajność
 
 Tasks i Kanban mają rozbudowane funkcje `*_window_for_request()`, które

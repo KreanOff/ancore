@@ -6808,7 +6808,7 @@ function initTasksPage() {
     }
 
     function initDirectoryColumnResize() {
-        const boards = document.querySelectorAll('.tasks-directory-board.tasks-directory-sheet, .tasks-directory-board.contacts-directory-sheet');
+        const boards = document.querySelectorAll(':is(.tasks-directory-board.tasks-directory-sheet, .tasks-directory-board.contacts-directory-sheet):not([data-directory-resize="false"])');
         const resetButtons = document.querySelectorAll('[data-directory-table-reset]');
         const columnManagers = document.querySelectorAll('[data-directory-column-manager]');
         if (!boards.length) return;

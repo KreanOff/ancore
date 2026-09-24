@@ -111,6 +111,7 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Accounts | Konto/profil, kadrowanie i walidacja obrazu, obecność, przełączanie kont |
 | Workplaces | Wybór i izolacja Workspace, scoped URL, ulubione, zmiany i usuwanie |
 | Tasks | Numeracja, hierarchie, CRUD, zakres dostępu, formularze, katalogi, paginacja, zapytania, historia, pliki |
+| Tasks: `test_work_logs.py` | Dziennik pracy: CRUD, autor, osobne podzadania, zwykłe/scoped URL, izolacja kont i Workspace, odebranie dostępu, stabilne PK, dwukierunkowe przeliczanie godzin/minut i dat, północ i zmiany czasu, zachowanie pól po błędach, paginacja/sumy, walidacja, CSRF, usunięcie autora, CASCADE oraz rollback wraz z historią |
 | Osobne testy Tasks | Słowniki źródeł, reguły terminów, nadpisanie reguł per projekt i migracje |
 | Kanban | Tablice/kolumny/karty, właściciel, zmiany statusu, katalogi, tagi, pliki |
 | Contacts | Osoby, firmy, powiązania z kontami, zakres dostępu i UI szablonów |

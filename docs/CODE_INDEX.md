@@ -20,7 +20,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 15 | 0 | 9 | 42 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 18 | 8 | 10 | 78 |
-| [tasks](../tasks) | 19 | 49 | 28 | 201 |
+| [tasks](../tasks) | 20 | 50 | 31 | 222 |
 | [kanban](../kanban) | 10 | 35 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 4 | 7 | 91 |
@@ -235,6 +235,19 @@ Pola zadeklarowane tutaj: `task_id` (PositiveIntegerField), `code_number` (Posit
 | `parent` | `'self'` | on_delete=models.CASCADE; related_name='subtasks'; null=True |
 
 Metody/properties: `_claim_next_code_number`, `save`, `delete`, `_renumber_user_tasks`, `__str__`, `code`, `full_code`, `_activity_datetime`, `_activity_time_spent`, `has_time_spent`, `time_spent_label`, `due_urgency`, `get_file_extension`.
+
+### `TaskWorkLog`
+
+Źródło: [tasks/models.py](../tasks/models.py).
+
+Pola zadeklarowane tutaj: `task` (ForeignKey), `author` (ForeignKey), `started_at` (DateTimeField), `ended_at` (DateTimeField), `description` (TextField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `Task` | on_delete=models.CASCADE; related_name='work_logs' |
+| `author` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='task_work_logs'; null=True |
+
+Metody/properties: `duration_minutes`, `__str__`.
 
 ### `TaskAttachment`
 
@@ -661,6 +674,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `DateTimeLocalInput`
 - `MultipleFileInput`
 - `TaskForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
+- `TaskWorkLogForm` — Meta.fields: `['started_at', 'ended_at', 'description']`
 - `TaskProjectBaseForm`
 - `TaskProjectDeadlineRuleForm` — Meta.fields: `['days', 'color']`
 - `TaskProjectFieldOptionForm` — Meta.fields: `['label', 'color']`
@@ -965,8 +979,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/__init__.py](../tasks/__init__.py)
 - [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskProjectFieldOptionAdmin`, `TaskSectionAdmin`, `TaskTagAdmin`, `TaskAttachmentAdmin`
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
-- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
-- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskAttachment`, `TaskActivity`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
+- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
+- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
 - [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
 - [tasks/urls.py](../tasks/urls.py)
@@ -1110,6 +1124,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/tasks_project_tree_initial_state.html](../tasks/templates/tasks/includes/tasks_project_tree_initial_state.html)
 - [tasks/templates/tasks/includes/tasks_secondary_menu.html](../tasks/templates/tasks/includes/tasks_secondary_menu.html)
 - [tasks/templates/tasks/includes/template_item_menu.html](../tasks/templates/tasks/includes/template_item_menu.html)
+- [tasks/templates/tasks/includes/work_log_fields.html](../tasks/templates/tasks/includes/work_log_fields.html)
+- [tasks/templates/tasks/includes/work_log_list.html](../tasks/templates/tasks/includes/work_log_list.html)
+- [tasks/templates/tasks/includes/work_log_modal.html](../tasks/templates/tasks/includes/work_log_modal.html)
 - [tasks/templates/tasks/project_template_edit.html](../tasks/templates/tasks/project_template_edit.html)
 - [tasks/templates/tasks/project_templates.html](../tasks/templates/tasks/project_templates.html)
 - [tasks/templates/tasks/tasks.html](../tasks/templates/tasks/tasks.html)
@@ -1255,6 +1272,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
+- [static/js/task-work-log.js](../static/js/task-work-log.js)
 - [static/js/tasks.js](../static/js/tasks.js)
 - [static/js/workplace-team.js](../static/js/workplace-team.js)
 
@@ -1366,6 +1384,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [tasks/test_project_templates.py](../tasks/test_project_templates.py).
 
 - `ProjectTemplateTests`: 29 metod testowych.
+
+### tasks/test_work_logs.py
+
+Źródło: [tasks/test_work_logs.py](../tasks/test_work_logs.py).
+
+- `TaskWorkLogTests`: 21 metod testowych.
 
 ### tasks/tests.py
 
@@ -1624,6 +1648,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0047_task_unique_tasks_number_per_workspace.py](../tasks/migrations/0047_task_unique_tasks_number_per_workspace.py)
 - [tasks/migrations/0048_taskprojecttemplate.py](../tasks/migrations/0048_taskprojecttemplate.py)
 - [tasks/migrations/0049_taskprojecttemplate_template_name.py](../tasks/migrations/0049_taskprojecttemplate_template_name.py)
+- [tasks/migrations/0050_task_work_log.py](../tasks/migrations/0050_task_work_log.py)
 
 ### kanban
 

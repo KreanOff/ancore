@@ -132,7 +132,8 @@ flowchart LR
 Użytkownik → Workspace
   ├─ Zadania: TaskProject → TaskSection → Task → podzadanie
   │                                      ├─ TaskActivity
-  │                                      └─ TaskAttachment
+  │                                      ├─ TaskAttachment
+  │                                      └─ TaskWorkLog
   ├─ Kanban: KanbanProject → KanbanSection → KanbanBoardColumn
   │                                         └─ Kanban → podkarta
   │                                              ├─ KanbanActivity

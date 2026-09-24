@@ -93,6 +93,7 @@ projektu w bieżącym Workspace; czyszczenie filtrów nie usuwa tego kontekstu.
 | Notatki | Osobne modele dla projektu, grupy i tagu, z autorem i czasem edycji |
 | `TaskActivity` | Historia i komentarze zadania; aktor, akcja, wiadomość i metadane zmian |
 | `TaskAttachment` | Plik przypisany do zadania, nazwa i rozmiar |
+| `TaskWorkLog` | Wpis dziennika pracy: zadanie, autor, rozpoczęcie, zakończenie, opis i daty zapisu; liczba minut wynika z przedziału czasu |
 
 „Moje zadania” pokazują zadania przypisane zalogowanej osobie w aktywnym Workspace.
 Wykonawcy i odpowiedzialni są ograniczeni do aktywnych kont zespołu.
@@ -108,13 +109,35 @@ Wykonawcy i odpowiedzialni są ograniczeni do aktywnych kont zespołu.
 
 Szczegóły zadania mają jawny zapis. Nazwa starego parametru wersji skryptu
 zawierająca „autosave” nie oznacza aktywnego autozapisu.
-Formularze Zadań nie udostępniają powodu blokady, czasu pracy ani szacowanego czasu, a panel boczny
+Główny formularz zadania nie udostępnia powodu blokady, dawnych pól czasu pracy ani szacowanego czasu, a panel boczny
 nie pokazuje sekcji „Historia statusu”. Dawne wartości pozostają w modelu;
 zapis zadania ich nie zmienia, także gdy stare pola zostaną przesłane w POST.
 Akcja `clear_time_spent` w Zadaniach została wycofana. Historia zmian statusu
 w „Aktywności” pozostaje dostępna. Kanban zachowuje własne kontrolki.
 Podzadanie dziedziczy kontekst rodzica; w obecnych widokach nie można dodawać
 do niego załączników.
+
+Szczegóły zadania i podzadania mają drugi pasek z zakładkami „Główna”
+i „Dziennik pracy”. W dzienniku „Dodaj czas” otwiera standardowy modal:
+data i godzina rozpoczęcia, data i godzina zakończenia, wymagany opis
+(do 4000 znaków) oraz dwa edytowalne pola czasu poświęconego: „Godziny” i „Minuty”.
+Zmiana dat oblicza godziny i minuty. Wpisanie czasu poświęconego zachowuje
+zakończenie i wylicza rozpoczęcie wstecz; domyślne zakończenie to bieżąca
+chwila zaokrąglona do minuty. Liczba godzin może przekraczać 24, minuty mają
+zakres 0–59, łączny czas musi być dodatni. Przeliczanie działa także przez
+północ i zmianę czasu letniego. Godziny interpretowane są w Europe/Warsaw,
+z dokładnością do minuty. Koniec musi być późniejszy od początku.
+Autor jest ustalany z zalogowanego konta, bez pola wyboru osoby.
+
+Tabela pokazuje autora, minuty, rozpoczęcie, zakończenie i opis. Menu wiersza
+pozwala edytować lub usunąć wpis z potwierdzeniem; obowiązują zwykłe prawa
+edycji danych Workspace, również dla członków zespołu. Edycja zachowuje
+pierwotnego autora. Suma obejmuje wszystkie wpisy tego zadania, tabela pokazuje
+25 wpisów na stronę, od najpóźniejszego rozpoczęcia. Podzadania mają osobne
+dzienniki; suma zadania głównego nie obejmuje wpisów podzadań.
+Dodanie, edycja i usunięcie zapisują rzeczywistego wykonawcę operacji w Aktywności.
+Wycofane pola `time_spent_hours` i `time_spent_minutes` pozostają bez zmian;
+historyczne sumy nie są automatycznie zamieniane na wpisy bez dat i autora.
 
 ### Konfigurowalne pola projektu i terminy
 

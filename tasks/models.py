@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from django.db import models, transaction
 from django.db.models import F, Max, Q
 from django.contrib.postgres.indexes import GinIndex
@@ -885,6 +887,29 @@ class Task(models.Model):
             return os.path.splitext(first_attachment.file.name)[1].lower()
         return ''
 
+
+class TaskWorkLog(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='work_logs')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='task_work_logs')
+    started_at = models.DateTimeField('Data i godzina rozpoczęcia')
+    ended_at = models.DateTimeField('Data i godzina zakończenia')
+    description = models.TextField('Opis', max_length=4000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-started_at', '-pk']
+        indexes = [models.Index(fields=['task', '-started_at', '-id'], name='task_worklog_order_idx')]
+        constraints = [models.CheckConstraint(condition=Q(ended_at__gt=F('started_at')), name='task_worklog_positive_time')]
+
+    @property
+    def duration_minutes(self):
+        return int((self.ended_at.astimezone(UTC) - self.started_at.astimezone(UTC)).total_seconds() // 60)
+
+    def __str__(self):
+        return f'{self.task} — {self.duration_minutes} min'
+
+
 class TaskAttachment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='attachments')
     file = models.FileField(upload_to='task_attachments/')
@@ -962,6 +987,9 @@ class TaskActivity(models.Model):
         ('subtask_created', 'Dodano podzadanie'),
         ('attachments_added', 'Dodano załączniki'),
         ('attachments_deleted', 'Usunięto załączniki'),
+        ('work_log_added', 'Dodano wpis czasu'),
+        ('work_log_updated', 'Zmieniono wpis czasu'),
+        ('work_log_deleted', 'Usunięto wpis czasu'),
     ]
 
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='activities')

@@ -14611,3 +14611,63 @@ body.is-resizing-directory-columns {
 .project-template-editor__table:has(.documents-empty) thead {
     display: none;
 }
+
+/* Task detail tabs reuse the shared notification/template tab treatment. */
+.tasks-issue-tabbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 0 auto;
+    min-height: 45px;
+    gap: 1rem;
+    padding: 0 1rem;
+}
+.tasks-issue-tabbar .tasks-issue-tabs { border: 0; min-width: 0; }
+.tasks-issue-page [data-task-tab-panel][hidden],
+.tasks-issue-page [data-task-main-action][hidden],
+.tasks-issue-page [data-task-log-action][hidden],
+#task-work-log-modal [hidden] { display: none; }
+.tasks-work-log { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
+.tasks-work-log-summary, .tasks-work-log-pagination {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem;
+    padding: 1rem 24px; font-size: var(--font-size-sm); flex: 0 0 auto;
+}
+.tasks-work-log-summary {
+    justify-content: space-between;
+    padding-inline: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+/* Work logs use the project directory's rows, separators and hover treatment. */
+.tasks-directory-board.tasks-work-log-sheet {
+    --tasks-project-action-width: 40px;
+    --tasks-work-log-columns: 240px 130px 172px 172px minmax(280px, 1fr);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-work-log-columns);
+}
+.tasks-directory-board.tasks-work-log-sheet--readonly {
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-work-log-columns);
+}
+.tasks-directory-board.tasks-work-log-sheet .tasks-directory-header,
+.tasks-directory-board.tasks-work-log-sheet .tasks-directory-list .tasks-directory-row {
+    --tasks-directory-grid: inherit;
+    width: 100%;
+    min-width: 1074px;
+    padding-inline: 0;
+}
+.tasks-directory-board.tasks-work-log-sheet--readonly .tasks-directory-header,
+.tasks-directory-board.tasks-work-log-sheet--readonly .tasks-directory-list .tasks-directory-row {
+    min-width: 1034px;
+}
+.tasks-work-log-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
+.tasks-work-log-sheet [data-row-actions] { width: 100%; height: 100%; }
+.tasks-work-log-empty { padding: 70px 24px; text-align: center; }
+.tasks-work-log-pagination { justify-content: flex-end; }
+.tasks-work-log-fields { display: flex; flex-direction: column; gap: 16px; }
+.tasks-work-log-hint { margin: 6px 0 0; font-size: var(--font-size-sm); }
+#task-work-log-modal .tasks-work-log-duration-label { grid-column: 1; line-height: 1.4; }
+@media (min-width: 1100px) {
+    #task-work-log-modal .tasks-work-log-duration-label { padding-top: 9px; }
+}
+@media (max-width: 600px) {
+    .tasks-issue-tabbar { padding-inline: 12px; gap: 0.5rem; }
+    .tasks-work-log-summary, .tasks-work-log-pagination { padding: 12px; }
+}

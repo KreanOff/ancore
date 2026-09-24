@@ -1,8 +1,10 @@
 {% extends 'core/base.html' %}
-{% load account_avatar %}
+{% load account_avatar static %}
 
 {% block extra_head %}
     {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
+    <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
+    <script src="{% static 'js/task-work-log.js' %}?v=20260924-work-log-selection" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -36,12 +38,20 @@
             <div class="tasks-issue-actions">
                 {% include 'tasks/includes/follow_button.html' %}
                 {% if can_edit_task %}
-                <button type="submit" form="task-detail-form" class="tasks-issue-save" data-task-save data-state="idle" disabled>
+                <button type="submit" form="task-detail-form" class="tasks-issue-save" data-task-save data-task-main-action data-state="idle" disabled{% if active_task_tab != 'main' %} hidden{% endif %}>
                     Zapisz
                 </button>
                 {% endif %}
             </div>
         </header>
+
+        <div class="tasks-issue-tabbar">
+            <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Widok zadania">
+                <button type="button" id="task-tab-main" role="tab" aria-controls="task-detail-form" aria-selected="{% if active_task_tab == 'main' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'main' %}0{% else %}-1{% endif %}" data-task-tab="main">Główna</button>
+                <button type="button" id="task-tab-work-log" role="tab" aria-controls="task-work-log" aria-selected="{% if active_task_tab == 'work-log' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'work-log' %}0{% else %}-1{% endif %}" data-task-tab="work-log">Dziennik pracy</button>
+            </div>
+            {% if can_edit_task %}<button type="button" class="tasks-filter-button tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-open-work-log data-task-log-action aria-haspopup="dialog" aria-controls="task-work-log-modal"{% if active_task_tab != 'work-log' %} hidden{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj czas</span></button>{% endif %}
+        </div>
 
         <form id="activity-comment-form" method="POST" class="tasks-issue-comment-form">
             {% csrf_token %}
@@ -50,7 +60,7 @@
             <input type="hidden" name="activity_mentions" value="[]" data-mention-values>
         </form>
 
-        <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}"{% if not can_edit_task %} data-task-readonly="true"{% endif %}>
+        <form id="task-detail-form" role="tabpanel" aria-labelledby="task-tab-main" data-task-tab-panel="main"{% if active_task_tab != 'main' %} hidden{% endif %} method="POST" enctype="multipart/form-data" class="tasks-issue-form{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}"{% if not can_edit_task %} data-task-readonly="true"{% endif %}>
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
@@ -438,8 +448,13 @@
                 </aside>
             </main>
         </form>
+        <section id="task-work-log" class="tasks-work-log" role="tabpanel" aria-labelledby="task-tab-work-log" tabindex="0" data-task-tab-panel="work-log"{% if active_task_tab != 'work-log' %} hidden{% endif %}>
+            {% include 'tasks/includes/work_log_list.html' %}
+        </section>
     </div>
 </div>
+
+{% if can_edit_task %}{% include 'tasks/includes/work_log_modal.html' %}{% endif %}
 
 <div class="tasks-modal app-modal-panel tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog">

@@ -7,11 +7,12 @@ from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Q, Value, When
+from django.db.models import Case, Count, F, IntegerField, Max, Prefetch, Q, Sum, Value, When
 from django.http import Http404, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -41,6 +42,7 @@ from ..models import (
     TaskSectionNote,
     TaskTag,
     TaskTagNote,
+    TaskWorkLog,
     parse_hierarchy_code_number,
 )
 from ..forms import (
@@ -53,6 +55,7 @@ from ..forms import (
     TaskSectionForm,
     TaskSectionRenameForm,
     TaskTagForm,
+    TaskWorkLogForm,
 )
 
 
@@ -4240,6 +4243,80 @@ def bulk_update_status(request):
         logger.exception('Failed to bulk update task status')
         return JsonResponse({'status': 'error', 'message': 'Nie udało się zaktualizować zadań.'}, status=500)
 
+
+def _task_work_log_url(task, page=1):
+    route = 'view-subtask' if task.parent_id else 'view-task'
+    return scoped_workplace_app_path(task.workplace, 'tasks', f'{route}/{task.task_id}/',
+                                    urlencode({'task_pk': task.pk, 'tab': 'work-log', 'work_log_page': page}))
+
+
+def _task_work_log_context(request, task):
+    entries = task.work_logs.select_related('author')
+    duration = entries.aggregate(total=Sum(F('ended_at') - F('started_at')))['total'] or timedelta()
+    total_minutes = int(duration.total_seconds() // 60)
+    page = Paginator(entries, 25).get_page(request.POST.get('work_log_page') or request.GET.get('work_log_page'))
+    for entry in page:
+        entry.form_values = json.dumps({
+            'id': entry.pk,
+            'duration_minutes': entry.duration_minutes,
+            'started_at': timezone.localtime(entry.started_at).strftime('%Y-%m-%dT%H:%M'),
+            'ended_at': timezone.localtime(entry.ended_at).strftime('%Y-%m-%dT%H:%M'),
+            'description': entry.description,
+        })
+    return {
+        'work_log_page': page,
+        'work_log_total_minutes': total_minutes,
+        'work_log_total_label': f'{total_minutes // 60} godz. {total_minutes % 60:02d} min',
+        'work_log_previous_url': _task_work_log_url(task, page.previous_page_number()) if page.has_previous() else '',
+        'work_log_next_url': _task_work_log_url(task, page.next_page_number()) if page.has_next() else '',
+    }
+
+
+@transaction.atomic
+def _save_task_work_log(request, task):
+    action = request.POST['action']
+    if not request.POST.get('task_pk'):
+        return JsonResponse({'status': 'error', 'message': 'Odśwież stronę i ponów operację — brakuje identyfikatora zadania.'}, status=400)
+    entry = None
+    if action != 'add_work_log':
+        try:
+            entry_id = int(request.POST.get('work_log_id', ''))
+        except (ValueError, TypeError, OverflowError):
+            raise Http404
+        entry = get_object_or_404(TaskWorkLog.objects.select_for_update(), task=task, pk=entry_id)
+    form = TaskWorkLogForm(request.POST, instance=entry, prefix='worklog')
+    if action != 'delete_work_log' and not form.is_valid():
+        if _is_ajax_request(request):
+            return JsonResponse({
+                'status': 'error', 'message': 'Sprawdź dane wpisu.',
+                'form_html': render_to_string('tasks/includes/work_log_fields.html', {'work_log_form': form}, request=request),
+            }, status=400)
+        return form
+
+    if action == 'delete_work_log':
+        minutes = entry.duration_minutes
+        entry_id = entry.pk
+        entry.delete()
+        activity_action, message = 'work_log_deleted', 'usunął wpis czasu'
+    else:
+        entry = form.save(commit=False)
+        if action == 'add_work_log':
+            entry.task, entry.author = task, request.user
+        entry.save()
+        minutes, entry_id = entry.duration_minutes, entry.pk
+        activity_action, message = ('work_log_added', 'dodał wpis czasu') if action == 'add_work_log' else ('work_log_updated', 'zmienił wpis czasu')
+    activity = _record_task_activity(task, request.user, activity_action, f'{message} ({minutes} min)',
+                                     metadata={'work_log_id': entry_id, 'minutes': minutes})
+    if _is_ajax_request(request):
+        context = {'task': task, 'can_edit_task': True, **_task_work_log_context(request, task)}
+        return JsonResponse({
+            'status': 'success', 'message': 'Usunięto wpis.' if action == 'delete_work_log' else 'Zapisano wpis.',
+            'work_log_html': render_to_string('tasks/includes/work_log_list.html', context, request=request),
+            'activity_html': _task_activity_html([activity]),
+        })
+    return redirect(_task_work_log_url(task))
+
+
 def _task_detail_response(request, task_id=None, task_pk=None):
     workplace = _active_workplace(request)
     task_queryset = _filter_workplace(
@@ -4269,12 +4346,24 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     form = TaskForm(instance=task, user=task.user, workplace=workplace)
     task_modal_form = SubTaskModalForm()
     task_modal_open = False
+    work_log_form = TaskWorkLogForm(prefix='worklog')
+    work_log_modal_open = False
+    active_tab = 'work-log' if request.GET.get('tab') == 'work-log' else 'main'
     _decorate_task_directory_members([task], current_user=workspace_owner(request))
 
     if request.method == 'POST':
         is_ajax = _is_ajax_request(request)
         action = request.POST.get('action')
-        if action == 'create_subtask_modal':
+        if action in {'add_work_log', 'edit_work_log', 'delete_work_log'}:
+            if not can_edit_task:
+                raise PermissionDenied
+            result = _save_task_work_log(request, task)
+            if not isinstance(result, TaskWorkLogForm):
+                return result
+            work_log_form = result
+            work_log_modal_open = True
+            active_tab = 'work-log'
+        elif action == 'create_subtask_modal':
             if not can_edit_task:
                 raise PermissionDenied
             task_modal_form = SubTaskModalForm(request.POST)
@@ -4415,6 +4504,11 @@ def _task_detail_response(request, task_id=None, task_pk=None):
 
     context = {
         'form': form,
+        'work_log_form': work_log_form,
+        'work_log_modal_open': work_log_modal_open,
+        'active_task_tab': active_tab,
+        'work_log_url': _task_work_log_url(task),
+        **_task_work_log_context(request, task),
         'task_modal_form': task_modal_form,
         'task_modal_open': task_modal_open,
         'task': task,

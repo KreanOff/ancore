@@ -699,13 +699,56 @@ prowadzą do odpowiedniego modułu; pełne nazwy pozostają w tekście i `title`
 
 ## 6. Modale
 
-Szczegóły zadania i podzadania w module Zadania nie pokazują „Powodu blokady”,
-„Czasu pracy”, „Szacowanego czasu” ani bocznej „Historii statusu”. Modal tworzenia
+Zakładka „Główna” szczegółów zadania i podzadania nie pokazuje „Powodu blokady”,
+dawnych kontrolek „Czasu pracy”, „Szacowanego czasu” ani bocznej „Historii statusu”. Modal tworzenia
 zadania również nie zawiera powodu blokady ani szacowanego czasu; zachowuje
 termin wykonania i przypomnienie. Edytor szablonów projektów nie
 pokazuje pola szacowanego czasu ani kolumny „Czas (min)”. Zmiany statusu są nadal
 widoczne w „Aktywności”.
 Wspólne style czasu pracy i historii są nadal używane przez Kanban.
+
+Drugi pasek szczegółów Zadania (`tasks-issue-tabbar`) ma zakładki „Główna”
+i „Dziennik pracy” oparte na `notifications-tabs`, z turkusowym podkreśleniem.
+Pod paskiem zakładek nie ma poziomej linii oddzielającej go od treści.
+Przełączanie zachowuje niezapisane dane głównego formularza; przycisk „Zapisz”
+dotyczy Głównej, a „Dodaj czas” pojawia się na drugim pasku dziennika.
+ARIA tablist/tab/tabpanel, strzałki, Home i End obsługują klawiaturę.
+Wybrany widok jest zapisywany w parametrze `tab=work-log`, bez przeładowania.
+
+`tasks-work-log` wykorzystuje wariant `tasks-work-log-sheet` wspólnej tabeli
+katalogu projektów: pełną szerokość bez bocznych marginesów, wiersze 35px,
+nagłówki z ikonami, separatory oraz turkusowe podświetlenie z paskiem po lewej.
+Pierwsza kolumna 40px zawiera wspólne checkboxy katalogu projektów, zawsze
+widoczne. Checkbox w nagłówku zaznacza/odznacza bieżącą stronę i pokazuje
+stan częściowego zaznaczenia. Kliknięcie pustego miejsca w kolumnie wyboru
+również przełącza wpis. Zaznaczenie utrzymuje podświetlenie wiersza oraz
+pozostaje po edycji i odświeżeniu fragmentu; usunięte i niewidoczne wpisy
+wypadają z wyboru. Pełne przeładowanie lub zmiana strony zaczyna nowy wybór.
+Delegacja w `task-work-log.js` obsługuje także nowe wiersze po zapisie i
+ponowną inicjalizację, bez wpływu na checkboxy pozostałych modułów.
+Menu działań ma osobną kolumnę 40px, ukrytą przy braku prawa edycji;
+przycisk `tasks-project-sheet__edit-button` wypełnia całą komórkę, ma proste
+rogi i ten sam turkusowy hover/fokus co akcje projektów. Wrapper menu rozciąga
+się do rozmiaru komórki; obsługę menu nadal zapewnia `row-actions.js`.
+Autor korzysta ze wspólnego avatara katalogów. Wąskie ekrany zachowują wszystkie
+kolumny w przewijanym poziomo obszarze, a opis wypełnia wolną szerokość.
+Wariant ma `data-directory-resize="false"`: szerokości ustala CSS, a wspólny
+mechanizm zmiany szerokości kolumn pomija tę tabelę także po ponownej inicjalizacji.
+Suma minut i licznik wpisów obejmują także pozostałe strony. Długi opis ma
+wielokropek i pełną treść w `title`; edytor pozwala przeczytać i zmienić całość.
+Pusty stan pokazuje instrukcję dodania czasu. Modal `task-work-log-modal`
+używa `tasks-modal app-modal-panel`, wspólnych pól, fokusu, Escape i stopki.
+„Czas poświęcony” używa dwóch edytowalnych pól „Godziny” i „Minuty” we wspólnym
+układzie `tasks-issue-time-spent` znanym z Kanbana. Edycja dat przelicza tę parę;
+edycja godzin lub minut wylicza rozpoczęcie względem zakończenia, domyślnie
+bierze bieżącą chwilę. Daty liczone są w Europe/Warsaw niezależnie od strefy
+przeglądarki. Pola pozostają w jednym rzędzie także na telefonie. Dodawanie
+i edycja rozpoczynają się z fokusem w godzinach. Ostatnia edytowana strona
+określa kierunek obliczeń; nie ma dodatkowego przełącznika.
+`task-work-log.js` obsługuje inicjalizację i `ancore:content-loaded`, sprząta
+listenery i żądania, ustawia `inert` na tle i blokuje ponowny zapis oraz
+zamknięcie w trakcie żądania. Błędy serwera pozostają w formularzu z wpisanymi
+danymi. Zapis odświeża dziennik i Aktywność bez nadpisywania głównego formularza.
 
 `modal-system.css` wprost wskazuje okna projektów i zadań jako wzorzec
 standardowego okna aplikacji. Powłoka odpowiada za powierzchnię, przyciemnienie,

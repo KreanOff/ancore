@@ -1,0 +1,63 @@
+{% load account_avatar %}
+<div class="tasks-work-log-summary" data-work-log-page="{{ work_log_page.number }}">
+    <span>Łącznie: <strong>{{ work_log_total_minutes }} min</strong> ({{ work_log_total_label }})</span>
+    <span>Wpisy: {{ work_log_page.paginator.count }}</span>
+</div>
+{% if work_log_page.object_list %}
+<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-work-log-sheet{% if not can_edit_task %} tasks-work-log-sheet--readonly{% endif %}" data-directory-resize="false">
+    <section class="tasks-directory-group" role="table" aria-label="Wpisy dziennika pracy">
+        <div class="tasks-directory-header" role="row">
+            <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader">
+                <input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie wpisy na tej stronie" title="Zaznacz wszystkie wpisy na tej stronie" data-work-log-select-all>
+            </span>
+            {% if can_edit_task %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Działania" title="Działania"><i data-icon="menu" aria-hidden="true"></i></span>{% endif %}
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="author" role="columnheader"><i data-icon="user-round" aria-hidden="true"></i>Kto dodał czas</span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="duration" role="columnheader"><i data-icon="clock" aria-hidden="true"></i>Czas (min)</span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="started_at" role="columnheader"><i data-icon="calendar-days" aria-hidden="true"></i>Rozpoczęcie</span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="ended_at" role="columnheader"><i data-icon="calendar-clock" aria-hidden="true"></i>Zakończenie</span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="columnheader"><i data-icon="align-left" aria-hidden="true"></i>Opis</span>
+        </div>
+        <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
+        {% for entry in work_log_page %}
+        {% firstof entry.author.get_full_name entry.author.username 'Usunięte konto' as author_label %}
+        <article class="tasks-issue-row tasks-directory-row" role="row" data-work-log-id="{{ entry.pk }}">
+            <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" data-work-log-select value="{{ entry.pk }}" aria-label="Zaznacz wpis z {{ entry.started_at|date:'d.m.Y H:i' }} — {{ author_label }}">
+            {% if can_edit_task %}
+            <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
+                <div data-row-actions>
+                    <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="work-log-{{ entry.pk }}-actions" aria-controls="work-log-{{ entry.pk }}-actions" aria-expanded="false" aria-label="Działania wpisu z {{ entry.started_at|date:'d.m.Y H:i' }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
+                    <div id="work-log-{{ entry.pk }}-actions" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania wpisu czasu" data-row-actions-panel>
+                        <div class="documents-menu-actions">
+                            <button type="button" class="tasks-project-menu-button" data-open-work-log data-work-log-values="{{ entry.form_values }}" aria-haspopup="dialog" aria-controls="task-work-log-modal"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj wpis</span></button>
+                            <button type="button" class="tasks-project-menu-button" data-delete-work-log="{{ entry.pk }}">{% include 'core/includes/trash_icon.html' %}<span>Usuń wpis</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-directory-assignee" data-column="author" role="cell">
+                {% user_avatar entry.author as entry_avatar %}
+                {% include 'accounts/includes/user_avatar.html' with avatar=entry_avatar avatar_class='tasks-directory-avatar' only %}
+                <span class="tasks-row-title-text" title="{{ author_label }}">{{ author_label }}</span>
+            </div>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="duration" role="cell">{{ entry.duration_minutes }} min</span>
+            <time class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-project-sheet__date" data-column="started_at" role="cell" datetime="{{ entry.started_at|date:'c' }}">{{ entry.started_at|date:'d.m.Y H:i' }}</time>
+            <time class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-project-sheet__date" data-column="ended_at" role="cell" datetime="{{ entry.ended_at|date:'c' }}">{{ entry.ended_at|date:'d.m.Y H:i' }}</time>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-project-sheet__description" data-column="description" role="cell"><span class="tasks-row-title-text" title="{{ entry.description }}">{{ entry.description }}</span></span>
+        </article>
+        {% endfor %}
+        </div>
+    </section>
+</div>
+{% else %}
+<div class="documents-empty tasks-work-log-empty"><h3>Brak wpisów w dzienniku pracy</h3><p>Dodaj czas, aby zapisać pracę wykonaną nad tym zadaniem.</p></div>
+{% endif %}
+{% if work_log_page.paginator.num_pages > 1 %}
+<nav class="tasks-work-log-pagination" aria-label="Strony dziennika pracy">
+    <div class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar">
+        {% if work_log_previous_url %}<a class="tasks-project-pagination__button" href="{{ work_log_previous_url }}" aria-label="Poprzednia strona dziennika"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% endif %}
+        <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact">Strona {{ work_log_page.number }} z {{ work_log_page.paginator.num_pages }}</span>
+        {% if work_log_next_url %}<a class="tasks-project-pagination__button" href="{{ work_log_next_url }}" aria-label="Następna strona dziennika"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% endif %}
+    </div>
+</nav>
+{% endif %}
