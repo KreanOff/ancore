@@ -4,7 +4,7 @@
 {% block extra_head %}
     {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
     <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
-    <script src="{% static 'js/task-work-log.js' %}?v=20260925-history-tab" defer></script>
+    <script src="{% static 'js/task-work-log.js' %}?v=20260925-subtasks-tab" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -61,6 +61,9 @@
                     <div class="tasks-issue-tabbar">
                         <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Widok zadania">
                             <button type="button" id="task-tab-main" role="tab" aria-controls="task-main-content" aria-selected="{% if active_task_tab == 'main' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'main' %}0{% else %}-1{% endif %}" data-task-tab="main">Główna</button>
+                            {% if not task.parent %}
+                            <button type="button" id="task-tab-subtasks" role="tab" aria-controls="task-subtasks" aria-selected="{% if active_task_tab == 'subtasks' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'subtasks' %}0{% else %}-1{% endif %}" data-task-tab="subtasks">Podzadania</button>
+                            {% endif %}
                             <button type="button" id="task-tab-work-log" role="tab" aria-controls="task-work-log" aria-selected="{% if active_task_tab == 'work-log' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'work-log' %}0{% else %}-1{% endif %}" data-task-tab="work-log">Dziennik pracy</button>
                             <button type="button" id="task-tab-history" role="tab" aria-controls="task-history" aria-selected="{% if active_task_tab == 'history' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'history' %}0{% else %}-1{% endif %}" data-task-tab="history">Historia</button>
                         </div>
@@ -68,7 +71,7 @@
                     </div>
 
                     <div class="tasks-issue-primary-body">
-                        <section class="tasks-issue-content tasks-issue-overview" aria-label="Temat i opis zadania" data-task-overview{% if active_task_tab == 'history' %} hidden{% endif %}>
+                        <section class="tasks-issue-content tasks-issue-overview" aria-label="Temat i opis zadania" data-task-overview{% if active_task_tab == 'history' or active_task_tab == 'subtasks' %} hidden{% endif %}>
                             {% if form.errors %}
                             <div class="tasks-error-banner">
                                 <strong>Wystąpiły błędy:</strong>
@@ -134,54 +137,6 @@
                             <div id="file-list" class="tasks-file-list"></div>
                             {% endif %}
 
-                            {% if not task.parent %}
-                            <section class="tasks-issue-subtasks" aria-label="Podzadania">
-                                <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
-                                    <button type="button" class="tasks-subtasks-title" data-subtasks-collapse aria-expanded="true">
-                                        <i data-icon="chevron-down" aria-hidden="true"></i>
-                                        <span>Podzadania ({{ task.subtasks.count }})</span>
-                                    </button>
-                                    <div class="tasks-subtasks-actions">
-                                        <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-subtasks-sort>
-                                            <i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i>
-                                        </button>
-                                        {% if can_manage_task %}
-                                        <button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-subtasks-delete>
-                                            {% include 'core/includes/trash_icon.html' %}
-                                        </button>
-                                        {% endif %}
-                                        {% if can_edit_task %}
-                                        <button type="button" class="tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-open-issue aria-haspopup="dialog" aria-controls="issue-modal">
-                                            <i data-icon="plus" aria-hidden="true"></i>
-                                        </button>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% if task.subtasks.exists %}
-                                <div class="tasks-table-wrap tasks-board tasks-subtasks-board">
-                                    {% for status_group in subtask_status_groups %}
-                                    {% if status_group.count %}
-                                    <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
-                                        <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
-                                            <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
-                                                <i data-icon="chevron-down" aria-hidden="true"></i>
-                                            </button>
-                                            <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
-                                            <span class="tasks-rail-count">{{ status_group.count }}</span>
-                                        </header>
-                                        <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
-                                            {% for subtask in status_group.tasks %}
-                                            {% include 'tasks/includes/task_issue_row.html' with task=subtask project_code=subtask.section.project.code|default:'TASK' compact=True workplace_app_urls=workplace_app_urls only %}
-                                            {% endfor %}
-                                        </div>
-                                    </section>
-                                    {% endif %}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </section>
-                            {% endif %}
-
                             <section class="tasks-issue-activity">
                                 <div class="tasks-issue-activity-head">
                                     <h2>
@@ -213,6 +168,56 @@
                                 </div>
                             </section>
                         </section>
+
+                        {% if not task.parent %}
+                        <section id="task-subtasks" class="tasks-issue-content tasks-issue-subtasks" role="tabpanel" aria-labelledby="task-tab-subtasks" tabindex="0" data-task-tab-panel="subtasks"{% if active_task_tab != 'subtasks' %} hidden{% endif %}>
+                            <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
+                                <button type="button" class="tasks-subtasks-title" data-subtasks-collapse aria-expanded="true">
+                                    <i data-icon="chevron-down" aria-hidden="true"></i>
+                                    <span>Podzadania ({{ task.subtasks.count }})</span>
+                                </button>
+                                <div class="tasks-subtasks-actions">
+                                    <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-subtasks-sort>
+                                        <i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i>
+                                    </button>
+                                    {% if can_manage_task %}
+                                    <button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-subtasks-delete>
+                                        {% include 'core/includes/trash_icon.html' %}
+                                    </button>
+                                    {% endif %}
+                                    {% if can_edit_task %}
+                                    <button type="button" class="tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-open-issue aria-haspopup="dialog" aria-controls="issue-modal">
+                                        <i data-icon="plus" aria-hidden="true"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if task.subtasks.exists %}
+                            <div class="tasks-table-wrap tasks-board tasks-subtasks-board">
+                                {% for status_group in subtask_status_groups %}
+                                {% if status_group.count %}
+                                <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
+                                    <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
+                                        <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
+                                            <i data-icon="chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
+                                        <span class="tasks-rail-count">{{ status_group.count }}</span>
+                                    </header>
+                                    <div class="tasks-issue-list" data-drop-status="{{ status_group.status }}">
+                                        {% for subtask in status_group.tasks %}
+                                        {% include 'tasks/includes/task_issue_row.html' with task=subtask project_code=subtask.section.project.code|default:'TASK' compact=True workplace_app_urls=workplace_app_urls only %}
+                                        {% endfor %}
+                                    </div>
+                                </section>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="tasks-issue-empty-feed">Brak podzadań.</p>
+                            {% endif %}
+                        </section>
+                        {% endif %}
 
                         <section id="task-work-log" class="tasks-work-log tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-work-log" tabindex="0" data-task-tab-panel="work-log"{% if active_task_tab != 'work-log' %} hidden{% endif %}>
                             {% include 'tasks/includes/work_log_list.html' %}

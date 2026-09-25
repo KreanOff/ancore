@@ -4349,7 +4349,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     work_log_form = TaskWorkLogForm(prefix='worklog')
     work_log_modal_open = False
     active_tab = request.GET.get('tab', 'main')
-    if active_tab not in {'main', 'work-log', 'history'}:
+    if active_tab not in {'main', 'subtasks', 'work-log', 'history'} or (active_tab == 'subtasks' and task.parent_id):
         active_tab = 'main'
     _decorate_task_directory_members([task], current_user=workspace_owner(request))
 
@@ -4388,7 +4388,10 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                     },
                 )
                 messages.success(request, 'Podzadanie dodane.')
-                return _redirect_to_task_detail(task, workspace_owner(request))
+                detail_redirect = _redirect_to_task_detail(task, workspace_owner(request))
+                detail_redirect['Location'] += '?' + urlencode({'task_pk': task.pk, 'tab': 'subtasks'})
+                return detail_redirect
+            active_tab = 'subtasks' if not task.parent_id else 'main'
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać podzadania.')
         elif action == 'add_activity_comment':

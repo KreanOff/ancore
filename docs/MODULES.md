@@ -118,7 +118,10 @@ Podzadanie dziedziczy kontekst rodzica; w obecnych widokach nie można dodawać
 do niego załączników.
 
 Szczegóły zadania i podzadania mają drugi pasek z zakładkami „Główna”,
-„Dziennik pracy” i „Historia”. „Główna” pokazuje komentarze w sekcji „Czat”,
+„Dziennik pracy” i „Historia”. Zadanie główne ma dodatkowo zakładkę „Podzadania”
+po „Głównej”, z listą według statusów, licznikiem i dotychczasowymi akcjami.
+Jest dostępna również bez podzadań; dodanie lub błąd formularza zachowuje tę zakładkę.
+„Główna” pokazuje komentarze w sekcji „Czat”,
 a „Historia” tylko zdarzenia, bez formularza komentarza. W dzienniku „Dodaj czas” otwiera standardowy modal:
 data i godzina rozpoczęcia, data i godzina zakończenia, wymagany opis
 (do 4000 znaków) oraz dwa edytowalne pola czasu poświęconego: „Godziny” i „Minuty”.

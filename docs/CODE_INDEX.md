@@ -20,7 +20,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 15 | 0 | 9 | 42 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 18 | 8 | 10 | 78 |
-| [tasks](../tasks) | 20 | 50 | 31 | 222 |
+| [tasks](../tasks) | 21 | 51 | 31 | 224 |
 | [kanban](../kanban) | 10 | 35 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 4 | 7 | 91 |
@@ -1360,6 +1360,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ProjectGroupDirectoryTests`: 3 metod testowych.
 
+### tasks/test_legacy_time_migration.py
+
+Źródło: [tasks/test_legacy_time_migration.py](../tasks/test_legacy_time_migration.py).
+
+- `LegacyTaskTimeMigrationTests`: 2 metod testowych.
+
 ### tasks/test_project_deadline_overrides.py
 
 Źródło: [tasks/test_project_deadline_overrides.py](../tasks/test_project_deadline_overrides.py).
@@ -1649,6 +1655,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0048_taskprojecttemplate.py](../tasks/migrations/0048_taskprojecttemplate.py)
 - [tasks/migrations/0049_taskprojecttemplate_template_name.py](../tasks/migrations/0049_taskprojecttemplate_template_name.py)
 - [tasks/migrations/0050_task_work_log.py](../tasks/migrations/0050_task_work_log.py)
+- [tasks/migrations/0051_legacy_logged_seconds_default.py](../tasks/migrations/0051_legacy_logged_seconds_default.py)
 
 ### kanban
 

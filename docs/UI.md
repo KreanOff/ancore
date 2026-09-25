@@ -707,7 +707,7 @@ pokazuje pola szacowanego czasu ani kolumny „Czas (min)”. Zmiany statusu są
 widoczne w zakładce „Historia”.
 Wspólne style czasu pracy i historii są nadal używane przez Kanban.
 
-Zakładki „Główna”, „Dziennik pracy” i „Historia” (`tasks-issue-tabbar`) znajdują się
+Zakładki „Główna”, „Podzadania”, „Dziennik pracy” i „Historia” (`tasks-issue-tabbar`) znajdują się
 w lewej kolumnie szczegółów (`tasks-issue-primary`), bezpośrednio nad tematem
 zadania i są wyrównane do jego lewej krawędzi, także na telefonie.
 Korzystają z `notifications-tabs`, z turkusowym podkreśleniem. Tekst zakładek
@@ -715,8 +715,8 @@ ma rozmiar `--font-size-lg` (15px); wariant jest ograniczony do szczegółów
 zadania i podzadania. Edytowalny tytuł w treści tych widoków ma 20px,
 także na telefonie, zgodnie z rozmiarem nagłówków standardowych modali.
 Pod paskiem zakładek nie ma poziomej linii oddzielającej go od treści.
-Temat i opis (`tasks-issue-overview`) są wspólne dla dwóch pierwszych zakładek: w „Główna”
-poprzedzają załączniki, podzadania i czat, a w „Dzienniku pracy” sumę
+Temat i opis (`tasks-issue-overview`) są wspólne dla „Głównej” i „Dziennika pracy”: w „Główna”
+poprzedzają załączniki i czat, a w „Dzienniku pracy” sumę
 oraz tabelę wpisów. To te same edytowalne pola formularza, bez kopii i osobnego
 zapisu. Przełączanie zachowuje również ich niezapisane zmiany. Wspólny obszar
 `tasks-issue-primary-body` przewija temat, opis i zawartość wybranej zakładki;
@@ -728,10 +728,16 @@ układem szczegółów. Przycisk „Zapisz” jest dostępny we wszystkich zakł
 ten sam formularz, w tym zmiany z panelu bocznego. „Dodaj czas” pojawia się
 obok zakładek w lewej kolumnie i zapisuje wpisy przez osobny formularz modala.
 ARIA tablist/tab/tabpanel, strzałki, Home i End obsługują klawiaturę.
-Wybrany widok jest zapisywany w parametrze `tab=work-log` lub `tab=history`, bez przeładowania.
+Wybrany widok jest zapisywany w parametrze `tab=subtasks`, `tab=work-log` lub `tab=history`, bez przeładowania.
+„Podzadania” są dostępne dla zadania głównego, także przy pustej liście.
+Panel pokazuje dotychczasowy licznik, zwijanie, sortowanie, usuwanie zaznaczonych
+i modal dodawania oraz listę grupowaną według statusu. Nie pokazuje tematu, opisu
+ani czatu. Pusta lista wyświetla „Brak podzadań.”, a dodawanie pozostaje dostępne.
+Zapis podzadania i błąd formularza pozostawiają wybraną zakładkę.
+Szczegóły podzadania zachowują trzy zakładki, bez kolejnego poziomu podzadań.
 
 „Główna” zawiera wyłącznie komentarze w sekcji „Czat”, z dotychczasowym
-formularzem i wzmiankami. Nie ma menu filtrowania aktywności. Trzecia zakładka
+formularzem i wzmiankami. Nie ma menu filtrowania aktywności. Zakładka
 „Historia” pokazuje wyłącznie zdarzenia zadania, bez tematu, opisu ani formularza
 komentarza. Ukrycie pól nie usuwa ich niezapisanych wartości; błąd walidacji
 ukrytego pola przywraca „Główną”, aby umożliwić poprawę. Obie listy korzystają

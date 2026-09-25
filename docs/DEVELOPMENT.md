@@ -112,6 +112,7 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Workplaces | Wybór i izolacja Workspace, scoped URL, ulubione, zmiany i usuwanie |
 | Tasks | Numeracja, hierarchie, CRUD, zakres dostępu, formularze, katalogi, paginacja, zapytania, historia, pliki |
 | Tasks: `test_work_logs.py` | Dziennik pracy: CRUD, autor, osobne podzadania, zwykłe/scoped URL, izolacja kont i Workspace, odebranie dostępu, stabilne PK, dwukierunkowe przeliczanie godzin/minut i dat, północ i zmiany czasu, zachowanie pól po błędach, paginacja/sumy, walidacja, CSRF, usunięcie autora, CASCADE oraz rollback wraz z historią |
+| Tasks: `test_legacy_time_migration.py` | Migracja dawnej kolumny czasu: świeża i starsza baza, zachowanie danych, tworzenie zadań i podzadań, zwykłe/scoped URL, autor historii i izolacja Workspace |
 | Osobne testy Tasks | Słowniki źródeł, reguły terminów, nadpisanie reguł per projekt i migracje |
 | Kanban | Tablice/kolumny/karty, właściciel, zmiany statusu, katalogi, tagi, pliki |
 | Contacts | Osoby, firmy, powiązania z kontami, zakres dostępu i UI szablonów |
@@ -367,6 +368,22 @@ paginację, podpisane snapshoty zbiorczego odczytu, nowe zdarzenia, escapowanie
 HTML, CASCADE i ograniczenia bazy. Przeglądarka powinna sprawdzić panel,
 przekierowanie z wycofanej strony `/notifications/`, telefon, klawiaturę,
 pusty stan, błąd/ponowienie i częściową nawigację.
+
+## Zgodność dawnej kolumny czasu zadań
+
+Migracja `tasks/0051_legacy_logged_seconds_default.py` naprawia zapis zadań
+i podzadań w bazach, w których po dawnej wersji pomiaru czasu pozostała
+kolumna `tasks_task.logged_seconds` z `NOT NULL`, bez wartości domyślnej.
+Obecny model `Task` nie używa tej kolumny, dlatego taki schemat blokował INSERT.
+Migracja ustawia domyślne `0` w bazie tylko wtedy, gdy kolumna istnieje i nie
+ma wartości domyślnej. Zachowuje dotychczasowe wartości i wpisy `TaskWorkLog`;
+nie dodaje kolumny do świeżych baz ani nie zmienia stanu modeli Django.
+Wycofanie migracji pozostawia tę zgodność, aby nie przywrócić błędu zapisu.
+Zastosuj ją przez `manage.py migrate` przed tworzeniem kolejnych zadań.
+
+Testy `tasks.test_legacy_time_migration` odtwarzają błąd na starszym schemacie
+i sprawdzają zapis po migracji, obie wersje URL, autora historii, kontekst
+Workspace, zamknięcie podzadania oraz zachowanie zapisanych czasów.
 
 ## Wzmianki i obserwowanie
 
