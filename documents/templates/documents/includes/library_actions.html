@@ -1,5 +1,7 @@
-<div class="documents-row-actions">
-                            <a class="tasks-icon-button documents-icon-button" data-document-modal href="{{ documents_url }}libraries/{{ item.pk }}/edit/" aria-label="Ustawienia dysku {{ item.name }}" title="Ustawienia dysku"><i data-icon="pencil" aria-hidden="true"></i></a>
-                            <form method="post" action="{{ documents_url }}libraries/{{ item.pk }}/delete/">{% csrf_token %}<button type="submit" class="tasks-icon-button documents-icon-button" aria-label="Usuń pusty dysk {{ item.name }}" title="Usuń pusty dysk"><i data-icon="trash-2" aria-hidden="true"></i></button></form>
-                            <a class="tasks-icon-button documents-icon-button documents-library-open" href="{{ documents_url }}?library={{ item.pk }}" aria-label="Otwórz dysk {{ item.name }}" title="Otwórz dysk"><i data-icon="chevron-right" aria-hidden="true"></i></a>
-                        </div>
+{% with action_class=action_menu|yesno:'tasks-project-menu-button,tasks-icon-button documents-icon-button' %}
+<div class="{% if action_menu %}documents-menu-actions{% else %}documents-row-actions{% endif %}">
+    <a class="{{ action_class }}" data-document-modal href="{{ documents_url }}libraries/{{ item.pk }}/edit/" aria-label="Ustawienia dysku {{ item.name }}" title="Ustawienia dysku"><i data-icon="pencil" aria-hidden="true"></i>{% if action_menu %}<span>Ustawienia dysku</span>{% endif %}</a>
+    <form method="post" action="{{ documents_url }}libraries/{{ item.pk }}/delete/">{% csrf_token %}<button type="submit" class="{{ action_class }}" aria-label="Usuń pusty dysk {{ item.name }}" title="Usuń pusty dysk"><i data-icon="trash-2" aria-hidden="true"></i>{% if action_menu %}<span>Usuń pusty dysk</span>{% endif %}</button></form>
+    <a class="{{ action_class }}{% if not action_menu %} documents-library-open{% endif %}" href="{{ documents_url }}?library={{ item.pk }}" aria-label="Otwórz dysk {{ item.name }}" title="Otwórz dysk"><i data-icon="chevron-right" aria-hidden="true"></i>{% if action_menu %}<span>Otwórz dysk</span>{% endif %}</a>
+</div>
+{% endwith %}

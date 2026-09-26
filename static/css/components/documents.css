@@ -25,6 +25,26 @@
 .documents-icon-button.is-starred svg { color: var(--system-accent); }
 .documents-page :is(a, button, summary):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
 .documents-table-scroll { width: 100%; min-height: 0; overflow: auto; flex: 1; }
+/* The drive index uses the project directory's compact rows and action cells. */
+.tasks-directory-board.documents-library-sheet {
+    --tasks-project-action-width: 40px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) minmax(280px, 1fr) 176px 120px;
+}
+.tasks-directory-board.documents-library-sheet .tasks-directory-header,
+.tasks-directory-board.documents-library-sheet .tasks-directory-list .tasks-directory-row {
+    --tasks-directory-grid: inherit;
+    width: 100%;
+    min-width: 656px;
+    padding-inline: 0;
+}
+.documents-library-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
+.documents-library-sheet .tasks-directory-list .tasks-directory-row { cursor: default; }
+.documents-library-sheet [data-document-actions] { width: 100%; height: 100%; }
+.documents-library-sheet .documents-library-entry { width: 100%; min-height: 0; padding: 0 0.75rem 0 0; gap: 8px; }
+.documents-library-sheet .documents-library-title { white-space: nowrap; overflow-wrap: normal; }
+.documents-library-sheet .documents-library-icon,
+.documents-library-sheet .documents-library-icon svg { width: 32px; height: 32px; flex-basis: 32px; }
+.documents-library-sheet [data-column="size"] { justify-content: flex-end; padding-right: 0.75rem; font-variant-numeric: tabular-nums; }
 /* Match the compact project directory while retaining semantic tables. */
 .documents-table { width: 100%; min-width: 690px; border-collapse: collapse; table-layout: fixed; font-size: var(--font-size-sm); }
 :is(.documents-layout, .office-page) .documents-table { min-width: 870px; }

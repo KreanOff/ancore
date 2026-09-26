@@ -4,8 +4,8 @@
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-shared-view-selector">
-<script src="{% static 'js/documents.js' %}?v=20260923-panel-motion" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260926-catalog-selection">
+<script src="{% static 'js/documents.js' %}?v=20260926-catalog-selection" defer></script>
 <script src="{% static 'js/office.js' %}?v=20260921-no-tags" defer></script>
 {% endblock %}
 {% block content %}
@@ -81,21 +81,41 @@
         </ul>
         </div>
         {% else %}
-        <div class="documents-table-scroll"><table class="documents-table documents-table--inline-actions">
-            <thead><tr><th scope="col"><span class="documents-column-heading">Nazwa</span></th><th scope="col" data-document-column="date"><span class="documents-column-heading">Zmodyfikowano</span></th><th scope="col" data-document-column="size"><span class="documents-column-heading">Rozmiar</span></th></tr></thead>
-            <tbody>{% for row in rows %}{% with item=row.item %}<tr>
-                <td><div class="documents-name">{% include 'documents/includes/row_menu.html' with actions_template='documents/office/actions.html' %}<span class="documents-file-icon">{% include 'documents/includes/file_icon.html' with document=item only %}</span><div>{% include 'documents/office/name.html' %}</div></div></td>
-                <td class="documents-date" data-document-column="date" title="Zmodyfikowano: {{ item.updated_at|date:'d.m.Y, H:i' }}">{{ item.updated_at|date:'d.m.Y' }}</td>
-                <td class="documents-size" data-document-column="size">{{ item.file_size|filesizeformat }}</td>
-            </tr>{% endwith %}{% empty %}<tr><td colspan="3" class="documents-empty"><div>
+        {% if rows %}
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable office-document-sheet" data-document-selection data-directory-resize="false" role="table" aria-label="Lista dokumentów">
+            <div class="tasks-directory-group" role="rowgroup">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+                    <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader">
+                        <input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" data-document-select-all aria-label="Zaznacz wszystkie dokumenty na stronie" title="Zaznacz wszystkie dokumenty na stronie">
+                    </span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader"><span class="u-sr-only">Działania</span></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">Nazwa<i data-icon="file-text" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="modified" role="columnheader">Zmodyfikowano<i data-icon="calendar-clock" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="size" role="columnheader">Rozmiar<i data-icon="hard-drive" aria-hidden="true"></i></span>
+                </div>
+                <div class="tasks-issue-list tasks-directory-list" role="presentation">
+                    {% for row in rows %}{% with item=row.item %}
+                    <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="row">
+                        <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" data-document-select value="{{ item.pk }}" aria-label="Zaznacz dokument {{ item.title }}">
+                        <div class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">{% include 'documents/includes/row_menu.html' with actions_template='documents/office/actions.html' button_class='tasks-project-sheet__edit-button' %}</div>
+                        <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell" title="{{ item.title }}"><div class="documents-name"><span class="documents-file-icon">{% include 'documents/includes/file_icon.html' with document=item only %}</span><div>{% include 'documents/office/name.html' %}</div></div></div>
+                        <div class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="modified" role="cell" title="Zmodyfikowano: {{ item.updated_at|date:'d.m.Y, H:i' }}">{{ item.updated_at|date:'d.m.Y' }}</div>
+                        <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="size" role="cell">{{ item.file_size|filesizeformat }}</div>
+                    </div>
+                    {% endwith %}{% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="documents-table-scroll"><div class="documents-empty office-document-empty"><div>
                 <i data-icon="{% if office_view == 'trash' %}trash-2{% else %}file-text{% endif %}" aria-hidden="true"></i>
                 {% if query or has_active_filters %}<h3>Brak pasujących dokumentów</h3><p>Zmień wyszukiwanie lub filtry albo wróć do pełnej listy.</p><a class="btn btn-secondary" href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a>
                 {% elif office_view == 'trash' %}<h3>Kosz jest pusty</h3><p>Tutaj znajdziesz usunięte dokumenty, które możesz przywrócić.</p>
                 {% elif office_view == 'starred' %}<h3>Brak oznaczonych dokumentów</h3><p>Dodaj gwiazdkę do dokumentu, aby łatwo do niego wrócić.</p>
                 {% elif office_view == 'templates' %}<h3>Brak szablonów</h3><p>W menu dokumentu wybierz „Używaj jako szablonu”. Potem wybierz „Utwórz kopię szablonu”.</p>
                 {% else %}<h3>Twoje dokumenty w jednym miejscu</h3><p>Twórz dokumenty, arkusze, prezentacje i tablice lub prześlij swoje pliki z komputera.</p><a class="btn btn-primary" href="{{ create_url }}" data-document-modal>Utwórz dokument</a>{% endif %}
-            </div></td></tr>{% endfor %}</tbody>
-        </table></div>
+        </div></div></div>
+        {% endif %}
         {% endif %}
     </section>
 </div>

@@ -7,6 +7,7 @@
         const options = { signal: controller.signal };
         initDocumentSidebar(options);
         initDocumentColors(options);
+        initDocumentSelection(options);
         const modals = initDocumentModals(options);
         initDocumentDragDrop(options, modals);
         const menu = document.querySelector('[data-documents-columns]');
@@ -54,6 +55,43 @@
             }
         }, options);
         apply();
+    }
+
+    function initDocumentSelection(options) {
+        const table = document.querySelector('[data-document-selection]');
+        if (!table) return;
+        const selectAll = table.querySelector('[data-document-select-all]');
+        const inputs = [...table.querySelectorAll('[data-document-select]')];
+
+        function syncSelection() {
+            const selected = inputs.filter(input => input.checked).length;
+            inputs.forEach(input => {
+                input.closest('.tasks-directory-row').classList.toggle('checked', input.checked);
+            });
+            selectAll.checked = inputs.length > 0 && selected === inputs.length;
+            selectAll.indeterminate = selected > 0 && selected < inputs.length;
+            selectAll.disabled = inputs.length === 0;
+        }
+
+        table.addEventListener('change', event => {
+            if (event.target === selectAll) {
+                inputs.forEach(input => { input.checked = selectAll.checked; });
+            } else if (!event.target.matches('[data-document-select]')) return;
+            syncSelection();
+        }, options);
+        // Match the project directory: the whole selection column is clickable.
+        table.addEventListener('click', event => {
+            if (event.defaultPrevented || event.target.closest('a, input, button, select, textarea')) return;
+            const header = event.target.closest('.tasks-directory-header [data-column="select"]');
+            const row = event.target.closest('.tasks-directory-row');
+            const input = header ? selectAll : row?.querySelector('[data-document-select]');
+            if (!input || input.disabled) return;
+            if (!header && (event.clientX < row.getBoundingClientRect().left
+                || event.clientX >= input.nextElementSibling.getBoundingClientRect().left)) return;
+            input.focus({ preventScroll: true });
+            input.click();
+        }, options);
+        syncSelection();
     }
 
     function initDocumentColors(options) {

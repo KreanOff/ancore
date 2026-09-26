@@ -361,7 +361,7 @@ także przy zapisanych wcześniej preferencjach ich ukrywania. „Nowy folder”
 istniejącego drugorzędnego przycisku w pasku, obok „Prześlij pliki”. Wyszukiwanie ma widoczny
 opis zakresu obejmującego podfoldery i akcję czyszczenia pustych wyników.
 
-`documents.css` zachowuje semantyczne tabele dysków i plików, dopasowane do
+`documents.css` zachowuje semantyczne tabele plików, dopasowane do
 katalogu projektów: tekst 13px, nagłówki 35px, wiersze plików minimum 36px, białe tło,
 delikatne podziały poziome i pionowe z tokenu `--tasks-directory-column-separator` oraz szare
 podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
@@ -411,8 +411,8 @@ nie ma obrysu ani fokusu i jest dekoracyjne.
 Nawigacja, pusty stan, filtry, sortowanie i globalne wyszukiwanie zachowują
 ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków ma rozmiar
 32×32px w polu 32×32px, a w panelu bocznym 30×30px, również na telefonie.
-Wiersze dysków mają minimum 44px wysokości, a odstęp między ikoną i nazwą
-wynosi 8px (10px w zwężonej liście).
+Wiersze dysków mają 35px wysokości, a odstęp między ikoną i nazwą
+wynosi 8px, także w zwężonej liście.
 
 Formularz tworzenia i ustawień dysku zawiera nazwę, kolor ikony i opis.
 Tworzenie oraz edycja folderów Dysku zawierają nazwę i kolor.
@@ -443,12 +443,30 @@ liczniki zachowują zakres Workspace i nie zależą od filtrów.
 Indeks nie powtarza listy dysków w panelu bocznym.
 Pasek narzędzi i siatka dysków mają wspólny
 odstęp boczny `--documents-index-padding-x: 0.95rem`, zgodny z paskiem narzędzi
-katalogów. Skrajne komórki listy dysków mają symetryczne odstępy od krawędzi tabeli:
-24px na komputerze i 20px na telefonie, również w nagłówku i przy węższej tabeli.
-Na komputerze lewy odstęp jest taki sam jak na liście plików.
+katalogów. Lista używa `tasks-directory-sheet tasks-project-sheet` z „Wszystkich
+projektów” oraz wariantu `documents-library-sheet` w `documents.css`.
+Tekst 13px/400, wiersze 35px, nagłówki z ikonami, separatory oraz turkusowe
+podświetlenie z paskiem po lewej pochodzą ze wspólnego komponentu.
 
 Lista dysków ma trzy kolumny danych: „Nazwa”, „Zmodyfikowano”, „Rozmiar”,
-z osobnym polem przycisków działań. Lista folderów i plików Dysku pokazuje
+poprzedzone kolumną wyboru 40px i kolumną menu 40px. Checkboxy korzystają
+z `tasks-project-sheet--selectable` i wspólnego stylu projektów, są stale
+widoczne i podświetlają zaznaczone wiersze. Checkbox w nagłówku wybiera całą
+bieżącą stronę i pokazuje stan częściowego zaznaczenia. Cała kolumna wyboru
+jest klikalna; `documents.js` obsługuje wybór również po `ancore:content-loaded`
+bez powielania listenerów. Nowe wyniki, strona lub przeładowanie resetują wybór.
+Menu ma wizualnie pusty nagłówek
+i etykietę „Działania” dla czytników ekranu. Przycisk z trzema paskami używa
+`tasks-project-sheet__edit-button` i wypełnia komórkę. Wspólny `row_menu.html`
+przyjmuje `menu_kind='library'`, aby zbudować identyfikator i etykietę dysku.
+Menu pokazuje ustawienia, usunięcie pustego dysku i otwarcie, korzystając
+z `library_actions.html` w wariancie `action_menu`. `row-actions.js` zapewnia
+popover, klawiaturę, Escape i powrót fokusu. Kafelki korzystają z tego samego
+menu w stopce, po prawej stronie daty, z przyciskiem
+`tasks-icon-button documents-icon-button`. Nazwa wypełnia wolne miejsce, data ma 176px,
+a rozmiar 120px. Wariant ma semantykę ARIA tabeli, wierszy i komórek oraz
+`data-directory-resize="false"`. Atrybuty celu przeciągania pozostają na wierszu.
+Lista folderów i plików Dysku pokazuje
 te same trzy kolumny danych, bez kolumny „Tagi”, z menu działań w nazwie.
 Minimalna szerokość tabeli plików z menu w nazwie wynosi 690px;
 węższy obszar zachowuje wszystkie kolumny dzięki przewijaniu poziomemu.
@@ -463,12 +481,11 @@ Data i rozmiar pozostają widoczne w trybie listy.
 `documents-library-entry` jest linkiem obejmującym miniaturę i nazwę (13px).
 Lista dysków nie wyświetla opisu pod nazwą ani opcji „Opis” w wyborze kolumn.
 Rozmiar jest wyrównany do prawej, a akcja
-ze strzałką otwiera dysk. Przy szerokości obszaru listy do 740px (container
-query, także przy rozwiniętej nawigacji aplikacji na tablecie) nazwa zawija się.
+ze strzałką otwiera dysk. Długie nazwy mają wielokropek oraz pełny tekst w `title`.
 Na wąskich ekranach tabela przewija się poziomo, zachowując wszystkie
-trzy kolumny danych (minimalna szerokość 620px).
-Ustawienia i usunięcie pustego dysku pozostają oddzielnymi kontrolkami.
-Pusty wynik ma bezpośrednią akcję wyczyszczenia wyszukiwania i filtrów.
+kolumny i menu działań (minimalna szerokość 616px).
+Pusty wynik pomija nagłówki, mieści się w szerokości ekranu i ma bezpośrednią
+akcję wyczyszczenia wyszukiwania i filtrów.
 
 Panel dysków ma białe tło `--bg-main`, takie samo jak lista dysków,
 również w wariancie wysuwanym na wąskich ekranach.
@@ -560,7 +577,7 @@ z istniejącą ochroną przed duplikacją. Nie zależy od usuniętych kontrolek.
 
 Osobna pozycja „Dokumenty” używa ikony `file-text`. Katalog w
 `documents/office/index.html` zachowuje paski `tasks-topbar`/`tasks-filterbar`,
-tabelę i kafelki Dysku. Na pasku narzędzi, po prawej stronie sortowania,
+tabelę projektów i kafelki Dysku. Na pasku narzędzi, po prawej stronie sortowania,
 przycisk `documents-view-selector` pokazuje ikonę i nazwę bieżącego widoku
 oraz strzałkę. W domyślnym katalogu ma napis „Wszystkie dokumenty”; menu
 zawiera Wszystkie dokumenty, Ostatnio zmienione, Oznaczone gwiazdką, Szablony i Kosz.
@@ -581,24 +598,40 @@ Lista odzwierciedla bieżący wybór oraz przeciągnięte pliki; nazwy są zwyk�
 `documents.js` odtwarza ją z zachowanego pola plikowego po błędzie walidacji
 i przy inicjalizacji po `ancore:content-loaded`, bez powielania listenerów.
 
-Lista Dokumentów używa tych samych odstępów co lista plików Dysku: 24px
-od lewej i prawej krawędzi tabeli, także na telefonie oraz w nagłówku.
-Przycisk menu działań jest po lewej stronie ikony pliku. Dokumenty mają jeden
+Lista Dokumentów używa komponentu `tasks-directory-sheet tasks-project-sheet`
+z katalogu „Wszystkie projekty”, z wariantem `office-document-sheet` w `office.css`.
+Wiersze mają 35px wysokości; nagłówki z ikonami, tekst, separatory, turkusowe
+podświetlenie oraz pasek przy lewej krawędzi po najechaniu pochodzą ze wspólnego CSS.
+Pierwsza kolumna 40px zawiera stale widoczne checkboxy w wariancie
+`tasks-project-sheet--selectable`, tak jak lista Dysków. Wspólna obsługa
+`data-document-selection` w `documents.js` zaznacza pojedyncze wiersze lub
+całą bieżącą stronę, pokazuje częściowy wybór w nagłówku i podświetla wiersze.
+Cała kolumna wyboru jest klikalna. Działa również w koszu i po częściowej
+nawigacji; zmiana wyników, strony lub przeładowanie resetuje wybór.
+Druga kolumna 40px zawiera menu z trzema paskami w wierszach. Jej nagłówek
+jest wizualnie pusty, z etykietą „Działania” dla czytników ekranu. Przycisk wypełnia komórkę
+i używa `tasks-project-sheet__edit-button`; include `row_menu.html` przyjmuje
+opcjonalny `button_class`, zachowując domyślny przycisk Dysku i kafelków.
+Kolorowa ikona pliku 32×32px pozostaje obok nazwy. Dokumenty mają jeden
 płaski katalog, bez folderów, ścieżki lokalizacji i akcji „Przenieś”. Include
 `documents/office/actions.html` obsługuje gwiazdkę, edycję, pobieranie oraz kosz;
 na kafelkach te same akcje otwiera przycisk z trzema paskami w stopce.
 Pusty widok gwiazdek dotyczy dokumentów.
 Pusty stan zachowuje własne odstępy i wyśrodkowanie.
-Lista pokazuje trzy kolumny: „Nazwa”, „Zmodyfikowano” i „Rozmiar”, bez kolumny
-„Tagi”. Oba katalogi mają tę samą minimalną szerokość tabeli z menu (690px).
+Lista pokazuje trzy kolumny danych: „Nazwa”, „Zmodyfikowano” i „Rozmiar”.
+Nazwa wypełnia wolne miejsce, długi tekst ma wielokropek i pełną treść w `title`.
+Data ma 176px, rozmiar 120px z wyrównaniem do prawej. Minimalna szerokość
+wynosi 656px; na telefonie wszystkie kolumny pozostają w przewijanym obszarze.
+Wariant ma `data-directory-resize="false"` i semantykę ARIA tabeli, wierszy oraz
+komórek. Pusty stan nie renderuje nagłówków i mieści się w szerokości ekranu.
 Tagi nie są dostępne w kafelkach, filtrach, oknie „Dane dokumentu” ani
 starszym edytorze tekstu. Aktywne filtry pozostałych pól mają nad listą akcję
 czyszczenia i pozostają przy wyszukiwaniu, sortowaniu, paginacji, zmianie
 układu oraz akcjach gwiazdki/kosza.
 
 Oba katalogi korzystają z jednego odstępu bocznego siatki
-(`--documents-index-padding-x` na `.documents-page`). Nagłówki tabel Dysków,
-plików Dysku i Dokumentów są tekstowe, bez ikon. Lista Dokumentów nie pokazuje historycznej lokalizacji w folderach.
+(`--documents-index-padding-x` na `.documents-page`). Nagłówki tabel plików Dysku
+są tekstowe, bez ikon. Lista Dokumentów nie pokazuje historycznej lokalizacji w folderach.
 Kafelki Dokumentów mają tę samą powierzchnię podglądu,
 nazwę, metadane i stopkę co pliki Dysku oraz własny przewijany kontener.
 Dokumenty używają wspólnego z Dyskiem include'a `documents/filter_sort.html`:
@@ -670,10 +703,11 @@ Statusy zapisu są potwierdzane przez serwer. Tablica przy błędzie zachowuje
 scenę i pozwala pobrać bieżącą kopię; jej iframe przyjmuje wyłącznie komunikaty
 z okna rodzica tego samego originu.
 
-Na listach plików Dysku i Dokumentów oraz folderów Dysku akcje wiersza otwiera
+Na listach plików i folderów Dysku akcje wiersza otwiera
 jeden przycisk z ikoną `menu`
 (trzy poziome paski), po lewej stronie ikony pliku lub folderu. Nie ma osobnej
-kolumny działań; pusty stan ukrywa nagłówki i mieści się na wąskim ekranie.
+kolumny działań. Lista Dokumentów ma osobną kolumnę menu zgodną z tabelą
+projektów; oba warianty ukrywają nagłówki w pustym stanie.
 `documents/includes/row_menu.html` przyjmuje szablon akcji danego modułu
 w parametrze `actions_template` i korzysta z dotychczasowych formularzy,
 z tekstowymi etykietami w wariancie `action_menu`.
