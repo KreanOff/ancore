@@ -1,0 +1,24 @@
+<div class="tasks-directory-sheet__cell tasks-project-sheet__cell contacts-directory-sheet__cell tasks-tag-sheet__cell" data-column="menu" data-row-actions data-directory-row-kind="{{ kind }}">
+    <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="directory-{{ kind }}-{{ item_id }}-actions" aria-controls="directory-{{ kind }}-{{ item_id }}-actions" aria-expanded="false" aria-label="Działania: {{ item_name }}" title="Działania">
+        <i data-icon="menu" aria-hidden="true"></i>
+    </button>
+    <div id="directory-{{ kind }}-{{ item_id }}-actions" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {{ item_name }}" data-row-actions-panel>
+        <div class="documents-menu-actions">
+            {% if can_manage %}
+            <button type="button" class="tasks-project-menu-button" data-directory-row-action="action"{% if edit_modal %} aria-haspopup="dialog" aria-controls="{{ edit_modal }}"{% endif %}><i data-icon="pencil" aria-hidden="true"></i><span>{{ edit_label }}</span></button>
+            {% endif %}
+            <button type="button" class="tasks-project-menu-button" data-directory-row-action="info"{% if edit_modal %} aria-haspopup="dialog" aria-controls="project-info-modal"{% endif %}><i data-icon="info" aria-hidden="true"></i><span>{{ info_label }}</span></button>
+            {% if notes_label %}
+            <button type="button" class="tasks-project-menu-button" data-directory-row-action="notes" aria-haspopup="dialog" aria-controls="{{ kind }}-notes-modal"><i data-icon="file-text" aria-hidden="true"></i><span>{{ notes_label }}</span></button>
+            {% endif %}
+            {% if can_manage %}
+                {% if can_save_template %}
+                <button type="button" class="tasks-project-menu-button" data-directory-row-action="template"><i data-icon="copy" aria-hidden="true"></i><span>Zapisz jako szablon</span></button>
+                {% endif %}
+                {% if delete_label %}
+                <button type="button" class="tasks-project-delete-button tasks-project-delete-button--separated" data-directory-row-action="delete">{% include 'core/includes/trash_icon.html' %}<span>{{ delete_label }}</span></button>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>

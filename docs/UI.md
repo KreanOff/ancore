@@ -5,8 +5,9 @@
 Nowe funkcje mają wyglądać i zachowywać się jak część obecnego Ancore.
 Punktem odniesienia są istniejące ekrany i komponenty opisane poniżej.
 
-Akcja „Zapisz jako szablon” znajduje się w menu „Więcej opcji” listy projektów.
-Jest aktywna po zaznaczeniu dokładnie jednego projektu, którym można zarządzać.
+Akcja „Zapisz jako szablon” znajduje się w menu „Więcej opcji” listy projektów
+oraz w menu działań wiersza. W pasku listy jest aktywna po zaznaczeniu dokładnie
+jednego projektu, którym można zarządzać; menu wiersza nie wymaga zaznaczenia.
 Szablony projektów używają standardowego okna „Nowy projekt” z dodatkowym
 wyborem szablonu. Po wyborze ukryte i wyłączone są pola pierwszej grupy,
 ponieważ grupy pochodzą ze snapshotu. Katalog szablonów korzysta ze wspólnych
@@ -228,6 +229,41 @@ ekranów. Szablony mają wymagany kontekst i kontrakt z JS. Przy użyciu include
 sprawdź wszystkie jego zmienne oraz miejsca wywołania.
 
 ### Ikony notatek
+
+„Wszystkie projekty” mają osobną kolumnę „Działania” (40px) po zaznaczeniu,
+przed zachowanymi kolumnami edycji, informacji i notatek. Przycisk z trzema
+paskami używa `row-actions.js` i wspólnego popovera Dokumentów. Menu otwiera
+dotychczasowe okna projektu, zapisuje szablon lub wywołuje istniejące potwierdzenie
+usunięcia, zgodnie z uprawnieniami. Dotyczy tylko projektu w danym wierszu
+i nie zmienia zaznaczenia do operacji zbiorczych. Kolumna uczestniczy w zarządzaniu
+widocznością i kolejnością; wcześniejsze ustawienia kolumn oraz szerokości
+są przenoszone do nowego układu. Wariant `tasks-project-directory-sheet`
+dodaje jedną kolumnę także na wąskim ekranie, zachowując przewijanie tabeli.
+Nagłówki kolumn działań, edycji, informacji i notatek są wizualnie puste,
+z zachowanymi etykietami dostępności oraz nazwami w zarządzaniu kolumnami.
+Ikony pozostają w przyciskach wierszy, a checkbox zaznaczania w nagłówku.
+Kolumny „Edytuj”, „Informacje” i „Notatki” są domyślnie ukryte; „Działania”
+pozostają widoczne. `data-directory-default-hidden` określa domyślny układ
+katalogu projektów przy braku zapisanych preferencji i po „Resetuj”. Użytkownik
+może włączyć te kolumny i zapisać wybór w zarządzaniu tabelą. Zapisany wybór
+ma pierwszeństwo przed ustawieniami domyślnymi; menu wiersza działa także
+przy ukrytych kolumnach skrótów.
+Ten sam układ obowiązuje w „Wszystkich grupach”, „Przestrzeniach roboczych”
+Kanbana, „Tagach” Zadań i Kanbana oraz w Kontaktach, Firmach i Gościach.
+Kontakty, Firmy i Goście zachowują dwa istniejące skróty (edycja i informacja),
+bez osobnej kolumny notatek. Pozostałe wymienione katalogi mają także notatki.
+Wspólny `directory_row_menu.html` korzysta z przycisków i linków danego wiersza;
+menu grup, tagów i przestrzeni wywołuje istniejące potwierdzenie usunięcia.
+Zapis szablonu jest dostępny wyłącznie dla projektów Zadań. `tasks-directory-menu-sheet`
+oznacza tabele z tym układem. Grupy wewnątrz projektu i tablice Kanbana
+zachowują dotychczasowe kontrolki.
+
+Na tablecie i telefonie siatka tych katalogów powstaje z widocznych kolumn w ich
+bieżącej kolejności, używając szerokości z tokenów CSS. Ukrycie skrótów
+nie przesuwa szerokości kolumn danych; tabela nadal przewija się poziomo.
+Kontakty, Firmy i Goście zachowują istniejące karty na telefonie: menu działań
+mieści się pod checkboxem, a edycja i informacje są dostępne przez to menu.
+Osobne kolumny skrótów są dostępne w ich widoku tabeli.
 
 Przyciski notatek projektów i grup w Zadaniach oraz przestrzeni w Kanbanie
 używają wspólnego stanu `.tasks-project-sheet__notes-button.has-notes`.

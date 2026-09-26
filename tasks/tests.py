@@ -153,7 +153,7 @@ class TaskProjectControlStyleTests(SimpleTestCase):
             re.DOTALL,
         )
         self.assertIsNotNone(project_widths)
-        for column in ('select', 'action', 'info', 'notes'):
+        for column in ('select', 'menu', 'action', 'info', 'notes'):
             self.assertRegex(project_widths.group('body'), rf'\b{column}:\s*40,')
 
     def test_saved_directory_widths_are_limited_to_wide_desktop(self):
@@ -281,9 +281,10 @@ class TaskProjectControlStyleTests(SimpleTestCase):
 
         self.assertIsNotNone(project_grid)
         self.assertEqual(
-            re.findall(r'var\((--[^)]+)\)', project_grid.group('body')),
+            re.findall(r'var\((--[^,)]+)', project_grid.group('body')),
             [
                 '--tasks-directory-select-width',
+                '--tasks-project-menu-column',
                 '--tasks-project-action-width',
                 '--tasks-project-info-width',
                 '--tasks-project-notes-width',

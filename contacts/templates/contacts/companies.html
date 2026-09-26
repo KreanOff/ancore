@@ -1,4 +1,6 @@
 {% extends 'core/base.html' %}
+{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">{% endblock %}
 
 {% block title %}Firmy | ancore{% endblock %}
 
@@ -80,18 +82,17 @@
             </div>
         </div>
 
-        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet contacts-project-sheet{% if not companies %} contacts-directory-board--empty{% endif %}">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet contacts-project-sheet tasks-directory-menu-sheet{% if not companies %} contacts-directory-board--empty{% endif %}" data-directory-default-hidden="action info">
             {% if companies %}
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
                     <span class="tasks-directory-header-select contacts-directory-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie firmy" title="Zaznacz wszystkie firmy" data-select-all-checkbox data-select-all-target="companies">
                     </span>
+                    {% include 'tasks/includes/directory_menu_header.html' %}
                     <span class="tasks-project-sheet__action contacts-directory-sheet__cell" data-column="action" aria-label="Edytuj firmę" title="Edytuj firmę" data-column-label="Edycja">
-                        <i data-icon="pencil" aria-hidden="true"></i>
                     </span>
                     <span class="tasks-project-sheet__info contacts-directory-sheet__cell" data-column="info" aria-label="Informacje o firmie" title="Informacje o firmie" data-column-label="Informacja">
-                        <i data-icon="info" aria-hidden="true"></i>
                         <span class="u-sr-only">Informacja</span>
                     </span>
                     <span class="contacts-directory-sheet__cell" data-column="company">FIRMA</span>
@@ -111,6 +112,7 @@
                          data-search-index="{{ company.name|default:''|striptags }} {{ company.website|default:'' }} {{ company.email|default:'' }} {{ company.phone|default:'' }} {{ company.address|default:''|striptags }} {{ company.contact_count }} kontaktów {{ company.created_at|date:'d.m.Y H:i' }}"
                          data-view-url="{% url 'contacts:view-company' company.pk %}">
                     <input type="checkbox" class="tasks-row-checkbox contacts-directory-sheet__cell" data-column="select" aria-label="Zaznacz firmę {{ company.name }}" data-company-id="{{ company.pk }}">
+                    {% include 'tasks/includes/directory_row_menu.html' with kind='company' item_id=company.pk item_name=company.name can_manage=True edit_label='Edytuj firmę' info_label='Informacje o firmie' only %}
                     <span class="tasks-project-sheet__action contacts-directory-sheet__cell" data-column="action">
                         <a href="{% url 'contacts:edit-company' company.pk %}" class="tasks-project-sheet__edit-button" title="Edytuj firmę" aria-label="Edytuj firmę {{ company.name }}">
                             <i data-icon="pencil" aria-hidden="true"></i>

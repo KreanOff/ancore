@@ -1,6 +1,8 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block extra_head %}
+    {% if active_view == 'projects' or active_view == 'tags' %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">{% endif %}
     {% include 'kanban/includes/tasks_project_tree_initial_state.html' %}
 {% endblock %}
 
@@ -855,21 +857,19 @@
             </section>
         </div>
         {% elif active_view == 'tags' %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet{% if not tags %} tasks-tag-board--empty{% endif %}">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-directory-menu-sheet{% if not tags %} tasks-tag-board--empty{% endif %}" data-directory-default-hidden="action info notes">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie tagi" title="Zaznacz wszystkie tagi" data-select-all-checkbox data-select-all-target="tags">
                     </span>
+                    {% include 'tasks/includes/directory_menu_header.html' %}
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action" aria-label="Edytuj tag" title="Edytuj tag" data-column-label="Edytuj">
-                        <i data-icon="pencil" aria-hidden="true"></i>
                     </span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info" aria-label="Informacje o tagu" title="Informacje o tagu" data-column-label="Informacje">
-                        <i data-icon="info" aria-hidden="true"></i>
                         <span class="u-sr-only">Informacje</span>
                     </span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes" aria-label="Notatki tagu" title="Notatki tagu" data-column-label="Notatki">
-                        <i data-icon="file-text" aria-hidden="true"></i>
                         <span class="u-sr-only">Notatki</span>
                     </span>
                     <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">NAZWA TAGU</span>
@@ -892,6 +892,7 @@
                 {% for tag in tags %}
                 <article class="tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.get_category_display }} {{ tag.get_scope_display }} {{ tag.owner_label|default:''|striptags }} {{ tag.get_status_display }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }} {{ tag.get_category_display }} {{ tag.get_priority_display }} {{ tag.get_scope_display }} {{ tag.owner_label|default:''|striptags }} {{ tag.get_status_display }} {{ tag.usage_notes|default:''|striptags }} {{ tag.automation_rules|default:''|striptags }} {{ tag.related_tags_label }}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-category="{{ tag.category }}" data-tag-color="{{ tag.color|default:'#64748b' }}" data-tag-icon="{{ tag.icon|default:'tag' }}" data-tag-priority="{{ tag.priority|default:'none' }}" data-tag-scope="{{ tag.scope|default:'tasks' }}" data-tag-owner-label="{{ tag.owner_label|default:''|escape }}" data-tag-status="{{ tag.status|default:'active' }}" data-tag-usage-notes="{{ tag.usage_notes|default:''|escape }}" data-tag-automation-rules="{{ tag.automation_rules|default:''|escape }}" data-tag-related-tags="{{ tag.related_tag_ids }}">
+                    {% include 'tasks/includes/directory_row_menu.html' with kind='tag' item_id=tag.pk item_name=tag.name can_manage=True edit_label='Edytuj tag' info_label='Informacje o tagu' notes_label='Notatki tagu' edit_modal='tag-modal' delete_label='Usuń tag' only %}
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action">
                         <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj tag" aria-label="Edytuj tag {{ tag.name }}" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag-edit data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-category="{{ tag.category }}" data-tag-color="{{ tag.color|default:'#64748b' }}" data-tag-icon="{{ tag.icon|default:'tag' }}" data-tag-priority="{{ tag.priority|default:'none' }}" data-tag-scope="{{ tag.scope|default:'tasks' }}" data-tag-owner-label="{{ tag.owner_label|default:''|escape }}" data-tag-status="{{ tag.status|default:'active' }}" data-tag-usage-notes="{{ tag.usage_notes|default:''|escape }}" data-tag-automation-rules="{{ tag.automation_rules|default:''|escape }}" data-tag-related-tags="{{ tag.related_tag_ids }}">
                             <i data-icon="pencil" aria-hidden="true"></i>
@@ -958,21 +959,19 @@
             </section>
         </div>
         {% elif active_view == 'projects' %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-kanban-project-sheet{% if not project_window.projects %} tasks-project-board--empty{% endif %}">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-kanban-project-sheet tasks-directory-menu-sheet{% if not project_window.projects %} tasks-project-board--empty{% endif %}" data-directory-default-hidden="action info notes">
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie przestrzenie robocze" title="Zaznacz wszystkie przestrzenie robocze" data-select-all-checkbox data-select-all-target="projects">
                     </span>
+                    {% include 'tasks/includes/directory_menu_header.html' %}
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" aria-label="Edytuj przestrzeń" title="Edytuj przestrzeń" data-column-label="Edytuj">
-                        <i data-icon="pencil" aria-hidden="true"></i>
                     </span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="info" aria-label="Informacje o przestrzeni" title="Informacje o przestrzeni" data-column-label="Informacje">
-                        <i data-icon="info" aria-hidden="true"></i>
                         <span class="u-sr-only">Informacje</span>
                     </span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="notes" aria-label="Notatki przestrzeni" title="Notatki przestrzeni" data-column-label="Notatki">
-                        <i data-icon="file-text" aria-hidden="true"></i>
                         <span class="u-sr-only">Notatki</span>
                     </span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_code">KOD PRZESTRZENI<i data-icon="hash" aria-hidden="true"></i></span>
@@ -998,6 +997,7 @@
                 {% for project in project_window.projects %}
                 <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} Przestrzeń Kanban {{ project.get_priority_display|default:'' }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-view-url="{% url 'kanban:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz przestrzeń {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
+                    {% include 'tasks/includes/directory_row_menu.html' with kind='project' item_id=project.pk item_name=project.name can_manage=True edit_label='Edytuj przestrzeń' info_label='Informacje o przestrzeni' notes_label='Notatki przestrzeni' edit_modal='project-rename-modal' delete_label='Usuń przestrzeń' only %}
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
                         <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj przestrzeń" aria-label="Edytuj przestrzeń {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}">
                             <i data-icon="pencil" aria-hidden="true"></i>

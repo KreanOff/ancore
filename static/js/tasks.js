@@ -4651,6 +4651,7 @@ function initTasksPage() {
     }
 
     function toggleDirectoryRowCheckboxFromSelectColumn(event, row) {
+        if (event.target.closest('[data-row-actions]')) return false;
         if (!isDirectoryColumnClick(event, row, 'select')) return false;
         if (event.target.type === 'checkbox' || event.target.closest('a, input, button, select, textarea')) {
             return false;
@@ -4676,7 +4677,7 @@ function initTasksPage() {
             || (form && form !== rowForm)
             || ignoredDirectoryRowClickColumns.has(directoryCell?.dataset.column)
             || isIgnoredDirectoryColumnClick(event, row)
-            || event.target.closest('a, input, button, select, textarea')
+            || event.target.closest('a, input, button, select, textarea, [data-row-actions]')
             || (cell && cell.querySelector('.task-checkbox'));
     }
 
@@ -5372,11 +5373,10 @@ function initTasksPage() {
         openProjectInfoPanel(selectedProjectCheckbox);
     }
 
-    function saveSelectedProjectTemplate() {
-        const selectedProjectCheckbox = getSelectedProjectCheckbox();
+    function saveSelectedProjectTemplate(selectedProjectCheckbox = getSelectedProjectCheckbox(), trigger = saveSelectedProjectTemplateMenuBtn) {
         if (!selectedProjectCheckbox || !checkboxCanManage(selectedProjectCheckbox)) return;
 
-        saveSelectedProjectTemplateMenuBtn.disabled = true;
+        if (trigger) trigger.disabled = true;
         closeSectionActionMenu();
         postPageAction('save_project_template', { project_id: selectedProjectCheckbox.dataset.projectId });
     }
@@ -5418,8 +5418,7 @@ function initTasksPage() {
         openTagEditFromDataset(selectedTagCheckbox.dataset);
     }
 
-    function deleteSelectedSection() {
-        const selectedSectionCheckboxes = getSelectedSectionCheckboxes();
+    function deleteSelectedSection(selectedSectionCheckboxes = getSelectedSectionCheckboxes()) {
         if (!allCheckboxesCanManage(selectedSectionCheckboxes)) return;
         const sectionIds = selectedSectionCheckboxes.map(cb => cb.dataset.sectionId).filter(Boolean);
         if (!sectionIds.length) return;
@@ -5440,8 +5439,7 @@ function initTasksPage() {
         });
     }
 
-    function deleteSelectedProject() {
-        const selectedProjectCheckboxes = getSelectedProjectCheckboxes();
+    function deleteSelectedProject(selectedProjectCheckboxes = getSelectedProjectCheckboxes()) {
         if (!allCheckboxesCanManage(selectedProjectCheckboxes)) return;
         const projectIds = selectedProjectCheckboxes.map(cb => cb.dataset.projectId).filter(Boolean);
         if (!projectIds.length) return;
@@ -5462,8 +5460,7 @@ function initTasksPage() {
         });
     }
 
-    function deleteSelectedTag() {
-        const selectedTagCheckboxes = getSelectedTagCheckboxes();
+    function deleteSelectedTag(selectedTagCheckboxes = getSelectedTagCheckboxes()) {
         const tagIds = selectedTagCheckboxes.map(cb => cb.dataset.tagId).filter(Boolean);
         if (!tagIds.length) return;
 
@@ -5627,6 +5624,28 @@ function initTasksPage() {
             openSectionRenameFromDataset(this.dataset);
         });
     });
+
+    // Row menus use the same actions without changing the bulk selection.
+    document.addEventListener('click', event => {
+        const button = event.target.closest('[data-directory-row-action]');
+        const row = button?.closest('.tasks-directory-row');
+        if (!row || button.disabled) return;
+        event.preventDefault();
+        const checkbox = row.querySelector(':scope > .tasks-row-checkbox');
+        const action = button.dataset.directoryRowAction;
+        const kind = button.closest('[data-directory-row-kind]')?.dataset.directoryRowKind;
+        if (['action', 'template', 'delete'].includes(action) && !checkboxCanManage(checkbox)) return;
+
+        if (['action', 'info', 'notes'].includes(action)) {
+            row.querySelector(`:scope > [data-column="${action}"] :is(button, a)`)?.click();
+        } else if (action === 'template' && kind === 'project' && taskAppSegment === 'tasks') {
+            saveSelectedProjectTemplate(checkbox, button);
+        } else if (action === 'delete') {
+            if (kind === 'project') deleteSelectedProject([checkbox]);
+            else if (kind === 'section') deleteSelectedSection([checkbox]);
+            else if (kind === 'tag') deleteSelectedTag([checkbox]);
+        }
+    }, pageListenerOptions);
 
     if (editSelectedProjectMenuBtn) {
         editSelectedProjectMenuBtn.addEventListener('click', function(e) {
@@ -6807,6 +6826,7 @@ function initTasksPage() {
         const defaultDirectoryColumnWidth = 250;
         const defaultDirectoryColumnMinWidth = 50;
         const columnDefaultWidths = {
+            menu: 40,
             action: 40,
             delete: 40,
             info: 40,
@@ -6834,6 +6854,7 @@ function initTasksPage() {
             spacer: 0
         };
         const projectColumnDefaultWidths = {
+            menu: 40,
             select: 40,
             action: 40,
             info: 40,
@@ -6904,6 +6925,7 @@ function initTasksPage() {
             status: 140
         };
         const columnMinimums = {
+            menu: 40,
             select: 18,
             action: 40,
             delete: 40,
@@ -6953,7 +6975,7 @@ function initTasksPage() {
             status: 120
         };
         const fixedColumns = new Set(['spacer']);
-        const nonResizableColumns = new Set(['action', 'delete', 'info', 'notes', 'spacer']);
+        const nonResizableColumns = new Set(['menu', 'action', 'delete', 'info', 'notes', 'spacer']);
         // Persisted column widths belong to the wide desktop layout. On tablets
         // the CSS owns a compact grid so desktop preferences cannot stretch the
         // first columns beyond the visible workspace.
@@ -7197,6 +7219,71 @@ function initTasksPage() {
         function syncDirectoryResizeGrid(board) {
             const header = board.querySelector('.tasks-directory-header');
 
+            if (header && board.classList.contains('tasks-directory-menu-sheet') && !resizeMediaQuery.matches) {
+                // Build the compact grid from visible columns, retaining CSS breakpoint widths.
+                const widthTokens = {
+                    select: '--tasks-directory-select-width',
+                    menu: '--tasks-directory-select-width',
+                    action: '--tasks-directory-select-width',
+                    info: '--tasks-directory-select-width',
+                    notes: '--tasks-directory-select-width',
+                    project_code: '--tasks-project-code-width',
+                    project: '--tasks-directory-name-width',
+                    section: '--tasks-directory-name-width',
+                    project_name: '--tasks-project-name-width',
+                    default_assignee: '--tasks-directory-assignee-width',
+                    description: '--tasks-project-description-width',
+                    priority: '--tasks-project-priority-width',
+                    start_at: '--tasks-project-start-width',
+                    due_at: '--tasks-project-due-width',
+                    company: '--tasks-project-company-width',
+                    responsible_user: '--tasks-project-responsible-width',
+                    project_status: '--tasks-project-status-width',
+                    stage: '--tasks-project-stage-width',
+                    health: '--tasks-project-health-width',
+                    progress: '--tasks-project-progress-width',
+                    source: '--tasks-project-source-width',
+                    sections_count: '--tasks-project-count-width',
+                    tasks_count: '--tasks-project-count-width',
+                    last_activity: '--tasks-project-activity-width',
+                    created_at: '--tasks-directory-date-width'
+                };
+                if (board.classList.contains('tasks-tag-sheet')) {
+                    Object.assign(widthTokens, {
+                        tag_name: '--tasks-directory-tag-name-width',
+                        tag_code: '--tasks-directory-tag-code-width',
+                        tag_type: '--tasks-directory-tag-type-width',
+                        tag_visual: '--tasks-directory-tag-visual-width',
+                        priority: '--tasks-directory-tag-priority-width',
+                        scope: '--tasks-directory-tag-scope-width',
+                        owner: '--tasks-directory-tag-owner-width',
+                        status: '--tasks-directory-tag-status-width',
+                        description: '--tasks-directory-description-width',
+                        usage_notes: '--tasks-directory-tag-usage-width',
+                        automation: '--tasks-directory-tag-automation-width',
+                        related_tags: '--tasks-directory-tag-related-width',
+                        task_count: '--tasks-directory-task-count-width'
+                    });
+                } else if (board.classList.contains('contacts-project-sheet')) {
+                    Object.assign(widthTokens, {
+                        contact: '--contacts-directory-name-width',
+                        company: board.classList.contains('contacts-project-sheet--contacts')
+                            ? '--contacts-directory-company-width' : '--contacts-directory-name-width',
+                        role: '--contacts-directory-role-width',
+                        channel: '--contacts-directory-channel-width',
+                        website: '--contacts-directory-company-width',
+                        status: '--contacts-directory-meta-width',
+                        contact_count: '--contacts-directory-meta-width',
+                        created_at: '--contacts-directory-meta-width'
+                    });
+                }
+                const tracks = getDirectoryHeaderCells(board, header).map(cell =>
+                    widthTokens[cell.dataset.column] ? `var(${widthTokens[cell.dataset.column]})` : `${defaultDirectoryColumnWidth}px`
+                );
+                board.style.setProperty('--tasks-directory-grid', tracks.join(' '));
+                return;
+            }
+
             if (header && board.classList.contains('tasks-template-sheet') && !resizeMediaQuery.matches) {
                 const cells = getDirectoryHeaderCells(board, header);
                 setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
@@ -7213,7 +7300,7 @@ function initTasksPage() {
 
         function resetDirectoryBoard(board) {
             const header = board.querySelector('.tasks-directory-header');
-            if (header && board.classList.contains('tasks-template-sheet') && !resizeMediaQuery.matches) {
+            if (header && board.matches('.tasks-template-sheet, .tasks-directory-menu-sheet') && !resizeMediaQuery.matches) {
                 removeStoredDirectoryWidths(getDirectoryHeaderCells(board, header));
                 syncDirectoryResizeGrid(board);
                 return;
@@ -7323,10 +7410,10 @@ function initTasksPage() {
             return taskAppSegment;
         }
 
-        function getDirectoryStorageKey(cells) {
+        function getDirectoryStorageKey(cells, omitMenu = false) {
             const schema = cells
                 .map(cell => getDirectoryStorageColumn(cell.dataset.column))
-                .filter(Boolean)
+                .filter(column => column && (!omitMenu || column !== 'menu'))
                 .join('-') || 'default';
 
             return `${getDirectoryStorageSegment()}:directoryColumnWidths:v4:${schema}`;
@@ -7369,7 +7456,7 @@ function initTasksPage() {
         function readStoredDirectoryWidths(cells) {
             const storageKey = getDirectoryStorageKey(cells);
             const legacyStorageKey = getLegacyProjectDirectoryWidthStorageKey(cells);
-            const keys = [storageKey, legacyStorageKey].filter(Boolean);
+            const keys = [storageKey, getDirectoryStorageKey(cells, true), legacyStorageKey].filter(Boolean);
 
             for (const key of keys) {
                 const storedWidths = readStoredDirectoryWidthsByKey(key);
@@ -7435,6 +7522,7 @@ function initTasksPage() {
             const segment = getDirectoryStorageSegment();
             const keys = new Set([
                 getDirectoryStorageKey(cells),
+                getDirectoryStorageKey(cells, true),
                 getLegacyProjectDirectoryWidthStorageKey(cells),
                 `${segment}:directoryColumnWidths:v3:${schema}`,
                 `${segment}:directoryColumnWidths:${schema}`,
@@ -8093,10 +8181,10 @@ function initTasksPage() {
             return column === 'select' || isFixedDirectoryColumn(column);
         }
 
-        function getDirectoryColumnLayoutStorageKey(board) {
+        function getDirectoryColumnLayoutStorageKey(board, omitMenu = false) {
             const schema = getDirectoryDefaultColumnOrder(board)
                 .map(column => getDirectoryStorageColumn(column))
-                .filter(Boolean)
+                .filter(column => column && (!omitMenu || column !== 'menu'))
                 .join('-') || 'default';
 
             return `${getDirectoryStorageSegment()}:directoryColumnLayout:v2:${schema}`;
@@ -8136,8 +8224,9 @@ function initTasksPage() {
         }
 
         function readStoredDirectoryColumnLayout(board) {
+            const defaultHidden = (board.dataset.directoryDefaultHidden || '').split(/\s+/).filter(Boolean);
             const storageKey = getDirectoryColumnLayoutStorageKey(board);
-            const keys = [storageKey, getLegacyProjectDirectoryColumnLayoutStorageKey(board)].filter(Boolean);
+            const keys = [storageKey, getDirectoryColumnLayoutStorageKey(board, true), getLegacyProjectDirectoryColumnLayoutStorageKey(board)].filter(Boolean);
 
             for (const key of keys) {
                 try {
@@ -8147,7 +8236,7 @@ function initTasksPage() {
                     const value = JSON.parse(storedValue);
                     const layout = {
                         order: Array.isArray(value.order) ? value.order.filter(Boolean) : [],
-                        hidden: Array.isArray(value.hidden) ? value.hidden.filter(Boolean) : []
+                        hidden: Array.isArray(value.hidden) ? value.hidden.filter(Boolean) : defaultHidden
                     };
 
                     if (key !== storageKey) {
@@ -8160,7 +8249,7 @@ function initTasksPage() {
                 }
             }
 
-            return { order: [], hidden: [] };
+            return { order: [], hidden: defaultHidden };
         }
 
         function writeStoredDirectoryColumnLayout(board, layout) {
@@ -8175,6 +8264,7 @@ function initTasksPage() {
             try {
                 const keys = new Set([
                     getDirectoryColumnLayoutStorageKey(board),
+                    getDirectoryColumnLayoutStorageKey(board, true),
                     getLegacyProjectDirectoryColumnLayoutStorageKey(board)
                 ]);
                 keys.forEach(key => {

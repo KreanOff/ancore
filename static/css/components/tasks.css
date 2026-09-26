@@ -13688,7 +13688,7 @@ body.is-resizing-directory-columns {
 .tasks-directory-board.tasks-project-sheet--selectable {
     --tasks-directory-select-width: 40px;
     --tasks-directory-checkbox-offset: 0;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-priority-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-progress-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-menu-column, ) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-priority-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-progress-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
 }
 
 .tasks-directory-board.tasks-kanban-project-sheet.tasks-project-sheet--selectable {
@@ -13968,7 +13968,7 @@ body.is-resizing-directory-columns {
 
     .tasks-directory-board.tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-directory-board.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-priority-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-progress-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-menu-column, ) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-priority-width) var(--tasks-project-start-width) var(--tasks-project-due-width) var(--tasks-project-company-width) var(--tasks-project-responsible-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-progress-width) var(--tasks-project-source-width) var(--tasks-project-count-width) var(--tasks-project-count-width) var(--tasks-project-activity-width) var(--tasks-directory-date-width);
     }
 
     .tasks-directory-board.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
@@ -14770,4 +14770,27 @@ body.is-resizing-directory-columns {
 }
 @media (max-width: 600px) {
     .tasks-work-log-summary, .tasks-work-log-pagination { padding-block: 12px; }
+}
+
+/* The project row menu is separate from the edit, info and notes shortcuts. */
+.tasks-project-directory-sheet {
+    --tasks-project-menu-column: var(--tasks-project-action-width);
+}
+
+.tasks-directory-board.tasks-directory-menu-sheet .tasks-directory-header,
+.tasks-directory-board.tasks-directory-menu-sheet .tasks-directory-list .tasks-directory-row {
+    /* The column manager owns this grid, including over the legacy mobile grids. */
+    --tasks-directory-grid: inherit !important;
+}
+
+.tasks-directory-board.tasks-directory-menu-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="menu"],
+.tasks-directory-board.tasks-directory-menu-sheet .tasks-directory-list .tasks-directory-row > [data-column="menu"] {
+    justify-content: center;
+    padding: 0;
+}
+
+/* Spreadsheet shortcuts remain available on narrow screens; Contacts keeps its mobile cards. */
+.tasks-directory-board.tasks-directory-menu-sheet:not(.contacts-project-sheet) .tasks-directory-list .tasks-directory-row > :is([data-column="menu"], [data-column="action"], [data-column="info"], [data-column="notes"]):not([hidden]) {
+    display: flex;
+    align-items: center;
 }

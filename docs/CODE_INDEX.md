@@ -20,7 +20,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 17 | 0 | 9 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 18 | 8 | 12 | 82 |
-| [tasks](../tasks) | 22 | 53 | 33 | 230 |
+| [tasks](../tasks) | 22 | 53 | 35 | 230 |
 | [kanban](../kanban) | 10 | 37 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 4 | 7 | 91 |
@@ -1132,7 +1132,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/directory_column_manager.html](../tasks/templates/tasks/includes/directory_column_manager.html)
 - [tasks/templates/tasks/includes/directory_filter_aggregate.html](../tasks/templates/tasks/includes/directory_filter_aggregate.html)
 - [tasks/templates/tasks/includes/directory_members.html](../tasks/templates/tasks/includes/directory_members.html)
+- [tasks/templates/tasks/includes/directory_menu_header.html](../tasks/templates/tasks/includes/directory_menu_header.html)
 - [tasks/templates/tasks/includes/directory_pagination_toolbar.html](../tasks/templates/tasks/includes/directory_pagination_toolbar.html)
+- [tasks/templates/tasks/includes/directory_row_menu.html](../tasks/templates/tasks/includes/directory_row_menu.html)
 - [tasks/templates/tasks/includes/directory_sort_builder.html](../tasks/templates/tasks/includes/directory_sort_builder.html)
 - [tasks/templates/tasks/includes/follow_button.html](../tasks/templates/tasks/includes/follow_button.html)
 - [tasks/templates/tasks/includes/group_directory_filter_builder.html](../tasks/templates/tasks/includes/group_directory_filter_builder.html)

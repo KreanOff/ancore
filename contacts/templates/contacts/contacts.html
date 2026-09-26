@@ -1,4 +1,6 @@
 {% extends 'core/base.html' %}
+{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">{% endblock %}
 {% load account_avatar %}
 
 {% block title %}{{ contacts_page_title|default:'Kontakty' }} | ancore{% endblock %}
@@ -82,18 +84,17 @@
             </div>
         </div>
 
-        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet contacts-project-sheet contacts-project-sheet--contacts{% if not contacts %} contacts-directory-board--empty{% endif %}">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board contacts-directory-board contacts-directory-sheet contacts-spreadsheet-sheet contacts-project-sheet contacts-project-sheet--contacts tasks-directory-menu-sheet{% if not contacts %} contacts-directory-board--empty{% endif %}" data-directory-default-hidden="action info">
             {% if contacts %}
             <section class="tasks-issue-group tasks-directory-group" data-section-status="">
                 <div class="tasks-directory-header contacts-directory-header contacts-directory-sheet__header" role="row">
                     <span class="tasks-directory-header-select contacts-directory-sheet__cell" data-column="select">
                         <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie kontakty" title="Zaznacz wszystkie kontakty" data-select-all-checkbox data-select-all-target="contacts">
                     </span>
+                    {% include 'tasks/includes/directory_menu_header.html' %}
                     <span class="tasks-project-sheet__action contacts-directory-sheet__cell" data-column="action" aria-label="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" title="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" data-column-label="Edycja">
-                        <i data-icon="pencil" aria-hidden="true"></i>
                     </span>
                     <span class="tasks-project-sheet__info contacts-directory-sheet__cell" data-column="info" aria-label="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %}" title="{% if status == 'guests' %}Informacje o gościu{% else %}Informacje o kontakcie{% endif %}" data-column-label="Informacja">
-                        <i data-icon="info" aria-hidden="true"></i>
                         <span class="u-sr-only">Informacja</span>
                     </span>
                     <span class="contacts-directory-sheet__cell" data-column="contact">KONTAKT<i data-icon="user-round" aria-hidden="true"></i></span>
@@ -114,6 +115,7 @@
                          data-search-index="{{ item.display_name|default:''|striptags }} {{ item.company|default:''|striptags }} {{ item.company_record.name|default:''|striptags }} {{ item.role|default:''|striptags }} {{ item.email|default:'' }} {{ item.phone|default:'' }} {{ item.get_status_display }} {{ item.created_at|date:'d.m.Y H:i' }}"
                          data-view-url="{% url 'contacts:view-contact' item.pk %}">
                     <input type="checkbox" class="tasks-row-checkbox contacts-directory-sheet__cell" data-column="select" aria-label="Zaznacz kontakt {{ item.display_name }}" data-contact-id="{{ item.pk }}">
+                    {% if status == 'guests' %}{% include 'tasks/includes/directory_row_menu.html' with kind='contact' item_id=item.pk item_name=item.display_name can_manage=True edit_label='Edytuj gościa' info_label='Informacje o gościu' only %}{% else %}{% include 'tasks/includes/directory_row_menu.html' with kind='contact' item_id=item.pk item_name=item.display_name can_manage=True edit_label='Edytuj kontakt' info_label='Informacje o kontakcie' only %}{% endif %}
                     <span class="tasks-project-sheet__action contacts-directory-sheet__cell" data-column="action">
                         <a href="{% url 'contacts:edit-contact' item.pk %}" class="tasks-project-sheet__edit-button" title="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %}" aria-label="{% if status == 'guests' %}Edytuj gościa{% else %}Edytuj kontakt{% endif %} {{ item.display_name }}">
                             <i data-icon="pencil" aria-hidden="true"></i>
