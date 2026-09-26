@@ -1123,8 +1123,8 @@ w stopce; wspólne przyciski paginacji pozwalają przejść do innych zaproszeń
 nawigacji. Zamknięcie usuwa parametr zaproszenia z adresu i przywraca fokus
 przyciskowi w wierszu lub zakładce „Zaproszenia”. Formularz nadal wymaga POST i CSRF.
 
-Ekran `/workplaces/` rozszerza `core/base.html` i ma sekcje „Workspace”,
-„Członkowie” oraz „Zaproszenia”. Przełącznik używa `documents-display-switch`
+Ekran `/workplaces/` rozszerza `core/base.html` i ma sekcje „Workspace”
+oraz „Zaproszenia”. Przełącznik używa `documents-display-switch`
 i standardowych linków `tasks-filter-button` z ikonami i `aria-current="page"`.
 Aktywna opcja ma klasę `is-active` i wspólne szare tło kontrolek katalogu.
 Licznik przy zaproszeniach używa `tasks-project-query-count` i oznacza
@@ -1133,54 +1133,97 @@ Serwer renderuje jedną listę, zamiast łączyć katalog i skład zespołu pion
 Każda zakładka ma dwa wspólne paski katalogu, jak Dokumenty i Projekty:
 `tasks-topbar--directory` z tytułem i akcjami oraz `tasks-filterbar--directory`
 (`management_toolbar.html`) z zakładkami i kontrolkami bieżącego widoku.
-„Ustawienia” i „Zaproś osobę” znajdują się w nagłówku członków i wysłanych
-zaproszeń. Wybór Workspace/rodzaju zaproszeń i licznik są obok zakładek.
+Strona „Zaproszenia” pokazuje otrzymane zaproszenia z licznikiem w drugim
+pasku. Wysłane zaproszenia i przycisk „Zaproś osobę” są w oknie miejsca pracy.
 W katalogu wyszukiwanie i kompaktowa paginacja znajdują się po prawej stronie
 drugiego paska. Paginacja używa wspólnych klas `tasks-project-pagination--toolbar`,
 zachowując filtrowanie i zmianę strony w przeglądarce; zakres i liczba wyników
 zastępują osobny dolny pasek z numerami stron. Pod paskami zaczyna się tabela.
 
 „Workspace” pokazuje pełną listę, wyszukiwanie, dodawanie, ustawienia i paginację.
-Znacznik „Bieżący” wskazuje aktywną przestrzeń. Nazwa i liczba członków otwierają
-zakładkę „Członkowie”. Ikony przełączania i edycji w tabeli używają podświetlenia
+Znacznik „Bieżący” wskazuje aktywną przestrzeń. Nazwa i ikona ustawień otwierają
+„Główną” w oknie miejsca pracy, a liczba członków — zakładkę „Członkowie”.
+Ikony przełączania i edycji w tabeli używają podświetlenia
 całej komórki, tak jak ikony projektów: `rgba(var(--system-accent-rgb), 0.24)`
 na delikatnym turkusowym tle wiersza. Hover i fokus klawiatury zachowują
 siatkę tabeli, bez dodatkowego obrysu i cienia. Komórki ikon mają jedną
 kolumnę `minmax(0, 1fr)`, aby przycisk wypełniał ich szerokość. Wyłączone akcje (bieżący
 Workspace lub brak uprawnień do edycji) nie otrzymują tego podświetlenia.
-`team_panel.html` renderuje tabelę składu lub wysłanych
-zaproszeń; listę wyboru Workspace i licznik zapewnia wspólny drugi pasek.
-`invitation_filter.html` rozdziela „Otrzymane” i „Wysłane”; `received_invitations.html`
-pokazuje Workspace, zapraszającego, rolę, datę i akcję „Otwórz”.
-Wybory Workspace i rodzaju zaproszeń używają `documents-view-selector`,
-`tasks-project-query-trigger` i menu `documents-item-menu`, tak jak wybór
-widoku Dokumentów. Wspólny `row-actions.js` obsługuje popover, strzałki,
-Escape i fokus; linki korzystają z nawigacji aplikacji. Menu wysłanych zaproszeń
-zawiera tylko Workspace, którymi użytkownik może zarządzać. Inicjalizacja po
-`ancore:content-loaded` usuwa stare listenery przez `AbortController`.
+`team_panel.html` renderuje tabelę składu lub wysłanych zaproszeń wewnątrz
+osobnych zakładek okna. `received_invitations.html` pokazuje na stronie Workspace,
+zapraszającego, rolę, datę i akcję „Otwórz”. Dawny filtr „Otrzymane”/„Wysłane”
+został usunięty; Workspace wybieramy przez katalog.
 
 Pasek filtrów zachowuje wysokość wiersza z polem wyszukiwania Dokumentów
 (`--dropdown-control-height` plus wspólny padding i ramka) oraz zawijanie
-na telefonie. Nazwa w przycisku wyboru używa ograniczenia 180px ze wspólnego
-`documents-view-selector`; pełna nazwa jest w opisie przycisku i menu.
+na telefonie.
 `team_modals.html` dostarcza istniejące okna zaproszenia
-i roli. Przełączenie zakładki lub wyboru Workspace nie zmienia aktywnej
-przestrzeni pracy. Ustawienia wracają po zapisie do właściwej zakładki.
-Tabela używa bezpośrednio
-`documents-table` i `documents-name` z katalogu Dokumentów. Nagłówki mają 35px,
-wiersze 36px, tekst 13px/400, białe tło i cienką siatkę kolumn. Kolumny to
-„Nazwa”, „E-mail”, „Rola” i „Dołączono” (w zaproszeniach „Ważne do”). Nazwa
-z avatarem mieści się w jednym wierszu; długie wartości mają ellipsis i pełny
-tekst w `title`. Na telefonie pozostaje tabela przewijana poziomo we własnym
-kontenerze, bez zmiany wierszy na karty.
-Pusta tabela na telefonie dopasowuje się do szerokości ekranu i pomija
-nagłówki kolumn, aby komunikat o braku członków lub zaproszeń był widoczny w całości.
+i roli. Przełączenie zakładki lub wybór Workspace nie zmienia aktywnej
+przestrzeni pracy. Ustawienia wracają po zapisie do katalogu.
 
-Parametr `view=invitations` wybiera wysłane zaproszenia;
-po wysłaniu lub anulowaniu zaproszenia użytkownik wraca do tej listy.
+Okno w `edit_modal.html` ma zakładki „Główna”, „Członkowie” i — tylko dla
+zarządzających — „Wysłane zaproszenia”, korzystające
+z `notifications-tabs tasks-issue-tabs`, jak szczegóły zadania: tekst 15px/400
+i turkusowe podkreślenie. Zmiana zakładki zachowuje wpisane ustawienia;
+strzałki, Home i End przełączają treść oraz fokus. Zakładki mają role i relacje
+`tablist`/`tab`/`tabpanel`. Przycisk „Zapisz zmiany” jest widoczny na „Głównej”,
+a „Zaproś osobę” nad tabelami członków i wysłanych zaproszeń. Formularz ustawień jest oddzielony od
+formularzy akcji członków, aby uniknąć zagnieżdżania formularzy.
+Błąd ustawień otwiera „Główną” z wartościami i komunikatami walidacji.
+Dla zwykłego członka pola są tylko do odczytu, bez przycisku zapisu.
 
-Menu trzech pasków przed avatarem korzysta z tych samych klas i zachowania
-co lista Dokumentów. Wspólny `row-actions.js`, ładowany w `core/base.html`,
+Serwer renderuje jeden modal wybranego Workspace. Link do innego Workspace
+pobiera jego kontekst; ponowne otwarcie bieżącego okna działa lokalnie.
+Stare linki `view=members` otwierają skład nad katalogiem. Zamknięcie okna
+usuwa żądanie otwarcia z adresu, więc reload pozostawia katalog.
+`workplace-team.js` obsługuje zakładki, fokus i inert ostatniego otwartego okna,
+a wspólny `AncoreTaskModals` zamykanie oraz klawiaturę. Zamknięcie okna roli
+lub zaproszenia odsłania nadal otwartą zakładkę. Przy błędzie wysyłania
+okno zaproszenia jest nad „Wysłane zaproszenia”; zamknięcie przywraca fokus
+widocznemu przyciskowi tej zakładki. Inicjalizacja działa
+również po `ancore:content-loaded` bez powielania listenerów.
+
+Tabele członków (`members_table.html`) i wysłanych zaproszeń
+(`invitations_table.html`) korzystają z tego samego komponentu
+co „Wszystkie projekty”: `tasks-directory-board tasks-directory-sheet
+tasks-project-sheet`, wspólnych nagłówków, komórek i wierszy. Wariant
+`workplace-team-sheet` określa wyłącznie układ sześciu kolumn: zaznaczenie
+(40px), działania (40px), nazwa z avatarem, e-mail, rola i data dołączenia
+lub ważności zaproszenia. Nagłówki danych mają ikony; nagłówek kolumny
+działań jest pusty wizualnie i zachowuje etykietę dostępną „Działania”.
+Wiersze zachowują wysokość 35px, tekst 13px/400, cienką siatkę i jasnoturkusowe
+podświetlenie z paskiem po lewej. Menu członka lub zaproszenia jest w osobnej komórce działań,
+z takim samym przyciskiem wypełniającym komórkę jak akcje projektów.
+Tabela ma role `table`/`rowgroup`/`row`/`columnheader`/`cell`.
+Układ kolumn skaluje się z oknem; `data-directory-resize="false"` wyłącza
+zapamiętywanie i ręczne rozszerzanie kolumn przez mechanizm katalogu projektów.
+Checkboxy używają `tasks-project-sheet--selectable` i `tasks-row-checkbox`,
+tak jak „Wszystkie projekty”. Nagłówek zaznacza wszystkie wiersze wyłącznie
+swojej tabeli i pokazuje stan częściowego wyboru. Kliknięcie pustego miejsca
+w kolumnie zaznaczenia też przełącza checkbox. `workplace-team.js`
+synchronizuje podświetlenie i nagłówek niezależnie dla obu zakładek, również
+po `ancore:content-loaded`. Przełączanie zakładek zachowuje wybór;
+zaznaczenie nie wykonuje operacji na członkach ani zaproszeniach.
+
+Nazwa i e-mail pozostają w jednym wierszu z ellipsis oraz pełną treścią
+w `title`. Na telefonie obie tabele zachowują kolumny i wiersze, przewijając
+się poziomo we własnym kontenerze o minimalnej szerokości zawartości 890px.
+Pusty stan członków używa `tasks-empty-state`, a wysłanych zaproszeń
+`documents-empty documents-grid-empty`; oba mieszczą się w szerokości okna
+i nie wyświetlają pustych nagłówków tabeli.
+Tabela otrzymanych zaproszeń nadal używa `documents-table`:
+nagłówek 35px, wiersze 36px, pola zaproszenia i dotychczasowe menu.
+Wspólny pusty stan `documents-empty` centruje ikonę nad tytułem i opisem
+przez blokowe SVG z automatycznymi marginesami bocznymi, zachowując 16px
+odstępu pod ikoną. Reguła obowiązuje też w pustych katalogach Dokumentów.
+
+Parametr `view=invitations` otwiera zakładkę „Wysłane zaproszenia” w oknie;
+po wysłaniu lub anulowaniu zaproszenia użytkownik wraca do tej zakładki.
+Na wąskim ekranie wspólny pasek zakładek można przewijać poziomo; klawiatura
+przewija go do aktywnej pozycji.
+
+Menu trzech pasków używa wspólnego mechanizmu akcji wiersza: w tabeli
+członków i wysłanych zaproszeń zajmuje osobną kolumnę. Wspólny `row-actions.js`, ładowany w `core/base.html`,
 obsługuje zarówno `data-document-actions`, jak i `data-row-actions`. Zachowuje
 popover, pozycjonowanie względem viewportu i skali UI, obsługę klawiatury,
 zamykanie przy przewijaniu oraz inicjalizację po `ancore:content-loaded`.

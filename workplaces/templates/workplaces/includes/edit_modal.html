@@ -1,0 +1,69 @@
+{% load workplace_avatar %}
+{% workplace_avatar workplace as workplace_logo %}
+<div class="tasks-modal app-modal-panel tasks-project-modal tasks-project-edit-modal tasks-issue-modal workplace-edit-modal{% if workplace_edit_modal_open %} is-open{% endif %}" id="workplace-edit-modal-{{ workplace.pk }}" role="dialog" aria-modal="true" aria-labelledby="workplace-edit-modal-title" aria-hidden="{{ workplace_edit_modal_open|yesno:'false,true' }}" data-workplace-edit-modal data-initial-tab="{{ workplace_edit_tab }}" data-workplace-return-url="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;view={{ management_view }}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog workplace-edit-modal__dialog">
+        <div class="tasks-modal__form tasks-project-modal__form tasks-project-edit-modal__form tasks-issue-modal__form workplace-edit-modal__form">
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header workplace-edit-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij"><i data-icon="arrow-left" aria-hidden="true"></i></button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong class="tasks-project-edit-modal__title-chip workplace-edit-modal__title-chip" id="workplace-edit-modal-title">{% if can_manage_team %}Edytuj miejsce pracy{% else %}Miejsce pracy{% endif %}</strong>
+                </div>
+            </header>
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body workplace-edit-modal__body">
+                <div class="tasks-issue-tabbar workplace-edit-modal__tabbar">
+                    <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Miejsce pracy">
+                        <button type="button" id="workplace-tab-main" role="tab" aria-controls="workplace-panel-main" aria-selected="{% if workplace_edit_tab == 'main' %}true{% else %}false{% endif %}" tabindex="{% if workplace_edit_tab == 'main' %}0{% else %}-1{% endif %}" data-workplace-tab="main">Główna</button>
+                        <button type="button" id="workplace-tab-members" role="tab" aria-controls="workplace-panel-members" aria-selected="{% if workplace_edit_tab == 'members' %}true{% else %}false{% endif %}" tabindex="{% if workplace_edit_tab == 'members' %}0{% else %}-1{% endif %}" data-workplace-tab="members">Członkowie</button>
+                        {% if can_manage_team %}<button type="button" id="workplace-tab-invitations" role="tab" aria-controls="workplace-panel-invitations" aria-selected="{% if workplace_edit_tab == 'invitations' %}true{% else %}false{% endif %}" tabindex="{% if workplace_edit_tab == 'invitations' %}0{% else %}-1{% endif %}" data-workplace-tab="invitations">Wysłane zaproszenia</button>{% endif %}
+                    </div>
+                </div>
+                <section id="workplace-panel-main" role="tabpanel" aria-labelledby="workplace-tab-main" data-workplace-tab-panel="main"{% if workplace_edit_tab != 'main' %} hidden{% endif %}>
+                    <form id="workplace-edit-form" method="post" action="{% url 'workplaces:update' workplace.pk %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="view" value="{{ management_view }}">
+                        {% if edit_form.errors %}<div class="tasks-modal__errors" role="alert">{% for field in edit_form %}{% for error in field.errors %}<p>{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}{% for error in edit_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                        <div class="workplace-modal__content" data-profile-photo-layout>
+                            {% if can_manage_team %}{% include 'workplaces/includes/workplace_photo_editor.html' with workplace_logo=workplace_logo photo_button_label='Zmień' %}{% endif %}
+                            <div class="workplace-modal__details">
+                                <div class="tasks-form-field">
+                                    <label for="workplace-edit-name">Nazwa miejsca pracy</label>
+                                    <input id="workplace-edit-name" type="text" name="name" value="{% if edit_form %}{{ edit_form.name.value|default_if_none:'' }}{% else %}{{ workplace.name }}{% endif %}" class="tasks-inline-input" placeholder="Nazwa miejsca pracy" autocomplete="off" required data-workplace-edit-autofocus{% if not can_manage_team %} readonly{% endif %}>
+                                </div>
+                                <div class="tasks-form-field">
+                                    <label for="workplace-edit-description">Opis</label>
+                                    <textarea id="workplace-edit-description" name="description" class="tasks-inline-input tasks-modal-textarea" rows="3" placeholder="Dodaj krótki opis miejsca pracy…"{% if not can_manage_team %} readonly{% endif %}>{% if edit_form %}{{ edit_form.description.value|default_if_none:'' }}{% else %}{{ workplace.description }}{% endif %}</textarea>
+                                </div>
+                                <section class="tasks-project-parameters workplace-modal__parameters" aria-label="Parametry miejsca pracy">
+                                    <div class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields workplace-edit-modal__fields">
+                                        <label class="tasks-issue-field workplace-edit-modal__code-field" for="workplace-edit-code"><span>Kod miejsca pracy</span><input id="workplace-edit-code" type="text" name="code" value="{% if edit_form %}{{ edit_form.code.value|default_if_none:'' }}{% else %}{{ workplace.code }}{% endif %}" class="tasks-inline-input" placeholder="np. STUDIO-01" maxlength="20" autocomplete="off"{% if not can_manage_team %} readonly{% endif %}></label>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+                <section id="workplace-panel-members" role="tabpanel" aria-labelledby="workplace-tab-members" data-workplace-tab-panel="members"{% if workplace_edit_tab != 'members' %} hidden{% endif %}>
+                    <div class="workplace-edit-modal__team-toolbar">
+                        <span class="workplaces-management__count">{{ workplace.name }} · Członkowie: {{ members|length }}</span>
+                        {% if can_manage_team %}<button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-team-modal-open="team-invite-modal" aria-haspopup="dialog" aria-controls="team-invite-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Zaproś osobę</span></button>{% endif %}
+                    </div>
+                    {% include 'workplaces/includes/team_panel.html' with show_invitations=False %}
+                </section>
+                {% if can_manage_team %}
+                <section id="workplace-panel-invitations" role="tabpanel" aria-labelledby="workplace-tab-invitations" data-workplace-tab-panel="invitations"{% if workplace_edit_tab != 'invitations' %} hidden{% endif %}>
+                    <div class="workplace-edit-modal__team-toolbar">
+                        <span class="workplaces-management__count">{{ workplace.name }} · Wysłane zaproszenia: {{ team_invitations|length }}</span>
+                        <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-team-modal-open="team-invite-modal" aria-haspopup="dialog" aria-controls="team-invite-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Zaproś osobę</span></button>
+                    </div>
+                    {% include 'workplaces/includes/team_panel.html' with show_invitations=True %}
+                </section>
+                {% endif %}
+            </div>
+            <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer workplace-edit-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Zamknij</button>
+                {% if can_manage_team %}<button type="submit" form="workplace-edit-form" class="tasks-modal__submit" data-workplace-main-action{% if workplace_edit_tab != 'main' %} hidden{% endif %}>Zapisz zmiany</button>{% endif %}
+            </footer>
+        </div>
+    </div>
+</div>

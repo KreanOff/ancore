@@ -1,9 +1,9 @@
 {% extends 'core/base.html' %}
 {% load workplace_avatar static %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
-<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260922-workspace-catalog-controls">
-<script src="{% static 'js/workplace-team.js' %}?v=20260922-workspace-catalog-controls" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">
+<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260926-team-selection">
+<script src="{% static 'js/workplace-team.js' %}?v=20260926-team-selection" defer></script>
 {% endblock %}
 
 {% block title %}Workspace | ancore{% endblock %}
@@ -32,11 +32,6 @@
                 {% if management_view == 'workspaces' %}
                 <div class="tasks-titlebar-actions">
                     <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--project-add workplaces-create-button" aria-haspopup="dialog" aria-expanded="{{ workplace_create_modal_open|yesno:'true,false' }}" aria-controls="workplace-create-modal" data-workplace-create-open><i data-icon="plus" aria-hidden="true"></i><span>Dodaj Workspace</span></button>
-                </div>
-                {% elif management_view != 'received' and can_manage_team %}
-                <div class="tasks-titlebar-actions">
-                    <button type="button" class="tasks-filter-button" data-workplace-edit-open="workplace-edit-modal-{{ team_workplace.pk }}" aria-haspopup="dialog" aria-controls="workplace-edit-modal-{{ team_workplace.pk }}" aria-expanded="false"><i data-icon="settings" aria-hidden="true"></i><span>Ustawienia</span></button>
-                    <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-team-modal-open="team-invite-modal" aria-haspopup="dialog" aria-controls="team-invite-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Zaproś osobę</span></button>
                 </div>
                 {% endif %}
             </header>
@@ -70,7 +65,7 @@
                             <div class="workplaces-directory__body tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista miejsc pracy">
                                 {% for workplace in workplaces %}
                                 {% with member_count=workplace.team_member_count %}
-                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" role="row"{% if active_workplace and workplace.id == active_workplace.id %} aria-current="true"{% endif %} data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-code="{{ workplace.code }}" data-workplace-description="{{ workplace.description }}" data-workplace-members="{{ member_count }}" data-workplace-context="{{ workplace.viewer_role_label }}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-edit-modal="workplace-edit-modal-{{ workplace.id }}">
+                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" role="row"{% if active_workplace and workplace.id == active_workplace.id %} aria-current="true"{% endif %} data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-code="{{ workplace.code }}" data-workplace-description="{{ workplace.description }}" data-workplace-members="{{ member_count }}" data-workplace-context="{{ workplace.viewer_role_label }}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-row-modal="workplace-edit-modal-{{ workplace.id }}">
                                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz miejsce pracy {{ workplace.name }}" data-workplace-id="{{ workplace.id }}" data-workplace-checkbox>
                                     <div class="workplaces-directory__cell workplace-row__open tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                                         {% if active_workplace and workplace.id == active_workplace.id %}
@@ -87,9 +82,11 @@
                                         {% endif %}
                                     </div>
                                     <div class="workplaces-directory__cell workplace-row__settings tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="info" role="cell">
-                                        <button type="button" class="tasks-project-sheet__edit-button workplace-settings__toggle" title="Edytuj {{ workplace.name }}" aria-label="Edytuj {{ workplace.name }}" aria-haspopup="dialog" aria-expanded="false" aria-controls="workplace-edit-modal-{{ workplace.id }}" data-workplace-edit-open="workplace-edit-modal-{{ workplace.id }}" {% if not workplace.can_manage_team %}disabled{% endif %}>
-                                            <i data-icon="settings" aria-hidden="true"></i>
-                                        </button>
+                                        {% if workplace.can_manage_team %}
+                                        <a class="tasks-project-sheet__edit-button workplace-settings__toggle" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;tab=main" title="Edytuj {{ workplace.name }}" aria-label="Edytuj {{ workplace.name }}" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.id }}" data-workplace-edit-tab="main"><i data-icon="settings" aria-hidden="true"></i></a>
+                                        {% else %}
+                                        <button type="button" class="tasks-project-sheet__edit-button workplace-settings__toggle" aria-label="Ustawienia {{ workplace.name }}" disabled><i data-icon="settings" aria-hidden="true"></i></button>
+                                        {% endif %}
                                     </div>
                                     {% workplace_avatar workplace as workplace_logo %}
                                     <span class="workplaces-directory__cell workplace-row__name tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell">
@@ -101,7 +98,7 @@
                                             {% endif %}
                                         </span>
                                         <span class="tasks-row-title-main">
-                                            <a class="tasks-row-title-text workplaces-management__select" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}" aria-label="Zarządzaj {{ workplace.name }}">{{ workplace.name }}</a>
+                                            <a class="tasks-row-title-text workplaces-management__select" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;tab=main" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="main" aria-haspopup="dialog" aria-label="Zarządzaj {{ workplace.name }}">{{ workplace.name }}</a>
                                             {% if active_workplace and workplace.id == active_workplace.id %}
                                             <span class="workplace-row__current-badge" data-workplace-current-badge>Bieżący</span>
                                             {% endif %}
@@ -111,7 +108,7 @@
                                     <span class="workplaces-directory__cell workplace-row__description tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="cell">{{ workplace.description|default:"—" }}</span>
                                     <span class="workplaces-directory__cell workplace-row__members tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" role="cell">
                                         <i data-icon="users" aria-hidden="true"></i>
-                                        <a href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}" aria-label="Zespół {{ workplace.name }}">{{ member_count }} {% if member_count == 1 %}członek{% else %}członków{% endif %}</a>
+                                        <a href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="members" aria-haspopup="dialog" aria-label="Zespół {{ workplace.name }}">{{ member_count }} {% if member_count == 1 %}członek{% else %}członków{% endif %}</a>
                                     </span>
                                     <span class="workplaces-directory__cell workplace-row__context tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="context" role="cell">{{ workplace.viewer_role_label }}</span>
                                     <span class="workplaces-directory__cell workplace-row__status tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" data-column="status" role="cell">
@@ -135,8 +132,6 @@
             </div>
             {% elif management_view == 'received' %}
                 {% include 'workplaces/includes/received_invitations.html' %}
-            {% elif team_workplace %}
-                {% include 'workplaces/includes/team_panel.html' %}
             {% endif %}
         </section>
     </main>
@@ -206,60 +201,7 @@
         </div>
     </div>
 
-    {% for workplace in workplaces %}
-    {% workplace_avatar workplace as workplace_logo %}
-    <div class="tasks-modal app-modal-panel tasks-project-modal tasks-project-edit-modal tasks-issue-modal workplace-edit-modal" id="workplace-edit-modal-{{ workplace.id }}" role="dialog" aria-modal="true" aria-labelledby="workplace-edit-modal-title-{{ workplace.id }}" aria-hidden="true" data-workplace-edit-modal>
-        <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog workplace-edit-modal__dialog">
-            <form method="post" action="{% url 'workplaces:update' workplace.id %}" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form workplace-edit-modal__form" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input type="hidden" name="view" value="{{ management_view }}">
-                <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header workplace-edit-modal__header">
-                    <div class="tasks-issue-modal__crumbs">
-                        <button type="button" class="tasks-issue-close" data-close-workplace-modal aria-label="Zamknij" title="Zamknij">
-                            <i data-icon="arrow-left" aria-hidden="true"></i>
-                        </button>
-                        <span class="tasks-issue-divider" aria-hidden="true"></span>
-                        <strong class="tasks-project-edit-modal__title-chip workplace-edit-modal__title-chip" id="workplace-edit-modal-title-{{ workplace.id }}">
-                            <span>Edytuj miejsce pracy</span>
-                        </strong>
-                    </div>
-                </header>
-
-                <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body workplace-edit-modal__body">
-                    <div class="workplace-modal__content" data-profile-photo-layout>
-                        {% include 'workplaces/includes/workplace_photo_editor.html' with workplace=workplace workplace_logo=workplace_logo photo_button_label='Zmień' %}
-
-                        <div class="workplace-modal__details">
-                            <div class="tasks-form-field">
-                                <label for="workplace-edit-name-{{ workplace.id }}">Nazwa miejsca pracy</label>
-                                <input id="workplace-edit-name-{{ workplace.id }}" type="text" name="name" value="{{ workplace.name }}" class="tasks-inline-input" placeholder="Nazwa miejsca pracy" autocomplete="off" required data-workplace-edit-autofocus>
-                            </div>
-                            <div class="tasks-form-field">
-                                <label for="workplace-edit-description-{{ workplace.id }}">Opis</label>
-                                <textarea id="workplace-edit-description-{{ workplace.id }}" name="description" class="tasks-inline-input tasks-modal-textarea" rows="3" placeholder="Dodaj krótki opis miejsca pracy…">{{ workplace.description }}</textarea>
-                            </div>
-
-                            <section class="tasks-project-parameters workplace-modal__parameters" aria-labelledby="workplace-edit-parameters-title-{{ workplace.id }}">
-                                <h3 class="u-sr-only" id="workplace-edit-parameters-title-{{ workplace.id }}">Parametry miejsca pracy</h3>
-                                <div class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields workplace-edit-modal__fields">
-                                    <label class="tasks-issue-field workplace-edit-modal__code-field" for="workplace-edit-code-{{ workplace.id }}">
-                                        <span>Kod miejsca pracy</span>
-                                        <input id="workplace-edit-code-{{ workplace.id }}" type="text" name="code" value="{{ workplace.code }}" class="tasks-inline-input" placeholder="np. STUDIO-01" maxlength="20" autocomplete="off">
-                                    </label>
-                                </div>
-                            </section>
-                        </div>
-                    </div>
-                </div>
-
-                <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer workplace-edit-modal__footer">
-                    <button type="button" class="btn btn-secondary" data-close-workplace-modal>Anuluj</button>
-                    <button type="submit" class="tasks-modal__submit">Zapisz zmiany</button>
-                </footer>
-            </form>
-        </div>
-    </div>
-    {% endfor %}
+    {% if team_workplace %}{% include 'workplaces/includes/edit_modal.html' with workplace=team_workplace %}{% endif %}
 
     <script>
         (function() {
@@ -534,73 +476,6 @@
             }
         })();
 
-        (function() {
-            const openButtons = Array.from(document.querySelectorAll('[data-workplace-edit-open]'));
-            const modals = Array.from(document.querySelectorAll('[data-workplace-edit-modal]'));
-
-            if (!openButtons.length || !modals.length) return;
-
-            function setTriggerState(modalId, isOpen) {
-                openButtons
-                    .filter(button => button.dataset.workplaceEditOpen === modalId)
-                    .forEach(button => button.setAttribute('aria-expanded', String(isOpen)));
-            }
-
-            function closeModal(modal) {
-                if (!modal) return;
-                modal.classList.remove('is-open');
-                modal.setAttribute('aria-hidden', 'true');
-                setTriggerState(modal.id, false);
-
-                if (!document.querySelector('[data-workplace-edit-modal].is-open')) {
-                    document.body.classList.remove('modal-open');
-                }
-            }
-
-            function openModal(modal) {
-                if (!modal) return;
-
-                modals.forEach(openModalElement => {
-                    if (openModalElement !== modal) {
-                        closeModal(openModalElement);
-                    }
-                });
-
-                modal.classList.add('is-open');
-                modal.setAttribute('aria-hidden', 'false');
-                document.body.classList.add('modal-open');
-                setTriggerState(modal.id, true);
-
-                const focusTarget = modal.querySelector('[data-workplace-edit-autofocus]');
-                window.setTimeout(() => focusTarget?.focus(), 50);
-            }
-
-            openButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    openModal(document.getElementById(this.dataset.workplaceEditOpen));
-                });
-            });
-
-            modals.forEach(modal => {
-                modal.querySelectorAll('[data-close-workplace-modal]').forEach(button => {
-                    button.addEventListener('click', () => closeModal(modal));
-                });
-
-                modal.addEventListener('click', event => {
-                    if (event.target === modal) {
-                        closeModal(modal);
-                    }
-                });
-            });
-
-            document.addEventListener('keydown', event => {
-                if (event.key !== 'Escape') return;
-                const openModalElement = document.querySelector('[data-workplace-edit-modal].is-open');
-                if (openModalElement) {
-                    closeModal(openModalElement);
-                }
-            });
-        })();
     </script>
 </div>
 {% endblock %}

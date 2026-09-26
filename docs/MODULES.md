@@ -35,8 +35,9 @@ obsługuje osobny mechanizm opisany w Mechanizmach.
 [middleware](../workplaces/middleware.py), [widoki](../workplaces/views.py),
 [nawigacja](../workplaces/navigation.py).
 
-**Funkcje:** wspólny panel z zakładkami „Workspace”, „Członkowie” i „Zaproszenia”
-(otrzymane lub wysłane z wybranej przestrzeni); utworzenie, edycja, usunięcie i przełączenie;
+**Funkcje:** wspólny panel z zakładkami „Workspace” i „Zaproszenia”
+(otrzymane) oraz zakładkami „Członkowie” i „Wysłane zaproszenia”
+w oknie edycji miejsca pracy; utworzenie, edycja, usunięcie i przełączenie;
 nazwa, opis, kod, slug i obraz; ulubione miejsca w nawigacji oraz ich kolejność.
 Po zalogowaniu, jeśli nie ma Workspace, usługa może utworzyć domyślne
 „Moje miejsce pracy”.
@@ -52,7 +53,8 @@ nawigacji i pozycję. Katalog dozwolonych miejsc jest w
 `SIDEBAR_FAVORITE_DEFINITIONS`. Zwijanie i szerokość nawigacji to lokalny stan UI.
 
 Wybór do zarządzania (`?workspace=<pk>`) nie zmienia aktywnego kontekstu.
-Utworzenie wraca do katalogu, a zapis ustawień zachowuje zakładkę i wybraną przestrzeń.
+Utworzenie wraca do katalogu, a zapis ustawień zachowuje wybraną przestrzeń
+i wraca do katalogu.
 
 **Scenariusz pracy:** przełącz Workspace → otwórz moduł pod jego adresem → pracuj na
 danych tego kontekstu. Zmiana Workspace zmienia kontekst list, formularzy,

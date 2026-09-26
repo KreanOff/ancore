@@ -48,7 +48,7 @@ def workplaces(request):
     return render_workplaces(request, form=form, workplace_create_modal_open=workplace_create_modal_open)
 
 
-def render_workplaces(request, *, form=None, workplace_create_modal_open=False, team_workplace=None, invite_form=None):
+def render_workplaces(request, *, form=None, workplace_create_modal_open=False, team_workplace=None, invite_form=None, edit_form=None):
     pending_invitations = list(pending_invitations_for_user(request.user).select_related('workplace', 'invited_by'))
     selected_invitation_id = request.GET.get('invitation') if request.method == 'GET' else None
     invitation_index = next((index for index, invitation in enumerate(pending_invitations)
@@ -97,8 +97,17 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
         management_view = 'workspaces'
     if invite_form is not None:
         management_view = 'invitations'
+    if edit_form is not None:
+        management_view = 'invitations' if request.POST.get('view') == 'invitations' else 'workspaces'
     if management_view == 'invitations' and not selected_team_context.get('can_manage_team'):
         management_view = 'received'
+    workplace_edit_modal_open = management_view in {'members', 'invitations'} or edit_form is not None
+    workplace_edit_tab = (
+        'main' if not workplace_edit_modal_open or request.GET.get('tab') == 'main' or edit_form is not None
+        else management_view
+    )
+    if management_view in {'members', 'invitations'}:
+        management_view = 'workspaces'
     return render(request, 'workplaces/workplaces.html', {
         'pending_invitations': pending_invitations,
         'response_invitation': pending_invitations[invitation_index] if pending_invitations else None,
@@ -110,12 +119,12 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
         'form': form if form is not None else WorkplaceForm(user=request.user),
         'active_workplace': active_workplace,
         'workplace_create_modal_open': workplace_create_modal_open,
+        'workplace_edit_modal_open': workplace_edit_modal_open,
+        'workplace_edit_tab': workplace_edit_tab,
+        'edit_form': edit_form,
         **selected_team_context,
         'management_view': management_view,
-        'show_invitations': management_view == 'invitations',
-        'invitation_workplace': team_workplace if selected_team_context.get('can_manage_team') else next(
-            (workplace for workplace in user_workplaces if workplace.can_manage_team), None
-        ),
+        'show_invitations': workplace_edit_tab == 'invitations',
     })
 
 
@@ -271,11 +280,7 @@ def update_workplace(request, workplace_id):
         form.save()
         messages.success(request, 'Ustawienia miejsca pracy zapisane.')
     else:
-        name_errors = form.errors.get('name')
-        messages.error(
-            request,
-            str(name_errors[0]) if name_errors else 'Nie udało się zapisać ustawień miejsca pracy.',
-        )
+        return render_workplaces(request, team_workplace=workplace, edit_form=form)
     return redirect(workplace_management_url(workplace, request.POST.get('view')))
 
 

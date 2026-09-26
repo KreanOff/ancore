@@ -1,57 +1,8 @@
-{% load account_avatar %}
-<section class="workplace-team workplaces-management__team" id="workspace-team" aria-labelledby="workspace-team-title" data-workplace-team>
-    <h2 id="workspace-team-title" class="u-sr-only">{% if show_invitations %}Wysłane zaproszenia{% else %}Członkowie{% endif %} · {{ team_workplace.name }}</h2>
-    <div class="documents-table-scroll workplace-team__scroll" tabindex="0" role="region" aria-label="{% if show_invitations %}Zaproszenia{% else %}Członkowie{% endif %} — tabela">
-        <table class="documents-table workplace-team__table">
-            <caption class="u-sr-only">{% if show_invitations %}Oczekujące zaproszenia{% else %}Członkowie zespołu{% endif %}</caption>
-            <thead><tr>
-                <th scope="col" data-team-column="person">Nazwa</th>
-                <th scope="col" data-team-column="email">E-mail</th>
-                <th scope="col" data-team-column="role">Rola</th>
-                <th scope="col" data-team-column="date">{% if show_invitations %}Ważne do{% else %}Dołączono{% endif %}</th>
-            </tr></thead>
-            <tbody>
-                {% if show_invitations %}
-                    {% for invitation in team_invitations %}
-                    <tr>
-                        <td data-team-column="person"><div class="documents-name">
-                            {% if is_team_owner or invitation.role == 'member' %}
-                            <div class="documents-item-actions" data-row-actions>
-                                <button type="button" class="tasks-icon-button documents-icon-button" data-row-actions-toggle popovertarget="team-invitation-menu-{{ invitation.pk }}" aria-controls="team-invitation-menu-{{ invitation.pk }}" aria-haspopup="menu" aria-expanded="false" aria-label="Działania: {{ invitation.recipient.email }}"><i data-icon="menu" aria-hidden="true"></i></button>
-                                <div id="team-invitation-menu-{{ invitation.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="menu" data-row-actions-panel><div class="documents-menu-actions"><form method="post" action="{% url 'workplaces:invitation-cancel' team_workplace.pk invitation.pk %}">{% csrf_token %}<button class="tasks-project-menu-button" type="submit" role="menuitem"><i data-icon="x" aria-hidden="true"></i><span>Anuluj zaproszenie</span></button></form></div></div>
-                            </div>
-                            {% else %}<span class="workplace-team__action-space" aria-hidden="true"></span>{% endif %}
-                            {% user_avatar invitation.recipient as recipient_avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=recipient_avatar avatar_class='tasks-directory-avatar' only %}
-                            <span class="workplace-team__name" title="{{ invitation.recipient.get_full_name|default:invitation.recipient.username }}">{{ invitation.recipient.get_full_name|default:invitation.recipient.username }}</span>
-                        </div></td>
-                        <td data-team-column="email" title="{{ invitation.recipient.email }}">{{ invitation.recipient.email }}</td>
-                        <td data-team-column="role">{{ invitation.get_role_display }}</td>
-                        <td data-team-column="date">{{ invitation.expires_at|date:'d.m.Y' }}</td>
-                    </tr>
-                    {% empty %}<tr><td colspan="4" class="documents-empty"><div><i data-icon="mail" aria-hidden="true"></i><h3>Brak oczekujących zaproszeń.</h3><p>Nowe osoby możesz dodać przyciskiem „Zaproś osobę”.</p></div></td></tr>{% endfor %}
-                {% else %}
-                    {% for member in members %}
-                    <tr>
-                        <td data-team-column="person"><div class="documents-name">
-                            {% if member.can_change %}
-                            <div class="documents-item-actions" data-row-actions>
-                                <button type="button" class="tasks-icon-button documents-icon-button" data-row-actions-toggle popovertarget="team-member-menu-{{ member.pk }}" aria-controls="team-member-menu-{{ member.pk }}" aria-haspopup="menu" aria-expanded="false" aria-label="Działania: {{ member.user.get_full_name|default:member.user.username }}"><i data-icon="menu" aria-hidden="true"></i></button>
-                                <div id="team-member-menu-{{ member.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="menu" data-row-actions-panel><div class="documents-menu-actions">
-                                    {% if is_team_owner %}<button type="button" class="tasks-project-menu-button" role="menuitem" data-team-modal-open="team-role-modal" data-team-role-url="{% url 'workplaces:member-update' team_workplace.pk member.pk %}" data-team-role="{{ member.role }}" data-team-person="{{ member.user.get_full_name|default:member.user.username }}" aria-haspopup="dialog"><i data-icon="pencil" aria-hidden="true"></i><span>Zmień rolę</span></button>{% endif %}
-                                    <form method="post" action="{% url 'workplaces:member-update' team_workplace.pk member.pk %}" data-team-remove>{% csrf_token %}<input type="hidden" name="action" value="remove"><button class="tasks-project-menu-button" type="submit" role="menuitem"><i data-icon="log-out" aria-hidden="true"></i><span>Odbierz dostęp</span></button></form>
-                                </div></div>
-                            </div>
-                            {% else %}<span class="workplace-team__action-space" aria-hidden="true"></span>{% endif %}
-                            {% user_avatar member.user as member_avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=member_avatar avatar_class='tasks-directory-avatar' only %}
-                            <span class="workplace-team__name" title="{{ member.user.get_full_name|default:member.user.username }}">{{ member.user.get_full_name|default:member.user.username }}{% if member.user_id == request.user.pk %} (Ty){% endif %}</span>
-                        </div></td>
-                        <td data-team-column="email" title="{{ member.user.email }}">{{ member.user.email }}</td>
-                        <td data-team-column="role">{{ member.get_role_display }}</td>
-                        <td data-team-column="date">{{ member.created_at|date:'d.m.Y' }}</td>
-                    </tr>
-                    {% empty %}<tr><td colspan="4" class="documents-empty"><div><h3>Brak członków.</h3></div></td></tr>{% endfor %}
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
+<section class="workplace-team workplaces-management__team" id="workspace-team-{% if show_invitations %}invitations{% else %}members{% endif %}" aria-labelledby="workspace-team-title-{% if show_invitations %}invitations{% else %}members{% endif %}" data-workplace-team>
+    <h2 id="workspace-team-title-{% if show_invitations %}invitations{% else %}members{% endif %}" class="u-sr-only">{% if show_invitations %}Wysłane zaproszenia{% else %}Członkowie{% endif %} · {{ team_workplace.name }}</h2>
+    {% if show_invitations %}
+        {% include 'workplaces/includes/invitations_table.html' %}
+    {% else %}
+        {% include 'workplaces/includes/members_table.html' %}
+    {% endif %}
 </section>

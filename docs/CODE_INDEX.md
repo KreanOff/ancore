@@ -19,7 +19,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
 | [core](../core) | 17 | 0 | 9 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
-| [workplaces](../workplaces) | 18 | 8 | 10 | 78 |
+| [workplaces](../workplaces) | 18 | 8 | 12 | 82 |
 | [tasks](../tasks) | 22 | 53 | 33 | 230 |
 | [kanban](../kanban) | 10 | 37 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
@@ -1110,9 +1110,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### workplaces
 
-- [workplaces/templates/workplaces/includes/invitation_filter.html](../workplaces/templates/workplaces/includes/invitation_filter.html)
+- [workplaces/templates/workplaces/includes/edit_modal.html](../workplaces/templates/workplaces/includes/edit_modal.html)
 - [workplaces/templates/workplaces/includes/invitation_response_modal.html](../workplaces/templates/workplaces/includes/invitation_response_modal.html)
+- [workplaces/templates/workplaces/includes/invitations_table.html](../workplaces/templates/workplaces/includes/invitations_table.html)
 - [workplaces/templates/workplaces/includes/management_toolbar.html](../workplaces/templates/workplaces/includes/management_toolbar.html)
+- [workplaces/templates/workplaces/includes/members_table.html](../workplaces/templates/workplaces/includes/members_table.html)
 - [workplaces/templates/workplaces/includes/received_invitations.html](../workplaces/templates/workplaces/includes/received_invitations.html)
 - [workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html](../workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html)
 - [workplaces/templates/workplaces/includes/sidebar_favorites.html](../workplaces/templates/workplaces/includes/sidebar_favorites.html)
@@ -1371,7 +1373,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [workplaces/test_management.py](../workplaces/test_management.py).
 
-- `WorkspaceManagementTests`: 12 metod testowych.
+- `WorkspaceManagementTests`: 16 metod testowych.
 
 ### workplaces/test_team.py
 

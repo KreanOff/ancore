@@ -20,37 +20,46 @@ wchodzą w zakres tej wersji.
 
 ## Zaproszenia i ekran zespołu
 
-Ekran `/workplaces/` ma trzy zakładki: „Workspace”, „Członkowie” i „Zaproszenia”,
-przełączane standardowymi przyciskami katalogu z szarym zaznaczeniem aktywnej opcji.
-Każda renderuje jedną listę i dwa paski: tytuł z akcjami oraz zakładki
-z kontrolkami widoku. W katalogu wyszukiwanie i paginacja są w drugim pasku;
-w członkach i zaproszeniach są tam menu wyboru oraz licznik.
-Domyślnie otwiera się katalog Workspace
-(`view=workspaces`). Kliknięcie nazwy lub liczby członków otwiera „Członkowie”
-dla danej przestrzeni (`?workspace=<pk>`, także `view=members`). Listy wyboru
-pozwalają zarządzać innym Workspace bez zmiany aktywnej sesji ani kontekstu
-modułów. Znacznik „Bieżący” wskazuje przestrzeń pracy; strzałka przełączenia
-nadal otwiera jej Zadania.
+Ekran `/workplaces/` ma zakładki „Workspace” i „Zaproszenia”, przełączane
+standardowymi przyciskami katalogu. Skład zespołu znajduje się w zakładce
+„Członkowie” okna „Edytuj miejsce pracy”, obok „Główna” z ustawieniami
+i „Wysłane zaproszenia” z oczekującymi zaproszeniami do tego Workspace.
+Nazwa Workspace i ikona ustawień otwierają „Główną”; liczba członków oraz stare
+linki `?workspace=<pk>` / `?view=members&workspace=<pk>` otwierają „Członkowie”.
+Okno wybranego Workspace jest renderowane nad katalogiem. Zarządzanie nim nie
+zmienia aktywnej sesji ani kontekstu modułów. Znacznik „Bieżący” wskazuje
+przestrzeń pracy; strzałka przełączenia nadal otwiera jej Zadania.
+Zwykły członek ma okno „Miejsce pracy” z odczytem danych i składu zespołu,
+bez akcji edycji, zapraszania, zmiany ról i odbierania dostępu.
 
-W „Zaproszeniach” lista wyboru rozdziela otrzymane (`view=received`, wszystkie
-zaproszenia zalogowanego odbiorcy) i wysłane (`view=invitations`, wskazany
-Workspace). Wysłane zaproszenia są dostępne zarządzającym; wybór Workspace
-bez tej roli nie ujawnia ich. Zakładka pokazuje licznik otrzymanych zaproszeń
-oraz domyślnie wybiera je, gdy wymagają decyzji. Przycisk „Otwórz” przy
-otrzymanym zaproszeniu uruchamia istniejące okno decyzji.
+Strona „Zaproszenia” pokazuje wyłącznie otrzymane zaproszenia
+(`view=received`, wszystkie zaproszenia zalogowanego odbiorcy) i ich licznik.
+Przycisk „Otwórz” uruchamia istniejące okno decyzji. Wysłane zaproszenia są
+w trzeciej zakładce okna miejsca pracy i są dostępne wyłącznie właścicielowi
+oraz administratorowi. Stare linki `view=invitations` otwierają tę zakładkę
+nad katalogiem; wybranie Workspace bez uprawnień nadal nie ujawnia zaproszeń.
+Nie ma już przełącznika rodzaju zaproszeń ani wyboru Workspace na tej stronie.
 
-Członek widzi skład zespołu. Właściciel i administrator mają dodatkowo ustawienia
-oraz „Zaproś osobę”. Zmiana ról i odebranie dostępu pozostają w menu wiersza,
+Właściciel i administrator mają przycisk „Zaproś osobę” w zakładce
+„Członkowie” i „Wysłane zaproszenia” w oknie miejsca pracy.
+Zmiana ról i odebranie dostępu pozostają w menu wiersza,
 zgodnie z macierzą ról. Po utworzeniu Workspace wracamy do katalogu,
-po zapisie ustawień — do zakładki, z której otwarto modal, po zmianie roli —
-do członków, a po zaproszeniu — do wysłanych zaproszeń tego Workspace.
+po zapisie ustawień — do katalogu, po zmianie roli —
+do otwartej zakładki „Członkowie” w oknie, a po wysłaniu lub anulowaniu zaproszenia —
+do zakładki „Wysłane zaproszenia” tego Workspace.
 Utworzenie nie przełącza kontekstu pracy. Ustawienia aplikacji mają jeden
 link „Zarządzaj Workspace”. Dotychczasowy GET `/workplaces/<pk>/team/`
 przekierowuje do właściwej zakładki; POST nadal waliduje zaproszenie i przy
-błędzie renderuje wspólny ekran z otwartym modalem.
+błędzie renderuje okno wysyłania nad zakładką „Wysłane zaproszenia”.
+Zamknięcie błędu przywraca fokus widocznemu przyciskowi „Zaproś osobę”.
 
-Tabela zespołu korzysta ze stylów Dokumentów: niskie wiersze, kolumny nazwy,
-e-maila, roli i daty, menu trzech pasków przed avatarem. „Zaproś osobę” i „Zmień rolę”
+Tabele członków i wysłanych zaproszeń korzystają ze wspólnego komponentu „Wszystkie projekty”:
+wiersze 35px, nagłówki z ikonami, siatka i turkusowe podświetlenie. Kolumny
+obejmują zaznaczenie, działania, nazwę z avatarem, e-mail, rolę i datę dołączenia lub
+ważności zaproszenia. Menu zaproszenia pozwala je anulować zgodnie z rolą
+użytkownika. Checkbox w nagłówku zaznacza wszystkie wiersze swojej tabeli;
+wybór pozostaje niezależny w obu zakładkach i podświetla zaznaczone wiersze.
+Tabela otrzymanych zaproszeń zachowuje style Dokumentów. „Zaproś osobę” i „Zmień rolę”
 otwierają standardowe modale. Wpływ
 odebrania dostępu na Office opisuje potwierdzenie operacji.
 
@@ -71,7 +80,8 @@ Przy kilku zaproszeniach strzałki przechodzą między nimi; zamknięcie nie zmi
 zaproszenia. Nie ma osobnych szerokich pasków nad listą Workspace.
 Nieaktualny lub cudzy adres pokazuje ogólny komunikat o niedostępności.
 Dotyczy to także wcześniej zapisanych zaproszeń.
-Filtr „Wysłane” w zakładce „Zaproszenia” pokazuje zaproszenia wysłane z wybranego Workspace.
+Zakładka „Wysłane zaproszenia” w oknie miejsca pracy pokazuje oczekujące
+zaproszenia wysłane z wybranego Workspace.
 Przyjęcie wymaga POST i sesji właściwego odbiorcy;
 GET nie nadaje dostępu. Zaproszenie wygasa po 7 dniach, może zostać odrzucone
 lub anulowane i nie może zostać wykorzystane ponownie. Zapis jest blokowany

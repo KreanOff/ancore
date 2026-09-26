@@ -2,31 +2,9 @@
     <div class="tasks-filterbar-left">
         <nav class="documents-display-switch workplaces-management__views" aria-label="Zarządzanie Workspace">
             <a class="tasks-filter-button{% if management_view == 'workspaces' %} is-active{% endif %}" href="{% url 'workplaces:workplaces' %}?view=workspaces{% if team_workplace %}&amp;workspace={{ team_workplace.pk }}{% endif %}"{% if management_view == 'workspaces' %} aria-current="page"{% endif %}><i data-icon="briefcase-business" aria-hidden="true"></i><span>Workspace</span></a>
-            <a class="tasks-filter-button{% if management_view == 'members' %} is-active{% endif %}" href="{% url 'workplaces:workplaces' %}?view=members{% if team_workplace %}&amp;workspace={{ team_workplace.pk }}{% endif %}"{% if management_view == 'members' %} aria-current="page"{% endif %}><i data-icon="users" aria-hidden="true"></i><span>Członkowie</span></a>
-            <a class="tasks-filter-button{% if management_view == 'invitations' or management_view == 'received' %} is-active{% endif %}" href="{% url 'workplaces:workplaces' %}?view={% if pending_invitations or not can_manage_team %}received{% else %}invitations{% endif %}{% if team_workplace %}&amp;workspace={{ team_workplace.pk }}{% endif %}"{% if management_view == 'invitations' or management_view == 'received' %} aria-current="page"{% endif %} data-team-invitation-return><i data-icon="mail" aria-hidden="true"></i><span>Zaproszenia</span>{% if pending_invitations %}<span class="tasks-project-query-count" aria-label="Otrzymane zaproszenia: {{ pending_invitations|length }}">{{ pending_invitations|length }}</span>{% endif %}</a>
+            <a class="tasks-filter-button{% if management_view == 'received' %} is-active{% endif %}" href="{% url 'workplaces:workplaces' %}?view=received{% if team_workplace %}&amp;workspace={{ team_workplace.pk }}{% endif %}"{% if management_view == 'received' %} aria-current="page"{% endif %} data-team-invitation-return><i data-icon="mail" aria-hidden="true"></i><span>Zaproszenia</span>{% if pending_invitations %}<span class="tasks-project-query-count" aria-label="Otrzymane zaproszenia: {{ pending_invitations|length }}">{{ pending_invitations|length }}</span>{% endif %}</a>
         </nav>
-        {% if management_view == 'received' %}
-        <div class="workplaces-management__filters">{% include 'workplaces/includes/invitation_filter.html' %}</div>
-        {% elif management_view != 'workspaces' and team_workplace %}
-        <div class="workplaces-management__filters">
-            {% if show_invitations %}{% include 'workplaces/includes/invitation_filter.html' %}{% endif %}
-            <div class="documents-item-actions documents-view-selector" data-row-actions>
-                <button type="button" id="managed-workspace" class="tasks-filter-button tasks-project-query-trigger" data-row-actions-toggle popovertarget="managed-workspace-menu" aria-controls="managed-workspace-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Wybierz Workspace: {{ team_workplace.name }}" title="Wybierz Workspace: {{ team_workplace.name }}">
-                    <i data-icon="briefcase-business" aria-hidden="true"></i><span>{{ team_workplace.name }}</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i>
-                </button>
-                <nav id="managed-workspace-menu" class="tasks-section-menu documents-item-menu" popover="auto" role="menu" aria-label="Wybierz Workspace" data-row-actions-panel>
-                    <div class="documents-menu-actions" role="none">
-                        {% for workplace in workplaces %}
-                        {% if not show_invitations or workplace.can_manage_team %}
-                        <a class="tasks-project-menu-button" role="menuitem" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;view={{ management_view }}"{% if workplace.pk == team_workplace.pk %} aria-current="page"{% endif %}><i data-icon="briefcase-business" aria-hidden="true"></i><span>{{ workplace.name }}</span></a>
-                        {% endif %}
-                        {% endfor %}
-                    </div>
-                </nav>
-            </div>
-            <span class="workplaces-management__count">{% if show_invitations %}Zaproszenia: {{ team_invitations|length }}{% else %}Członkowie: {{ members|length }}{% endif %}</span>
-        </div>
-        {% endif %}
+        {% if management_view == 'received' %}<span class="workplaces-management__count">Otrzymane zaproszenia: {{ pending_invitations|length }}</span>{% endif %}
     </div>
     {% if management_view == 'workspaces' %}
     <div class="tasks-filterbar-right">

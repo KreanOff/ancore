@@ -36,8 +36,47 @@ class WorkspaceManagementTests(TestCase):
         self.assertEqual(response.context['team_workplace'], self.selected)
         self.assertEqual({m.user_id for m in response.context['members']}, {self.owner.pk, self.member.pk})
         self.assertEqual(response.context['active_workplace'], self.active)
-        self.assertContains(response, 'id="workspace-team"')
-        self.assertNotContains(response, 'data-workplace-row ')
+        self.assertEqual(response.context['management_view'], 'workspaces')
+        self.assertTrue(response.context['workplace_edit_modal_open'])
+        self.assertEqual(response.context['workplace_edit_tab'], 'members')
+        self.assertContains(response, 'id="workspace-team-members"', count=1)
+        self.assertContains(response, 'data-workplace-row ')
+        self.assert_active_unchanged()
+
+    def test_members_legacy_link_and_settings_open_the_requested_tab(self):
+        for query, tab in [({'view': 'members'}, 'members'), ({'tab': 'main'}, 'main')]:
+            response = self.client.get(reverse('workplaces:workplaces'), {'workspace': self.selected.pk, **query})
+            self.assertTrue(response.context['workplace_edit_modal_open'])
+            self.assertEqual(response.context['workplace_edit_tab'], tab)
+            self.assertEqual(response.context['team_workplace'], self.selected)
+            self.assertNotContains(response, 'href="/workplaces/?view=members')
+            self.assert_active_unchanged()
+
+    def test_member_can_read_modal_but_cannot_change_settings(self):
+        self.client.force_login(self.member)
+        response = self.client.get(workplace_management_url(self.selected))
+        self.assertTrue(response.context['workplace_edit_modal_open'])
+        self.assertContains(response, 'id="workspace-team-members"')
+        self.assertContains(response, 'data-workplace-edit-autofocus readonly')
+        self.assertNotContains(response, 'data-workplace-main-action')
+        self.assertNotContains(response, 'data-team-remove')
+        self.assertNotContains(response, 'id="team-role-modal"')
+        response = self.client.post(reverse('workplaces:update', args=[self.selected.pk]), {'name': 'Nie wolno'})
+        self.assertEqual(response.status_code, 403)
+        self.selected.refresh_from_db()
+        self.assertEqual(self.selected.name, 'Wybrany Workspace')
+
+    def test_settings_validation_keeps_values_in_main_tab(self):
+        response = self.client.post(reverse('workplaces:update', args=[self.selected.pk]), {
+            'name': ' ', 'description': 'Opis do zachowania', 'code': 'KOD', 'view': 'workspaces',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['edit_form'].errors)
+        self.assertTrue(response.context['workplace_edit_modal_open'])
+        self.assertEqual(response.context['workplace_edit_tab'], 'main')
+        self.assertContains(response, 'Opis do zachowania')
+        self.selected.refresh_from_db()
+        self.assertEqual(self.selected.name, 'Wybrany Workspace')
         self.assert_active_unchanged()
 
     def test_old_team_link_opens_selected_panel_without_switching(self):
@@ -57,6 +96,8 @@ class WorkspaceManagementTests(TestCase):
         response = self.client.post(url, {'email': 'missing@example.test', 'role': 'member'})
         self.assertEqual(response.context['team_workplace'], self.selected)
         self.assertTrue(response.context['invite_form'].errors)
+        self.assertTrue(response.context['workplace_edit_modal_open'])
+        self.assertEqual(response.context['workplace_edit_tab'], 'invitations')
         self.assertContains(response, self.active.name)
         self.assertContains(response, 'id="team-invite-modal"')
         self.assert_active_unchanged()
@@ -95,6 +136,7 @@ class WorkspaceManagementTests(TestCase):
         self.assertFalse(response.context['can_manage_team'])
         self.assertNotContains(response, self.recipient.email)
         self.assertNotContains(response, 'id="team-invite-modal"')
+        self.assertNotContains(response, 'data-workplace-tab="invitations"')
         self.assertEqual(self.client.post(reverse('workplaces:team', args=[self.selected.pk]), {'email': self.recipient.email, 'role': 'member'}).status_code, 403)
         self.membership.delete()
         self.assertEqual(self.client.get(workplace_management_url(self.selected)).status_code, 404)
@@ -125,14 +167,16 @@ class WorkspaceManagementTests(TestCase):
         response = self.client.get(reverse('workplaces:workplaces'))
         self.assertEqual(response.context['management_view'], 'workspaces')
         self.assertContains(response, 'data-workplace-row ')
-        self.assertNotContains(response, 'id="workspace-team"')
+        self.assertFalse(response.context['workplace_edit_modal_open'])
         response = self.client.get(workplace_management_url(self.selected, 'invitations'))
-        self.assertEqual(response.context['management_view'], 'invitations')
+        self.assertEqual(response.context['management_view'], 'workspaces')
+        self.assertTrue(response.context['workplace_edit_modal_open'])
+        self.assertEqual(response.context['workplace_edit_tab'], 'invitations')
         self.assertContains(response, 'Brak oczekujących zaproszeń.')
-        self.assertNotContains(response, 'data-workplace-row ')
+        self.assertContains(response, 'data-workplace-row ')
         response = self.client.get(workplace_management_url(self.selected, 'received'))
         self.assertContains(response, 'Brak otrzymanych zaproszeń.')
-        self.assertNotContains(response, 'id="workspace-team"')
+        self.assertFalse(response.context['workplace_edit_modal_open'])
         self.assert_active_unchanged()
 
     def test_received_invitations_tab_is_recipient_only(self):
@@ -141,7 +185,19 @@ class WorkspaceManagementTests(TestCase):
         response = self.client.get(workplace_management_url(self.selected, 'received'))
         self.assertEqual(response.context['pending_invitations'], [incoming])
         self.assertContains(response, 'Otwórz zaproszenie do Obcy Workspace')
-        self.assertNotContains(response, 'Anuluj zaproszenie')
+        self.assertFalse(response.context['workplace_edit_modal_open'])
+        self.assertEqual(response.context['management_view'], 'received')
+        self.assertNotContains(response, 'id="workspace-invitation-direction"')
+        self.assert_active_unchanged()
+
+    def test_sent_invitations_modal_is_scoped_to_selected_workspace(self):
+        selected_invitation = WorkplaceInvitation.objects.create(workplace=self.selected, recipient=self.recipient, invited_by=self.owner)
+        other_invitation = WorkplaceInvitation.objects.create(workplace=self.active, recipient=self.member, invited_by=self.owner)
+        response = self.client.get(workplace_management_url(self.selected, 'invitations'))
+        self.assertEqual(list(response.context['team_invitations']), [selected_invitation])
+        self.assertContains(response, f'id="team-invitation-menu-{selected_invitation.pk}"', count=1)
+        self.assertNotContains(response, f'id="team-invitation-menu-{other_invitation.pk}"')
+        self.assertEqual(response.context['workplace_edit_tab'], 'invitations')
         self.assert_active_unchanged()
 
     def test_settings_can_return_to_workspace_directory(self):
