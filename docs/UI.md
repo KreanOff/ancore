@@ -236,6 +236,23 @@ Tło i stany interakcji przycisku pozostają standardowe.
 Pusty stan zachowuje szarą ikonę kartki z plusem. Stan wynika z istniejących
 notatek, także po zapisie i ponownym wejściu.
 
+### Powrót i zamykanie okien
+
+Linki powrotu `tasks-issue-close` oraz krzyżyki standardowych modali,
+potwierdzeń, edycji profilu i zdjęć korzystają ze wspólnej geometrii
+w `modal-system.css`: kwadrat `--control-height` (32px), zaokrąglenie
+`--dropdown-control-radius` (6px) i ikona `--app-navigation-icon-size` (18px).
+Domyślnie mają przezroczyste tło i kolor `--text-primary`; hover oraz fokus
+klawiatury dodają szare tło `--system-interaction-soft`, bez obrysu.
+Powrót zachowuje strzałkę Flaticon, a zamknięcie używa maski `x-mask.svg`
+z tego samego lokalnego zestawu, generowanej przez `build_flaticon_icons.py`.
+Wspólna reguła obejmuje także puste przyciski zamknięcia doładowywanych
+formularzy Dysku i Dokumentów. Pozycja przycisków, etykiety, Escape,
+powrót fokusu i dotychczasowa nawigacja pozostają odpowiedzialnością
+istniejących szablonów oraz JS.
+Na telefonie nagłówek szczegółów pozostawia 3.5rem miejsca po lewej na
+przycisk nawigacji aplikacji, aby nie zasłaniał strzałki powrotu.
+
 ### Paski listy grup
 
 Lista grup otwartego projektu używa tych samych dwóch pasków co „Wszystkie

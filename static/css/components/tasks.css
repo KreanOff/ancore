@@ -10781,7 +10781,7 @@ body.is-resizing-directory-columns {
         min-height: 0;
         align-items: flex-start;
         flex-direction: column;
-        padding: 0.85rem;
+        padding: 0.85rem 0.85rem 0.85rem 3.5rem;
     }
 
     .tasks-issue-breadcrumb,

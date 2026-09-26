@@ -62,6 +62,7 @@ def build(archive):
         'circle-check-mask': ('check-circle', 'black'),
         'circle-x-mask': ('circle-x', 'black'),
         'circle-minus-mask': ('minus-circle', 'black'),
+        'x-mask': ('x', 'black'),
     }
     for filename, (name, color) in css_icons.items():
         (output / f'{filename}.svg').write_text(

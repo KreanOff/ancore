@@ -24,7 +24,8 @@
     --app-modal-field-gap: 16px;
     --app-modal-icon-color: var(--text-primary);
     --app-modal-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='white' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='7' width='16' height='13' rx='2'/%3E%3Cpath d='M9 7V5a3 3 0 0 1 6 0v2M4 12h16M9 10v4M15 10v4'/%3E%3C/svg%3E");
-    --app-modal-close-icon: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");
+    --app-modal-close-icon: url("../../vendor/flaticon/x-mask.svg");
+    --app-navigation-icon-size: 18px;
 }
 
 /* Shared task, project, contact, workplace and calendar windows. */
@@ -195,7 +196,35 @@
     display: none;
 }
 
-/* Every standard modal uses the close affordance from the reference dialog. */
+/* Back links and window close buttons share the application control geometry. */
+.tasks-issue-close,
+.tasks-project-breadcrumb .tasks-issue-close,
+.profile-edit-overlay .profile-edit-close,
+.page-container.full-width .profile-edit-close,
+.contacts-photo-editor-overlay .contacts-photo-editor-close,
+.confirm-modal-overlay .confirm-modal__close,
+.tasks-modal .tasks-modal__close,
+.page-container.full-width .tasks-modal .tasks-modal__close,
+.tasks-modal .tasks-issue-close,
+.page-container.full-width .tasks-modal .tasks-issue-close {
+    width: var(--control-height);
+    height: var(--control-height);
+    min-width: var(--control-height);
+    min-height: var(--control-height);
+    flex: 0 0 var(--control-height);
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--dropdown-control-radius);
+    background: transparent;
+    color: var(--text-primary);
+    box-sizing: border-box;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.1s ease, color 0.1s ease;
+}
+
 .contacts-photo-editor-overlay .contacts-photo-editor-close,
 .confirm-modal-overlay .confirm-modal__close,
 .tasks-modal .tasks-modal__close,
@@ -203,23 +232,12 @@
 .tasks-modal .tasks-issue-close,
 .page-container.full-width .tasks-modal .tasks-issue-close {
     order: 99;
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    min-height: 34px;
-    flex: 0 0 34px;
-    display: grid;
-    place-items: center;
     margin: 0 0 0 auto;
-    padding: 0;
-    border: 0;
-    border-radius: 7px;
-    background: transparent;
-    color: #5f6671;
-    box-sizing: border-box;
-    cursor: pointer;
 }
 
+.tasks-issue-close:is(:hover, :focus-visible),
+.profile-edit-overlay .profile-edit-close:is(:hover, :focus-visible),
+.page-container.full-width .profile-edit-close:is(:hover, :focus-visible),
 .contacts-photo-editor-overlay .contacts-photo-editor-close:is(:hover, :focus-visible),
 .confirm-modal-overlay .confirm-modal__close:is(:hover, :focus-visible),
 .tasks-modal .tasks-modal__close:hover,
@@ -235,6 +253,14 @@
     outline: none;
 }
 
+.tasks-issue-close svg {
+    width: var(--app-navigation-icon-size);
+    height: var(--app-navigation-icon-size);
+}
+
+.profile-edit-overlay .profile-edit-close svg,
+.page-container.full-width .profile-edit-close svg,
+.contacts-photo-editor-overlay .contacts-photo-editor-close svg,
 .tasks-modal .tasks-modal__close svg,
 .page-container.full-width .tasks-modal .tasks-modal__close svg,
 .tasks-modal .tasks-issue-close svg,
@@ -242,14 +268,17 @@
     display: none;
 }
 
+.profile-edit-overlay .profile-edit-close::before,
+.page-container.full-width .profile-edit-close::before,
+.contacts-photo-editor-overlay .contacts-photo-editor-close::before,
 .confirm-modal-overlay .confirm-modal__close::before,
 .tasks-modal .tasks-modal__close::before,
 .page-container.full-width .tasks-modal .tasks-modal__close::before,
 .tasks-modal .tasks-issue-close::before,
 .page-container.full-width .tasks-modal .tasks-issue-close::before {
     content: "";
-    width: 19px;
-    height: 19px;
+    width: var(--app-navigation-icon-size);
+    height: var(--app-navigation-icon-size);
     display: block;
     background: currentColor;
     -webkit-mask: var(--app-modal-close-icon) center / contain no-repeat;
@@ -381,24 +410,7 @@
 .profile-edit-close,
 .page-container.full-width .profile-edit-close {
     order: initial;
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
     margin: 0 0 0 auto;
-    padding: 0;
-    border: 0;
-    border-radius: 7px;
-    box-sizing: border-box;
-}
-
-.profile-edit-close::before,
-.page-container.full-width .profile-edit-close::before {
-    display: none;
-}
-
-.profile-edit-close svg,
-.page-container.full-width .profile-edit-close svg {
-    display: block;
 }
 
 .profile-edit-body,
@@ -741,14 +753,6 @@
     white-space: nowrap;
 }
 
-.tasks-modal .tasks-modal__close:focus-visible,
-.tasks-modal .tasks-issue-close:focus-visible,
-.profile-edit-close:focus-visible,
-.contacts-photo-editor-close:focus-visible {
-    outline: 2px solid var(--system-interaction);
-    outline-offset: 2px;
-}
-
 /* Generic confirmations use the same title bar, compact body and action bar. */
 .confirm-modal-overlay {
     padding: 1rem;
@@ -864,33 +868,6 @@
 .tasks-modal .contacts-modal-title-grid > .tasks-form-field:has([name="middle_name"]) {
     grid-column: 1;
     grid-row: 2;
-}
-
-.profile-edit-overlay .profile-edit-close,
-.contacts-photo-editor-overlay .contacts-photo-editor-close {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--dropdown-control-radius);
-}
-
-.profile-edit-overlay .profile-edit-close svg,
-.contacts-photo-editor-overlay .contacts-photo-editor-close svg {
-    display: none;
-}
-
-.profile-edit-overlay .profile-edit-close::before,
-.contacts-photo-editor-overlay .contacts-photo-editor-close::before {
-    content: "";
-    display: block;
-    width: 19px;
-    height: 19px;
-    background: currentColor;
-    -webkit-mask: var(--app-modal-close-icon) center / contain no-repeat;
-    mask: var(--app-modal-close-icon) center / contain no-repeat;
 }
 
 .contacts-photo-editor-header strong {
