@@ -9391,6 +9391,7 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
 
 .tasks-subtasks-title {
     min-width: 0;
+    margin: 0;
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -9400,23 +9401,6 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
     font: inherit;
     font-size: var(--font-size-sm);
     font-weight: 650;
-    cursor: pointer;
-}
-
-.tasks-subtasks-title svg {
-    width: 20px;
-    height: 20px;
-    flex: 0 0 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    transition: transform 0.08s ease;
-}
-
-.tasks-subtasks-title[aria-expanded="false"] svg {
-    transform: rotate(-90deg);
 }
 
 .tasks-subtasks-actions {
@@ -9432,10 +9416,6 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
     padding: 0.65rem 0 0;
     overflow-x: auto;
     overflow-y: visible;
-}
-
-.tasks-subtasks-board.is-collapsed {
-    display: none;
 }
 
 .tasks-subtasks-board .tasks-issue-group {
@@ -9616,6 +9596,88 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
     justify-content: flex-end;
     gap: 0.85rem;
     padding: 0.45rem 0.7rem 0.65rem;
+}
+
+.tasks-issue-comment-tools .tasks-comment-add {
+    margin-right: auto;
+}
+
+[data-comment-composer] .tasks-issue-comment-tools {
+    flex-direction: row;
+    align-items: center;
+}
+
+.tasks-issue-comment.is-dragging-images {
+    border-color: var(--system-accent);
+    background: var(--system-interaction-soft);
+}
+
+.tasks-comment-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 0.5rem;
+}
+
+.tasks-comment-images--pending {
+    margin: 0;
+    padding: 0.5rem 0.85rem;
+}
+
+.tasks-comment-images[hidden],
+.tasks-comment-error[hidden] {
+    display: none;
+}
+
+.tasks-comment-image {
+    display: block;
+    width: 180px;
+    max-width: 100%;
+    height: 130px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--panel-bg);
+}
+
+.tasks-comment-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.tasks-comment-image--pending {
+    position: relative;
+    width: 96px;
+    height: 76px;
+}
+
+.tasks-comment-file {
+    width: 260px;
+    max-width: 100%;
+    min-width: 0;
+    align-self: flex-start;
+}
+
+.tasks-comment-file > [data-icon="download"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.tasks-comment-image .tasks-comment-image-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--card-bg);
+}
+
+.tasks-comment-error {
+    margin: 0;
+    padding: 0.5rem 0.85rem;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
 }
 
 .tasks-issue-send {
@@ -14618,6 +14680,7 @@ body.is-resizing-directory-columns {
 
 /* Task detail tabs reuse the shared notification/template tab treatment. */
 .tasks-issue-primary {
+    --tasks-issue-content-padding-x: 50px;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -14632,6 +14695,14 @@ body.is-resizing-directory-columns {
 .tasks-issue-primary-body > .tasks-issue-content {
     overflow: visible;
     padding-top: 0;
+    padding-inline: var(--tasks-issue-content-padding-x);
+}
+.tasks-issue-primary-body > .tasks-issue-content > * {
+    width: 100%;
+}
+.tasks-issue-primary-body [data-activity-feed="history"] {
+    max-height: none;
+    overflow: visible;
 }
 .tasks-issue-primary-body > .tasks-issue-overview {
     padding-top: 1rem;
@@ -14645,7 +14716,7 @@ body.is-resizing-directory-columns {
     min-height: 45px;
     gap: 1rem;
     margin-top: 1.4rem;
-    padding: 0 max(clamp(1.75rem, 5vw, 5rem), calc((100% - 980px) / 2));
+    padding: 0 var(--tasks-issue-content-padding-x);
 }
 .tasks-issue-tabbar .tasks-issue-tabs { border: 0; min-width: 0; }
 .tasks-issue-tabbar .tasks-issue-tabs button { font-size: var(--font-size-lg); }
@@ -14694,7 +14765,7 @@ body.is-resizing-directory-columns {
     .tasks-issue-primary-body { flex: none; overflow: visible; }
 }
 @media (max-width: 767px) {
-    .tasks-issue-tabbar { padding-inline: 1.1rem; gap: 0.5rem; }
+    .tasks-issue-tabbar { gap: 0.5rem; }
 }
 @media (min-width: 1100px) {
     #task-work-log-modal .tasks-work-log-duration-label { padding-top: 9px; }

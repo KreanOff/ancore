@@ -165,7 +165,6 @@ function initTasksPage() {
     const collapsibleGroupHeaders = document.querySelectorAll('.tasks-issue-group-header, .tasks-status-subgroup-header');
     const subtasksToolbar = document.querySelector('.tasks-subtasks-toolbar');
     const subtasksBoard = document.querySelector('.tasks-subtasks-board');
-    const subtasksCollapseButton = document.querySelector('[data-subtasks-collapse]');
     const subtasksSortButton = document.querySelector('[data-subtasks-sort]');
     const subtasksDeleteButton = document.querySelector('[data-subtasks-delete]');
     const descriptionInput = document.querySelector('.tasks-issue-description-field textarea[name="description"]');
@@ -6728,14 +6727,6 @@ function initTasksPage() {
             button.click();
         });
     });
-
-    if (subtasksCollapseButton && subtasksBoard) {
-        subtasksCollapseButton.addEventListener('click', function() {
-            const isCollapsed = !subtasksBoard.classList.contains('is-collapsed');
-            subtasksBoard.classList.toggle('is-collapsed', isCollapsed);
-            this.setAttribute('aria-expanded', String(!isCollapsed));
-        });
-    }
 
     if (subtasksSortButton && subtasksBoard) {
         subtasksSortButton.addEventListener('click', function() {

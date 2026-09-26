@@ -54,11 +54,11 @@
             </div>
         </header>
 
-        <form id="activity-comment-form" method="POST" class="tasks-issue-comment-form">
+        <form id="activity-comment-form" method="POST" enctype="multipart/form-data" class="tasks-issue-comment-form">
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="action" value="add_activity_comment">
-            <input type="hidden" name="activity_mentions" value="[]" data-mention-values>
+            <input type="hidden" name="activity_mentions" value="{{ comment_mentions|default:'[]' }}" data-mention-values>
         </form>
 
         <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form">
@@ -176,19 +176,7 @@
                             </div>
                         </div>
 
-                        <div class="tasks-issue-comment tasks-issue-comment--mentions">
-                            {{ mention_people|json_script:"mention-people" }}
-                            <div class="tasks-mention-composer" data-mention-composer>
-                            <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz komentarz; wpisz @ i imię osoby..." form="activity-comment-form"></textarea>
-                            <div id="mention-suggestions" class="tasks-filter-menu tasks-mention-menu" role="listbox" aria-label="Osoby z Workspace" data-mention-menu hidden></div>
-                            <span class="u-sr-only" data-mention-status role="status"></span>
-                            </div>
-                            <div class="tasks-issue-comment-tools">
-                                <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
-                                    <i data-icon="send" aria-hidden="true"></i>
-                                </button>
-                            </div>
-                        </div>
+                        {% include 'tasks/includes/comment_composer.html' %}
 
                         <div class="tasks-issue-feed" data-activity-feed tabindex="0" aria-label="Historia i czat zadania">
                             {% for item in activity_items %}
@@ -201,7 +189,8 @@
                                         <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
                                         <time>{{ item.created_at|date:"d.m, H:i" }}</time>
                                     </p>
-                                    <div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>
+                                    {% if item.message %}<div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>{% endif %}
+                                    {% include 'tasks/includes/comment_images.html' with item=item only %}
                                     {% else %}
                                     <p>
                                         <strong>{{ item.actor.get_full_name|default:item.actor.username|default:"System" }}</strong>
@@ -529,7 +518,6 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
     const toggle = dropdown ? dropdown.querySelector('[data-activity-toggle]') : null;
     const label = dropdown ? dropdown.querySelector('[data-activity-label]') : null;
     const filterButtons = dropdown ? dropdown.querySelectorAll('[data-activity-filter]') : [];
-    const feedItems = feed.querySelectorAll('[data-activity-kind]');
     const emptyFilterMessage = feed.querySelector('[data-activity-empty-filter]');
 
     function closeActivityDropdown() {
@@ -540,6 +528,7 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
     }
 
     function applyActivityFilter(filter) {
+        const feedItems = feed.querySelectorAll('[data-activity-kind]');
         let visibleCount = 0;
 
         feedItems.forEach((item) => {
@@ -562,6 +551,8 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
             emptyFilterMessage.style.display = shouldHideEmptyMessage ? 'none' : '';
         }
     }
+
+    feed.addEventListener('ancore:comment-added', () => applyActivityFilter('comment'));
 
     toggle?.addEventListener('click', (event) => {
         event.stopPropagation();

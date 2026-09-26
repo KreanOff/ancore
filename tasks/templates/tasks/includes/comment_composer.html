@@ -1,0 +1,21 @@
+<div class="tasks-issue-comment tasks-issue-comment--mentions" data-comment-composer data-image-limit="{{ comment_image_limit }}" data-image-max-size="{{ comment_image_max_size }}">
+    {{ mention_people|json_script:"mention-people" }}
+    <div class="tasks-mention-composer" data-mention-composer>
+        <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" aria-describedby="comment-image-hint" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz komentarz; wpisz @ i imię osoby..." form="activity-comment-form">{{ comment_draft }}</textarea>
+        <div id="mention-suggestions" class="tasks-filter-menu tasks-mention-menu" role="listbox" aria-label="Osoby z Workspace" data-mention-menu hidden></div>
+        <span class="u-sr-only" data-mention-status role="status"></span>
+    </div>
+    <div class="tasks-comment-images tasks-comment-images--pending" data-comment-previews aria-label="Pliki do wysłania" hidden></div>
+    <p class="tasks-comment-error" data-comment-error role="alert"{% if not comment_errors %} hidden{% endif %}>{{ comment_errors|join:' ' }}</p>
+    <div class="tasks-issue-comment-tools">
+        <input type="file" name="comment_attachments" data-comment-files accept="{{ comment_attachment_accept }}" multiple hidden form="activity-comment-form">
+        <button type="button" class="tasks-issue-tool tasks-issue-tool--labelled tasks-comment-add" data-comment-add title="Dodaj pliki lub zdjęcia">
+            <i data-icon="paperclip" aria-hidden="true"></i><span>Dodaj pliki</span>
+        </button>
+        <span id="comment-image-hint" class="u-sr-only">Możesz też wkleić zdjęcie ze schowka lub przeciągnąć pliki do pola komentarza. Maksymalnie {{ comment_image_limit }} plików.</span>
+        <span class="u-sr-only" data-comment-status role="status"></span>
+        <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
+            <i data-icon="send" aria-hidden="true"></i>
+        </button>
+    </div>
+</div>

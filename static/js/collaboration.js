@@ -157,7 +157,7 @@
             } else if (['Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) close();
         }, { signal });
         input.addEventListener('blur', close, { signal });
-        input.form.addEventListener('submit', () => { syncMentions(); saveMentions(); }, { signal });
+        input.form.addEventListener('submit', () => { syncMentions(); saveMentions(); }, { signal, capture: true });
         document.addEventListener('click', event => { if (!composer.contains(event.target)) close(); }, { signal });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });

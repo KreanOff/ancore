@@ -5,6 +5,7 @@ from .views import tasks
 app_name = 'kanban'
 
 urlpatterns = [
+    path('comment-images/<int:image_id>/', tasks.comment_image, name='comment_image'),
     path('follow/<str:kind>/<int:object_id>/', follow_object, {'app': 'kanban'}, name='follow_object'),
     path('', tasks.tasks, name='tasks'),
     path('groups/<int:section_id>/', tasks.task_group, name='task_group'),

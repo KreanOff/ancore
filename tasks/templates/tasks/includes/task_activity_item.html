@@ -10,7 +10,8 @@
             <strong>{{ actor_label }}</strong>
             <time>{{ item.created_at|date:"d.m, H:i" }}</time>
         </p>
-        <div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>
+        {% if item.message %}<div class="tasks-issue-chat-message">{{ item.message|linebreaksbr }}</div>{% endif %}
+        {% include 'tasks/includes/comment_images.html' with item=item only %}
         {% else %}
         <p>
             <strong>{{ actor_label }}</strong>

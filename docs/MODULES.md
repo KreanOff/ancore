@@ -69,7 +69,7 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 - Projekt — lista jego grup.
 - Wszystkie grupy oraz widok konkretnej grupy.
 - Wszystkie zadania i Moje zadania.
-- Szczegóły zadania/podzadania, komentarze z `@Imię Nazwisko` i historia; nagłówek nie udostępnia przycisku obserwowania.
+- Szczegóły zadania/podzadania, komentarze z plikami, zdjęciami i `@Imię Nazwisko` oraz historia; nagłówek nie udostępnia przycisku obserwowania.
 - Obserwowanie projektu: nowe komentarze i zmiany jego zadań w filtrze „Obserwowane”.
 - Katalog tagów oraz formularze tworzenia i edycji.
 
@@ -92,11 +92,21 @@ projektu w bieżącym Workspace; czyszczenie filtrów nie usuwa tego kontekstu.
 | `Task` | Tytuł, opis, status, priorytet, termin i przypomnienie w aplikacji, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic |
 | Notatki | Osobne modele dla projektu, grupy i tagu, z autorem i czasem edycji |
 | `TaskActivity` | Historia i komentarze zadania; aktor, akcja, wiadomość i metadane zmian |
+| `TaskCommentImage` | Prywatne pliki i zdjęcia przypisane do konkretnego komentarza; nazwa i rozmiar |
 | `TaskAttachment` | Plik przypisany do zadania, nazwa i rozmiar |
 | `TaskWorkLog` | Wpis dziennika pracy: zadanie, autor, rozpoczęcie, zakończenie, opis i daty zapisu; liczba minut wynika z przedziału czasu |
 
 „Moje zadania” pokazują zadania przypisane zalogowanej osobie w aktywnym Workspace.
 Wykonawcy i odpowiedzialni są ograniczeni do aktywnych kont zespołu.
+
+W katalogach „Wszystkie zadania” i „Moje zadania” limit strony dotyczy każdego
+stanu osobno: 50 oznacza do 50 nowych, realizowanych, rozwiązanych, zamkniętych
+i ponownie otwartych. Wspólne strzałki przechodzą do kolejnych pozycji w każdym
+stanie; liczba stron wynika z najliczniejszego stanu po filtrowaniu.
+Licznik w pasku sumuje zadania z pokazanych sekcji, a licznik sekcji dotyczy jej
+bieżącej strony. Wyszukiwanie i filtry obejmują cały dostępny zbiór przed podziałem
+na strony; sortowanie obowiązuje wewnątrz każdego stanu. Widok pojedynczej grupy
+zachowuje własne, niezależne kontrolki paginacji statusów.
 
 ### Podstawowy scenariusz
 
@@ -120,8 +130,19 @@ do niego załączników.
 Szczegóły zadania i podzadania mają drugi pasek z zakładkami „Główna”,
 „Dziennik pracy” i „Historia”. Zadanie główne ma dodatkowo zakładkę „Podzadania”
 po „Głównej”, z listą według statusów, licznikiem i dotychczasowymi akcjami.
+Lista podzadań i jej grupy statusów pozostają rozwinięte, bez możliwości zwijania.
 Jest dostępna również bez podzadań; dodanie lub błąd formularza zachowuje tę zakładkę.
-„Główna” pokazuje komentarze w sekcji „Czat”,
+„Główna” pokazuje temat, opis i komentarze w sekcji „Czat”.
+Komentarz może zawierać tekst, pliki i zdjęcia albo same załączniki. „Dodaj pliki”,
+wklejenie ze schowka (gdy przeglądarka udostępnia plik) i przeciągnięcie do pola
+pokazują załączniki z możliwością usunięcia przed wysłaniem. Obowiązuje wspólna
+lista formatów Ancore: obrazy, PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, TXT/CSV/RTF
+oraz ZIP/RAR/7Z/TAR/GZ. Limit to 10 plików łącznie, domyślnie do 10 MiB każdy.
+Zdjęcia mają miniatury otwierające pełny obraz w osobnej karcie; pozostałe pliki
+mają ikonę formatu, nazwę, rozmiar i pobieranie. Dotyczy też podzadań oraz czatu kart/podkart Kanbana;
+załączniki wiadomości nie trafiają do ogólnych załączników zadania.
+Zapis przez fetch zachowuje niezapisane pola zadania, a błąd zachowuje szkic i wybrane pliki.
+„Dziennik pracy” pokazuje podsumowanie i wpisy, bez tematu i opisu zadania,
 a „Historia” tylko zdarzenia, bez formularza komentarza. W dzienniku „Dodaj czas” otwiera standardowy modal:
 data i godzina rozpoczęcia, data i godzina zakończenia, wymagany opis
 (do 4000 znaków) oraz dwa edytowalne pola czasu poświęconego: „Godziny” i „Minuty”.
@@ -208,7 +229,7 @@ usuwa projektów. Dane są ograniczone do właściciela i aktywnego Workspace.
 → `KanbanBoardColumn` → `Kanban` (karta), z opcjonalnymi podkartami.
 
 **Funkcje:** katalog przestrzeni, katalog tablic, tablica z kolumnami,
-tworzenie/edycja kart, komentarze ze wzmiankami, obserwowanie kart i przestrzeni, historia, załączniki, czas pracy,
+tworzenie/edycja kart, komentarze z plikami i zdjęciami (`KanbanCommentImage`) i wzmiankami, obserwowanie kart i przestrzeni, historia, załączniki, czas pracy,
 priorytety, tagi, dodawanie/nazywanie/usuwanie i przestawianie kolumn,
 przenoszenie kart między kolumnami. Ustawienia widoku obejmują m.in.
 okładki i lokalnie przechowywane tapety.

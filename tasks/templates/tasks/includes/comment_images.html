@@ -1,0 +1,22 @@
+{% if item.images.all %}
+<div class="tasks-comment-images" aria-label="Załączniki w wiadomości">
+    {% for image in item.images.all %}
+    {% if image.is_image %}
+    <a class="tasks-comment-image" href="{{ image.get_url }}" target="_blank" rel="noopener" title="Otwórz zdjęcie: {{ image.filename }}">
+        <img src="{{ image.get_url }}" alt="{{ image.filename }}" loading="lazy">
+    </a>
+    {% else %}
+    <a class="tasks-attachment-card tasks-comment-file is-link" href="{{ image.get_url }}" download="{{ image.filename }}" title="Pobierz plik: {{ image.filename }}">
+        <span class="tasks-attachment-info">
+            {% include 'core/includes/attachment_icon.html' with type_class=image.get_type_class size='lg' %}
+            <span class="tasks-attachment-details">
+                <span class="tasks-attachment-name">{{ image.filename }}</span>
+                <span class="tasks-attachment-size">{{ image.get_formatted_size }}</span>
+            </span>
+        </span>
+        <i data-icon="download" aria-hidden="true"></i>
+    </a>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endif %}

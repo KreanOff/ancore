@@ -399,3 +399,21 @@ i warianty URL, obserwowanie zadań/projektów, wyłączenie i ponowienie,
 deduplikację, własne działania, cofnięcie dostępu, CSRF, rollback, ograniczenia
 bazy, paginację i osobisty odczyt/archiwum. Powiązane regresje obejmują Zadania,
 Kanban, Dashboard, Workspace i Core.
+
+## Załączniki komentarzy
+
+Migracje `tasks/0052_comment_images.py` i `kanban/0036_comment_images.py`
+dodają osobne tabele zdjęć wiadomości, bez zmiany dawnych komentarzy i załączników.
+Przed uruchomieniem nowego kodu wykonaj `manage.py migrate`. Obrazy korzystają
+z istniejącego `PRIVATE_DOCUMENT_ROOT` i limitu `MAX_ATTACHMENT_SIZE`.
+Migracje `tasks/0053_comment_attachment_size.py` i
+`kanban/0037_comment_attachment_size.py` dodają rozmiar załącznika. Te same
+rekordy obsługują teraz wszystkie pliki dopuszczone przez wspólny walidator;
+stare zdjęcia i ich adresy pozostają dostępne.
+
+`core.test_comment_images` sprawdza tekst/obrazy/pliki, zadania/podzadania i karty/podkarty,
+zwykłe/scoped URL, format/rozmiar/liczbę plików, partie mieszane, starsze pole
+`comment_images`, pobieranie zamiast inline dla dokumentów, CSRF, autorstwo, wzmianki,
+izolację Workspace, cofnięcie członkostwa, prywatny odczyt oraz rollback bazy
+razem z plikami i sprzątanie po zatwierdzonym usunięciu. Uruchamiaj wraz z
+`dashboard.test_collaboration` i regresjami załączników Tasks/Kanban.

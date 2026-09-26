@@ -245,6 +245,15 @@ wyszukiwanie i zmiana strony zachowują otwarty projekt oraz Workspace.
 Na telefonie nagłówek projektu pozostawia miejsce po lewej na przycisk
 nawigacji aplikacji, aby strzałka powrotu pozostała dostępna.
 
+### Limit zadań według stanu
+
+„Wszystkie zadania” i „Moje zadania” używają wspólnego paska paginacji.
+Wariant `page_size_suffix='/ stan'` w `directory_pagination_toolbar.html`
+wyjaśnia, że np. 50 dotyczy osobno każdej sekcji statusu. Etykieta dostępności
+brzmi „Liczba zadań na stronie w każdym stanie”. Strzałki zmieniają stronę
+we wszystkich stanach jednocześnie; licznik sumuje pokazane zadania.
+Pozostałe katalogi zachowują etykietę „/ stronę” i dotychczasowe działanie.
+
 ### Krótkie powiadomienia
 
 Komunikaty Django Messages i `showNotification(message, type, options)` używają
@@ -710,18 +719,24 @@ Wspólne style czasu pracy i historii są nadal używane przez Kanban.
 Zakładki „Główna”, „Podzadania”, „Dziennik pracy” i „Historia” (`tasks-issue-tabbar`) znajdują się
 w lewej kolumnie szczegółów (`tasks-issue-primary`), bezpośrednio nad tematem
 zadania i są wyrównane do jego lewej krawędzi, także na telefonie.
+Pasek zakładek i ich treść mają po 50px odstępu od obu krawędzi lewej kolumny
+(`--tasks-issue-content-padding-x`), także na telefonie. Treść wykorzystuje całą
+pozostałą szerokość bez limitu 980px; wariant dotyczy zadań i podzadań.
 Korzystają z `notifications-tabs`, z turkusowym podkreśleniem. Tekst zakładek
 ma rozmiar `--font-size-lg` (15px); wariant jest ograniczony do szczegółów
 zadania i podzadania. Edytowalny tytuł w treści tych widoków ma 20px,
 także na telefonie, zgodnie z rozmiarem nagłówków standardowych modali.
 Pod paskiem zakładek nie ma poziomej linii oddzielającej go od treści.
-Temat i opis (`tasks-issue-overview`) są wspólne dla „Głównej” i „Dziennika pracy”: w „Główna”
-poprzedzają załączniki i czat, a w „Dzienniku pracy” sumę
-oraz tabelę wpisów. To te same edytowalne pola formularza, bez kopii i osobnego
-zapisu. Przełączanie zachowuje również ich niezapisane zmiany. Wspólny obszar
-`tasks-issue-primary-body` przewija temat, opis i zawartość wybranej zakładki;
-długi opis nie blokuje dostępu do dziennika. Zapis wpisu czasu odświeża tylko
-tabelę i historię, pozostawiając temat i opis.
+Temat i opis (`tasks-issue-overview`) są widoczne tylko w „Głównej”,
+przed załącznikami i czatem. „Dziennik pracy” zaczyna się od podsumowania
+i listy wpisów, również przy bezpośrednim wejściu z `tab=work-log`.
+Pola pozostają w formularzu, a przełączanie zakładek zachowuje ich niezapisane
+zmiany. Wspólny obszar `tasks-issue-primary-body` przewija zawartość wybranej
+zakładki. Lista w „Historii” nie ma limitu wysokości ani własnego przewijania:
+wypełnia dostępną wysokość treścią, a dłuższą historię przewija wspólny obszar
+zakładki (na wąskich ekranach główny obszar szczegółów). Czat zachowuje własny
+limit wysokości. Zapis wpisu czasu odświeża tylko tabelę i historię, zachowując wartości
+tematu i opisu. Dotyczy to zadań i podzadań.
 Prawy panel szczegółów jest wspólny dla wszystkich zakładek zadania
 i podzadania; na wąskich ekranach pozostaje pod treścią zgodnie ze wspólnym
 układem szczegółów. Przycisk „Zapisz” jest dostępny we wszystkich zakładkach i zapisuje
@@ -730,8 +745,10 @@ obok zakładek w lewej kolumnie i zapisuje wpisy przez osobny formularz modala.
 ARIA tablist/tab/tabpanel, strzałki, Home i End obsługują klawiaturę.
 Wybrany widok jest zapisywany w parametrze `tab=subtasks`, `tab=work-log` lub `tab=history`, bez przeładowania.
 „Podzadania” są dostępne dla zadania głównego, także przy pustej liście.
-Panel pokazuje dotychczasowy licznik, zwijanie, sortowanie, usuwanie zaznaczonych
-i modal dodawania oraz listę grupowaną według statusu. Nie pokazuje tematu, opisu
+Panel pokazuje dotychczasowy licznik, sortowanie, usuwanie zaznaczonych
+i modal dodawania oraz listę grupowaną według statusu. Lista i grupy statusów są
+stale rozwinięte, bez przycisków zwijania; „Podzadania” z licznikiem to zwykły
+nagłówek. Nie pokazuje tematu, opisu
 ani czatu. Pusta lista wyświetla „Brak podzadań.”, a dodawanie pozostaje dostępne.
 Zapis podzadania i błąd formularza pozostawiają wybraną zakładkę.
 Szczegóły podzadania zachowują trzy zakładki, bez kolejnego poziomu podzadań.
@@ -751,7 +768,7 @@ oraz podzadań, pod zwykłymi i scoped adresami. Kanban zachowuje własną Aktyw
 katalogu projektów: wiersze 35px,
 nagłówki z ikonami, separatory oraz turkusowe podświetlenie z paskiem po lewej.
 Cały dziennik korzysta z `tasks-issue-content`: tabela, podsumowanie, pusty stan
-i paginacja mają tę samą szerokość (maksymalnie 980px) oraz boczne marginesy
+i paginacja mają tę samą pełną szerokość i boczne odstępy 50px
 co temat i opis, również na telefonie. Podsumowanie i paginacja nie dodają
 własnego poziomego wcięcia. Tabela zachowuje poziome przewijanie kolumn.
 Pierwsza kolumna 40px zawiera wspólne checkboxy katalogu projektów, zawsze
@@ -1211,6 +1228,29 @@ fokusu do ukrytego panelu. Na telefonie panel zajmuje ekran,
 a na najwęższym układzie toolbar przechodzi do dwóch wierszy.
 Inicjalizacja po `ancore:content-loaded` nie powiela listenerów; polling działa
 wyłącznie w widocznej karcie. Dane są prywatne dla konta i nie trafiają do localStorage.
+
+### Załączniki czatu
+Wspólny `comment_composer.html` rozszerza obecne pole komentarza Zadań i Kanbana.
+„Dodaj pliki” używa `tasks-issue-tool` i ikony `paperclip`; przycisk wysyłania
+pozostaje po prawej, także na telefonie. `tasks-comment-images` pokazuje
+miniatury wiadomości, a wariant `--pending` mniejsze podglądy z krzyżykiem
+usuwania przed wysłaniem. Obrazy zachowują proporcje (`object-fit: contain`).
+Kliknięcie wysłanego zdjęcia otwiera kontrolowany URL w nowej karcie.
+Pozostałe pliki używają `tasks-attachment-card` i wspólnych ikon załączników.
+Minimalny wariant `tasks-comment-file` ogranicza kartę do 260px i szerokości
+kontenera, zachowuje skracanie długich nazw, rozmiar oraz przycisk usunięcia
+przed wysłaniem. Po wysłaniu karta pobiera plik (atrybut `download`).
+Lista wyboru formatów w `accept` pochodzi ze wspólnego walidatora serwera.
+
+`comment-images.js` obsługuje wybór plików, wklejenie załącznika udostępnionego
+przez schowek przeglądarki do pola tekstu,
+przeciągnięcie do kompozytora i zapis bez przeładowania. Błędy są przy polu
+(`role=alert`), a wybór i wysyłka mają komunikaty czytnika ekranu.
+W trakcie wysyłki kontrolki są zablokowane; błąd pozostawia tekst, wzmianki
+i podglądy do poprawienia lub ponowienia. Sukces czyści wyłącznie szkic czatu.
+Inicjalizacja działa także po `ancore:content-loaded`, nie powiela listenerów
+i zwalnia lokalne URL podglądów. Synchronizacja wzmianek na `submit` działa
+w fazie capture, przed utworzeniem multipart `FormData`.
 
 ### Wzmianki i obserwowanie
 

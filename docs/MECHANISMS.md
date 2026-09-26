@@ -207,6 +207,14 @@ filtrują, sortują i wycinają okno wyników po stronie serwera. Widoki używaj
 Tasks ma osobne mechanizmy katalogów projektów, grup, tagów i zadań oraz
 grupowania/paginacji po statusach.
 
+W `_task_window_for_request()` liczności statusów są liczone jednym agregatem
+na identyfikatorach przefiltrowanego zbioru. Katalogi Wszystkie/Moje zadania
+pobierają następnie najwyżej `page_size` rekordów z każdego stanu, z tym samym
+offsetem strony. Liczba stron zależy od największej liczności statusu.
+Krótsze sekcje nie powtarzają ostatnich rekordów na dalszych stronach.
+Zakres właściciela, Workspace, wykonawcy i zadań głównych jest ustalany przed
+filtrowaniem, agregacją i paginacją.
+
 Kontakty i firmy mają własne okna wyników. Dysk używa `Paginator`;
 na jednej stronie najpierw rozlicza foldery, potem pliki, aby nie
 powielać i nie pomijać pozycji przy przechodzeniu między stronami.
@@ -270,6 +278,7 @@ reguł nie powodował ponownego utworzenia domyślnych.
 | Rodzaj danych | Przechowywanie |
 | --- | --- |
 | Zdjęcia i załączniki Tasks/Kanban | Standardowy `MEDIA_ROOT`, podkatalog zależny od modelu |
+| Pliki i zdjęcia komentarzy Tasks/Kanban | `PRIVATE_DOCUMENT_ROOT/comment_images/<moduł>/`, losowe nazwy, kontrolowane pobieranie/podgląd |
 | Historyczne zdjęcia dysków (upload wyłączony) | `PRIVATE_DOCUMENT_ROOT/library_photos/<workplace_id>/`, losowa nazwa; kontrolowany widok obrazu |
 | Pliki Documents | `FileSystemStorage` w `PRIVATE_DOCUMENT_ROOT`; losowa nazwa pod katalogiem Workspace |
 | Metadane, foldery, gwiazdki, kosz | PostgreSQL |
@@ -494,6 +503,26 @@ do karty, po `ancore:content-loaded` i co 30 sekund w widocznej karcie.
 Otwarta lista sygnalizuje zmianę przyciskiem odświeżenia, bez przestawiania
 czytanej treści. Błędy sieci zachowują ostatni licznik; panel udostępnia ponowienie.
 To powiadomienia wewnątrz aplikacji przez HTTP, bez push, e-maila i workera.
+
+### Pliki i zdjęcia w komentarzach
+`TaskCommentImage` i `KanbanCommentImage` zachowują historyczne nazwy, ale przechowują
+wszystkie załączniki komentarzy. Mają rozmiar `file_size` i FK do aktywności (`images`),
+nie do ogólnych załączników zadania. Wspólny `core/comment_images.py` waliduje
+całą partię przez `validate_comment_attachments()` w `core/upload_validation.py`
+(wspólna lista `ATTACHMENT_ALLOWED_EXTENSIONS`, łącznie 10 plików i `MAX_ATTACHMENT_SIZE`). Dopiero potem zapisuje komentarz,
+wzmianki i pliki w jednej transakcji. Przy rollbacku usuwa nowe pliki;
+usunięcie aktywności/zadania usuwa pliki dopiero po zatwierdzeniu transakcji.
+
+`/<moduł>/comment-images/<pk>/` i scoped odpowiednik wymagają zalogowania,
+właściciela danych oraz aktywnego Workspace. Zdjęcia zwracają inline, a pozostałe
+pliki jako attachment. Wszystkie odpowiedzi mają `nosniff` i `private, no-store`; publiczne `/media/` nie obsługuje tych plików.
+Link załącznika zawiera Workspace, a identyfikatorem jest PK pliku.
+Usunięcie członkostwa odbiera dostęp także do wcześniej zapisanych URL.
+Listy aktywności pobierają pliki przez prefetch relacji `images`. POST
+`add_activity_comment` przyjmuje `comment_attachments` oraz starsze `comment_images`
+z tym samym łącznym limitem; AJAX zwraca fragment wiadomości albo błąd 400,
+bez przeładowania niezapisanego formularza zadania. Zwykły POST nadal działa;
+po błędzie zachowuje tekst i wzmianki, a pliki trzeba wybrać ponownie.
 
 ### Wzmianki i obserwowanie
 Komentarze zadań, podzadań, kart i podkart wstawiają `@Imię Nazwisko` po

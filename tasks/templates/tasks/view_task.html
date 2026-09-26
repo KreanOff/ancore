@@ -4,7 +4,7 @@
 {% block extra_head %}
     {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
     <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260921-no-tags">
-    <script src="{% static 'js/task-work-log.js' %}?v=20260925-subtasks-tab" defer></script>
+    <script src="{% static 'js/task-work-log.js' %}?v=20260925-work-log-hide-overview" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -44,11 +44,11 @@
             </div>
         </header>
 
-        <form id="activity-comment-form" method="POST" class="tasks-issue-comment-form">
+        <form id="activity-comment-form" method="POST" enctype="multipart/form-data" class="tasks-issue-comment-form">
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="action" value="add_activity_comment">
-            <input type="hidden" name="activity_mentions" value="[]" data-mention-values>
+            <input type="hidden" name="activity_mentions" value="{{ comment_mentions|default:'[]' }}" data-mention-values>
         </form>
 
         <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}"{% if not can_edit_task %} data-task-readonly="true"{% endif %}>
@@ -71,7 +71,7 @@
                     </div>
 
                     <div class="tasks-issue-primary-body">
-                        <section class="tasks-issue-content tasks-issue-overview" aria-label="Temat i opis zadania" data-task-overview{% if active_task_tab == 'history' or active_task_tab == 'subtasks' %} hidden{% endif %}>
+                        <section class="tasks-issue-content tasks-issue-overview" aria-label="Temat i opis zadania" data-task-overview{% if active_task_tab != 'main' %} hidden{% endif %}>
                             {% if form.errors %}
                             <div class="tasks-error-banner">
                                 <strong>Wystąpiły błędy:</strong>
@@ -145,19 +145,7 @@
                                     </h2>
                                 </div>
 
-                                <div class="tasks-issue-comment tasks-issue-comment--mentions">
-                                    {{ mention_people|json_script:"mention-people" }}
-                                    <div class="tasks-mention-composer" data-mention-composer>
-                                    <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz komentarz; wpisz @ i imię osoby..." form="activity-comment-form"></textarea>
-                                    <div id="mention-suggestions" class="tasks-filter-menu tasks-mention-menu" role="listbox" aria-label="Osoby z Workspace" data-mention-menu hidden></div>
-                                    <span class="u-sr-only" data-mention-status role="status"></span>
-                                    </div>
-                                    <div class="tasks-issue-comment-tools">
-                                        <button type="submit" class="tasks-issue-send" aria-label="Wyślij komentarz" title="Wyślij komentarz" form="activity-comment-form">
-                                            <i data-icon="send" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                {% include 'tasks/includes/comment_composer.html' %}
 
                                 <div class="tasks-issue-feed" data-activity-feed="comment" tabindex="0" aria-label="Czat zadania">
                                     {% for item in comment_items %}
@@ -172,10 +160,9 @@
                         {% if not task.parent %}
                         <section id="task-subtasks" class="tasks-issue-content tasks-issue-subtasks" role="tabpanel" aria-labelledby="task-tab-subtasks" tabindex="0" data-task-tab-panel="subtasks"{% if active_task_tab != 'subtasks' %} hidden{% endif %}>
                             <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
-                                <button type="button" class="tasks-subtasks-title" data-subtasks-collapse aria-expanded="true">
-                                    <i data-icon="chevron-down" aria-hidden="true"></i>
+                                <h2 class="tasks-subtasks-title">
                                     <span>Podzadania ({{ task.subtasks.count }})</span>
-                                </button>
+                                </h2>
                                 <div class="tasks-subtasks-actions">
                                     <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-subtasks-sort>
                                         <i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i>
@@ -198,9 +185,6 @@
                                 {% if status_group.count %}
                                 <section class="tasks-issue-group tasks-status-block" data-section-status="{{ status_group.status }}" data-drop-status="{{ status_group.status }}">
                                     <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ status_group.status }}">
-                                        <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ status_group.label }}" aria-expanded="true">
-                                            <i data-icon="chevron-down" aria-hidden="true"></i>
-                                        </button>
                                         <span class="status-indicator status-{{ status_group.status }}">{{ status_group.label }}</span>
                                         <span class="tasks-rail-count">{{ status_group.count }}</span>
                                     </header>
@@ -991,7 +975,7 @@ if (taskDetailForm) {
     setTaskSaveState('idle');
 
     taskDetailForm.addEventListener('input', (event) => {
-        if (event.target.matches('[type="file"]')) return;
+        if (event.target.form !== taskDetailForm || event.target.matches('[type="file"]')) return;
         if (event.target.matches('[name="title"]')) {
             const currentTitle = document.querySelector('[data-task-title-current] span');
             if (currentTitle) currentTitle.textContent = event.target.value.trim() || 'Bez tytułu';
@@ -1000,7 +984,7 @@ if (taskDetailForm) {
     });
 
     taskDetailForm.addEventListener('change', (event) => {
-        if (event.target.matches('[type="file"]')) return;
+        if (event.target.form !== taskDetailForm || event.target.matches('[type="file"]')) return;
         markTaskDetailDirty();
     });
 

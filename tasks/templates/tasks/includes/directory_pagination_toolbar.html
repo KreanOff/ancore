@@ -30,7 +30,7 @@
         </select>
         <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact tasks-project-pagination__size-button--toolbar" aria-label="{{ page_size_label }}" aria-haspopup="menu" aria-expanded="false" data-project-page-size-toggle>
             <i data-icon="rows-3" aria-hidden="true"></i>
-            <span class="tasks-project-pagination__size-value"><strong data-project-page-size-label>{{ window.page_size }}</strong><span>/ stronę</span></span>
+            <span class="tasks-project-pagination__size-value"><strong data-project-page-size-label>{{ window.page_size }}</strong><span>{{ page_size_suffix|default:'/ stronę' }}</span></span>
             <i data-icon="chevron-down" aria-hidden="true"></i>
         </button>
         <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="{{ page_size_label }}">

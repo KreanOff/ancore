@@ -5,6 +5,7 @@ from collections import defaultdict
 from datetime import timedelta
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
@@ -20,19 +21,24 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 
-from dashboard.collaboration import comment_mention_metadata, follow_context, mention_choices
+from dashboard.collaboration import follow_context, mention_choices
 from workplaces.services import workspace_owner, scoped_workplace_app_path
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
 from contacts.models import SharedItem, SharedItemLink, UserContact
 from core.task_numbering import lock_task_numbers
 from core.task_requests import task_detail_lookup, task_primary_keys
-from core.upload_validation import attachment_download_response, validate_attachment_upload
+from core.upload_validation import (
+    DEFAULT_ATTACHMENT_MAX_SIZE, MAX_COMMENT_ATTACHMENTS, ATTACHMENT_ALLOWED_EXTENSIONS,
+    attachment_download_response, validate_attachment_upload,
+)
+from core.comment_images import save_comment, comment_image_response
 from ..models import (
     PROJECT_FIELD_OPTION_DEFAULTS,
     Task,
     TaskActivity,
     TaskAttachment,
+    TaskCommentImage,
     TaskProject,
     TaskProjectTemplate,
     TaskProjectDeadlineRule,
@@ -1585,11 +1591,25 @@ def _task_window_for_request(request, queryset):
         due,
         sort != TASK_DEFAULT_SORT,
     ))
-    total_tasks = queryset.count()
+    # Count and slice each status separately: the toolbar limit applies to every
+    # status, while its page buttons advance the same window in all statuses.
+    status_counts = {
+        row['status']: row['total']
+        for row in (
+            Task.objects.filter(pk__in=queryset.order_by().values('pk'))
+            .values('status').annotate(total=Count('pk'))
+        )
+    }
+    total_tasks = sum(status_counts.values())
     page_size = _project_page_size(request)
-    total_pages = max(1, (total_tasks + page_size - 1) // page_size)
+    largest_status_count = max(status_counts.values(), default=0)
+    total_pages = max(1, (largest_status_count + page_size - 1) // page_size)
     current_page = min(_project_page_number(request), total_pages)
     offset = (current_page - 1) * page_size
+    page_tasks = []
+    for task_status, _label in Task.STATUS_CHOICES:
+        if status_counts.get(task_status, 0) > offset:
+            page_tasks.extend(queryset.filter(status=task_status)[offset:offset + page_size])
     base_params = _request_query_params(request)
     # Status-specific pages belong to the group view, not the combined directory.
     for task_status, _label in Task.STATUS_CHOICES:
@@ -1599,9 +1619,10 @@ def _task_window_for_request(request, queryset):
     base_params.pop('page', None)
     has_previous = current_page > 1
     has_next = current_page < total_pages
-    compact_summary = f'{offset + 1}-{min(offset + page_size, total_tasks)} z {total_tasks}' if total_tasks else '0 z 0'
+    preceding_tasks = sum(min(offset, count) for count in status_counts.values())
+    compact_summary = f'{preceding_tasks + 1}-{preceding_tasks + len(page_tasks)} z {total_tasks}' if total_tasks else '0 z 0'
     return {
-        'queryset': queryset[offset:offset + page_size],
+        'queryset': page_tasks,
         'page': current_page,
         'page_size': page_size,
         'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
@@ -4332,7 +4353,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
         ),
         Prefetch(
             'activities',
-            queryset=TaskActivity.objects.select_related('actor').order_by('-created_at', '-id'),
+            queryset=TaskActivity.objects.select_related('actor').prefetch_related('images').order_by('-created_at', '-id'),
         ),
     )
     if task_pk is not None:
@@ -4346,6 +4367,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     form = TaskForm(instance=task, user=task.user, workplace=workplace)
     task_modal_form = SubTaskModalForm()
     task_modal_open = False
+    comment_errors = []
     work_log_form = TaskWorkLogForm(prefix='worklog')
     work_log_modal_open = False
     active_tab = request.GET.get('tab', 'main')
@@ -4395,21 +4417,20 @@ def _task_detail_response(request, task_id=None, task_pk=None):
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać podzadania.')
         elif action == 'add_activity_comment':
-            raw_comment = request.POST.get('activity_comment') or ''
-            comment = raw_comment.replace('\r\n', '\n').strip()
-            if comment:
-                _record_task_activity(
-                    task,
-                    request.user,
-                    'commented',
-                    comment,
-                    kind='comment',
-                    metadata=comment_mention_metadata(task, raw_comment, request.POST.get('activity_mentions')),
-                )
-                messages.success(request, 'Komentarz dodany.')
+            try:
+                activity = save_comment(request, task, TaskCommentImage, _record_task_activity)
+            except ValidationError as error:
+                comment_errors = error.messages
+                active_tab = 'main'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'error', 'message': ' '.join(comment_errors)}, status=400)
             else:
-                messages.error(request, 'Wpisz treść komentarza.')
-            return _redirect_to_task_detail(task, workspace_owner(request))
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'success', 'activity_html': render_to_string(
+                        'tasks/includes/task_activity_item.html', {'item': activity}, request=request,
+                    )})
+                messages.success(request, 'Komentarz dodany.')
+                return _redirect_to_task_detail(task, workspace_owner(request))
         else:
             if not can_edit_task:
                 raise PermissionDenied
@@ -4523,6 +4544,12 @@ def _task_detail_response(request, task_id=None, task_pk=None):
         'can_edit_task': can_edit_task,
         'can_share_task': False,
         'can_add_attachments': can_add_attachments,
+        'comment_errors': comment_errors,
+        'comment_draft': request.POST.get('activity_comment', '') if comment_errors else '',
+        'comment_mentions': request.POST.get('activity_mentions', '[]') if comment_errors else '[]',
+        'comment_image_limit': MAX_COMMENT_ATTACHMENTS,
+        'comment_attachment_accept': ','.join(sorted(ATTACHMENT_ALLOWED_EXTENSIONS)),
+        'comment_image_max_size': getattr(settings, 'MAX_ATTACHMENT_SIZE', DEFAULT_ATTACHMENT_MAX_SIZE),
         'comment_items': [item for item in activity_items if item.kind == 'comment'],
         'history_items': [item for item in activity_items if item.kind != 'comment'],
         'subtask_status_groups': subtask_status_groups,
@@ -4546,3 +4573,8 @@ def view_task(request, task_id):
 @login_required
 def view_subtask(request, task_id):
     return _task_detail_response(request, task_id)
+
+
+@login_required
+def comment_image(request, image_id):
+    return comment_image_response(request, TaskCommentImage, image_id)

@@ -210,11 +210,22 @@ def validate_attachment_upload(uploaded_file):
     return uploaded_file
 
 
-def attachment_download_response(attachment):
+COMMENT_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+MAX_COMMENT_ATTACHMENTS = 10
+
+
+def validate_comment_attachments(files):
+    if len(files) > MAX_COMMENT_ATTACHMENTS:
+        raise ValidationError(f'Dodaj maksymalnie {MAX_COMMENT_ATTACHMENTS} plików do jednej wiadomości.')
+    for uploaded in files:
+        validate_attachment_upload(uploaded)
+
+
+def attachment_download_response(attachment, *, inline=False):
     content_type, _encoding = mimetypes.guess_type(attachment.filename)
     response = FileResponse(
         attachment.file.open('rb'),
-        as_attachment=True,
+        as_attachment=not inline,
         filename=attachment.filename,
         content_type=content_type or 'application/octet-stream',
     )

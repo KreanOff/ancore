@@ -4,6 +4,7 @@ import unicodedata
 from urllib.parse import urlencode
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -15,13 +16,17 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 
-from dashboard.collaboration import comment_mention_metadata, follow_context, mention_choices
+from dashboard.collaboration import follow_context, mention_choices
 from workplaces.services import workspace_owner
 from core.task_numbering import lock_task_numbers
 from core.task_requests import task_detail_lookup, task_primary_keys
-from core.upload_validation import attachment_download_response, validate_attachment_upload
+from core.upload_validation import (
+    DEFAULT_ATTACHMENT_MAX_SIZE, MAX_COMMENT_ATTACHMENTS, ATTACHMENT_ALLOWED_EXTENSIONS,
+    attachment_download_response, validate_attachment_upload,
+)
+from core.comment_images import save_comment, comment_image_response
 from tasks.models import TaskTag, TaskTagNote
-from ..models import Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanProjectNote, KanbanSection
+from ..models import KanbanCommentImage, Kanban, KanbanActivity, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanProjectNote, KanbanSection
 from ..forms import QuickKanbanForm, SubKanbanModalForm, KanbanBoardColumnForm, KanbanForm, KanbanModalForm, KanbanProjectForm, KanbanProjectRenameForm, KanbanSectionForm, KanbanSectionRenameForm, KanbanTagForm
 
 
@@ -2013,7 +2018,7 @@ def _task_detail_response(request, task_id):
             ),
             Prefetch(
                 'activities',
-                queryset=KanbanActivity.objects.select_related('actor').order_by('created_at', 'id'),
+                queryset=KanbanActivity.objects.select_related('actor').prefetch_related('images').order_by('created_at', 'id'),
             ),
         ),
         user=workspace_owner(request),
@@ -2024,6 +2029,7 @@ def _task_detail_response(request, task_id):
     form = KanbanForm(instance=task, user=workspace_owner(request), workplace=workplace)
     task_modal_form = SubKanbanModalForm(user=workspace_owner(request))
     task_modal_open = False
+    comment_errors = []
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -2052,22 +2058,20 @@ def _task_detail_response(request, task_id):
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać podkarty.')
         elif action == 'add_activity_comment':
-            raw_comment = request.POST.get('activity_comment') or ''
-            comment = raw_comment.replace('\r\n', '\n').strip()
-            if comment:
-                _record_task_activity(
-                    task,
-                    request.user,
-                    'commented',
-                    comment,
-                    kind='comment',
-                    metadata=comment_mention_metadata(task, raw_comment, request.POST.get('activity_mentions')),
-                )
-                messages.success(request, 'Komentarz dodany.')
+            try:
+                activity = save_comment(request, task, KanbanCommentImage, _record_task_activity)
+            except ValidationError as error:
+                comment_errors = error.messages
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'error', 'message': ' '.join(comment_errors)}, status=400)
             else:
-                messages.error(request, 'Wpisz treść komentarza.')
-            detail_route = 'kanban:view-subtask' if task.parent_id else 'kanban:view-task'
-            return redirect(detail_route, task_id=task.task_id)
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'success', 'activity_html': render_to_string(
+                        'tasks/includes/task_activity_item.html', {'item': activity}, request=request,
+                    )})
+                messages.success(request, 'Komentarz dodany.')
+                detail_route = 'kanban:view-subtask' if task.parent_id else 'kanban:view-task'
+                return redirect(detail_route, task_id=task.task_id)
         elif action == 'clear_time_spent':
             if task.has_time_spent:
                 before = _task_activity_snapshot(task)
@@ -2155,7 +2159,13 @@ def _task_detail_response(request, task_id):
         'task_modal_open': task_modal_open,
         'task': task,
         'can_add_attachments': can_add_attachments,
-        'activity_items': task.activities.order_by('-created_at', '-id'),
+        'comment_errors': comment_errors,
+        'comment_draft': request.POST.get('activity_comment', '') if comment_errors else '',
+        'comment_mentions': request.POST.get('activity_mentions', '[]') if comment_errors else '[]',
+        'comment_image_limit': MAX_COMMENT_ATTACHMENTS,
+        'comment_attachment_accept': ','.join(sorted(ATTACHMENT_ALLOWED_EXTENSIONS)),
+        'comment_image_max_size': getattr(settings, 'MAX_ATTACHMENT_SIZE', DEFAULT_ATTACHMENT_MAX_SIZE),
+        'activity_items': list(reversed(task.activities.all())),
         'subtask_status_groups': subtask_status_groups,
         **_tasks_navigation_context(
             workspace_owner(request),
@@ -2176,3 +2186,8 @@ def view_task(request, task_id):
 @login_required
 def view_subtask(request, task_id):
     return _task_detail_response(request, task_id)
+
+
+@login_required
+def comment_image(request, image_id):
+    return comment_image_response(request, KanbanCommentImage, image_id)

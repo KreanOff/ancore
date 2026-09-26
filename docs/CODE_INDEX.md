@@ -17,11 +17,11 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 15 | 0 | 9 | 42 |
+| [core](../core) | 17 | 0 | 9 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 18 | 8 | 10 | 78 |
-| [tasks](../tasks) | 21 | 51 | 31 | 224 |
-| [kanban](../kanban) | 10 | 35 | 9 | 73 |
+| [tasks](../tasks) | 22 | 53 | 33 | 230 |
+| [kanban](../kanban) | 10 | 37 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 4 | 7 | 91 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
@@ -274,6 +274,16 @@ Pola zadeklarowane tutaj: `task` (ForeignKey), `actor` (ForeignKey), `kind` (Cha
 
 Metody/properties: `__str__`.
 
+### `TaskCommentImage`
+
+Źródło: [tasks/models.py](../tasks/models.py).
+
+Pola zadeklarowane tutaj: `activity` (ForeignKey).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `activity` | `TaskActivity` | on_delete=models.CASCADE; related_name='images' |
+
 ## Modele: kanban
 
 ### `KanbanProject`
@@ -369,6 +379,16 @@ Pola zadeklarowane tutaj: `task` (ForeignKey), `actor` (ForeignKey), `kind` (Cha
 | `actor` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='kanban_activities'; null=True |
 
 Metody/properties: `__str__`.
+
+### `KanbanCommentImage`
+
+Źródło: [kanban/models.py](../kanban/models.py).
+
+Pola zadeklarowane tutaj: `activity` (ForeignKey).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `activity` | `KanbanActivity` | on_delete=models.CASCADE; related_name='images' |
 
 ## Modele: contacts
 
@@ -806,6 +826,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'comment-images/<int:image_id>/'` | `tasks.comment_image` | 'comment_image' |
 | `'follow/<str:kind>/<int:object_id>/'` | `follow_object` | 'follow_object' |
 | `''` | `tasks.tasks` | 'tasks' |
 | `'templates/'` | `project_templates` | 'project_templates' |
@@ -826,6 +847,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'comment-images/<int:image_id>/'` | `tasks.comment_image` | 'comment_image' |
 | `'follow/<str:kind>/<int:object_id>/'` | `follow_object` | 'follow_object' |
 | `''` | `tasks.tasks` | 'tasks' |
 | `'groups/<int:section_id>/'` | `tasks.task_group` | 'task_group' |
@@ -932,12 +954,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/__init__.py](../core/__init__.py)
 - [core/admin.py](../core/admin.py)
 - [core/apps.py](../core/apps.py) — `CoreConfig`
+- [core/comment_images.py](../core/comment_images.py) — `comment_image_storage`, `comment_image_path`, `CommentImage`, `delete_comment_image_file`, `save_comment`, `comment_image_response`
 - [core/forms.py](../core/forms.py)
 - [core/media.py](../core/media.py) — `public_media`
 - [core/models.py](../core/models.py)
 - [core/task_numbering.py](../core/task_numbering.py) — `lock_task_numbers`, `renumber_tasks`
 - [core/task_requests.py](../core/task_requests.py) — `task_detail_lookup`, `task_primary_keys`
-- [core/upload_validation.py](../core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `attachment_download_response`
+- [core/upload_validation.py](../core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
 - [core/views/__init__.py](../core/views/__init__.py)
 
 ### accounts
@@ -980,14 +1003,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskProjectFieldOptionAdmin`, `TaskSectionAdmin`, `TaskTagAdmin`, `TaskAttachmentAdmin`
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
 - [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
-- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
+- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
 - [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
 - [tasks/urls.py](../tasks/urls.py)
 - [tasks/views/__init__.py](../tasks/views/__init__.py)
 - [tasks/views/project_settings.py](../tasks/views/project_settings.py) — `project_field_settings`
 - [tasks/views/project_templates.py](../tasks/views/project_templates.py) — `project_templates`, `edit_project_template`
-- [tasks/views/tasks.py](../tasks/views/tasks.py) — `tasks`, `task_group`, `create_share_link`, `revoke_share_link`, `accept_share_link`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`
+- [tasks/views/tasks.py](../tasks/views/tasks.py) — `tasks`, `task_group`, `create_share_link`, `revoke_share_link`, `accept_share_link`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`, `comment_image`
 - [tasks/views.py](../tasks/views.py)
 
 ### kanban
@@ -996,10 +1019,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [kanban/admin.py](../kanban/admin.py) — `KanbanAttachmentInline`, `TaskAdmin`, `KanbanSectionInline`, `KanbanBoardColumnInline`, `KanbanProjectNoteInline`, `KanbanProjectAdmin`, `KanbanProjectNoteAdmin`, `KanbanSectionAdmin`, `KanbanBoardColumnAdmin`, `KanbanAttachmentAdmin`
 - [kanban/apps.py](../kanban/apps.py) — `KanbanConfig`
 - [kanban/forms.py](../kanban/forms.py) — `LenientModelChoiceField`, `TwoDigitNumberInput`, `board_column_status_choices`, `DynamicStatusFormMixin`, `MultipleFileInput`, `KanbanForm`, `KanbanProjectBaseForm`, `KanbanProjectForm`, `KanbanProjectRenameForm`, `KanbanSectionForm`, `KanbanSectionRenameForm`, `KanbanTagForm`, `KanbanBoardColumnForm`, `QuickKanbanForm`, `KanbanModalForm`, `SubKanbanModalForm`
-- [kanban/models.py](../kanban/models.py) — `KanbanProject`, `KanbanProjectNote`, `KanbanSection`, `KanbanBoardColumn`, `Kanban`, `KanbanAttachment`, `KanbanActivity`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
+- [kanban/models.py](../kanban/models.py) — `KanbanProject`, `KanbanProjectNote`, `KanbanSection`, `KanbanBoardColumn`, `Kanban`, `KanbanAttachment`, `KanbanActivity`, `KanbanCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [kanban/urls.py](../kanban/urls.py)
 - [kanban/views/__init__.py](../kanban/views/__init__.py)
-- [kanban/views/tasks.py](../kanban/views/tasks.py) — `tasks`, `task_group`, `reorder_board_columns`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`
+- [kanban/views/tasks.py](../kanban/views/tasks.py) — `tasks`, `task_group`, `reorder_board_columns`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`, `comment_image`
 
 ### contacts
 
@@ -1101,6 +1124,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### tasks
 
 - [tasks/templates/tasks/edit_task.html](../tasks/templates/tasks/edit_task.html)
+- [tasks/templates/tasks/includes/comment_composer.html](../tasks/templates/tasks/includes/comment_composer.html)
+- [tasks/templates/tasks/includes/comment_images.html](../tasks/templates/tasks/includes/comment_images.html)
 - [tasks/templates/tasks/includes/directory_actions_menu.html](../tasks/templates/tasks/includes/directory_actions_menu.html)
 - [tasks/templates/tasks/includes/directory_column_manager.html](../tasks/templates/tasks/includes/directory_column_manager.html)
 - [tasks/templates/tasks/includes/directory_filter_aggregate.html](../tasks/templates/tasks/includes/directory_filter_aggregate.html)
@@ -1254,6 +1279,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/auth.js](../static/js/auth.js)
 - [static/js/calendar.js](../static/js/calendar.js)
 - [static/js/collaboration.js](../static/js/collaboration.js)
+- [static/js/comment-images.js](../static/js/comment-images.js)
 - [static/js/custom-select.js](../static/js/custom-select.js)
 - [static/js/documents.js](../static/js/documents.js)
 - [static/js/dropdown-layer.js](../static/js/dropdown-layer.js)
@@ -1284,6 +1310,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ## 8. Testy
 
 Liczby dotyczą definicji metod, nie uruchomionych przypadków.
+
+### core/test_comment_images.py
+
+Źródło: [core/test_comment_images.py](../core/test_comment_images.py).
+
+- `CommentImageTests`: 16 metod testowych.
 
 ### core/test_file_lifecycle.py
 
@@ -1390,6 +1422,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [tasks/test_project_templates.py](../tasks/test_project_templates.py).
 
 - `ProjectTemplateTests`: 29 metod testowych.
+
+### tasks/test_status_pagination.py
+
+Źródło: [tasks/test_status_pagination.py](../tasks/test_status_pagination.py).
+
+- `TaskStatusPaginationTests`: 6 metod testowych.
 
 ### tasks/test_work_logs.py
 
@@ -1656,6 +1694,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0049_taskprojecttemplate_template_name.py](../tasks/migrations/0049_taskprojecttemplate_template_name.py)
 - [tasks/migrations/0050_task_work_log.py](../tasks/migrations/0050_task_work_log.py)
 - [tasks/migrations/0051_legacy_logged_seconds_default.py](../tasks/migrations/0051_legacy_logged_seconds_default.py)
+- [tasks/migrations/0052_comment_images.py](../tasks/migrations/0052_comment_images.py)
+- [tasks/migrations/0053_comment_attachment_size.py](../tasks/migrations/0053_comment_attachment_size.py)
 
 ### kanban
 
@@ -1694,6 +1734,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [kanban/migrations/0033_retire_entity_icons.py](../kanban/migrations/0033_retire_entity_icons.py)
 - [kanban/migrations/0034_kanban_unique_kanban_number_per_workspace.py](../kanban/migrations/0034_kanban_unique_kanban_number_per_workspace.py)
 - [kanban/migrations/0035_kanban_due_at.py](../kanban/migrations/0035_kanban_due_at.py)
+- [kanban/migrations/0036_comment_images.py](../kanban/migrations/0036_comment_images.py)
+- [kanban/migrations/0037_comment_attachment_size.py](../kanban/migrations/0037_comment_attachment_size.py)
 
 ### contacts
 

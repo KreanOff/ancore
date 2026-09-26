@@ -37,7 +37,7 @@ static/js/              wspólne i modułowe skrypty przeglądarki
 static/img/             logo i favicon
 static/vendor/flaticon/ lokalny podzbiór Flaticon UIcons i licencja
 media/                  pliki obsługiwane przez standardowy MEDIA_ROOT
-private_documents/      prywatne pliki Dysku i Dokumentów
+private_documents/      prywatne pliki Dysku, Dokumentów i komentarzy
 files/                  katalog lokalny; brak aktywnej aplikacji Django o tej nazwie
 docs/                   opisy projektu i generowany indeks kodu
 scripts/                narzędzia utrzymania dokumentacji
@@ -131,12 +131,12 @@ flowchart LR
 ```text
 Użytkownik → Workspace
   ├─ Zadania: TaskProject → TaskSection → Task → podzadanie
-  │                                      ├─ TaskActivity
+  │                                      ├─ TaskActivity → TaskCommentImage
   │                                      ├─ TaskAttachment
   │                                      └─ TaskWorkLog
   ├─ Kanban: KanbanProject → KanbanSection → KanbanBoardColumn
   │                                         └─ Kanban → podkarta
-  │                                              ├─ KanbanActivity
+  │                                              ├─ KanbanActivity → KanbanCommentImage
   │                                              └─ KanbanAttachment
   ├─ Kontakty: Company ← Contact ← UserContact → konto Ancore
   ├─ Kalendarz: CalendarEvent + terminy Task / Kanban (bez kopiowania rekordów)
@@ -151,6 +151,9 @@ wyłącznie dla zgodności ze starymi danymi; Dokumenty nie udostępniają już 
 Podobnie relacje `Document.tags` i `WorkspaceDocument.tags` przechowują jedynie
 historyczne powiązania. Dysk i Dokumenty nie udostępniają tagów, nie wyszukują
 po nich ani nie przypisują ich przy zapisie lub kopiowaniu.
+
+Modele `TaskCommentImage` i `KanbanCommentImage` zachowują historyczne nazwy,
+ale przechowują zarówno zdjęcia, jak i pozostałe pliki komentarzy.
 
 Diagram pokazuje główną organizację. Niektóre relacje są opcjonalne, np.
 zadanie może nie mieć sekcji, a karta kolumny. Reguły `CASCADE`, `SET_NULL`

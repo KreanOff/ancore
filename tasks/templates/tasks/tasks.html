@@ -628,7 +628,7 @@
                 {% elif active_view == 'tags' %}
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=tag_window items_exist=tags pages_label='Strony tagów' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' include_page_items=True only %}
                 {% else %}
-                {% include 'tasks/includes/directory_pagination_toolbar.html' with window=task_window items_exist=total_task_count pages_label='Strony zadań' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
+                {% include 'tasks/includes/directory_pagination_toolbar.html' with window=task_window items_exist=total_task_count pages_label='Strony zadań' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba zadań na stronie w każdym stanie' page_size_suffix='/ stan' only %}
                 {% endif %}
                 {% else %}
                 {% if active_section %}

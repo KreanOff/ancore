@@ -16,6 +16,7 @@ import secrets
 import string
 
 from core.task_numbering import lock_task_numbers, renumber_tasks
+from core.comment_images import CommentImage, delete_comment_image_file
 
 
 BASE36_ALPHABET = string.digits + string.ascii_uppercase
@@ -1005,6 +1006,13 @@ class TaskActivity(models.Model):
 
     def __str__(self):
         return f'{self.get_action_display()} - {self.task}'
+
+
+class TaskCommentImage(CommentImage):
+    activity = models.ForeignKey(TaskActivity, on_delete=models.CASCADE, related_name='images')
+
+
+post_delete.connect(delete_comment_image_file, sender=TaskCommentImage)
 
 
 @receiver(post_delete, sender=TaskAttachment)

@@ -6,6 +6,7 @@ from .views.project_templates import edit_project_template, project_templates
 app_name = 'tasks'
 
 urlpatterns = [
+    path('comment-images/<int:image_id>/', tasks.comment_image, name='comment_image'),
     path('follow/<str:kind>/<int:object_id>/', follow_object, {'app': 'tasks'}, name='follow_object'),
     path('', tasks.tasks, name='tasks'),
     path('templates/', project_templates, name='project_templates'),

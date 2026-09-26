@@ -82,7 +82,7 @@
                 if (active && focus) tab.focus();
             });
             page.querySelectorAll('[data-task-tab-panel]').forEach(item => { item.hidden = item.dataset.taskTabPanel !== name; });
-            page.querySelectorAll('[data-task-overview]').forEach(item => { item.hidden = name !== 'main' && name !== 'work-log'; });
+            page.querySelectorAll('[data-task-overview]').forEach(item => { item.hidden = name !== 'main'; });
             page.querySelectorAll('[data-task-log-action]').forEach(item => { item.hidden = name !== 'work-log'; });
             if (updateUrl) {
                 const url = new URL(window.location.href);
