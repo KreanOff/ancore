@@ -1,5 +1,5 @@
 {% if can_manage_team %}
-<div class="tasks-modal tasks-form-modal{% if invite_form.errors %} is-open{% endif %}" id="team-invite-modal" role="dialog" aria-modal="true" aria-labelledby="team-invite-title" aria-describedby="team-invite-description" aria-hidden="{% if invite_form.errors %}false{% else %}true{% endif %}" data-team-modal>
+<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact{% if invite_form.errors %} is-open{% endif %}" id="team-invite-modal" role="dialog" aria-modal="true" aria-labelledby="team-invite-title" aria-describedby="team-invite-description" aria-hidden="{% if invite_form.errors %}false{% else %}true{% endif %}" data-team-modal>
     <div class="tasks-modal__dialog"><form method="post" action="{% url 'workplaces:team' team_workplace.pk %}?view=invitations" class="tasks-modal__form" data-team-invite-form>
         {% csrf_token %}
         <header class="tasks-modal__header"><h2 id="team-invite-title">Zaproś osobę · {{ team_workplace.name }}</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
@@ -13,7 +13,7 @@
 </div>
 {% endif %}
 {% if is_team_owner %}
-<div class="tasks-modal tasks-form-modal" id="team-role-modal" role="dialog" aria-modal="true" aria-labelledby="team-role-title" aria-hidden="true" data-team-modal>
+<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact" id="team-role-modal" role="dialog" aria-modal="true" aria-labelledby="team-role-title" aria-hidden="true" data-team-modal>
     <div class="tasks-modal__dialog"><form method="post" class="tasks-modal__form" data-team-role-form>
         {% csrf_token %}<input type="hidden" name="action" value="role">
         <header class="tasks-modal__header"><h2 id="team-role-title">Zmień rolę</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>

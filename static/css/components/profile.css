@@ -211,17 +211,6 @@
     background: #ffffff;
 }
 
-.profile-crumb-icon svg {
-    width: 17px;
-    height: 17px;
-    display: block;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.9;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
 .profile-detail-form {
     width: min(100%, 980px);
 }
@@ -1189,6 +1178,10 @@
 }
 
 @media (max-width: 767px) {
+    .profile-page .tasks-issue-header {
+        padding-left: 3.5rem;
+    }
+
     .profile-name-fields {
         grid-template-columns: 1fr;
         gap: 0.2rem;

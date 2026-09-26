@@ -60,6 +60,7 @@ window.showConfirmModal = function (options) {
                 <i data-icon="${iconName}" aria-hidden="true"></i>
             </div>
             <h3 class="confirm-modal__title" id="${titleId}">${title}</h3>
+            <button type="button" class="confirm-modal__close" data-confirm-modal-close aria-label="Zamknij" title="Zamknij"></button>
         </header>
         <div class="confirm-modal__body">
             <div class="confirm-modal__content">
@@ -77,6 +78,7 @@ window.showConfirmModal = function (options) {
     window.AncoreIcons?.render(modal);
 
     const cancelButton = modal.querySelector('[data-confirm-modal-cancel]');
+    const closeButton = modal.querySelector('[data-confirm-modal-close]');
     const confirmButton = modal.querySelector('[data-confirm-modal-confirm]');
 
     requestAnimationFrame(() => {
@@ -102,6 +104,7 @@ window.showConfirmModal = function (options) {
     };
 
     cancelButton?.addEventListener('click', closeModal);
+    closeButton?.addEventListener('click', closeModal);
 
     confirmButton?.addEventListener('click', () => {
         if (closeModal()) onConfirm();
@@ -116,13 +119,13 @@ window.showConfirmModal = function (options) {
         } else if (e.key === 'Enter' && document.activeElement === confirmButton) {
             e.preventDefault();
             if (closeModal()) onConfirm();
-        } else if (e.key === 'Tab' && cancelButton && confirmButton) {
-            if (e.shiftKey && document.activeElement === cancelButton) {
+        } else if (e.key === 'Tab' && closeButton && confirmButton) {
+            if (e.shiftKey && document.activeElement === closeButton) {
                 e.preventDefault();
                 confirmButton.focus();
             } else if (!e.shiftKey && document.activeElement === confirmButton) {
                 e.preventDefault();
-                cancelButton.focus();
+                closeButton.focus();
             }
         }
     };

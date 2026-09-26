@@ -196,6 +196,8 @@
 }
 
 /* Every standard modal uses the close affordance from the reference dialog. */
+.contacts-photo-editor-overlay .contacts-photo-editor-close,
+.confirm-modal-overlay .confirm-modal__close,
 .tasks-modal .tasks-modal__close,
 .page-container.full-width .tasks-modal .tasks-modal__close,
 .tasks-modal .tasks-issue-close,
@@ -218,6 +220,8 @@
     cursor: pointer;
 }
 
+.contacts-photo-editor-overlay .contacts-photo-editor-close:is(:hover, :focus-visible),
+.confirm-modal-overlay .confirm-modal__close:is(:hover, :focus-visible),
 .tasks-modal .tasks-modal__close:hover,
 .tasks-modal .tasks-modal__close:focus-visible,
 .page-container.full-width .tasks-modal .tasks-modal__close:hover,
@@ -238,6 +242,7 @@
     display: none;
 }
 
+.confirm-modal-overlay .confirm-modal__close::before,
 .tasks-modal .tasks-modal__close::before,
 .page-container.full-width .tasks-modal .tasks-modal__close::before,
 .tasks-modal .tasks-issue-close::before,
@@ -759,6 +764,13 @@
     margin: 0;
 }
 
+.confirm-modal-overlay .confirm-modal,
+.contacts-photo-editor-overlay .contacts-photo-editor-dialog {
+    max-width: 100%;
+    background: var(--app-panel-surface);
+    border-radius: calc(var(--app-modal-radius) * 2);
+}
+
 .confirm-modal__header {
     display: flex;
     align-items: center;
@@ -911,12 +923,17 @@
     }
 }
 
-/* Spacious content panel. Explicit opt-in keeps confirmations,
-   image croppers and document previews on their existing compact shells. */
-.app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
-.page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
+/* Large panels and compact dialogs share the same surfaces and spacing. */
+.app-modal-panel,
+.confirm-modal-overlay,
+.contacts-photo-editor-overlay {
     --app-panel-gutter: 24px;
     --app-panel-surface: var(--secondary-menu-bg);
+}
+
+/* Large forms explicitly opt into the screen-height panel layout. */
+.app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
+.page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
     --app-panel-motion-duration: 320ms;
     --app-panel-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -962,7 +979,9 @@
 .tasks-modal.app-modal-panel .tasks-modal__header,
 .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__header,
 .profile-edit-overlay.app-modal-panel .profile-edit-header,
-.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header {
+.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header,
+.confirm-modal-overlay .confirm-modal .confirm-modal__header,
+.contacts-photo-editor-overlay .contacts-photo-editor-header {
     height: 72px;
     min-height: 72px;
     padding: 12px var(--app-panel-gutter);
@@ -977,7 +996,9 @@
 .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__header h2,
 .page-container.full-width .tasks-modal.app-modal-panel .tasks-issue-modal__crumbs > strong,
 .profile-edit-overlay.app-modal-panel .profile-edit-header h2,
-.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header h2 {
+.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header h2,
+.confirm-modal-overlay .confirm-modal .confirm-modal__title,
+.contacts-photo-editor-overlay .contacts-photo-editor-header strong {
     max-width: 100%;
     min-width: 0;
     font-size: 20px;
@@ -988,7 +1009,9 @@
 .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__body,
 .tasks-modal.app-modal-panel :is(#issue-create-form, #tag-create-form) > .tasks-modal__body,
 .profile-edit-overlay.app-modal-panel .profile-edit-body,
-.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-body {
+.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-body,
+.confirm-modal-overlay .confirm-modal .confirm-modal__body,
+.contacts-photo-editor-overlay .contacts-photo-editor-cropper {
     flex: 1;
     min-height: 0;
     min-width: 0;
@@ -1009,12 +1032,54 @@
 .tasks-modal.app-modal-panel #issue-create-form > .tasks-modal__footer,
 .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__footer,
 .profile-edit-overlay.app-modal-panel .profile-edit-footer,
-.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-footer {
+.page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-footer,
+.confirm-modal-overlay .confirm-modal .confirm-modal__footer,
+.contacts-photo-editor-overlay .contacts-photo-editor-footer {
     height: auto;
     min-height: 68px;
     justify-content: flex-start;
     padding: 12px var(--app-panel-gutter) max(12px, env(safe-area-inset-bottom));
     background: var(--card-bg);
+}
+
+.confirm-modal-overlay .confirm-modal .confirm-modal__header,
+.contacts-photo-editor-overlay .contacts-photo-editor-header {
+    height: auto;
+}
+
+.confirm-modal-overlay .confirm-modal .confirm-modal__title {
+    margin: 0;
+}
+
+.confirm-modal-overlay .confirm-modal .confirm-modal__icon {
+    display: none;
+}
+
+.confirm-modal-overlay .confirm-modal .confirm-modal__body {
+    display: block;
+}
+
+.confirm-modal-overlay .confirm-modal .confirm-modal__footer {
+    flex-wrap: wrap;
+}
+
+.confirm-modal-overlay .confirm-modal .confirm-modal__footer :is(.btn, .btn-cancel) {
+    flex: 0 1 auto;
+    max-width: 100%;
+    height: auto;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding-block: 8px;
+}
+
+.contacts-photo-editor-overlay .contacts-photo-editor-cropper {
+    width: auto;
+}
+
+.contacts-photo-editor-overlay .contacts-photo-editor-stage .profile-photo-crop-canvas {
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 1;
 }
 
 /* Notes scroll with the composer inside the panel's shared content surface. */
@@ -1081,6 +1146,11 @@
 }
 
 @media (max-width: 900px) {
+    .confirm-modal-overlay,
+    .contacts-photo-editor-overlay {
+        --app-panel-gutter: 18px;
+    }
+
     .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
     .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
         --app-panel-gutter: 18px;
@@ -1089,6 +1159,11 @@
 }
 
 @media (max-width: 600px) {
+    .confirm-modal-overlay,
+    .contacts-photo-editor-overlay {
+        --app-panel-gutter: 12px;
+    }
+
     .tasks-modal.app-modal-panel .contacts-modal-fields {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -1111,7 +1186,9 @@
     .tasks-modal.app-modal-panel .tasks-modal__header,
     .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__header,
     .profile-edit-overlay.app-modal-panel .profile-edit-header,
-    .page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header {
+    .page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-header,
+    .confirm-modal-overlay .confirm-modal .confirm-modal__header,
+    .contacts-photo-editor-overlay .contacts-photo-editor-header {
         height: auto;
         min-height: 60px;
         padding-top: max(12px, env(safe-area-inset-top));
@@ -1121,14 +1198,18 @@
     .tasks-modal.app-modal-panel .tasks-issue-modal__crumbs > strong,
     .tasks-modal.app-modal-panel #issue-modal-title,
     .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__header h2,
-    .page-container.full-width .tasks-modal.app-modal-panel .tasks-issue-modal__crumbs > strong {
+    .page-container.full-width .tasks-modal.app-modal-panel .tasks-issue-modal__crumbs > strong,
+    .confirm-modal-overlay .confirm-modal .confirm-modal__title,
+    .contacts-photo-editor-overlay .contacts-photo-editor-header strong {
         font-size: 18px;
     }
 
     .tasks-modal.app-modal-panel .tasks-modal__footer,
     .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__footer,
     .profile-edit-overlay.app-modal-panel .profile-edit-footer,
-    .page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-footer {
+    .page-container.full-width .profile-edit-overlay.app-modal-panel .profile-edit-footer,
+    .confirm-modal-overlay .confirm-modal .confirm-modal__footer,
+    .contacts-photo-editor-overlay .contacts-photo-editor-footer {
         flex-wrap: wrap;
         min-height: 60px;
     }
@@ -1190,6 +1271,50 @@
         animation: none;
         transition: none;
     }
+}
+
+/* Small forms share the panel's surfaces and bars in a centered, fitted window. */
+.tasks-modal.app-modal-panel.app-modal-panel--compact,
+.page-container.full-width .tasks-modal.app-modal-panel.app-modal-panel--compact {
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.tasks-modal.app-modal-panel.app-modal-panel--compact > .tasks-modal__dialog,
+.page-container.full-width .tasks-modal.app-modal-panel.app-modal-panel--compact > .tasks-modal__dialog {
+    width: var(--tasks-modal-shell-width);
+    max-width: 100%;
+    height: auto;
+    max-height: var(--tasks-modal-max-height);
+    border: 1px solid var(--app-modal-border);
+    border-radius: calc(var(--app-modal-radius) * 2);
+}
+
+.tasks-modal.app-modal-panel.app-modal-panel--compact .tasks-modal__form,
+.page-container.full-width .tasks-modal.app-modal-panel.app-modal-panel--compact .tasks-modal__form {
+    flex: 0 1 auto;
+    height: auto;
+    max-height: var(--tasks-modal-max-height);
+}
+
+.tasks-modal.app-modal-panel--compact .tasks-modal__header,
+.page-container.full-width .tasks-modal.app-modal-panel--compact .tasks-modal__header {
+    height: auto;
+}
+
+.tasks-modal.app-modal-panel--compact .tasks-modal__header h2,
+.page-container.full-width .tasks-modal.app-modal-panel--compact .tasks-modal__header h2 {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.tasks-modal.app-modal-panel--compact .tasks-modal__body > .tasks-form-field {
+    display: flex;
+}
+
+.tasks-modal.app-modal-panel--compact .tasks-modal__body > .tasks-form-field > label {
+    padding-top: 0;
 }
 
 /* The routed template editor shares the form panel shell. */

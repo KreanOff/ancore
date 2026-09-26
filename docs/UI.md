@@ -116,6 +116,10 @@ Powtórna inicjalizacja po nawigacji nie powiela obsługi przycisku.
 Przełącznik Workspace w nagłówku pokazuje avatar i nazwę bez strzałki.
 Kliknięcie avatara lub nazwy nadal otwiera menu wyboru Workspace.
 
+Nagłówek strony profilu pokazuje tekst „Profil użytkownika” bez poprzedzającej
+go ikony. Avatar użytkownika pozostaje w treści profilu. Do 767px nagłówek
+zachowuje 3.5rem odstępu po lewej na przycisk nawigacji, jak paski katalogów.
+
 Aktywna ikona w przełączniku domu, powiadomień i wyszukiwania używa
 `color-mix(in srgb, var(--system-accent) 15%, #ffffff)`, także przy zwiniętym
 sidebarze.
@@ -888,10 +892,26 @@ Notatki zachowują formularz i listę wpisów; cała biała treść przewija si�
 bez osobnego przewijania listy. Okna mają stałą stopkę „Zamknij” oraz
 dotychczasowe zamykanie krzyżykiem i Escape, fokus i obsługę zapisu.
 
-Potwierdzenia, okna zespołu, kadrowanie zdjęć i podglądy plików zachowują
-swoje dotychczasowe powłoki.
-Poniższe tokeny opisują bazowy, kompaktowy wariant; nie wyznaczają wysokości
-i szerokości formularza z `app-modal-panel`.
+Małe okna formularzy używają `app-modal-panel app-modal-panel--compact`,
+jak „Zaproś osobę”, „Zmień rolę” oraz „Zaproszenie do Workspace”. Okno zaproszenia
+zachowuje wyśrodkowaną szerokość do 760px i wysokość dopasowaną do formularza,
+a powierzchnie, nagłówek i stopkę dziedziczy po panelu „Edytuj miejsce pracy”.
+Ma jasnoszare tło, białą przewijaną treść i akcje po lewej. Pola pozostają
+w jednej kolumnie z etykietami nad kontrolkami; długi tytuł zawija się.
+Na telefonie zachowuje margines od krawędzi, a stopka może zawijać akcje.
+Potwierdzenia `showConfirmModal` i edytory zdjęć konta, firmy oraz logo Workspace
+korzystają z tych samych reguł powierzchni, nagłówka, białej treści i stopki
+w `modal-system.css`, zachowując własne szerokości i mechanizmy otwierania.
+Nagłówki mają minimum 72px i tekst 20px/400; stopki minimum 68px oraz akcje
+po lewej. Do 600px jest to odpowiednio 60px, 18px i 60px, z odstępami 12px.
+Długie komunikaty przewijają się w treści, a przyciski potwierdzeń mogą się
+zawijać. Potwierdzenia mają krzyżyk zamykania bez wykonania operacji;
+Tab obejmuje krzyżyk i oba przyciski, a Escape i powrót fokusu działają jak wcześniej.
+Kadrowanie zachowuje płótno, powiększenie i zapis; przewijana sekcja mieści się
+między stałym nagłówkiem i stopką. Nowe małe okna powinny korzystać z tego wzorca.
+Podglądy plików zachowują swoją geometrię.
+Poniższe tokeny opisują bazową powłokę i podglądy; nie wyznaczają wysokości
+i szerokości paneli ani ujednoliconych małych okien.
 
 | Token powłoki | Wartość bazowa |
 | --- | --- |
@@ -907,13 +927,13 @@ i szerokości formularza z `app-modal-panel`.
 | `--app-modal-control-height` | `var(--dropdown-control-height)` — 36px |
 | `--app-modal-field-gap` | `16px` |
 
-Nagłówki i stopki kompaktowych okien aplikacji mają po 50px wysokości CSS,
-również na telefonie. Wariant panelu formularza ma wymiary opisane powyżej.
+Nagłówki i stopki bazowej powłoki mają po 50px wysokości CSS,
+również na telefonie. Panele i ujednolicone małe okna mają wymiary opisane powyżej.
 Paski nie kurczą się przy przewijaniu treści.
 Na ekranach do 600px stopka może zwiększyć wysokość i zawinąć akcje,
 aby ich etykiety pozostały dostępne. Podgląd plików zachowuje pojedynczy rząd.
 
-Kompaktowy nagłówek używa tekstu 15px/400 oraz wspólnego przycisku zamknięcia 34px
+Bazowy nagłówek używa tekstu 15px/400 oraz wspólnego przycisku zamknięcia 34px
 po prawej. Nie dodaje dekoracyjnej ikony walizki; istniejące przełączniki
 typu kontaktu zachowują działanie. Pola tekstowe, daty i listy wyboru mają
 tekst 13px, wysokość 36px, ramkę `--border-color` i radius
@@ -1230,7 +1250,8 @@ zamykanie przy przewijaniu oraz inicjalizację po `ancore:content-loaded`.
 W Zespole menu zawiera zmianę roli, odebranie dostępu lub anulowanie zaproszenia,
 zależnie od uprawnień. Właściciel nie ma akcji zmiany swojej roli ani usunięcia.
 
-Zaproszenie i zmiana roli używają wspólnej powłoki `tasks-modal`, pól
+Zaproszenie, odpowiedź na zaproszenie i zmiana roli używają wspólnej powłoki
+`tasks-modal app-modal-panel app-modal-panel--compact`, pól
 `tasks-form-field` i stopki z `tasks-modal__submit`. `workplace-team.js` zarządza
 otwarciem, `inert` tła, fokusem i blokadą ponownego wysłania; `tasks.js` obsługuje
 zamykanie i pułapkę fokusu, a listy wyboru korzystają z `AncoreCustomSelect`

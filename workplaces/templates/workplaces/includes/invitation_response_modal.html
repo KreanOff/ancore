@@ -1,4 +1,4 @@
-<div class="tasks-modal tasks-form-modal{% if invitation_modal_open %} is-open{% endif %}" id="workspace-invitation-modal" role="dialog" aria-modal="true" aria-labelledby="workspace-invitation-title" aria-describedby="workspace-invitation-description" aria-hidden="{{ invitation_modal_open|yesno:'false,true' }}" data-team-modal data-invitation-response-modal>
+<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact{% if invitation_modal_open %} is-open{% endif %}" id="workspace-invitation-modal" role="dialog" aria-modal="true" aria-labelledby="workspace-invitation-title" aria-describedby="workspace-invitation-description" aria-hidden="{{ invitation_modal_open|yesno:'false,true' }}" data-team-modal data-invitation-response-modal>
     <div class="tasks-modal__dialog">
         <form method="post" action="{% url 'workplaces:invitation-response' response_invitation.pk %}" class="tasks-modal__form" data-team-response-form>
             {% csrf_token %}

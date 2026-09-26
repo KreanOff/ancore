@@ -2442,8 +2442,6 @@ body.modal-open::before {
 
 .confirm-modal--destructive .confirm-modal__message,
 .confirm-modal-overlay--tasks .confirm-modal--destructive .confirm-modal__message {
-    --app-text-color: rgba(64, 68, 76, 0.78);
-    color: rgba(64, 68, 76, 0.78) !important;
     font-size: var(--font-size-sm);
     line-height: 1.5;
 }
