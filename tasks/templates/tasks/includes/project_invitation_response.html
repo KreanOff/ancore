@@ -1,0 +1,19 @@
+<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact is-open" id="project-invitation-response-modal" role="dialog" aria-modal="true" aria-labelledby="project-invitation-title" aria-hidden="false" data-project-response-modal>
+    <div class="tasks-modal__dialog">
+        <form method="post" action="{{ project_response_url }}" class="tasks-modal__form">
+            {% csrf_token %}
+            <header class="tasks-modal__header"><h2 id="project-invitation-title">Zaproszenie do projektu</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
+            <div class="tasks-modal__body">
+                <dl class="workplace-invitation__details">
+                    <dt>Projekt</dt><dd>{{ project_response_invitation.project.name }}</dd>
+                    <dt>Workspace</dt><dd>{{ project_response_invitation.project.workplace.name }}</dd>
+                    <dt>Zaprasza</dt><dd>{{ project_response_invitation.invited_by.get_full_name|default:project_response_invitation.invited_by.username|default:'System' }}</dd>
+                    <dt>Twoja rola</dt><dd>{{ project_response_invitation.get_role_display }}</dd>
+                    <dt>Ważne do</dt><dd>{{ project_response_invitation.expires_at|date:'d.m.Y' }}</dd>
+                </dl>
+                <p class="workplace-team__hint">Po przyjęciu uzyskasz dostęp do tego projektu, jego grup, zadań i plików.</p>
+            </div>
+            <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Później</button><button type="submit" class="btn btn-secondary" name="action" value="decline">Odrzuć</button><button type="submit" class="tasks-modal__submit" name="action" value="accept">Przyjmij</button></footer>
+        </form>
+    </div>
+</div>

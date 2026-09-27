@@ -33,7 +33,9 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   `tasks.TaskTag`, część szablonów oraz `static/js/tasks.js`.
 - Dane biznesowe ograniczaj do właściciela Workspace wyznaczonego przez
   `workplaces.services.workspace_owner(request)` i aktywnego `request.workplace`.
-  Członkostwo daje dostęp do całego Workspace; formularze także ograniczają relacje.
+  Członkostwo daje dostęp do wspólnych danych Workspace; prywatne projekty Zadań
+  i ich zawartość filtruj przez `tasks.access.visible_to(queryset, request.user)`.
+  Formularze także ograniczają relacje.
   `request.user` pozostaje faktycznym autorem operacji, komentarzy i historii.
   Samo przypisanie wykonawcy nie daje dostępu. Zasady ról: `docs/TEAMWORK.md`.
 - Korzystaj z mechanizmów `workplaces.services` do ustalania Workspace
@@ -45,8 +47,11 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   Bezpośrednie `QuerySet.update()` omija `save()` i sygnały modelu.
 - Zachowaj walidację plików w `core/upload_validation.py`, kontrolowane
   pobieranie i prywatny storage Dokumentów.
-- Funkcje udostępniania mają pozostałości w kodzie, ale są obecnie wyłączone
-  w aktywnych ścieżkach. Nie przywracaj ich przy okazji innego zadania.
+- Projekty Zadań udostępniają dostęp wybranym członkom Workspace przez
+  `TaskProject.shared_with` przez `TaskProjectMembership`, po przyjęciu zaproszenia.
+  Właściciel zarządza widocznością i rolami, administrator projektu zwykłymi
+  członkami; role projektu są niezależne od ról Workspace.
+  Historyczne `SharedItem` i linki są nadal wyłączone. Nie przywracaj ich przy okazji innego zadania.
 - Nie traktuj `reminder_at`, `automation_rules`, `wip_limit` lub `is_done`
   jako dowodu istnienia automatyzacji. Sprawdź ich faktycznych odbiorców.
 

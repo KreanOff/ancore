@@ -68,6 +68,7 @@ def workspace_owner(request):
 
     Existing owner + Workspace constraints and numbering stay intact. Joining a
     Workspace grants access to its owner's data in that Workspace only.
+    Project privacy is an additional filter based on request.user.
     """
     workplace = getattr(request, 'workplace', None)
     if workplace is None:

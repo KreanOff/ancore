@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
+from tasks.access import editable_to
 from workplaces.services import workspace_owner
 
 from ..forms import TaskProjectDeadlineRuleForm, TaskProjectFieldOptionForm
@@ -21,7 +22,7 @@ def _save_deadline_settings(request, workplace, project_id, default_rules):
         project = None
         if project_id:
             project = get_object_or_404(
-                TaskProject.objects.select_for_update().filter(user=workspace_owner(request), workplace=workplace),
+                editable_to(TaskProject.objects.all(), request.user).select_for_update().filter(user=workspace_owner(request), workplace=workplace),
                 pk=project_id,
             )
         scoped_rules = TaskProjectDeadlineRule.for_scope(workspace_owner(request), workplace, project)
@@ -77,8 +78,8 @@ def _save_deadline_settings(request, workplace, project_id, default_rules):
 @require_http_methods(['GET', 'POST'])
 def project_field_settings(request):
     workplace = _active_workplace(request)
-    configuration = _project_field_configuration(workspace_owner(request), workplace)
-    projects = TaskProject.objects.filter(user=workspace_owner(request), workplace=workplace).order_by('name', 'id')
+    configuration = _project_field_configuration(workspace_owner(request), workplace, viewer=request.user)
+    projects = editable_to(TaskProject.objects.all(), request.user).filter(user=workspace_owner(request), workplace=workplace).order_by('name', 'id')
     project_id = (request.POST if request.method == 'POST' else request.GET).get('project_id')
     if project_id:
         try:

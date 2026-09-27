@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_http_methods
 
+from tasks.access import visible_to
 from workplaces.services import scoped_workplace_app_path, workspace_owner
 from ..forms import TaskProjectTemplateNameForm
 from ..models import Task, TaskProjectTemplate, TaskSection
@@ -37,7 +38,7 @@ def _template_text(field):
 @require_http_methods(['GET', 'POST'])
 def project_templates(request):
     workplace = request.workplace
-    templates = TaskProjectTemplate.objects.filter(user=workspace_owner(request), workplace=workplace)
+    templates = visible_to(TaskProjectTemplate.objects.all(), request.user).filter(user=workspace_owner(request), workplace=workplace)
     base_url = scoped_workplace_app_path(workplace, 'tasks')
     rename_form = TaskProjectTemplateNameForm()
     rename_template_id = None
@@ -68,7 +69,7 @@ def project_templates(request):
 
 
 def _directory_context(request):
-    templates = TaskProjectTemplate.objects.filter(user=workspace_owner(request), workplace=request.workplace)
+    templates = visible_to(TaskProjectTemplate.objects.all(), request.user).filter(user=workspace_owner(request), workplace=request.workplace)
     base_url = scoped_workplace_app_path(request.workplace, 'tasks')
     query = request.GET.get('q', '').strip()[:200]
     description_filter = request.GET.get('description_filter', '')
@@ -134,7 +135,7 @@ def _directory_context(request):
 @require_http_methods(['GET', 'POST'])
 @transaction.atomic
 def edit_project_template(request, template_id):
-    templates = TaskProjectTemplate.objects.filter(user=workspace_owner(request), workplace=request.workplace)
+    templates = visible_to(TaskProjectTemplate.objects.all(), request.user).filter(user=workspace_owner(request), workplace=request.workplace)
     if request.method == 'POST':
         templates = templates.select_for_update()
     template = get_object_or_404(templates, pk=template_id)

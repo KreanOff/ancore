@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.views.decorators.http import require_GET, require_POST
 
+from tasks.access import visible_to
 from workplaces.services import workspace_owner
 
 from accounts.avatar import account_avatar
@@ -162,8 +163,8 @@ def global_search(request):
         task_filter |= Q(task_id=numeric_query)
         kanban_card_filter |= Q(task_id=numeric_query)
 
-    task_queryset = Task.objects.filter(user=user).filter(task_filter)
-    project_queryset = TaskProject.objects.filter(user=user).filter(
+    task_queryset = visible_to(Task.objects.all(), request.user).filter(user=user).filter(task_filter)
+    project_queryset = visible_to(TaskProject.objects.all(), request.user).filter(user=user).filter(
         Q(name__icontains=query)
         | Q(description__icontains=query)
         | Q(code__icontains=query)
@@ -175,7 +176,7 @@ def global_search(request):
         | Q(responsible_user__email__icontains=query)
         | Q(project_notes__message__icontains=query)
     )
-    section_queryset = TaskSection.objects.filter(project__user=user).filter(
+    section_queryset = visible_to(TaskSection.objects.all(), request.user).filter(project__user=user).filter(
         Q(title__icontains=query)
         | Q(description__icontains=query)
         | Q(code__icontains=query)
@@ -510,7 +511,7 @@ def home(request):
     if workplace is None:
         return redirect('workplaces:workplaces')
     response = render(request, 'dashboard/home.html', dashboard_overview(
-        workspace_owner(request), workplace, request.GET.get('focus'),
+        workspace_owner(request), workplace, request.GET.get('focus'), viewer=request.user,
     ))
     response['Cache-Control'] = 'no-store'
     return response

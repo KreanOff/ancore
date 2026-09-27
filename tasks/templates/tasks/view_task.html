@@ -145,7 +145,7 @@
                                     </h2>
                                 </div>
 
-                                {% include 'tasks/includes/comment_composer.html' %}
+                                {% if can_edit_task %}{% include 'tasks/includes/comment_composer.html' %}{% endif %}
 
                                 <div class="tasks-issue-feed" data-activity-feed="comment" tabindex="0" aria-label="Czat zadania">
                                     {% for item in comment_items %}
@@ -449,6 +449,7 @@
 
 {% if can_edit_task %}{% include 'tasks/includes/work_log_modal.html' %}{% endif %}
 
+{% if can_edit_task %}
 <div class="tasks-modal app-modal-panel tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form">
@@ -522,6 +523,8 @@
         </form>
     </div>
 </div>
+
+{% endif %}
 
 {% include 'tasks/includes/project_info_modal.html' %}
 

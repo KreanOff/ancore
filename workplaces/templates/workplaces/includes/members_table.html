@@ -22,8 +22,13 @@
                         <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="team-member-menu-{{ member.pk }}" aria-controls="team-member-menu-{{ member.pk }}" aria-haspopup="menu" aria-expanded="false" aria-label="Działania: {{ member.user.get_full_name|default:member.user.username }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
                         <div id="team-member-menu-{{ member.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="menu" data-row-actions-panel>
                             <div class="documents-menu-actions">
+                                {% if project_team %}
+                                {% if is_team_owner %}<button type="button" class="tasks-project-menu-button" role="menuitem" data-project-role-member="{{ member.pk }}" data-project-role="{{ member.role }}" data-project-person="{{ member.user.get_full_name|default:member.user.username }}" aria-haspopup="dialog"><i data-icon="pencil" aria-hidden="true"></i><span>Zmień rolę</span></button>{% endif %}
+                                <button data-project-team-action="remove" data-member-id="{{ member.pk }}" class="tasks-project-menu-button" type="button" role="menuitem"><i data-icon="log-out" aria-hidden="true"></i><span>Odbierz dostęp</span></button>
+                                {% else %}
                                 {% if is_team_owner %}<button type="button" class="tasks-project-menu-button" role="menuitem" data-team-modal-open="team-role-modal" data-team-role-url="{% url 'workplaces:member-update' team_workplace.pk member.pk %}" data-team-role="{{ member.role }}" data-team-person="{{ member.user.get_full_name|default:member.user.username }}" aria-haspopup="dialog"><i data-icon="pencil" aria-hidden="true"></i><span>Zmień rolę</span></button>{% endif %}
                                 <form method="post" action="{% url 'workplaces:member-update' team_workplace.pk member.pk %}" data-team-remove>{% csrf_token %}<input type="hidden" name="action" value="remove"><button class="tasks-project-menu-button" type="submit" role="menuitem"><i data-icon="log-out" aria-hidden="true"></i><span>Odbierz dostęp</span></button></form>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

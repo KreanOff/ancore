@@ -108,8 +108,10 @@ def save_comment(request, task, image_model, record_activity):
 
 
 def comment_image_response(request, image_model, image_id):
+    from tasks.access import visible_to
+
     image = get_object_or_404(
-        image_model.objects.select_related('activity__task').filter(
+        visible_to(image_model.objects.all(), request.user).select_related('activity__task').filter(
             activity__kind='comment', activity__task__user=workspace_owner(request),
             activity__task__workplace=request.workplace,
         ), pk=image_id,

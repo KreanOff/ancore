@@ -20,10 +20,10 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 17 | 0 | 9 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
-| [tasks](../tasks) | 22 | 53 | 35 | 230 |
+| [tasks](../tasks) | 30 | 57 | 41 | 284 |
 | [kanban](../kanban) | 10 | 37 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 17 | 4 | 7 | 91 |
+| [dashboard](../dashboard) | 17 | 5 | 7 | 91 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 
@@ -102,10 +102,12 @@ Metody/properties: `__str__`.
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `next_section_code_number` (PositiveIntegerField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `use_custom_deadline_rules` (BooleanField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `name` (CharField), `description` (TextField), `code` (CharField), `next_section_code_number` (PositiveIntegerField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `use_custom_deadline_rules` (BooleanField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
+| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_task_projects'; null=True |
+| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_task_projects'; through='TaskProjectMembership' |
 | `company` | `'contacts.Company'` | on_delete=models.SET_NULL; related_name='task_projects'; null=True |
 | `responsible_user` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='responsible_task_projects'; null=True |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='task_projects' |
@@ -113,14 +115,38 @@ Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` 
 
 Metody/properties: `_code_scope_models`, `_code_exists`, `_generate_unique_code`, `save`, `__str__`, `_field_option_display`, `get_status_display`, `get_stage_display`, `get_health_display`.
 
+### `TaskProjectMembership`
+
+Źródło: [tasks/models.py](../tasks/models.py).
+
+Pola zadeklarowane tutaj: `project` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `project` | `TaskProject` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+
+### `TaskProjectInvitation`
+
+Źródło: [tasks/models.py](../tasks/models.py).
+
+Pola zadeklarowane tutaj: `project` (ForeignKey), `recipient` (ForeignKey), `invited_by` (ForeignKey), `role` (CharField), `status` (CharField), `created_at` (DateTimeField), `expires_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `project` | `TaskProject` | on_delete=models.CASCADE; related_name='invitations' |
+| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='project_invitations' |
+| `invited_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='sent_project_invitations'; null=True |
+
 ### `TaskProjectTemplate`
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `user` (ForeignKey), `workplace` (ForeignKey), `name` (CharField), `template_name` (CharField), `description` (TextField), `structure` (JSONField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `name` (CharField), `template_name` (CharField), `description` (TextField), `structure` (JSONField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
+| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_task_project_templates'; null=True |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; null=True |
 
@@ -533,7 +559,7 @@ Pola zadeklarowane tutaj: `task` (ForeignKey), `recipient` (ForeignKey), `schedu
 
 Źródło: [dashboard/models.py](../dashboard/models.py).
 
-Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `reminder` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField), `is_deleted` (BooleanField).
+Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `project_invitation` (ForeignKey), `reminder` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField), `is_deleted` (BooleanField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -541,6 +567,7 @@ Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `ka
 | `task_activity` | `'tasks.TaskActivity'` | on_delete=models.CASCADE; null=True |
 | `kanban_activity` | `'kanban.KanbanActivity'` | on_delete=models.CASCADE; null=True |
 | `invitation` | `'workplaces.WorkplaceInvitation'` | on_delete=models.CASCADE; null=True |
+| `project_invitation` | `'tasks.TaskProjectInvitation'` | on_delete=models.CASCADE; null=True |
 | `reminder` | `TaskReminder` | on_delete=models.CASCADE; null=True |
 
 ## Modele: planner
@@ -695,12 +722,13 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `MultipleFileInput`
 - `TaskForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
 - `TaskWorkLogForm` — Meta.fields: `['started_at', 'ended_at', 'description']`
+- `ProjectVisibilitySelect`
 - `TaskProjectBaseForm`
 - `TaskProjectDeadlineRuleForm` — Meta.fields: `['days', 'color']`
 - `TaskProjectFieldOptionForm` — Meta.fields: `['label', 'color']`
 - `TaskProjectTemplateNameForm` — Meta.fields: `('template_name',)`
-- `TaskProjectForm` — Meta.fields: `['name', 'template', 'code', 'section_title', 'section_code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
-- `TaskProjectRenameForm` — Meta.fields: `['name', 'code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
+- `TaskProjectForm` — Meta.fields: `['name', 'visibility', 'template', 'code', 'section_title', 'section_code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
+- `TaskProjectRenameForm` — Meta.fields: `['name', 'visibility', 'code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
 - `TaskSectionForm` — Meta.fields: `['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']`
 - `TaskSectionRenameForm` — Meta.fields: `['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']`
 - `TaskTagForm` — Meta.fields: `['name', 'description', 'category', 'color', 'icon', 'priority', 'scope', 'owner_label', 'status', 'usage_notes', 'automation_rules', 'related_tags']`
@@ -827,6 +855,9 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'projects/<int:project_id>/team/'` | `project_team` | 'project_team' |
+| `'projects/<int:project_id>/team/candidates/'` | `project_candidates` | 'project_candidates' |
+| `'project-invitations/<int:invitation_id>/respond/'` | `project_invitation_response` | 'project_invitation_response' |
 | `'comment-images/<int:image_id>/'` | `tasks.comment_image` | 'comment_image' |
 | `'follow/<str:kind>/<int:object_id>/'` | `follow_object` | 'follow_object' |
 | `''` | `tasks.tasks` | 'tasks' |
@@ -991,7 +1022,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [workplaces/models.py](../workplaces/models.py) — `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `SidebarFavorite`, `create_workplace_for_user`
 - [workplaces/navigation.py](../workplaces/navigation.py) — `sidebar_favorite_catalog`, `sidebar_favorite_is_active`, `sidebar_favorites_for_request`
 - [workplaces/services.py](../workplaces/services.py) — `workplace_management_url`, `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `backfill_legacy_records_for_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
-- [workplaces/team_views.py](../workplaces/team_views.py) — `InvitationForm`, `invitation_candidates`, `team`, `team_context`, `invitation_response`, `member_update`, `invitation_cancel`
+- [workplaces/team_views.py](../workplaces/team_views.py) — `TeamRoleSelect`, `InvitationForm`, `invitation_candidates`, `team`, `team_context`, `invitation_response`, `member_update`, `invitation_cancel`
 - [workplaces/templatetags/__init__.py](../workplaces/templatetags/__init__.py)
 - [workplaces/templatetags/sidebar_favorites.py](../workplaces/templatetags/sidebar_favorites.py) — `sidebar_favorite_toggle`
 - [workplaces/templatetags/workplace_avatar.py](../workplaces/templatetags/workplace_avatar.py) — `workplace_avatar_seed`, `workplace_avatar`
@@ -1001,15 +1032,19 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### tasks
 
 - [tasks/__init__.py](../tasks/__init__.py)
+- [tasks/access.py](../tasks/access.py) — `task_tree_ids`, `require_deletable_tasks`, `editable_to`, `require_editable`, `visible_to`
 - [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskProjectFieldOptionAdmin`, `TaskSectionAdmin`, `TaskTagAdmin`, `TaskAttachmentAdmin`
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
-- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
-- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
+- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskWorkLogForm`, `ProjectVisibilitySelect`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
+- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectMembership`, `TaskProjectInvitation`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
 - [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
+- [tasks/sharing.py](../tasks/sharing.py) — `share_candidates`, `project_role`, `pending_project_invitations`, `project_access_data`
+- [tasks/sharing_signals.py](../tasks/sharing_signals.py) — `revoke_project_shares`, `membership_deleted`, `membership_disabled`
 - [tasks/urls.py](../tasks/urls.py)
 - [tasks/views/__init__.py](../tasks/views/__init__.py)
 - [tasks/views/project_settings.py](../tasks/views/project_settings.py) — `project_field_settings`
+- [tasks/views/project_team.py](../tasks/views/project_team.py) — `ProjectInvitationForm`, `team_payload`, `project_team`, `project_candidates`, `project_invitation_response`
 - [tasks/views/project_templates.py](../tasks/views/project_templates.py) — `project_templates`, `edit_project_template`
 - [tasks/views/tasks.py](../tasks/views/tasks.py) — `tasks`, `task_group`, `create_share_link`, `revoke_share_link`, `accept_share_link`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`, `comment_image`
 - [tasks/views.py](../tasks/views.py)
@@ -1139,11 +1174,17 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/directory_sort_builder.html](../tasks/templates/tasks/includes/directory_sort_builder.html)
 - [tasks/templates/tasks/includes/follow_button.html](../tasks/templates/tasks/includes/follow_button.html)
 - [tasks/templates/tasks/includes/group_directory_filter_builder.html](../tasks/templates/tasks/includes/group_directory_filter_builder.html)
+- [tasks/templates/tasks/includes/project_access_panel.html](../tasks/templates/tasks/includes/project_access_panel.html)
+- [tasks/templates/tasks/includes/project_access_tabs.html](../tasks/templates/tasks/includes/project_access_tabs.html)
 - [tasks/templates/tasks/includes/project_choice_filter_detail.html](../tasks/templates/tasks/includes/project_choice_filter_detail.html)
 - [tasks/templates/tasks/includes/project_deadline_settings.html](../tasks/templates/tasks/includes/project_deadline_settings.html)
 - [tasks/templates/tasks/includes/project_directory_filter_sort.html](../tasks/templates/tasks/includes/project_directory_filter_sort.html)
 - [tasks/templates/tasks/includes/project_info_modal.html](../tasks/templates/tasks/includes/project_info_modal.html)
+- [tasks/templates/tasks/includes/project_invitation_response.html](../tasks/templates/tasks/includes/project_invitation_response.html)
+- [tasks/templates/tasks/includes/project_invitations_panel.html](../tasks/templates/tasks/includes/project_invitations_panel.html)
+- [tasks/templates/tasks/includes/project_members_panel.html](../tasks/templates/tasks/includes/project_members_panel.html)
 - [tasks/templates/tasks/includes/project_note_item.html](../tasks/templates/tasks/includes/project_note_item.html)
+- [tasks/templates/tasks/includes/project_team_modals.html](../tasks/templates/tasks/includes/project_team_modals.html)
 - [tasks/templates/tasks/includes/project_text_filter_detail.html](../tasks/templates/tasks/includes/project_text_filter_detail.html)
 - [tasks/templates/tasks/includes/section_notes_thread.html](../tasks/templates/tasks/includes/section_notes_thread.html)
 - [tasks/templates/tasks/includes/status_pagination.html](../tasks/templates/tasks/includes/status_pagination.html)
@@ -1299,6 +1340,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/office.js](../static/js/office.js)
 - [static/js/presence.js](../static/js/presence.js)
 - [static/js/profile.js](../static/js/profile.js)
+- [static/js/project-team.js](../static/js/project-team.js)
 - [static/js/project-templates.js](../static/js/project-templates.js)
 - [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
@@ -1422,6 +1464,25 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `DeadlineColorTests`: 2 metod testowych.
 - `ProjectDeadlineSettingsTests`: 6 metod testowych.
 
+### tasks/test_project_invitations.py
+
+Źródło: [tasks/test_project_invitations.py](../tasks/test_project_invitations.py).
+
+- `ProjectInvitationTests`: 11 metod testowych.
+- `ProjectMembershipMigrationTests`: 1 metod testowych.
+
+### tasks/test_project_observer.py
+
+Źródło: [tasks/test_project_observer.py](../tasks/test_project_observer.py).
+
+- `ProjectObserverTests`: 11 metod testowych.
+
+### tasks/test_project_sharing.py
+
+Źródło: [tasks/test_project_sharing.py](../tasks/test_project_sharing.py).
+
+- `ProjectSharingTests`: 12 metod testowych.
+
 ### tasks/test_project_sources.py
 
 Źródło: [tasks/test_project_sources.py](../tasks/test_project_sources.py).
@@ -1433,6 +1494,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [tasks/test_project_templates.py](../tasks/test_project_templates.py).
 
 - `ProjectTemplateTests`: 29 metod testowych.
+
+### tasks/test_project_visibility.py
+
+Źródło: [tasks/test_project_visibility.py](../tasks/test_project_visibility.py).
+
+- `ProjectVisibilityTests`: 18 metod testowych.
+- `ProjectVisibilityMigrationTests`: 1 metod testowych.
 
 ### tasks/test_status_pagination.py
 
@@ -1707,6 +1775,10 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0051_legacy_logged_seconds_default.py](../tasks/migrations/0051_legacy_logged_seconds_default.py)
 - [tasks/migrations/0052_comment_images.py](../tasks/migrations/0052_comment_images.py)
 - [tasks/migrations/0053_comment_attachment_size.py](../tasks/migrations/0053_comment_attachment_size.py)
+- [tasks/migrations/0054_project_visibility.py](../tasks/migrations/0054_project_visibility.py)
+- [tasks/migrations/0055_project_sharing.py](../tasks/migrations/0055_project_sharing.py)
+- [tasks/migrations/0056_project_invitations.py](../tasks/migrations/0056_project_invitations.py)
+- [tasks/migrations/0057_project_observer.py](../tasks/migrations/0057_project_observer.py)
 
 ### kanban
 
@@ -1765,6 +1837,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [dashboard/migrations/0002_taskreminder_and_more.py](../dashboard/migrations/0002_taskreminder_and_more.py)
 - [dashboard/migrations/0003_notificationstate_is_deleted.py](../dashboard/migrations/0003_notificationstate_is_deleted.py)
 - [dashboard/migrations/0004_mentions_and_following.py](../dashboard/migrations/0004_mentions_and_following.py)
+- [dashboard/migrations/0005_project_invitations.py](../dashboard/migrations/0005_project_invitations.py)
 
 ### planner
 

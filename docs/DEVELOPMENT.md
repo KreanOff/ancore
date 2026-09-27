@@ -111,6 +111,7 @@ stanu migracji, poprawnego połączenia z bazą ani działania UI.
 | Accounts | Konto/profil, kadrowanie i walidacja obrazu, obecność, przełączanie kont |
 | Workplaces | Wybór i izolacja Workspace, scoped URL, ulubione, zmiany i usuwanie |
 | Tasks | Numeracja, hierarchie, CRUD, zakres dostępu, formularze, katalogi, paginacja, zapytania, historia, pliki |
+| Tasks: `test_project_visibility.py` | Publiczne i prywatne projekty, rzeczywisty odbiorca, dziedziczenie dostępu, zwykłe/scoped URL, operacje zbiorcze, formularze, pliki, search, Dashboard, kalendarz, powiadomienia i szablony |
 | Tasks: `test_work_logs.py` | Dziennik pracy: CRUD, autor, osobne podzadania, zwykłe/scoped URL, izolacja kont i Workspace, odebranie dostępu, stabilne PK, dwukierunkowe przeliczanie godzin/minut i dat, północ i zmiany czasu, zachowanie pól po błędach, paginacja/sumy, walidacja, CSRF, usunięcie autora, CASCADE oraz rollback wraz z historią |
 | Tasks: `test_legacy_time_migration.py` | Migracja dawnej kolumny czasu: świeża i starsza baza, zachowanie danych, tworzenie zadań i podzadań, zwykłe/scoped URL, autor historii i izolacja Workspace |
 | Osobne testy Tasks | Słowniki źródeł, reguły terminów, nadpisanie reguł per projekt i migracje |
@@ -417,3 +418,30 @@ zwykłe/scoped URL, format/rozmiar/liczbę plików, partie mieszane, starsze pol
 izolację Workspace, cofnięcie członkostwa, prywatny odczyt oraz rollback bazy
 razem z plikami i sprzątanie po zatwierdzonym usunięciu. Uruchamiaj wraz z
 `dashboard.test_collaboration` i regresjami załączników Tasks/Kanban.
+
+## Udostępnianie projektów członkom Workspace
+
+Tasks `0055_project_sharing` dodaje relację odbiorców, a
+`0056_project_invitations` przenosi jej wpisy do jawnych członkostw z rolą
+„Członek” i dodaje zaproszenia. Migracja zachowuje dostęp w obu kierunkach.
+Dashboard `0005_project_invitations` rozszerza osobisty stan powiadomień.
+Tasks `0057_project_observer` dodaje rolę tylko do odczytu do obu pól `role`,
+bez migracji istniejących wartości. Testy `tasks.test_project_observer` obejmują
+blokady zapisu, odczyt, relacje formularzy, role zespołu i mieszane operacje zbiorcze.
+Uruchom `manage.py migrate`; sprawdź obecność wszystkich plików migracji
+w repozytorium. UI korzysta z `project-team.js`, istniejącego pickera
+`workplace-team.js`, tabel Workspace oraz stylów `workplace-team.css`.
+
+Sprawdzenia: `manage.py test tasks.test_project_invitations tasks.test_project_sharing
+tasks.test_project_visibility tasks.test_project_templates workplaces.test_team
+workplaces.test_management workplaces.test_invitation_candidates dashboard.test_collaboration
+dashboard.test_notifications dashboard.test_workspace_invitations`.
+Test migracji odtwarza wcześniejsze udostępnienie i sprawdza jego zachowanie
+po przejściu na członkostwo. Pozostałe testy obejmują przyjęcie, odrzucenie,
+anulowanie, wygaśnięcie, role projektu, CSRF, granice Workspace oraz pliki
+i inne powiązane moduły po cofnięciu dostępu.
+
+Browser QA: porównanie z oknem Workspace, zaproszenie i decyzja na dwóch
+kontach, zmiana roli i usunięcie członka, błąd odbiorcy spoza Workspace,
+puste zaproszenia, zachowanie szkicu głównego formularza, telefon,
+klawiatura i ponowne wejście przez częściową nawigację.

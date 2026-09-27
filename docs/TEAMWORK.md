@@ -3,20 +3,122 @@
 ## Zakres pierwszej wersji
 
 Workspace obejmuje wspólne Projekty i Zadania, Kanban, Kontakty i firmy,
-Kalendarz, Dysk oraz Dokumenty. Dołączenie udostępnia **cały Workspace**.
-Nie ma jeszcze prywatnych projektów wewnątrz zespołu, ról gości ani uprawnień
-odczytu dla wybranych elementów. Historyczne `SharedItem` i linki udostępniania
+Kalendarz, Dysk oraz Dokumenty. Dołączenie udostępnia wspólne dane Workspace.
+Projekty Zadań mają widoczność **Publiczny** (cały Workspace) lub **Prywatny**
+(osoba, która ustawiła prywatność, i przyjęci członkowie projektu). Rola „Obserwator” zapewnia dostęp tylko do odczytu w konkretnym prywatnym projekcie. Nie ma roli gościa Workspace. Historyczne `SharedItem` i linki udostępniania
 pozostają wyłączone.
 
 | Rola | Dostęp |
 | --- | --- |
-| Właściciel | Wszystkie dane; ustawienia Workspace; zaproszenia członków i administratorów; zmiana ról i odbieranie dostępu; usunięcie Workspace zgodnie z dotychczasowym ograniczeniem ostatniej własnej przestrzeni |
-| Administrator | Wszystkie dane; ustawienia Workspace; zapraszanie i usuwanie członków; anulowanie zaproszeń członków. Nie zmienia administratorów ani właściciela |
-| Członek | Tworzenie, odczyt, edycja i usuwanie danych we wszystkich modułach; lista zespołu. Bez zarządzania zespołem i ustawieniami Workspace |
+| Właściciel | Wspólne dane i własne i udostępnione prywatne projekty; ustawienia Workspace; zaproszenia członków i administratorów; zmiana ról i odbieranie dostępu; usunięcie Workspace zgodnie z dotychczasowym ograniczeniem ostatniej własnej przestrzeni |
+| Administrator | Wspólne dane i własne i udostępnione prywatne projekty; ustawienia Workspace; zapraszanie i usuwanie członków; anulowanie zaproszeń członków. Nie zmienia administratorów ani właściciela |
+| Członek | Tworzenie, odczyt, edycja i usuwanie wspólnych danych oraz własnych i udostępnionych prywatnych projektów; lista zespołu. Bez zarządzania zespołem i ustawieniami Workspace |
 
 Właściciel wynika z `Workplace.owner`; nie można go usunąć z zespołu ani
 zmienić tą ścieżką. Przenoszenie własności i usuwanie kont właścicieli nie
 wchodzą w zakres tej wersji.
+
+## Widoczność projektów Zadań
+
+„Publiczny” oznacza dostęp dla właściciela i aktywnych członków danego Workspace,
+bez dostępu anonimowego lub osób z innych Workspace. „Prywatny — wybrane osoby”
+przypisuje `TaskProject.private_owner` faktycznej osobie zapisującej tę opcję.
+Pole `user` nadal wskazuje właściciela danych Workspace; odpowiedzialny za projekt
+oraz wykonawca zadania nie nadają dostępu. Administrator i właściciel Workspace
+nie mają wyjątku pozwalającego oglądać cudze prywatne projekty.
+
+Po utworzeniu prywatnego projektu jego właściciel może zaprosić wybranych,
+aktywnych członków tego samego Workspace. Okno „Edytuj projekt” korzysta
+z zakładek „Główna”, „Członkowie” i „Wysłane zaproszenia” oraz przycisku
+„Zaproś osobę”, tak jak okno Workspace. Wybór odbiorcy używa tego samego
+wyszukiwania osoby, a tabele tych samych szablonów. Nowy projekt domyślnie jest prywatny
+i pozostaje dostępny tylko właścicielowi do przyjęcia pierwszego zaproszenia.
+Dotyczy to także tworzenia z szablonu i żądań bez pola widoczności; wybór
+„Publiczny” musi być jawny. Edycja zachowuje aktualną widoczność.
+
+Role projektu są niezależne od ról Workspace:
+
+| Rola projektu | Uprawnienia |
+| --- | --- |
+| Właściciel (`private_owner`) | Zaprasza członków, administratorów i obserwatorów, zmienia ich role i odbiera dostęp; jako jedyny zmienia widoczność |
+| Administrator | Zaprasza i usuwa członków oraz obserwatorów i anuluje ich zaproszenia; nie zmienia ról ani administratorów |
+| Członek | Edytuje zawartość i widzi listę członków; nie zarządza zespołem ani zaproszeniami |
+| Obserwator | Tylko przegląda projekt, grupy, zadania, notatki, czat, historię, dziennik pracy i pliki oraz listę członków. Bez zapisu, komentarzy, dodawania, usuwania, zmiany statusów, kopiowania do szablonu i zarządzania dostępem |
+
+Właściciel, administrator i członek zachowują dotychczasowe operacje edycji
+i usuwania danych projektu, grup, zadań i plików. Obserwator może pobierać
+dostępne pliki i ustawiać własne obserwowanie powiadomień. Jego rola nie zmienia
+uprawnień do pozostałych projektów ani innych modułów Workspace. Również
+administrator lub właściciel Workspace zaproszony jako obserwator ma w tym
+projekcie tylko odczyt. Zmiana roli obowiązuje przy kolejnym żądaniu.
+`editable_to` ogranicza zapisy i relacje formularzy; mieszana operacja zbiorcza
+z obserwowanym elementem zostaje odrzucona w całości. Blokada obejmuje również
+stare podzadania poza grupą rodzica i kaskadowe usuwanie przez inny projekt. Prywatnego właściciela nie można usunąć ani
+zmienić jego roli tą ścieżką. Rola w Workspace nie omija ograniczeń projektu.
+
+`TaskProjectInvitation` przechowuje odbiorcę, faktycznego autora, rolę, status
+i termin ważności (7 dni, jak w Workspace). Zaproszenie trafia do panelu
+powiadomień odbiorcy. „Przyjmij” tworzy `TaskProjectMembership`, a „Odrzuć”
+kończy zaproszenie bez dostępu. Odczyt powiadomienia nie jest przyjęciem.
+Oczekujące zaproszenie można anulować w menu wiersza; wygasłego, anulowanego
+lub odrzuconego nie można przyjąć. Nie wysyłamy e-maili ani zaproszeń do osób
+spoza Workspace. `TaskProject.shared_with` korzysta z modelu członkostwa jako
+`through`; historyczne `SharedItem` i tokeny pozostają wyłączone.
+
+Endpointy w `tasks/views/project_team.py` ponownie weryfikują uprawnienia,
+aktywność kont i członkostwo przy każdym odczycie i zapisie. Operacje blokują
+Workspace i projekt w transakcji. Wysłanie zaproszenia lub zmiana członka
+zapisują się osobno od pól głównego formularza; jego niezapisane dane pozostają.
+Stary formularz przesyłający listę `shared_with` jest odrzucany. Zwykły zapis
+pól projektu zachowuje członków. Zmiana na publiczny czyści członkostwa i anuluje
+oczekujące zaproszenia; ponowne ustawienie prywatności zaczyna się bez odbiorców.
+
+Usunięcie lub dezaktywacja członkostwa Workspace przez zapis modelu usuwa
+udostępnienia i anuluje zaproszenia do projektów (`tasks/sharing_signals.py`);
+ponowne dołączenie nie przywraca ich. Operacje utrzymaniowe przez
+`QuerySet.update()` muszą same wyczyścić członkostwa i zaproszenia, ponieważ
+omijają sygnały. Sam filtr dostępu zawsze sprawdza członkostwo Workspace.
+
+Grupy, zadania i podzadania dziedziczą widoczność projektu. Kontrola obejmuje
+całe drzewo rodziców, również stare podzadania z inną grupą niż rodzic;
+usuwanie zadania, grupy lub projektu odrzuca kaskadę obejmującą niedostępne podzadania. `tasks/access.py`
+filtruje jawnie według rzeczywistego odbiorcy: listy, nawigację, opcje formularzy,
+bezpośrednie URL, edycję i usuwanie (także zbiorcze), notatki, dziennik pracy,
+pliki, ustawienia terminów, wyszukiwanie, Dashboard, kalendarz i powiadomienia.
+Obserwowanie, wzmianki i przypisanie wykonawcy nie omijają tego filtra.
+Przypomnienie zadania bez wykonawcy w prywatnym projekcie trafia do prywatnego
+właściciela projektu; pozostałe zadania zachowują odbiorcę według dotychczasowych zasad.
+Prywatny projekt nie pojawia się w licznikach zadań przy wspólnych tagach.
+Numery zadań nadal są wspólne dla właściciela i Workspace; ich luki nie nadają dostępu.
+
+Zmiana na „Publiczny” udostępnia całą strukturę zespołowi. Zmiana na „Prywatny”
+odbiera dostęp osobom niewskazanym w udostępnianiu przy kolejnym żądaniu, również z wcześniej otwartego
+formularza. Plików już pobranych oraz treści wcześniej wyświetlonych nie można
+cofnąć. Usunięcie członkostwa odbiera dostęp także do własnych prywatnych projektów
+w tym Workspace, zachowując dane. Usunięcie konta prywatnego właściciela nie
+publikuje projektu: `private_owner` staje się pusty, a projekt pozostaje ukryty.
+
+Szablon zapisany z prywatnego projektu jest prywatny dla osoby zapisującej snapshot.
+Nie kopiuje odbiorców udostępnienia projektu ani nie udostępnia im szablonu.
+Jest niezależnym snapshotem, więc późniejsze zmiany widoczności projektu nie
+zmieniają już zapisanych szablonów. Nowy projekt z szablonu domyślnie jest prywatny, niezależnie od widoczności
+szablonu; użytkownik może jawnie wybrać publiczny w formularzu.
+Kanban zachowuje dotychczasowy wspólny dostęp i własne modele.
+
+Migracja Tasks `0054_project_visibility` zachowuje istniejące projekty i szablony
+jako publiczne. Starszy formularz bez pola widoczności zachowuje bieżącą wartość.
+Testy `tasks/test_project_visibility.py` obejmują role, oba warianty URL,
+spreparowane żądania, powiązane moduły, szablony i cofnięcie dostępu.
+Migracja `0055_project_sharing` dodaje pustą relację odbiorców, bez zmiany
+istniejącego dostępu. `0056_project_invitations` przenosi dotychczasowe udostępnienia
+do członkostw z rolą „Członek”, zachowując dostęp, i dodaje zaproszenia.
+Dashboard `0005_project_invitations` dodaje osobisty stan ich powiadomień.
+Tasks `0057_project_observer` rozszerza wybór roli w członkostwach i zaproszeniach,
+bez zmiany istniejących ról. `tasks/test_project_observer.py` sprawdza odczyt,
+blokady zapisu, zmianę roli, formularze, operacje zbiorcze i oba warianty URL.
+Testy `tasks/test_project_sharing.py` obejmują dostęp i integracje modułów,
+a `tasks/test_project_invitations.py` decyzje odbiorcy, role, granice Workspace,
+wygaśnięcie, cofnięcie, powiadomienia i zachowanie udostępnień podczas migracji.
 
 ## Zaproszenia i ekran zespołu
 

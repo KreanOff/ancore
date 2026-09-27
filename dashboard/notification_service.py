@@ -11,6 +11,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 
+from tasks.access import visible_to
+from tasks.sharing import pending_project_invitations
 from accounts.avatar import account_avatar
 from kanban.models import KanbanActivity
 from tasks.models import TaskActivity
@@ -19,7 +21,8 @@ from .models import ActivityInterest, NotificationState
 from .reminders import reminders_for_user
 
 DASHBOARD_NOTIFICATION_LIMIT = 12
-SOURCES = {'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity', 'reminders': 'reminder'}
+INVITATION_SOURCES = {'workplace', 'project'}
+SOURCES = {'project': 'project_invitation', 'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity', 'reminders': 'reminder'}
 VIEWS = {'all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived'}
 SIGNING_SALT = 'dashboard.notifications.v1'
 
@@ -154,7 +157,8 @@ def notification_sources(user, workspace='', *, include_deleted=False):
     )
     sources = {
         'workplace': pending_invitations_for_user(user),
-        'tasks': TaskActivity.objects.filter(access),
+        'project': pending_project_invitations(user),
+        'tasks': visible_to(TaskActivity.objects.all(), user).filter(access),
         'kanban': KanbanActivity.objects.filter(access),
         'reminders': reminders_for_user(user),
     }
@@ -166,10 +170,10 @@ def notification_sources(user, workspace='', *, include_deleted=False):
                 inbox_followed=Exists(interest.filter(followed=True)),
             )
         if workspace:
-            field = 'workplace_id' if source == 'workplace' else 'task__workplace_id'
+            field = {'workplace': 'workplace_id', 'project': 'project__workplace_id'}.get(source, 'task__workplace_id')
             queryset = queryset.filter(**{field: workspace})
         state = NotificationState.objects.filter(user=user, **{SOURCES[source]: OuterRef('pk')})
-        default_read = Value(False) if source in {'workplace', 'reminders'} else Case(
+        default_read = Value(False) if source in INVITATION_SOURCES | {'reminders'} else Case(
             When(actor_id=user.pk, then=Value(True)), default=Value(False), output_field=BooleanField(),
         )
         sources[source] = queryset.annotate(
@@ -191,11 +195,11 @@ def filtered_sources(user, filters, asof=None, sources=None):
             if source not in {'tasks', 'kanban'}:
                 continue
             queryset = queryset.filter(**{'inbox_mentioned' if view == 'mentions' else 'inbox_followed': True})
-        if view == 'invitations' and source != 'workplace':
+        if view == 'invitations' and source not in INVITATION_SOURCES:
             continue
         if view == 'reminders' and source != 'reminders':
             continue
-        if view == 'archived' and source == 'workplace':
+        if view == 'archived' and source in INVITATION_SOURCES:
             continue
         queryset = queryset.filter(inbox_archived=(view == 'archived'))
         if view == 'unread':
@@ -208,7 +212,7 @@ def filtered_sources(user, filters, asof=None, sources=None):
 def notification_summary(user):
     sources = notification_sources(user)
     unread = sum(qs.filter(inbox_read=False, inbox_archived=False).count() for qs in sources.values())
-    pending = sources['workplace'].count()
+    pending = sum(sources[source].count() for source in INVITATION_SOURCES)
     # A signature lets the UI announce new items even when the unread count stays equal.
     latest = [qs.order_by('-created_at', '-pk').values_list('pk', flat=True).first() for qs in sources.values()]
     return {'unread_count': unread, 'pending_invitation_count': pending, 'revision': latest}
@@ -229,25 +233,27 @@ def _token_data(token, user):
 
 
 def _sort_key(source, row):
-    return (0 if source == 'workplace' else 1, -row.created_at.timestamp(), -row.pk, source)
+    return (0 if source in INVITATION_SOURCES else 1, -row.created_at.timestamp(), -row.pk, source)
 
 
 def _serialize(source, row):
-    if source == 'workplace':
+    if source in INVITATION_SOURCES:
+        is_project = source == 'project'
+        workplace = row.project.workplace if is_project else row.workplace
+        target = row.project if is_project else workplace
         item = {
-            'source': source, 'source_label': 'Workspace', 'object_id': row.pk,
-            'title': row.workplace.name, 'actor_label': _actor_label(row.invited_by),
+            'source': source, 'source_label': 'Projekt' if is_project else 'Workspace', 'is_invitation': True, 'object_id': row.pk,
+            'title': target.name, 'actor_label': _actor_label(row.invited_by),
             'actor_avatar': account_avatar(row.invited_by),
-            'action_message': 'zaprasza Cię do Workspace',
+            'action_message': 'zaprasza Cię do projektu' if is_project else 'zaprasza Cię do Workspace',
             'detail_lines': [
                 _detail_line('Rola', value=row.get_role_display()),
                 _detail_line('Ważne do', value=date_format(timezone.localtime(row.expires_at), 'd.m.Y')),
             ],
-            'location_label': row.workplace.name, 'created_at': row.created_at,
-            'url': reverse('workplaces:workplaces') + f'?invitation={row.pk}',
+            'location_label': target.name, 'created_at': row.created_at,
+            'url': (scoped_workplace_app_path(workplace, 'tasks') + f'?project_invitation={row.pk}' if is_project else reverse('workplaces:workplaces') + f'?invitation={row.pk}'),
             'action_label': 'Przyjmij lub odrzuć zaproszenie',
         }
-        workplace = row.workplace
         item['group_label'] = 'Wymagają Twojej decyzji'
         item['event_label'] = 'Zaproszenie'
     elif source == 'reminders':
@@ -300,7 +306,7 @@ def notification_page(user, filters, cursor=''):
         total += queryset.count()
         unread += queryset.filter(inbox_read=False).count()
         if anchor:
-            rank = 0 if source == 'workplace' else 1
+            rank = 0 if source in INVITATION_SOURCES else 1
             if rank < anchor[0]:
                 continue
             if rank == anchor[0]:
@@ -309,7 +315,7 @@ def notification_page(user, filters, cursor=''):
                 if source > anchor[3]:
                     older |= Q(created_at=created, pk=anchor[2])
                 queryset = queryset.filter(older)
-        relations = ['workplace', 'invited_by'] if source == 'workplace' else [
+        relations = (['project', 'project__workplace', 'invited_by'] if source == 'project' else ['workplace', 'invited_by']) if source in INVITATION_SOURCES else [
             'task', 'task__workplace', 'task__section', 'task__section__project', 'actor',
         ]
         if source == 'kanban':
@@ -324,7 +330,7 @@ def notification_page(user, filters, cursor=''):
     next_cursor = ''
     if len(candidates) > DASHBOARD_NOTIFICATION_LIMIT:
         source, row = visible[-1]
-        data['anchor'] = [0 if source == 'workplace' else 1, row.created_at.isoformat(), row.pk, source]
+        data['anchor'] = [0 if source in INVITATION_SOURCES else 1, row.created_at.isoformat(), row.pk, source]
         next_cursor = signing.dumps(data, salt=SIGNING_SALT, compress=True)
     items = [_serialize(source, row) for source, row in visible]
     return {'dashboard_notifications': items, 'dashboard_notification_count': total,
@@ -363,7 +369,7 @@ def change_notification_state(user, params):
     row = notification_sources(user, include_deleted=(action == 'delete'))[source].filter(pk=int(pk)).first()
     if row is None:
         raise Http404
-    if source == 'workplace' and action in {'archive', 'restore'}:
+    if source in INVITATION_SOURCES and action in {'archive', 'restore'}:
         raise ValueError('Oczekujące zaproszenie wymaga przyjęcia lub odrzucenia.')
     values = {'is_read': action == 'read'} if action in {'read', 'unread'} else {'is_archived': action == 'archive'}
     if action == 'archive':

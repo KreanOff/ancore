@@ -6,6 +6,7 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
+from tasks.access import visible_to
 from workplaces.services import workspace_owner
 
 from .forms import CalendarEventForm
@@ -123,7 +124,7 @@ def events_list(request):
     ), _active_workplace(request))
     payload = [_event_payload(event) for event in events]
     for source, model in (('tasks', Task), ('kanban', Kanban)):
-        tasks = model.objects.filter(
+        tasks = visible_to(model.objects.all(), request.user).filter(
             user=workspace_owner(request), workplace=_active_workplace(request),
             due_at__gte=start, due_at__lte=end,
         ).exclude(status='closed').select_related('workplace')

@@ -2,10 +2,14 @@ from django.urls import path
 from dashboard.collaboration import follow_object
 from .views import tasks
 from .views.project_templates import edit_project_template, project_templates
+from .views.project_team import project_team, project_candidates, project_invitation_response
 
 app_name = 'tasks'
 
 urlpatterns = [
+    path('projects/<int:project_id>/team/', project_team, name='project_team'),
+    path('projects/<int:project_id>/team/candidates/', project_candidates, name='project_candidates'),
+    path('project-invitations/<int:invitation_id>/respond/', project_invitation_response, name='project_invitation_response'),
     path('comment-images/<int:image_id>/', tasks.comment_image, name='comment_image'),
     path('follow/<str:kind>/<int:object_id>/', follow_object, {'app': 'tasks'}, name='follow_object'),
     path('', tasks.tasks, name='tasks'),

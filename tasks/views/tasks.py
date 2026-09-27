@@ -22,6 +22,9 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 
 from dashboard.collaboration import follow_context, mention_choices
+from tasks.access import editable_to, require_editable, visible_to, require_deletable_tasks
+from tasks.sharing import pending_project_invitations, project_access_data
+from workplaces.models import Workplace
 from workplaces.services import workspace_owner, scoped_workplace_app_path
 from accounts.avatar import account_avatar
 from accounts.models import normalize_public_username
@@ -208,14 +211,15 @@ def _attachment_validation_errors(files):
     return errors
 
 
-def _mark_task_row_access(tasks, user):
+def _mark_task_row_access(tasks, user, viewer=None):
     if not user or not getattr(user, 'is_authenticated', False):
         return tasks
 
+    editable_ids = set(editable_to(Task.objects.filter(pk__in=[task.pk for task in tasks if task]), viewer or user).values_list('pk', flat=True))
     for task in tasks:
         if not task:
             continue
-        task.can_manage = task.user_id == user.id
+        task.can_manage = task.user_id == user.id and task.pk in editable_ids
         task.can_edit = task.can_manage
         task.shared_view_url = ''
         task.tags_render_count = getattr(task, 'tags_total', None)
@@ -275,7 +279,7 @@ def _paginated_status_group_for_tasks(tasks, status, label, user=None, request=N
     current_page = min(requested_page, total_pages)
     offset = (current_page - 1) * page_size
     status_tasks = list(status_queryset[offset:offset + page_size]) if total_tasks else []
-    _mark_task_row_access(status_tasks, user)
+    _mark_task_row_access(status_tasks, user, viewer=request.user if request else user)
 
     base_params = _request_query_params(request)
     base_params[page_size_param] = page_size
@@ -362,7 +366,7 @@ def _status_groups_for_tasks(tasks, user=None, request=None, base_url=None, pagi
         ]
 
     task_list = list(tasks)
-    _mark_task_row_access(task_list, user)
+    _mark_task_row_access(task_list, user, viewer=request.user if request else user)
     tasks_by_status = {status: [] for status, _label in Task.STATUS_CHOICES}
     for task in task_list:
         tasks_by_status.setdefault(task.status, []).append(task)
@@ -534,8 +538,8 @@ def _user_task_permission(user, task):
     return ''
 
 
-def _user_can_edit_task(user, task):
-    return _user_task_permission(user, task) in ('owner', 'edit')
+def _user_can_edit_task(user, task, viewer=None):
+    return _user_task_permission(user, task) in ('owner', 'edit') and editable_to(Task.objects.all(), viewer or user).filter(pk=task.pk).exists()
 
 
 def _user_can_create_task_in_section(user, section):
@@ -544,25 +548,25 @@ def _user_can_create_task_in_section(user, section):
     return _user_section_permission(user, section) in ('owner', 'edit')
 
 
-def _editable_sections_queryset(user, workplace=None):
+def _editable_sections_queryset(user, workplace=None, viewer=None):
     if not user or not getattr(user, 'is_authenticated', False):
         return TaskSection.objects.none()
-    queryset = TaskSection.objects.filter(project__user=user).select_related('project', 'project__user').distinct()
+    queryset = editable_to(TaskSection.objects.all(), viewer or user).filter(project__user=user).select_related('project', 'project__user').distinct()
     return _filter_workplace(queryset, workplace, field_name='project__workplace')
 
 
-def _task_creation_project_for_user(user, project_id, workplace=None):
+def _task_creation_project_for_user(user, project_id, workplace=None, viewer=None):
     if not project_id:
         return None
     return (
-        TaskProject.objects.filter(id=project_id, sections__in=_editable_sections_queryset(user, workplace))
+        visible_to(TaskProject.objects.all(), viewer or user).filter(id=project_id, sections__in=_editable_sections_queryset(user, workplace, viewer=viewer or user))
         .distinct()
         .first()
     )
 
 
-def _user_can_create_issue(user, active_project=None, active_section=None, workplace=None):
-    editable_sections = _editable_sections_queryset(user, workplace)
+def _user_can_create_issue(user, active_project=None, active_section=None, workplace=None, viewer=None):
+    editable_sections = _editable_sections_queryset(user, workplace, viewer=viewer or user)
     if active_section:
         return editable_sections.filter(pk=active_section.pk).exists()
     if active_project:
@@ -629,13 +633,13 @@ def _task_access_filter(user, workplace=None):
     return task_filter
 
 
-def _owned_share_object(user, object_type, object_id, workplace=None):
+def _owned_share_object(user, object_type, object_id, workplace=None, viewer=None):
     if object_type == 'project':
-        return get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=user), workplace), id=object_id)
+        return get_object_or_404(_filter_workplace(visible_to(TaskProject.objects.all(), viewer or user).filter(user=user), workplace), id=object_id)
     if object_type == 'section':
-        return get_object_or_404(_filter_workplace(TaskSection.objects.filter(project__user=user), workplace, field_name='project__workplace'), id=object_id)
+        return get_object_or_404(_filter_workplace(visible_to(TaskSection.objects.all(), viewer or user).filter(project__user=user), workplace, field_name='project__workplace'), id=object_id)
     if object_type == 'task':
-        return get_object_or_404(_filter_workplace(Task.objects.select_related('section', 'section__project').filter(user=user), workplace), id=object_id)
+        return get_object_or_404(_filter_workplace(visible_to(Task.objects.all(), viewer or user).select_related('section', 'section__project').filter(user=user), workplace), id=object_id)
     raise PermissionDenied
 
 
@@ -657,10 +661,11 @@ def _shared_sections_queryset(user):
     return TaskSection.objects.none()
 
 
-def _mark_project_permissions(projects, user):
+def _mark_project_permissions(projects, user, viewer=None):
+    editable_ids = set(editable_to(TaskProject.objects.filter(pk__in=[project.pk for project in projects]), viewer or user).values_list('pk', flat=True))
     for project in projects:
         _clear_share_access_badge(project)
-        project.can_manage = project.user_id == user.id
+        project.can_manage = project.user_id == user.id and project.pk in editable_ids
         project.can_share = False
         project.can_edit = project.can_manage
         project.has_editable_sections = False
@@ -742,7 +747,7 @@ def _choice_options(choices):
     return [{'value': value, 'label': label} for value, label in choices]
 
 
-def _project_field_configuration(user, workplace=None):
+def _project_field_configuration(user, workplace=None, viewer=None):
     options = list(TaskProjectFieldOption.active_for_scope(user, workplace))
     choices = {field_type: [] for field_type, _label in TaskProjectFieldOption.FIELD_CHOICES}
     labels = {field_type: {} for field_type in choices}
@@ -752,7 +757,7 @@ def _project_field_configuration(user, workplace=None):
         labels[option.field_type][option.project_value] = option.label
         colors[option.field_type][option.project_value] = option.color
 
-    scoped_projects = TaskProject.objects.filter(user=user, workplace=workplace)
+    scoped_projects = visible_to(TaskProject.objects.all(), viewer or user).filter(user=user, workplace=workplace)
     used_values = {
         field_type: set(scoped_projects.values_list(field_type, flat=True).distinct())
         for field_type in choices
@@ -913,13 +918,14 @@ def _project_filter_queryset(
     responsible='',
     workplace=None,
     project_choices=None,
+    viewer=None,
 ):
     project_choices = project_choices or {
         'status': TaskProject.STATUS_CHOICES,
         'stage': TaskProject.STAGE_CHOICES,
         'health': TaskProject.HEALTH_CHOICES,
     }
-    queryset = _filter_workplace(TaskProject.objects.filter(user=user), workplace)
+    queryset = _filter_workplace(visible_to(TaskProject.objects.all(), viewer or user).filter(user=user), workplace)
     query = (query or '').strip()
     if query:
         priority_matches = _choice_values_matching_query(TaskProject.PRIORITY_CHOICES, query)
@@ -1060,14 +1066,14 @@ def _project_sort_queryset(queryset, sort_value, project_choices=None):
     return queryset.order_by('name', 'id')
 
 
-def _project_filter_options(user, workplace=None, project_choices=None):
+def _project_filter_options(user, workplace=None, project_choices=None, viewer=None):
     project_choices = project_choices or {
         'status': TaskProject.STATUS_CHOICES,
         'stage': TaskProject.STAGE_CHOICES,
         'health': TaskProject.HEALTH_CHOICES,
     }
     queryset = _filter_workplace(
-        TaskProject.objects.filter(user=user),
+        visible_to(TaskProject.objects.all(), viewer or user).filter(user=user),
         workplace,
     ).select_related('company', 'responsible_user')
     companies = [
@@ -1202,8 +1208,9 @@ def _group_filter_queryset(
     project_filter='',
     owner='',
     workplace=None,
+    viewer=None,
 ):
-    queryset = TaskSection.objects.filter(project__user=user).select_related('project', 'project__user', 'owner')
+    queryset = visible_to(TaskSection.objects.all(), viewer or user).filter(project__user=user).select_related('project', 'project__user', 'owner')
     queryset = _filter_workplace(queryset, workplace, field_name='project__workplace')
     query = (query or '').strip()
     if query:
@@ -1249,7 +1256,7 @@ def _group_filter_queryset(
     return queryset.prefetch_related(
         Prefetch(
             'section_notes',
-            queryset=TaskSectionNote.objects.select_related('author').order_by('created_at', 'id'),
+            queryset=visible_to(TaskSectionNote.objects.all(), viewer or user).select_related('author').order_by('created_at', 'id'),
         )
     )
 
@@ -1308,8 +1315,8 @@ def _group_sort_queryset(queryset, sort_value):
     return queryset.order_by('project__name', 'order', 'created_at', 'id')
 
 
-def _group_filter_options(user, workplace=None, project=None):
-    queryset = TaskSection.objects.filter(project__user=user).select_related('project', 'owner')
+def _group_filter_options(user, workplace=None, project=None, viewer=None):
+    queryset = visible_to(TaskSection.objects.all(), viewer or user).filter(project__user=user).select_related('project', 'owner')
     queryset = _filter_workplace(queryset, workplace, field_name='project__workplace')
     if project is not None:
         queryset = queryset.filter(project=project)
@@ -1503,9 +1510,9 @@ def _task_sort_queryset(queryset, sort_value):
     return queryset.order_by('is_closed_sort', 'task_id', 'id')
 
 
-def _task_filter_options(user, workplace=None):
+def _task_filter_options(user, workplace=None, viewer=None):
     queryset = _filter_workplace(
-        Task.objects.filter(user=user, parent__isnull=True),
+        visible_to(Task.objects.all(), viewer or user).filter(user=user, parent__isnull=True),
         workplace,
     ).select_related('section', 'section__project', 'assignee')
     projects = [
@@ -1596,7 +1603,7 @@ def _task_window_for_request(request, queryset):
     status_counts = {
         row['status']: row['total']
         for row in (
-            Task.objects.filter(pk__in=queryset.order_by().values('pk'))
+            visible_to(Task.objects.all(), request.user).filter(pk__in=queryset.order_by().values('pk'))
             .values('status').annotate(total=Count('pk'))
         )
     }
@@ -1645,7 +1652,7 @@ def _task_window_for_request(request, queryset):
         'sort_param': '' if sort == TASK_DEFAULT_SORT else sort,
         'sort_label': TASK_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': TASK_SORT_OPTION_MAP[sort]['direction'],
-        'filters': _task_filter_options(workspace_owner(request), workplace=workplace),
+        'filters': _task_filter_options(workspace_owner(request), workplace=workplace, viewer=request.user),
         'total_tasks': total_tasks,
         'has_active_filters': active_filters,
     }
@@ -1741,8 +1748,8 @@ def _empty_tag_filter_options():
     }
 
 
-def _tag_task_count_filter(user, workplace):
-    task_filter = Q(tasks__user=user, tasks__parent__isnull=True)
+def _tag_task_count_filter(user, workplace, viewer=None):
+    task_filter = Q(tasks__pk__in=visible_to(Task.objects.all(), viewer or user), tasks__user=user, tasks__parent__isnull=True)
     task_filter &= Q(tasks__workplace=workplace) if workplace is not None else Q(tasks__workplace__isnull=True)
     return task_filter
 
@@ -1792,11 +1799,11 @@ def _tag_sort_queryset(queryset, sort_value):
     return queryset.order_by('name', 'id')
 
 
-def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_by=('name', 'id'), limit=None, offset=0, workplace=None):
+def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_by=('name', 'id'), limit=None, offset=0, workplace=None, viewer=None):
     projects_filter = Q(user=user)
     if workplace is not None:
         projects_filter &= Q(workplace=workplace)
-    sections_queryset = TaskSection.objects.select_related('project', 'project__user', 'owner')
+    sections_queryset = visible_to(TaskSection.objects.all(), viewer or user).select_related('project', 'project__user', 'owner')
     sections_queryset = _filter_workplace(sections_queryset, workplace, field_name='project__workplace')
     if tasks_queryset is not None:
         sections_queryset = sections_queryset.prefetch_related(
@@ -1804,7 +1811,7 @@ def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_b
         )
 
     queryset = (
-        (project_queryset if project_queryset is not None else TaskProject.objects.filter(projects_filter))
+        (project_queryset if project_queryset is not None else visible_to(TaskProject.objects.all(), viewer or user).filter(projects_filter))
         .distinct()
         .select_related('user', 'company', 'responsible_user')
         .annotate(
@@ -1820,7 +1827,7 @@ def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_b
             ),
             Prefetch(
                 'project_notes',
-                queryset=TaskProjectNote.objects.select_related('author').order_by('created_at', 'id'),
+                queryset=visible_to(TaskProjectNote.objects.all(), viewer or user).select_related('author').order_by('created_at', 'id'),
             ),
         )
     )
@@ -1829,25 +1836,26 @@ def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_b
     if limit is not None:
         queryset = queryset[offset:offset + limit]
     projects = list(queryset)
-    return _mark_project_permissions(projects, user)
+    return _mark_project_permissions(projects, user, viewer=viewer or user)
 
 
-def _project_for_user(user, project_id, workplace=None):
+def _project_for_user(user, project_id, workplace=None, viewer=None):
     if not project_id:
         return None
     projects = _projects_for_user(
         user,
-        project_queryset=_filter_workplace(TaskProject.objects.filter(user=user, id=project_id), workplace),
+        project_queryset=_filter_workplace(visible_to(TaskProject.objects.all(), viewer or user).filter(user=user, id=project_id), workplace),
         order_by=None,
         limit=1,
         workplace=workplace,
+        viewer=viewer or user,
     )
     return projects[0] if projects else None
 
 
 def _project_window_for_request(request, field_configuration=None):
     workplace = _active_workplace(request)
-    field_configuration = field_configuration or _project_field_configuration(workspace_owner(request), workplace)
+    field_configuration = field_configuration or _project_field_configuration(workspace_owner(request), workplace, viewer=request.user)
     project_choices = field_configuration['choices']
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
@@ -1886,6 +1894,7 @@ def _project_window_for_request(request, field_configuration=None):
         responsible=responsible,
         workplace=workplace,
         project_choices=project_choices,
+        viewer=request.user,
     )
     queryset = _project_sort_queryset(queryset, sort, project_choices=project_choices)
     total_projects = queryset.count()
@@ -1900,16 +1909,18 @@ def _project_window_for_request(request, field_configuration=None):
         limit=page_size,
         offset=offset,
         workplace=workplace,
+        viewer=request.user,
     )
 
-    _decorate_project_directory_metrics(projects)
+    _decorate_project_directory_metrics(projects, viewer=request.user)
     _decorate_project_field_values(projects, field_configuration)
-    _decorate_directory_members(projects, current_user=workspace_owner(request))
+    _decorate_directory_members(projects, current_user=workspace_owner(request), viewer=request.user)
 
     filter_options = _project_filter_options(
         workspace_owner(request),
         workplace=workplace,
         project_choices=project_choices,
+        viewer=request.user,
     )
     active_filters = _project_active_filters(
         name=name,
@@ -2035,6 +2046,7 @@ def _group_window_for_request(request, field_configuration=None, project=None):
         project_filter=project_filter,
         owner=owner,
         workplace=workplace,
+        viewer=request.user,
     )
     if project is not None:
         queryset = queryset.filter(project=project)
@@ -2045,7 +2057,7 @@ def _group_window_for_request(request, field_configuration=None, project=None):
     offset = (current_page - 1) * page_size
 
     sections = list(queryset[offset:offset + page_size])
-    _decorate_group_directory_rows(sections, current_user=workspace_owner(request))
+    _decorate_group_directory_rows(sections, current_user=workspace_owner(request), viewer=request.user)
     if field_configuration:
         _decorate_project_field_values(
             [section.project for section in sections],
@@ -2084,7 +2096,7 @@ def _group_window_for_request(request, field_configuration=None, project=None):
         summary = f'Pokazano {first_visible}-{last_visible} z {total_groups} grup'
         compact_summary = f'{first_visible}-{last_visible} z {total_groups}'
 
-    filter_options = _group_filter_options(workspace_owner(request), workplace=workplace, project=project)
+    filter_options = _group_filter_options(workspace_owner(request), workplace=workplace, project=project, viewer=request.user)
     active_filters = _group_active_filters(
         priority=priority,
         status=status,
@@ -2148,7 +2160,7 @@ def _tag_window_for_request(request):
     ).annotate(
         total_tasks=Count(
             'tasks',
-            filter=_tag_task_count_filter(workspace_owner(request), workplace),
+            filter=_tag_task_count_filter(workspace_owner(request), workplace, viewer=request.user),
             distinct=True,
         )
     )
@@ -2224,16 +2236,16 @@ def _tag_window_for_request(request):
     }
 
 
-def _navigation_projects_for_user(user, active_project=None, workplace=None):
-    projects = _projects_for_user(user, limit=PROJECT_NAVIGATION_LIMIT, workplace=workplace)
+def _navigation_projects_for_user(user, active_project=None, workplace=None, viewer=None):
+    projects = _projects_for_user(user, limit=PROJECT_NAVIGATION_LIMIT, workplace=workplace, viewer=viewer or user)
     if active_project and all(project.id != active_project.id for project in projects):
         projects = [active_project, *projects]
     return projects
 
 
-def _navigation_project_ids_for_user(user, active_project=None, workplace=None):
+def _navigation_project_ids_for_user(user, active_project=None, workplace=None, viewer=None):
     project_ids = list(
-        _filter_workplace(TaskProject.objects.filter(user=user), workplace)
+        _filter_workplace(visible_to(TaskProject.objects.all(), viewer or user).filter(user=user), workplace)
         .order_by('name', 'id')
         .values_list('id', flat=True)[:PROJECT_NAVIGATION_LIMIT]
     )
@@ -2279,7 +2291,7 @@ def _polish_count_label(value, singular, paucal, plural):
     return f'{count} {label}'
 
 
-def _decorate_project_directory_metrics(projects):
+def _decorate_project_directory_metrics(projects, viewer=None):
     if not projects:
         return
 
@@ -2294,7 +2306,7 @@ def _decorate_project_directory_metrics(projects):
         metrics_by_section = {
             row['section_id']: row
             for row in (
-                Task.objects.filter(section_id__in=section_ids, parent__isnull=True)
+                visible_to(Task.objects.all(), viewer).filter(section_id__in=section_ids, parent__isnull=True)
                 .values('section_id')
                 .annotate(
                     total_tasks=Count('id', distinct=True),
@@ -2374,16 +2386,17 @@ def _decorate_project_directory_metrics(projects):
         )
 
 
-def _decorate_group_directory_rows(sections, current_user=None):
+def _decorate_group_directory_rows(sections, current_user=None, viewer=None):
     if not sections:
         return
 
     today = timezone.localdate()
     section_ids = [section.id for section in sections]
+    editable_ids = set(editable_to(TaskSection.objects.filter(pk__in=section_ids), viewer or current_user).values_list('pk', flat=True))
     metrics_by_section = {
         row['section_id']: row
         for row in (
-            Task.objects.filter(section_id__in=section_ids, parent__isnull=True)
+            visible_to(Task.objects.all(), viewer or current_user).filter(section_id__in=section_ids, parent__isnull=True)
             .values('section_id')
             .annotate(
                 total_tasks=Count('id', distinct=True),
@@ -2413,7 +2426,7 @@ def _decorate_group_directory_rows(sections, current_user=None):
                 section.due_highlight = 'scheduled'
 
         project = section.project
-        can_manage_project = project.user_id == getattr(current_user, 'id', None)
+        can_manage_project = project.user_id == getattr(current_user, 'id', None) and section.pk in editable_ids
         project.can_manage = can_manage_project
         project.can_share = False
         project.can_edit = can_manage_project
@@ -2512,12 +2525,13 @@ def _assign_directory_members(item, users):
     item.directory_member_title = payload['title']
 
 
-def _decorate_directory_members(projects, current_user=None):
+def _decorate_directory_members(projects, current_user=None, viewer=None):
     if not projects:
         return
 
+    editable_ids = set(editable_to(TaskProject.objects.filter(pk__in=[project.pk for project in projects]), viewer or current_user).values_list('pk', flat=True))
     for project in projects:
-        can_manage_project = project.user_id == getattr(current_user, 'id', None)
+        can_manage_project = project.user_id == getattr(current_user, 'id', None) and project.pk in editable_ids
         project.can_manage = can_manage_project
         project.can_share = False
         project.can_edit = can_manage_project
@@ -2542,13 +2556,14 @@ def _decorate_directory_members(projects, current_user=None):
             )
 
 
-def _decorate_task_directory_members(tasks, current_user=None):
+def _decorate_task_directory_members(tasks, current_user=None, viewer=None):
     task_list = [task for task in tasks if task]
     if not task_list:
         return
 
+    editable_ids = set(editable_to(Task.objects.filter(pk__in=[task.pk for task in task_list]), viewer or current_user).values_list('pk', flat=True))
     for task in task_list:
-        can_manage_task = task.user_id == getattr(current_user, 'id', None)
+        can_manage_task = task.user_id == getattr(current_user, 'id', None) and task.pk in editable_ids
         task.can_manage = can_manage_task
         task.can_share = False
         task.can_edit = can_manage_task
@@ -2903,9 +2918,9 @@ def _posted_ids(request, plural_name, singular_name):
     return [item for item in ids if item]
 
 
-def _tasks_navigation_context(user, active_section=None, active_view=None, workplace=None):
+def _tasks_navigation_context(user, active_section=None, active_view=None, workplace=None, viewer=None):
     tasks_qs = _filter_workplace(
-        Task.objects.filter(user=user, parent__isnull=True),
+        visible_to(Task.objects.all(), viewer or user).filter(user=user, parent__isnull=True),
         workplace,
     ).select_related('section', 'section__project', 'assignee').prefetch_related('tags').annotate(
         is_closed_sort=Case(
@@ -2917,22 +2932,23 @@ def _tasks_navigation_context(user, active_section=None, active_view=None, workp
         attachments_total=Count('attachments', distinct=True),
     ).order_by('is_closed_sort', 'task_id')
 
-    active_project = _project_for_user(user, active_section.project_id, workplace=workplace) if active_section else None
+    active_project = _project_for_user(user, active_section.project_id, workplace=workplace, viewer=viewer or user) if active_section else None
     if active_section:
         active_section = next((section for section in active_project.sections.all() if section.id == active_section.id), active_section)
 
     if active_view is None:
         active_view = 'section' if active_section else 'projects'
 
-    navigation_projects = _navigation_projects_for_user(user, active_project=active_project, workplace=workplace)
-    _decorate_project_directory_metrics(navigation_projects)
-    _decorate_directory_members(navigation_projects, current_user=user)
+    navigation_projects = _navigation_projects_for_user(user, active_project=active_project, workplace=workplace, viewer=viewer or user)
+    _decorate_project_directory_metrics(navigation_projects, viewer=viewer or user)
+    _decorate_directory_members(navigation_projects, current_user=user, viewer=viewer or user)
 
     can_create_issue = _user_can_create_issue(
         user,
         active_project=active_project,
         active_section=active_section,
         workplace=workplace,
+        viewer=viewer or user,
     )
 
     return {
@@ -2946,7 +2962,7 @@ def _tasks_navigation_context(user, active_section=None, active_view=None, workp
         'total_task_count': tasks_qs.count(),
         'total_group_count': len(_sections_for_projects(navigation_projects)),
         'tags': _filter_workplace(TaskTag.objects.filter(user=user), workplace).annotate(
-            total_tasks=Count('tasks', filter=Q(tasks__user=user, tasks__workplace=workplace, tasks__parent__isnull=True))
+            total_tasks=Count('tasks', filter=_tag_task_count_filter(user, workplace, viewer=viewer))
         ),
         'total_tag_count': _filter_workplace(TaskTag.objects.filter(user=user), workplace).count(),
         'shared_task_count': 0,
@@ -3113,7 +3129,7 @@ def tasks(request):
 def task_group(request, section_id):
     active_section = get_object_or_404(
         _filter_workplace(
-            TaskSection.objects.select_related('project', 'project__user'),
+            visible_to(TaskSection.objects.all(), request.user).select_related('project', 'project__user'),
             _active_workplace(request),
             field_name='project__workplace',
         ),
@@ -3126,26 +3142,37 @@ def task_group(request, section_id):
 
 def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
+    project_response_invitation = None
+    if request.method == 'GET' and 'project_invitation' in request.GET:
+        invitation_id = request.GET['project_invitation']
+        if invitation_id.isdecimal() and len(invitation_id) <= 18:
+            project_response_invitation = pending_project_invitations(request.user).filter(
+                pk=int(invitation_id), project__workplace=workplace,
+            ).select_related('project__workplace', 'invited_by').first()
+        if project_response_invitation is None:
+            messages.error(request, 'Zaproszenie jest niedostępne lub wygasło.')
+            return redirect(scoped_workplace_app_path(workplace, 'tasks'))
     if request.method == 'POST' and request.POST.get('action') == 'save_project_template':
         project_id = request.POST.get('project_id', '')
         if not project_id.isdecimal() or len(project_id) > 18:
             raise Http404
         project = get_object_or_404(
-            TaskProject, user=workspace_owner(request), workplace=workplace, pk=int(project_id),
+            editable_to(TaskProject.objects.all(), request.user), user=workspace_owner(request), workplace=workplace, pk=int(project_id),
         )
         try:
-            save_project_template(project)
+            save_project_template(project, request.user)
         except ValidationError as error:
             messages.error(request, error.messages[0])
         else:
             messages.success(request, 'Szablon projektu zapisany.')
         return redirect(scoped_workplace_app_path(workplace, 'tasks', 'templates/'))
 
-    project_field_configuration = _project_field_configuration(workspace_owner(request), workplace)
+    project_field_configuration = _project_field_configuration(workspace_owner(request), workplace, viewer=request.user)
     project_form = TaskProjectForm(
         user=workspace_owner(request),
         workplace=workplace,
         field_options=project_field_configuration['options'],
+        viewer=request.user,
     )
     section_form = TaskSectionForm(user=workspace_owner(request), workplace=workplace)
     tag_form = TaskTagForm(user=workspace_owner(request), workplace=workplace)
@@ -3169,13 +3196,14 @@ def _tasks_page(request, active_section=None):
         active_project_id = None
     if active_section:
         active_project_id = active_section.project_id
-    active_project_for_form = _task_creation_project_for_user(workspace_owner(request), active_project_id, workplace=workplace)
+    active_project_for_form = _task_creation_project_for_user(workspace_owner(request), active_project_id, workplace=workplace, viewer=request.user)
     project_option_ids_for_form = _navigation_project_ids_for_user(
         workspace_owner(request),
         active_project=active_project_for_form,
         workplace=workplace,
+        viewer=request.user,
     )
-    task_modal_sections = _editable_sections_queryset(workspace_owner(request), workplace)
+    task_modal_sections = _editable_sections_queryset(workspace_owner(request), workplace, viewer=request.user)
     if active_project_for_form:
         task_modal_sections = task_modal_sections.filter(project=active_project_for_form)
     else:
@@ -3186,6 +3214,7 @@ def _tasks_page(request, active_section=None):
         project=active_project_for_form,
         section=active_section,
         sections_queryset=task_modal_sections,
+        viewer=request.user,
     )
     project_modal_open = False
     if request.method == 'GET' and request.GET.get('template'):
@@ -3193,7 +3222,7 @@ def _tasks_page(request, active_section=None):
         if not template_id.isdecimal() or len(template_id) > 18:
             raise Http404
         selected_template = get_object_or_404(
-            TaskProjectTemplate, user=workspace_owner(request), workplace=workplace,
+            visible_to(TaskProjectTemplate.objects.all(), request.user), user=workspace_owner(request), workplace=workplace,
             pk=int(template_id),
         )
         project_form.initial.update(template=selected_template.pk, name=selected_template.name,
@@ -3204,6 +3233,7 @@ def _tasks_page(request, active_section=None):
         user=workspace_owner(request),
         workplace=workplace,
         field_options=project_field_configuration['options'],
+        viewer=request.user,
     )
     project_rename_project_id = ''
     section_create_modal_open = False
@@ -3226,38 +3256,45 @@ def _tasks_page(request, active_section=None):
                 user=workspace_owner(request),
                 workplace=workplace,
                 field_options=project_field_configuration['options'],
+                viewer=request.user,
             )
-            if project_form.is_valid():
-                with transaction.atomic():
-                    project = project_form.save(commit=False)
-                    project.user = workspace_owner(request)
-                    project.workplace = workplace
-                    project.save()
-                    template = project_form.cleaned_data.get('template')
-                    if template:
-                        populate_project_from_template(project, template, request.user)
-                    else:
-                        section_title = project_form.cleaned_data.get('section_title') or 'Nowa Grupa'
-                        section_code = project_form.cleaned_data.get('section_code') or ''
-                        TaskSection.objects.create(
-                            project=project, title=section_title, code=section_code,
-                            kind='custom', order=0,
-                        )
-                messages.success(request, 'Projekt dodany.')
-                project_base_url = (scoped_workplace_app_path(workplace, 'tasks')
-                                    if request.resolver_match.namespace == 'workplace_tasks' else reverse('tasks:tasks'))
-                return redirect(f'{project_base_url}?project={project.id}')
+            with transaction.atomic():
+                if workplace:
+                    Workplace.objects.select_for_update().get(pk=workplace.pk)
+                if project_form.is_valid():
+                    with transaction.atomic():
+                        project = project_form.save(commit=False)
+                        project.user = workspace_owner(request)
+                        project.workplace = workplace
+                        project.save()
+                        project_form.save_m2m()
+                        template = project_form.cleaned_data.get('template')
+                        if template:
+                            populate_project_from_template(project, template, request.user)
+                        else:
+                            section_title = project_form.cleaned_data.get('section_title') or 'Nowa Grupa'
+                            section_code = project_form.cleaned_data.get('section_code') or ''
+                            TaskSection.objects.create(
+                                project=project, title=section_title, code=section_code,
+                                kind='custom', order=0,
+                            )
+                    messages.success(request, 'Projekt dodany.')
+                    project_base_url = (scoped_workplace_app_path(workplace, 'tasks')
+                                        if request.resolver_match.namespace == 'workplace_tasks' else reverse('tasks:tasks'))
+                    return redirect(f'{project_base_url}?project={project.id}')
             project_modal_open = True
             messages.error(request, 'Nie udało się dodać projektu.')
 
         if action == 'delete_project':
             project_ids = _posted_ids(request, 'project_ids', 'project_id')
-            projects_to_delete = _filter_workplace(TaskProject.objects.filter(id__in=project_ids, user=workspace_owner(request)), workplace)
+            projects_to_delete = _filter_workplace(visible_to(TaskProject.objects.all(), request.user).filter(id__in=project_ids, user=workspace_owner(request)), workplace)
+            require_editable(projects_to_delete, request.user)
             if not projects_to_delete.exists():
-                get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
+                get_object_or_404(_filter_workplace(editable_to(TaskProject.objects.all(), request.user).filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
             project_count = projects_to_delete.count()
-            task_count = _filter_workplace(Task.objects.filter(section__project__in=projects_to_delete, user=workspace_owner(request)), workplace).count()
+            task_count = _filter_workplace(visible_to(Task.objects.all(), request.user).filter(section__project__in=projects_to_delete, user=workspace_owner(request)), workplace).count()
             with lock_task_numbers(workspace_owner(request).pk):
+                require_deletable_tasks(Task.objects.filter(section__project__in=projects_to_delete), request.user)
                 projects_to_delete.delete()
                 Task._renumber_user_tasks(workspace_owner(request), workplace)
             if project_count == 1 and task_count:
@@ -3271,25 +3308,29 @@ def _tasks_page(request, active_section=None):
             return redirect('tasks:tasks')
 
         if action in ('edit_project', 'rename_project'):
-            project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
-            project_rename_form = TaskProjectRenameForm(
-                request.POST,
-                instance=project,
-                user=workspace_owner(request),
-                workplace=workplace,
-                field_options=project_field_configuration['options'],
-            )
-            if project_rename_form.is_valid():
-                project_rename_form.save()
-                messages.success(request, 'Projekt zaktualizowany.')
-                return redirect('tasks:tasks')
+            with transaction.atomic():
+                if workplace:
+                    Workplace.objects.select_for_update().get(pk=workplace.pk)
+                project = get_object_or_404(_filter_workplace(editable_to(TaskProject.objects.select_for_update(), request.user).filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
+                project_rename_form = TaskProjectRenameForm(
+                    request.POST,
+                    instance=project,
+                    user=workspace_owner(request),
+                    workplace=workplace,
+                    field_options=project_field_configuration['options'],
+                    viewer=request.user,
+                )
+                if project_rename_form.is_valid():
+                    project_rename_form.save()
+                    messages.success(request, 'Projekt zaktualizowany.')
+                    return redirect('tasks:tasks')
             project_rename_modal_open = True
             project_rename_project_id = project.id
             active_project_for_form = project
             messages.error(request, 'Nie udało się zaktualizować projektu.')
 
         if action in ('add_project_note', 'update_project_notes'):
-            project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
+            project = get_object_or_404(_filter_workplace(editable_to(TaskProject.objects.all(), request.user).filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
             message = (request.POST.get('message') or request.POST.get('description') or '').strip()
             is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if message:
@@ -3317,7 +3358,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'edit_project_note':
             note_queryset = _filter_workplace(
-                TaskProjectNote.objects.filter(author=request.user, project__user=workspace_owner(request)),
+                editable_to(TaskProjectNote.objects.all(), request.user).filter(author=request.user, project__user=workspace_owner(request)),
                 workplace,
                 field_name='project__workplace',
             )
@@ -3348,7 +3389,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_project_note':
             note_queryset = _filter_workplace(
-                TaskProjectNote.objects.filter(author=request.user, project__user=workspace_owner(request)),
+                editable_to(TaskProjectNote.objects.all(), request.user).filter(author=request.user, project__user=workspace_owner(request)),
                 workplace,
                 field_name='project__workplace',
             )
@@ -3360,7 +3401,7 @@ def _tasks_page(request, active_section=None):
         if action in ('add_section_note', 'update_section_notes'):
             section = get_object_or_404(
                 _filter_workplace(
-                    TaskSection.objects.filter(project__user=workspace_owner(request)),
+                    editable_to(TaskSection.objects.all(), request.user).filter(project__user=workspace_owner(request)),
                     workplace,
                     field_name='project__workplace',
                 ),
@@ -3376,7 +3417,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'edit_section_note':
             note_queryset = _filter_workplace(
-                TaskSectionNote.objects.filter(author=request.user, section__project__user=workspace_owner(request)),
+                editable_to(TaskSectionNote.objects.all(), request.user).filter(author=request.user, section__project__user=workspace_owner(request)),
                 workplace,
                 field_name='section__project__workplace',
             )
@@ -3407,7 +3448,7 @@ def _tasks_page(request, active_section=None):
 
         if action == 'delete_section_note':
             note_queryset = _filter_workplace(
-                TaskSectionNote.objects.filter(author=request.user, section__project__user=workspace_owner(request)),
+                editable_to(TaskSectionNote.objects.all(), request.user).filter(author=request.user, section__project__user=workspace_owner(request)),
                 workplace,
                 field_name='section__project__workplace',
             )
@@ -3417,7 +3458,7 @@ def _tasks_page(request, active_section=None):
             return redirect(_tasks_next_url(request))
 
         if action == 'create_section':
-            project = get_object_or_404(_filter_workplace(TaskProject.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
+            project = get_object_or_404(_filter_workplace(editable_to(TaskProject.objects.all(), request.user).filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
             section_form = TaskSectionForm(request.POST, user=workspace_owner(request), project=project)
             if section_form.is_valid():
                 section = section_form.save(commit=False)
@@ -3533,7 +3574,7 @@ def _tasks_page(request, active_section=None):
 
         if action in ('edit_section', 'rename_section'):
             section = get_object_or_404(
-                _filter_workplace(TaskSection.objects.filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
+                _filter_workplace(editable_to(TaskSection.objects.all(), request.user).filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
                 id=request.POST.get('section_id'),
             )
             section_rename_form = TaskSectionRenameForm(request.POST, instance=section, user=workspace_owner(request), project=section.project)
@@ -3552,19 +3593,21 @@ def _tasks_page(request, active_section=None):
         if action == 'delete_section':
             section_ids = _posted_ids(request, 'section_ids', 'section_id')
             sections_to_delete = _filter_workplace(
-                TaskSection.objects.filter(id__in=section_ids, project__user=workspace_owner(request)),
+                visible_to(TaskSection.objects.all(), request.user).filter(id__in=section_ids, project__user=workspace_owner(request)),
                 workplace,
                 field_name='project__workplace',
             )
+            require_editable(sections_to_delete, request.user)
             if not sections_to_delete.exists():
                 get_object_or_404(
-                    _filter_workplace(TaskSection.objects.filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
+                    _filter_workplace(editable_to(TaskSection.objects.all(), request.user).filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
                     id=request.POST.get('section_id'),
                 )
             section_count = sections_to_delete.count()
             project_id = sections_to_delete.values_list('project_id', flat=True).first()
-            task_count = _filter_workplace(Task.objects.filter(section__in=sections_to_delete, user=workspace_owner(request)), workplace).count()
+            task_count = _filter_workplace(visible_to(Task.objects.all(), request.user).filter(section__in=sections_to_delete, user=workspace_owner(request)), workplace).count()
             with lock_task_numbers(workspace_owner(request).pk):
+                require_deletable_tasks(Task.objects.filter(section__in=sections_to_delete), request.user)
                 sections_to_delete.delete()
                 Task._renumber_user_tasks(workspace_owner(request), workplace)
             if section_count == 1 and task_count:
@@ -3582,7 +3625,7 @@ def _tasks_page(request, active_section=None):
         if action == 'create_task':
             section = get_object_or_404(
                 _filter_workplace(
-                    TaskSection.objects.select_related('project', 'project__user'),
+                    editable_to(TaskSection.objects.all(), request.user).select_related('project', 'project__user'),
                     workplace,
                     field_name='project__workplace',
                 ),
@@ -3606,10 +3649,10 @@ def _tasks_page(request, active_section=None):
             project = None
             project_id = request.POST.get('project_id')
             if project_id:
-                project = _task_creation_project_for_user(workspace_owner(request), project_id, workplace=workplace)
+                project = _task_creation_project_for_user(workspace_owner(request), project_id, workplace=workplace, viewer=request.user)
                 if not project:
                     raise PermissionDenied
-            task_modal_sections = _editable_sections_queryset(workspace_owner(request), workplace)
+            task_modal_sections = _editable_sections_queryset(workspace_owner(request), workplace, viewer=request.user)
             if project:
                 task_modal_sections = task_modal_sections.filter(project=project)
             task_modal_form = TaskModalForm(
@@ -3619,6 +3662,7 @@ def _tasks_page(request, active_section=None):
                 project=project,
                 section=active_section,
                 sections_queryset=task_modal_sections,
+                viewer=request.user,
             )
             if task_modal_form.is_valid():
                 task = task_modal_form.save(commit=False)
@@ -3636,7 +3680,7 @@ def _tasks_page(request, active_section=None):
             messages.error(request, 'Nie udało się dodać zadania.')
 
     tasks_qs = _filter_workplace(
-        Task.objects.filter(user=workspace_owner(request), parent__isnull=True),
+        visible_to(Task.objects.all(), request.user).filter(user=workspace_owner(request), parent__isnull=True),
         workplace,
     ).select_related('section', 'section__project', 'assignee').prefetch_related('tags').annotate(
         is_closed_sort=Case(
@@ -3649,7 +3693,7 @@ def _tasks_page(request, active_section=None):
     ).order_by('is_closed_sort', 'task_id')
 
     active_project_id = str(active_section.project_id) if active_section else active_project_id
-    active_project = _project_for_user(workspace_owner(request), active_project_id, workplace=workplace) if active_project_id else None
+    active_project = _project_for_user(workspace_owner(request), active_project_id, workplace=workplace, viewer=request.user) if active_project_id else None
     if active_section and active_project:
         active_section = next((section for section in active_project.sections.all() if section.id == active_section.id), active_section)
 
@@ -3818,7 +3862,7 @@ def _tasks_page(request, active_section=None):
         'has_active_filters': False,
     }
     projects = project_window['projects']
-    navigation_projects = _navigation_projects_for_user(workspace_owner(request), active_project=active_project, workplace=workplace)
+    navigation_projects = _navigation_projects_for_user(workspace_owner(request), active_project=active_project, workplace=workplace, viewer=request.user)
     if active_project:
         navigation_active_project = next((project for project in navigation_projects if project.id == active_project.id), None)
         if navigation_active_project:
@@ -3830,16 +3874,17 @@ def _tasks_page(request, active_section=None):
             workspace_owner(request),
             active_project=active_project_for_form,
             workplace=workplace,
+            viewer=request.user,
         )
     else:
         project_options = navigation_projects
-    _decorate_project_directory_metrics(navigation_projects)
+    _decorate_project_directory_metrics(navigation_projects, viewer=request.user)
     _decorate_project_field_values(navigation_projects, project_field_configuration)
-    _decorate_directory_members(navigation_projects, current_user=workspace_owner(request))
+    _decorate_directory_members(navigation_projects, current_user=workspace_owner(request), viewer=request.user)
     if project_options is not navigation_projects:
-        _decorate_project_directory_metrics(project_options)
+        _decorate_project_directory_metrics(project_options, viewer=request.user)
         _decorate_project_field_values(project_options, project_field_configuration)
-        _decorate_directory_members(project_options, current_user=workspace_owner(request))
+        _decorate_directory_members(project_options, current_user=workspace_owner(request), viewer=request.user)
 
     orphan_tasks = []
     orphan_status_groups = []
@@ -3856,6 +3901,7 @@ def _tasks_page(request, active_section=None):
         all_status_groups = _status_groups_for_tasks(
             task_window['queryset'],
             workspace_owner(request),
+            request=request,
         )
     all_sections = group_window['sections'] if active_view == 'all_groups' else []
     shared_projects = []
@@ -3870,6 +3916,7 @@ def _tasks_page(request, active_section=None):
         active_project=active_project,
         active_section=active_section,
         workplace=workplace,
+        viewer=request.user,
     )
     project_sections = project_section_window['sections'] if active_view == 'project' else []
 
@@ -3993,6 +4040,9 @@ def _tasks_page(request, active_section=None):
         'tasks_return_path': request.get_full_path(),
         'project_form': project_form,
         'project_rename_form': project_rename_form,
+        'project_access_data': project_access_data(workplace, request.user),
+        'project_response_invitation': project_response_invitation,
+        'project_response_url': scoped_workplace_app_path(workplace, 'tasks', f'project-invitations/{project_response_invitation.pk}/respond/') if project_response_invitation else '',
         'project_rename_project_id': project_rename_project_id,
         'section_form': section_form,
         'tag_form': tag_form,
@@ -4028,6 +4078,7 @@ def create_share_link(request):
         (request.POST.get('object_type') or '').strip(),
         request.POST.get('object_id'),
         workplace=_active_workplace(request),
+        viewer=request.user,
     )
     permission = _share_permission_from_request(request)
     link, created = SharedItemLink.objects.get_or_create(
@@ -4060,6 +4111,7 @@ def revoke_share_link(request):
         (request.POST.get('object_type') or '').strip(),
         request.POST.get('object_id'),
         workplace=_active_workplace(request),
+        viewer=request.user,
     )
     updated_count = SharedItemLink.objects.filter(
         content_type=ContentType.objects.get_for_model(obj.__class__),
@@ -4114,7 +4166,7 @@ def update_task_status(request, task_id):
         task_pk = task_primary_keys(data)[0]
         user = workspace_owner(request)
         with lock_task_numbers(user.pk):
-            task = _filter_workplace(Task.objects.filter(user=user), workplace).select_for_update().get(pk=task_pk)
+            task = _filter_workplace(editable_to(Task.objects.all(), request.user).filter(user=user), workplace).select_for_update().get(pk=task_pk)
             status = data.get('status')
             previous_status = task.status
 
@@ -4159,7 +4211,8 @@ def delete_task(request, task_id):
     try:
         task_pk = task_primary_keys(json.loads(request.body))[0]
         with lock_task_numbers(workspace_owner(request).pk):
-            task = _filter_workplace(Task.objects.filter(user=workspace_owner(request)), _active_workplace(request)).get(pk=task_pk)
+            task = _filter_workplace(editable_to(Task.objects.all(), request.user).filter(user=workspace_owner(request)), _active_workplace(request)).get(pk=task_pk)
+            require_deletable_tasks(Task.objects.filter(pk=task.pk), request.user)
             task.delete()
         return JsonResponse({'status': 'success', 'message': 'Zadanie usunięte pomyślnie'})
     except Task.DoesNotExist:
@@ -4173,13 +4226,13 @@ def delete_attachment(request, attachment_id):
     try:
         attachment = get_object_or_404(
             _filter_workplace(
-                TaskAttachment.objects.select_related('task', 'task__section', 'task__section__project'),
+                editable_to(TaskAttachment.objects.all(), request.user).select_related('task', 'task__section', 'task__section__project'),
                 _active_workplace(request),
                 field_name='task__workplace',
             ),
             id=attachment_id,
         )
-        if not _user_can_edit_task(workspace_owner(request), attachment.task):
+        if not _user_can_edit_task(workspace_owner(request), attachment.task, viewer=request.user):
             return JsonResponse({'status': 'error', 'message': 'Brak uprawnień do edycji zadania'}, status=403)
         attachment.delete()
         return JsonResponse({'status': 'success', 'message': 'Załącznik usunięty pomyślnie'})
@@ -4191,7 +4244,7 @@ def delete_attachment(request, attachment_id):
 def download_attachment(request, attachment_id):
     attachment = get_object_or_404(
         _filter_workplace(
-            TaskAttachment.objects.select_related('task'),
+            visible_to(TaskAttachment.objects.all(), request.user).select_related('task'),
             _active_workplace(request),
             field_name='task__workplace',
         ).filter(task__user=workspace_owner(request)),
@@ -4210,7 +4263,10 @@ def delete_tasks(request):
         user = workspace_owner(request)
         workplace = _active_workplace(request)
         with lock_task_numbers(user.pk):
-            deleted_count = _filter_workplace(Task.objects.filter(pk__in=task_pks, user=user), workplace).delete()[0]
+            tasks_to_delete = _filter_workplace(visible_to(Task.objects.all(), request.user).filter(pk__in=task_pks, user=user), workplace)
+            require_editable(tasks_to_delete, request.user)
+            require_deletable_tasks(tasks_to_delete, request.user)
+            deleted_count = tasks_to_delete.delete()[0]
             Task._renumber_user_tasks(user, workplace)
 
         return JsonResponse({
@@ -4220,6 +4276,8 @@ def delete_tasks(request):
         })
     except (ValueError, TypeError) as error:
         return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
+    except PermissionDenied as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=403)
     except Exception:
         logger.exception('Failed to delete tasks')
         return JsonResponse({'status': 'error', 'message': 'Nie udało się usunąć zadań.'}, status=500)
@@ -4238,9 +4296,10 @@ def bulk_update_status(request):
         
         user = workspace_owner(request)
         workplace = _active_workplace(request)
-        tasks_to_update = _filter_workplace(Task.objects.filter(pk__in=task_pks, user=user), workplace)
+        tasks_to_update = _filter_workplace(visible_to(Task.objects.all(), request.user).filter(pk__in=task_pks, user=user), workplace)
         updated_count = 0
         with lock_task_numbers(user.pk):
+            require_editable(tasks_to_update, request.user)
             for task in tasks_to_update.select_for_update():
                 previous_status = task.status
                 _set_task_status(task, status)
@@ -4260,6 +4319,8 @@ def bulk_update_status(request):
         })
     except (ValueError, TypeError) as error:
         return JsonResponse({'status': 'error', 'message': str(error)}, status=400)
+    except PermissionDenied as error:
+        return JsonResponse({'status': 'error', 'message': str(error)}, status=403)
     except Exception:
         logger.exception('Failed to bulk update task status')
         return JsonResponse({'status': 'error', 'message': 'Nie udało się zaktualizować zadań.'}, status=500)
@@ -4304,7 +4365,7 @@ def _save_task_work_log(request, task):
             entry_id = int(request.POST.get('work_log_id', ''))
         except (ValueError, TypeError, OverflowError):
             raise Http404
-        entry = get_object_or_404(TaskWorkLog.objects.select_for_update(), task=task, pk=entry_id)
+        entry = get_object_or_404(visible_to(TaskWorkLog.objects.all(), request.user).select_for_update(), task=task, pk=entry_id)
     form = TaskWorkLogForm(request.POST, instance=entry, prefix='worklog')
     if action != 'delete_work_log' and not form.is_valid():
         if _is_ajax_request(request):
@@ -4341,30 +4402,30 @@ def _save_task_work_log(request, task):
 def _task_detail_response(request, task_id=None, task_pk=None):
     workplace = _active_workplace(request)
     task_queryset = _filter_workplace(
-        Task.objects.select_related('section', 'section__project', 'section__project__user', 'parent', 'assignee'),
+        visible_to(Task.objects.all(), request.user).select_related('section', 'section__project', 'section__project__user', 'parent', 'assignee'),
         workplace,
     ).prefetch_related(
         Prefetch(
             'subtasks',
             queryset=_filter_workplace(
-                Task.objects.select_related('section', 'section__project', 'assignee'),
+                visible_to(Task.objects.all(), request.user).select_related('section', 'section__project', 'assignee'),
                 workplace,
             ).prefetch_related('tags', 'attachments').order_by('task_id'),
         ),
         Prefetch(
             'activities',
-            queryset=TaskActivity.objects.select_related('actor').prefetch_related('images').order_by('-created_at', '-id'),
+            queryset=visible_to(TaskActivity.objects.all(), request.user).select_related('actor').prefetch_related('images').order_by('-created_at', '-id'),
         ),
     )
     if task_pk is not None:
         raise PermissionDenied
     task = get_object_or_404(task_queryset, user=workspace_owner(request), **task_detail_lookup(request, task_id))
 
-    can_manage_task = task.user_id == workspace_owner(request).id
-    can_edit_task = _user_can_edit_task(workspace_owner(request), task)
-    subtask_status_groups = _status_groups_for_tasks(task.subtasks.all(), workspace_owner(request))
+    can_edit_task = _user_can_edit_task(workspace_owner(request), task, viewer=request.user)
+    can_manage_task = can_edit_task
+    subtask_status_groups = _status_groups_for_tasks(task.subtasks.all(), workspace_owner(request), request=request)
     can_add_attachments = can_edit_task and not task.parent_id
-    form = TaskForm(instance=task, user=task.user, workplace=workplace)
+    form = TaskForm(instance=task, user=task.user, workplace=workplace, viewer=request.user, read_only=not can_edit_task)
     task_modal_form = SubTaskModalForm()
     task_modal_open = False
     comment_errors = []
@@ -4373,9 +4434,11 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     active_tab = request.GET.get('tab', 'main')
     if active_tab not in {'main', 'subtasks', 'work-log', 'history'} or (active_tab == 'subtasks' and task.parent_id):
         active_tab = 'main'
-    _decorate_task_directory_members([task], current_user=workspace_owner(request))
+    _decorate_task_directory_members([task], current_user=workspace_owner(request), viewer=request.user)
 
     if request.method == 'POST':
+        if not can_edit_task:
+            raise PermissionDenied('Masz dostęp tylko do odczytu tego projektu.')
         is_ajax = _is_ajax_request(request)
         action = request.POST.get('action')
         if action in {'add_work_log', 'edit_work_log', 'delete_work_log'}:
@@ -4437,7 +4500,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
             files = request.FILES.getlist('attachments') if can_add_attachments else []
             file_errors = _attachment_validation_errors(files)
             before = _task_activity_snapshot(task)
-            form = TaskForm(request.POST, request.FILES, instance=task, user=task.user, workplace=workplace)
+            form = TaskForm(request.POST, request.FILES, instance=task, user=task.user, workplace=workplace, viewer=request.user)
             if form.is_valid() and not file_errors:
                 form.save()
                 recorded_activities = []
@@ -4447,7 +4510,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                 deleted_count = 0
                 if deleted_attachments:
                     attachment_ids = [int(aid) for aid in deleted_attachments.split(',') if aid.isdigit()]
-                    attachments_to_delete = TaskAttachment.objects.filter(id__in=attachment_ids, task=task)
+                    attachments_to_delete = visible_to(TaskAttachment.objects.all(), request.user).filter(id__in=attachment_ids, task=task)
                     deleted_count = attachments_to_delete.count()
                     attachments_to_delete.delete()
 
@@ -4523,7 +4586,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                         messages.error(request, f"{field}: {error}")
                 active_tab = 'main'
     else:
-        form = TaskForm(instance=task, user=task.user, workplace=workplace)
+        form = TaskForm(instance=task, user=task.user, workplace=workplace, viewer=request.user, read_only=not can_edit_task)
 
     if not can_edit_task:
         for field in form.fields.values():
@@ -4559,6 +4622,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
             active_section=task.section,
             active_view='section' if task.section_id else 'all_tasks',
             workplace=workplace,
+            viewer=request.user,
         ),
     }
     context.update(follow_context(request.user, task, 'tasks', 'task'))

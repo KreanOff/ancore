@@ -4,6 +4,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+from tasks.access import editable_to, visible_to
 from workplaces.services import workplace_people
 
 from contacts.models import Company
@@ -100,20 +101,23 @@ class TaskForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        viewer = kwargs.pop('viewer', None) or user
         workplace = kwargs.pop('workplace', None)
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
+        read_only = kwargs.pop('read_only', False)
+        relation_scope = visible_to if read_only else editable_to
         super().__init__(*args, **kwargs)
         if workplace is None and section is not None:
             workplace = getattr(section.project, 'workplace', None)
         if user:
-            projects = _filter_workplace(TaskProject.objects.filter(user=user), workplace).prefetch_related('sections')
-            sections = TaskSection.objects.filter(project__user=user).select_related('project')
+            projects = _filter_workplace(relation_scope(TaskProject.objects.all(), viewer).filter(user=user), workplace).prefetch_related('sections')
+            sections = relation_scope(TaskSection.objects.all(), viewer).filter(project__user=user).select_related('project')
             if workplace is not None:
                 sections = sections.filter(project__workplace=workplace)
             parents = Task.objects.none()
             if getattr(self.instance, 'parent_id', None):
-                parents = Task.objects.filter(user=user, parent__isnull=True).select_related('section', 'section__project').order_by('task_id')
+                parents = relation_scope(Task.objects.all(), viewer).filter(user=user, parent__isnull=True).select_related('section', 'section__project').order_by('task_id')
                 if workplace is not None:
                     parents = parents.filter(workplace=workplace)
                 if self.instance and self.instance.pk:
@@ -141,7 +145,7 @@ class TaskForm(forms.ModelForm):
         self.fields['due_at'].label = 'Termin wykonania'
         self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['reminder_at'].label = 'Przypomnienie'
-        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela Workspace.'
+        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela prywatnego projektu lub Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['assignee'].label = 'Przypisane do'
         self.fields['task_type'].label = 'Typ zadania'
@@ -291,7 +295,51 @@ class TaskWorkLogForm(forms.ModelForm):
         return cleaned
 
 
+class ProjectVisibilitySelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        icon = {'private': 'lock', 'public': 'users'}.get(value)
+        if icon:
+            option['attrs']['data-ancore-option-icon'] = icon
+        return option
+
+
 class TaskProjectBaseForm(forms.ModelForm):
+    visibility = forms.ChoiceField(
+        choices=[('private', 'Prywatny — wybrane osoby'), ('public', 'Publiczny — cały Workspace')], required=False, label='Widoczność',
+        widget=ProjectVisibilitySelect(attrs={'class': 'tasks-inline-select'}),
+    )
+    def clean_visibility(self):
+        # An older open form must not accidentally publish a private project.
+        default = self.instance.visibility if self.instance.pk else TaskProject.Visibility.PRIVATE
+        value = self.cleaned_data.get('visibility') or default
+        if not self.can_manage_access and value != self.instance.visibility:
+            raise forms.ValidationError('Tylko właściciel prywatnego projektu może zmienić widoczność.')
+        return value
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.data.get('sharing_present') or self.data.get('shared_with'):
+            raise forms.ValidationError('Udostępnianie odbywa się przez zaproszenia. Odśwież formularz.')
+        return cleaned
+
+    def _save_m2m(self):
+        if self.can_manage_access and self.instance.visibility == 'public':
+            self.instance.shared_with.clear()
+            self.instance.invitations.filter(status='pending').update(status='revoked')
+
+    def save(self, commit=True):
+        project = super().save(commit=False)
+        if project.visibility == TaskProject.Visibility.PRIVATE:
+            if not project.private_owner_id:
+                project.private_owner = self.viewer
+        else:
+            project.private_owner = None
+        if commit:
+            project.save()
+            self.save_m2m()
+        return project
+
     source = forms.CharField(
         required=False,
         max_length=120,
@@ -323,9 +371,17 @@ class TaskProjectBaseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        viewer = kwargs.pop('viewer', None) or user
         workplace = kwargs.pop('workplace', None)
         field_options = kwargs.pop('field_options', None)
         super().__init__(*args, **kwargs)
+        self.viewer = viewer
+        self.can_manage_access = (not self.instance.pk or self.instance.visibility == 'public'
+                                  or self.instance.private_owner_id == getattr(viewer, 'pk', None))
+        if "visibility" in self.fields:
+            self.fields["visibility"].widget.attrs["id"] = (
+                "project-rename-visibility" if isinstance(self, TaskProjectRenameForm) else "project-create-visibility"
+            )
         if 'company' in self.fields:
             _replace_optional_model_choice(self, 'company', _company_queryset(user, workplace), 'Brak firmy')
             self.fields['company'].widget.attrs['data-ancore-custom-select-search'] = 'true'
@@ -350,7 +406,7 @@ class TaskProjectBaseForm(forms.ModelForm):
             # Include legacy/imported text values in the shared edit modal as well.
             if user:
                 legacy_sources = (
-                    TaskProject.objects.filter(user=user, workplace=workplace)
+                    visible_to(TaskProject.objects.all(), viewer).filter(user=user, workplace=workplace)
                     .exclude(source='').order_by('source').values_list('source', flat=True).distinct()
                 )
                 sources = sources + [(value, value) for value in legacy_sources if value not in known_sources]
@@ -492,8 +548,10 @@ class TaskProjectForm(TaskProjectBaseForm):
     def __init__(self, *args, **kwargs):
         user, workplace = kwargs.get('user'), kwargs.get('workplace')
         super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.initial['visibility'] = TaskProject.Visibility.PRIVATE
         if user:
-            self.fields['template'].queryset = TaskProjectTemplate.objects.filter(user=user, workplace=workplace)
+            self.fields['template'].queryset = visible_to(TaskProjectTemplate.objects.all(), self.viewer).filter(user=user, workplace=workplace)
 
     section_title = forms.CharField(
         required=False,
@@ -525,6 +583,7 @@ class TaskProjectForm(TaskProjectBaseForm):
         model = TaskProject
         fields = [
             'name',
+            'visibility',
             'template',
             'code',
             'section_title',
@@ -602,6 +661,7 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
         model = TaskProject
         fields = [
             'name',
+            'visibility',
             'code',
             'description',
             'company',
@@ -993,6 +1053,7 @@ class QuickTaskForm(forms.ModelForm):
 class TaskModalForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        viewer = kwargs.pop('viewer', None) or user
         workplace = kwargs.pop('workplace', None)
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
@@ -1001,12 +1062,12 @@ class TaskModalForm(forms.ModelForm):
         if workplace is None and section is not None:
             workplace = getattr(section.project, 'workplace', None)
         if sections_queryset is not None:
-            sections = sections_queryset
+            sections = editable_to(sections_queryset, viewer)
             if project:
                 sections = sections.filter(project=project)
             self.fields['section'].queryset = sections
         elif user:
-            sections = TaskSection.objects.filter(project__user=user)
+            sections = editable_to(TaskSection.objects.all(), viewer).filter(project__user=user)
             if workplace is not None:
                 sections = sections.filter(project__workplace=workplace)
             if project:
@@ -1024,7 +1085,7 @@ class TaskModalForm(forms.ModelForm):
         self.fields['due_at'].label = 'Termin wykonania'
         self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['reminder_at'].label = 'Przypomnienie'
-        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela Workspace.'
+        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela prywatnego projektu lub Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['assignee'].label = 'Przypisane do'
         self.fields['task_type'].label = 'Typ zadania'

@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from kanban.models import Kanban, KanbanActivity, KanbanProject
+from tasks.access import visible_to
 from tasks.models import Task, TaskActivity, TaskProject
 from workplaces.services import workplace_people, scoped_workplace_app_path, workspace_owner
 from .models import ActivityInterest, ObjectFollow
@@ -95,6 +96,16 @@ def mention_people(task):
             workplace_memberships__is_active=True,
             workplace_memberships__role__in=['admin', 'member'],
         )).distinct()
+    if isinstance(task, Task):
+        current, seen = task, set()
+        while current is not None and current.pk not in seen:
+            seen.add(current.pk)
+            if current.section_id:
+                project = current.section.project
+                if project.visibility == TaskProject.Visibility.PRIVATE:
+                    people = (people.filter(Q(pk=project.private_owner_id) | Q(pk__in=project.shared_with.values('pk')))
+                              if project.private_owner_id else people.none())
+            current = current.parent if current.parent_id else None
     return people
 
 
@@ -114,7 +125,7 @@ def follow_object(request, app, kind, object_id):
     if (app, kind) not in OBJECTS:
         raise Http404
     model, field = OBJECTS[app, kind]
-    obj = get_object_or_404(model, pk=object_id, user=workspace_owner(request), workplace=request.workplace)
+    obj = get_object_or_404(visible_to(model.objects.all(), request.user), pk=object_id, user=workspace_owner(request), workplace=request.workplace)
     following = request.POST.get('following')
     if following not in {'true', 'false'}:
         return JsonResponse({'message': 'Nieprawidłowy stan obserwowania.'}, status=400)

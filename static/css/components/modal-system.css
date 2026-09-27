@@ -681,6 +681,12 @@
     font-size: var(--font-size-sm);
 }
 
+.tasks-modal .tasks-project-heading-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--app-modal-field-gap);
+}
+
 .tasks-form-field > label,
 .tasks-modal .tasks-settings-grid > label {
     font-size: var(--font-size-sm);
@@ -689,6 +695,7 @@
 }
 
 .tasks-modal .tasks-modal__body > .tasks-form-field + .tasks-form-field,
+.tasks-modal .tasks-modal__body > [data-project-access-panel="main"] > .tasks-form-field + .tasks-form-field,
 .tasks-modal :is(.workplace-modal__details, .contacts-company-create-fields) > .tasks-form-field + .tasks-form-field {
     margin-top: var(--app-modal-field-gap);
 }
@@ -836,6 +843,7 @@
 
 @media (max-width: 600px) {
     .tasks-modal .tasks-project-create-fields.tasks-issue-fields,
+    .tasks-modal .tasks-project-heading-fields,
     .tasks-modal .contacts-modal-title-grid,
     .tasks-modal .contacts-modal-fields,
     .tasks-modal .calendar-form-row {
@@ -856,7 +864,8 @@
     }
 }
 
-.tasks-modal .contacts-modal-title-grid + .tasks-form-field {
+.tasks-modal .contacts-modal-title-grid + .tasks-form-field,
+.tasks-modal .tasks-project-heading-fields + .tasks-form-field {
     margin-top: var(--app-modal-field-gap);
 }
 
@@ -1088,6 +1097,8 @@
    the modules' stacked fields and their existing single-column breakpoints. */
 @media (min-width: 1100px) {
     .tasks-modal.app-modal-panel .tasks-modal__body > .tasks-form-field,
+.tasks-modal.app-modal-panel .tasks-modal__body > [data-project-access-panel="main"] > .tasks-form-field,
+    .tasks-modal.app-modal-panel .tasks-project-heading-fields > .tasks-form-field,
     .tasks-modal.app-modal-panel .calendar-dialog-body > .calendar-dialog-field:not(.calendar-checkbox-field) {
         display: grid;
         grid-template-columns: 180px minmax(0, 1fr);
@@ -1097,18 +1108,31 @@
     }
 
     .tasks-modal.app-modal-panel .tasks-modal__body > .tasks-form-field > label,
+.tasks-modal.app-modal-panel .tasks-modal__body > [data-project-access-panel="main"] > .tasks-form-field > label,
+    .tasks-modal.app-modal-panel .tasks-project-heading-fields > .tasks-form-field > label,
     .tasks-modal.app-modal-panel .calendar-dialog-body > .calendar-dialog-field > .form-label:not(.form-label--checkbox) {
         grid-column: 1;
         padding-top: 9px;
     }
 
     .tasks-modal.app-modal-panel .tasks-modal__body > .tasks-form-field > :not(label),
+.tasks-modal.app-modal-panel .tasks-modal__body > [data-project-access-panel="main"] > .tasks-form-field > :not(label),
+    .tasks-modal.app-modal-panel .tasks-project-heading-fields > .tasks-form-field > :not(label),
     .tasks-modal.app-modal-panel .calendar-dialog-body > .calendar-dialog-field:not(.calendar-checkbox-field) > :not(label) {
         grid-column: 2;
     }
 
     .tasks-modal.app-modal-panel .calendar-checkbox-field {
         margin-left: 204px;
+    }
+
+    .tasks-modal.app-modal-panel .tasks-project-heading-fields {
+        grid-template-columns: minmax(0, 1fr) minmax(340px, 0.6fr);
+    }
+
+    .tasks-modal.app-modal-panel .tasks-project-heading-fields > .tasks-form-field:last-child {
+        grid-template-columns: max-content minmax(0, 1fr);
+        column-gap: var(--app-modal-field-gap);
     }
 
     .tasks-modal.app-modal-panel :is(#project-create-form, #project-rename-form, #section-create-form, #section-rename-form, #issue-create-form) .tasks-project-create-fields > :is(label, .tasks-issue-field):not(.u-hidden):not([hidden]) {

@@ -16,7 +16,6 @@ class LegacyTaskTimeMigrationTests(TransactionTestCase):
         executor = MigrationExecutor(connection)
         self.latest = executor.loader.graph.leaf_nodes()
         self.addCleanup(self.restore_schema)
-        executor.migrate([('tasks', '0050_task_work_log')])
         self.owner = get_user_model().objects.create_user(
             username='legacy-time-owner', email='legacy-time-owner@example.test',
         )
@@ -24,6 +23,9 @@ class LegacyTaskTimeMigrationTests(TransactionTestCase):
         project = TaskProject.objects.create(user=self.owner, workplace=self.team, name='Project')
         self.section = TaskSection.objects.create(project=project, title='Group')
         self.parent = Task.objects.create(user=self.owner, section=self.section, title='Parent')
+        # Seed with current models before rolling back; later project fields
+        # are intentionally absent from the historical schema under test.
+        executor.migrate([('tasks', '0050_task_work_log')])
 
     def restore_schema(self):
         # This column exists only in the simulated legacy test database.

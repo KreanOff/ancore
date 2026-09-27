@@ -153,6 +153,11 @@
         filterOptions(wrapper);
     }
 
+    function optionIcon(option) {
+        const name = option?.dataset.ancoreOptionIcon;
+        return name ? window.AncoreIcons?.create(name, { className: 'ancore-custom-select__icon' }) : null;
+    }
+
     function buildOption(select, option, index) {
         const button = document.createElement('button');
         button.type = 'button';
@@ -170,7 +175,10 @@
         label.className = 'ancore-custom-select__option-label';
         label.textContent = option.textContent.trim() || option.value || 'Opcja';
 
-        button.append(check, label);
+        button.append(check);
+        const icon = optionIcon(option);
+        if (icon) button.append(icon);
+        button.append(label);
         button.setAttribute('aria-selected', option.selected ? 'true' : 'false');
         button.classList.toggle('is-selected', option.selected);
 
@@ -210,6 +218,7 @@
         empty.textContent = 'Brak wyników';
         list.appendChild(empty);
 
+        renderIcon(list);
         filterOptions(wrapper);
     }
 
@@ -218,6 +227,12 @@
         if (!select || !button || !label || !menu) return;
 
         label.textContent = selectedLabel(select);
+        button.querySelector('.ancore-custom-select__icon')?.remove();
+        const icon = select.selectedOptions.length === 1 ? optionIcon(select.selectedOptions[0]) : null;
+        if (icon) {
+            button.prepend(icon);
+            renderIcon(button);
+        }
         button.disabled = select.disabled;
         button.setAttribute('aria-disabled', select.disabled ? 'true' : 'false');
         wrapper.classList.toggle('is-disabled', select.disabled);

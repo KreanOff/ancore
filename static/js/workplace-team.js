@@ -130,6 +130,7 @@
         }, options);
         return close;
     }
+    window.AncoreTeamInvitationPicker = { init: initInvitationPicker };
     function init() {
         cleanup();
         cleanup = () => {};

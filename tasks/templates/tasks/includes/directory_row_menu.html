@@ -6,6 +6,8 @@
         <div class="documents-menu-actions">
             {% if can_manage %}
             <button type="button" class="tasks-project-menu-button" data-directory-row-action="action"{% if edit_modal %} aria-haspopup="dialog" aria-controls="{{ edit_modal }}"{% endif %}><i data-icon="pencil" aria-hidden="true"></i><span>{{ edit_label }}</span></button>
+            {% elif can_preview_project %}
+            <button type="button" class="tasks-project-menu-button" data-directory-row-action="preview" aria-haspopup="dialog" aria-controls="project-rename-modal"><i data-icon="eye" aria-hidden="true"></i><span>Podgląd projektu</span></button>
             {% endif %}
             <button type="button" class="tasks-project-menu-button" data-directory-row-action="info"{% if edit_modal %} aria-haspopup="dialog" aria-controls="project-info-modal"{% endif %}><i data-icon="info" aria-hidden="true"></i><span>{{ info_label }}</span></button>
             {% if notes_label %}

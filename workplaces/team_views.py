@@ -19,6 +19,15 @@ from .models import Workplace, WorkplaceInvitation, WorkplaceMembership
 from .services import can_manage_team, workplace_role, workplaces_for_user, set_active_workplace, scoped_workplace_app_path, workplace_management_url
 
 
+class TeamRoleSelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        icon = {'member': 'user-round', 'admin': 'shield-check', 'observer': 'eye'}.get(str(value))
+        if icon:
+            option['attrs']['data-ancore-option-icon'] = icon
+        return option
+
+
 class InvitationForm(forms.Form):
     email = forms.EmailField(label='Osoba lub adres e-mail konta Ancore', widget=forms.TextInput(attrs={
         'class': 'form-input', 'autocomplete': 'off', 'spellcheck': 'false',
@@ -27,7 +36,7 @@ class InvitationForm(forms.Form):
         'aria-expanded': 'false', 'aria-controls': 'team-invite-results',
         'aria-describedby': 'team-invite-search-status',
     }))
-    role = forms.ChoiceField(label='Rola', choices=[('member', 'Członek'), ('admin', 'Administrator')], widget=forms.Select(attrs={'class': 'form-select'}))
+    role = forms.ChoiceField(label='Rola', choices=[('member', 'Członek'), ('admin', 'Administrator')], widget=TeamRoleSelect(attrs={'class': 'form-select'}))
 
     def __init__(self, *args, workplace, actor, **kwargs):
         super().__init__(*args, **kwargs)

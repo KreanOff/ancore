@@ -29,7 +29,7 @@
     <div class="tasks-modal__dialog"><form method="post" class="tasks-modal__form" data-team-role-form>
         {% csrf_token %}<input type="hidden" name="action" value="role">
         <header class="tasks-modal__header"><h2 id="team-role-title">Zmień rolę</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
-        <div class="tasks-modal__body"><p class="workplace-team__hint" data-team-role-person></p><div class="tasks-form-field"><label for="team-member-role">Rola</label><select id="team-member-role" name="role" class="form-select"><option value="member">Członek</option><option value="admin">Administrator</option></select></div></div>
+        <div class="tasks-modal__body"><p class="workplace-team__hint" data-team-role-person></p><div class="tasks-form-field"><label for="team-member-role">Rola</label><select id="team-member-role" name="role" class="form-select"><option value="member" data-ancore-option-icon="user-round">Członek</option><option value="admin" data-ancore-option-icon="shield-check">Administrator</option></select></div></div>
         <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zapisz rolę</button></footer>
     </form></div>
 </div>

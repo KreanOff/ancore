@@ -90,6 +90,64 @@ Pierwszy opis powstał z przeglądu szablonów, CSS i JS. Nie jest pomiarem
 wszystkich końcowych stylów w przeglądarce. Przed zmianą wizualną obejrzyj
 referencyjny ekran w tej samej szerokości i stanie co ekran zmieniany.
 
+Formularze „Nowy projekt” i „Edytuj projekt” mają pole „Widoczność” po prawej
+stronie „Nazwa projektu”, w pierwszym wspólnym wierszu `tasks-project-heading-fields`.
+Na ekranach do 600px pola układają się pionowo: nazwa, następnie widoczność.
+W formularzu tworzenia dalej znajdują się „Opis”, „Szablon projektu” i parametry projektu.
+Kontrolka używa istniejącego `tasks-inline-select` i `AncoreCustomSelect`:
+„Publiczny — cały Workspace” oraz „Prywatny — wybrane osoby”. Domyślny nowy projekt
+jest prywatny, także po wyborze publicznego szablonu. Otwarcie edycji z wiersza, zaznaczenia lub menu projektu pobiera
+bieżącą widoczność przez `data-project-visibility`; błędy zachowują wybór.
+„Prywatny” ma ikonę `lock`, a „Publiczny” ikonę `users`, zarówno w zamkniętym
+polu, jak i na liście. `ProjectVisibilitySelect` nadaje opcjom
+`data-ancore-option-icon`; wspólny `AncoreCustomSelect` renderuje ten opcjonalny
+atrybut przez `AncoreIcons`, zachowując tekst i wskaźnik zaznaczenia. Ikony są
+dekoracyjne (`aria-hidden`), mają 16px i dziedziczą kolor kontrolki.
+Nowy projekt ma formularz główny. Po utworzeniu okno „Edytuj projekt” ma
+zakładki „Główna”, „Członkowie” i „Wysłane zaproszenia”, zgodne z oknem
+Workspace. `notifications-tabs` obsługuje strzałki, Home i End. Członkowie
+korzystają ze wspólnych include'ów Workspace `members_table.html` oraz
+`invitations_table.html`: zaznaczenie, menu, avatar i nazwa, e-mail, rola,
+data dołączenia lub ważności. Parametr `project_team` wybiera akcje projektu;
+układ sześciu kolumn, ikony i poziome przewijanie pozostają wspólne.
+
+„Zaproś osobę” otwiera kompaktowe okno z tym samym pickerem konta co Workspace
+(`AncoreTeamInvitationPicker` z `workplace-team.js`) i wyborem roli. Wyszukiwanie
+obejmuje tylko aktywnych członków tego Workspace, bez obecnych uczestników
+projektu i oczekujących zaproszeń. Menu wiersza pozwala zmienić rolę, odebrać
+dostęp lub anulować zaproszenie zgodnie z uprawnieniami. Checkboxy oznaczają
+zaznaczenie wierszy, nie nadają dostępu. Właściciel i administrator widzą
+wysłane zaproszenia; członek i obserwator mają tylko listę członków. Publiczny projekt
+pokazuje zespół Workspace i informację o wspólnym dostępie, bez zapraszania.
+
+`project-team.js` pobiera tabele i zapisuje operacje przez AJAX, zachowując
+niezapisane pola głównej zakładki. Błędy pozostają w aktualnym oknie.
+W zakładkach zespołu stopka ma „Zamknij”; zapis pól projektu jest dostępny na
+„Główna”. Widoczność prywatnego projektu zmienia wyłącznie jego właściciel.
+Okna zaproszenia i roli używają `AncoreTaskModals`, `inert`, Escape i przywrócenia
+fokusu. Ponowna inicjalizacja po `ancore:content-loaded` anuluje stare listenery,
+pickery i żądania. Wybór innego projektu zeruje stan i ignoruje spóźnione odpowiedzi.
+`project-access-data` zawiera uprawnienia do edycji i widoczności oraz URL zespołu
+projektów dostępnych odbiorcy. Układ pól zachowuje `modal-system.css`.
+
+Zaproszenie i zmiana roli projektu oferują „Członek”, „Administrator” oraz
+„Obserwator”; administrator projektu może zaprosić członka lub obserwatora.
+Wybór roli w zaproszeniu i zmianie roli korzysta z ikon `user-round` (Członek),
+`shield-check` (Administrator) oraz `eye` (Obserwator), także przy wybranej
+wartości. `TeamRoleSelect` przekazuje `data-ancore-option-icon` do istniejącego
+`AncoreCustomSelect`; Workspace używa tych samych ikon dla swoich dwóch ról.
+Obserwator otwiera „Podgląd projektu” z ikoną `eye`, wyłączonymi polami,
+listą członków i stopką „Zamknij”, bez zapisu ani zapraszania. Zadania korzystają
+z istniejącego wariantu `tasks-issue-form--readonly`, bez kompozytora czatu,
+edycji czasu i plików. Notatki pozostają widoczne, bez formularzy dodawania
+i edycji. Uprawnienia wierszy wyłączają przeciąganie i operacje zbiorcze.
+Ponowne otwarcie edytowalnego projektu przywraca jego kontrolki.
+
+Otrzymane zaproszenie jest widoczne w panelu powiadomień. Link otwiera kompaktowe
+okno „Zaproszenie do projektu” z projektem, Workspace, zapraszającym, rolą,
+terminem i przyciskami „Później”, „Odrzuć”, „Przyjmij”. Dopiero przyjęcie nadaje
+dostęp do prywatnego projektu.
+
 ## 2. Powłoka aplikacji
 
 Źródło: [core/base.html](../core/templates/core/base.html).

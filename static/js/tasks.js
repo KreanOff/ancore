@@ -327,6 +327,7 @@ function initTasksPage() {
     const projectRenameDueAtInput = projectRenameForm ? projectRenameForm.querySelector('[name="due_at"]') : null;
     const projectRenameBudgetInput = projectRenameForm ? projectRenameForm.querySelector('[name="budget_amount"]') : null;
     const projectRenameCurrencyInput = projectRenameForm ? projectRenameForm.querySelector('[name="currency"]') : null;
+    const projectRenameVisibilityInput = projectRenameForm?.querySelector('[name="visibility"]');
     const projectRenameSourceInput = projectRenameForm ? projectRenameForm.querySelector('[name="source"]') : null;
     const projectRenameCodeValue = document.getElementById('project-rename-code');
 
@@ -1575,7 +1576,7 @@ function initTasksPage() {
 
     function updateProjectRenameSubmitState() {
         if (!projectRenameSubmitBtn || !projectRenameNameInput) return;
-        projectRenameSubmitBtn.disabled = projectRenameNameInput.value.trim().length === 0;
+        projectRenameSubmitBtn.disabled = projectRenameForm?.dataset.projectReadonly === 'true' || projectRenameNameInput.value.trim().length === 0;
     }
 
     function updateSectionCreateSubmitState() {
@@ -3692,7 +3693,25 @@ function initTasksPage() {
         setFieldValue(projectRenameBudgetInput, dataset.projectBudgetAmount);
         setFieldValue(projectRenameCurrencyInput, dataset.projectCurrency || 'PLN');
         setFieldValue(projectRenameSourceInput, dataset.projectSource);
+        setFieldValue(projectRenameVisibilityInput, dataset.projectVisibility || 'public');
         setFieldValue(projectRenameCodeValue, dataset.projectCode);
+        resetProjectAccess(projectRenameForm, dataset.projectId);
+    }
+
+    function resetProjectAccess(form, projectId) {
+        if (taskAppSegment !== 'tasks') return;
+        const access = JSON.parse(document.getElementById('project-access-data')?.textContent || '{}')[projectId];
+        const readonly = access?.canEdit === false;
+        if (form) form.dataset.projectReadonly = String(readonly);
+        form?.querySelectorAll('[data-project-access-panel="main"] input:not([type=hidden]), [data-project-access-panel="main"] textarea, [data-project-access-panel="main"] select, [data-project-access-panel="main"] button').forEach(control => { control.disabled = readonly; });
+        const title = form?.querySelector('#project-rename-modal-title');
+        if (title) title.textContent = readonly ? 'Projekt — tylko odczyt' : 'Edytuj projekt';
+        const settingsLink = form?.querySelector('[data-project-deadline-settings-link]');
+        if (settingsLink) settingsLink.hidden = readonly;
+        const visibility = form?.elements.namedItem('visibility');
+        if (visibility) visibility.disabled = !access?.canManage;
+        window.AncoreCustomSelect?.refresh(form);
+        form?.dispatchEvent(new CustomEvent('ancore:project-team-selected', { bubbles: true, detail: { url: access?.teamUrl } }));
     }
 
     openProjectRenameButtons.forEach(button => {
@@ -3716,8 +3735,10 @@ function initTasksPage() {
         projectNotesModal.querySelectorAll('[data-project-notes-thread]').forEach(thread => {
             thread.hidden = thread.dataset.projectId !== projectId;
         });
+        const canEdit = taskAppSegment !== 'tasks' || projectNotesModal.querySelector('[data-project-notes-thread]:not([hidden])')?.dataset.canEdit === 'true';
+        if (projectNotesForm) projectNotesForm.hidden = !canEdit;
         closeProjectActionMenus();
-        openModal(projectNotesModal, projectNotesMessageInput);
+        openModal(projectNotesModal, canEdit ? projectNotesMessageInput : null);
     }
 
     openProjectNotesButtons.forEach(button => {
@@ -4007,8 +4028,10 @@ function initTasksPage() {
         sectionNotesThreads.forEach(thread => {
             thread.hidden = thread.dataset.sectionId !== sectionId;
         });
+        const canEdit = taskAppSegment !== 'tasks' || sectionNotesModal.querySelector('[data-section-notes-thread]:not([hidden])')?.dataset.canEdit === 'true';
+        if (sectionNotesForm) sectionNotesForm.hidden = !canEdit;
         closeProjectActionMenus();
-        openModal(sectionNotesModal, sectionNotesMessageInput);
+        openModal(sectionNotesModal, canEdit ? sectionNotesMessageInput : null);
     }
 
     openSectionNotesButtons.forEach(button => {
@@ -5638,6 +5661,8 @@ function initTasksPage() {
 
         if (['action', 'info', 'notes'].includes(action)) {
             row.querySelector(`:scope > [data-column="${action}"] :is(button, a)`)?.click();
+        } else if (action === 'preview' && kind === 'project' && taskAppSegment === 'tasks') {
+            row.querySelector('[data-open-project-rename]')?.click();
         } else if (action === 'template' && kind === 'project' && taskAppSegment === 'tasks') {
             saveSelectedProjectTemplate(checkbox, button);
         } else if (action === 'delete') {

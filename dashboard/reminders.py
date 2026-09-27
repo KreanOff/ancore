@@ -2,6 +2,7 @@
 from django.db.models import Exists, F, OuterRef, Q
 from django.utils import timezone
 
+from tasks.access import visible_to
 from tasks.models import Task
 from workplaces.services import workplaces_for_user
 from .models import TaskReminder
@@ -11,8 +12,10 @@ def reminders_for_user(user):
     access = Q(user=user, workplace__isnull=True) | Q(
         user_id=F('workplace__owner_id'), workplace__in=workplaces_for_user(user),
     )
-    recipient = Q(assignee=user) | Q(assignee__isnull=True, user=user)
-    tasks = Task.objects.filter(access, recipient, reminder_at__lte=timezone.now()).exclude(status='closed')
+    recipient = Q(assignee=user) | Q(assignee__isnull=True, user=user) | Q(
+        assignee__isnull=True, section__project__visibility='private', section__project__private_owner=user,
+    )
+    tasks = visible_to(Task.objects.all(), user).filter(access, recipient, reminder_at__lte=timezone.now()).exclude(status='closed')
     delivered = TaskReminder.objects.filter(
         recipient=user, task_id=OuterRef('pk'), scheduled_at=OuterRef('reminder_at'),
     )

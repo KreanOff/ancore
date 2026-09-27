@@ -66,7 +66,7 @@ def delete_template_item(structure, kind, item_id):
 
 
 @transaction.atomic
-def save_project_template(project):
+def save_project_template(project, actor=None):
     sections = list(project.sections.order_by('order', 'pk'))
     tasks = list(Task.objects.filter(
         section__in=sections, user=project.user, workplace=project.workplace,
@@ -83,10 +83,16 @@ def save_project_template(project):
     return TaskProjectTemplate.objects.create(
         user=project.user, workplace=project.workplace, name=project.name, template_name=project.name,
         description=project.description, structure=structure,
+        visibility=project.visibility,
+        private_owner=(actor or project.private_owner) if project.visibility == 'private' else None,
     )
 
 
 def populate_project_from_template(project, template, actor):
+    from .access import visible_to
+
+    if not visible_to(TaskProjectTemplate.objects.all(), actor).filter(pk=template.pk).exists():
+        raise ValidationError('Szablon jest niedostępny.')
     if (project.user_id, project.workplace_id) != (template.user_id, template.workplace_id):
         raise ValidationError('Szablon nie należy do tego Workspace.')
     # Match the owner -> section lock order used by Task.save() and bulk actions.

@@ -17,6 +17,7 @@ import string
 
 from core.task_numbering import lock_task_numbers, renumber_tasks
 from core.comment_images import CommentImage, delete_comment_image_file
+from workplaces.models import invitation_expiry
 
 
 BASE36_ALPHABET = string.digits + string.ascii_uppercase
@@ -87,6 +88,19 @@ def _add_update_field(kwargs, field_name):
 
 
 class TaskProject(models.Model):
+    class Visibility(models.TextChoices):
+        PUBLIC = 'public', 'Publiczny'
+        PRIVATE = 'private', 'Prywatny'
+
+    visibility = models.CharField(max_length=7, choices=Visibility.choices, default=Visibility.PUBLIC)
+    private_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='private_task_projects', editable=False,
+    )
+    shared_with = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name='shared_task_projects', through='TaskProjectMembership',
+    )
+
     PRIORITY_CHOICES = [
         ('none', 'Brak'),
         ('low', 'Niski'),
@@ -208,8 +222,38 @@ class TaskProject(models.Model):
         return self._field_option_display('health')
 
 
+class TaskProjectMembership(models.Model):
+    project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('observer', 'Obserwator')], default='member')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['project', 'user'], name='unique_task_project_member')]
+
+
+class TaskProjectInvitation(models.Model):
+    project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='invitations')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_invitations')
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_project_invitations')
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('observer', 'Obserwator')], default='member')
+    status = models.CharField(max_length=20, choices=[('pending', 'Oczekuje'), ('accepted', 'Przyjęte'), ('declined', 'Odrzucone'), ('revoked', 'Anulowane')], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=invitation_expiry)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        constraints = [models.UniqueConstraint(fields=['project', 'recipient'], condition=Q(status='pending'), name='unique_pending_project_invite')]
+
+
 class TaskProjectTemplate(models.Model):
     """A reusable snapshot; deleting or editing the source project does not change it."""
+
+    visibility = models.CharField(max_length=7, choices=TaskProject.Visibility.choices, default=TaskProject.Visibility.PUBLIC)
+    private_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='private_task_project_templates', editable=False,
+    )
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, null=True, blank=True)

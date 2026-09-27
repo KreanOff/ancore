@@ -128,6 +128,12 @@ select.form-select {
     transition: transform 0.1s;
 }
 
+.ancore-custom-select__icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
 .ancore-custom-select.is-open .ancore-custom-select__caret {
     transform: rotate(180deg);
 }

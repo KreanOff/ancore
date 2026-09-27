@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from django.utils import timezone
 
+from tasks.access import visible_to
 from kanban.models import Kanban
 from planner.models import CalendarEvent
 from tasks.models import Task, TaskProject
@@ -15,14 +16,14 @@ from workplaces.services import scoped_workplace_app_path
 OVERVIEW_LIMIT = 6
 
 
-def dashboard_overview(user, workplace, focus='deadlines'):
+def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     now = timezone.now()
     today = timezone.localdate(now)
     start = timezone.make_aware(datetime.combine(today, time.min))
     end = timezone.make_aware(datetime.combine(today + timedelta(days=7), time.min))
     week_start = timezone.make_aware(datetime.combine(today - timedelta(days=6), time.min))
     focus = focus if focus in {'deadlines', 'priority', 'kanban'} else 'deadlines'
-    tasks = Task.objects.filter(user=user, workplace=workplace, parent__isnull=True)
+    tasks = visible_to(Task.objects.all(), viewer or user).filter(user=user, workplace=workplace, parent__isnull=True)
     cards = Kanban.objects.filter(user=user, workplace=workplace, parent__isnull=True)
     tasks_url = scoped_workplace_app_path(workplace, 'tasks')
     kanban_url = scoped_workplace_app_path(workplace, 'kanban')
@@ -95,7 +96,7 @@ def dashboard_overview(user, workplace, focus='deadlines'):
         sections__tasks__user=user, sections__tasks__workplace=workplace,
         sections__tasks__parent__isnull=True,
     )
-    projects = TaskProject.objects.filter(user=user, workplace=workplace).exclude(
+    projects = visible_to(TaskProject.objects.all(), viewer or user).filter(user=user, workplace=workplace).exclude(
         status__in=['completed', 'cancelled'],
     ).annotate(
         item_count=Count('sections__tasks', filter=project_task_scope),

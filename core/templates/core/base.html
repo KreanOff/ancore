@@ -59,7 +59,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260927-workspace-row-menu">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260927-project-heading">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}">
@@ -151,7 +151,7 @@
                     <i data-icon="bell" aria-hidden="true"></i>
                     <span class="notifications-toggle__indicator" data-notifications-pending aria-hidden="true" hidden></span>
                     <span class="notifications-toggle__invitation-count" data-notifications-invitation-badge aria-hidden="true"{% if not pending_notification_invitation_count %} hidden{% endif %}>{% if pending_notification_invitation_count > 9 %}9+{% else %}{{ pending_notification_invitation_count|default:0 }}{% endif %}</span>
-                    <span id="notifications-invitation-status" class="u-sr-only" data-notifications-invitation-status>{% if pending_notification_invitation_count %}Oczekujące zaproszenia do Workspace: {{ pending_notification_invitation_count }}.{% endif %}</span>
+                    <span id="notifications-invitation-status" class="u-sr-only" data-notifications-invitation-status>{% if pending_notification_invitation_count %}Oczekujące zaproszenia: {{ pending_notification_invitation_count }}.{% endif %}</span>
                 </button>
                 <button type="button" class="sidebar-view-switcher__item sidebar-view-switcher__item--search" aria-label="Wyszukaj w Ancore" title="Wyszukaj w Ancore" aria-controls="global-search-panel" aria-expanded="false" data-global-search-toggle>
                     <i data-icon="search" aria-hidden="true"></i>
@@ -393,9 +393,9 @@
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20260926-unified-small-dialogs"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20260921-dropdown-search"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260927-directory-row-menus"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260927-project-observer"></script>
     <script src="{% static 'js/profile.js' %}?v=20260921-dropdown-layer"></script>
-    <script src="{% static 'js/custom-select.js' %}?v=20260921-dropdown-search"></script>
+    <script src="{% static 'js/custom-select.js' %}?v=20260927-option-icons"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>
     <script src="{% static 'js/file-upload.js' %}?v=20260616-task-autosave"></script>
     <script src="{% static 'js/sticky-note.js' %}?v=20260922-account-scope"></script>

@@ -85,11 +85,20 @@ filtry statusu, typu, odpowiedzialnego i priorytetu oraz paginację w pasku
 narzędzi. Wyniki i opcje odpowiedzialnych pozostają ograniczone do otwartego
 projektu w bieżącym Workspace; czyszczenie filtrów nie usuwa tego kontekstu.
 
+Projekt można oznaczyć jako „Publiczny — cały Workspace” albo „Prywatny — wybrane osoby”.
+Prywatny projekt jest początkowo dostępny tylko właścicielowi. W edycji ma
+zakładki członków i wysłanych zaproszeń, jak Workspace. Zaproszenie można wysłać
+wyłącznie do członka tego Workspace; uzyskuje on dostęp po przyjęciu w powiadomieniach.
+Grupy i zadania dziedziczą ten zakres; pełną macierz dostępu opisuje
+[Praca zespołowa](TEAMWORK.md#widoczność-projektów-zadań).
+
 ### Dane
 
 | Obiekt | Zawartość i powiązania |
 | --- | --- |
-| `TaskProject` | Nazwa, opis, kod, priorytet, status, etap, kondycja, początek i termin, budżet/waluta, źródło, firma, osoba odpowiedzialna, właściciel i Workspace |
+| `TaskProject` | Nazwa, opis, kod, priorytet, status, etap, kondycja, początek i termin, budżet/waluta, źródło, firma, osoba odpowiedzialna, właściciel danych i Workspace, widoczność publiczna/prywatna, prywatny właściciel i wybrani członkowie Workspace z dostępem (`shared_with`) |
+| `TaskProjectMembership` | Przyjęty członek projektu z rolą administrator/członek/obserwator i datą dołączenia; relacja `shared_with` |
+| `TaskProjectInvitation` | Odbiorca z tego samego Workspace, zapraszający, rola, status i termin ważności zaproszenia |
 | `TaskSection` | Grupa projektu: nazwa, opis, kod, rodzaj, status, właściciel grupy, priorytet, termin, zapisany limit WIP i kolejność |
 | `Task` | Tytuł, opis, status, priorytet, termin i przypomnienie w aplikacji, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic |
 | Notatki | Osobne modele dla projektu, grupy i tagu, z autorem i czasem edycji |
