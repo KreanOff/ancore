@@ -437,11 +437,35 @@ tasks.test_project_visibility tasks.test_project_templates workplaces.test_team
 workplaces.test_management workplaces.test_invitation_candidates dashboard.test_collaboration
 dashboard.test_notifications dashboard.test_workspace_invitations`.
 Test migracji odtwarza wcześniejsze udostępnienie i sprawdza jego zachowanie
-po przejściu na członkostwo. Pozostałe testy obejmują przyjęcie, odrzucenie,
-anulowanie, wygaśnięcie, role projektu, CSRF, granice Workspace oraz pliki
+po przejściu na członkostwo. Pozostałe testy obejmują natychmiastowy dostęp,
+brak zaproszeń, role projektu, CSRF, granice Workspace oraz pliki
 i inne powiązane moduły po cofnięciu dostępu.
 
-Browser QA: porównanie z oknem Workspace, zaproszenie i decyzja na dwóch
+Browser QA: porównanie z oknem Workspace, natychmiastowe udostępnienie na dwóch
 kontach, zmiana roli i usunięcie członka, błąd odbiorcy spoza Workspace,
-puste zaproszenia, zachowanie szkicu głównego formularza, telefon,
+brak wyników wyszukiwania, zachowanie szkicu głównego formularza, telefon,
 klawiatura i ponowne wejście przez częściową nawigację.
+
+## Widoczność i zespół grup
+
+Zastosuj `tasks/0058_section_sharing` i `dashboard/0006_section_sharing` przez
+`manage.py migrate` przed uruchomieniem nowej wersji. Migracje są addytywne;
+istniejące grupy otrzymują widoczność publiczną w zakresie projektu, bez nowych
+członkostw i bez przenoszenia zadań. Pliki migracji są wersjonowane.
+
+`tasks.test_section_sharing` sprawdza natychmiastowy dostęp bez zaproszeń, role, CSRF, rzeczywistego autora, prywatność projektu nadrzędnego,
+cofnięcie członkostwa i publikację, zwykłe/scoped URL, stare drzewa podzadań,
+pliki, listy, szablony, liczniki, powiadomienia i migrację wcześniejszych grup. Uruchamiaj wraz z testami
+prywatności i zespołu projektów oraz regresjami Tasks/Kanban/Workspace/Planner/
+Dashboard/Core. W przeglądarce sprawdź menu grupy, widoczność, zespół na dwóch
+kontach, błędnego odbiorcę, brak wyników wyszukiwania, szkic głównego formularza,
+obserwatora, telefon, klawiaturę, częściową nawigację i referencyjny modal projektu.
+
+Migracja `tasks/0059_direct_sharing` kończy przepływ zaproszeń do projektów i grup.
+Przed uruchomieniem wykonaj `manage.py migrate`. Ważne oczekujące zaproszenia
+są przekształcane w członkostwa po ponownej walidacji uprawnień; odrzucone,
+wygasłe i wycofane nie nadają dostępu. Istniejące członkostwa zachowują role.
+`tasks.test_direct_sharing_migration` sprawdza konwersję obu poziomów,
+granice Workspace, nieaktywne konta, prawa autora, projekt nadrzędny oraz
+zachowanie istniejących ról. Cofnięcie migracji zachowuje nadany dostęp.
+Zaproszenia do Workspace nadal wymagają przyjęcia.

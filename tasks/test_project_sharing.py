@@ -55,18 +55,16 @@ class ProjectSharingTests(TestCase):
     def setUp(self):
         self.login(self.author)
 
-    def test_creation_does_not_allow_bypassing_invitations_with_old_checkbox_payload(self):
+    def test_creation_does_not_allow_bypassing_team_permissions_with_old_checkbox_payload(self):
         response = self.client.post(self.url(), dict(action='create_project', name='Nowy współdzielony',
             visibility='private', sharing_present='1', shared_with=[self.owner.pk, self.member.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertFalse(TaskProject.objects.filter(name='Nowy współdzielony').exists())
 
     def test_grant_opens_directories_tasks_forms_search_calendar_and_notifications(self):
-        response = self.client.post(self.url(f'projects/{self.project.pk}/team/'), dict(action='invite', email=self.member.email, role='member'))
+        response = self.client.post(self.url(f'projects/{self.project.pk}/team/'), dict(action='share', email=self.member.email, role='member'))
         self.assertEqual(response.status_code, 200)
-        invitation = self.project.invitations.get()
         self.login(self.member)
-        self.assertEqual(self.client.post(self.url(f'project-invitations/{invitation.pk}/respond/'), {'action': 'accept'}).status_code, 302)
         for base in [self.url(), '/tasks/']:
             for suffix in ['', f'groups/{self.section.pk}/', f'view-task/{self.task.task_id}/?task_pk={self.task.pk}',
                            f'view-subtask/{self.child.task_id}/?task_pk={self.child.pk}']:

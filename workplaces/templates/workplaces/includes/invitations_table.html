@@ -19,8 +19,8 @@
                 <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                     {% if is_team_owner or invitation.role == 'member' or project_team and invitation.role == 'observer' %}
                     <div class="documents-item-actions" data-row-actions>
-                        <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="team-invitation-menu-{{ invitation.pk }}" aria-controls="team-invitation-menu-{{ invitation.pk }}" aria-haspopup="menu" aria-expanded="false" aria-label="Działania: {{ invitation.recipient.email }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
-                        <div id="team-invitation-menu-{{ invitation.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="menu" data-row-actions-panel>
+                        <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="{{ team_prefix }}team-invitation-menu-{{ invitation.pk }}" aria-controls="{{ team_prefix }}team-invitation-menu-{{ invitation.pk }}" aria-haspopup="menu" aria-expanded="false" aria-label="Działania: {{ invitation.recipient.email }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
+                        <div id="{{ team_prefix }}team-invitation-menu-{{ invitation.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="menu" data-row-actions-panel>
                             <div class="documents-menu-actions">
                                 {% if project_team %}
                                 <button data-project-team-action="cancel" data-invitation-id="{{ invitation.pk }}" class="tasks-project-menu-button" type="button" role="menuitem"><i data-icon="x" aria-hidden="true"></i><span>Anuluj zaproszenie</span></button>

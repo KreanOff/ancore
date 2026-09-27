@@ -2,10 +2,10 @@
 {% load static company_avatar account_avatar %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260927-project-invitations">
+    <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260927-section-sharing">
     {% if active_view == 'projects' or active_view == 'all_groups' or active_view == 'tags' %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">{% endif %}
-    <script src="{% static 'js/workplace-team.js' %}?v=20260927-project-invitations" defer></script>
-    <script src="{% static 'js/project-team.js' %}?v=20260927-project-observer" defer></script>
+    <script src="{% static 'js/workplace-team.js' %}?v=20260927-direct-sharing" defer></script>
+    <script src="{% static 'js/project-team.js' %}?v=20260927-direct-sharing" defer></script>
     {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
 {% endblock %}
 
@@ -683,9 +683,9 @@
                 <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ active_project.name|default:''|striptags }} {{ active_project.code|default:'' }} {{ section.code|default:'' }} {{ section.full_code|default:'' }}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.code|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
-                        {% if section.can_edit %}<button type="button" class="tasks-project-sheet__edit-button" title="Edytuj grupę" aria-label="Edytuj grupę {{ section.title }}" aria-haspopup="dialog" aria-controls="section-rename-modal" data-open-section-rename data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.code|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
-                            <i data-icon="pencil" aria-hidden="true"></i>
-                        </button>{% endif %}
+                        <button type="button" class="tasks-project-sheet__edit-button" title="{% if section.can_edit %}Edytuj grupę{% else %}Podgląd grupy{% endif %}" aria-label="{% if section.can_edit %}Edytuj grupę{% else %}Podgląd grupy{% endif %} {{ section.title }}" aria-haspopup="dialog" aria-controls="section-rename-modal" data-open-section-rename data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.code|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
+                            <i data-icon="{% if section.can_edit %}pencil{% else %}eye{% endif %}" aria-hidden="true"></i>
+                        </button>
                     </span>
                     <span class="tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="info">
                         <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o grupie" aria-label="Informacje o grupie {{ section.title }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-section-info data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.full_code|escape }}" data-section-project-code="{{ section.full_code|escape }}" data-section-progress-label="{{ section.progress_percent }}%" data-section-tasks-label="{{ section.tasks_count_label }}" data-section-priority-label="{{ section.get_priority_display }}" data-section-due-label="{% if active_project.due_at %}{{ active_project.due_at|date:'d.m.Y' }}{% else %}Brak terminu{% endif %}" data-section-created-label="{{ section.created_at|date:'d.m.Y' }}" data-section-last-activity-label="{% if section.last_activity_at %}{{ section.last_activity_at|date:'d.m.Y H:i' }}{% else %}Brak aktywności{% endif %}">
@@ -851,11 +851,11 @@
                 {% for section in all_sections %}
                 <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.get_status_display }} {{ section.get_kind_display }} {% if section.owner %}{{ section.owner.get_full_name }} {{ section.owner.username }} {{ section.owner.email }}{% endif %}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }} {{ section.code|default:'' }} {{ section.full_code|default:'' }} {{ section.get_status_display }} {{ section.get_kind_display }} {{ section.get_priority_display }} {% if section.owner %}{{ section.owner.get_full_name }} {{ section.owner.username }} {{ section.owner.email }}{% endif %}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.code|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-section-status="{{ section.status|default:'open' }}" data-section-kind="{{ section.kind|default:'issues' }}" data-section-owner-id="{{ section.owner_id|default:'' }}" data-section-due-at="{{ section.due_at|date:'Y-m-d' }}" data-section-wip-limit="{{ section.wip_limit|default:'' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
-                    {% include 'tasks/includes/directory_row_menu.html' with kind='section' item_id=section.pk item_name=section.title can_manage=section.can_manage edit_label='Edytuj grupę' info_label='Informacje o grupie' notes_label='Notatki grupy' edit_modal='section-rename-modal' delete_label='Usuń grupę' only %}
+                    {% include 'tasks/includes/directory_row_menu.html' with kind='section' can_preview_section=True item_id=section.pk item_name=section.title can_manage=section.can_manage edit_label='Edytuj grupę' info_label='Informacje o grupie' notes_label='Notatki grupy' edit_modal='section-rename-modal' delete_label='Usuń grupę' only %}
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
-                        {% if section.can_edit %}<button type="button" class="tasks-project-sheet__edit-button" title="Edytuj grupę" aria-label="Edytuj grupę {{ section.title }}" aria-haspopup="dialog" aria-controls="section-rename-modal" data-open-section-rename data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.code|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-section-status="{{ section.status|default:'open' }}" data-section-kind="{{ section.kind|default:'issues' }}" data-section-owner-id="{{ section.owner_id|default:'' }}" data-section-due-at="{{ section.due_at|date:'Y-m-d' }}" data-section-wip-limit="{{ section.wip_limit|default:'' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
-                            <i data-icon="pencil" aria-hidden="true"></i>
-                        </button>{% endif %}
+                        <button type="button" class="tasks-project-sheet__edit-button" title="{% if section.can_edit %}Edytuj grupę{% else %}Podgląd grupy{% endif %}" aria-label="{% if section.can_edit %}Edytuj grupę{% else %}Podgląd grupy{% endif %} {{ section.title }}" aria-haspopup="dialog" aria-controls="section-rename-modal" data-open-section-rename data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.code|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-section-status="{{ section.status|default:'open' }}" data-section-kind="{{ section.kind|default:'issues' }}" data-section-owner-id="{{ section.owner_id|default:'' }}" data-section-due-at="{{ section.due_at|date:'Y-m-d' }}" data-section-wip-limit="{{ section.wip_limit|default:'' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
+                            <i data-icon="{% if section.can_edit %}pencil{% else %}eye{% endif %}" aria-hidden="true"></i>
+                        </button>
                     </span>
                     <span class="tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="info">
                         <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o grupie" aria-label="Informacje o grupie {{ section.title }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-section-info data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.full_code|escape }}" data-section-project-code="{{ section.full_code|escape }}" data-section-progress-label="{{ section.progress_percent }}%" data-section-tasks-label="{{ section.tasks_count_label }}" data-section-priority-label="{{ section.get_priority_display }}" data-section-status-label="{{ section.get_status_display }}" data-section-kind-label="{{ section.get_kind_display }}" data-section-owner-label="{% if section.owner %}{{ section.owner.get_full_name|default:section.owner.username }}{% else %}Brak osoby{% endif %}" data-section-due-label="{% if section.due_at %}{{ section.due_at|date:'d.m.Y' }}{% else %}Brak terminu{% endif %}" data-section-wip-label="{% if section.wip_limit %}{{ section.wip_limit }}{% else %}Brak limitu{% endif %}" data-section-created-label="{{ section.created_at|date:'d.m.Y' }}" data-section-last-activity-label="{% if section.last_activity_at %}{{ section.last_activity_at|date:'d.m.Y H:i' }}{% else %}Brak aktywności{% endif %}">
@@ -1276,6 +1276,7 @@
 </div>
 
 {{ project_access_data|json_script:"project-access-data" }}
+{{ section_access_data|json_script:"section-access-data" }}
 <div class="tasks-modal app-modal-panel tasks-form-modal tasks-project-modal tasks-project-create-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-create-modal__dialog tasks-issue-modal__dialog">
         <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form" id="project-create-form">
@@ -1439,7 +1440,7 @@
                 </div>
                 {% endif %}
 
-                {% include 'tasks/includes/project_access_tabs.html' with prefix='project-rename' only %}
+                {% include 'tasks/includes/project_access_tabs.html' with kind='project' label='Projekt' only %}
                 <section id="project-rename-panel-main" role="tabpanel" aria-labelledby="project-tab-main" data-project-access-panel="main">
                 <div class="tasks-project-heading-fields">
                     <div class="tasks-form-field">
@@ -1523,7 +1524,7 @@
                     <a href="{% url 'project_field_settings' %}?project_id={{ project_rename_form.instance.pk|default:'' }}#project-field-group-deadline" data-project-deadline-settings-link data-settings-url="{% url 'project_field_settings' %}" class="tasks-project-deadline-settings-link">Progi i kolory terminu tego projektu</a>
                 </section>
                 </section>
-                {% include 'tasks/includes/project_access_panel.html' %}
+                {% include 'tasks/includes/project_access_panel.html' with kind='project' only %}
             </div>
 
             <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
@@ -1534,8 +1535,7 @@
     </div>
 </div>
 
-<div data-project-team-modal-host></div>
-{% if project_response_invitation %}{% include 'tasks/includes/project_invitation_response.html' %}{% endif %}
+<div data-project-team-modal-host="project"></div>
 
 <div class="tasks-modal app-modal-panel tasks-project-modal tasks-project-notes-modal" id="project-notes-modal" role="dialog" aria-modal="true" aria-labelledby="project-notes-modal-title" aria-hidden="true">
     <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
@@ -1777,9 +1777,12 @@
                 </div>
                 {% endif %}
 
+                <div class="tasks-project-heading-fields">
                 <div class="tasks-form-field">
                     <label for="{{ section_form.title.id_for_label }}">Nazwa grupy</label>
                     {{ section_form.title }}
+                </div>
+                    <div class="tasks-form-field"><label for="section-create-visibility">Widoczność</label>{{ section_form.visibility }}</div>
                 </div>
                 <div class="tasks-form-field">
                     <label for="{{ section_form.description.id_for_label }}">Opis</label>
@@ -1872,9 +1875,14 @@
                 </div>
                 {% endif %}
 
+                {% include 'tasks/includes/project_access_tabs.html' with kind='section' label='Grupa' only %}
+                <section id="section-rename-panel-main" role="tabpanel" aria-labelledby="section-tab-main" data-project-access-panel="main">
+                <div class="tasks-project-heading-fields">
                 <div class="tasks-form-field">
                     <label for="section-rename-title">Nazwa grupy</label>
                     <input type="text" id="section-rename-title" name="title" class="tasks-inline-input" placeholder="Nazwa grupy" value="{{ section_rename_form.title.value|default_if_none:'' }}" required>
+                </div>
+                    <div class="tasks-form-field"><label for="section-rename-visibility">Widoczność</label>{{ section_rename_form.visibility }}</div>
                 </div>
 
                 <div class="tasks-form-field">
@@ -1915,6 +1923,8 @@
                         </label>
                     </div>
                 </section>
+                </section>
+                {% include 'tasks/includes/project_access_panel.html' with kind='section' only %}
             </div>
 
             <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
@@ -1924,6 +1934,8 @@
         </form>
     </div>
 </div>
+
+<div data-project-team-modal-host="section"></div>
 
 <div class="tasks-modal app-modal-panel tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog">

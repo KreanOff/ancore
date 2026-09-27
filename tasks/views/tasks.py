@@ -23,7 +23,7 @@ from django.contrib import messages
 
 from dashboard.collaboration import follow_context, mention_choices
 from tasks.access import editable_to, require_editable, visible_to, require_deletable_tasks
-from tasks.sharing import pending_project_invitations, project_access_data
+from tasks.sharing import project_access_data, section_access_data
 from workplaces.models import Workplace
 from workplaces.services import workspace_owner, scoped_workplace_app_path
 from accounts.avatar import account_avatar
@@ -663,6 +663,8 @@ def _shared_sections_queryset(user):
 
 def _mark_project_permissions(projects, user, viewer=None):
     editable_ids = set(editable_to(TaskProject.objects.filter(pk__in=[project.pk for project in projects]), viewer or user).values_list('pk', flat=True))
+    section_ids = [section.pk for project in projects for section in project.sections.all()]
+    editable_sections = set(editable_to(TaskSection.objects.filter(pk__in=section_ids), viewer or user).values_list('pk', flat=True))
     for project in projects:
         _clear_share_access_badge(project)
         project.can_manage = project.user_id == user.id and project.pk in editable_ids
@@ -671,7 +673,7 @@ def _mark_project_permissions(projects, user, viewer=None):
         project.has_editable_sections = False
         for section in project.sections.all():
             _clear_share_access_badge(section)
-            section.can_manage = project.can_manage
+            section.can_manage = project.can_manage and section.pk in editable_sections
             section.can_share = False
             section.can_edit = section.can_manage
             if section.can_edit:
@@ -979,7 +981,7 @@ def _project_filter_queryset(
     return queryset
 
 
-def _project_sort_queryset(queryset, sort_value, project_choices=None):
+def _project_sort_queryset(queryset, sort_value, project_choices=None, viewer=None):
     sort_value = _project_sort_value(sort_value)
     project_choices = project_choices or {
         'status': TaskProject.STATUS_CHOICES,
@@ -1060,8 +1062,8 @@ def _project_sort_queryset(queryset, sort_value, project_choices=None):
             else F('project_last_task_created_sort').asc(nulls_last=True)
         )
         return queryset.annotate(
-            project_last_task_created_sort=Max('sections__tasks__created_at'),
-            project_last_activity_sort=Max('sections__tasks__activities__created_at'),
+            project_last_task_created_sort=Max('sections__tasks__created_at', filter=Q(sections__tasks__in=visible_to(Task.objects.all(), viewer))),
+            project_last_activity_sort=Max('sections__tasks__activities__created_at', filter=Q(sections__tasks__in=visible_to(Task.objects.all(), viewer))),
         ).order_by(activity_order, task_created_order, f'{prefix}created_at', 'name', 'id')
     return queryset.order_by('name', 'id')
 
@@ -1817,7 +1819,7 @@ def _projects_for_user(user, tasks_queryset=None, project_queryset=None, order_b
         .annotate(
             total_tasks=Count(
                 'sections__tasks',
-                filter=Q(sections__tasks__parent__isnull=True),
+                filter=Q(sections__tasks__parent__isnull=True, sections__tasks__in=visible_to(Task.objects.all(), viewer or user)),
             )
         )
         .prefetch_related(
@@ -1896,7 +1898,7 @@ def _project_window_for_request(request, field_configuration=None):
         project_choices=project_choices,
         viewer=request.user,
     )
-    queryset = _project_sort_queryset(queryset, sort, project_choices=project_choices)
+    queryset = _project_sort_queryset(queryset, sort, project_choices=project_choices, viewer=request.user)
     total_projects = queryset.count()
     total_pages = max(1, (total_projects + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
@@ -2530,6 +2532,8 @@ def _decorate_directory_members(projects, current_user=None, viewer=None):
         return
 
     editable_ids = set(editable_to(TaskProject.objects.filter(pk__in=[project.pk for project in projects]), viewer or current_user).values_list('pk', flat=True))
+    section_ids = [section.pk for project in projects for section in project.sections.all()]
+    editable_sections = set(editable_to(TaskSection.objects.filter(pk__in=section_ids), viewer or current_user).values_list('pk', flat=True))
     for project in projects:
         can_manage_project = project.user_id == getattr(current_user, 'id', None) and project.pk in editable_ids
         project.can_manage = can_manage_project
@@ -2543,9 +2547,9 @@ def _decorate_directory_members(projects, current_user=None, viewer=None):
             ],
         )
         for section in project.sections.all():
-            section.can_manage = can_manage_project
+            section.can_manage = can_manage_project and section.pk in editable_sections
             section.can_share = False
-            section.can_edit = can_manage_project
+            section.can_edit = section.can_manage
             if section.can_edit:
                 project.has_editable_sections = True
             _assign_directory_members(
@@ -3142,16 +3146,6 @@ def task_group(request, section_id):
 
 def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
-    project_response_invitation = None
-    if request.method == 'GET' and 'project_invitation' in request.GET:
-        invitation_id = request.GET['project_invitation']
-        if invitation_id.isdecimal() and len(invitation_id) <= 18:
-            project_response_invitation = pending_project_invitations(request.user).filter(
-                pk=int(invitation_id), project__workplace=workplace,
-            ).select_related('project__workplace', 'invited_by').first()
-        if project_response_invitation is None:
-            messages.error(request, 'Zaproszenie jest niedostępne lub wygasło.')
-            return redirect(scoped_workplace_app_path(workplace, 'tasks'))
     if request.method == 'POST' and request.POST.get('action') == 'save_project_template':
         project_id = request.POST.get('project_id', '')
         if not project_id.isdecimal() or len(project_id) > 18:
@@ -3174,7 +3168,7 @@ def _tasks_page(request, active_section=None):
         field_options=project_field_configuration['options'],
         viewer=request.user,
     )
-    section_form = TaskSectionForm(user=workspace_owner(request), workplace=workplace)
+    section_form = TaskSectionForm(user=workspace_owner(request), workplace=workplace, viewer=request.user)
     tag_form = TaskTagForm(user=workspace_owner(request), workplace=workplace)
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
@@ -3239,7 +3233,7 @@ def _tasks_page(request, active_section=None):
     section_create_modal_open = False
     section_create_project_id = active_project_id or ''
     section_rename_modal_open = False
-    section_rename_form = TaskSectionRenameForm(user=workspace_owner(request), workplace=workplace)
+    section_rename_form = TaskSectionRenameForm(user=workspace_owner(request), workplace=workplace, viewer=request.user)
     section_rename_section_id = ''
     task_modal_open = False
     tag_modal_open = False
@@ -3295,6 +3289,7 @@ def _tasks_page(request, active_section=None):
             task_count = _filter_workplace(visible_to(Task.objects.all(), request.user).filter(section__project__in=projects_to_delete, user=workspace_owner(request)), workplace).count()
             with lock_task_numbers(workspace_owner(request).pk):
                 require_deletable_tasks(Task.objects.filter(section__project__in=projects_to_delete), request.user)
+                require_editable(TaskSection.objects.filter(project__in=projects_to_delete), request.user)
                 projects_to_delete.delete()
                 Task._renumber_user_tasks(workspace_owner(request), workplace)
             if project_count == 1 and task_count:
@@ -3459,12 +3454,13 @@ def _tasks_page(request, active_section=None):
 
         if action == 'create_section':
             project = get_object_or_404(_filter_workplace(editable_to(TaskProject.objects.all(), request.user).filter(user=workspace_owner(request)), workplace), id=request.POST.get('project_id'))
-            section_form = TaskSectionForm(request.POST, user=workspace_owner(request), project=project)
+            section_form = TaskSectionForm(request.POST, user=workspace_owner(request), project=project, viewer=request.user)
             if section_form.is_valid():
                 section = section_form.save(commit=False)
                 section.project = project
                 section.order = project.sections.count()
                 section.save()
+                section_form.save_m2m()
                 messages.success(request, 'Grupa dodana.')
                 return redirect('tasks:task_group', section_id=section.id)
             section_create_modal_open = True
@@ -3573,17 +3569,20 @@ def _tasks_page(request, active_section=None):
             return redirect(f"{reverse('tasks:tasks')}?view=tags")
 
         if action in ('edit_section', 'rename_section'):
-            section = get_object_or_404(
-                _filter_workplace(editable_to(TaskSection.objects.all(), request.user).filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
-                id=request.POST.get('section_id'),
-            )
-            section_rename_form = TaskSectionRenameForm(request.POST, instance=section, user=workspace_owner(request), project=section.project)
-            if section_rename_form.is_valid():
-                section_rename_form.save()
-                messages.success(request, 'Grupa zaktualizowana.')
-                if all_groups_view:
-                    return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
-                return redirect('tasks:task_group', section_id=section.id)
+            with transaction.atomic():
+                if workplace:
+                    Workplace.objects.select_for_update().get(pk=workplace.pk)
+                section = get_object_or_404(
+                    _filter_workplace(editable_to(TaskSection.objects.select_for_update(), request.user).filter(project__user=workspace_owner(request)), workplace, field_name='project__workplace'),
+                    id=request.POST.get('section_id'),
+                )
+                section_rename_form = TaskSectionRenameForm(request.POST, instance=section, user=workspace_owner(request), project=section.project, viewer=request.user)
+                if section_rename_form.is_valid():
+                    section_rename_form.save()
+                    messages.success(request, 'Grupa zaktualizowana.')
+                    if all_groups_view:
+                        return redirect(f"{reverse('tasks:tasks')}?view=all-groups")
+                    return redirect('tasks:task_group', section_id=section.id)
             section_rename_modal_open = True
             section_rename_section_id = section.id
             active_section = section
@@ -4041,8 +4040,7 @@ def _tasks_page(request, active_section=None):
         'project_form': project_form,
         'project_rename_form': project_rename_form,
         'project_access_data': project_access_data(workplace, request.user),
-        'project_response_invitation': project_response_invitation,
-        'project_response_url': scoped_workplace_app_path(workplace, 'tasks', f'project-invitations/{project_response_invitation.pk}/respond/') if project_response_invitation else '',
+        'section_access_data': section_access_data(workplace, request.user),
         'project_rename_project_id': project_rename_project_id,
         'section_form': section_form,
         'tag_form': tag_form,

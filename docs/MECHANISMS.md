@@ -116,12 +116,18 @@ właściciela danych. Zwykłe managery modeli pozostają nieograniczone na potrz
 migracji, numeracji i operacji utrzymaniowych; nowe odczyty użytkownika muszą
 korzystać z jawnego filtra widoczności. Dotyczy to również powiązanych grup, zadań,
 plików, szablonów i integracji Dashboard/Kalendarza.
-Udostępnienia projektów nie obejmują niezależnych snapshotów szablonów.
+Grupy mają dodatkowy filtr `visibility` / `private_owner` / `shared_with`;
+prywatność grupy nie omija projektu nadrzędnego. `editable_to` uwzględnia rolę
+obserwatora na obu poziomach, także dla potomków w starszych drzewach.
+Szablon kopiuje tylko edytowalne grupy i zadania; obecność prywatnej grupy
+wymusza prywatny snapshot dla autora. Udostępnienia nie przechodzą do szablonu.
 Formularz projektu zmienia widoczność wyłącznie dla prywatnego właściciela.
 Zespół obsługują osobne endpointy `projects/<id>/team/` (GET/POST),
-`projects/<id>/team/candidates/` (GET) i `project-invitations/<id>/respond/` (POST),
-także pod scoped URL. Zaproszenie jest adresowane do aktywnego członka Workspace;
-przyjęcie tworzy `TaskProjectMembership`, używane przez `shared_with`.
+`projects/<id>/team/candidates/` (GET), także pod scoped URL. POST `action=share`
+od razu tworzy `TaskProjectMembership` dla aktywnego członka Workspace.
+Analogiczne `groups/<id>/team/` i `groups/<id>/team/candidates/` obsługują grupy
+przez `TaskSectionMembership`, z zachowaniem dostępu do projektu nadrzędnego.
+Nie ma zaproszeń ani endpointów akceptacji dla projektu/grupy.
 Zapisy zespołu blokują Workspace i projekt; nie zapisują pól głównego formularza.
 Rola `observer` zachowuje `visible_to`, ale jest wykluczona z zapisu przez
 `tasks.access.editable_to(queryset, viewer)`. Ten filtr obejmuje projekt, grupy,
@@ -130,7 +136,7 @@ z tego samego zakresu; formularz podglądu zachowuje widoczne bieżące wartośc
 `require_editable` odrzuca całą mieszaną operację zbiorczą przed zapisem,
 a `require_deletable_tasks` chroni również obserwowane podzadania przy kaskadzie.
 Widoki szczegółów blokują każdy POST obserwatora, również komentarze i pliki.
-Role projektu, wygasanie oraz cofnięcie dostępu opisuje [TEAMWORK.md](TEAMWORK.md).
+Role projektu oraz cofnięcie dostępu opisuje [TEAMWORK.md](TEAMWORK.md).
 Przy zmianie uprawnień trzeba świadomie przeanalizować całą ścieżkę,
 łącznie z formularzami, wyszukiwaniem, plikami i akcjami zbiorczymi.
 
@@ -486,11 +492,11 @@ Domyślny zakres obejmuje wszystkie dostępne Workspace oraz własne starsze rek
 bez Workspace; filtr pozwala wybrać pojedynczą dostępną przestrzeń.
 Każde pobranie i każda akcja ponownie sprawdzają członkostwo oraz właściciela
 rekordu zgodnego z właścicielem Workspace. Sam wpis `NotificationState` nie daje
-dostępu. Zaproszenia do Workspace korzystają z `pending_invitations_for_user()`,
-a do projektów z `tasks.sharing.pending_project_invitations()`. Oba źródła
-są widoczne przed dołączeniem wyłącznie dla odbiorcy, współdzielą filtr zaproszeń
-i licznik dzwonka. Zakończone i wygasłe znikają. Zaproszenie do projektu dodatkowo
-wymaga aktywnego członkostwa Workspace i nadal prywatnego projektu.
+dostępu. Zaproszenia do Workspace korzystają z `pending_invitations_for_user()`
+i są widoczne przed dołączeniem tylko dla odbiorcy. Filtr zaproszeń i licznik
+dzwonka obejmują wyłącznie te zaproszenia; zakończone i wygasłe znikają.
+Projekt i grupa nadają dostęp bezpośrednio przez członkostwo, bez wpisu
+w powiadomieniach wymagającego decyzji odbiorcy.
 
 Własna aktywność jest domyślnie przeczytana; działania innych osób i zaproszenia
 są nieprzeczytane. Można ręcznie zmienić ten stan. Archiwizacja oznacza wpis jako
@@ -506,8 +512,8 @@ licznik zaproszeń w zarządzaniu Workspace nadal obejmuje wszystkie oczekujące
 Ponowne usunięcie jest idempotentne; odczyt, archiwizacja i przywrócenie usuniętego
 wpisu są odrzucane. Każda operacja ponownie sprawdza dostęp do źródła.
 Link `/workplaces/?invitation=<pk>` otwiera istniejący modal „Przyjmij / Odrzuć”.
-Zaproszenia projektów prowadzą do scoped `/tasks/?project_invitation=<pk>`;
-GET pokazuje decyzję, a POST ponownie waliduje odbiorcę i stan zaproszenia.
+Udostępnienia projektów i grup nie tworzą zaproszeń w powiadomieniach;
+historyczne rekordy tych zaproszeń są pomijane przez listę, liczniki i akcje.
 Link zadania/karty określa Workspace, aktualny numer i stabilne `task_pk`.
 
 Lista ma filtry wszystkie / nieprzeczytane / zaproszenia / przypomnienia / wzmianki / obserwowane / archiwum, grupy dat

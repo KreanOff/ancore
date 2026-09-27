@@ -87,9 +87,11 @@ projektu w bieżącym Workspace; czyszczenie filtrów nie usuwa tego kontekstu.
 
 Projekt można oznaczyć jako „Publiczny — cały Workspace” albo „Prywatny — wybrane osoby”.
 Prywatny projekt jest początkowo dostępny tylko właścicielowi. W edycji ma
-zakładki członków i wysłanych zaproszeń, jak Workspace. Zaproszenie można wysłać
-wyłącznie do członka tego Workspace; uzyskuje on dostęp po przyjęciu w powiadomieniach.
-Grupy i zadania dziedziczą ten zakres; pełną macierz dostępu opisuje
+zakładki „Główna” i „Członkowie”. „Udostępnij” od razu nadaje dostęp wybranemu
+aktywnemu członkowi tego Workspace, bez zaproszenia ani akceptacji.
+Grupy mogą dodatkowo być prywatne, z własnymi rolami i członkami; są udostępniane tak samo.
+Dostęp do grupy wymaga dostępu do projektu. Zadania dziedziczą oba ograniczenia;
+pełną macierz dostępu opisuje
 [Praca zespołowa](TEAMWORK.md#widoczność-projektów-zadań).
 
 ### Dane
@@ -97,9 +99,11 @@ Grupy i zadania dziedziczą ten zakres; pełną macierz dostępu opisuje
 | Obiekt | Zawartość i powiązania |
 | --- | --- |
 | `TaskProject` | Nazwa, opis, kod, priorytet, status, etap, kondycja, początek i termin, budżet/waluta, źródło, firma, osoba odpowiedzialna, właściciel danych i Workspace, widoczność publiczna/prywatna, prywatny właściciel i wybrani członkowie Workspace z dostępem (`shared_with`) |
-| `TaskProjectMembership` | Przyjęty członek projektu z rolą administrator/członek/obserwator i datą dołączenia; relacja `shared_with` |
-| `TaskProjectInvitation` | Odbiorca z tego samego Workspace, zapraszający, rola, status i termin ważności zaproszenia |
-| `TaskSection` | Grupa projektu: nazwa, opis, kod, rodzaj, status, właściciel grupy, priorytet, termin, zapisany limit WIP i kolejność |
+| `TaskProjectMembership` | Osoba z bezpośrednio nadanym dostępem do projektu z rolą administrator/członek/obserwator i datą dołączenia; relacja `shared_with` |
+| `TaskProjectInvitation` | Historyczne zaproszenie; nie jest tworzone ani obsługiwane przez aktywny przepływ udostępniania |
+| `TaskSection` | Grupa projektu: nazwa, opis, kod, rodzaj, status, właściciel grupy, priorytet, termin, limit WIP, kolejność oraz widoczność, prywatny właściciel i udostępnienia |
+| `TaskSectionMembership` | Bezpośredni dostęp do grupy z rolą administrator/członek/obserwator; zawężony dostępem projektu |
+| `TaskSectionInvitation` | Historyczne zaproszenie, bez aktywnego przepływu akceptacji |
 | `Task` | Tytuł, opis, status, priorytet, termin i przypomnienie w aplikacji, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic |
 | Notatki | Osobne modele dla projektu, grupy i tagu, z autorem i czasem edycji |
 | `TaskActivity` | Historia i komentarze zadania; aktor, akcja, wiadomość i metadane zmian |

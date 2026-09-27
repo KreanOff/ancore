@@ -2,7 +2,6 @@ from .services import pending_invitations_for_user, scoped_workplace_app_path, w
 from .models import SidebarFavorite
 from .navigation import sidebar_favorites_for_request
 from dashboard.models import NotificationState
-from tasks.sharing import pending_project_invitations
 
 
 def current_workplace(request):
@@ -45,8 +44,5 @@ def current_workplace(request):
         'pending_notification_invitation_count': pending_invitations_for_user(user).exclude(
             pk__in=NotificationState.objects.filter(user=user, is_deleted=True, invitation__isnull=False)
             .values('invitation_id'),
-        ).count() + pending_project_invitations(user).exclude(
-            pk__in=NotificationState.objects.filter(user=user, is_deleted=True, project_invitation__isnull=False)
-            .values('project_invitation_id'),
         ).count(),
     }

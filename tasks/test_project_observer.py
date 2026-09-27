@@ -13,7 +13,7 @@ from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .access import editable_to, visible_to
 from .forms import TaskForm, TaskModalForm
-from .models import (Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectInvitation,
+from .models import (Task, TaskActivity, TaskAttachment, TaskProject,
                      TaskProjectMembership, TaskProjectNote, TaskProjectTemplate, TaskSection, TaskSectionNote)
 
 
@@ -171,7 +171,7 @@ class ProjectObserverTests(TestCase):
         self.assertTrue(Task.objects.filter(pk=self.public_task.pk).exists())
 
     def test_observer_cannot_manage_team_or_deadlines_even_as_workspace_admin(self):
-        for action in ['invite', 'role', 'remove', 'cancel']:
+        for action in ['share', 'role', 'remove']:
             self.assertEqual(self.team(action=action, member_id=self.membership.pk,
                 email=self.candidate.email, role='admin', invitation_id=123).status_code, 403)
         self.assertEqual(self.client.get(self.url(f'projects/{self.project.pk}/team/candidates/'), {'q': 'candidate'}).status_code, 403)
@@ -182,13 +182,11 @@ class ProjectObserverTests(TestCase):
             }).status_code, 404)
         self.assertFalse(self.project.use_custom_deadline_rules)
 
-    def test_owner_and_admin_invite_observer_and_owner_can_change_role(self):
+    def test_owner_and_admin_share_with_observer_and_owner_can_change_role(self):
         for inviter in [self.owner, self.admin]:
             self.login(inviter)
-            self.assertEqual(self.team(action='invite', email=self.candidate.email, role='observer').status_code, 200)
-            invitation = self.project.invitations.get(status='pending')
+            self.assertEqual(self.team(action='share', email=self.candidate.email, role='observer').status_code, 200)
             self.login(self.candidate)
-            self.assertEqual(self.client.post(self.url(f'project-invitations/{invitation.pk}/respond/'), {'action': 'accept'}).status_code, 302)
             grant = self.project.memberships.get(user=self.candidate)
             self.assertEqual(grant.role, 'observer')
             self.assertFalse(editable_to(TaskProject.objects.all(), self.candidate).filter(pk=self.project.pk).exists())
@@ -204,13 +202,13 @@ class ProjectObserverTests(TestCase):
         self.login(self.observer)
         self.assertEqual(self.post_json(self.url(), f'update/{self.task.task_id}/', {'task_pk': self.task.pk, 'status': 'new'}).status_code, 404)
 
-    def test_admin_can_cancel_observer_invitation(self):
+    def test_admin_can_revoke_observer_access_immediately(self):
         self.login(self.admin)
-        self.assertEqual(self.team(action='invite', email=self.candidate.email, role='observer').status_code, 200)
-        invitation = TaskProjectInvitation.objects.get(status='pending')
-        self.assertEqual(self.team(action='cancel', invitation_id=invitation.pk).status_code, 200)
-        invitation.refresh_from_db()
-        self.assertEqual(invitation.status, 'revoked')
+        self.assertEqual(self.team(action='share', email=self.candidate.email, role='observer').status_code, 200)
+        grant = self.project.memberships.get(user=self.candidate)
+        self.assertTrue(visible_to(TaskProject.objects.all(), self.candidate).filter(pk=self.project.pk).exists())
+        self.assertEqual(self.team(action='remove', member_id=grant.pk).status_code, 200)
+        self.assertFalse(visible_to(TaskProject.objects.all(), self.candidate).filter(pk=self.project.pk).exists())
 
     def test_readonly_ui_and_workspace_boundaries(self):
         response = self.client.get(self.url(f'view-task/{self.task.task_id}/?task_pk={self.task.pk}'))
@@ -239,6 +237,6 @@ class ProjectObserverTests(TestCase):
         self.assertTrue(visible_to(Task.objects.all(), self.owner).filter(pk=self.task.pk).exists())
         self.assertFalse(editable_to(Task.objects.all(), self.owner).filter(pk=self.task.pk).exists())
         self.assertEqual(self.post_json(self.url(), f'update/{self.task.task_id}/', {'task_pk': self.task.pk, 'status': 'closed'}).status_code, 404)
-        self.assertEqual(self.team(action='invite', email=self.candidate.email, role='member').status_code, 403)
+        self.assertEqual(self.team(action='share', email=self.candidate.email, role='member').status_code, 403)
         self.login(self.admin)
         self.assertEqual(self.post_json(self.url(), f'update/{self.task.task_id}/', {'task_pk': self.task.pk, 'status': 'closed'}).status_code, 200)

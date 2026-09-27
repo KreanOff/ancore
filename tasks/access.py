@@ -38,7 +38,7 @@ def require_deletable_tasks(roots, viewer):
 
 def editable_to(queryset, viewer):
     """Visible data excluding observer projects and their entire task trees."""
-    from .models import Task, TaskProject
+    from .models import Task, TaskProject, TaskSection
 
     queryset = visible_to(queryset, viewer)
     if queryset.model._meta.app_label != 'tasks' or not getattr(viewer, 'is_authenticated', False):
@@ -46,19 +46,24 @@ def editable_to(queryset, viewer):
     readonly_projects = TaskProject.objects.filter(
         visibility='private', memberships__user=viewer, memberships__role='observer',
     ).exclude(private_owner=viewer).order_by()
+    readonly_sections = TaskSection.objects.filter(
+        visibility='private', memberships__user=viewer, memberships__role='observer',
+    ).exclude(private_owner=viewer).order_by()
     model_name = queryset.model._meta.model_name
     if model_name == 'taskproject':
         return queryset.exclude(pk__in=readonly_projects.values('pk'))
-    if model_name in {'tasksection', 'taskprojectnote'}:
+    if model_name == 'taskprojectnote':
         return queryset.exclude(project__in=readonly_projects)
+    if model_name == 'tasksection':
+        return queryset.exclude(project__in=readonly_projects).exclude(pk__in=readonly_sections)
     if model_name == 'tasksectionnote':
-        return queryset.exclude(section__project__in=readonly_projects)
+        return queryset.exclude(section__project__in=readonly_projects).exclude(section__in=readonly_sections)
     paths = {
         'task': 'pk', 'taskattachment': 'task_id', 'taskactivity': 'task_id',
         'taskworklog': 'task_id', 'taskcommentimage': 'activity__task_id',
     }
     if model_name in paths:
-        roots = Task.objects.filter(section__project__in=readonly_projects)
+        roots = Task.objects.filter(Q(section__project__in=readonly_projects) | Q(section__in=readonly_sections))
         return queryset.exclude(**{paths[model_name] + '__in': task_tree_ids(roots)})
     return queryset
 
@@ -68,7 +73,7 @@ def require_editable(queryset, viewer):
     from django.core.exceptions import PermissionDenied
 
     if queryset.exclude(pk__in=editable_to(queryset.model.objects.all(), viewer)).exists():
-        raise PermissionDenied('Masz dostęp tylko do odczytu tego projektu.')
+        raise PermissionDenied('Masz dostęp tylko do odczytu tego projektu lub grupy.')
 
 
 def visible_to(queryset, viewer):
@@ -89,13 +94,14 @@ def visible_to(queryset, viewer):
         return queryset.filter(pk__in=projects.values('pk'))
     if model is TaskProjectTemplate:
         return queryset.filter(pk__in=TaskProjectTemplate.objects.filter(scope, privacy).values('pk'))
-    sections = TaskSection.objects.filter(project__in=projects).order_by()
+    section_privacy = privacy | Q(visibility='private', private_owner__isnull=False, shared_with=viewer)
+    sections = TaskSection.objects.filter(section_privacy, project__in=projects).order_by()
     if model is TaskSection:
         return queryset.filter(pk__in=sections.values('pk'))
     # Preserve legacy orphan/foreign-link handling for public projects. Their
     # task owner and Workspace remain authoritative; private links fail closed.
     task_sections = TaskSection.objects.filter(
-        Q(project__visibility='public') | Q(project__in=projects),
+        section_privacy, Q(project__visibility='public') | Q(project__in=projects),
     ).order_by()
     hidden_roots = Task.objects.filter(section__isnull=False).exclude(section__in=task_sections)
     tasks = Task.objects.filter(scope).exclude(pk__in=task_tree_ids(hidden_roots)).order_by()

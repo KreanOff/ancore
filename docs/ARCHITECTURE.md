@@ -117,10 +117,13 @@ flowchart LR
   Dane zachowują właściciela Workspace, a autor operacji to `request.user`.
   Projekty Zadań mogą być prywatne: `private_owner` i jawny filtr
   `tasks.access.visible_to` ograniczają projekt oraz jego zawartość do tej osoby
-  i przyjętych członków projektu z `shared_with` (przez `TaskProjectMembership`).
-  `TaskProjectInvitation` udostępnia zaproszenia tylko aktywnym członkom tego
-  samego Workspace; decyzję odbiorcy obsługuje `tasks/views/project_team.py`.
-  Projekt i Workspace współdzielą szablony tabel zespołu oraz picker osoby.
+  i wskazanych członków projektu z `shared_with` (przez `TaskProjectMembership`).
+  `tasks/views/project_team.py` nadaje dostęp natychmiast aktywnym członkom tego
+  samego Workspace. Grupy mają analogiczne `TaskSectionMembership` obsługiwane
+  przez `tasks/views/section_team.py`; ich dostęp zawęża dostęp projektu.
+  Projekt i grupa nie wymagają zaproszeń ani akceptacji; modele zaproszeń
+  pozostają wyłącznie historyczne.
+  Projekt, grupa i Workspace współdzielą szablony tabel zespołu oraz picker osoby.
 - Zadania i Kanban mają różne hierarchie i osobne tabele. Kanban nie jest
   jedynie innym sposobem wyświetlenia `Task`.
 - Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.

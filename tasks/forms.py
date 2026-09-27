@@ -2,6 +2,7 @@ from datetime import UTC, timedelta
 
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db.models import Prefetch
 from django.utils import timezone
 
 from tasks.access import editable_to, visible_to
@@ -111,7 +112,7 @@ class TaskForm(forms.ModelForm):
         if workplace is None and section is not None:
             workplace = getattr(section.project, 'workplace', None)
         if user:
-            projects = _filter_workplace(relation_scope(TaskProject.objects.all(), viewer).filter(user=user), workplace).prefetch_related('sections')
+            projects = _filter_workplace(relation_scope(TaskProject.objects.all(), viewer).filter(user=user), workplace).prefetch_related(Prefetch('sections', queryset=relation_scope(TaskSection.objects.all(), viewer)))
             sections = relation_scope(TaskSection.objects.all(), viewer).filter(project__user=user).select_related('project')
             if workplace is not None:
                 sections = sections.filter(project__workplace=workplace)
@@ -320,7 +321,7 @@ class TaskProjectBaseForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         if self.data.get('sharing_present') or self.data.get('shared_with'):
-            raise forms.ValidationError('Udostępnianie odbywa się przez zaproszenia. Odśwież formularz.')
+            raise forms.ValidationError('Udostępniaj w zakładce „Członkowie”. Odśwież formularz.')
         return cleaned
 
     def _save_m2m(self):
@@ -731,9 +732,59 @@ class TaskProjectRenameForm(TaskProjectBaseForm):
         }
 
 
-class TaskSectionForm(forms.ModelForm):
+class TaskSectionAccessForm(forms.ModelForm):
+    visibility = forms.ChoiceField(
+        choices=[('private', 'Prywatna — wybrane osoby'), ('public', 'Publiczna — uczestnicy projektu')],
+        required=False, label='Widoczność',
+        widget=ProjectVisibilitySelect(attrs={'class': 'tasks-inline-select'}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.viewer = kwargs.pop('viewer', None) or kwargs.get('user')
+        super().__init__(*args, **kwargs)
+        self.can_manage_access = (not self.instance.pk or self.instance.visibility == 'public'
+                                  or self.instance.private_owner_id == getattr(self.viewer, 'pk', None))
+        self.fields['visibility'].widget.attrs['id'] = (
+            'section-rename-visibility' if self.instance.pk or isinstance(self, TaskSectionRenameForm)
+            else 'section-create-visibility'
+        )
+        if not self.instance.pk:
+            self.initial['visibility'] = 'private'
+
+    def clean_visibility(self):
+        value = self.cleaned_data.get('visibility') or (self.instance.visibility if self.instance.pk else 'private')
+        if not self.can_manage_access and value != self.instance.visibility:
+            raise forms.ValidationError('Tylko właściciel prywatnej grupy może zmienić widoczność.')
+        return value
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.data.get('sharing_present') or self.data.get('shared_with'):
+            raise forms.ValidationError('Udostępniaj w zakładce „Członkowie”. Odśwież formularz.')
+        return cleaned
+
+    def _save_m2m(self):
+        if self.can_manage_access and self.instance.visibility == 'public':
+            self.instance.shared_with.clear()
+            self.instance.invitations.filter(status='pending').update(status='revoked')
+
+    def save(self, commit=True):
+        section = super().save(commit=False)
+        if section.visibility == 'private':
+            if not section.private_owner_id:
+                section.private_owner = self.viewer
+        else:
+            section.private_owner = None
+        if commit:
+            section.save()
+            self.save_m2m()
+        return section
+
+
+class TaskSectionForm(TaskSectionAccessForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        kwargs.setdefault('viewer', user)
         self.project_for_validation = kwargs.pop('project', None)
         workplace = kwargs.pop('workplace', None)
         super().__init__(*args, **kwargs)
@@ -771,7 +822,7 @@ class TaskSectionForm(forms.ModelForm):
 
     class Meta:
         model = TaskSection
-        fields = ['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']
+        fields = ['visibility', 'title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',
@@ -821,9 +872,10 @@ class TaskSectionForm(forms.ModelForm):
         }
 
 
-class TaskSectionRenameForm(forms.ModelForm):
+class TaskSectionRenameForm(TaskSectionAccessForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        kwargs.setdefault('viewer', user)
         self.project_for_validation = kwargs.pop('project', None)
         workplace = kwargs.pop('workplace', None)
         super().__init__(*args, **kwargs)
@@ -861,7 +913,7 @@ class TaskSectionRenameForm(forms.ModelForm):
 
     class Meta:
         model = TaskSection
-        fields = ['title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']
+        fields = ['visibility', 'title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa grupy',

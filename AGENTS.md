@@ -48,7 +48,9 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
 - Zachowaj walidację plików w `core/upload_validation.py`, kontrolowane
   pobieranie i prywatny storage Dokumentów.
 - Projekty Zadań udostępniają dostęp wybranym członkom Workspace przez
-  `TaskProject.shared_with` przez `TaskProjectMembership`, po przyjęciu zaproszenia.
+  `TaskProject.shared_with` przez `TaskProjectMembership`, od razu po udostępnieniu.
+  Grupy używają analogicznie `TaskSectionMembership` i zawężają dostęp projektu;
+  projekty i grupy nie wysyłają zaproszeń ani nie wymagają akceptacji.
   Właściciel zarządza widocznością i rolami, administrator projektu zwykłymi
   członkami; role projektu są niezależne od ról Workspace.
   Historyczne `SharedItem` i linki są nadal wyłączone. Nie przywracaj ich przy okazji innego zadania.

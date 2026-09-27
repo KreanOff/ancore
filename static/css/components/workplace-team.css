@@ -31,6 +31,7 @@
 .workplace-team-sheet [data-row-actions] { width: 100%; height: 100%; }
 .project-access-tabbar.tasks-issue-tabbar { margin: 0 0 var(--app-modal-padding-y); padding: 0; }
 #project-rename-submit[hidden],
+#section-rename-submit[hidden],
 .tasks-modal [data-project-access-tab][hidden],
 .tasks-modal [data-project-team-errors][hidden],
 .tasks-modal [data-project-team-error][hidden],

@@ -1,18 +1,18 @@
 {% if can_manage_team %}
-<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact{% if invite_form.errors %} is-open{% endif %}" id="project-invite-modal" role="dialog" aria-modal="true" aria-labelledby="team-invite-title" aria-describedby="team-invite-description" aria-hidden="{% if invite_form.errors %}false{% else %}true{% endif %}" data-project-team-modal>
+<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact{% if share_form.errors %} is-open{% endif %}" id="{{ team_kind }}-share-modal" role="dialog" aria-modal="true" aria-labelledby="{{ team_kind }}-team-invite-title" aria-describedby="{{ team_kind }}-team-invite-description" aria-hidden="{% if share_form.errors %}false{% else %}true{% endif %}" data-project-team-modal>
     <div class="tasks-modal__dialog"><form method="post" action="{{ team_url }}" class="tasks-modal__form" data-project-team-form>
-        {% csrf_token %}<input type="hidden" name="action" value="invite">
-        <header class="tasks-modal__header"><h2 id="team-invite-title">Zaproś osobę · {{ project.name }}</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
+        {% csrf_token %}<input type="hidden" name="action" value="share">
+        <header class="tasks-modal__header"><h2 id="{{ team_kind }}-team-invite-title">Udostępnij · {{ team_name }}</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
         <div class="tasks-modal__body"><div class="tasks-modal__errors" role="alert" data-project-team-errors hidden></div>
-            <p id="team-invite-description" class="workplace-team__hint">Zaproszenie pojawi się w powiadomieniach wskazanej osoby. Jest ważne przez 7 dni i daje dostęp do tego projektu po przyjęciu. Zapraszasz wyłącznie członków bieżącego Workspace.</p>
-            {% if invite_form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{% for error in invite_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+            <p id="{{ team_kind }}-team-invite-description" class="workplace-team__hint">Wybrana osoba od razu uzyska dostęp do {% if team_kind == "section" %}tej grupy{% else %}tego projektu{% endif %} z wybraną rolą. {% if team_kind == "section" %}Wybierasz członków Workspace mających dostęp do projektu.{% else %}Wybierasz wyłącznie członków bieżącego Workspace.{% endif %}</p>
+            {% if share_form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{% for error in share_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
             <div class="workplace-invite__fields">
-            {% for field in invite_form %}
-            <div class="tasks-form-field"{% if field.name == 'email' %} data-team-invite-picker data-candidates-url="{{ team_url }}candidates/"{% endif %}>
+            {% for field in share_form %}
+            <div class="tasks-form-field"{% if field.name == 'email' %} data-team-invite-picker data-sharing-picker data-selected-label="Udostępniasz" data-candidates-url="{{ team_url }}candidates/"{% endif %}>
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
                 {% if field.name == 'email' %}
-                <p id="team-invite-search-status" class="workplace-invite__status" role="status" aria-live="polite">Wpisz co najmniej 2 znaki, aby wyszukać osobę.</p>
-                <div id="team-invite-results" class="workplace-invite__results" role="listbox" aria-label="Osoby, które możesz zaprosić" hidden></div>
+                <p id="{{ team_kind }}-team-invite-search-status" class="workplace-invite__status" role="status" aria-live="polite">Wpisz co najmniej 2 znaki, aby wyszukać osobę.</p>
+                <div id="{{ team_kind }}-team-invite-results" class="workplace-invite__results" role="listbox" aria-label="Osoby, którym możesz udostępnić" hidden></div>
                 <div class="workplace-invite__selected" data-team-invite-selected hidden></div>
                 {% endif %}
                 {% if field.help_text %}<p class="workplace-team__hint">{{ field.help_text }}</p>{% endif %}
@@ -21,16 +21,16 @@
             {% endfor %}
             </div>
         </div>
-        <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zaproś do projektu</button></footer>
+        <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Udostępnij</button></footer>
     </form></div>
 </div>
 {% endif %}
 {% if is_team_owner %}
-<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact" id="project-role-modal" role="dialog" aria-modal="true" aria-labelledby="team-role-title" aria-hidden="true" data-project-team-modal>
+<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact" id="{{ team_kind }}-role-modal" role="dialog" aria-modal="true" aria-labelledby="{{ team_kind }}-team-role-title" aria-hidden="true" data-project-team-modal>
     <div class="tasks-modal__dialog"><form method="post" class="tasks-modal__form" data-project-team-form>
         {% csrf_token %}<input type="hidden" name="action" value="role"><input type="hidden" name="member_id">
-        <header class="tasks-modal__header"><h2 id="team-role-title">Zmień rolę</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
-        <div class="tasks-modal__body"><div class="tasks-modal__errors" role="alert" data-project-team-errors hidden></div><p class="workplace-team__hint" data-team-role-person></p><div class="tasks-form-field"><label for="team-member-role">Rola</label><select id="team-member-role" name="role" class="form-select"><option value="member" data-ancore-option-icon="user-round">Członek</option><option value="admin" data-ancore-option-icon="shield-check">Administrator</option><option value="observer" data-ancore-option-icon="eye">Obserwator</option></select></div></div>
+        <header class="tasks-modal__header"><h2 id="{{ team_kind }}-team-role-title">Zmień rolę</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
+        <div class="tasks-modal__body"><div class="tasks-modal__errors" role="alert" data-project-team-errors hidden></div><p class="workplace-team__hint" data-team-role-person></p><div class="tasks-form-field"><label for="{{ team_kind }}-team-member-role">Rola</label><select id="{{ team_kind }}-team-member-role" name="role" class="form-select"><option value="member" data-ancore-option-icon="user-round">Członek</option><option value="admin" data-ancore-option-icon="shield-check">Administrator</option><option value="observer" data-ancore-option-icon="eye">Obserwator</option></select></div></div>
         <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zapisz rolę</button></footer>
     </form></div>
 </div>

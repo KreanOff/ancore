@@ -104,49 +104,51 @@ polu, jak i na liście. `ProjectVisibilitySelect` nadaje opcjom
 atrybut przez `AncoreIcons`, zachowując tekst i wskaźnik zaznaczenia. Ikony są
 dekoracyjne (`aria-hidden`), mają 16px i dziedziczą kolor kontrolki.
 Nowy projekt ma formularz główny. Po utworzeniu okno „Edytuj projekt” ma
-zakładki „Główna”, „Członkowie” i „Wysłane zaproszenia”, zgodne z oknem
-Workspace. `notifications-tabs` obsługuje strzałki, Home i End. Członkowie
-korzystają ze wspólnych include'ów Workspace `members_table.html` oraz
-`invitations_table.html`: zaznaczenie, menu, avatar i nazwa, e-mail, rola,
-data dołączenia lub ważności. Parametr `project_team` wybiera akcje projektu;
-układ sześciu kolumn, ikony i poziome przewijanie pozostają wspólne.
+zakładki „Główna” i „Członkowie”. `notifications-tabs` obsługuje strzałki,
+Home i End. Członkowie korzystają ze wspólnego `members_table.html` Workspace:
+zaznaczenie, menu, avatar i nazwa, e-mail, rola, data dołączenia. Parametr
+`project_team` wybiera akcje projektu; układ sześciu kolumn i przewijanie są wspólne.
 
-„Zaproś osobę” otwiera kompaktowe okno z tym samym pickerem konta co Workspace
-(`AncoreTeamInvitationPicker` z `workplace-team.js`) i wyborem roli. Wyszukiwanie
-obejmuje tylko aktywnych członków tego Workspace, bez obecnych uczestników
-projektu i oczekujących zaproszeń. Menu wiersza pozwala zmienić rolę, odebrać
-dostęp lub anulować zaproszenie zgodnie z uprawnieniami. Checkboxy oznaczają
-zaznaczenie wierszy, nie nadają dostępu. Właściciel i administrator widzą
-wysłane zaproszenia; członek i obserwator mają tylko listę członków. Publiczny projekt
-pokazuje zespół Workspace i informację o wspólnym dostępie, bez zapraszania.
+„Udostępnij” otwiera kompaktowe okno z pickerem konta
+(`AncoreTeamInvitationPicker` z `workplace-team.js`) oraz rolą. Wariant
+`data-sharing-picker` ma komunikaty udostępniania, bez treści o zaproszeniach.
+Wyszukiwanie obejmuje aktywnych członków Workspace poza obecnymi uczestnikami.
+Po zapisie osoba od razu trafia do tabeli członków, a projekt jest dla niej
+widoczny przy kolejnym odczycie listy. Nie ma zakładki wysłanych zaproszeń ani
+okna akceptacji projektu/grupy. Zaproszenia do Workspace zachowują własny przepływ.
 
-`project-team.js` pobiera tabele i zapisuje operacje przez AJAX, zachowując
+Menu członka pozwala zmienić rolę i odebrać dostęp zgodnie z uprawnieniami.
+Checkboxy zaznaczają wiersze. Publiczny projekt pokazuje zespół Workspace
+oraz informację o wspólnym dostępie, bez osobnego udostępniania.
+`project-team.js` pobiera tabelę i zapisuje operacje przez AJAX, zachowując
 niezapisane pola głównej zakładki. Błędy pozostają w aktualnym oknie.
-W zakładkach zespołu stopka ma „Zamknij”; zapis pól projektu jest dostępny na
-„Główna”. Widoczność prywatnego projektu zmienia wyłącznie jego właściciel.
-Okna zaproszenia i roli używają `AncoreTaskModals`, `inert`, Escape i przywrócenia
+W zakładce zespołu stopka ma „Zamknij”; zapis pól projektu jest na „Główna”.
+Widoczność prywatnego projektu zmienia wyłącznie jego właściciel.
+Okna udostępnienia i roli używają `AncoreTaskModals`, `inert`, Escape i przywrócenia
 fokusu. Ponowna inicjalizacja po `ancore:content-loaded` anuluje stare listenery,
 pickery i żądania. Wybór innego projektu zeruje stan i ignoruje spóźnione odpowiedzi.
 `project-access-data` zawiera uprawnienia do edycji i widoczności oraz URL zespołu
 projektów dostępnych odbiorcy. Układ pól zachowuje `modal-system.css`.
 
-Zaproszenie i zmiana roli projektu oferują „Członek”, „Administrator” oraz
-„Obserwator”; administrator projektu może zaprosić członka lub obserwatora.
-Wybór roli w zaproszeniu i zmianie roli korzysta z ikon `user-round` (Członek),
-`shield-check` (Administrator) oraz `eye` (Obserwator), także przy wybranej
-wartości. `TeamRoleSelect` przekazuje `data-ancore-option-icon` do istniejącego
-`AncoreCustomSelect`; Workspace używa tych samych ikon dla swoich dwóch ról.
+Udostępnianie i zmiana roli oferują „Członek”, „Administrator” oraz „Obserwator”;
+administrator projektu nadaje tylko role członka i obserwatora. `TeamRoleSelect`
+używa ikon `user-round`, `shield-check` i `eye` przez `AncoreCustomSelect`.
 Obserwator otwiera „Podgląd projektu” z ikoną `eye`, wyłączonymi polami,
-listą członków i stopką „Zamknij”, bez zapisu ani zapraszania. Zadania korzystają
-z istniejącego wariantu `tasks-issue-form--readonly`, bez kompozytora czatu,
-edycji czasu i plików. Notatki pozostają widoczne, bez formularzy dodawania
-i edycji. Uprawnienia wierszy wyłączają przeciąganie i operacje zbiorcze.
-Ponowne otwarcie edytowalnego projektu przywraca jego kontrolki.
+listą członków i stopką „Zamknij”. Zadania używają istniejącego wariantu
+`tasks-issue-form--readonly`, bez kompozytora czatu, edycji czasu i plików.
+Notatki pozostają widoczne bez formularzy zapisu. Uprawnienia wierszy wyłączają
+przeciąganie i operacje zbiorcze. Otwarcie edytowalnego projektu przywraca kontrolki.
 
-Otrzymane zaproszenie jest widoczne w panelu powiadomień. Link otwiera kompaktowe
-okno „Zaproszenie do projektu” z projektem, Workspace, zapraszającym, rolą,
-terminem i przyciskami „Później”, „Odrzuć”, „Przyjmij”. Dopiero przyjęcie nadaje
-dostęp do prywatnego projektu.
+Formularze grup korzystają z tego samego wiersza nazwy i widoczności co projekty.
+„Nowa grupa” domyślnie wybiera „Prywatna — wybrane osoby”; „Publiczna — uczestnicy
+projektu” zachowuje ograniczenia projektu nadrzędnego. Po utworzeniu „Edytuj grupę”
+ma wspólne zakładki „Główna” i „Członkowie”, picker osoby, tabelę oraz modale
+roli/udostępnienia. `project-team.js` inicjalizuje osobne instancje projektu i grupy,
+zachowując kontrakt `data-project-*` wewnątrz formularza. Prefiksy identyfikatorów
+pozwalają obu oknom współistnieć na stronie. `section-access-data` przekazuje
+widoczność, uprawnienia oraz URL zespołu. Menu obserwatora udostępnia „Podgląd grupy”
+z wyłączonymi polami i listą członków. Obsługa błędów, szkicu, fokusu, Escape
+i ponownego wejścia po częściowej nawigacji pozostaje wspólna.
 
 ## 2. Powłoka aplikacji
 

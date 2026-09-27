@@ -5334,7 +5334,7 @@ function initTasksPage() {
 
     function openSectionRenameFromDataset(sectionDataset) {
         if (!sectionDataset || !sectionRenameModal) return;
-        if (sectionDataset.canManage === 'false') return;
+        if (sectionDataset.canManage === 'false' && taskAppSegment !== 'tasks') return;
 
         setFieldValue(sectionRenameIdInput, sectionDataset.sectionId);
         setFieldValue(sectionRenameTitleInput, sectionDataset.sectionTitle);
@@ -5347,6 +5347,17 @@ function initTasksPage() {
         syncInlineSelectForSelect(sectionRenamePriorityInput);
         setFieldValue(sectionRenameDueAtInput, sectionDataset.sectionDueAt);
         setFieldValue(sectionRenameWipLimitInput, sectionDataset.sectionWipLimit);
+        if (taskAppSegment === 'tasks') {
+            const access = JSON.parse(document.getElementById('section-access-data')?.textContent || '{}')[sectionDataset.sectionId];
+            const readonly = access?.canEdit === false;
+            sectionRenameForm.dataset.projectReadonly = String(readonly);
+            sectionRenameForm.querySelectorAll('[data-project-access-panel="main"] input, [data-project-access-panel="main"] textarea, [data-project-access-panel="main"] select, [data-project-access-panel="main"] button').forEach(control => { control.disabled = readonly; });
+            const visibility = sectionRenameForm.elements.visibility;
+            if (visibility) { visibility.value = access?.visibility || 'public'; visibility.disabled = !access?.canManage; }
+            sectionRenameForm.querySelector('#section-rename-modal-title').textContent = readonly ? 'Grupa — tylko odczyt' : 'Edytuj grupę';
+            window.AncoreCustomSelect?.refresh(sectionRenameForm);
+            sectionRenameForm.dispatchEvent(new CustomEvent('ancore:section-team-selected', { bubbles: true, detail: { url: access?.teamUrl } }));
+        }
         closeSectionActionMenu();
         openModal(sectionRenameModal, sectionRenameTitleInput, updateSectionRenameSubmitState);
         setTimeout(() => sectionRenameTitleInput?.select(), 60);
@@ -5661,6 +5672,8 @@ function initTasksPage() {
 
         if (['action', 'info', 'notes'].includes(action)) {
             row.querySelector(`:scope > [data-column="${action}"] :is(button, a)`)?.click();
+        } else if (action === 'preview' && kind === 'section' && taskAppSegment === 'tasks') {
+            openSectionRenameFromDataset(row.querySelector('[data-open-section-rename]').dataset);
         } else if (action === 'preview' && kind === 'project' && taskAppSegment === 'tasks') {
             row.querySelector('[data-open-project-rename]')?.click();
         } else if (action === 'template' && kind === 'project' && taskAppSegment === 'tasks') {

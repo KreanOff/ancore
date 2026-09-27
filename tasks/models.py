@@ -233,6 +233,8 @@ class TaskProjectMembership(models.Model):
 
 
 class TaskProjectInvitation(models.Model):
+    """Historical records; project access is granted directly by membership."""
+
     project = models.ForeignKey(TaskProject, on_delete=models.CASCADE, related_name='invitations')
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_invitations')
     invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_project_invitations')
@@ -494,6 +496,16 @@ class TaskProjectNote(models.Model):
 
 
 class TaskSection(models.Model):
+    Visibility = TaskProject.Visibility
+    visibility = models.CharField(max_length=7, choices=Visibility.choices, default=Visibility.PUBLIC)
+    private_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='private_task_sections', editable=False,
+    )
+    shared_with = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name='shared_task_sections', through='TaskSectionMembership',
+    )
+
     PRIORITY_CHOICES = TaskProject.PRIORITY_CHOICES
     CODE_PREFIX = 'G'
     CODE_WIDTH = 5
@@ -581,6 +593,32 @@ class TaskSection(models.Model):
 
     def __str__(self):
         return f'{self.project.name} / {self.title}'
+
+
+class TaskSectionMembership(models.Model):
+    section = models.ForeignKey(TaskSection, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('observer', 'Obserwator')], default='member')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['section', 'user'], name='unique_task_section_member')]
+
+
+class TaskSectionInvitation(models.Model):
+    """Historical records; group access is granted directly by membership."""
+
+    section = models.ForeignKey(TaskSection, on_delete=models.CASCADE, related_name='invitations')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='section_invitations')
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_section_invitations')
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('observer', 'Obserwator')], default='member')
+    status = models.CharField(max_length=20, choices=[('pending', 'Oczekuje'), ('accepted', 'Przyjęte'), ('declined', 'Odrzucone'), ('revoked', 'Anulowane')], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=invitation_expiry)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        constraints = [models.UniqueConstraint(fields=['section', 'recipient'], condition=Q(status='pending'), name='unique_pending_section_invite')]
 
 
 class TaskSectionNote(models.Model):

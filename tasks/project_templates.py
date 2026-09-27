@@ -67,8 +67,9 @@ def delete_template_item(structure, kind, item_id):
 
 @transaction.atomic
 def save_project_template(project, actor=None):
-    sections = list(project.sections.order_by('order', 'pk'))
-    tasks = list(Task.objects.filter(
+    from .access import editable_to
+    sections = list(editable_to(project.sections.all(), actor or project.user).order_by('order', 'pk'))
+    tasks = list(editable_to(Task.objects.all(), actor or project.user).filter(
         section__in=sections, user=project.user, workplace=project.workplace,
     ).order_by('pk'))
     task_ids = {task.pk for task in tasks}
@@ -83,8 +84,8 @@ def save_project_template(project, actor=None):
     return TaskProjectTemplate.objects.create(
         user=project.user, workplace=project.workplace, name=project.name, template_name=project.name,
         description=project.description, structure=structure,
-        visibility=project.visibility,
-        private_owner=(actor or project.private_owner) if project.visibility == 'private' else None,
+        visibility='private' if project.visibility == 'private' or any(section.visibility == 'private' for section in sections) else 'public',
+        private_owner=(actor or project.private_owner or project.user) if project.visibility == 'private' or any(section.visibility == 'private' for section in sections) else None,
     )
 
 

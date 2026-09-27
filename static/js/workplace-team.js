@@ -32,7 +32,7 @@
             selected.innerHTML = person.html;
             window.AncoreIcons?.render(selected);
             selected.hidden = false;
-            status.textContent = `Zapraszasz: ${person.name}.`;
+            status.textContent = `${picker.dataset.selectedLabel || 'Zapraszasz'}: ${person.name}.`;
             input.focus({ preventScroll: true });
         }
         function search() {
@@ -81,7 +81,9 @@
                     menu.hidden = people.length === 0;
                     input.setAttribute('aria-expanded', String(people.length > 0));
                     status.textContent = !people.length
-                        ? 'Nie znaleziono osoby, którą można zaprosić. Sprawdź dane; członkowie i osoby z oczekującym zaproszeniem nie pojawiają się na liście.'
+                        ? picker.hasAttribute('data-sharing-picker')
+                            ? 'Nie znaleziono osoby, której można udostępnić. Sprawdź dane; obecni członkowie nie pojawiają się na liście.'
+                            : 'Nie znaleziono osoby, którą można zaprosić. Sprawdź dane; członkowie i osoby z oczekującym zaproszeniem nie pojawiają się na liście.'
                         : data.has_more ? 'Pokazano 10 osób. Doprecyzuj wyszukiwanie lub wybierz osobę.'
                             : 'Wybierz osobę z listy.';
                 } catch (error) {

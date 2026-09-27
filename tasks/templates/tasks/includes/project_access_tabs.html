@@ -1,7 +1,6 @@
 <div class="tasks-issue-tabbar project-access-tabbar">
-    <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Projekt">
-        <button type="button" id="project-tab-main" role="tab" aria-controls="project-rename-panel-main" aria-selected="true" data-project-access-tab="main">Główna</button>
-        <button type="button" id="project-tab-members" role="tab" aria-controls="project-panel-members" aria-selected="false" tabindex="-1" data-project-access-tab="members">Członkowie</button>
-        <button type="button" id="project-tab-invitations" role="tab" aria-controls="project-panel-invitations" aria-selected="false" tabindex="-1" data-project-access-tab="invitations" hidden>Wysłane zaproszenia</button>
+    <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="{{ label }}">
+        <button type="button" id="{{ kind }}-tab-main" role="tab" aria-controls="{{ kind }}-rename-panel-main" aria-selected="true" data-project-access-tab="main">Główna</button>
+        <button type="button" id="{{ kind }}-tab-members" role="tab" aria-controls="{{ kind }}-panel-members" aria-selected="false" tabindex="-1" data-project-access-tab="members">Członkowie</button>
     </div>
 </div>

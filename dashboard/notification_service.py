@@ -12,7 +12,6 @@ from django.utils import timezone
 from django.utils.formats import date_format
 
 from tasks.access import visible_to
-from tasks.sharing import pending_project_invitations
 from accounts.avatar import account_avatar
 from kanban.models import KanbanActivity
 from tasks.models import TaskActivity
@@ -21,8 +20,8 @@ from .models import ActivityInterest, NotificationState
 from .reminders import reminders_for_user
 
 DASHBOARD_NOTIFICATION_LIMIT = 12
-INVITATION_SOURCES = {'workplace', 'project'}
-SOURCES = {'project': 'project_invitation', 'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity', 'reminders': 'reminder'}
+INVITATION_SOURCES = {'workplace'}
+SOURCES = {'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity', 'reminders': 'reminder'}
 VIEWS = {'all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived'}
 SIGNING_SALT = 'dashboard.notifications.v1'
 
@@ -157,7 +156,6 @@ def notification_sources(user, workspace='', *, include_deleted=False):
     )
     sources = {
         'workplace': pending_invitations_for_user(user),
-        'project': pending_project_invitations(user),
         'tasks': visible_to(TaskActivity.objects.all(), user).filter(access),
         'kanban': KanbanActivity.objects.filter(access),
         'reminders': reminders_for_user(user),
@@ -170,7 +168,7 @@ def notification_sources(user, workspace='', *, include_deleted=False):
                 inbox_followed=Exists(interest.filter(followed=True)),
             )
         if workspace:
-            field = {'workplace': 'workplace_id', 'project': 'project__workplace_id'}.get(source, 'task__workplace_id')
+            field = 'workplace_id' if source == 'workplace' else 'task__workplace_id'
             queryset = queryset.filter(**{field: workspace})
         state = NotificationState.objects.filter(user=user, **{SOURCES[source]: OuterRef('pk')})
         default_read = Value(False) if source in INVITATION_SOURCES | {'reminders'} else Case(
@@ -238,20 +236,19 @@ def _sort_key(source, row):
 
 def _serialize(source, row):
     if source in INVITATION_SOURCES:
-        is_project = source == 'project'
-        workplace = row.project.workplace if is_project else row.workplace
-        target = row.project if is_project else workplace
+        workplace = row.workplace
+        name = workplace.name
         item = {
-            'source': source, 'source_label': 'Projekt' if is_project else 'Workspace', 'is_invitation': True, 'object_id': row.pk,
-            'title': target.name, 'actor_label': _actor_label(row.invited_by),
+            'source': source, 'source_label': 'Workspace', 'is_invitation': True, 'object_id': row.pk,
+            'title': name, 'actor_label': _actor_label(row.invited_by),
             'actor_avatar': account_avatar(row.invited_by),
-            'action_message': 'zaprasza Cię do projektu' if is_project else 'zaprasza Cię do Workspace',
+            'action_message': 'zaprasza Cię do Workspace',
             'detail_lines': [
                 _detail_line('Rola', value=row.get_role_display()),
                 _detail_line('Ważne do', value=date_format(timezone.localtime(row.expires_at), 'd.m.Y')),
             ],
-            'location_label': target.name, 'created_at': row.created_at,
-            'url': (scoped_workplace_app_path(workplace, 'tasks') + f'?project_invitation={row.pk}' if is_project else reverse('workplaces:workplaces') + f'?invitation={row.pk}'),
+            'location_label': name, 'created_at': row.created_at,
+            'url': reverse('workplaces:workplaces') + f'?invitation={row.pk}',
             'action_label': 'Przyjmij lub odrzuć zaproszenie',
         }
         item['group_label'] = 'Wymagają Twojej decyzji'
@@ -315,7 +312,7 @@ def notification_page(user, filters, cursor=''):
                 if source > anchor[3]:
                     older |= Q(created_at=created, pk=anchor[2])
                 queryset = queryset.filter(older)
-        relations = (['project', 'project__workplace', 'invited_by'] if source == 'project' else ['workplace', 'invited_by']) if source in INVITATION_SOURCES else [
+        relations = ['workplace', 'invited_by'] if source in INVITATION_SOURCES else [
             'task', 'task__workplace', 'task__section', 'task__section__project', 'actor',
         ]
         if source == 'kanban':

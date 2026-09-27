@@ -2,11 +2,10 @@
     if (window.ancoreProjectTeam) return;
     window.ancoreProjectTeam = true;
     let cleanup = () => {};
-    function init() {
-        cleanup();
-        const form = document.getElementById('project-rename-form');
-        const host = document.querySelector('[data-project-team-modal-host]');
-        if (!form || !host) return;
+    function initTeam(kind) {
+        const form = document.getElementById(`${kind}-rename-form`);
+        const host = document.querySelector(`[data-project-team-modal-host="${kind}"]`);
+        if (!form || !host) return () => {};
         const controller = new AbortController();
         const options = { signal: controller.signal };
         const main = form.closest('.tasks-modal');
@@ -37,7 +36,7 @@
                 if (selected && focus) node.focus();
             });
             form.querySelectorAll('[data-project-access-panel]').forEach(node => { node.hidden = node.dataset.projectAccessPanel !== name; });
-            form.querySelector('#project-rename-submit').hidden = name !== 'main' || form.dataset.projectReadonly === 'true';
+            form.querySelector(`#${kind}-rename-submit`).hidden = name !== 'main' || form.dataset.projectReadonly === 'true';
             form.querySelector('footer [data-close-modal]').textContent = name === 'main' && form.dataset.projectReadonly !== 'true' ? 'Anuluj' : 'Zamknij';
         }
         function clearPickers() {
@@ -47,8 +46,6 @@
         function display(data) {
             clearPickers();
             form.querySelector('[data-project-team-members]').innerHTML = data.members;
-            form.querySelector('[data-project-team-invitations]').innerHTML = data.invitations;
-            form.querySelector('[data-project-access-tab="invitations"]').hidden = !data.can_manage;
             host.innerHTML = data.modals;
             host.querySelectorAll('form').forEach(node => { node.action = url; });
             window.AncoreIcons?.render(form); window.AncoreIcons?.render(host);
@@ -69,7 +66,7 @@
                 const data = await response.json();
                 if (!response.ok) {
                     const messages = Object.values(data.errors || {}).flat().map(error => error.message);
-                    throw new Error(messages.join(' ') || data.error || 'Nie udało się zapisać zmian. Odśwież projekt i spróbuj ponownie.');
+                    throw new Error(messages.join(' ') || data.error || 'Nie udało się zapisać zmian. Zamknij i ponownie otwórz okno.');
                 }
                 return data;
             } finally { clearTimeout(timer); }
@@ -78,12 +75,11 @@
             const current = ++version;
             requestController?.abort(); clearPickers();
             url = teamUrl; selectTab('main'); errorBox.hidden = true;
-            form.querySelector('[data-project-access-tab="invitations"]').hidden = true;
             form.querySelector('[data-project-team-members]').textContent = 'Ładowanie członków…';
-            form.querySelector('[data-project-team-invitations]').replaceChildren(); host.replaceChildren();
+            host.replaceChildren();
             if (!url) return;
             try { const data = await request(); if (current === version) display(data); }
-            catch (error) { if (current === version && !controller.signal.aborted) { errorBox.textContent = 'Nie udało się pobrać członków. Zamknij i ponownie otwórz projekt.'; errorBox.hidden = false; } }
+            catch (error) { if (current === version && !controller.signal.aborted) { errorBox.textContent = 'Nie udało się pobrać członków. Zamknij i ponownie otwórz okno.'; errorBox.hidden = false; } }
         }
         function openChild(id, trigger) {
             const modal = host.querySelector('#' + id); if (!modal) return;
@@ -105,7 +101,7 @@
                 pending = false;
                 const child = childForm?.closest('.tasks-modal');
                 if (child) window.AncoreTaskModals.close(child);
-                if (body.get('action') === 'invite' || body.get('action') === 'cancel') tab = 'invitations';
+                if (body.get('action') === 'share') tab = 'members';
                 display(data);
                 form.querySelector(`[data-project-access-tab="${tab}"]`)?.focus();
                 window.showNotification?.('Zmiany zapisane.', 'success');
@@ -113,27 +109,26 @@
                 if (!controller.signal.aborted) { errors.textContent = error.message; errors.hidden = false; }
             } finally { pending = false; controls.forEach(([node, disabled]) => { node.disabled = disabled; }); }
         }
-        document.addEventListener('ancore:project-team-selected', event => { if (event.target === form) load(event.detail.url); }, options);
+        document.addEventListener(`ancore:${kind}-team-selected`, event => { if (event.target === form) load(event.detail.url); }, options);
         form.addEventListener('click', event => {
             const trigger = event.target.closest('button'); if (!trigger || pending) return;
             if (trigger.dataset.projectAccessTab) selectTab(trigger.dataset.projectAccessTab);
-            if (trigger.hasAttribute('data-project-invite-open')) {
+            if (trigger.hasAttribute('data-project-share-open')) {
                 host.querySelector('[name="email"]').value = '';
                 host.querySelector('[data-team-invite-selected]').hidden = true;
-                openChild('project-invite-modal', trigger);
+                openChild(`${kind}-share-modal`, trigger);
             }
             if (trigger.dataset.projectRoleMember) {
-                const roleForm = host.querySelector('#project-role-modal form');
+                const roleForm = host.querySelector(`#${kind}-role-modal form`);
                 roleForm.elements.member_id.value = trigger.dataset.projectRoleMember;
                 roleForm.elements.role.value = trigger.dataset.projectRole;
                 roleForm.querySelector('[data-team-role-person]').textContent = trigger.dataset.projectPerson;
-                openChild('project-role-modal', trigger);
+                openChild(`${kind}-role-modal`, trigger);
             }
             if (trigger.dataset.projectTeamAction) {
                 const body = new FormData(); body.set('action', trigger.dataset.projectTeamAction);
                 if (trigger.dataset.memberId) body.set('member_id', trigger.dataset.memberId);
-                if (trigger.dataset.invitationId) body.set('invitation_id', trigger.dataset.invitationId);
-                if (body.get('action') === 'remove') window.showConfirmModal({ title: 'Odebrać dostęp do projektu?', message: 'Osoba straci dostęp do prywatnego projektu, jego zadań i plików. Pozostanie członkiem Workspace.', confirmText: 'Odbierz dostęp', onConfirm: () => mutate(body) });
+                if (body.get('action') === 'remove') window.showConfirmModal({ title: kind === 'section' ? 'Odebrać dostęp do grupy?' : 'Odebrać dostęp do projektu?', message: kind === 'section' ? 'Osoba straci dostęp do prywatnej grupy, jej zadań i plików. Pozostanie członkiem projektu i Workspace.' : 'Osoba straci dostęp do prywatnego projektu, jego zadań i plików. Pozostanie członkiem Workspace.', confirmText: 'Odbierz dostęp', onConfirm: () => mutate(body) });
                 else mutate(body);
             }
         }, options);
@@ -157,14 +152,16 @@
         document.addEventListener('ancore:task-modal-before-close', event => { if (pending && (event.target === main || host.contains(event.target))) event.preventDefault(); }, options);
         document.addEventListener('ancore:task-modal-closed', event => {
             if (host.contains(event.target)) { closePickers.forEach(close => close()); restoreBackground(); previousFocus?.isConnected && previousFocus.focus({preventScroll:true}); }
-            if (event.target.matches('[data-project-response-modal]')) { restoreBackground(); const current = new URL(location.href); current.searchParams.delete('project_invitation'); history.replaceState(history.state, '', current); }
         }, options);
-        const response = document.querySelector('[data-project-response-modal].is-open');
-        if (response) protectBackground(response);
-        const id = form.elements.project_id.value;
-        const access = JSON.parse(document.getElementById('project-access-data')?.textContent || '{}')[id];
+        const id = form.elements[`${kind}_id`].value;
+        const access = JSON.parse(document.getElementById(`${kind}-access-data`)?.textContent || '{}')[id];
         if (id && access) { form.elements.visibility.disabled = !access.canManage; load(access.teamUrl); }
-        cleanup = () => { version++; requestController?.abort(); controller.abort(); clearPickers(); restoreBackground(); };
+        return () => { version++; requestController?.abort(); controller.abort(); clearPickers(); restoreBackground(); };
+    }
+    function init() {
+        cleanup();
+        const cleanups = ['project', 'section'].map(initTeam);
+        cleanup = () => cleanups.forEach(close => close());
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
