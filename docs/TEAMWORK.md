@@ -20,8 +20,8 @@ wchodzą w zakres tej wersji.
 
 ## Zaproszenia i ekran zespołu
 
-Ekran `/workplaces/` ma zakładki „Workspace” i „Zaproszenia”, przełączane
-standardowymi przyciskami katalogu. Skład zespołu znajduje się w zakładce
+Ekran `/workplaces/` pokazuje katalog Workspace, bez zakładki otrzymanych
+zaproszeń. Skład zespołu znajduje się w zakładce
 „Członkowie” okna „Edytuj miejsce pracy”, obok „Główna” z ustawieniami
 i „Wysłane zaproszenia” z oczekującymi zaproszeniami do tego Workspace.
 Nazwa Workspace i ikona ustawień otwierają „Główną”; liczba członków oraz stare
@@ -32,9 +32,9 @@ przestrzeń pracy; strzałka przełączenia nadal otwiera jej Zadania.
 Zwykły członek ma okno „Miejsce pracy” z odczytem danych i składu zespołu,
 bez akcji edycji, zapraszania, zmiany ról i odbierania dostępu.
 
-Strona „Zaproszenia” pokazuje wyłącznie otrzymane zaproszenia
-(`view=received`, wszystkie zaproszenia zalogowanego odbiorcy) i ich licznik.
-Przycisk „Otwórz” uruchamia istniejące okno decyzji. Wysłane zaproszenia są
+Otrzymane zaproszenia są dostępne przez panel powiadomień; jego link
+otwiera okno decyzji nad katalogiem Workspace. Dawny adres `view=received`
+pokazuje katalog bez tabeli ani licznika otrzymanych zaproszeń. Wysłane zaproszenia są
 w trzeciej zakładce okna miejsca pracy i są dostępne wyłącznie właścicielowi
 oraz administratorowi. Stare linki `view=invitations` otwierają tę zakładkę
 nad katalogiem; wybranie Workspace bez uprawnień nadal nie ujawnia zaproszeń.
@@ -59,22 +59,31 @@ obejmują zaznaczenie, działania, nazwę z avatarem, e-mail, rolę i datę doł
 ważności zaproszenia. Menu zaproszenia pozwala je anulować zgodnie z rolą
 użytkownika. Checkbox w nagłówku zaznacza wszystkie wiersze swojej tabeli;
 wybór pozostaje niezależny w obu zakładkach i podświetla zaznaczone wiersze.
-Tabela otrzymanych zaproszeń zachowuje style Dokumentów. „Zaproś osobę” i „Zmień rolę”
+„Zaproś osobę” i „Zmień rolę”
 otwierają standardowe modale. Wpływ
 odebrania dostępu na Office opisuje potwierdzenie operacji.
 
 Zaproszenie wskazuje **istniejące aktywne konto Ancore przez e-mail**. Jest
-zapisywane w aplikacji, bez wysyłania e-maila. Odbiorca widzi je pod dzwonkiem
-oraz na stronie Workspace, niezależnie od aktualnie wybranej przestrzeni.
-Wyszukanie nie rozróżnia wielkości liter, ale musi wskazać dokładnie jedno
-konto. Niejednoznaczny adres w starszej bazie daje błąd formularza; nie wybieramy
+zapisywane w aplikacji, bez wysyłania e-maila. Odbiorca widzi je pod dzwonkiem,
+niezależnie od aktualnie wybranej przestrzeni.
+Formularz podpowiada osoby po co najmniej 2 znakach imienia, drugiego imienia,
+nazwiska, ID Ancore lub e-maila. Można łączyć części imienia i nazwiska.
+Lista pokazuje do 10 aktywnych kont z avatarem, nazwą i adresem; większy zbiór
+wymaga doprecyzowania. Wybór wpisuje e-mail i pokazuje odbiorcę zaproszenia;
+pełny pasujący adres również pokazuje podgląd. Podpowiedzi pomijają właściciela,
+aktywnych członków i osoby z ważnym oczekującym zaproszeniem do wybranego Workspace.
+GET `/workplaces/<pk>/team/candidates/` wymaga właściciela lub administratora
+tego Workspace, niezależnie od aktywnej sesji. Nie tworzy zaproszeń i zwraca
+wyłącznie dane potrzebne do rozpoznania odbiorcy; odpowiedź nie jest cache'owana.
+Zapis nadal ponownie weryfikuje adres, konto, członkostwo i oczekujące zaproszenia.
+Przy zapisie porównanie adresu nie rozróżnia wielkości liter, ale musi wskazać
+dokładnie jedno konto. Niejednoznaczny adres w starszej bazie daje błąd formularza; nie wybieramy
 pierwszego konta. Migracja Accounts 0008 blokuje tworzenie takich duplikatów.
 Turkusowa kropka przy dzwonku oznacza nieprzeczytane wpisy lub oczekujące
 zaproszenia; obie liczby są dostępne w opisie przycisku. Stan jest sprawdzany co 30 sekund w widocznej karcie,
 po powrocie do karty i po częściowej nawigacji. Powiadomienie pokazuje autora,
 Workspace, rolę i termin ważności. Kliknięcie otwiera konkretne zaproszenie
-w standardowym oknie na stronie Workspace (`?invitation=<pk>`). To samo okno
-otwiera przycisk „Otwórz” na liście otrzymanych zaproszeń. Pokazuje zapraszającą
+w standardowym oknie nad katalogiem Workspace (`?invitation=<pk>`). Pokazuje zapraszającą
 osobę, Workspace, rolę, termin oraz przyciski „Później”, „Odrzuć” i „Przyjmij”.
 Przy kilku zaproszeniach strzałki przechodzą między nimi; zamknięcie nie zmienia
 zaproszenia. Nie ma osobnych szerokich pasków nad listą Workspace.
@@ -146,3 +155,6 @@ Office i osobiste dane bez Workspace. Weryfikacja wymaga PostgreSQL.
 Testy `workplaces/test_management.py` obejmują wybór niezależny od aktywnej sesji,
 powroty po zapisie i błędach, stare linki, niedostępne identyfikatory, role, CSRF
 oraz jawne przełączenie kontekstu.
+`workplaces/test_invitation_candidates.py` obejmuje podpowiedzi, limit, uprawnienia,
+wykluczenia w wybranym Workspace, cofnięcie dostępu, escapowanie danych i ponowną
+walidację zapisu po zmianie członkostwa.

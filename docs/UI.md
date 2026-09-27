@@ -949,8 +949,8 @@ Małe okna formularzy używają `app-modal-panel app-modal-panel--compact`,
 jak „Zaproś osobę”, „Zmień rolę” oraz „Zaproszenie do Workspace”. Okno zaproszenia
 zachowuje wyśrodkowaną szerokość do 760px i wysokość dopasowaną do formularza,
 a powierzchnie, nagłówek i stopkę dziedziczy po panelu „Edytuj miejsce pracy”.
-Ma jasnoszare tło, białą przewijaną treść i akcje po lewej. Pola pozostają
-w jednej kolumnie z etykietami nad kontrolkami; długi tytuł zawija się.
+Ma jasnoszare tło, białą przewijaną treść i akcje po lewej. Etykiety pozostają
+nad kontrolkami; w zaproszeniu osoba i rola są obok siebie. Długi tytuł zawija się.
 Na telefonie zachowuje margines od krawędzi, a stopka może zawijać akcje.
 Potwierdzenia `showConfirmModal` i edytory zdjęć konta, firmy oraz logo Workspace
 korzystają z tych samych reguł powierzchni, nagłówka, białej treści i stopki
@@ -1185,8 +1185,8 @@ Gdy nie ma zaproszeń, nieprzeczytane wpisy
 sygnalizuje kropka `notifications-toggle__indicator`. Opis czytnika ekranu
 rozróżnia obie liczby. Znaczniki zaproszeń są renderowane także przed uruchomieniem JS.
 
-Link powiadomienia `?invitation=<pk>` otwiera okno konkretnego zaproszenia na
-stronie Workspace. Przycisk „Otwórz” przy otrzymanym zaproszeniu otwiera to samo okno.
+Link powiadomienia `?invitation=<pk>` otwiera okno konkretnego zaproszenia nad
+katalogiem Workspace.
 Include `workplaces/includes/invitation_response_modal.html` korzysta z
 `tasks-modal`, standardowej stopki i kompaktowej listy szczegółów
 `workplace-invitation__details`. Akcje „Później”, „Odrzuć” i „Przyjmij” są razem
@@ -1194,38 +1194,43 @@ w stopce; wspólne przyciski paginacji pozwalają przejść do innych zaproszeń
 `workplace-team.js` obsługuje ten modal także na stronie Workspace przez
 `data-team-modal-page`, zachowując inert, fokus i inicjalizację po częściowej
 nawigacji. Zamknięcie usuwa parametr zaproszenia z adresu i przywraca fokus
-przyciskowi w wierszu lub zakładce „Zaproszenia”. Formularz nadal wymaga POST i CSRF.
+polu „Szukaj Workspace” w pasku katalogu. Formularz nadal wymaga POST i CSRF.
 
-Ekran `/workplaces/` rozszerza `core/base.html` i ma sekcje „Workspace”
-oraz „Zaproszenia”. Przełącznik używa `documents-display-switch`
-i standardowych linków `tasks-filter-button` z ikonami i `aria-current="page"`.
-Aktywna opcja ma klasę `is-active` i wspólne szare tło kontrolek katalogu.
-Licznik przy zaproszeniach używa `tasks-project-query-count` i oznacza
-otrzymane zaproszenia. Pasek ma odstępy, przyciski i menu takie jak Dokumenty.
-Serwer renderuje jedną listę, zamiast łączyć katalog i skład zespołu pionowo.
-Każda zakładka ma dwa wspólne paski katalogu, jak Dokumenty i Projekty:
+Ekran `/workplaces/` rozszerza `core/base.html` i pokazuje katalog Workspace.
+Nie ma zakładki, tabeli ani licznika otrzymanych zaproszeń; są dostępne
+przez panel powiadomień. Dawny parametr `view=received` pokazuje katalog.
+Pasek nie ma osobnego przycisku „Workspace” ani separatora po nim.
+Pasek ma odstępy, przyciski i menu takie jak Dokumenty.
+Katalog ma dwa wspólne paski, jak Dokumenty i Projekty:
 `tasks-topbar--directory` z tytułem i akcjami oraz `tasks-filterbar--directory`
-(`management_toolbar.html`) z zakładkami i kontrolkami bieżącego widoku.
-Strona „Zaproszenia” pokazuje otrzymane zaproszenia z licznikiem w drugim
-pasku. Wysłane zaproszenia i przycisk „Zaproś osobę” są w oknie miejsca pracy.
+(`management_toolbar.html`) z wyszukiwaniem i paginacją katalogu.
+Wysłane zaproszenia i przycisk „Zaproś osobę” są w oknie miejsca pracy.
 W katalogu wyszukiwanie i kompaktowa paginacja znajdują się po prawej stronie
 drugiego paska. Paginacja używa wspólnych klas `tasks-project-pagination--toolbar`,
 zachowując filtrowanie i zmianę strony w przeglądarce; zakres i liczba wyników
 zastępują osobny dolny pasek z numerami stron. Pod paskami zaczyna się tabela.
 
 „Workspace” pokazuje pełną listę, wyszukiwanie, dodawanie, ustawienia i paginację.
-Znacznik „Bieżący” wskazuje aktywną przestrzeń. Nazwa i ikona ustawień otwierają
-„Główną” w oknie miejsca pracy, a liczba członków — zakładkę „Członkowie”.
-Ikony przełączania i edycji w tabeli używają podświetlenia
+Znacznik „Bieżący” wskazuje aktywną przestrzeń. Nazwa otwiera „Główną” w oknie
+miejsca pracy, a liczba członków — zakładkę „Członkowie”. Kolumna „Działania”
+(40px, pusty wizualnie nagłówek) zastępuje kolumnę koła zębatego. Przycisk
+trzech pasków korzysta ze wspólnego `row-actions.js` i popovera Dokumentów.
+Menu otwiera edycję, członków i wysłane zaproszenia; zwykły członek widzi
+informacje tylko do odczytu oraz członków. Zamknięcie menu przez Escape
+i zamknięcie otwartego z niego okna przywracają fokus przyciskowi menu.
+Kliknięcie pozostałej części wiersza (także kodu, opisu, roli i statusu)
+otwiera tę samą „Główną” przez link nazwy. Enter i Spacja na wierszu działają
+tak samo. Checkbox, przełączanie, menu i link członków zachowują własne
+akcje; zaznaczanie tekstu nie otwiera okna. Obsługa w `workplace-team.js`
+działa także po częściowej nawigacji, bez powielania listenerów.
+Ikony przełączania i menu w tabeli używają podświetlenia
 całej komórki, tak jak ikony projektów: `rgba(var(--system-accent-rgb), 0.24)`
 na delikatnym turkusowym tle wiersza. Hover i fokus klawiatury zachowują
 siatkę tabeli, bez dodatkowego obrysu i cienia. Komórki ikon mają jedną
-kolumnę `minmax(0, 1fr)`, aby przycisk wypełniał ich szerokość. Wyłączone akcje (bieżący
-Workspace lub brak uprawnień do edycji) nie otrzymują tego podświetlenia.
+kolumnę `minmax(0, 1fr)`, aby przycisk wypełniał ich szerokość. Wyłączone
+przełączanie bieżącego Workspace nie otrzymuje tego podświetlenia.
 `team_panel.html` renderuje tabelę składu lub wysłanych zaproszeń wewnątrz
-osobnych zakładek okna. `received_invitations.html` pokazuje na stronie Workspace,
-zapraszającego, rolę, datę i akcję „Otwórz”. Dawny filtr „Otrzymane”/„Wysłane”
-został usunięty; Workspace wybieramy przez katalog.
+osobnych zakładek okna. Workspace wybieramy przez katalog.
 
 Pasek filtrów zachowuje wysokość wiersza z polem wyszukiwania Dokumentów
 (`--dropdown-control-height` plus wspólny padding i ramka) oraz zawijanie
@@ -1265,7 +1270,10 @@ tasks-project-sheet`, wspólnych nagłówków, komórek i wierszy. Wariant
 lub ważności zaproszenia. Nagłówki danych mają ikony; nagłówek kolumny
 działań jest pusty wizualnie i zachowuje etykietę dostępną „Działania”.
 Wiersze zachowują wysokość 35px, tekst 13px/400, cienką siatkę i jasnoturkusowe
-podświetlenie z paskiem po lewej. Menu członka lub zaproszenia jest w osobnej komórce działań,
+podświetlenie z paskiem po lewej. Avatary członków i odbiorców zaproszeń mają
+30×30px, jak na liście Kontaktów, również na wąskich ekranach. Stały rozmiar
+obejmuje zdjęcia oraz ikonę zastępczą i nie kurczy się przy długiej nazwie.
+Menu członka lub zaproszenia jest w osobnej komórce działań,
 z takim samym przyciskiem wypełniającym komórkę jak akcje projektów.
 Tabela ma role `table`/`rowgroup`/`row`/`columnheader`/`cell`.
 Układ kolumn skaluje się z oknem; `data-directory-resize="false"` wyłącza
@@ -1284,8 +1292,6 @@ się poziomo we własnym kontenerze o minimalnej szerokości zawartości 890px.
 Pusty stan członków używa `tasks-empty-state`, a wysłanych zaproszeń
 `documents-empty documents-grid-empty`; oba mieszczą się w szerokości okna
 i nie wyświetlają pustych nagłówków tabeli.
-Tabela otrzymanych zaproszeń nadal używa `documents-table`:
-nagłówek 35px, wiersze 36px, pola zaproszenia i dotychczasowe menu.
 Wspólny pusty stan `documents-empty` centruje ikonę nad tytułem i opisem
 przez blokowe SVG z automatycznymi marginesami bocznymi, zachowując 16px
 odstępu pod ikoną. Reguła obowiązuje też w pustych katalogach Dokumentów.
@@ -1309,6 +1315,21 @@ Zaproszenie, odpowiedź na zaproszenie i zmiana roli używają wspólnej powłok
 otwarciem, `inert` tła, fokusem i blokadą ponownego wysłania; `tasks.js` obsługuje
 zamykanie i pułapkę fokusu, a listy wyboru korzystają z `AncoreCustomSelect`
 i `AncoreDropdownLayer`. Błąd zaproszenia otwiera ten sam modal z wpisanymi danymi.
+Formularz zaproszenia ma pole osoby po lewej i „Rolę” po prawej, w jednym
+wierszu `workplace-invite__fields`. Kolumna roli ma 180px, a pole osoby zajmuje
+pozostałą szerokość; etykiety są nad kontrolkami. Podpowiedzi i podgląd pozostają
+pod polem osoby. Do 600px pola przechodzą do jednej kolumny, zgodnie ze wzorcem
+formularzy kontaktowych.
+Pole osoby w zaproszeniu ma podpowiedzi od 2 znaków imienia, nazwiska, ID Ancore
+lub e-maila. Wariant `workplace-invite__results` pokazuje przewijaną listę pod
+polem, w białej treści modala; korzysta ze wspólnych przycisków menu, układu
+tożsamości `tasks-responsible-select__person` i avatara 30px. Po wyborze pozostaje
+nazwa i e-mail odbiorcy z komunikatem „Zapraszasz”. Pełny pasujący e-mail także
+pokazuje odbiorcę. Lista ma role combobox/listbox/option; strzałki wybierają,
+Enter zatwierdza osobę, Escape najpierw zamyka podpowiedzi. Zmiana tekstu usuwa
+poprzedni wybór. Obsługa anuluje nieaktualne żądania oraz sprząta je przy zamknięciu
+i częściowej nawigacji. Status komunikuje ładowanie, brak wyników, limit i błąd;
+przy błędzie nadal można ręcznie wpisać adres. Dopiero przycisk zaproszenia zapisuje.
 Odebranie dostępu wymaga `showConfirmModal` wyjaśniającego wpływ na Office.
 Zapis nadal używa POST, CSRF i komunikatów aplikacji.
 

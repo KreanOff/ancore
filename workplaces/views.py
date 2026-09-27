@@ -89,9 +89,11 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
         team_workplace = next((workplace for workplace in user_workplaces if active_workplace and workplace.pk == active_workplace.pk), None)
         team_workplace = team_workplace or next(iter(user_workplaces), None)
     selected_team_context = team_context(request, team_workplace, invite_form) if team_workplace else {}
-    default_view = 'received' if selected_invitation_id else ('members' if selected_id is not None else 'workspaces')
+    default_view = 'workspaces' if selected_invitation_id else ('members' if selected_id is not None else 'workspaces')
     management_view = request.GET.get('view', default_view)
-    if management_view not in {'workspaces', 'members', 'invitations', 'received'}:
+    if management_view == 'received':
+        management_view = 'workspaces'
+    if management_view not in {'workspaces', 'members', 'invitations'}:
         management_view = default_view
     if workplace_create_modal_open:
         management_view = 'workspaces'
@@ -100,7 +102,7 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
     if edit_form is not None:
         management_view = 'invitations' if request.POST.get('view') == 'invitations' else 'workspaces'
     if management_view == 'invitations' and not selected_team_context.get('can_manage_team'):
-        management_view = 'received'
+        management_view = 'workspaces'
     workplace_edit_modal_open = management_view in {'members', 'invitations'} or edit_form is not None
     workplace_edit_tab = (
         'main' if not workplace_edit_modal_open or request.GET.get('tab') == 'main' or edit_form is not None

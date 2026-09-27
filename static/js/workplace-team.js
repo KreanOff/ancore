@@ -3,6 +3,133 @@
     if (window.ancoreWorkplaceTeam) return;
     window.ancoreWorkplaceTeam = true;
     let cleanup = () => {};
+    function initInvitationPicker(picker, options) {
+        const input = picker.querySelector('[data-team-invite-search]');
+        const menu = picker.querySelector('[role="listbox"]');
+        const status = picker.querySelector('[role="status"]');
+        const selected = picker.querySelector('[data-team-invite-selected]');
+        let timer, request, version = 0, activeIndex = -1, people = [], selectedEmail = '';
+        function cancelRequest() {
+            clearTimeout(timer);
+            request?.abort();
+            version += 1;
+        }
+        function close() {
+            cancelRequest();
+            menu.hidden = true;
+            input.setAttribute('aria-expanded', 'false');
+            input.removeAttribute('aria-activedescendant');
+            activeIndex = -1;
+            if (status.dataset.loading) {
+                status.textContent = '';
+                delete status.dataset.loading;
+            }
+        }
+        function choose(person) {
+            close();
+            input.value = person.email;
+            selectedEmail = person.email;
+            selected.innerHTML = person.html;
+            window.AncoreIcons?.render(selected);
+            selected.hidden = false;
+            status.textContent = `Zapraszasz: ${person.name}.`;
+            input.focus({ preventScroll: true });
+        }
+        function search() {
+            close();
+            selectedEmail = '';
+            selected.hidden = true;
+            selected.replaceChildren();
+            people = [];
+            menu.replaceChildren();
+            const query = input.value.trim();
+            if (query.length < 2) {
+                status.textContent = 'Wpisz co najmniej 2 znaki, aby wyszukać osobę.';
+                return;
+            }
+            const currentVersion = version;
+            status.textContent = 'Szukam osób…';
+            status.dataset.loading = 'true';
+            timer = setTimeout(async () => {
+                request = new AbortController();
+                const url = new URL(picker.dataset.candidatesUrl, window.location.href);
+                url.searchParams.set('q', query);
+                try {
+                    const response = await fetch(url, {
+                        signal: request.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!response.ok) throw new Error('Lookup failed');
+                    const data = await response.json();
+                    if (currentVersion !== version || !picker.isConnected) return;
+                    delete status.dataset.loading;
+                    people = data.results;
+                    const exact = people.find(person => person.email.toLocaleLowerCase() === query.toLocaleLowerCase());
+                    if (exact) { choose(exact); return; }
+                    people.forEach((person, index) => {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'tasks-project-menu-button';
+                        button.id = `team-invite-person-${index}`;
+                        button.dataset.personIndex = String(index);
+                        button.setAttribute('role', 'option');
+                        button.setAttribute('aria-selected', 'false');
+                        button.tabIndex = -1;
+                        button.innerHTML = person.html;
+                        menu.appendChild(button);
+                    });
+                    window.AncoreIcons?.render(menu);
+                    menu.hidden = people.length === 0;
+                    input.setAttribute('aria-expanded', String(people.length > 0));
+                    status.textContent = !people.length
+                        ? 'Nie znaleziono osoby, którą można zaprosić. Sprawdź dane; członkowie i osoby z oczekującym zaproszeniem nie pojawiają się na liście.'
+                        : data.has_more ? 'Pokazano 10 osób. Doprecyzuj wyszukiwanie lub wybierz osobę.'
+                            : 'Wybierz osobę z listy.';
+                } catch (error) {
+                    if (error.name === 'AbortError' || currentVersion !== version) return;
+                    delete status.dataset.loading;
+                    status.textContent = 'Nie udało się pobrać podpowiedzi. Wpisz adres e-mail lub zmień tekst, aby spróbować ponownie.';
+                }
+            }, 250);
+        }
+        input.addEventListener('input', search, options);
+        input.addEventListener('focus', () => {
+            if (input.value.trim() && input.value.trim() !== selectedEmail) search();
+        }, options);
+        input.addEventListener('blur', cancelRequest, options);
+        // Collapse after the click: hiding this inline list on blur would move
+        // the modal's Cancel/Submit buttons between pointer down and pointer up.
+        document.addEventListener('click', event => {
+            if (event.target.closest('[data-team-modal-open]')?.dataset.teamModalOpen === picker.closest('.tasks-modal').id) return;
+            if (!picker.contains(event.target)) close();
+        }, options);
+        // Keep focus on the combobox while selecting a result with a pointer.
+        menu.addEventListener('mousedown', event => event.preventDefault(), options);
+        menu.addEventListener('click', event => {
+            const button = event.target.closest('[data-person-index]');
+            if (button) choose(people[Number(button.dataset.personIndex)]);
+        }, options);
+        input.addEventListener('keydown', event => {
+            if (event.isComposing) return;
+            if (event.key === 'Tab') {
+                close();
+            } else if (event.key === 'Escape' && (!menu.hidden || status.dataset.loading)) {
+                event.preventDefault();
+                event.stopPropagation();
+                close();
+            } else if (!menu.hidden && ['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.key === 'Enter') { choose(people[Math.max(0, activeIndex)]); return; }
+                activeIndex = activeIndex < 0 ? (event.key === 'ArrowDown' ? 0 : people.length - 1)
+                    : (activeIndex + (event.key === 'ArrowDown' ? 1 : -1) + people.length) % people.length;
+                [...menu.children].forEach((button, index) => button.setAttribute('aria-selected', String(index === activeIndex)));
+                const active = menu.children[activeIndex];
+                input.setAttribute('aria-activedescendant', active.id);
+                active.scrollIntoView({ block: 'nearest' });
+            }
+        }, options);
+        return close;
+    }
     function init() {
         cleanup();
         cleanup = () => {};
@@ -10,6 +137,8 @@
         if (!page) return;
         const controller = new AbortController();
         const options = { signal: controller.signal };
+        const closePickers = [...document.querySelectorAll('[data-team-invite-picker]')]
+            .map(picker => initInvitationPicker(picker, options));
         page.querySelectorAll('[data-team-selection]').forEach(table => {
             const selectAll = table.querySelector('[data-team-select-all]');
             const inputs = [...table.querySelectorAll('[data-team-select]')];
@@ -90,11 +219,12 @@
                 window.AncoreCustomSelect?.refresh(modal);
                 const focusTarget = modal.querySelector('[aria-invalid="true"]')
                     || modal.querySelector('[data-workplace-tab][aria-selected="true"]')
-                    || modal.querySelector('input[type="email"]')
+                    || modal.querySelector('[data-team-invite-search], input[type="email"]')
                     || modal.querySelector('[data-ancore-custom-select-toggle]')
                     || modal.querySelector('[data-close-modal]');
                 if (!modal.closest('[inert]')) focusTarget?.focus();
             } else {
+                if (modal.querySelector('[data-team-invite-picker]')) closePickers.forEach(close => close());
                 if (modal.matches('[data-invitation-response-modal]')) {
                     const url = new URL(window.location.href);
                     url.searchParams.delete('invitation');
@@ -108,7 +238,9 @@
                     && !modal.contains(state.previousFocus) && state.previousFocus.offsetParent !== null
                     ? state.previousFocus : ([...page.querySelectorAll(`[data-team-modal-open="${modal.id}"]`)]
                         .find(trigger => trigger.getClientRects().length)
-                        || page.querySelector(`[data-workplace-edit-open="${modal.id}"]`)
+                        || page.querySelector(`[data-workplace-row-modal="${modal.id}"] [data-row-actions-toggle]`)
+                        || [...page.querySelectorAll(`[data-workplace-edit-open="${modal.id}"]`)]
+                            .find(trigger => trigger.getClientRects().length)
                         || page.querySelector('[data-team-invitation-return]'));
                 if (target?.isConnected) target.focus({ preventScroll: true });
             }
@@ -122,7 +254,21 @@
             syncModal(modal);
             return observer;
         });
+        function openWorkplaceRow(row) {
+            const link = row.querySelector('.workplaces-management__select[data-workplace-edit-open]');
+            if (!link) return;
+            link.focus({ preventScroll: true });
+            link.click();
+        }
         page.addEventListener('click', event => {
+            const row = event.target.closest('[data-workplace-row-modal]');
+            if (row && !event.defaultPrevented && event.button === 0
+                && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey
+                && !event.target.closest('a, button, input, select, textarea, label, form, [contenteditable], [data-row-actions], [data-column="select"], [data-column="action"]')
+                && !window.getSelection()?.toString()) {
+                openWorkplaceRow(row);
+                return;
+            }
             const tab = event.target.closest('[data-workplace-tab]');
             if (tab) {
                 selectTab(tab.closest('[data-workplace-edit-modal]'), tab.dataset.workplaceTab);
@@ -152,6 +298,13 @@
             syncModal(modal);
         }, options);
         page.addEventListener('keydown', event => {
+            if (event.target.matches('[data-workplace-row-modal]')
+                && ['Enter', ' '].includes(event.key) && !event.defaultPrevented
+                && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+                event.preventDefault();
+                openWorkplaceRow(event.target);
+                return;
+            }
             const tab = event.target.closest('[data-workplace-tab]');
             if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
             event.preventDefault();
@@ -192,7 +345,7 @@
                 onConfirm: () => { form.dataset.confirmed = 'true'; form.requestSubmit(); }
             });
         }, options);
-        cleanup = () => { controller.abort(); observers.forEach(observer => observer.disconnect()); restoreBackground(); };
+        cleanup = () => { closePickers.forEach(close => close()); controller.abort(); observers.forEach(observer => observer.disconnect()); restoreBackground(); };
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
     else init();

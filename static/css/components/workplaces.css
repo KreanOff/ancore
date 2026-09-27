@@ -3676,15 +3676,15 @@
     --tasks-directory-select-width: 40px;
     --tasks-project-row-height: 35px;
     --tasks-project-action-width: 40px;
-    --tasks-project-info-width: 40px;
+    --tasks-project-menu-width: 40px;
     --workplaces-name-width: 300px;
     --workplaces-code-width: 180px;
     --workplaces-description-width: 360px;
     --workplaces-members-width: 180px;
     --workplaces-context-width: 220px;
     --workplaces-status-width: 140px;
-    --workplaces-table-min-width: calc(var(--tasks-directory-select-width) + var(--tasks-project-action-width) + var(--tasks-project-info-width) + var(--workplaces-name-width) + var(--workplaces-code-width) + var(--workplaces-description-width) + var(--workplaces-members-width) + var(--workplaces-context-width) + var(--workplaces-status-width));
-    --workplaces-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) minmax(var(--workplaces-name-width), 1.1fr) minmax(var(--workplaces-code-width), 0.65fr) minmax(var(--workplaces-description-width), 1.25fr) minmax(var(--workplaces-members-width), 0.65fr) minmax(var(--workplaces-context-width), 0.8fr) minmax(var(--workplaces-status-width), 0.5fr);
+    --workplaces-table-min-width: calc(var(--tasks-directory-select-width) + var(--tasks-project-action-width) + var(--tasks-project-menu-width) + var(--workplaces-name-width) + var(--workplaces-code-width) + var(--workplaces-description-width) + var(--workplaces-members-width) + var(--workplaces-context-width) + var(--workplaces-status-width));
+    --workplaces-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-menu-width) minmax(var(--workplaces-name-width), 1.1fr) minmax(var(--workplaces-code-width), 0.65fr) minmax(var(--workplaces-description-width), 1.25fr) minmax(var(--workplaces-members-width), 0.65fr) minmax(var(--workplaces-context-width), 0.8fr) minmax(var(--workplaces-status-width), 0.5fr);
     --tasks-directory-grid: var(--workplaces-directory-grid);
 
     width: 100%;
@@ -3742,7 +3742,7 @@
     background: #ffffff;
 }
 
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="info"]) {
+.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell:not([data-column="select"]):not([data-column="action"]):not([data-column="menu"]) {
     justify-content: flex-start;
     padding: 0 0.75rem;
     text-align: left;
@@ -3750,9 +3750,9 @@
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="select"],
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="action"],
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="info"],
+.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-header > .tasks-project-sheet__cell[data-column="menu"],
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell[data-column="action"],
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell[data-column="info"] {
+.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell[data-column="menu"] {
     width: 100%;
     min-width: 0;
     max-width: none;
@@ -3789,7 +3789,7 @@
     background-size: 12px 12px;
 }
 
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell:not(.tasks-row-checkbox):not([data-column="action"]):not([data-column="info"]) {
+.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row > .tasks-project-sheet__cell:not(.tasks-row-checkbox):not([data-column="action"]):not([data-column="menu"]) {
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -3819,8 +3819,7 @@
     flex: 0 0 45px;
 }
 
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button,
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-row__settings .workplace-settings__toggle {
+.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button {
     width: 100%;
     height: 100%;
     min-height: var(--tasks-project-row-height);
@@ -3831,8 +3830,7 @@
 }
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button:hover:not(:disabled),
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button:focus-visible:not(:disabled),
-.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-row__settings .workplace-settings[open] .workplace-settings__toggle {
+.tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-project-sheet__edit-button:focus-visible:not(:disabled) {
     background: rgba(var(--system-accent-rgb), 0.24);
     color: #343842;
     outline: 0;

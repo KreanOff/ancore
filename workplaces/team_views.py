@@ -6,9 +6,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Case, Q, Value, When
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.utils import timezone
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django import forms
 
 from .models import Workplace, WorkplaceInvitation, WorkplaceMembership
@@ -16,7 +20,13 @@ from .services import can_manage_team, workplace_role, workplaces_for_user, set_
 
 
 class InvitationForm(forms.Form):
-    email = forms.EmailField(label='Adres e-mail konta Ancore', widget=forms.EmailInput(attrs={'class': 'form-input', 'autocomplete': 'email'}))
+    email = forms.EmailField(label='Osoba lub adres e-mail konta Ancore', widget=forms.TextInput(attrs={
+        'class': 'form-input', 'autocomplete': 'off', 'spellcheck': 'false',
+        'placeholder': 'Wpisz imię, nazwisko, ID Ancore lub e-mail',
+        'data-team-invite-search': '', 'role': 'combobox', 'aria-autocomplete': 'list',
+        'aria-expanded': 'false', 'aria-controls': 'team-invite-results',
+        'aria-describedby': 'team-invite-search-status',
+    }))
     role = forms.ChoiceField(label='Rola', choices=[('member', 'Członek'), ('admin', 'Administrator')], widget=forms.Select(attrs={'class': 'form-select'}))
 
     def __init__(self, *args, workplace, actor, **kwargs):
@@ -41,6 +51,40 @@ class InvitationForm(forms.Form):
             raise forms.ValidationError('Ta osoba ma już oczekujące zaproszenie.')
         self.recipient = recipient
         return email
+
+
+@login_required
+@require_GET
+@never_cache
+def invitation_candidates(request, workplace_id):
+    """Account directory suggestions for managers of the explicitly chosen team."""
+    workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
+    if not can_manage_team(request.user, workplace):
+        raise PermissionDenied
+    query = (request.GET.get('q') or '').strip()
+    if len(query) < 2 or len(query) > 254:
+        return JsonResponse({'results': [], 'has_more': False})
+    users = (get_user_model().objects.filter(is_active=True).exclude(email='')
+             .exclude(pk=workplace.owner_id)
+             .exclude(pk__in=workplace.memberships.filter(is_active=True).values('user_id'))
+             .exclude(pk__in=workplace.invitations.filter(
+                 status='pending', expires_at__gt=timezone.now()).values('recipient_id')))
+    for term in query.split():
+        users = users.filter(
+            Q(first_name__icontains=term) | Q(middle_name__icontains=term)
+            | Q(last_name__icontains=term) | Q(username__icontains=term)
+            | Q(email__icontains=term)
+        )
+    matches = list(users.order_by(
+        Case(When(email__iexact=query, then=Value(0)), default=Value(1)),
+        'first_name', 'middle_name', 'last_name', 'email',
+    )[:11])
+    results = [{
+        'email': user.email,
+        'name': user.get_full_name() or user.username,
+        'html': render_to_string('workplaces/includes/invitation_person.html', {'person': user}),
+    } for user in matches[:10]]
+    return JsonResponse({'results': results, 'has_more': len(matches) > 10})
 
 
 @login_required

@@ -163,7 +163,7 @@ class WorkspaceManagementTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.session['active_workplace_id'], created.pk)
 
-    def test_directory_and_invitation_tabs_show_one_list_at_a_time(self):
+    def test_directory_stays_visible_with_sent_invitations_and_legacy_received_link(self):
         response = self.client.get(reverse('workplaces:workplaces'))
         self.assertEqual(response.context['management_view'], 'workspaces')
         self.assertContains(response, 'data-workplace-row ')
@@ -174,19 +174,26 @@ class WorkspaceManagementTests(TestCase):
         self.assertEqual(response.context['workplace_edit_tab'], 'invitations')
         self.assertContains(response, 'Brak oczekujących zaproszeń.')
         self.assertContains(response, 'data-workplace-row ')
-        response = self.client.get(workplace_management_url(self.selected, 'received'))
-        self.assertContains(response, 'Brak otrzymanych zaproszeń.')
+        response = self.client.get(reverse('workplaces:workplaces'), {'workspace': self.selected.pk, 'view': 'received'})
+        self.assertEqual(response.context['management_view'], 'workspaces')
+        self.assertContains(response, 'data-workplace-row ')
+        self.assertNotContains(response, 'Brak otrzymanych zaproszeń.')
+        self.assertNotContains(response, '?view=received')
         self.assertFalse(response.context['workplace_edit_modal_open'])
+        self.assertEqual(workplace_management_url(self.selected, 'received'), workplace_management_url(self.selected, 'workspaces'))
         self.assert_active_unchanged()
 
-    def test_received_invitations_tab_is_recipient_only(self):
+    def test_received_invitation_modal_is_recipient_only_over_directory(self):
         incoming = WorkplaceInvitation.objects.create(workplace=self.foreign, recipient=self.owner, invited_by=self.recipient)
         WorkplaceInvitation.objects.create(workplace=self.selected, recipient=self.recipient, invited_by=self.owner)
-        response = self.client.get(workplace_management_url(self.selected, 'received'))
+        response = self.client.get(reverse('workplaces:workplaces'), {'invitation': incoming.pk, 'workspace': self.selected.pk})
         self.assertEqual(response.context['pending_invitations'], [incoming])
-        self.assertContains(response, 'Otwórz zaproszenie do Obcy Workspace')
+        self.assertTrue(response.context['invitation_modal_open'])
+        self.assertEqual(response.context['response_invitation'], incoming)
+        self.assertContains(response, 'data-workplace-row ')
+        self.assertNotContains(response, 'Otrzymane zaproszenia:')
         self.assertFalse(response.context['workplace_edit_modal_open'])
-        self.assertEqual(response.context['management_view'], 'received')
+        self.assertEqual(response.context['management_view'], 'workspaces')
         self.assertNotContains(response, 'id="workspace-invitation-direction"')
         self.assert_active_unchanged()
 

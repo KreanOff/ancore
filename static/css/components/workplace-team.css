@@ -22,11 +22,44 @@
 }
 .workplace-team-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
 .workplace-team-sheet .tasks-directory-list [data-column="person"] { gap: 0.5rem; padding-right: 0.75rem; }
-.workplace-team-sheet .tasks-directory-avatar { flex: 0 0 22px; }
+/* Match the 30px person avatars in the Contacts directory. */
+.workplace-team-sheet .tasks-directory-avatar.profile-avatar {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+}
 .workplace-team-sheet [data-row-actions] { width: 100%; height: 100%; }
 .workplace-team__hint { margin: 0 0 var(--app-modal-field-gap); font-size: var(--font-size-sm); line-height: 1.5; }
 .workplace-invitation__details { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: var(--app-modal-field-gap); margin: 0 0 var(--app-modal-padding-y); font-size: var(--font-size-sm); }
 .workplace-invitation__details :is(dt, dd) { margin: 0; overflow-wrap: anywhere; }
+
+/* Inline person suggestions share the responsible-person identity and menu buttons. */
+.workplace-invite__fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    align-items: start;
+    gap: var(--app-modal-field-gap);
+}
+@media (max-width: 600px) {
+    .workplace-invite__fields { grid-template-columns: minmax(0, 1fr); }
+}
+[data-team-invite-picker] { min-width: 0; }
+.workplace-invite__status { margin: 0; font-size: var(--font-size-sm); line-height: 1.5; overflow-wrap: anywhere; }
+.workplace-invite__results {
+    width: 100%;
+    max-height: var(--dropdown-menu-max-height);
+    overflow-y: auto;
+    padding: var(--dropdown-menu-padding);
+    border: 1px solid var(--border-color);
+    border-radius: var(--dropdown-menu-radius);
+    background: var(--card-bg);
+}
+.workplace-invite__results .tasks-project-menu-button { width: 100%; padding: 0.5rem; text-align: left; }
+.workplace-invite__results [aria-selected="true"] { background: var(--system-interaction-soft); }
+.workplace-invite__selected { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--dropdown-menu-radius); }
+[data-team-invite-picker] .tasks-responsible-select__person { display: flex; width: 100%; font-size: var(--font-size-sm); }
+[data-team-invite-picker] .tasks-directory-avatar.profile-avatar { width: 30px; height: 30px; flex: 0 0 30px; }
+[data-team-invite-picker] [hidden] { display: none !important; }
 
 /* Use the same toolbar buttons and view menus as the document catalogue. */
 .workplaces-management__views { flex-wrap: wrap; min-width: 0; max-width: 100%; }

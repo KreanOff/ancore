@@ -19,7 +19,9 @@ SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'contacts', 'calendar', 'documents',
 def workplace_management_url(workplace, view='members'):
     """Management selection never changes the active business-data Workspace."""
     url = f'{reverse("workplaces:workplaces")}?workspace={workplace.pk}'
-    if view in {'invitations', 'received', 'workspaces'}:
+    if view == 'received':
+        view = 'workspaces'
+    if view in {'invitations', 'workspaces'}:
         url += f'&view={view}'
     return url
 

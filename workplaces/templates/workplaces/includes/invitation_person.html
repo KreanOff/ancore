@@ -1,0 +1,8 @@
+{% load account_avatar %}
+<span class="tasks-responsible-select__person">
+    {% user_avatar person as avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=avatar avatar_class='tasks-directory-avatar' only %}
+    <span class="tasks-responsible-select__identity">
+        <span class="workplace-team__name" title="{{ person.get_full_name|default:person.username }}">{{ person.get_full_name|default:person.username }}</span>
+        <span class="workplace-team__name" title="{{ person.email }}">{{ person.email }}</span>
+    </span>
+</span>

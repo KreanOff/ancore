@@ -6,6 +6,7 @@ from . import views, team_views
 app_name = 'workplaces'
 
 urlpatterns = [
+    path('<int:workplace_id>/team/candidates/', team_views.invitation_candidates, name='invitation-candidates'),
     path('<int:workplace_id>/team/', team_views.team, name='team'),
     path('<int:workplace_id>/team/<int:member_id>/', team_views.member_update, name='member-update'),
     path('<int:workplace_id>/invitations/<int:invitation_id>/cancel/', team_views.invitation_cancel, name='invitation-cancel'),

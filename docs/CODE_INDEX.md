@@ -19,7 +19,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
 | [core](../core) | 17 | 0 | 9 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
-| [workplaces](../workplaces) | 18 | 8 | 12 | 82 |
+| [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
 | [tasks](../tasks) | 22 | 53 | 35 | 230 |
 | [kanban](../kanban) | 10 | 37 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
@@ -808,6 +808,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'<int:workplace_id>/team/candidates/'` | `team_views.invitation_candidates` | 'invitation-candidates' |
 | `'<int:workplace_id>/team/'` | `team_views.team` | 'team' |
 | `'<int:workplace_id>/team/<int:member_id>/'` | `team_views.member_update` | 'member-update' |
 | `'<int:workplace_id>/invitations/<int:invitation_id>/cancel/'` | `team_views.invitation_cancel` | 'invitation-cancel' |
@@ -990,7 +991,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [workplaces/models.py](../workplaces/models.py) — `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `SidebarFavorite`, `create_workplace_for_user`
 - [workplaces/navigation.py](../workplaces/navigation.py) — `sidebar_favorite_catalog`, `sidebar_favorite_is_active`, `sidebar_favorites_for_request`
 - [workplaces/services.py](../workplaces/services.py) — `workplace_management_url`, `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `backfill_legacy_records_for_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
-- [workplaces/team_views.py](../workplaces/team_views.py) — `InvitationForm`, `team`, `team_context`, `invitation_response`, `member_update`, `invitation_cancel`
+- [workplaces/team_views.py](../workplaces/team_views.py) — `InvitationForm`, `invitation_candidates`, `team`, `team_context`, `invitation_response`, `member_update`, `invitation_cancel`
 - [workplaces/templatetags/__init__.py](../workplaces/templatetags/__init__.py)
 - [workplaces/templatetags/sidebar_favorites.py](../workplaces/templatetags/sidebar_favorites.py) — `sidebar_favorite_toggle`
 - [workplaces/templatetags/workplace_avatar.py](../workplaces/templatetags/workplace_avatar.py) — `workplace_avatar_seed`, `workplace_avatar`
@@ -1111,11 +1112,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### workplaces
 
 - [workplaces/templates/workplaces/includes/edit_modal.html](../workplaces/templates/workplaces/includes/edit_modal.html)
+- [workplaces/templates/workplaces/includes/invitation_person.html](../workplaces/templates/workplaces/includes/invitation_person.html)
 - [workplaces/templates/workplaces/includes/invitation_response_modal.html](../workplaces/templates/workplaces/includes/invitation_response_modal.html)
 - [workplaces/templates/workplaces/includes/invitations_table.html](../workplaces/templates/workplaces/includes/invitations_table.html)
 - [workplaces/templates/workplaces/includes/management_toolbar.html](../workplaces/templates/workplaces/includes/management_toolbar.html)
 - [workplaces/templates/workplaces/includes/members_table.html](../workplaces/templates/workplaces/includes/members_table.html)
-- [workplaces/templates/workplaces/includes/received_invitations.html](../workplaces/templates/workplaces/includes/received_invitations.html)
 - [workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html](../workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html)
 - [workplaces/templates/workplaces/includes/sidebar_favorites.html](../workplaces/templates/workplaces/includes/sidebar_favorites.html)
 - [workplaces/templates/workplaces/includes/team_modals.html](../workplaces/templates/workplaces/includes/team_modals.html)
@@ -1370,6 +1371,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `AuthPageViewTests`: 2 metod testowych.
 - `ProfileViewTests`: 13 metod testowych.
 - `AccountSwitcherTests`: 11 metod testowych.
+
+### workplaces/test_invitation_candidates.py
+
+Źródło: [workplaces/test_invitation_candidates.py](../workplaces/test_invitation_candidates.py).
+
+- `InvitationCandidateTests`: 9 metod testowych.
 
 ### workplaces/test_management.py
 

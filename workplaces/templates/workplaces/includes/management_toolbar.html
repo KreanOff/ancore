@@ -1,16 +1,8 @@
 <div class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory workplaces-management__toolbar">
-    <div class="tasks-filterbar-left">
-        <nav class="documents-display-switch workplaces-management__views" aria-label="Zarządzanie Workspace">
-            <a class="tasks-filter-button{% if management_view == 'workspaces' %} is-active{% endif %}" href="{% url 'workplaces:workplaces' %}?view=workspaces{% if team_workplace %}&amp;workspace={{ team_workplace.pk }}{% endif %}"{% if management_view == 'workspaces' %} aria-current="page"{% endif %}><i data-icon="briefcase-business" aria-hidden="true"></i><span>Workspace</span></a>
-            <a class="tasks-filter-button{% if management_view == 'received' %} is-active{% endif %}" href="{% url 'workplaces:workplaces' %}?view=received{% if team_workplace %}&amp;workspace={{ team_workplace.pk }}{% endif %}"{% if management_view == 'received' %} aria-current="page"{% endif %} data-team-invitation-return><i data-icon="mail" aria-hidden="true"></i><span>Zaproszenia</span>{% if pending_invitations %}<span class="tasks-project-query-count" aria-label="Otrzymane zaproszenia: {{ pending_invitations|length }}">{{ pending_invitations|length }}</span>{% endif %}</a>
-        </nav>
-        {% if management_view == 'received' %}<span class="workplaces-management__count">Otrzymane zaproszenia: {{ pending_invitations|length }}</span>{% endif %}
-    </div>
-    {% if management_view == 'workspaces' %}
     <div class="tasks-filterbar-right">
         <label class="tasks-search-field tasks-project-search" for="workplaces-search-input">
             <i data-icon="search" aria-hidden="true"></i>
-            <input id="workplaces-search-input" type="search" placeholder="Szukaj Workspace" aria-label="Szukaj Workspace" autocomplete="off" data-workplaces-search>
+            <input id="workplaces-search-input" type="search" placeholder="Szukaj Workspace" aria-label="Szukaj Workspace" autocomplete="off" data-workplaces-search data-team-invitation-return>
         </label>
         <div class="tasks-project-pagination tasks-project-pagination--toolbar" data-workplaces-pagination{% if not workplaces %} hidden{% endif %}>
             <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony miejsc pracy">
@@ -35,5 +27,4 @@
             </div>
         </div>
     </div>
-    {% endif %}
 </div>

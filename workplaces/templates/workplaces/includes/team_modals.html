@@ -6,7 +6,19 @@
         <div class="tasks-modal__body">
             <p id="team-invite-description" class="workplace-team__hint">Zaproszenie pojawi się na ekranie Workspace wskazanej osoby. Jest ważne przez 7 dni i daje dostęp do całego Workspace.</p>
             {% if invite_form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{% for error in invite_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
-            {% for field in invite_form %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}</div>{% endfor %}
+            <div class="workplace-invite__fields">
+            {% for field in invite_form %}
+            <div class="tasks-form-field"{% if field.name == 'email' %} data-team-invite-picker data-candidates-url="{% url 'workplaces:invitation-candidates' team_workplace.pk %}"{% endif %}>
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+                {% if field.name == 'email' %}
+                <p id="team-invite-search-status" class="workplace-invite__status" role="status" aria-live="polite">Wpisz co najmniej 2 znaki, aby wyszukać osobę.</p>
+                <div id="team-invite-results" class="workplace-invite__results" role="listbox" aria-label="Osoby, które możesz zaprosić" hidden></div>
+                <div class="workplace-invite__selected" data-team-invite-selected hidden></div>
+                {% endif %}
+                {% if field.errors %}<div class="tasks-modal__errors" role="alert">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+            </div>
+            {% endfor %}
+            </div>
         </div>
         <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zaproś do Workspace</button></footer>
     </form></div>
