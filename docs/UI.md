@@ -173,6 +173,21 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 - Osobny host `#app-page-modals` oraz komunikaty `#app-notifications`.
 - Wspólne panele wyszukiwania i powiadomień oraz Sticker.
 
+Zwykła nawigacja między ekranami podmienia treść przy zachowaniu bocznego menu,
+także pod adresami Workspace. Działają historia Wstecz/Dalej, filtry GET,
+powrót ze szczegółów i ponowna inicjalizacja kontrolek. Podczas pobierania obszar
+główny ma `aria-busy`. Po 180 ms pojawia się szkielet nagłówka, narzędzi i wierszy
+z delikatnym przesuwającym się rozjaśnieniem. Używa istniejących tokenów szarości,
+powierzchni i zaokrągleń; pozostawia aktywne menu boczne oraz mobilny przycisk menu.
+`core/includes/content_skeleton.html` jest stałą częścią powłoki poza podmienianą
+treścią. Szybkie odpowiedzi nie pokazują szkieletu i nie czekają na animację.
+Przy `prefers-reduced-motion` placeholdery są nieruchome. Zasłonięta treść ma
+tymczasowo `inert`, a czytnik ekranu otrzymuje „Wczytywanie widoku…”.
+Zmiana konta/Workspace, edytory i adresy spoza listy ekranów
+zachowują pełną nawigację. Szczegóły zadania pytają o porzucenie niezapisanych
+zmian, a po podmianie usuwają poprzednie listenery. Kontrakt i wyjątki opisuje
+[cykl życia strony](MECHANISMS.md#12-częściowa-nawigacja-i-cykl-życia-frontendowej-strony).
+
 Globalne wyszukiwanie pokazuje najwyżej 20 wyników w każdej kategorii danych.
 Jeśli dopasowań jest więcej, istniejący licznik kategorii pokazuje „20+”,
 a pod wynikami pojawia się prośba o doprecyzowanie frazy. Komunikat czytnika

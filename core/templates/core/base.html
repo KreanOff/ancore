@@ -59,10 +59,10 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260927-project-heading">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260928-navigation-skeleton">
     {% block extra_head %}{% endblock %}
 </head>
-<body data-account-id="{{ request.user.pk|default:'' }}">
+<body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
     <script>
         (function () {
             if (document.documentElement.classList.contains('sidebar-collapsed')) {
@@ -343,6 +343,7 @@
             </div>
         </div>
     </main>
+    {% include 'core/includes/content_skeleton.html' %}
 
     <div id="app-notifications">
         {% if messages %}
@@ -383,11 +384,11 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260923-notifications-panel-only"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260928-navigation-skeleton"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260923-notification-actions"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>
-    <script src="{% static 'js/notifications-panel.js' %}?v=20260923-notifications-heading"></script>
+    <script src="{% static 'js/notifications-panel.js' %}?v=20260928-workspace-navigation"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>

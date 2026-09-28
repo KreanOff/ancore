@@ -889,7 +889,8 @@ function initCalendarPage() {
 
     function openDialog(mode, presetDate, event) {
         if (event?.url) {
-            window.location.assign(event.url);
+            if (window.AncoreApp?.canNavigatePartially(event.url)) window.AncoreApp.navigate(event.url);
+            else window.location.assign(event.url);
             return;
         }
         if (saving) return;

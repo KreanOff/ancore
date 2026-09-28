@@ -146,6 +146,16 @@ Lista klas i liczba zdefiniowanych metod testowych jest generowana w
 Przy zmianie UI stosuj [procedurę wizualnej weryfikacji](UI.md).
 Test HTML sprawdzający klasę nie dowodzi, że końcowy układ wygląda prawidłowo.
 
+Przy zmianie nawigacji sprawdź bazowy i scoped URL, przejścia między wszystkimi
+modułami, aktywne menu, filtry/paginację, modale po powrocie, Wstecz/Dalej,
+szybkie kliknięcia oraz odrzucenie wyjścia z niezapisanego zadania. Porównanie
+tego samego obiektu `document`/sidebaru lub znacznika na `window` przed i po
+kliknięciu potwierdza brak pełnego przeładowania. Sprawdź również doładowanie
+skryptów Kalendarza/Dysku, pusty stan, błąd pobrania i zmianę konta/Workspace
+w odpowiedzi. Dla linków i granic danych uruchom
+`core.test_task_integrity.TaskIdentityTests`, `dashboard.test_notifications`
+i `planner.test_task_calendar`; testy backendu nie zastępują prób w przeglądarce.
+
 ## 6. Utrzymanie dokumentacji
 
 | Zmieniło się | Zaktualizuj |

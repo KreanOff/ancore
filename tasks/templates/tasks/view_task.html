@@ -546,8 +546,18 @@
 <div data-project-team-modal-host="task"></div>
 
 <script>
+(function () {
+const controller = new AbortController();
+const listenerOptions = { signal: controller.signal };
+document.addEventListener('ancore:content-unloading', () => {
+    controller.abort();
+    clearTimeout(taskSaveFeedbackTimer);
+    delete window.deleteAttachment;
+    delete window.prependTaskDetailActivityItems;
+}, { once: true });
 document.querySelectorAll('[data-history-back]').forEach((link) => {
     link.addEventListener('click', (event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         const storedReturnPoint = sessionStorage.getItem('tasks:lastTaskReturn');
         if (storedReturnPoint) {
             try {
@@ -559,7 +569,8 @@ document.querySelectorAll('[data-history-back]').forEach((link) => {
                 if (returnPoint.returnUrl && isCurrentTask && isFresh) {
                     event.preventDefault();
                     sessionStorage.setItem('tasks:restoreTaskReturn', storedReturnPoint);
-                    window.location.href = returnPoint.returnUrl;
+                    if (window.AncoreApp?.canNavigatePartially(returnPoint.returnUrl)) window.AncoreApp.navigate(returnPoint.returnUrl);
+                    else window.location.href = returnPoint.returnUrl;
                     return;
                 }
             } catch (error) {
@@ -856,7 +867,7 @@ syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown
 syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
 syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
 
-document.addEventListener('click', () => closeTaskDetailDropdowns());
+document.addEventListener('click', () => closeTaskDetailDropdowns(), listenerOptions);
 
 const taskDetailForm = document.getElementById('task-detail-form');
 const taskSaveButton = document.querySelector('[data-task-save]');
@@ -1017,19 +1028,24 @@ if (taskDetailForm) {
     document.addEventListener('ancore:file-upload-updated', (event) => {
         if (event.detail?.form !== taskDetailForm) return;
         markTaskDetailDirty();
-    });
+    }, listenerOptions);
 
     document.addEventListener('ancore:task-description-ready', (event) => {
         if (event.detail?.form !== taskDetailForm) return;
         taskSavedSnapshot = getTaskDetailSnapshot();
         setTaskSaveState('idle');
-    }, { once: true });
+    }, { ...listenerOptions, once: true });
+
+    document.addEventListener('ancore:before-navigate', (event) => {
+        if (taskSaveIsReloading || getTaskDetailSnapshot() === taskSavedSnapshot) return;
+        if (!window.confirm('Masz niezapisane zmiany w zadaniu. Opuścić stronę?')) event.preventDefault();
+    }, listenerOptions);
 
     window.addEventListener('beforeunload', (event) => {
         if (taskSaveIsReloading || getTaskDetailSnapshot() === taskSavedSnapshot) return;
         event.preventDefault();
         event.returnValue = '';
-    });
+    }, listenerOptions);
 
 }
 
@@ -1139,5 +1155,8 @@ function confirmDelete() {
         }
     });
 }
+window.deleteAttachment = deleteAttachment;
+window.prependTaskDetailActivityItems = prependTaskDetailActivityItems;
+})();
 </script>
 {% endblock %}

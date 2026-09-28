@@ -632,23 +632,42 @@ użytkownika i pozostają domyślnie nieprzeczytane również dla właściciela.
 
 Źródło: [layout.js](../static/js/layout.js).
 
-1. `canNavigatePartially()` sprawdza origin i listę dozwolonych ścieżek.
-2. `navigate()` pobiera HTML, przerywając poprzedni request.
-3. Kod wczytuje brakujące style, podmienia kontener strony/modali/komunikatów,
-   wykonuje właściwe skrypty i synchronizuje wybrane elementy nawigacji.
-4. Aktualizuje tytuł, historię przeglądarki, przewijanie i ikony.
-5. Wysyła `ancore:content-loaded`.
-6. Przy nieobsługiwanym adresie lub błędzie stosuje pełną nawigację.
+1. `canNavigatePartially()` sprawdza origin i listę dozwolonych ekranów,
+   normalizując `/workplaces/<slug>/<moduł>/` do bazowej ścieżki modułu.
+2. Zwykłe kliknięcia oraz formularze GET korzystają z `navigate()`. Pobieranie
+   HTML przerywa poprzedni request; spóźniona odpowiedź nie nadpisuje nowego ekranu.
+3. `ancore:before-navigate` pozwala anulować opuszczenie niezapisanego zadania.
+   Przed podmianą `ancore:content-unloading` usuwa listenery szczegółów zadania/karty.
+4. Kod wczytuje brakujące style, podmienia kontener strony z modalami oraz
+   komunikaty. Ustawia URL przed inicjalizacją, synchronizuje aktywne linki menu
+   według adresów i wykonuje skrypty inline raz, z pominięciem danych JSON.
+   Zewnętrzne skrypty są ładowane tylko raz; równoczesne przejścia współdzielą
+   oczekujące pobrania.
+5. Aktualizuje tytuł, historię, przewijanie i ikony, a następnie wysyła
+   `ancore:content-loaded`. Wstecz/Dalej także podmienia treść. Odrzucenie wyjścia
+   z niezapisanego zadania przywraca pozycję historii i zachowuje formularz.
+6. Boczne menu i dokument przeglądarki pozostają na miejscu. Pobieranie oznacza
+   `.main-content` przez `aria-busy`. `requestContentLoading()` po 180 ms pokazuje
+   szkielet wyłącznie nad treścią i wyłącza zasłonięty kontener przez `inert`.
+   Zakończenie bieżącego żądania usuwa szkielet, timer i tymczasowy stan kontenera;
+   zakończenie starszego, anulowanego żądania nie ukrywa wskaźnika nowszego.
+   Szybkie odpowiedzi nie pokazują placeholderów ani nie mają sztucznego opóźnienia.
+   Nieobsługiwane adresy i błędy pobrania zachowują pełną nawigację.
 
-Powłoka oznacza konto przez `body[data-account-id]`. Jeśli odpowiedź częściowej
-nawigacji pochodzi z innego konta, następuje pełne przeładowanie, aby osobiste
-elementy (w tym Sticker) nie pozostały z poprzedniej sesji.
+Powłoka oznacza konto i Workspace przez `body[data-account-id]` oraz
+`body[data-workplace-id]`. Zmiana któregokolwiek z nich w odpowiedzi wymaga
+pełnego przeładowania, aby osobiste elementy, ulubione i adresy operacji
+nie pozostały z poprzedniego kontekstu. Tak samo działa odpowiedź bez powłoki
+aplikacji (np. logowanie) lub z edytorem `data-app-full-navigation`.
 
-Lista ścieżek nie obejmuje automatycznie wszystkich adresów modułów.
-W sprawdzonej wersji regexy `layout.js` są głównie bazowe; nie zawierają
-scoped ścieżek Workspace ani Dysku. Obsługa `ancore:content-loaded`
-w danym skrypcie nie dowodzi, że każdy jego adres jest częściowo nawigowany.
-Tasks ma dodatkowo własny mechanizm podmiany widoków katalogu.
+Lista obejmuje Dashboard, ustawienia i pola projektów, zarządzanie Workspace,
+profil, katalogi Zadań/Kanbana, grupy, szczegóły zadań/podzadań/kart, szablony
+projektów, Kontakty, Kalendarz oraz katalogi Dysku i Dokumentów. Działa dla
+bazowych i scoped URL, łącznie z query string filtrów i paginacji. Otwieranie
+zadania z Kalendarza, powiadomień i powrót ze szczegółów używają tego samego API.
+Pobieranie plików, zewnętrzne linki, nowe karty, akcje POST, przełączanie konta
+lub Workspace i pełne edytory nadal mają własne przepływy. Nowy ekran wymaga
+jawnego dopisania do listy. Tasks ma także własną podmianę pojedynczego stanu katalogu.
 
 Przy nowym skrypcie zachowaj inicjalizację na pierwszym wejściu i po podmianie,
 sprawdzanie istnienia elementu oraz sprzątanie/ochronę listenerów.

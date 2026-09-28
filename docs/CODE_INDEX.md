@@ -17,7 +17,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 17 | 0 | 9 | 58 |
+| [core](../core) | 17 | 0 | 10 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
 | [tasks](../tasks) | 35 | 60 | 39 | 320 |
@@ -1173,6 +1173,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/includes/attachment_icon.html](../core/templates/core/includes/attachment_icon.html)
 - [core/templates/core/includes/attachment_upload_icon.html](../core/templates/core/includes/attachment_upload_icon.html)
 - [core/templates/core/includes/bootstrap.html](../core/templates/core/includes/bootstrap.html)
+- [core/templates/core/includes/content_skeleton.html](../core/templates/core/includes/content_skeleton.html)
 - [core/templates/core/includes/icon_credit.html](../core/templates/core/includes/icon_credit.html)
 - [core/templates/core/includes/photo_crop_dialog.html](../core/templates/core/includes/photo_crop_dialog.html)
 - [core/templates/core/includes/priority_icon.html](../core/templates/core/includes/priority_icon.html)

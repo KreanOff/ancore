@@ -38,14 +38,23 @@
     const secondaryMenuToggle = document.getElementById('secondary-menu-toggle');
     const secondaryMenuResizer = document.getElementById('secondary-menu-resizer');
     const loadingOverlay = document.getElementById('app-loading-overlay');
+    const contentLoading = document.getElementById('app-content-loading');
     const root = document.documentElement;
     let sidebarResizeState = null;
     let secondaryMenuResizeState = null;
     let pageLoadingTimer = null;
     let pageLoadingFallbackTimer = null;
+    let contentLoadingTimer = null;
+    let loadingPage = null;
+    let loadingPageWasInert = false;
+    let loadingPageFocus = null;
     let partialNavigationController = null;
     let sidebarCollapsedFlyoutTrigger = null;
     let sidebarTransitionTimer = null;
+    let renderedUrl = window.location.href;
+    let navigationIndex = window.history.state?.ancoreNavigationIndex || 0;
+    let restoringHistory = false;
+    const pendingScripts = new Map();
 
     function getUrl(href) {
         try {
@@ -56,13 +65,18 @@
     }
 
     function isPartialNavigationPath(pathname) {
+        // Scoped module URLs use the same views and shell as their base URLs.
+        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|kanban|contacts|calendar|documents|office)(\/|$))/, '/');
         const appShellPaths = [
             /^\/$/,
             /^\/settings\/?$/,
+            /^\/settings\/project-fields\/?$/,
             /^\/workplaces\/?$/,
             /^\/accounts\/profile\/?$/,
             /^\/tasks\/?$/,
             /^\/tasks\/groups\/\d+\/?$/,
+            /^\/tasks\/templates\/?$/,
+            /^\/(tasks|kanban)\/view-(subtask|task)\/\d+\/?$/,
             /^\/kanban\/?$/,
             /^\/kanban\/groups\/\d+\/?$/,
             /^\/contacts\/?$/,
@@ -75,6 +89,8 @@
             /^\/contacts\/view-contact\/\d+\/?$/,
             /^\/contacts\/view-contact\/\d+\/edit\/?$/,
             /^\/calendar\/?$/,
+            /^\/documents\/?$/,
+            /^\/office\/?$/,
         ];
 
         if (
@@ -115,14 +131,14 @@
     }
 
     function syncSidebarState(nextDocument) {
-        const currentLinks = document.querySelectorAll('.sidebar .nav-link');
-        const nextLinks = nextDocument.querySelectorAll('.sidebar .nav-link');
+        const currentLinks = document.querySelectorAll('.sidebar a.nav-link');
+        const nextLinks = Array.from(nextDocument.querySelectorAll('.sidebar a.nav-link'));
 
-        currentLinks.forEach(function (link, index) {
-            const nextLink = nextLinks[index];
+        currentLinks.forEach(function (link) {
+            const nextLink = nextLinks.find(candidate => candidate.getAttribute('href') === link.getAttribute('href'));
             if (!nextLink) return;
 
-            link.className = nextLink.className;
+            link.classList.toggle('active', nextLink.classList.contains('active'));
             if (nextLink.hasAttribute('aria-current')) {
                 link.setAttribute('aria-current', nextLink.getAttribute('aria-current'));
             } else {
@@ -184,6 +200,10 @@
 
         nextDocument.querySelectorAll('script[src]').forEach(script => {
             const src = assetUrl(script.getAttribute('src'));
+            if (pendingScripts.has(src)) {
+                loadingScripts.push(pendingScripts.get(src));
+                return;
+            }
             if (!src || hasLoadedAsset('script[src]', 'src', src)) {
                 return;
             }
@@ -192,10 +212,12 @@
             copyAttributes(script, clone);
             clone.src = src;
             clone.async = false;
-            loadingScripts.push(new Promise(resolve => {
+            const loading = new Promise((resolve, reject) => {
                 clone.addEventListener('load', resolve, { once: true });
-                clone.addEventListener('error', resolve, { once: true });
-            }));
+                clone.addEventListener('error', () => reject(new Error('Nie udało się wczytać skryptu.')), { once: true });
+            }).finally(() => pendingScripts.delete(src));
+            pendingScripts.set(src, loading);
+            loadingScripts.push(loading);
             document.body.appendChild(clone);
         });
 
@@ -205,14 +227,11 @@
     function runInlineScripts(scope) {
         if (!scope) return;
 
-        scope.querySelectorAll('script').forEach(script => {
+        scope.querySelectorAll('script:not([src])').forEach(script => {
+            if (script.type && !['text/javascript', 'application/javascript', 'module'].includes(script.type)) return;
             const replacement = document.createElement('script');
             copyAttributes(script, replacement);
-            if (script.src) {
-                replacement.src = script.src;
-            } else {
-                replacement.textContent = script.textContent;
-            }
+            replacement.textContent = script.textContent;
             script.replaceWith(replacement);
         });
     }
@@ -256,7 +275,7 @@
         return true;
     }
 
-    async function finishPartialNavigation(nextDocument, url, options) {
+    async function finishPartialNavigation(nextDocument, url, options, navigationController) {
         const hasRequiredRegions = document.querySelector('.main-content .page-container')
             && document.querySelector('#app-page-modals')
             && document.querySelector('#app-notifications')
@@ -267,7 +286,8 @@
         // A different account may have logged in in another tab. Reload the
         // whole shell so personal widgets cannot survive an identity change.
         const sameAccount = document.body.dataset.accountId === nextDocument.body.dataset.accountId;
-        if (!hasRequiredRegions || !sameAccount) {
+        const sameWorkplace = document.body.dataset.workplaceId === nextDocument.body.dataset.workplaceId;
+        if (!hasRequiredRegions || !sameAccount || !sameWorkplace || nextDocument.querySelector('[data-app-full-navigation]')) {
             window.location.href = url.href;
             return;
         }
@@ -280,7 +300,7 @@
         }
 
         clearTransientPageState();
-        syncSidebarState(nextDocument);
+        document.dispatchEvent(new CustomEvent('ancore:content-unloading'));
 
         const pageUpdated = replaceAppRegion('.main-content .page-container', nextDocument);
         const modalsUpdated = replaceAppRegion('#app-page-modals', nextDocument);
@@ -291,14 +311,20 @@
             return;
         }
 
-        runInlineScripts(document.querySelector('.main-content .page-container'));
-        runInlineScripts(document.querySelector('#app-page-modals'));
-        await loadMissingExternalScripts(nextDocument);
-
+        // Initializers read location, so publish the destination before running them.
         if (options?.updateHistory !== false) {
-            const historyMethod = options?.replace ? 'replaceState' : 'pushState';
-            window.history[historyMethod]({ ancorePartialNavigation: true }, '', url.href);
+            const replace = options?.replace || url.href === window.location.href;
+            const historyMethod = replace ? 'replaceState' : 'pushState';
+            if (!replace) navigationIndex += 1;
+            window.history[historyMethod]({ ancorePartialNavigation: true, ancoreNavigationIndex: navigationIndex }, '', url.href);
         }
+        renderedUrl = url.href;
+        syncSidebarState(nextDocument);
+
+        // The modal host is inside page-container; execute its scripts only once.
+        runInlineScripts(document.querySelector('.main-content .page-container'));
+        await loadMissingExternalScripts(nextDocument);
+        if (navigationController.signal.aborted) return;
 
         updateTasksUiBodyClass();
         scrollAfterNavigation(url);
@@ -316,14 +342,19 @@
             return false;
         }
 
+        const leaving = new CustomEvent('ancore:before-navigate', { cancelable: true, detail: { url: url.href } });
+        if (!document.dispatchEvent(leaving)) return false;
+
         if (partialNavigationController) {
             partialNavigationController.abort();
         }
+        window.ancoreTaskStatusPaginationController?.abort();
 
-        const navigationController = typeof AbortController === 'function' ? new AbortController() : null;
+        const navigationController = new AbortController();
         partialNavigationController = navigationController;
         document.body.classList.add('app-partial-navigation');
-        requestPageLoading();
+        document.querySelector('.main-content')?.setAttribute('aria-busy', 'true');
+        requestContentLoading();
 
         try {
             const requestOptions = {
@@ -339,6 +370,7 @@
             }
 
             const response = await fetch(url.href, requestOptions);
+            if (navigationController.signal.aborted) return true;
 
             if (!response.ok) {
                 window.location.href = url.href;
@@ -346,18 +378,22 @@
             }
 
             const html = await response.text();
+            if (navigationController.signal.aborted) return true;
             const nextDocument = new DOMParser().parseFromString(html, 'text/html');
             const responseUrl = getUrl(response.url) || url;
+            if (url.hash && !responseUrl.hash) responseUrl.hash = url.hash;
 
-            await finishPartialNavigation(nextDocument, responseUrl, options);
+            await finishPartialNavigation(nextDocument, responseUrl, options, navigationController);
         } catch (error) {
-            if (error.name !== 'AbortError') {
+            if (error.name !== 'AbortError' && !navigationController.signal.aborted) {
                 window.location.href = url.href;
             }
         } finally {
             if (!navigationController || partialNavigationController === navigationController) {
                 partialNavigationController = null;
                 document.body.classList.remove('app-partial-navigation');
+                document.querySelector('.main-content')?.removeAttribute('aria-busy');
+                hideContentLoading();
                 hidePageLoading();
             }
         }
@@ -369,6 +405,30 @@
         canNavigatePartially: canUsePartialNavigation,
         navigate: navigatePartially,
     });
+
+    function requestContentLoading() {
+        window.clearTimeout(contentLoadingTimer);
+        if (!contentLoading || !contentLoading.hidden) return;
+        // Fast responses should never flash a placeholder or wait for an animation.
+        contentLoadingTimer = window.setTimeout(function () {
+            loadingPage = document.querySelector('.main-content .page-container');
+            loadingPageWasInert = Boolean(loadingPage?.inert);
+            loadingPageFocus = loadingPage?.contains(document.activeElement) ? document.activeElement : null;
+            if (loadingPage) loadingPage.inert = true;
+            contentLoading.hidden = false;
+        }, 180);
+    }
+
+    function hideContentLoading() {
+        window.clearTimeout(contentLoadingTimer);
+        if (contentLoading) contentLoading.hidden = true;
+        if (loadingPage) loadingPage.inert = loadingPageWasInert;
+        if (loadingPageFocus?.isConnected && document.activeElement === document.body) {
+            loadingPageFocus.focus({ preventScroll: true });
+        }
+        loadingPage = null;
+        loadingPageFocus = null;
+    }
 
     function setPageLoading(loading) {
         root.classList.toggle('app-page-loading', loading);
@@ -409,7 +469,7 @@
 
         const target = e.target instanceof Element ? e.target : e.target?.parentElement;
         const link = target?.closest('a[href]');
-        if (!link || link.hasAttribute('download')) {
+        if (!link || link.hasAttribute('download') || link.closest('[data-app-full-navigation]')) {
             return true;
         }
 
@@ -477,19 +537,52 @@
     });
 
     if (canUsePartialNavigation(window.location.href)) {
-        window.history.replaceState({ ancorePartialNavigation: true }, '', window.location.href);
+        window.history.replaceState({ ...window.history.state, ancorePartialNavigation: true, ancoreNavigationIndex: navigationIndex }, '', window.location.href);
     }
 
-    window.addEventListener('popstate', function () {
+    window.addEventListener('popstate', async function (event) {
+        if (restoringHistory) {
+            restoringHistory = false;
+            return;
+        }
+        const previousUrl = getUrl(renderedUrl);
+        const nextUrl = getUrl(window.location.href);
+        // Hash-only changes belong to the current page (e.g. Settings tabs).
+        if (previousUrl.pathname === nextUrl.pathname && previousUrl.search === nextUrl.search && previousUrl.hash !== nextUrl.hash) {
+            renderedUrl = nextUrl.href;
+            return;
+        }
         if (!canUsePartialNavigation(window.location.href)) {
             return;
         }
 
-        navigatePartially(window.location.href, { replace: true, updateHistory: false });
+        const previousIndex = navigationIndex;
+        navigationIndex = event.state?.ancoreNavigationIndex ?? navigationIndex;
+        const navigated = await navigatePartially(window.location.href, { replace: true, updateHistory: false });
+        if (!navigated) {
+            const delta = previousIndex - navigationIndex;
+            navigationIndex = previousIndex;
+            if (delta) {
+                restoringHistory = true;
+                window.history.go(delta);
+            } else {
+                window.history.replaceState(window.history.state, '', renderedUrl);
+            }
+        }
     });
 
     document.addEventListener('submit', function (e) {
         if (shouldIgnoreFormSubmit(e)) {
+            return;
+        }
+
+        const form = e.target;
+        const method = (e.submitter?.getAttribute('formmethod') || form.getAttribute('method') || 'get').toLowerCase();
+        const url = getUrl(e.submitter?.getAttribute('formaction') || form.action);
+        if (method === 'get' && url && canUsePartialNavigation(url.href)) {
+            e.preventDefault();
+            url.search = new URLSearchParams(new FormData(form, e.submitter)).toString();
+            navigatePartially(url.href);
             return;
         }
 

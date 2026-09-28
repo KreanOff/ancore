@@ -510,6 +510,13 @@
 </div>
 
 <script>
+(function () {
+const controller = new AbortController();
+const listenerOptions = { signal: controller.signal };
+document.addEventListener('ancore:content-unloading', () => {
+    controller.abort();
+    delete window.deleteAttachment;
+}, { once: true });
 const ATTACHMENT_TRASH_ICON_HTML = `{% include 'core/includes/trash_icon.html' %}`;
 
 document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
@@ -575,7 +582,7 @@ document.querySelectorAll('[data-activity-feed]').forEach((feed) => {
         });
     });
 
-    document.addEventListener('click', closeActivityDropdown);
+    document.addEventListener('click', closeActivityDropdown, listenerOptions);
     applyActivityFilter('all');
 });
 
@@ -769,7 +776,7 @@ syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown
 syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
 syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
 
-document.addEventListener('click', () => closeTaskDetailDropdowns());
+document.addEventListener('click', () => closeTaskDetailDropdowns(), listenerOptions);
 
 function deleteAttachment(attachmentId) {
     const attachmentName = document.getElementById(`attachment-${attachmentId}`)
@@ -869,5 +876,7 @@ function confirmDelete() {
         }
     });
 }
+window.deleteAttachment = deleteAttachment;
+})();
 </script>
 {% endblock %}

@@ -210,7 +210,8 @@
                 updateSummary(payload);
                 if (link) {
                     setOpen(false);
-                    window.location.assign(link.href);
+                    if (window.AncoreApp?.canNavigatePartially(link.href)) window.AncoreApp.navigate(link.href);
+                    else window.location.assign(link.href);
                 } else {
                     const refreshed = await load({ quiet: true, focusKey: key });
                     const message = {

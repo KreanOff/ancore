@@ -2,7 +2,7 @@
 @import 'base/variables.css?v=20260923-no-interaction-rings';
 @import 'base/reset.css?v=20260902-app-scale-98';
 @import 'layout/sidebar.css?v=20260902-resizable-app-sidebar-v1';
-@import 'layout/main.css?v=20260903-lightweight-loader-v1';
+@import 'layout/main.css?v=20260928-navigation-skeleton';
 @import 'layout/responsive.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/cards.css?v=20260902-system-accent-v1';
 @import 'components/buttons.css?v=20260923-secondary-gray-hover';
