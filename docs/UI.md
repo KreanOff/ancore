@@ -344,6 +344,24 @@ Zapis szablonu jest dostępny wyłącznie dla projektów Zadań. `tasks-director
 oznacza tabele z tym układem. Grupy wewnątrz projektu i tablice Kanbana
 zachowują dotychczasowe kontrolki.
 
+Na ekranie „Wszystkie projekty” od szerokości okna 1181px kolumny
+„Ostatnia aktywność” i „Data utworzenia” mają domyślnie odpowiednio 190px i 170px.
+Wartości określa `projectColumnDefaultWidths` w `tasks.js`; obowiązują przy braku
+zapisanych szerokości oraz po „Resetuj”. Ręcznie zapisane szerokości mają pierwszeństwo.
+„Wszystkie grupy” w tym samym zakresie szerokości okna mają domyślną kolumnę
+„Data utworzenia” 170px (`allGroupsColumnDefaultWidths`), z tymi samymi zasadami
+zapisu i resetowania szerokości.
+Domyślna kolejność danych w „Wszystkich grupach” zaczyna się od „Kod grupy”,
+a następnie „Grupa”. Nagłówek, komórki i siatka zachowują tę kolejność również
+na wąskich ekranach. Zapisana własna kolejność, widoczność i szerokości kolumn
+są odczytywane także z wcześniejszego układu; „Resetuj” przywraca nową kolejność.
+
+Zaznaczone wiersze zadań i podzadań w module Zadania używają tego samego
+jasnoturkusowego tła (8% `--system-accent` na bieli) oraz paska 3px po lewej
+co katalogi projektów i grup. Styl działa dla `.checked` i zaznaczonego checkboxa,
+również po najechaniu kursorem; odznaczenie przywraca zwykły wiersz bez paska.
+Wspólne reguły są ograniczone przez `data-task-app="tasks"` do modułu Zadania.
+
 Na tablecie i telefonie siatka tych katalogów powstaje z widocznych kolumn w ich
 bieżącej kolejności, używając szerokości z tokenów CSS. Ukrycie skrótów
 nie przesuwa szerokości kolumn danych; tabela nadal przewija się poziomo.

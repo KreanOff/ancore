@@ -6912,8 +6912,11 @@ function initTasksPage() {
             source: 200,
             sections_count: 105,
             tasks_count: 105,
-            last_activity: 170,
-            created_at: 125
+            last_activity: 190,
+            created_at: 170
+        };
+        const allGroupsColumnDefaultWidths = {
+            created_at: 170
         };
         const legacyProjectDirectoryColumnOrder = [
             'select',
@@ -7384,6 +7387,9 @@ function initTasksPage() {
                 if (isProjectDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(projectColumnDefaultWidths, column)) {
                     return projectColumnDefaultWidths[column];
                 }
+                if (cell.closest('.tasks-all-groups-sheet') && Object.prototype.hasOwnProperty.call(allGroupsColumnDefaultWidths, column)) {
+                    return allGroupsColumnDefaultWidths[column];
+                }
                 if (Object.prototype.hasOwnProperty.call(columnDefaultWidths, column)) {
                     return columnDefaultWidths[column];
                 }
@@ -7448,9 +7454,13 @@ function initTasksPage() {
             return taskAppSegment;
         }
 
-        function getDirectoryStorageKey(cells, omitMenu = false) {
-            const schema = cells
-                .map(cell => getDirectoryStorageColumn(cell.dataset.column))
+        function getDirectoryStorageKey(cells, omitMenu = false, legacyGroups = false) {
+            let columns = cells.map(cell => getDirectoryStorageColumn(cell.dataset.column));
+            if (legacyGroups) {
+                if (!cells[0]?.closest('.tasks-all-groups-sheet')) return '';
+                columns = swapGroupNameAndCodeColumns(columns);
+            }
+            const schema = columns
                 .filter(column => column && (!omitMenu || column !== 'menu'))
                 .join('-') || 'default';
 
@@ -7494,7 +7504,8 @@ function initTasksPage() {
         function readStoredDirectoryWidths(cells) {
             const storageKey = getDirectoryStorageKey(cells);
             const legacyStorageKey = getLegacyProjectDirectoryWidthStorageKey(cells);
-            const keys = [storageKey, getDirectoryStorageKey(cells, true), legacyStorageKey].filter(Boolean);
+            const keys = [storageKey, getDirectoryStorageKey(cells, true), legacyStorageKey,
+                getDirectoryStorageKey(cells, false, true), getDirectoryStorageKey(cells, true, true)].filter(Boolean);
 
             for (const key of keys) {
                 const storedWidths = readStoredDirectoryWidthsByKey(key);
@@ -7562,6 +7573,8 @@ function initTasksPage() {
                 getDirectoryStorageKey(cells),
                 getDirectoryStorageKey(cells, true),
                 getLegacyProjectDirectoryWidthStorageKey(cells),
+                getDirectoryStorageKey(cells, false, true),
+                getDirectoryStorageKey(cells, true, true),
                 `${segment}:directoryColumnWidths:v3:${schema}`,
                 `${segment}:directoryColumnWidths:${schema}`,
                 `${taskAppSegment}:directoryColumnWidths`
@@ -8219,8 +8232,23 @@ function initTasksPage() {
             return column === 'select' || isFixedDirectoryColumn(column);
         }
 
-        function getDirectoryColumnLayoutStorageKey(board, omitMenu = false) {
-            const schema = getDirectoryDefaultColumnOrder(board)
+        function swapGroupNameAndCodeColumns(columns) {
+            const result = [...columns];
+            const nameIndex = result.indexOf('section');
+            const codeIndex = result.indexOf('project_code');
+            if (nameIndex >= 0 && codeIndex >= 0) {
+                [result[nameIndex], result[codeIndex]] = [result[codeIndex], result[nameIndex]];
+            }
+            return result;
+        }
+
+        function getDirectoryColumnLayoutStorageKey(board, omitMenu = false, legacyGroups = false) {
+            let columns = getDirectoryDefaultColumnOrder(board);
+            if (legacyGroups) {
+                if (!board.classList.contains('tasks-all-groups-sheet')) return '';
+                columns = swapGroupNameAndCodeColumns(columns);
+            }
+            const schema = columns
                 .map(column => getDirectoryStorageColumn(column))
                 .filter(column => column && (!omitMenu || column !== 'menu'))
                 .join('-') || 'default';
@@ -8264,7 +8292,8 @@ function initTasksPage() {
         function readStoredDirectoryColumnLayout(board) {
             const defaultHidden = (board.dataset.directoryDefaultHidden || '').split(/\s+/).filter(Boolean);
             const storageKey = getDirectoryColumnLayoutStorageKey(board);
-            const keys = [storageKey, getDirectoryColumnLayoutStorageKey(board, true), getLegacyProjectDirectoryColumnLayoutStorageKey(board)].filter(Boolean);
+            const keys = [storageKey, getDirectoryColumnLayoutStorageKey(board, true), getLegacyProjectDirectoryColumnLayoutStorageKey(board),
+                getDirectoryColumnLayoutStorageKey(board, false, true), getDirectoryColumnLayoutStorageKey(board, true, true)].filter(Boolean);
 
             for (const key of keys) {
                 try {
@@ -8303,7 +8332,9 @@ function initTasksPage() {
                 const keys = new Set([
                     getDirectoryColumnLayoutStorageKey(board),
                     getDirectoryColumnLayoutStorageKey(board, true),
-                    getLegacyProjectDirectoryColumnLayoutStorageKey(board)
+                    getLegacyProjectDirectoryColumnLayoutStorageKey(board),
+                    getDirectoryColumnLayoutStorageKey(board, false, true),
+                    getDirectoryColumnLayoutStorageKey(board, true, true)
                 ]);
                 keys.forEach(key => {
                     if (key) window.localStorage.removeItem(key);

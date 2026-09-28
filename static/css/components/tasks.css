@@ -7593,6 +7593,10 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
     color: #242830;
 }
 
+.tasks-page[data-task-app="tasks"] .task-row.tasks-issue-row {
+    position: relative;
+}
+
 .tasks-issue-row--compact {
     grid-template-columns: 24px 132px minmax(0, 1fr);
 }
@@ -11867,7 +11871,7 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable {
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
 }
 
 .tasks-project-sheet--selectable .tasks-directory-header,
@@ -13402,7 +13406,7 @@ body.is-resizing-directory-columns {
 
     .tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
     }
 
     .tasks-project-sheet .tasks-directory-header > [data-column="action"],
@@ -13700,7 +13704,7 @@ body.is-resizing-directory-columns {
 }
 
 .tasks-directory-board.tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable {
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
 }
 
 .tasks-directory-board.tasks-project-sheet .tasks-directory-header,
@@ -13787,6 +13791,7 @@ body.is-resizing-directory-columns {
     transition: background-color 0.12s ease;
 }
 
+.tasks-page[data-task-app="tasks"] .task-row.tasks-issue-row::after,
 .tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet) .tasks-directory-list .tasks-directory-row::after {
     content: "";
     position: absolute;
@@ -13805,6 +13810,7 @@ body.is-resizing-directory-columns {
     opacity: 1;
 }
 
+.tasks-page[data-task-app="tasks"] .task-row.tasks-issue-row:is(.checked, :has(> .task-checkbox:checked))::after,
 .tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet) .tasks-directory-list .tasks-directory-row:is(.checked, :has(.tasks-row-checkbox:checked))::after {
     opacity: 1;
 }
@@ -13978,7 +13984,7 @@ body.is-resizing-directory-columns {
 
     .tasks-directory-board.tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header,
     .tasks-directory-board.tasks-all-groups-sheet.tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row {
-        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-directory-name-width) var(--tasks-project-code-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
+        --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-info-width) var(--tasks-project-notes-width) var(--tasks-project-code-width) var(--tasks-directory-name-width) var(--tasks-project-description-width) var(--tasks-project-progress-width) var(--tasks-project-due-width) var(--tasks-project-count-width) var(--tasks-project-priority-width) var(--tasks-project-activity-width) var(--tasks-project-name-width) var(--tasks-project-start-width) var(--tasks-project-status-width) var(--tasks-project-stage-width) var(--tasks-project-health-width) var(--tasks-project-source-width) var(--tasks-directory-assignee-width) var(--tasks-directory-date-width);
     }
 }
 

@@ -698,6 +698,7 @@ body.auth-page,
 
 /* Use the same opaque fill on every layer, including the checkbox gutter.
    Separators keep their own color in hovered, focused and selected rows. */
+.tasks-page[data-task-app="tasks"] .task-row.tasks-issue-row:is(.checked, :has(> .task-checkbox:checked)),
 .tasks-directory-board .tasks-directory-list .tasks-directory-row:is(.checked, :has(.tasks-row-checkbox:checked)),
 .tasks-directory-board .tasks-directory-list .tasks-directory-row:is(.checked, :has(.tasks-row-checkbox:checked))::before,
 .tasks-directory-board .tasks-directory-list .tasks-directory-row:is(.checked, :has(.tasks-row-checkbox:checked)) > [data-column]:not([data-column="select"]),
