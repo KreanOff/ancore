@@ -4,6 +4,9 @@
 {% block extra_head %}
     {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
     <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">
+    <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260927-section-sharing">
+    <script src="{% static 'js/workplace-team.js' %}?v=20260927-direct-sharing" defer></script>
+    <script src="{% static 'js/project-team.js' %}?v=20260928-task-sharing" defer></script>
     <script src="{% static 'js/task-work-log.js' %}?v=20260925-work-log-hide-overview" defer></script>
 {% endblock %}
 
@@ -51,7 +54,7 @@
             <input type="hidden" name="activity_mentions" value="{{ comment_mentions|default:'[]' }}" data-mention-values>
         </form>
 
-        <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}"{% if not can_edit_task %} data-task-readonly="true"{% endif %}>
+        <form id="task-detail-form" data-task-team-url="{{ task_team_url }}" method="POST" enctype="multipart/form-data" class="tasks-issue-form{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}"{% if not can_edit_task %} data-task-readonly="true"{% endif %}>
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
@@ -65,6 +68,7 @@
                             <button type="button" id="task-tab-subtasks" role="tab" aria-controls="task-subtasks" aria-selected="{% if active_task_tab == 'subtasks' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'subtasks' %}0{% else %}-1{% endif %}" data-task-tab="subtasks">Podzadania</button>
                             {% endif %}
                             <button type="button" id="task-tab-work-log" role="tab" aria-controls="task-work-log" aria-selected="{% if active_task_tab == 'work-log' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'work-log' %}0{% else %}-1{% endif %}" data-task-tab="work-log">Dziennik pracy</button>
+                            <button type="button" id="task-tab-members" role="tab" aria-controls="task-members" aria-selected="{% if active_task_tab == 'members' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'members' %}0{% else %}-1{% endif %}" data-task-tab="members">Członkowie</button>
                             <button type="button" id="task-tab-history" role="tab" aria-controls="task-history" aria-selected="{% if active_task_tab == 'history' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'history' %}0{% else %}-1{% endif %}" data-task-tab="history">Historia</button>
                         </div>
                         {% if can_edit_task %}<button type="button" class="tasks-filter-button tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-open-work-log data-task-log-action aria-haspopup="dialog" aria-controls="task-work-log-modal"{% if active_task_tab != 'work-log' %} hidden{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj czas</span></button>{% endif %}
@@ -203,6 +207,11 @@
                         </section>
                         {% endif %}
 
+                        <section id="task-members" class="tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-members" data-task-tab-panel="members"{% if active_task_tab != 'members' %} hidden{% endif %}>
+                            <div class="tasks-modal__errors" role="alert" data-project-team-error hidden></div>
+                            <div data-project-team-members></div>
+                        </section>
+
                         <section id="task-work-log" class="tasks-work-log tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-work-log" tabindex="0" data-task-tab-panel="work-log"{% if active_task_tab != 'work-log' %} hidden{% endif %}>
                             {% include 'tasks/includes/work_log_list.html' %}
                         </section>
@@ -220,6 +229,9 @@
                 </div>
 
                 <aside class="tasks-issue-sidebar" aria-label="Szczegóły zadania">
+                    <section class="tasks-issue-side-section">
+                        <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="{{ form.visibility.id_for_label }}">Widoczność</label></span>{{ form.visibility }}</div>
+                    </section>
                     <section class="tasks-issue-side-section">
                         <div class="tasks-issue-field">
                             <span class="tasks-issue-field-label">
@@ -480,9 +492,12 @@
                 </div>
                 {% endif %}
 
-                <div class="tasks-form-field">
-                    <label for="{{ task_modal_form.title.id_for_label }}">Tytuł podzadania</label>
-                    {{ task_modal_form.title }}
+                <div class="tasks-project-heading-fields">
+                    <div class="tasks-form-field">
+                        <label for="{{ task_modal_form.title.id_for_label }}">Tytuł podzadania</label>
+                        {{ task_modal_form.title }}
+                    </div>
+                    <div class="tasks-form-field"><label for="{{ task_modal_form.visibility.id_for_label }}">Widoczność</label>{{ task_modal_form.visibility }}</div>
                 </div>
                 <div class="tasks-form-field">
                     <label for="{{ task_modal_form.description.id_for_label }}">Opis</label>
@@ -527,6 +542,8 @@
 {% endif %}
 
 {% include 'tasks/includes/project_info_modal.html' %}
+
+<div data-project-team-modal-host="task"></div>
 
 <script>
 document.querySelectorAll('[data-history-back]').forEach((link) => {
@@ -944,6 +961,7 @@ async function saveTaskDetail() {
         }
 
         updateTaskDetailLiveValues(payload);
+        if (payload.team) taskDetailForm.dispatchEvent(new CustomEvent('ancore:task-team-updated', { bubbles: true, detail: payload.team }));
         prependTaskDetailActivityItems(payload.activity_html);
 
         if (shouldReloadAfterSave && (payload.attachments_added || payload.attachments_deleted)) {

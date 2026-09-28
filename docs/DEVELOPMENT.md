@@ -469,3 +469,20 @@ wygasłe i wycofane nie nadają dostępu. Istniejące członkostwa zachowują ro
 granice Workspace, nieaktywne konta, prawa autora, projekt nadrzędny oraz
 zachowanie istniejących ról. Cofnięcie migracji zachowuje nadany dostęp.
 Zaproszenia do Workspace nadal wymagają przyjęcia.
+
+## Widoczność i zespół zadań
+
+Przed uruchomieniem zastosuj `tasks/0060_task_sharing` przez `manage.py migrate`.
+Migracja zachowuje wcześniejszy odziedziczony dostęp i normalizuje historyczne
+wpisy utworzenia podzadań do stabilnego PK; nie nadaje nowych członkostw.
+Nowe formularze tworzą prywatne zadania faktycznego autora.
+
+`tasks.test_task_sharing` sprawdza natychmiastowy dostęp bez zaproszeń, role,
+CSRF, kandydatów, Workspace i całe drzewa rodziców, cofnięcie dostępu, publikację,
+starsze formularze, autora, podzadania i historię, pliki, wzmianki, przypomnienia,
+listy, search, kalendarz, szablony oraz migrację. Uruchamiaj wraz z testami
+projektów i grup oraz regresjami Tasks/Kanban/Workspace/Planner/Dashboard/Core.
+W przeglądarce sprawdź dwa konta, członka i obserwatora, odebranie dostępu,
+zapis widoczności przez AJAX, szkic formularza, tworzenie zadania/podzadania,
+błąd i pusty wynik pickera, telefon, fokus i Escape, zakładki klawiaturą,
+ponowne wejście przez częściową nawigację oraz referencyjne okna projektu/grupy.

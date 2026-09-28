@@ -33,8 +33,8 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   `tasks.TaskTag`, część szablonów oraz `static/js/tasks.js`.
 - Dane biznesowe ograniczaj do właściciela Workspace wyznaczonego przez
   `workplaces.services.workspace_owner(request)` i aktywnego `request.workplace`.
-  Członkostwo daje dostęp do wspólnych danych Workspace; prywatne projekty Zadań
-  i ich zawartość filtruj przez `tasks.access.visible_to(queryset, request.user)`.
+  Członkostwo daje dostęp do wspólnych danych Workspace; prywatne projekty, grupy i zadania
+  oraz ich zawartość filtruj przez `tasks.access.visible_to(queryset, request.user)`.
   Formularze także ograniczają relacje.
   `request.user` pozostaje faktycznym autorem operacji, komentarzy i historii.
   Samo przypisanie wykonawcy nie daje dostępu. Zasady ról: `docs/TEAMWORK.md`.
@@ -49,8 +49,9 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   pobieranie i prywatny storage Dokumentów.
 - Projekty Zadań udostępniają dostęp wybranym członkom Workspace przez
   `TaskProject.shared_with` przez `TaskProjectMembership`, od razu po udostępnieniu.
-  Grupy używają analogicznie `TaskSectionMembership` i zawężają dostęp projektu;
-  projekty i grupy nie wysyłają zaproszeń ani nie wymagają akceptacji.
+  Grupy używają analogicznie `TaskSectionMembership`, zadania `TaskMembership`;
+  zawężają dostęp projektu, grupy i wszystkich rodziców;
+  projekty, grupy i zadania nie wysyłają zaproszeń ani nie wymagają akceptacji.
   Właściciel zarządza widocznością i rolami, administrator projektu zwykłymi
   członkami; role projektu są niezależne od ról Workspace.
   Historyczne `SharedItem` i linki są nadal wyłączone. Nie przywracaj ich przy okazji innego zadania.

@@ -6,9 +6,13 @@ from .views.project_team import project_team, project_candidates
 
 from .views.section_team import section_team, section_candidates
 
+from .views.task_team import task_team, task_candidates
+
 app_name = 'tasks'
 
 urlpatterns = [
+    path('items/<int:task_id>/team/', task_team, name='task_team'),
+    path('items/<int:task_id>/team/candidates/', task_candidates, name='task_candidates'),
     path('groups/<int:section_id>/team/', section_team, name='section_team'),
     path('groups/<int:section_id>/team/candidates/', section_candidates, name='section_candidates'),
     path('projects/<int:project_id>/team/', project_team, name='project_team'),

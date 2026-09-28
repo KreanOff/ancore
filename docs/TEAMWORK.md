@@ -78,14 +78,14 @@ ponowne dołączenie nie przywraca ich. Operacje utrzymaniowe przez
 `QuerySet.update()` muszą same wyczyścić członkostwa i zaproszenia, ponieważ
 omijają sygnały. Sam filtr dostępu zawsze sprawdza członkostwo Workspace.
 
-Grupy mogą dodatkowo ograniczać widoczność projektu; zadania i podzadania dziedziczą oba ograniczenia. Kontrola obejmuje
+Grupy oraz zadania mogą dodatkowo ograniczać widoczność projektu; podzadania dziedziczą ograniczenia wszystkich rodziców. Kontrola obejmuje
 całe drzewo rodziców, również stare podzadania z inną grupą niż rodzic;
 usuwanie zadania, grupy lub projektu odrzuca kaskadę obejmującą niedostępne podzadania. `tasks/access.py`
 filtruje jawnie według rzeczywistego odbiorcy: listy, nawigację, opcje formularzy,
 bezpośrednie URL, edycję i usuwanie (także zbiorcze), notatki, dziennik pracy,
 pliki, ustawienia terminów, wyszukiwanie, Dashboard, kalendarz i powiadomienia.
 Obserwowanie, wzmianki i przypisanie wykonawcy nie omijają tego filtra.
-Przypomnienie zadania bez wykonawcy w prywatnym projekcie trafia do prywatnego
+Przypomnienie zadania bez wykonawcy trafia do jego prywatnego właściciela, a gdy zadanie dziedziczy dostęp — do prywatnego
 właściciela projektu; pozostałe zadania zachowują odbiorcę według dotychczasowych zasad.
 Prywatny projekt nie pojawia się w licznikach zadań przy wspólnych tagach.
 Numery zadań nadal są wspólne dla właściciela i Workspace; ich luki nie nadają dostępu.
@@ -170,6 +170,48 @@ wygasłych ani dostępu po utracie uprawnień. Kończy wszystkie pozostałe ocze
 zaproszenia statusem `revoked`, bez przypisywania odbiorcy decyzji o akceptacji.
 Cofnięcie migracji nie odbiera nadanych członkostw. Regresje migracji:
 `tasks/test_direct_sharing_migration.py`.
+
+## Widoczność i udostępnianie zadań
+
+`Task` ma `visibility`, `private_owner` i `shared_with` przez `TaskMembership`.
+„Publiczne — dostęp odziedziczony” zachowuje zakres projektu, grupy i każdego
+zadania nadrzędnego. „Prywatne — wybrane osoby” dodatkowo ogranicza go do
+prywatnego właściciela i osób z nadanym dostępem. Istniejące zadania zachowują
+dotychczasowy dostęp; nowe zadania i podzadania w formularzach oraz szybkim
+dodawaniu domyślnie są prywatne faktycznego autora. Samo przypisanie wykonawcy
+nadal nie daje dostępu. „Moje zadania” dodatkowo wymagają przypisania; inne
+udostępnione zadania są widoczne na liście „Wszystkie zadania”.
+
+Szczegóły zadania mają pole „Widoczność” oraz zakładkę „Członkowie”. Właściciel
+udostępnia zadanie rolom administrator/członek/obserwator i zarządza rolami;
+administrator nadaje i odbiera dostęp członkom oraz obserwatorom. Obserwator
+na dowolnym poziomie hierarchii ma tylko odczyt, także gdy niżej jest właścicielem.
+Publiczne zadanie pokazuje osoby z dostępem odziedziczonym. Udostępnienie
+prywatnego zadania zapisuje się osobno od głównego formularza i działa od razu,
+bez zaproszenia, powiadomienia do akceptacji ani wysyłania e-maila.
+
+`tasks/views/task_team.py` obsługuje `items/<pk>/team/` oraz
+`items/<pk>/team/candidates/`, także w adresach scoped. `pk` jest stabilnym
+kluczem bazy, nie wyświetlanym numerem `task_id`. Kandydat musi być aktywnym
+członkiem tego Workspace z dostępem do wszystkich nadrzędnych elementów.
+Udostępnienie zadania nie udostępnia projektu, grupy ani rodzica. Brak prywatnego
+właściciela zamyka dostęp. Zmiana widoczności na publiczną czyści jego członkostwa,
+ale zachowuje niezależne udostępnienia prywatnych podzadań. Odebranie członkostwa
+prywatnego projektu, grupy, rodzica lub Workspace czyści odpowiednie udostępnienia
+zadań, więc ponowne dołączenie ich nie przywraca.
+
+`visible_to` i `editable_to` obejmują całe drzewa zadań, komentarze, pliki,
+czas pracy, listy, statystyki, szablony, wyszukiwanie, kalendarz i powiadomienia.
+Wzmianki podpowiadają wyłącznie osoby z dostępem. Historia utworzenia podzadania
+przechowuje stabilne `metadata.subtask_pk`; czytelnik rodzica nie widzi wpisu
+ujawniającego tytuł niedostępnego podzadania. Snapshot zawierający prywatne
+zadanie jest prywatny autora i nie kopiuje członkostw.
+
+Migracja `tasks/0060_task_sharing` zachowuje istniejące zadania jako publiczne
+w odziedziczonym zakresie. Wiąże starsze wpisy utworzenia podzadania ze stabilnym
+PK tylko przy zgodnym rodzicu, numerze i tytule. Niejednoznaczne lub nieaktualne
+wpisy zachowuje jako zdarzenia bez tytułu i numeru podzadania. Regresje dostępu,
+formularzy, migracji i integracji: `tasks/test_task_sharing.py`.
 
 ## Zaproszenia i ekran zespołu
 

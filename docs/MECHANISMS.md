@@ -118,8 +118,9 @@ korzystać z jawnego filtra widoczności. Dotyczy to również powiązanych grup
 plików, szablonów i integracji Dashboard/Kalendarza.
 Grupy mają dodatkowy filtr `visibility` / `private_owner` / `shared_with`;
 prywatność grupy nie omija projektu nadrzędnego. `editable_to` uwzględnia rolę
-obserwatora na obu poziomach, także dla potomków w starszych drzewach.
-Szablon kopiuje tylko edytowalne grupy i zadania; obecność prywatnej grupy
+obserwatora na poziomie projektu, grupy i zadania, także dla potomków w starszych drzewach.
+Prywatność `Task` zawęża dostęp odziedziczony po wszystkich rodzicach.
+Szablon kopiuje tylko edytowalne grupy i zadania; obecność prywatnej grupy lub zadania
 wymusza prywatny snapshot dla autora. Udostępnienia nie przechodzą do szablonu.
 Formularz projektu zmienia widoczność wyłącznie dla prywatnego właściciela.
 Zespół obsługują osobne endpointy `projects/<id>/team/` (GET/POST),
@@ -127,8 +128,9 @@ Zespół obsługują osobne endpointy `projects/<id>/team/` (GET/POST),
 od razu tworzy `TaskProjectMembership` dla aktywnego członka Workspace.
 Analogiczne `groups/<id>/team/` i `groups/<id>/team/candidates/` obsługują grupy
 przez `TaskSectionMembership`, z zachowaniem dostępu do projektu nadrzędnego.
-Nie ma zaproszeń ani endpointów akceptacji dla projektu/grupy.
-Zapisy zespołu blokują Workspace i projekt; nie zapisują pól głównego formularza.
+Zadania używają `items/<pk>/team/`, `items/<pk>/team/candidates/` i `TaskMembership`.
+Nie ma zaproszeń ani endpointów akceptacji dla projektu/grupy/zadania.
+Zapisy zespołu blokują Workspace i odpowiedni projekt, grupę lub zadanie; nie zapisują pól głównego formularza.
 Rola `observer` zachowuje `visible_to`, ale jest wykluczona z zapisu przez
 `tasks.access.editable_to(queryset, viewer)`. Ten filtr obejmuje projekt, grupy,
 notatki i całe drzewa zadań wraz z plikami. Relacje formularzy edycji korzystają

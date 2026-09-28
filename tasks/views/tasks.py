@@ -23,6 +23,7 @@ from django.contrib import messages
 
 from dashboard.collaboration import follow_context, mention_choices
 from tasks.access import editable_to, require_editable, visible_to, require_deletable_tasks
+from tasks.views.task_team import team_payload as _task_team_payload
 from tasks.sharing import project_access_data, section_access_data
 from workplaces.models import Workplace
 from workplaces.services import workspace_owner, scoped_workplace_app_path
@@ -1063,7 +1064,7 @@ def _project_sort_queryset(queryset, sort_value, project_choices=None, viewer=No
         )
         return queryset.annotate(
             project_last_task_created_sort=Max('sections__tasks__created_at', filter=Q(sections__tasks__in=visible_to(Task.objects.all(), viewer))),
-            project_last_activity_sort=Max('sections__tasks__activities__created_at', filter=Q(sections__tasks__in=visible_to(Task.objects.all(), viewer))),
+            project_last_activity_sort=Max('sections__tasks__activities__created_at', filter=Q(sections__tasks__activities__in=visible_to(TaskActivity.objects.all(), viewer))),
         ).order_by(activity_order, task_created_order, f'{prefix}created_at', 'name', 'id')
     return queryset.order_by('name', 'id')
 
@@ -1263,7 +1264,7 @@ def _group_filter_queryset(
     )
 
 
-def _group_sort_queryset(queryset, sort_value):
+def _group_sort_queryset(queryset, sort_value, viewer=None):
     sort_value = _group_sort_value(sort_value)
     if sort_value == 'title_asc':
         return queryset.order_by('title', 'id')
@@ -1311,8 +1312,8 @@ def _group_sort_queryset(queryset, sort_value):
         return queryset.order_by('-created_at', 'project__name', 'order', 'id')
     if sort_value == 'activity_desc':
         return queryset.annotate(
-            last_task_created_sort=Max('tasks__created_at'),
-            last_activity_sort=Max('tasks__activities__created_at'),
+            last_task_created_sort=Max('tasks__created_at', filter=Q(tasks__in=visible_to(Task.objects.all(), viewer))),
+            last_activity_sort=Max('tasks__activities__created_at', filter=Q(tasks__activities__in=visible_to(TaskActivity.objects.all(), viewer))),
         ).order_by('-last_activity_sort', '-last_task_created_sort', '-created_at', 'project__name', 'order', 'id')
     return queryset.order_by('project__name', 'order', 'created_at', 'id')
 
@@ -2052,7 +2053,7 @@ def _group_window_for_request(request, field_configuration=None, project=None):
     )
     if project is not None:
         queryset = queryset.filter(project=project)
-    queryset = _group_sort_queryset(queryset, sort)
+    queryset = _group_sort_queryset(queryset, sort, viewer=request.user)
     total_groups = queryset.count()
     total_pages = max(1, (total_groups + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
@@ -3002,6 +3003,7 @@ def _task_activity_snapshot(task):
     project = section.project if section else None
     return {
         'title': task.title,
+        'visibility': task.visibility,
         'description': task.description,
         'status': task.status,
         'priority': task.priority,
@@ -3043,6 +3045,8 @@ def _task_change_activities(task, before):
             'to_label': normalize_change_value(to_label),
         })
 
+    if before['visibility'] != task.visibility:
+        add_change('widoczność', {'public': 'Publiczne', 'private': 'Prywatne'}[before['visibility']], {'public': 'Publiczne', 'private': 'Prywatne'}[task.visibility])
     if before['status'] != task.status:
         add_change('status', status_labels.get(before['status'], before['status']), task.get_status_display())
     if before['priority'] != task.priority:
@@ -3638,6 +3642,8 @@ def _tasks_page(request, active_section=None):
                 task.user = section.project.user
                 task.section = section
                 task.workplace = workplace
+                task.visibility = 'private'
+                task.private_owner = request.user
                 task._activity_actor = request.user
                 task.save()
                 messages.success(request, 'Zadanie dodane.')
@@ -4398,6 +4404,15 @@ def _save_task_work_log(request, task):
 
 
 def _task_detail_response(request, task_id=None, task_pk=None):
+    if request.method == 'POST':
+        with lock_task_numbers(workspace_owner(request).pk):
+            if request.workplace:
+                Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+            return _task_detail(request, task_id, task_pk, lock=True)
+    return _task_detail(request, task_id, task_pk)
+
+
+def _task_detail(request, task_id=None, task_pk=None, *, lock=False):
     workplace = _active_workplace(request)
     task_queryset = _filter_workplace(
         visible_to(Task.objects.all(), request.user).select_related('section', 'section__project', 'section__project__user', 'parent', 'assignee'),
@@ -4417,6 +4432,8 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     )
     if task_pk is not None:
         raise PermissionDenied
+    if lock:
+        task_queryset = task_queryset.select_for_update(of=('self',))
     task = get_object_or_404(task_queryset, user=workspace_owner(request), **task_detail_lookup(request, task_id))
 
     can_edit_task = _user_can_edit_task(workspace_owner(request), task, viewer=request.user)
@@ -4424,13 +4441,13 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     subtask_status_groups = _status_groups_for_tasks(task.subtasks.all(), workspace_owner(request), request=request)
     can_add_attachments = can_edit_task and not task.parent_id
     form = TaskForm(instance=task, user=task.user, workplace=workplace, viewer=request.user, read_only=not can_edit_task)
-    task_modal_form = SubTaskModalForm()
+    task_modal_form = SubTaskModalForm(viewer=request.user)
     task_modal_open = False
     comment_errors = []
     work_log_form = TaskWorkLogForm(prefix='worklog')
     work_log_modal_open = False
     active_tab = request.GET.get('tab', 'main')
-    if active_tab not in {'main', 'subtasks', 'work-log', 'history'} or (active_tab == 'subtasks' and task.parent_id):
+    if active_tab not in {'main', 'subtasks', 'work-log', 'history', 'members'} or (active_tab == 'subtasks' and task.parent_id):
         active_tab = 'main'
     _decorate_task_directory_members([task], current_user=workspace_owner(request), viewer=request.user)
 
@@ -4451,7 +4468,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
         elif action == 'create_subtask_modal':
             if not can_edit_task:
                 raise PermissionDenied
-            task_modal_form = SubTaskModalForm(request.POST)
+            task_modal_form = SubTaskModalForm(request.POST, viewer=request.user)
             if task_modal_form.is_valid():
                 subtask = task_modal_form.save(commit=False)
                 subtask.user = task.user
@@ -4468,6 +4485,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                     metadata={
                         'subtask_title': subtask.title,
                         'subtask_task_id': subtask.task_id,
+                        'subtask_pk': subtask.pk,
                     },
                 )
                 messages.success(request, 'Podzadanie dodane.')
@@ -4557,6 +4575,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
                         'status': 'success',
                         'message': 'Zapisano.',
                         'task': _task_detail_payload(task),
+                        'team': _task_team_payload(request, task),
                         'changed_fields': [
                             field
                             for change in change_activities
@@ -4586,6 +4605,8 @@ def _task_detail_response(request, task_id=None, task_pk=None):
     else:
         form = TaskForm(instance=task, user=task.user, workplace=workplace, viewer=request.user, read_only=not can_edit_task)
 
+    if not form.can_manage_access:
+        form.fields['visibility'].disabled = True
     if not can_edit_task:
         for field in form.fields.values():
             field.disabled = True
@@ -4603,7 +4624,7 @@ def _task_detail_response(request, task_id=None, task_pk=None):
         'task': task,
         'can_manage_task': can_manage_task,
         'can_edit_task': can_edit_task,
-        'can_share_task': False,
+        'task_team_url': scoped_workplace_app_path(workplace, 'tasks', f'items/{task.pk}/team/') if workplace else reverse('tasks:task_team', args=[task.pk]),
         'can_add_attachments': can_add_attachments,
         'comment_errors': comment_errors,
         'comment_draft': request.POST.get('activity_comment', '') if comment_errors else '',

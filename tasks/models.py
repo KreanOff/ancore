@@ -805,6 +805,15 @@ class Task(models.Model):
         ('internal', 'Wewnętrzne'),
     ]
 
+    visibility = models.CharField(max_length=7, choices=TaskProject.Visibility.choices, default=TaskProject.Visibility.PUBLIC)
+    private_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='private_tasks', editable=False,
+    )
+    shared_with = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, through='TaskMembership', related_name='shared_tasks', blank=True,
+    )
+
     task_id = models.PositiveIntegerField(default=0)
     code_number = models.PositiveIntegerField(default=0, editable=False)
     title = models.CharField(max_length=255)
@@ -969,6 +978,16 @@ class Task(models.Model):
             first_attachment = self.attachments.first()
             return os.path.splitext(first_attachment.file.name)[1].lower()
         return ''
+
+
+class TaskMembership(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('observer', 'Obserwator')], default='member')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['task', 'user'], name='unique_task_member')]
 
 
 class TaskWorkLog(models.Model):

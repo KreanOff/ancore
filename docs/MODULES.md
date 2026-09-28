@@ -90,7 +90,10 @@ Prywatny projekt jest początkowo dostępny tylko właścicielowi. W edycji ma
 zakładki „Główna” i „Członkowie”. „Udostępnij” od razu nadaje dostęp wybranemu
 aktywnemu członkowi tego Workspace, bez zaproszenia ani akceptacji.
 Grupy mogą dodatkowo być prywatne, z własnymi rolami i członkami; są udostępniane tak samo.
-Dostęp do grupy wymaga dostępu do projektu. Zadania dziedziczą oba ograniczenia;
+Dostęp do grupy wymaga dostępu do projektu. Zadania dziedziczą oba ograniczenia
+i mogą dodatkowo być prywatne, z polem „Widoczność” i zakładką „Członkowie”.
+Udostępnienie zadania od razu nadaje dostęp, bez akceptacji; podzadania zachowują
+ograniczenia rodziców. Nowe zadania domyślnie są prywatne faktycznego autora;
 pełną macierz dostępu opisuje
 [Praca zespołowa](TEAMWORK.md#widoczność-projektów-zadań).
 
@@ -104,7 +107,8 @@ pełną macierz dostępu opisuje
 | `TaskSection` | Grupa projektu: nazwa, opis, kod, rodzaj, status, właściciel grupy, priorytet, termin, limit WIP, kolejność oraz widoczność, prywatny właściciel i udostępnienia |
 | `TaskSectionMembership` | Bezpośredni dostęp do grupy z rolą administrator/członek/obserwator; zawężony dostępem projektu |
 | `TaskSectionInvitation` | Historyczne zaproszenie, bez aktywnego przepływu akceptacji |
-| `Task` | Tytuł, opis, status, priorytet, termin i przypomnienie w aplikacji, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic |
+| `Task` | Tytuł, opis, status, priorytet, termin i przypomnienie w aplikacji, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic, widoczność, prywatny właściciel i udostępnienia |
+| `TaskMembership` | Bezpośredni dostęp do prywatnego zadania z rolą administrator/członek/obserwator; zawężony całą hierarchią rodziców |
 | Notatki | Osobne modele dla projektu, grupy i tagu, z autorem i czasem edycji |
 | `TaskActivity` | Historia i komentarze zadania; aktor, akcja, wiadomość i metadane zmian |
 | `TaskCommentImage` | Prywatne pliki i zdjęcia przypisane do konkretnego komentarza; nazwa i rozmiar |

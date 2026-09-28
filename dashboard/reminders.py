@@ -12,7 +12,7 @@ def reminders_for_user(user):
     access = Q(user=user, workplace__isnull=True) | Q(
         user_id=F('workplace__owner_id'), workplace__in=workplaces_for_user(user),
     )
-    recipient = Q(assignee=user) | Q(assignee__isnull=True, user=user) | Q(
+    recipient = Q(assignee__isnull=True, visibility='private', private_owner=user) | Q(assignee=user) | Q(assignee__isnull=True, user=user) | Q(
         assignee__isnull=True, section__project__visibility='private', section__project__private_owner=user,
     )
     tasks = visible_to(Task.objects.all(), user).filter(access, recipient, reminder_at__lte=timezone.now()).exclude(status='closed')

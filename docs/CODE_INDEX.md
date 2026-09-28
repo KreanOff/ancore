@@ -20,7 +20,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 17 | 0 | 9 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
-| [tasks](../tasks) | 33 | 59 | 39 | 302 |
+| [tasks](../tasks) | 35 | 60 | 39 | 320 |
 | [kanban](../kanban) | 10 | 37 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 6 | 7 | 91 |
@@ -274,10 +274,12 @@ Metody/properties: `__str__`.
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `task_id` (PositiveIntegerField), `code_number` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `reminder_at` (DateTimeField), `estimated_minutes` (PositiveIntegerField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `task_type` (CharField), `blocked_reason` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `assignee` (ForeignKey), `section` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
+Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `task_id` (PositiveIntegerField), `code_number` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `reminder_at` (DateTimeField), `estimated_minutes` (PositiveIntegerField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `task_type` (CharField), `blocked_reason` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `assignee` (ForeignKey), `section` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
+| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_tasks'; null=True |
+| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_tasks'; through='TaskMembership' |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='tasks' |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='tasks'; null=True |
 | `assignee` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='assigned_tasks'; null=True |
@@ -286,6 +288,17 @@ Pola zadeklarowane tutaj: `task_id` (PositiveIntegerField), `code_number` (Posit
 | `parent` | `'self'` | on_delete=models.CASCADE; related_name='subtasks'; null=True |
 
 Metody/properties: `_claim_next_code_number`, `save`, `delete`, `_renumber_user_tasks`, `__str__`, `code`, `full_code`, `_activity_datetime`, `_activity_time_spent`, `has_time_spent`, `time_spent_label`, `due_urgency`, `get_file_extension`.
+
+### `TaskMembership`
+
+Źródło: [tasks/models.py](../tasks/models.py).
+
+Pola zadeklarowane tutaj: `task` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `Task` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
 
 ### `TaskWorkLog`
 
@@ -746,9 +759,10 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `LenientModelChoiceField`
 - `DateTimeLocalInput`
 - `MultipleFileInput`
-- `TaskForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
-- `TaskWorkLogForm` — Meta.fields: `['started_at', 'ended_at', 'description']`
 - `ProjectVisibilitySelect`
+- `TaskAccessForm`
+- `TaskForm` — Meta.fields: `['title', 'visibility', 'parent', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
+- `TaskWorkLogForm` — Meta.fields: `['started_at', 'ended_at', 'description']`
 - `TaskProjectBaseForm`
 - `TaskProjectDeadlineRuleForm` — Meta.fields: `['days', 'color']`
 - `TaskProjectFieldOptionForm` — Meta.fields: `['label', 'color']`
@@ -760,8 +774,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `TaskSectionRenameForm` — Meta.fields: `['visibility', 'title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']`
 - `TaskTagForm` — Meta.fields: `['name', 'description', 'category', 'color', 'icon', 'priority', 'scope', 'owner_label', 'status', 'usage_notes', 'automation_rules', 'related_tags']`
 - `QuickTaskForm` — Meta.fields: `['title']`
-- `TaskModalForm` — Meta.fields: `['title', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
-- `SubTaskModalForm` — Meta.fields: `['title', 'description', 'status', 'due_at']`
+- `TaskModalForm` — Meta.fields: `['title', 'visibility', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
+- `SubTaskModalForm` — Meta.fields: `['title', 'visibility', 'description', 'status', 'due_at']`
 
 ### kanban
 
@@ -882,6 +896,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'items/<int:task_id>/team/'` | `task_team` | 'task_team' |
+| `'items/<int:task_id>/team/candidates/'` | `task_candidates` | 'task_candidates' |
 | `'groups/<int:section_id>/team/'` | `section_team` | 'section_team' |
 | `'groups/<int:section_id>/team/candidates/'` | `section_candidates` | 'section_candidates' |
 | `'projects/<int:project_id>/team/'` | `project_team` | 'project_team' |
@@ -1063,18 +1079,19 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/access.py](../tasks/access.py) — `task_tree_ids`, `require_deletable_tasks`, `editable_to`, `require_editable`, `visible_to`
 - [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskProjectFieldOptionAdmin`, `TaskSectionAdmin`, `TaskTagAdmin`, `TaskAttachmentAdmin`
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
-- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `TaskForm`, `TaskWorkLogForm`, `ProjectVisibilitySelect`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionAccessForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
-- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectMembership`, `TaskProjectInvitation`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionMembership`, `TaskSectionInvitation`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
+- [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `ProjectVisibilitySelect`, `TaskAccessForm`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionAccessForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
+- [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectMembership`, `TaskProjectInvitation`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionMembership`, `TaskSectionInvitation`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskMembership`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
 - [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
-- [tasks/sharing.py](../tasks/sharing.py) — `share_candidates`, `project_role`, `project_access_data`, `section_candidates`, `section_role`, `section_access_data`
-- [tasks/sharing_signals.py](../tasks/sharing_signals.py) — `revoke_project_shares`, `membership_deleted`, `membership_disabled`, `project_member_deleted`
+- [tasks/sharing.py](../tasks/sharing.py) — `share_candidates`, `project_role`, `project_access_data`, `section_candidates`, `section_role`, `section_access_data`, `task_candidates`, `task_role`
+- [tasks/sharing_signals.py](../tasks/sharing_signals.py) — `revoke_project_shares`, `membership_deleted`, `membership_disabled`, `project_member_deleted`, `section_member_deleted`, `task_member_deleted`
 - [tasks/urls.py](../tasks/urls.py)
 - [tasks/views/__init__.py](../tasks/views/__init__.py)
 - [tasks/views/project_settings.py](../tasks/views/project_settings.py) — `project_field_settings`
 - [tasks/views/project_team.py](../tasks/views/project_team.py) — `ProjectShareForm`, `team_payload`, `project_team`, `project_candidates`
 - [tasks/views/project_templates.py](../tasks/views/project_templates.py) — `project_templates`, `edit_project_template`
 - [tasks/views/section_team.py](../tasks/views/section_team.py) — `SectionShareForm`, `team_payload`, `section_team`, `section_candidates`
+- [tasks/views/task_team.py](../tasks/views/task_team.py) — `TaskShareForm`, `team_payload`, `task_team`, `task_candidates`
 - [tasks/views/tasks.py](../tasks/views/tasks.py) — `tasks`, `task_group`, `create_share_link`, `revoke_share_link`, `accept_share_link`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`, `comment_image`
 - [tasks/views.py](../tasks/views.py)
 
@@ -1548,6 +1565,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `TaskStatusPaginationTests`: 6 metod testowych.
 
+### tasks/test_task_sharing.py
+
+Źródło: [tasks/test_task_sharing.py](../tasks/test_task_sharing.py).
+
+- `TaskSharingTests`: 17 metod testowych.
+- `TaskSharingMigrationTests`: 1 metod testowych.
+
 ### tasks/test_work_logs.py
 
 Źródło: [tasks/test_work_logs.py](../tasks/test_work_logs.py).
@@ -1821,6 +1845,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0057_project_observer.py](../tasks/migrations/0057_project_observer.py)
 - [tasks/migrations/0058_section_sharing.py](../tasks/migrations/0058_section_sharing.py)
 - [tasks/migrations/0059_direct_sharing.py](../tasks/migrations/0059_direct_sharing.py)
+- [tasks/migrations/0060_task_sharing.py](../tasks/migrations/0060_task_sharing.py)
 
 ### kanban
 

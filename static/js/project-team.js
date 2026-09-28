@@ -3,7 +3,8 @@
     window.ancoreProjectTeam = true;
     let cleanup = () => {};
     function initTeam(kind) {
-        const form = document.getElementById(`${kind}-rename-form`);
+        const isTask = kind === 'task';
+        const form = document.getElementById(isTask ? 'task-detail-form' : `${kind}-rename-form`);
         const host = document.querySelector(`[data-project-team-modal-host="${kind}"]`);
         if (!form || !host) return () => {};
         const controller = new AbortController();
@@ -27,6 +28,12 @@
             }
         }
         function selectTab(name, focus = false) {
+            if (isTask) {
+                const button = form.querySelector(`[data-task-tab="${name}"]`);
+                button?.click();
+                if (focus) button?.focus();
+                return;
+            }
             const tabs = [...form.querySelectorAll('[data-project-access-tab]')].filter(node => !node.hidden);
             if (!tabs.some(node => node.dataset.projectAccessTab === name)) name = 'main';
             tab = name;
@@ -54,7 +61,7 @@
             pickerController = new AbortController();
             closePickers = [...host.querySelectorAll('[data-team-invite-picker]')].map(picker =>
                 window.AncoreTeamInvitationPicker.init(picker, { signal: pickerController.signal }));
-            selectTab(tab);
+            if (!isTask) selectTab(tab);
         }
         async function request(body) {
             requestController?.abort(); requestController = new AbortController();
@@ -74,7 +81,7 @@
         async function load(teamUrl) {
             const current = ++version;
             requestController?.abort(); clearPickers();
-            url = teamUrl; selectTab('main'); errorBox.hidden = true;
+            url = teamUrl; if (!isTask) selectTab('main'); errorBox.hidden = true;
             form.querySelector('[data-project-team-members]').textContent = 'Ładowanie członków…';
             host.replaceChildren();
             if (!url) return;
@@ -103,7 +110,8 @@
                 if (child) window.AncoreTaskModals.close(child);
                 if (body.get('action') === 'share') tab = 'members';
                 display(data);
-                form.querySelector(`[data-project-access-tab="${tab}"]`)?.focus();
+                if (isTask) selectTab('members', true);
+                else form.querySelector(`[data-project-access-tab="${tab}"]`)?.focus();
                 window.showNotification?.('Zmiany zapisane.', 'success');
             } catch (error) {
                 if (!controller.signal.aborted) { errors.textContent = error.message; errors.hidden = false; }
@@ -128,7 +136,7 @@
             if (trigger.dataset.projectTeamAction) {
                 const body = new FormData(); body.set('action', trigger.dataset.projectTeamAction);
                 if (trigger.dataset.memberId) body.set('member_id', trigger.dataset.memberId);
-                if (body.get('action') === 'remove') window.showConfirmModal({ title: kind === 'section' ? 'Odebrać dostęp do grupy?' : 'Odebrać dostęp do projektu?', message: kind === 'section' ? 'Osoba straci dostęp do prywatnej grupy, jej zadań i plików. Pozostanie członkiem projektu i Workspace.' : 'Osoba straci dostęp do prywatnego projektu, jego zadań i plików. Pozostanie członkiem Workspace.', confirmText: 'Odbierz dostęp', onConfirm: () => mutate(body) });
+                if (body.get('action') === 'remove') window.showConfirmModal({ title: isTask ? 'Odebrać dostęp do zadania?' : kind === 'section' ? 'Odebrać dostęp do grupy?' : 'Odebrać dostęp do projektu?', message: isTask ? 'Osoba straci dostęp do prywatnego zadania, jego podzadań i plików. Zachowa pozostałe uprawnienia w Workspace.' : kind === 'section' ? 'Osoba straci dostęp do prywatnej grupy, jej zadań i plików. Pozostanie członkiem projektu i Workspace.' : 'Osoba straci dostęp do prywatnego projektu, jego zadań i plików. Pozostanie członkiem Workspace.', confirmText: 'Odbierz dostęp', onConfirm: () => mutate(body) });
                 else mutate(body);
             }
         }, options);
@@ -153,14 +161,18 @@
         document.addEventListener('ancore:task-modal-closed', event => {
             if (host.contains(event.target)) { closePickers.forEach(close => close()); restoreBackground(); previousFocus?.isConnected && previousFocus.focus({preventScroll:true}); }
         }, options);
-        const id = form.elements[`${kind}_id`].value;
+        form.addEventListener('ancore:task-team-updated', event => {
+            version++; requestController?.abort(); display(event.detail);
+        }, options);
+        const id = form.elements[isTask ? 'task_pk' : `${kind}_id`].value;
         const access = JSON.parse(document.getElementById(`${kind}-access-data`)?.textContent || '{}')[id];
-        if (id && access) { form.elements.visibility.disabled = !access.canManage; load(access.teamUrl); }
+        if (isTask) load(form.dataset.taskTeamUrl);
+        else if (id && access) { form.elements.visibility.disabled = !access.canManage; load(access.teamUrl); }
         return () => { version++; requestController?.abort(); controller.abort(); clearPickers(); restoreBackground(); };
     }
     function init() {
         cleanup();
-        const cleanups = ['project', 'section'].map(initTeam);
+        const cleanups = ['project', 'section', 'task'].map(initTeam);
         cleanup = () => cleanups.forEach(close => close());
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

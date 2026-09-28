@@ -143,12 +143,23 @@ Formularze grup korzystają z tego samego wiersza nazwy i widoczności co projek
 „Nowa grupa” domyślnie wybiera „Prywatna — wybrane osoby”; „Publiczna — uczestnicy
 projektu” zachowuje ograniczenia projektu nadrzędnego. Po utworzeniu „Edytuj grupę”
 ma wspólne zakładki „Główna” i „Członkowie”, picker osoby, tabelę oraz modale
-roli/udostępnienia. `project-team.js` inicjalizuje osobne instancje projektu i grupy,
+roli/udostępnienia. `project-team.js` inicjalizuje osobne instancje projektu, grupy i zadania,
 zachowując kontrakt `data-project-*` wewnątrz formularza. Prefiksy identyfikatorów
 pozwalają obu oknom współistnieć na stronie. `section-access-data` przekazuje
 widoczność, uprawnienia oraz URL zespołu. Menu obserwatora udostępnia „Podgląd grupy”
 z wyłączonymi polami i listą członków. Obsługa błędów, szkicu, fokusu, Escape
 i ponownego wejścia po częściowej nawigacji pozostaje wspólna.
+
+W szczegółach zadania „Widoczność” jest pierwszą sekcją bocznego panelu.
+Zakładka „Członkowie” korzysta z istniejącego systemu zakładek `task-work-log.js`
+i wspólnej tabeli zespołu. `project-team.js` obsługuje `task-detail-form` oraz
+osobny host modali `data-project-team-modal-host="task"`; zachowuje szkic pól,
+błędy, fokus, Escape i inicjalizację po `ancore:content-loaded`. Po zapisaniu
+widoczności przez AJAX zdarzenie `ancore:task-team-updated` odświeża członków.
+Tworzenie zadania i podzadania używa istniejącego wiersza tytułu z widocznością,
+domyślnie „Prywatne — wybrane osoby”. Publiczne zadanie pokazuje dostęp
+odziedziczony, bez osobnego przycisku udostępnienia. Prywatne udostępnia się
+od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń.
 
 ## 2. Powłoka aplikacji
 

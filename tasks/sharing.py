@@ -3,7 +3,7 @@ from django.db.models import Q
 
 from workplaces.services import workplace_people
 from .access import editable_to, visible_to
-from .models import TaskProject, TaskSection
+from .models import Task, TaskProject, TaskSection
 
 
 def share_candidates(workplace, viewer):
@@ -71,3 +71,35 @@ def section_access_data(workplace, viewer):
         'canManage': section.pk in editable_ids and (section.visibility == 'public' or section.private_owner_id == viewer.pk),
         'teamUrl': f'{base}groups/{section.pk}/team/',
     } for section in sections}
+
+
+def task_candidates(task):
+    """Intersect Workspace, group/project and every ancestor's privacy."""
+    people = share_candidates(task.workplace, None)
+    current, seen = task, set()
+    while current:
+        if current.pk in seen:
+            return people.none()
+        seen.add(current.pk)
+        if current.workplace_id != task.workplace_id or current.user_id != task.user_id:
+            return people.none()
+        if current.section_id:
+            for resource in [current.section.project, current.section]:
+                if resource.visibility == 'private':
+                    if not resource.private_owner_id:
+                        return people.none()
+                    people = people.filter(Q(pk=resource.private_owner_id) | Q(pk__in=resource.shared_with.values('pk')))
+        if current.pk != task.pk and current.visibility == 'private':
+            if not current.private_owner_id:
+                return people.none()
+            people = people.filter(Q(pk=current.private_owner_id) | Q(pk__in=current.shared_with.values('pk')))
+        current = current.parent if current.parent_id else None
+    return people
+
+
+def task_role(task, viewer):
+    if task.visibility != 'private' or not visible_to(Task.objects.all(), viewer).filter(pk=task.pk).exists():
+        return ''
+    if task.private_owner_id == viewer.pk:
+        return 'owner'
+    return task.memberships.filter(user=viewer).values_list('role', flat=True).first() or ''

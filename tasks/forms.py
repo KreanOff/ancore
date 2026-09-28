@@ -82,7 +82,64 @@ def _normalize_optional_code(value):
     return (value or '').strip().upper()
 
 
-class TaskForm(forms.ModelForm):
+class ProjectVisibilitySelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        icon = {'private': 'lock', 'public': 'users'}.get(value)
+        if icon:
+            option['attrs']['data-ancore-option-icon'] = icon
+        return option
+
+
+class TaskAccessForm(forms.ModelForm):
+    visibility = forms.ChoiceField(
+        choices=[('private', 'Prywatne — wybrane osoby'), ('public', 'Publiczne — dostęp odziedziczony')],
+        required=False, label='Widoczność',
+        widget=ProjectVisibilitySelect(attrs={'class': 'tasks-inline-select'}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.viewer = kwargs.pop('viewer', None)
+        super().__init__(*args, **kwargs)
+        self.original_visibility = self.instance.visibility
+        self.can_manage_access = (not self.instance.pk or self.instance.visibility == 'public'
+                                  or self.instance.private_owner_id == getattr(self.viewer, 'pk', None))
+        self.fields['visibility'].widget.attrs['id'] = 'task-visibility' if self.instance.pk else 'task-create-visibility'
+        if not self.instance.pk:
+            self.initial['visibility'] = 'private'
+
+    def clean_visibility(self):
+        value = self.cleaned_data.get('visibility') or (self.original_visibility if self.instance.pk else 'private')
+        if not self.can_manage_access and value != self.original_visibility:
+            raise forms.ValidationError('Tylko właściciel prywatnego zadania może zmienić widoczność.')
+        return value
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.data.get('sharing_present') or self.data.get('shared_with'):
+            raise forms.ValidationError('Udostępniaj w zakładce „Członkowie”. Odśwież formularz.')
+        return cleaned
+
+    def _save_m2m(self):
+        super()._save_m2m()
+        if self.can_manage_access and self.instance.visibility == 'public':
+            self.instance.shared_with.clear()
+
+    def save(self, commit=True):
+        task = super().save(commit=False)
+        if task.visibility == 'private':
+            # A deleted private owner must never be replaced by a regular member.
+            if not task.pk or self.original_visibility == 'public':
+                task.private_owner = self.viewer
+        else:
+            task.private_owner = None
+        if commit:
+            task.save()
+            self.save_m2m()
+        return task
+
+
+class TaskForm(TaskAccessForm):
     project = forms.ModelChoiceField(
         queryset=TaskProject.objects.none(),
         required=False,
@@ -108,7 +165,7 @@ class TaskForm(forms.ModelForm):
         section = kwargs.pop('section', None)
         read_only = kwargs.pop('read_only', False)
         relation_scope = visible_to if read_only else editable_to
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, viewer=viewer, **kwargs)
         if workplace is None and section is not None:
             workplace = getattr(section.project, 'workplace', None)
         if user:
@@ -146,7 +203,7 @@ class TaskForm(forms.ModelForm):
         self.fields['due_at'].label = 'Termin wykonania'
         self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['reminder_at'].label = 'Przypomnienie'
-        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela prywatnego projektu lub Workspace.'
+        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela prywatnego zadania, projektu lub Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['assignee'].label = 'Przypisane do'
         self.fields['task_type'].label = 'Typ zadania'
@@ -177,6 +234,7 @@ class TaskForm(forms.ModelForm):
         model = Task
         fields = [
             'title',
+            'visibility',
             'parent',
             'section',
             'tags',
@@ -294,15 +352,6 @@ class TaskWorkLogForm(forms.ModelForm):
         if start and end and end <= start:
             self.add_error('ended_at', 'Zakończenie musi być późniejsze niż rozpoczęcie.')
         return cleaned
-
-
-class ProjectVisibilitySelect(forms.Select):
-    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
-        option = super().create_option(name, value, label, selected, index, subindex, attrs)
-        icon = {'private': 'lock', 'public': 'users'}.get(value)
-        if icon:
-            option['attrs']['data-ancore-option-icon'] = icon
-        return option
 
 
 class TaskProjectBaseForm(forms.ModelForm):
@@ -1102,7 +1151,7 @@ class QuickTaskForm(forms.ModelForm):
         }
 
 
-class TaskModalForm(forms.ModelForm):
+class TaskModalForm(TaskAccessForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         viewer = kwargs.pop('viewer', None) or user
@@ -1110,7 +1159,7 @@ class TaskModalForm(forms.ModelForm):
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
         sections_queryset = kwargs.pop('sections_queryset', None)
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, viewer=viewer, **kwargs)
         if workplace is None and section is not None:
             workplace = getattr(section.project, 'workplace', None)
         if sections_queryset is not None:
@@ -1137,7 +1186,7 @@ class TaskModalForm(forms.ModelForm):
         self.fields['due_at'].label = 'Termin wykonania'
         self.fields['due_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['reminder_at'].label = 'Przypomnienie'
-        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela prywatnego projektu lub Workspace.'
+        self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela prywatnego zadania, projektu lub Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['assignee'].label = 'Przypisane do'
         self.fields['task_type'].label = 'Typ zadania'
@@ -1152,6 +1201,7 @@ class TaskModalForm(forms.ModelForm):
         model = Task
         fields = [
             'title',
+            'visibility',
             'section',
             'tags',
             'description',
@@ -1200,7 +1250,7 @@ class TaskModalForm(forms.ModelForm):
         }
 
 
-class SubTaskModalForm(forms.ModelForm):
+class SubTaskModalForm(TaskAccessForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['due_at'].label = 'Termin wykonania'
@@ -1208,7 +1258,7 @@ class SubTaskModalForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ['title', 'description', 'status', 'due_at']
+        fields = ['title', 'visibility', 'description', 'status', 'due_at']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Tytuł podzadania',

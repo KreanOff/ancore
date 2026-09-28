@@ -1,10 +1,10 @@
-"""Explicit project privacy, in addition to the existing owner/Workspace scope.
+"""Project, group and task privacy within the existing owner/Workspace scope.
 
 Always pass the actual reader, never workspace_owner(request). Keep managers
 unfiltered: numbering, migrations and maintenance must see all stored records.
 Subqueries avoid adding nullable joins to rows locked with select_for_update().
 """
-from django.db.models import F, Q
+from django.db.models import F, Func, JSONField, Q
 from django.db.models.expressions import RawSQL
 
 from workplaces.services import workplaces_for_user
@@ -37,7 +37,7 @@ def require_deletable_tasks(roots, viewer):
 
 
 def editable_to(queryset, viewer):
-    """Visible data excluding observer projects and their entire task trees."""
+    """Visible data excluding observed resources and their entire task trees."""
     from .models import Task, TaskProject, TaskSection
 
     queryset = visible_to(queryset, viewer)
@@ -47,6 +47,9 @@ def editable_to(queryset, viewer):
         visibility='private', memberships__user=viewer, memberships__role='observer',
     ).exclude(private_owner=viewer).order_by()
     readonly_sections = TaskSection.objects.filter(
+        visibility='private', memberships__user=viewer, memberships__role='observer',
+    ).exclude(private_owner=viewer).order_by()
+    readonly_tasks = Task.objects.filter(
         visibility='private', memberships__user=viewer, memberships__role='observer',
     ).exclude(private_owner=viewer).order_by()
     model_name = queryset.model._meta.model_name
@@ -63,7 +66,7 @@ def editable_to(queryset, viewer):
         'taskworklog': 'task_id', 'taskcommentimage': 'activity__task_id',
     }
     if model_name in paths:
-        roots = Task.objects.filter(Q(section__project__in=readonly_projects) | Q(section__in=readonly_sections))
+        roots = Task.objects.filter(Q(section__project__in=readonly_projects) | Q(section__in=readonly_sections) | Q(pk__in=readonly_tasks))
         return queryset.exclude(**{paths[model_name] + '__in': task_tree_ids(roots)})
     return queryset
 
@@ -73,7 +76,7 @@ def require_editable(queryset, viewer):
     from django.core.exceptions import PermissionDenied
 
     if queryset.exclude(pk__in=editable_to(queryset.model.objects.all(), viewer)).exists():
-        raise PermissionDenied('Masz dostęp tylko do odczytu tego projektu lub grupy.')
+        raise PermissionDenied('Masz dostęp tylko do odczytu tego projektu, grupy lub zadania.')
 
 
 def visible_to(queryset, viewer):
@@ -103,14 +106,23 @@ def visible_to(queryset, viewer):
     task_sections = TaskSection.objects.filter(
         section_privacy, Q(project__visibility='public') | Q(project__in=projects),
     ).order_by()
-    hidden_roots = Task.objects.filter(section__isnull=False).exclude(section__in=task_sections)
+    task_privacy = privacy | Q(visibility='private', private_owner__isnull=False, shared_with=viewer)
+    allowed_tasks = Task.objects.filter(task_privacy).order_by().values('pk')
+    hidden_roots = Task.objects.filter(
+        (Q(section__isnull=False) & ~Q(section__in=task_sections)) | ~Q(pk__in=allowed_tasks)
+    )
     tasks = Task.objects.filter(scope).exclude(pk__in=task_tree_ids(hidden_roots)).order_by()
     paths = {
         'task': 'pk', 'taskattachment': 'task_id', 'taskactivity': 'task_id',
         'taskworklog': 'task_id', 'taskcommentimage': 'activity__task_id',
     }
     if model._meta.model_name in paths:
-        return queryset.filter(**{paths[model._meta.model_name] + '__in': tasks.values('pk')})
+        result = queryset.filter(**{paths[model._meta.model_name] + '__in': tasks.values('pk')})
+        if model._meta.model_name == 'taskactivity':
+            # Parent history must not reveal a private child's title or activity.
+            visible_ids = tasks.annotate(json_pk=Func(F('pk'), function='to_jsonb', output_field=JSONField())).values('json_pk')
+            result = result.filter(~Q(metadata__has_key='subtask_pk') | Q(metadata__subtask_pk__in=visible_ids))
+        return result
     if model._meta.model_name == 'taskprojectnote':
         return queryset.filter(project__in=projects)
     if model._meta.model_name == 'tasksectionnote':

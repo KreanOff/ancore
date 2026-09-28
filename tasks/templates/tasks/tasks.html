@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260927-section-sharing">
     {% if active_view == 'projects' or active_view == 'all_groups' or active_view == 'tags' %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">{% endif %}
     <script src="{% static 'js/workplace-team.js' %}?v=20260927-direct-sharing" defer></script>
-    <script src="{% static 'js/project-team.js' %}?v=20260927-direct-sharing" defer></script>
+    <script src="{% static 'js/project-team.js' %}?v=20260928-task-sharing" defer></script>
     {% include 'tasks/includes/tasks_project_tree_initial_state.html' %}
 {% endblock %}
 
@@ -1968,9 +1968,12 @@
                 </div>
                 {% endif %}
 
-                <div class="tasks-form-field">
-                    <label for="{{ task_modal_form.title.id_for_label }}">Tytuł zadania</label>
-                    {{ task_modal_form.title }}
+                <div class="tasks-project-heading-fields">
+                    <div class="tasks-form-field">
+                        <label for="{{ task_modal_form.title.id_for_label }}">Tytuł zadania</label>
+                        {{ task_modal_form.title }}
+                    </div>
+                    <div class="tasks-form-field"><label for="{{ task_modal_form.visibility.id_for_label }}">Widoczność</label>{{ task_modal_form.visibility }}</div>
                 </div>
                 <div class="tasks-form-field">
                     <label for="{{ task_modal_form.description.id_for_label }}">Opis</label>

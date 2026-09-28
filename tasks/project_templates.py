@@ -84,8 +84,8 @@ def save_project_template(project, actor=None):
     return TaskProjectTemplate.objects.create(
         user=project.user, workplace=project.workplace, name=project.name, template_name=project.name,
         description=project.description, structure=structure,
-        visibility='private' if project.visibility == 'private' or any(section.visibility == 'private' for section in sections) else 'public',
-        private_owner=(actor or project.private_owner or project.user) if project.visibility == 'private' or any(section.visibility == 'private' for section in sections) else None,
+        visibility='private' if project.visibility == 'private' or any(section.visibility == 'private' for section in sections) or any(task.visibility == 'private' for task in tasks) else 'public',
+        private_owner=(actor or project.private_owner or project.user) if project.visibility == 'private' or any(section.visibility == 'private' for section in sections) or any(task.visibility == 'private' for task in tasks) else None,
     )
 
 

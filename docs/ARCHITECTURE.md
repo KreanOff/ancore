@@ -121,9 +121,11 @@ flowchart LR
   `tasks/views/project_team.py` nadaje dostęp natychmiast aktywnym członkom tego
   samego Workspace. Grupy mają analogiczne `TaskSectionMembership` obsługiwane
   przez `tasks/views/section_team.py`; ich dostęp zawęża dostęp projektu.
-  Projekt i grupa nie wymagają zaproszeń ani akceptacji; modele zaproszeń
+  Zadania mają `TaskMembership` i `tasks/views/task_team.py`; ich prywatność
+  dodatkowo zawęża grupę i całe drzewo rodziców.
+  Projekt, grupa i zadanie nie wymagają zaproszeń ani akceptacji; modele zaproszeń
   pozostają wyłącznie historyczne.
-  Projekt, grupa i Workspace współdzielą szablony tabel zespołu oraz picker osoby.
+  Projekt, grupa, zadanie i Workspace współdzielą szablony tabel zespołu oraz picker osoby.
 - Zadania i Kanban mają różne hierarchie i osobne tabele. Kanban nie jest
   jedynie innym sposobem wyświetlenia `Task`.
 - Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.

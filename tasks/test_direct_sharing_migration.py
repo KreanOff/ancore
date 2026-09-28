@@ -8,7 +8,7 @@ from django.test import TransactionTestCase
 from django.utils import timezone
 
 from tasks.models import TaskProjectMembership, TaskSectionMembership
-from workplaces.models import WorkplaceMembership, create_workplace_for_user
+from workplaces.models import create_workplace_for_user
 
 
 class DirectSharingMigrationTests(TransactionTestCase):
@@ -24,6 +24,7 @@ class DirectSharingMigrationTests(TransactionTestCase):
         SectionMember = apps.get_model('tasks', 'TaskSectionMembership')
         ProjectInvite = apps.get_model('tasks', 'TaskProjectInvitation')
         SectionInvite = apps.get_model('tasks', 'TaskSectionInvitation')
+        WorkspaceMember = apps.get_model('workplaces', 'WorkplaceMembership')
         owner = get_user_model().objects.create_user(username='direct-owner', email='owner@migration.test')
         workspace = create_workplace_for_user(owner, 'Direct migration')
         expected = []
@@ -37,8 +38,8 @@ class DirectSharingMigrationTests(TransactionTestCase):
                         username=f'{kind}-{case}', email=f'{kind}-{case}@migration.test', is_active=case != 'inactive',
                     )
                     if case != 'foreign':
-                        WorkplaceMembership.objects.create(workplace=workspace, user=person,
-                                                           is_active=case != 'inactive_membership')
+                        WorkspaceMember.objects.create(workplace_id=workspace.pk, user_id=person.pk,
+                                                       is_active=case != 'inactive_membership')
                     project = Project.objects.create(
                         user_id=person.pk if case == 'wrong_scope' else owner.pk,
                         workplace_id=workspace.pk, name=f'{kind}-{case}',
@@ -58,7 +59,7 @@ class DirectSharingMigrationTests(TransactionTestCase):
                     actor = owner
                     if case in {'unauthorized_author', 'admin_promote', 'parent_observer'}:
                         actor = get_user_model().objects.create_user(username=f'actor-{kind}-{case}', email=f'actor-{kind}-{case}@migration.test')
-                        WorkplaceMembership.objects.create(workplace=workspace, user=actor)
+                        WorkspaceMember.objects.create(workplace_id=workspace.pk, user_id=actor.pk)
                         if case in {'admin_promote', 'parent_observer'}:
                             Membership.objects.create(**{kind: target, 'user_id': actor.pk, 'role': 'admin'})
                     if kind == 'section':

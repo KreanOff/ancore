@@ -26,6 +26,7 @@ class LegacyTaskTimeMigrationTests(TransactionTestCase):
         # Seed with current models before rolling back; later project fields
         # are intentionally absent from the historical schema under test.
         executor.migrate([('tasks', '0050_task_work_log')])
+        self.HistoricalTask = executor.loader.project_state([('tasks', '0050_task_work_log')]).apps.get_model('tasks', 'Task')
 
     def restore_schema(self):
         # This column exists only in the simulated legacy test database.
@@ -57,9 +58,10 @@ class LegacyTaskTimeMigrationTests(TransactionTestCase):
             cursor.execute('ALTER TABLE tasks_task ALTER COLUMN logged_seconds DROP DEFAULT')
             cursor.execute('UPDATE tasks_task SET logged_seconds = 3600 WHERE id = %s', [self.parent.pk])
 
-        # Reproduce the reported failure with the current model and old schema.
+        # Reproduce the missing legacy default using fields from that schema.
         with self.assertRaisesMessage(IntegrityError, 'logged_seconds'), transaction.atomic():
-            Task.objects.create(user=self.owner, section=self.section, title='Before repair')
+            self.HistoricalTask.objects.create(user_id=self.owner.pk, workplace_id=self.team.pk,
+                section_id=self.section.pk, task_id=2, code_number=2, title='Before repair')
 
         self.migrate_forward()
         task = Task.objects.create(user=self.owner, section=self.section, title='After repair')

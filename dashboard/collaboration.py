@@ -100,11 +100,13 @@ def mention_people(task):
         current, seen = task, set()
         while current is not None and current.pk not in seen:
             seen.add(current.pk)
+            resources = [current]
             if current.section_id:
-                project = current.section.project
-                if project.visibility == TaskProject.Visibility.PRIVATE:
-                    people = (people.filter(Q(pk=project.private_owner_id) | Q(pk__in=project.shared_with.values('pk')))
-                              if project.private_owner_id else people.none())
+                resources.extend([current.section, current.section.project])
+            for resource in resources:
+                if resource.visibility == 'private':
+                    people = (people.filter(Q(pk=resource.private_owner_id) | Q(pk__in=resource.shared_with.values('pk')))
+                              if resource.private_owner_id else people.none())
             current = current.parent if current.parent_id else None
     return people
 
