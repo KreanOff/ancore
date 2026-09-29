@@ -69,8 +69,8 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 
 - Katalog projektów — domyślny widok modułu.
 - Projekt — lista jego grup.
-- Wszystkie grupy oraz widok konkretnej grupy.
-- Wszystkie zadania i Moje zadania.
+- Grupy oraz widok konkretnej grupy.
+- Zadania i Zadania nieprzydzielone.
 - Szczegóły zadania/podzadania, komentarze z plikami, zdjęciami i `@Imię Nazwisko` oraz historia; nagłówek nie udostępnia przycisku obserwowania.
 - Obserwowanie projektu: nowe komentarze i zmiany jego zadań w filtrze „Obserwowane”.
 - Katalog tagów oraz formularze tworzenia i edycji.
@@ -80,7 +80,22 @@ serwera. UI ma wybór widocznych kolumn, zmianę szerokości/kolejności oraz ak
 zbiorcze. Zakres funkcji różni się między typami list; nie należy automatycznie
 przenosić każdej funkcji jednego katalogu do wszystkich pozostałych.
 
-Lista grup projektu współdzieli z „Wszystkie grupy” wyszukiwanie, sortowanie,
+„Projekty”, „Grupy” i „Zadania” mają cztery zakładki:
+„Prywatne” (domyślna, własne prywatne elementy, również udostępnione innym),
+„Udostępnione” (prywatne elementy innych osób dostępne odbiorcy), „Publiczne”
+(dostęp dla całego Workspace) i „Ulubione” (osobiste oznaczenia z dowolnej kategorii).
+Publiczna grupa dziedziczy kategorię projektu; prywatna grupa ma własnego
+właściciela i dodatkowe ograniczenia. Zakładki nie zmieniają uprawnień.
+Menu wiersza pozwala dodać lub usunąć ulubiony projekt/grupę, również obserwatorowi.
+Zadania mają w tym celu gwiazdkę po prawej stronie wiersza. Publiczne zadanie
+dziedziczy kategorię grupy i projektu; własne prywatne zadanie ma pierwszeństwo
+przed kategorią rodziców. Publiczne zadanie bez grupy trafia do „Publiczne”.
+Katalog nadal zawiera zadania główne, a podzadania są dostępne w szczegółach rodzica.
+Relacje `favorited_by` są osobne dla każdego konta i niezależne od skrótów sidebaru.
+Odebranie dostępu ukrywa również ulubiony element. „Zadania nieprzydzielone”, zadania grupy
+oraz grupy wewnątrz konkretnego projektu zachowują listę bez tych zakładek.
+
+Lista grup projektu współdzieli z „Grupy” wyszukiwanie, sortowanie,
 filtry statusu, typu, odpowiedzialnego i priorytetu oraz paginację w pasku
 narzędzi. Wyniki i opcje odpowiedzialnych pozostają ograniczone do otwartego
 projektu w bieżącym Workspace; czyszczenie filtrów nie usuwa tego kontekstu.
@@ -115,10 +130,13 @@ pełną macierz dostępu opisuje
 | `TaskAttachment` | Plik przypisany do zadania, nazwa i rozmiar |
 | `TaskWorkLog` | Wpis dziennika pracy: zadanie, autor, rozpoczęcie, zakończenie, opis i daty zapisu; liczba minut wynika z przedziału czasu |
 
-„Moje zadania” pokazują zadania przypisane zalogowanej osobie w aktywnym Workspace.
+„Zadania nieprzydzielone” (`view=unassigned-tasks`) pokazują dostępne zadania
+główne bez wykonawcy w aktywnym Workspace. Przypisanie osoby usuwa zadanie z tej listy.
+Dawny adres `view=my-tasks` nadal pokazuje zadania przypisane zalogowanej osobie,
+ale nie występuje w nowym menu.
 Wykonawcy i odpowiedzialni są ograniczeni do aktywnych kont zespołu.
 
-W katalogach „Wszystkie zadania” i „Moje zadania” limit strony dotyczy każdego
+W katalogach „Zadania” i „Zadania nieprzydzielone” limit strony dotyczy każdego
 stanu osobno: 50 oznacza do 50 nowych, realizowanych, rozwiązanych, zamkniętych
 i ponownie otwartych. Wspólne strzałki przechodzą do kolejnych pozycji w każdym
 stanie; liczba stron wynika z najliczniejszego stanu po filtrowaniu.

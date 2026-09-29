@@ -3,7 +3,7 @@
         <i data-icon="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
     </button>
     <div class="tasks-section-menu" role="menu">
-        {% if active_section or active_view == 'all_tasks' or active_view == 'my_tasks' %}
+        {% if active_section or active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
         <button type="button" class="tasks-project-menu-button" role="menuitem" id="edit-selected-task-menu-btn" disabled>
             <i data-icon="pencil" aria-hidden="true"></i>
             Edytuj zadanie

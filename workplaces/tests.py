@@ -777,7 +777,7 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.get(scoped_workplace_app_path(self.second_workplace, 'tasks'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f'href="{scoped_workplace_app_path(self.second_workplace, "tasks")}?view=my-tasks"')
+        self.assertContains(response, f'href="{scoped_workplace_app_path(self.second_workplace, "tasks")}?view=unassigned-tasks"')
         self.assertContains(response, f'data-view-url="/tasks/?project={project.pk}"')
         self.assertNotContains(response, '/workplaces/-/tasks/')
 

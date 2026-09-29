@@ -163,6 +163,37 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 
 ## 2. Powłoka aplikacji
 
+Menu Zadań i nagłówki katalogów używają nazw „Projekty”, „Grupy”, „Zadania”
+oraz „Zadania nieprzydzielone”, w tej kolejności. Ostatni widok pokazuje dostępne
+zadania główne bez przypisanej osoby, zachowuje filtry i paginację po statusach,
+ale pomija zbędny filtr wykonawcy. Pusty stan wyjaśnia brak zadań bez wykonawcy.
+Nazwy i adresy skrótów w ulubionych sidebaru odpowiadają temu menu.
+Na telefonie `tasks-topbar--unassigned` pozostawia 2.5rem miejsca na przycisk
+menu, a przyciski nagłówka w razie potrzeby przechodzą do następnego wiersza.
+
+Katalogi „Projekty”, „Grupy” i „Zadania” mają zakładki „Prywatne”,
+„Udostępnione”, „Publiczne” i „Ulubione” w nagłówku, po prawej stronie tytułu.
+Wariant `tasks-topbar--with-tabs` umieszcza je w `tasks-titlebar-left` z odstępem
+1.5rem od tytułu. `notifications-tabs tasks-directory-tabs` korzysta ze wspólnego
+turkusowego podkreślenia i tekstu 15px/400, bez osobnej dolnej ramki całego paska.
+Na wąskim ekranie zakładki przechodzą do kolejnego wiersza wewnątrz nagłówka;
+tytuł pozostawia miejsce na mobilny przycisk menu. Poniżej pozostaje pasek filtrów,
+wyszukiwania i paginacji. Zakładki są linkami z `aria-current="page"`,
+obsługiwanymi przez wspólną częściową nawigację i historię przeglądarki.
+Parametr `tab` zachowuje się podczas wyszukiwania, sortowania, filtrowania
+i paginacji; przełączenie kategorii zeruje numer strony, zachowując filtry.
+Nieznana lub pominięta wartość wybiera „Prywatne”.
+Menu wiersza zawiera „Dodaj do ulubionych” / „Usuń z ulubionych”. Zapis przez POST
+jest wspólny ze stale widoczną gwiazdką po prawej stronie wiersza zadania.
+Wariant `tasks-issue-row--with-favorite` dodaje kolumnę 30px, a przycisk
+`tasks-icon-button tasks-row-favorite` korzysta z turkusowego akcentu dla
+`aria-pressed="true"`. Jego kliknięcie i użycie klawiatury nie otwierają szczegółów.
+Gwiazdkę pokazuje wyłącznie katalog „Zadania”. Zapis ulubionych
+blokuje przycisk do zakończenia żądania, pokazuje potwierdzenie albo błąd bez
+zmiany oznaczenia. Usunięcie z zakładki „Ulubione” odświeża jej wyniki i liczniki,
+zachowując URL i przywracając fokus aktywnej zakładce. Puste stany odróżniają
+brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
+
 Źródło: [core/base.html](../core/templates/core/base.html).
 
 - Stała nawigacja z przełącznikiem Workspace, modułami, ulubionymi i profilem.
@@ -316,7 +347,7 @@ sprawdź wszystkie jego zmienne oraz miejsca wywołania.
 
 ### Ikony notatek
 
-„Wszystkie projekty” mają osobną kolumnę „Działania” (40px) po zaznaczeniu,
+„Projekty” mają osobną kolumnę „Działania” (40px) po zaznaczeniu,
 przed zachowanymi kolumnami edycji, informacji i notatek. Przycisk z trzema
 paskami używa `row-actions.js` i wspólnego popovera Dokumentów. Menu otwiera
 dotychczasowe okna projektu, zapisuje szablon lub wywołuje istniejące potwierdzenie
@@ -344,11 +375,11 @@ Zapis szablonu jest dostępny wyłącznie dla projektów Zadań. `tasks-director
 oznacza tabele z tym układem. Grupy wewnątrz projektu i tablice Kanbana
 zachowują dotychczasowe kontrolki.
 
-Na ekranie „Wszystkie projekty” od szerokości okna 1181px kolumny
+Na ekranie „Projekty” od szerokości okna 1181px kolumny
 „Ostatnia aktywność” i „Data utworzenia” mają domyślnie odpowiednio 190px i 170px.
 Wartości określa `projectColumnDefaultWidths` w `tasks.js`; obowiązują przy braku
 zapisanych szerokości oraz po „Resetuj”. Ręcznie zapisane szerokości mają pierwszeństwo.
-„Wszystkie grupy” w tym samym zakresie szerokości okna mają domyślną kolumnę
+„Grupy” w tym samym zakresie szerokości okna mają domyślną kolumnę
 „Data utworzenia” 170px (`allGroupsColumnDefaultWidths`), z tymi samymi zasadami
 zapisu i resetowania szerokości.
 Domyślna kolejność danych w „Wszystkich grupach” zaczyna się od „Kod grupy”,
@@ -395,8 +426,7 @@ przycisk nawigacji aplikacji, aby nie zasłaniał strzałki powrotu.
 
 ### Paski listy grup
 
-Lista grup otwartego projektu używa tych samych dwóch pasków co „Wszystkie
-grupy”: `tasks-topbar--directory` z tytułem i akcjami oraz
+Lista grup otwartego projektu używa tych samych dwóch pasków co „Grupy”: `tasks-topbar--directory` z tytułem i akcjami oraz
 `tasks-filterbar--directory` z kolumnami, „Filtruj”, „Sortuj”, wyszukiwaniem
 i wspólnym `directory_pagination_toolbar.html`. Projekt zachowuje nazwę
 i strzałkę powrotu. Paginacja występuje wyłącznie w drugim pasku.
@@ -408,7 +438,7 @@ nawigacji aplikacji, aby strzałka powrotu pozostała dostępna.
 
 ### Limit zadań według stanu
 
-„Wszystkie zadania” i „Moje zadania” używają wspólnego paska paginacji.
+„Zadania” i „Zadania nieprzydzielone” używają wspólnego paska paginacji.
 Wariant `page_size_suffix='/ stan'` w `directory_pagination_toolbar.html`
 wyjaśnia, że np. 50 dotyczy osobno każdej sekcji statusu. Etykieta dostępności
 brzmi „Liczba zadań na stronie w każdym stanie”. Strzałki zmieniają stronę
@@ -760,7 +790,7 @@ Lista odzwierciedla bieżący wybór oraz przeciągnięte pliki; nazwy są zwyk�
 i przy inicjalizacji po `ancore:content-loaded`, bez powielania listenerów.
 
 Lista Dokumentów używa komponentu `tasks-directory-sheet tasks-project-sheet`
-z katalogu „Wszystkie projekty”, z wariantem `office-document-sheet` w `office.css`.
+z katalogu „Projekty”, z wariantem `office-document-sheet` w `office.css`.
 Wiersze mają 35px wysokości; nagłówki z ikonami, tekst, separatory, turkusowe
 podświetlenie oraz pasek przy lewej krawędzi po najechaniu pochodzą ze wspólnego CSS.
 Pierwsza kolumna 40px zawiera stale widoczne checkboxy w wariancie
@@ -1367,7 +1397,7 @@ również po `ancore:content-loaded` bez powielania listenerów.
 
 Tabele członków (`members_table.html`) i wysłanych zaproszeń
 (`invitations_table.html`) korzystają z tego samego komponentu
-co „Wszystkie projekty”: `tasks-directory-board tasks-directory-sheet
+co „Projekty”: `tasks-directory-board tasks-directory-sheet
 tasks-project-sheet`, wspólnych nagłówków, komórek i wierszy. Wariant
 `workplace-team-sheet` określa wyłącznie układ sześciu kolumn: zaznaczenie
 (40px), działania (40px), nazwa z avatarem, e-mail, rola i data dołączenia
@@ -1383,7 +1413,7 @@ Tabela ma role `table`/`rowgroup`/`row`/`columnheader`/`cell`.
 Układ kolumn skaluje się z oknem; `data-directory-resize="false"` wyłącza
 zapamiętywanie i ręczne rozszerzanie kolumn przez mechanizm katalogu projektów.
 Checkboxy używają `tasks-project-sheet--selectable` i `tasks-row-checkbox`,
-tak jak „Wszystkie projekty”. Nagłówek zaznacza wszystkie wiersze wyłącznie
+tak jak „Projekty”. Nagłówek zaznacza wszystkie wiersze wyłącznie
 swojej tabeli i pokazuje stan częściowego wyboru. Kliknięcie pustego miejsca
 w kolumnie zaznaczenia też przełącza checkbox. `workplace-team.js`
 synchronizuje podświetlenie i nagłówek niezależnie dla obu zakładek, również

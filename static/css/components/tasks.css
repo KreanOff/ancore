@@ -14724,6 +14724,46 @@ body.is-resizing-directory-columns {
 }
 .tasks-issue-tabbar .tasks-issue-tabs { border: 0; min-width: 0; }
 .tasks-issue-tabbar .tasks-issue-tabs button { font-size: var(--font-size-lg); }
+.tasks-topbar.tasks-topbar--with-tabs { padding-block: 0; }
+.tasks-topbar--with-tabs .tasks-titlebar-left {
+    flex-wrap: wrap;
+    gap: 0 1.5rem;
+}
+.tasks-directory-tabs.notifications-tabs {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    border: 0;
+    padding: 0;
+}
+.tasks-directory-tabs.notifications-tabs a {
+    font-size: var(--font-size-lg);
+    font-weight: 400 !important;
+}
+
+.tasks-issue-row.tasks-issue-row--with-favorite {
+    grid-template-columns: 18px 22px 24px minmax(190px, 1fr) max-content max-content max-content 30px;
+}
+
+.tasks-row-favorite.tasks-icon-button {
+    border-color: transparent;
+    background: transparent;
+}
+
+.tasks-row-favorite.tasks-icon-button:hover {
+    background: var(--nav-selected-bg);
+}
+
+.tasks-row-favorite.tasks-icon-button[aria-pressed="true"] svg {
+    color: var(--system-accent);
+}
+@media (max-width: 767px) {
+    .tasks-topbar.tasks-topbar--with-tabs { padding-bottom: 0.5rem; }
+    .tasks-topbar--unassigned .tasks-titlebar-left { padding-left: 2.5rem; }
+    .tasks-topbar--with-tabs .tasks-topbar-title {
+        min-height: 45px;
+        margin-left: 2.5rem;
+    }
+}
 .tasks-issue-page [data-task-tab-panel][hidden],
 .tasks-issue-page [data-task-main-action][hidden],
 .tasks-issue-page [data-task-log-action][hidden],

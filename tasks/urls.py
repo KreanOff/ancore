@@ -7,10 +7,12 @@ from .views.project_team import project_team, project_candidates
 from .views.section_team import section_team, section_candidates
 
 from .views.task_team import task_team, task_candidates
+from .views.directory import directory_favorite
 
 app_name = 'tasks'
 
 urlpatterns = [
+    path('favorites/<str:kind>/<int:object_id>/', directory_favorite, name='directory_favorite'),
     path('items/<int:task_id>/team/', task_team, name='task_team'),
     path('items/<int:task_id>/team/candidates/', task_candidates, name='task_candidates'),
     path('groups/<int:section_id>/team/', section_team, name='section_team'),

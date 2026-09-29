@@ -38,30 +38,29 @@
         </div>
 
         <nav class="tasks-rail-nav">
-            <a href="{% url 'tasks:tasks' %}?view=my-tasks" class="tasks-rail-link {% if active_view == 'my_tasks' %}is-active{% endif %}">
-                <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-icon="list-todo" aria-hidden="true"></i>
-                </span>
-                Moje zadania
-            </a>
-            <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
-                <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-icon="list-checks" aria-hidden="true"></i>
-                </span>
-                Wszystkie zadania
-            </a>
-            <div class="tasks-rail-nav-separator" role="separator" aria-hidden="true"></div>
             <a href="{% url 'tasks:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <i data-icon="folders" aria-hidden="true"></i>
                 </span>
-                Wszystkie projekty
+                Projekty
             </a>
             <a href="{% url 'tasks:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <i data-icon="folder-open" aria-hidden="true"></i>
                 </span>
-                Wszystkie grupy
+                Grupy
+            </a>
+            <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <i data-icon="list-checks" aria-hidden="true"></i>
+                </span>
+                Zadania
+            </a>
+            <a href="{% url 'tasks:tasks' %}?view=unassigned-tasks" class="tasks-rail-link {% if active_view == 'unassigned_tasks' %}is-active{% endif %}">
+                <span class="tasks-rail-icon" aria-hidden="true">
+                    <i data-icon="list-todo" aria-hidden="true"></i>
+                </span>
+                Zadania nieprzydzielone
             </a>
             <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
@@ -150,7 +149,7 @@
 {% block content %}
 <div class="tasks-page tasks-list-page" data-task-app="tasks" data-task-base-url="{{ workplace_app_urls.tasks }}">
     <section class="tasks-workspace" aria-label="Lista zadań">
-        <header class="tasks-topbar{% if not active_project or active_view == 'project' %} tasks-topbar--directory tasks-topbar--project-directory{% endif %}">
+        <header class="tasks-topbar{% if not active_project or active_view == 'project' %} tasks-topbar--directory tasks-topbar--project-directory{% endif %}{% if directory_tabs %} tasks-topbar--with-tabs{% endif %}{% if active_view == 'unassigned_tasks' %} tasks-topbar--unassigned{% endif %}">
             <div class="tasks-titlebar-left{% if active_view == 'project' or active_view == 'section' %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
                 {% if active_view == 'project' and active_project %}
                 <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" title="Wróć do wszystkich projektów" aria-label="Wróć do wszystkich projektów" data-projects-back-link>
@@ -180,22 +179,32 @@
                     </span>
                     {% else %}
                     {% if active_view == 'all_tasks' %}
-                    <span>Wszystkie zadania</span>
+                    <span>Zadania</span>
                     {% elif active_view == 'my_tasks' %}
                     <span>Moje zadania</span>
+                    {% elif active_view == 'unassigned_tasks' %}
+                    <span>Zadania nieprzydzielone</span>
                     {% elif active_view == 'all_groups' %}
-                    <span>Wszystkie grupy</span>
+                    <span>Grupy</span>
                     {% elif active_view == 'tags' %}
                     <span>Tagi</span>
                     {% else %}
-                    <span>Wszystkie projekty</span>
+                    <span>Projekty</span>
                     {% endif %}
                     {% endif %}
                 </span>
                 {% endif %}
+                {% if directory_tabs %}
+                <nav class="notifications-tabs tasks-directory-tabs" aria-label="{% if active_view == 'projects' %}Widok projektów{% elif active_view == 'all_tasks' %}Widok zadań{% else %}Widok grup{% endif %}" data-directory-tabs="{{ directory_tab }}">
+                    {% for tab in directory_tabs %}
+                    <a href="{{ tab.url }}"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }}</a>
+                    {% endfor %}
+                </nav>
+                {% endif %}
             </div>
-            {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' or active_view == 'all_tasks' or active_view == 'my_tasks' %}
-            <form hidden id="projects-search-form" method="get" action="{% url 'tasks:tasks' %}" data-project-search-form{% if active_view == 'all_tasks' or active_view == 'my_tasks' %} data-server-directory-filters="true"{% endif %}>
+            {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' or active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
+            <form hidden id="projects-search-form" method="get" action="{% url 'tasks:tasks' %}" data-project-search-form{% if active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %} data-server-directory-filters="true"{% endif %}>
+                {% if directory_tabs %}<input type="hidden" name="tab" value="{{ directory_tab }}">{% endif %}
                 {% if active_view == 'project' and active_project %}
                 <input type="hidden" name="project" value="{{ active_project.id }}">
                 {% elif active_view == 'all_groups' %}
@@ -212,11 +221,13 @@
                 <input type="hidden" name="view" value="all-tasks">
                 {% elif active_view == 'my_tasks' %}
                 <input type="hidden" name="view" value="my-tasks">
+                {% elif active_view == 'unassigned_tasks' %}
+                <input type="hidden" name="view" value="unassigned-tasks">
                 {% endif %}
                 {% if active_view != 'tags' %}
-                <input type="hidden" id="filter-priority" name="priority" value="{% if active_view == 'project' %}{{ project_section_priority_filter }}{% elif active_view == 'all_groups' %}{{ group_priority_filter }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}{{ task_priority_filter }}{% else %}{{ project_priority_filter }}{% endif %}">
+                <input type="hidden" id="filter-priority" name="priority" value="{% if active_view == 'project' %}{{ project_section_priority_filter }}{% elif active_view == 'all_groups' %}{{ group_priority_filter }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}{{ task_priority_filter }}{% else %}{{ project_priority_filter }}{% endif %}">
                 {% endif %}
-                {% if active_view == 'all_tasks' or active_view == 'my_tasks' %}
+                {% if active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
                 <input type="hidden" id="filter-status" name="status" value="{{ task_status_filter }}" data-project-filter-input="status">
                 <input type="hidden" name="task_project" value="{{ task_project_filter }}" data-project-filter-input="task_project">
                 <input type="hidden" name="task_section" value="{{ task_section_filter }}" data-project-filter-input="task_section">
@@ -248,7 +259,7 @@
                 <input type="hidden" name="responsible" value="{{ project_responsible_filter }}" data-project-filter-input="responsible">
                 <input type="hidden" name="sort" value="{{ project_sort_param }}" data-project-sort-input>
                 {% endif %}
-                <input type="hidden" name="page_size" value="{% if active_view == 'project' %}{{ project_section_window.page_size }}{% elif active_view == 'all_groups' %}{{ group_window.page_size }}{% elif active_view == 'tags' %}{{ tag_window.page_size }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}{{ task_window.page_size }}{% else %}{{ project_window.page_size }}{% endif %}" data-project-search-page-size>
+                <input type="hidden" name="page_size" value="{% if active_view == 'project' %}{{ project_section_window.page_size }}{% elif active_view == 'all_groups' %}{{ group_window.page_size }}{% elif active_view == 'tags' %}{{ tag_window.page_size }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}{{ task_window.page_size }}{% else %}{{ project_window.page_size }}{% endif %}" data-project-search-page-size>
             </form>
             {% else %}
             <div class="tasks-titlebar-search tasks-search-actions">
@@ -276,7 +287,7 @@
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj tag" aria-label="Dodaj tag" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag>
                     <span aria-hidden="true"><i data-icon="plus"></i></span><span>Dodaj tag</span>
                 </button>
-                {% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}
+                {% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj zadanie" aria-label="Dodaj zadanie" aria-haspopup="dialog" aria-controls="issue-modal" data-open-issue {% if not can_create_issue %}disabled{% endif %}>
                     <span aria-hidden="true"><i data-icon="plus"></i></span><span>Dodaj zadanie</span>
                 </button>
@@ -287,12 +298,12 @@
             {% if active_project %}{% include 'tasks/includes/follow_button.html' %}{% endif %}
         </header>
 
-        <div class="tasks-filterbar{% if not active_project or active_view == 'project' %} tasks-filterbar--directory{% endif %}{% if active_view == 'projects' %} tasks-filterbar--project-directory{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %} tasks-filterbar--task-directory{% endif %}">
+        <div class="tasks-filterbar{% if not active_project or active_view == 'project' %} tasks-filterbar--directory{% endif %}{% if active_view == 'projects' %} tasks-filterbar--project-directory{% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %} tasks-filterbar--task-directory{% endif %}">
             <div class="tasks-filterbar-left">
                 {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' %}
                 {% include 'tasks/includes/directory_column_manager.html' %}
                 {% endif %}
-                {% if active_view == 'all_tasks' or active_view == 'my_tasks' %}
+                {% if active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
                 {% include 'tasks/includes/task_display_manager.html' %}
                 {% endif %}
                 {% if active_view == 'projects' %}
@@ -314,7 +325,7 @@
                         {% endfor %}
                     </div>
                 </div>
-                {% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}
+                {% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
                 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ task_default_sort }}">
                     <button type="button" class="tasks-filter-button tasks-project-query-trigger tasks-sort-button{% if task_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ task_sort_label }}" title="Sortowanie: {{ task_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if task_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ task_sort_direction }}">
                         <i data-icon="{% if task_sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
@@ -354,7 +365,7 @@
                 {% endif %}
                 {% if active_view == 'all_groups' or active_view == 'project' %}
                 {% include 'tasks/includes/group_directory_filter_builder.html' %}
-                {% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}
+                {% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
                 {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=task_has_active_filters only %}
                 {% elif active_view == 'tags' %}
                 {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=tag_status_filter|default:tag_priority_filter|default:tag_category_filter|default:tag_scope_filter|default:tag_owner_filter only %}
@@ -519,7 +530,7 @@
                     </div>
                 </div>
                 {% endif %}
-                {% if active_view == 'all_tasks' or active_view == 'my_tasks' %}
+                {% if active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
                 <div class="tasks-filter-dropdown" data-project-filter-menu="task_project">
                     <button type="button" class="tasks-filter-button{% if task_project_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="task_project">
                         <i data-icon="folder-kanban" aria-hidden="true"></i>
@@ -562,6 +573,7 @@
                         <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
                     </div>
                 </div>
+                {% if active_view != 'unassigned_tasks' %}
                 <div class="tasks-filter-dropdown" data-project-filter-menu="task_assignee">
                     <button type="button" class="tasks-filter-button{% if task_assignee_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="task_assignee">
                         <i data-icon="circle-user-round" aria-hidden="true"></i>
@@ -583,6 +595,7 @@
                         <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
                     </div>
                 </div>
+                {% endif %}
                 <div class="tasks-filter-dropdown" data-project-filter-menu="task_type">
                     <button type="button" class="tasks-filter-button{% if task_type_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="task_type">
                         <i data-icon="list-filter" aria-hidden="true"></i>
@@ -623,7 +636,7 @@
                 {% if not active_project or active_view == 'project' %}
                 <label class="tasks-search-field tasks-project-search" for="filter-search">
                     <i data-icon="search" aria-hidden="true"></i>
-                    <input id="filter-search" type="search" name="q" form="projects-search-form" value="{% if active_view == 'all_groups' or active_view == 'project' %}{{ group_query }}{% elif active_view == 'tags' %}{{ tag_query }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}{{ task_query }}{% else %}{{ project_query }}{% endif %}" placeholder="{% if active_view == 'all_groups' or active_view == 'project' %}Szukaj grup{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}Szukaj zadań{% else %}Szukaj projektów{% endif %}" aria-label="{% if active_view == 'all_groups' or active_view == 'project' %}Szukaj grup{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}Szukaj zadań{% else %}Szukaj projektów{% endif %}" autocomplete="off">
+                    <input id="filter-search" type="search" name="q" form="projects-search-form" value="{% if active_view == 'all_groups' or active_view == 'project' %}{{ group_query }}{% elif active_view == 'tags' %}{{ tag_query }}{% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}{{ task_query }}{% else %}{{ project_query }}{% endif %}" placeholder="{% if active_view == 'all_groups' or active_view == 'project' %}Szukaj grup{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}Szukaj zadań{% else %}Szukaj projektów{% endif %}" aria-label="{% if active_view == 'all_groups' or active_view == 'project' %}Szukaj grup{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}Szukaj zadań{% else %}Szukaj projektów{% endif %}" autocomplete="off">
                 </label>
                 {% if active_view == 'projects' %}
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=project_window items_exist=projects pages_label='Strony projektów' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
@@ -780,7 +793,7 @@
             </div>
             {% endfor %}
         </div>
-        {% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}
+        {% elif active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
         <div class="tasks-table-wrap tasks-board{% if total_task_count == 0 %} tasks-board--empty{% endif %}">
             {% for status_group in all_status_groups %}
             {% if status_group.count %}
@@ -807,8 +820,15 @@
                     <i data-icon="{% if active_view == 'all_tasks' %}list-checks{% else %}list-todo{% endif %}" aria-hidden="true"></i>
                 </span>
                 <div class="tasks-empty-state__copy">
+                    {% if directory_tabs %}
+                    {% include 'tasks/includes/directory_empty_copy.html' with noun='zadań' query=task_window.query has_filters=task_has_active_filters %}
+                    {% elif active_view == 'unassigned_tasks' and not task_has_active_filters %}
+                    <h2>Brak zadań nieprzydzielonych.</h2>
+                    <p>Tutaj pojawią się zadania bez przypisanej osoby.</p>
+                    {% else %}
                     <h2>{% if task_has_active_filters %}Nie znaleziono zadań.{% else %}Nie ma jeszcze zadań.{% endif %}</h2>
                     <p>{% if task_has_active_filters %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Nowe zadania pojawią się tutaj po ich utworzeniu.{% endif %}</p>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -851,7 +871,7 @@
                 {% for section in all_sections %}
                 <article class="tasks-issue-row tasks-section-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row tasks-section-sheet__row" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.get_status_display }} {{ section.get_kind_display }} {% if section.owner %}{{ section.owner.get_full_name }} {{ section.owner.username }} {{ section.owner.email }}{% endif %}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }} {{ section.code|default:'' }} {{ section.full_code|default:'' }} {{ section.get_status_display }} {{ section.get_kind_display }} {{ section.get_priority_display }} {% if section.owner %}{{ section.owner.get_full_name }} {{ section.owner.username }} {{ section.owner.email }}{% endif %}" data-view-url="{% url 'tasks:task_group' section.id %}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz grupę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.code|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-section-status="{{ section.status|default:'open' }}" data-section-kind="{{ section.kind|default:'issues' }}" data-section-owner-id="{{ section.owner_id|default:'' }}" data-section-due-at="{{ section.due_at|date:'Y-m-d' }}" data-section-wip-limit="{{ section.wip_limit|default:'' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
-                    {% include 'tasks/includes/directory_row_menu.html' with kind='section' can_preview_section=True item_id=section.pk item_name=section.title can_manage=section.can_manage edit_label='Edytuj grupę' info_label='Informacje o grupie' notes_label='Notatki grupy' edit_modal='section-rename-modal' delete_label='Usuń grupę' only %}
+                    {% include 'tasks/includes/directory_row_menu.html' with kind='section' can_preview_section=True item_id=section.pk item_name=section.title can_manage=section.can_manage edit_label='Edytuj grupę' info_label='Informacje o grupie' notes_label='Notatki grupy' edit_modal='section-rename-modal' delete_label='Usuń grupę' favorite_url=section.favorite_url is_favorite=section.is_favorite only %}
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
                         <button type="button" class="tasks-project-sheet__edit-button" title="{% if section.can_edit %}Edytuj grupę{% else %}Podgląd grupy{% endif %}" aria-label="{% if section.can_edit %}Edytuj grupę{% else %}Podgląd grupy{% endif %} {{ section.title }}" aria-haspopup="dialog" aria-controls="section-rename-modal" data-open-section-rename data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}" data-section-code="{{ section.code|default:''|escape }}" data-section-priority="{{ section.priority|default:'none' }}" data-section-status="{{ section.status|default:'open' }}" data-section-kind="{{ section.kind|default:'issues' }}" data-section-owner-id="{{ section.owner_id|default:'' }}" data-section-due-at="{{ section.due_at|date:'Y-m-d' }}" data-section-wip-limit="{{ section.wip_limit|default:'' }}" data-can-manage="{% if section.can_manage %}true{% else %}false{% endif %}">
                             <i data-icon="{% if section.can_edit %}pencil{% else %}eye{% endif %}" aria-hidden="true"></i>
@@ -929,8 +949,7 @@
                         <i data-icon="folder-open" aria-hidden="true"></i>
                     </span>
                     <div class="tasks-empty-state__copy">
-                        <h2>{% if group_query or group_priority_filter or group_status_filter or group_kind_filter or group_project_filter or group_owner_filter %}Nie znaleziono grup.{% else %}Nie ma jeszcze grup.{% endif %}</h2>
-                        <p>{% if group_query or group_priority_filter or group_status_filter or group_kind_filter or group_project_filter or group_owner_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą grupę, aby uporządkować zadania.{% endif %}</p>
+                        {% include 'tasks/includes/directory_empty_copy.html' with noun='grup' query=group_query has_filters=group_has_active_filters %}
                     </div>
                 </div>
                 {% endfor %}
@@ -1081,7 +1100,7 @@
                 {% for project in projects %}
                 <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} {{ project.get_priority_display|default:'' }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-view-url="{% url 'tasks:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-visibility="{{ project.visibility }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}">
                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz projekt {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-visibility="{{ project.visibility }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="{% if project.can_manage %}true{% else %}false{% endif %}">
-                    {% include 'tasks/includes/directory_row_menu.html' with kind='project' item_id=project.pk item_name=project.name can_manage=project.can_manage edit_label='Edytuj projekt' info_label='Informacje o projekcie' notes_label='Notatki projektu' edit_modal='project-rename-modal' delete_label='Usuń projekt' can_save_template=True can_preview_project=True only %}
+                    {% include 'tasks/includes/directory_row_menu.html' with kind='project' item_id=project.pk item_name=project.name can_manage=project.can_manage edit_label='Edytuj projekt' info_label='Informacje o projekcie' notes_label='Notatki projektu' edit_modal='project-rename-modal' delete_label='Usuń projekt' can_save_template=True can_preview_project=True favorite_url=project.favorite_url is_favorite=project.is_favorite only %}
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
                         <button type="button" class="tasks-project-sheet__edit-button" title="{% if project.can_edit %}Edytuj projekt{% else %}Podgląd projektu{% endif %}" aria-label="{% if project.can_edit %}Edytuj projekt{% else %}Podgląd projektu{% endif %} {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-visibility="{{ project.visibility }}" data-project-source="{{ project.source|default:''|escape }}">
                             <i data-icon="{% if project.can_edit %}pencil{% else %}eye{% endif %}" aria-hidden="true"></i>
@@ -1153,8 +1172,7 @@
                         <i data-icon="folders" aria-hidden="true"></i>
                     </span>
                     <div class="tasks-empty-state__copy">
-                        <h2>{% if project_query or project_has_active_filters %}Nie znaleziono projektów.{% else %}Nie ma jeszcze projektów.{% endif %}</h2>
-                        <p>{% if project_query or project_has_active_filters %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszy projekt, aby rozpocząć pracę.{% endif %}</p>
+                        {% include 'tasks/includes/directory_empty_copy.html' with noun='projektów' query=project_query has_filters=project_has_active_filters %}
                     </div>
                 </div>
                 {% endfor %}

@@ -23,6 +23,7 @@ from django.contrib import messages
 
 from dashboard.collaboration import follow_context, mention_choices
 from tasks.access import editable_to, require_editable, visible_to, require_deletable_tasks
+from tasks.directory import decorate_favorites, directory_queryset, directory_tab, directory_tabs
 from tasks.views.task_team import team_payload as _task_team_payload
 from tasks.sharing import project_access_data, section_access_data
 from workplaces.models import Workplace
@@ -1575,6 +1576,8 @@ def _task_window_for_request(request, queryset):
     project_filter = (request.GET.get('task_project') or '').strip()
     section = (request.GET.get('task_section') or '').strip()
     assignee = (request.GET.get('task_assignee') or '').strip()
+    if request.GET.get('view') == 'unassigned-tasks':
+        assignee = ''
     task_type = (request.GET.get('task_type') or '').strip()
     due = (request.GET.get('task_due') or '').strip()
     sort = _task_sort_value((request.GET.get('sort') or '').strip())
@@ -1858,6 +1861,7 @@ def _project_for_user(user, project_id, workplace=None, viewer=None):
 
 def _project_window_for_request(request, field_configuration=None):
     workplace = _active_workplace(request)
+    tab = directory_tab(request)
     field_configuration = field_configuration or _project_field_configuration(workspace_owner(request), workplace, viewer=request.user)
     project_choices = field_configuration['choices']
     page_size = _project_page_size(request)
@@ -1899,6 +1903,7 @@ def _project_window_for_request(request, field_configuration=None):
         project_choices=project_choices,
         viewer=request.user,
     )
+    queryset = directory_queryset(queryset, request.user, tab)
     queryset = _project_sort_queryset(queryset, sort, project_choices=project_choices, viewer=request.user)
     total_projects = queryset.count()
     total_pages = max(1, (total_projects + page_size - 1) // page_size)
@@ -1916,6 +1921,7 @@ def _project_window_for_request(request, field_configuration=None):
     )
 
     _decorate_project_directory_metrics(projects, viewer=request.user)
+    decorate_favorites(projects, request, 'project')
     _decorate_project_field_values(projects, field_configuration)
     _decorate_directory_members(projects, current_user=workspace_owner(request), viewer=request.user)
 
@@ -1945,6 +1951,7 @@ def _project_window_for_request(request, field_configuration=None):
     )
 
     base_params = {
+        'tab': tab,
         'q': query,
         'name': name,
         'name_op': name_operator if _project_text_filter_is_active(name, name_operator) and name_operator != 'contains' else '',
@@ -1971,9 +1978,9 @@ def _project_window_for_request(request, field_configuration=None):
         previous_page_params = {**base_params, 'page': current_page - 1}
         if current_page - 1 == 1:
             previous_page_params.pop('page', None)
-        previous_url = _projects_url(previous_page_params)
+        previous_url = _projects_url(previous_page_params, base_url=request.path)
     if has_next:
-        next_url = _projects_url({**base_params, 'page': current_page + 1})
+        next_url = _projects_url({**base_params, 'page': current_page + 1}, base_url=request.path)
 
     first_visible = 0
     last_visible = 0
@@ -1986,6 +1993,7 @@ def _project_window_for_request(request, field_configuration=None):
 
     return {
         'projects': projects,
+        'tab': tab,
         'query': query,
         'name': name,
         'name_operator': name_operator,
@@ -2019,7 +2027,7 @@ def _project_window_for_request(request, field_configuration=None):
         'total_projects': total_projects,
         'page_size': page_size,
         'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
-        'page_items': _project_page_items(current_page, total_pages, base_params) if total_projects else [],
+        'page_items': _project_page_items(current_page, total_pages, base_params, base_url=request.path) if total_projects else [],
         'has_previous': has_previous,
         'has_next': has_next,
         'previous_url': previous_url,
@@ -2031,6 +2039,7 @@ def _project_window_for_request(request, field_configuration=None):
 
 def _group_window_for_request(request, field_configuration=None, project=None):
     workplace = _active_workplace(request)
+    tab = directory_tab(request) if project is None else None
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
@@ -2053,6 +2062,8 @@ def _group_window_for_request(request, field_configuration=None, project=None):
     )
     if project is not None:
         queryset = queryset.filter(project=project)
+    else:
+        queryset = directory_queryset(queryset, request.user, tab)
     queryset = _group_sort_queryset(queryset, sort, viewer=request.user)
     total_groups = queryset.count()
     total_pages = max(1, (total_groups + page_size - 1) // page_size)
@@ -2060,6 +2071,8 @@ def _group_window_for_request(request, field_configuration=None, project=None):
     offset = (current_page - 1) * page_size
 
     sections = list(queryset[offset:offset + page_size])
+    if project is None:
+        decorate_favorites(sections, request, 'section')
     _decorate_group_directory_rows(sections, current_user=workspace_owner(request), viewer=request.user)
     if field_configuration:
         _decorate_project_field_values(
@@ -2069,6 +2082,7 @@ def _group_window_for_request(request, field_configuration=None, project=None):
 
     base_params = {
         **({'project': project.id} if project is not None else {'view': 'all-groups'}),
+        'tab': tab,
         'q': query,
         'priority': priority,
         'status': status,
@@ -2111,6 +2125,7 @@ def _group_window_for_request(request, field_configuration=None, project=None):
 
     return {
         'sections': sections,
+        'tab': tab,
         'query': query,
         'priority': priority,
         'status': status,
@@ -3176,6 +3191,7 @@ def _tasks_page(request, active_section=None):
     tag_form = TaskTagForm(user=workspace_owner(request), workplace=workplace)
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
+    unassigned_tasks_view = request.GET.get('view') == 'unassigned-tasks' and not active_section
     all_groups_view = request.GET.get('view') == 'all-groups' and not active_section
     tags_view = request.GET.get('view') == 'tags' and not active_section
     shared_tasks_view = False
@@ -3185,6 +3201,7 @@ def _tasks_page(request, active_section=None):
     if (
         all_tasks_view
         or my_tasks_view
+        or unassigned_tasks_view
         or all_groups_view
         or tags_view
         or shared_tasks_view
@@ -3712,6 +3729,8 @@ def _tasks_page(request, active_section=None):
         active_view = 'tags'
     elif my_tasks_view:
         active_view = 'my_tasks'
+    elif unassigned_tasks_view:
+        active_view = 'unassigned_tasks'
     elif all_tasks_view:
         active_view = 'all_tasks'
     else:
@@ -3719,6 +3738,10 @@ def _tasks_page(request, active_section=None):
 
     if my_tasks_view:
         tasks_qs = tasks_qs.filter(assignee=request.user)
+    elif unassigned_tasks_view:
+        tasks_qs = tasks_qs.filter(assignee__isnull=True)
+    if active_view == 'all_tasks':
+        tasks_qs = directory_queryset(tasks_qs, request.user, directory_tab(request))
 
     project_window = _project_window_for_request(
         request,
@@ -3838,7 +3861,7 @@ def _tasks_page(request, active_section=None):
         'next_url': '',
         'summary': '',
     }
-    task_window = _task_window_for_request(request, tasks_qs) if active_view in ('all_tasks', 'my_tasks') else {
+    task_window = _task_window_for_request(request, tasks_qs) if active_view in ('all_tasks', 'my_tasks', 'unassigned_tasks') else {
         'queryset': tasks_qs,
         'query': '',
         'priority': '',
@@ -3902,7 +3925,9 @@ def _tasks_page(request, active_section=None):
             base_url=request.path,
             paginate=True,
         )
-    elif all_tasks_view or my_tasks_view:
+    elif all_tasks_view or my_tasks_view or unassigned_tasks_view:
+        if active_view == 'all_tasks':
+            decorate_favorites(task_window['queryset'], request, 'task')
         all_status_groups = _status_groups_for_tasks(
             task_window['queryset'],
             workspace_owner(request),
@@ -3915,7 +3940,7 @@ def _tasks_page(request, active_section=None):
     shared_status_groups = []
     _decorate_share_links(request, [*projects, *all_sections])
     tags = tag_window['tags'] if active_view == 'tags' else TaskTag.objects.none()
-    total_task_count = task_window['total_tasks'] if (all_tasks_view or my_tasks_view) else 0
+    total_task_count = task_window['total_tasks'] if (all_tasks_view or my_tasks_view or unassigned_tasks_view) else 0
     can_create_issue = _user_can_create_issue(
         workspace_owner(request),
         active_project=active_project,
@@ -4071,6 +4096,9 @@ def _tasks_page(request, active_section=None):
         'can_create_issue': can_create_issue,
     }
     context.update(follow_context(request.user, active_project, 'tasks', 'project'))
+    if active_view in {'projects', 'all_groups', 'all_tasks'}:
+        context['directory_tab'] = directory_tab(request)
+        context['directory_tabs'] = directory_tabs(request, context['directory_tab'])
     return render(request, 'tasks/tasks.html', context)
 
 

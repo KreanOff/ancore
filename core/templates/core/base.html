@@ -59,7 +59,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260928-task-selection">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260929-unassigned-navigation">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
@@ -193,14 +193,14 @@
                     <i class="sidebar-group-chevron" data-icon="chevron-down" aria-hidden="true"></i>
                 </button>
                 <div class="sidebar-subnav" id="sidebar-tasks-subnav" data-sidebar-group-label="Zadania">
-                    <a href="{{ sidebar_tasks_url }}" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'projects' or active_view == 'project' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-projects" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="briefcase-business"></i></span><span>Wszystkie projekty</span></a>
-                    {% sidebar_favorite_toggle 'tasks-projects' 'Wszystkie projekty' 'briefcase-business' sidebar_tasks_url %}
-                    <a href="{{ sidebar_tasks_url }}?view=all-groups" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_groups' or active_view == 'section' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-groups" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="layers-3"></i></span><span>Wszystkie grupy</span></a>
-                    {% sidebar_favorite_toggle 'tasks-groups' 'Wszystkie grupy' 'layers-3' sidebar_tasks_url|add:'?view=all-groups' %}
-                    <a href="{{ sidebar_tasks_url }}?view=all-tasks" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_tasks' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="list-checks"></i></span><span>Wszystkie zadania</span></a>
-                    {% sidebar_favorite_toggle 'tasks-all' 'Wszystkie zadania' 'list-checks' sidebar_tasks_url|add:'?view=all-tasks' %}
-                    <a href="{{ sidebar_tasks_url }}?view=my-tasks" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'my_tasks' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-my" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="user-round-check"></i></span><span>Moje zadania</span></a>
-                    {% sidebar_favorite_toggle 'tasks-my' 'Moje zadania' 'user-round-check' sidebar_tasks_url|add:'?view=my-tasks' %}
+                    <a href="{{ sidebar_tasks_url }}" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'projects' or active_view == 'project' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-projects" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="briefcase-business"></i></span><span>Projekty</span></a>
+                    {% sidebar_favorite_toggle 'tasks-projects' 'Projekty' 'briefcase-business' sidebar_tasks_url %}
+                    <a href="{{ sidebar_tasks_url }}?view=all-groups" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_groups' or active_view == 'section' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-groups" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="layers-3"></i></span><span>Grupy</span></a>
+                    {% sidebar_favorite_toggle 'tasks-groups' 'Grupy' 'layers-3' sidebar_tasks_url|add:'?view=all-groups' %}
+                    <a href="{{ sidebar_tasks_url }}?view=all-tasks" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_tasks' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="list-checks"></i></span><span>Zadania</span></a>
+                    {% sidebar_favorite_toggle 'tasks-all' 'Zadania' 'list-checks' sidebar_tasks_url|add:'?view=all-tasks' %}
+                    <a href="{{ sidebar_tasks_url }}?view=unassigned-tasks" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'unassigned_tasks' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-my" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="user-round-check"></i></span><span>Zadania nieprzydzielone</span></a>
+                    {% sidebar_favorite_toggle 'tasks-my' 'Zadania nieprzydzielone' 'user-round-check' sidebar_tasks_url|add:'?view=unassigned-tasks' %}
                 </div>
             </section>
 
@@ -394,7 +394,7 @@
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20260926-unified-small-dialogs"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20260921-dropdown-search"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20260927-section-sharing"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20260929-unassigned-navigation"></script>
     <script src="{% static 'js/profile.js' %}?v=20260921-dropdown-layer"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260927-option-icons"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>

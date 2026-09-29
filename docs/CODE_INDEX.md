@@ -20,7 +20,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 17 | 0 | 10 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
-| [tasks](../tasks) | 35 | 60 | 39 | 320 |
+| [tasks](../tasks) | 38 | 62 | 40 | 341 |
 | [kanban](../kanban) | 10 | 37 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 6 | 7 | 91 |
@@ -102,12 +102,13 @@ Metody/properties: `__str__`.
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `name` (CharField), `description` (TextField), `code` (CharField), `next_section_code_number` (PositiveIntegerField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `use_custom_deadline_rules` (BooleanField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `name` (CharField), `description` (TextField), `code` (CharField), `next_section_code_number` (PositiveIntegerField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `use_custom_deadline_rules` (BooleanField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_task_projects'; null=True |
 | `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_task_projects'; through='TaskProjectMembership' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_task_projects' |
 | `company` | `'contacts.Company'` | on_delete=models.SET_NULL; related_name='task_projects'; null=True |
 | `responsible_user` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='responsible_task_projects'; null=True |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='task_projects' |
@@ -196,12 +197,13 @@ Metody/properties: `__str__`.
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `project` (ForeignKey), `title` (CharField), `description` (TextField), `code` (CharField), `code_number` (PositiveIntegerField), `next_task_code_number` (PositiveIntegerField), `priority` (CharField), `status` (CharField), `kind` (CharField), `icon` (CharField), `owner` (ForeignKey), `due_at` (DateField), `wip_limit` (PositiveIntegerField), `order` (PositiveIntegerField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `project` (ForeignKey), `title` (CharField), `description` (TextField), `code` (CharField), `code_number` (PositiveIntegerField), `next_task_code_number` (PositiveIntegerField), `priority` (CharField), `status` (CharField), `kind` (CharField), `icon` (CharField), `owner` (ForeignKey), `due_at` (DateField), `wip_limit` (PositiveIntegerField), `order` (PositiveIntegerField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_task_sections'; null=True |
 | `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_task_sections'; through='TaskSectionMembership' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_task_sections' |
 | `project` | `TaskProject` | on_delete=models.CASCADE; related_name='sections' |
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='owned_task_sections'; null=True |
 
@@ -274,12 +276,13 @@ Metody/properties: `__str__`.
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `task_id` (PositiveIntegerField), `code_number` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `reminder_at` (DateTimeField), `estimated_minutes` (PositiveIntegerField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `task_type` (CharField), `blocked_reason` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `assignee` (ForeignKey), `section` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
+Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `task_id` (PositiveIntegerField), `code_number` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `reminder_at` (DateTimeField), `estimated_minutes` (PositiveIntegerField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `task_type` (CharField), `blocked_reason` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `assignee` (ForeignKey), `section` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_tasks'; null=True |
 | `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_tasks'; through='TaskMembership' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_tasks' |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='tasks' |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='tasks'; null=True |
 | `assignee` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='assigned_tasks'; null=True |
@@ -896,6 +899,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'favorites/<str:kind>/<int:object_id>/'` | `directory_favorite` | 'directory_favorite' |
 | `'items/<int:task_id>/team/'` | `task_team` | 'task_team' |
 | `'items/<int:task_id>/team/candidates/'` | `task_candidates` | 'task_candidates' |
 | `'groups/<int:section_id>/team/'` | `section_team` | 'section_team' |
@@ -1079,6 +1083,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/access.py](../tasks/access.py) — `task_tree_ids`, `require_deletable_tasks`, `editable_to`, `require_editable`, `visible_to`
 - [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskProjectFieldOptionAdmin`, `TaskSectionAdmin`, `TaskTagAdmin`, `TaskAttachmentAdmin`
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
+- [tasks/directory.py](../tasks/directory.py) — `directory_tab`, `directory_queryset`, `directory_tabs`, `decorate_favorites`
 - [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `ProjectVisibilitySelect`, `TaskAccessForm`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectDeadlineRuleForm`, `TaskProjectFieldOptionForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionAccessForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
 - [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectMembership`, `TaskProjectInvitation`, `TaskProjectTemplate`, `TaskProjectDeadlineRule`, `TaskProjectFieldOption`, `TaskProjectNote`, `TaskSection`, `TaskSectionMembership`, `TaskSectionInvitation`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskMembership`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
@@ -1087,6 +1092,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/sharing_signals.py](../tasks/sharing_signals.py) — `revoke_project_shares`, `membership_deleted`, `membership_disabled`, `project_member_deleted`, `section_member_deleted`, `task_member_deleted`
 - [tasks/urls.py](../tasks/urls.py)
 - [tasks/views/__init__.py](../tasks/views/__init__.py)
+- [tasks/views/directory.py](../tasks/views/directory.py) — `directory_favorite`
 - [tasks/views/project_settings.py](../tasks/views/project_settings.py) — `project_field_settings`
 - [tasks/views/project_team.py](../tasks/views/project_team.py) — `ProjectShareForm`, `team_payload`, `project_team`, `project_candidates`
 - [tasks/views/project_templates.py](../tasks/views/project_templates.py) — `project_templates`, `edit_project_template`
@@ -1213,6 +1219,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/comment_images.html](../tasks/templates/tasks/includes/comment_images.html)
 - [tasks/templates/tasks/includes/directory_actions_menu.html](../tasks/templates/tasks/includes/directory_actions_menu.html)
 - [tasks/templates/tasks/includes/directory_column_manager.html](../tasks/templates/tasks/includes/directory_column_manager.html)
+- [tasks/templates/tasks/includes/directory_empty_copy.html](../tasks/templates/tasks/includes/directory_empty_copy.html)
 - [tasks/templates/tasks/includes/directory_filter_aggregate.html](../tasks/templates/tasks/includes/directory_filter_aggregate.html)
 - [tasks/templates/tasks/includes/directory_members.html](../tasks/templates/tasks/includes/directory_members.html)
 - [tasks/templates/tasks/includes/directory_menu_header.html](../tasks/templates/tasks/includes/directory_menu_header.html)
@@ -1490,6 +1497,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DirectSharingMigrationTests`: 1 metod testowych.
 
+### tasks/test_directory_tabs.py
+
+Źródło: [tasks/test_directory_tabs.py](../tasks/test_directory_tabs.py).
+
+- `DirectoryTabsTests`: 20 metod testowych.
+
 ### tasks/test_group_directory.py
 
 Źródło: [tasks/test_group_directory.py](../tasks/test_group_directory.py).
@@ -1564,7 +1577,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [tasks/test_status_pagination.py](../tasks/test_status_pagination.py).
 
-- `TaskStatusPaginationTests`: 6 metod testowych.
+- `TaskStatusPaginationTests`: 7 metod testowych.
 
 ### tasks/test_task_sharing.py
 
@@ -1847,6 +1860,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0058_section_sharing.py](../tasks/migrations/0058_section_sharing.py)
 - [tasks/migrations/0059_direct_sharing.py](../tasks/migrations/0059_direct_sharing.py)
 - [tasks/migrations/0060_task_sharing.py](../tasks/migrations/0060_task_sharing.py)
+- [tasks/migrations/0061_directory_favorites.py](../tasks/migrations/0061_directory_favorites.py)
+- [tasks/migrations/0062_task_favorites.py](../tasks/migrations/0062_task_favorites.py)
 
 ### kanban
 

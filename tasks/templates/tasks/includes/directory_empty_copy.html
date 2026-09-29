@@ -1,0 +1,20 @@
+{% if query or has_filters %}
+<h2>Nie znaleziono {{ noun }}.</h2>
+<p>Zmień lub wyczyść filtry, aby zobaczyć inne wyniki w tej zakładce.</p>
+{% elif directory_tab == 'favorites' %}
+<h2>Brak ulubionych {{ noun }}.</h2>
+{% if noun == 'zadań' %}
+<p>Oznacz zadanie gwiazdką, aby dodać je do ulubionych.</p>
+{% else %}
+<p>W menu wybranego wiersza wybierz „Dodaj do ulubionych”.</p>
+{% endif %}
+{% elif directory_tab == 'shared' %}
+<h2>Brak udostępnionych {{ noun }}.</h2>
+<p>Tutaj pojawią się elementy, które inni udostępnią Tobie.</p>
+{% elif directory_tab == 'public' %}
+<h2>Brak publicznych {{ noun }}.</h2>
+<p>Tutaj pojawią się elementy dostępne dla całego Workspace.</p>
+{% else %}
+<h2>Brak prywatnych {{ noun }}.</h2>
+<p>Tutaj pojawią się Twoje prywatne elementy.</p>
+{% endif %}

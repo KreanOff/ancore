@@ -944,7 +944,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertRedirects(response, reverse('tasks:tasks'))
         self.assertEqual(project.responsible_user, target)
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
         self.assertContains(response, 'Osoba Spoza Kontaktow')
         self.assertContains(response, 'data-project-responsible-user-id')
         self.assertNotContains(response, 'tasks-responsible-select__avatar')
@@ -1000,7 +1000,7 @@ class TaskProjectCreationTests(TestCase):
         )
         TaskProject.objects.create(user=self.user, name='Projekt bez firmy')
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
 
         self.assertContains(response, 'data-project-sort-menu')
         self.assertContains(response, 'data-project-sort-field="priority"')
@@ -1063,6 +1063,7 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(
             reverse('tasks:tasks'),
             {
+                'tab': 'public',
                 'q': 'aktywny',
                 'status': 'active',
                 'stage': 'offer',
@@ -1102,6 +1103,7 @@ class TaskProjectCreationTests(TestCase):
         )
 
         response = self.client.get(reverse('tasks:tasks'), {
+            'tab': 'public',
             'name': 'crm',
             'description': 'archiwum',
             'description_op': 'not_contains',
@@ -1119,7 +1121,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Opis:</strong> nie zawiera „archiwum”')
         self.assertContains(response, 'Źródło:</strong> zawiera „pole”')
 
-        empty_response = self.client.get(reverse('tasks:tasks'), {'description_op': 'is_empty'})
+        empty_response = self.client.get(reverse('tasks:tasks'), {'tab': 'public', 'description_op': 'is_empty'})
         empty_html = empty_response.content.decode()
         table_start = empty_html.index('class="tasks-issue-list tasks-project-list')
         table_end = empty_html.index('</section>', table_start)
@@ -1153,13 +1155,13 @@ class TaskProjectCreationTests(TestCase):
                 with self.subTest(field=field, direction=direction):
                     sort_response = self.client.get(
                         reverse('tasks:tasks'),
-                        {'sort': f'{field}_{direction}'},
+                        {'tab': 'public', 'sort': f'{field}_{direction}'},
                     )
                     self.assertEqual(sort_response.status_code, 200)
                     self.assertContains(sort_response, f'data-current-sort-field="{field}"')
                     self.assertContains(sort_response, f'data-current-sort-direction="{direction}"')
 
-        response = self.client.get(reverse('tasks:tasks'), {'sort': 'code_desc'})
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public', 'sort': 'code_desc'})
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-project-list')
         table_end = html.index('</section>', table_start)
@@ -1180,7 +1182,7 @@ class TaskProjectCreationTests(TestCase):
                 priority='low',
             )
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?sort=priority_desc&page_size=50")
+        response = self.client.get(f"{reverse('tasks:tasks')}?tab=public&sort=priority_desc&page_size=50")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-project-list')
         table_end = html.index('</section>', table_start)
@@ -1189,7 +1191,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertLess(table_html.index(urgent.name), table_html.index(low.name))
         self.assertContains(response, 'Sortowanie: Priorytet')
         self.assertContains(response, '<span class="tasks-project-sort-current">Priorytet</span>', html=True)
-        self.assertContains(response, 'data-project-page-url="/tasks/?sort=priority_desc&amp;page_size=50&amp;page=2"')
+        self.assertContains(response, 'data-project-page-url="/tasks/?tab=public&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_task_create_modal_does_not_render_removed_task_fields(self):
         response = self.client.get(reverse('tasks:tasks'))
@@ -1280,6 +1282,7 @@ class TaskProjectCreationTests(TestCase):
         response = self.client.get(
             reverse('tasks:tasks'),
             {
+                'tab': 'public',
                 'view': 'all-groups',
                 'q': 'gotowa',
                 'status': 'ready',
@@ -1315,7 +1318,7 @@ class TaskProjectCreationTests(TestCase):
                 order=index,
             )
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&sort=priority_desc&page_size=50")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public&sort=priority_desc&page_size=50")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-section-list')
         table_end = html.index('</section>', table_start)
@@ -1324,7 +1327,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertLess(table_html.index(urgent.title), table_html.index(low.title))
         self.assertContains(response, 'Sortowanie: Priorytet')
         self.assertContains(response, '<span class="tasks-project-sort-current">Priorytet</span>', html=True)
-        self.assertContains(response, 'data-project-page-url="/tasks/?view=all-groups&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
+        self.assertContains(response, 'data-project-page-url="/tasks/?view=all-groups&amp;tab=public&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
     def test_tags_view_renders_server_filter_controls(self):
         TaskTag.objects.create(user=self.user, name='Tag właściciela', owner_label='Zespół CRM')
@@ -1448,7 +1451,7 @@ class TaskProjectCreationTests(TestCase):
     def test_projects_priority_column_uses_priority_icons(self):
         project = TaskProject.objects.create(user=self.user, name='Pilny projekt', priority='urgent')
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
         html = response.content.decode()
         row_start = html.index(f'data-project-id="{project.id}"')
         row_end = html.index('</article>', row_start)
@@ -1493,7 +1496,7 @@ class TaskProjectCreationTests(TestCase):
             due_at=date(2026, 7, 1),
         )
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-project-list tasks-directory-list')
         table_end = html.index('</section>', table_start)
@@ -1532,7 +1535,7 @@ class TaskProjectCreationTests(TestCase):
             due_at=date(2026, 7, 1),
         )
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list')
         table_end = html.index('</section>', table_start)
@@ -1588,7 +1591,7 @@ class TaskProjectCreationTests(TestCase):
         section = TaskSection.objects.create(project=project, title='Grupa bez priorytetu', priority='none')
 
         project_response = self.client.get(f"{reverse('tasks:tasks')}?project={project.id}")
-        all_groups_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+        all_groups_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public")
 
         for response in (project_response, all_groups_response):
             html = response.content.decode()
@@ -1605,7 +1608,7 @@ class TaskProjectCreationTests(TestCase):
         project = TaskProject.objects.create(user=self.user, name='Projekt', priority='none')
         section = TaskSection.objects.create(project=project, title='Pilna grupa', priority='urgent')
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public")
         html = response.content.decode()
         row_start = html.index(f'data-section-id="{section.id}"')
         row_end = html.index('</article>', row_start)
@@ -1823,7 +1826,7 @@ class TaskProjectCreationTests(TestCase):
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
         )
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
 
         self.assertNotContains(response, 'tasks-project-row-icon')
         self.assertNotContains(response, 'tasks-project-row-icon--fallback')
@@ -1971,7 +1974,7 @@ class TaskProjectCreationTests(TestCase):
         Task.objects.create(user=self.user, section=second_section, title='Wdrożenie')
         Task.objects.create(user=self.user, section=third_section, title='Akceptacja')
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
 
         self.assertContains(
             response,
@@ -2029,7 +2032,7 @@ class TaskProjectCreationTests(TestCase):
                 status=status,
             )
 
-        request = RequestFactory().get(f"{reverse('tasks:tasks')}?view=all-tasks")
+        request = RequestFactory().get(f"{reverse('tasks:tasks')}?view=all-tasks&tab=public")
         request.user = self.user
         queryset = Task.objects.filter(user=self.user, parent__isnull=True).annotate(
             is_closed_sort=Case(
@@ -2076,7 +2079,7 @@ class TaskProjectCreationTests(TestCase):
             )
             TaskSection.objects.create(project=project, title='Plan')
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
         html = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
@@ -2098,7 +2101,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '<span>/ stronę</span>', html=True)
         for page_size in (10, 25, 50, 100, 150, 200):
             self.assertContains(response, f'data-project-page-size-value="{page_size}"')
-        self.assertIn('data-project-page-url="/tasks/?page_size=50&amp;page=2"', html)
+        self.assertIn('data-project-page-url="/tasks/?tab=public&amp;page_size=50&amp;page=2"', html)
         self.assertNotIn('&amp;after=', html)
         filterbar_start = html.index('class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory"')
         sort_start = html.index('class="tasks-filter-dropdown tasks-project-sort-builder"')
@@ -2114,7 +2117,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertLess(pagination_start, table_start)
         self.assertNotIn('data-project-pagination-pages', html)
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?page_size=50&page=2")
+        response = self.client.get(f"{reverse('tasks:tasks')}?tab=public&page_size=50&page=2")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-project-list')
         table_end = html.index('</section>', table_start)
@@ -2125,9 +2128,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('Projekt 059', table_html)
         self.assertNotIn('Projekt 049', table_html)
         self.assertContains(response, 'Pokazano 51-60 z 60 projektów')
-        self.assertIn('data-project-page-url="/tasks/?page_size=50"', html)
+        self.assertIn('data-project-page-url="/tasks/?tab=public&amp;page_size=50"', html)
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?page_size=10")
+        response = self.client.get(f"{reverse('tasks:tasks')}?tab=public&page_size=10")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-project-list')
         table_end = html.index('</section>', table_start)
@@ -2136,7 +2139,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'tasks-project-row tasks-directory-row', count=10)
         self.assertIn('Projekt 000', table_html)
         self.assertNotIn('Projekt 010', table_html)
-        self.assertIn('data-project-page-url="/tasks/?page_size=10&amp;page=2"', html)
+        self.assertIn('data-project-page-url="/tasks/?tab=public&amp;page_size=10&amp;page=2"', html)
 
     def test_all_groups_view_renders_only_server_side_window(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt grup', code='GRP')
@@ -2147,7 +2150,7 @@ class TaskProjectCreationTests(TestCase):
                 order=index,
             )
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-section-list')
         table_end = html.index('</section>', table_start)
@@ -2162,10 +2165,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Na stronie')
         self.assertContains(response, 'grup')
         self.assertContains(response, 'Pokazano 1-50 z 60 grup')
-        self.assertIn('data-project-page-url="/tasks/?view=all-groups&amp;page_size=50&amp;page=2"', html)
+        self.assertIn('data-project-page-url="/tasks/?view=all-groups&amp;tab=public&amp;page_size=50&amp;page=2"', html)
         self.assertIn('aria-current="page">1</button>', html)
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&page_size=50&page=2")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public&page_size=50&page=2")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-section-list')
         table_end = html.index('</section>', table_start)
@@ -2177,9 +2180,9 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotIn('Grupa 049', table_html)
         self.assertContains(response, 'Pokazano 51-60 z 60 grup')
         self.assertIn('aria-current="page">2</button>', html)
-        self.assertIn('data-project-page-url="/tasks/?view=all-groups&amp;page_size=50"', html)
+        self.assertIn('data-project-page-url="/tasks/?view=all-groups&amp;tab=public&amp;page_size=50"', html)
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&page_size=10")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public&page_size=10")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-section-list')
         table_end = html.index('</section>', table_start)
@@ -2257,7 +2260,7 @@ class TaskProjectCreationTests(TestCase):
                                 status='new' if index < 60 else 'in_progress')
 
         url = reverse('tasks:tasks')
-        response = self.client.get(f'{url}?view=all-tasks&sort=title_asc')
+        response = self.client.get(f'{url}?view=all-tasks&tab=public&sort=title_asc')
         self.assertContains(response, 'task-row tasks-issue-row', count=62)
         self.assertContains(response, 'Pokazano 1-62 z 72 zadań')
         self.assertContains(response, 'Zadanie 049')
@@ -2276,10 +2279,10 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'Zadanie 049')
         self.assertFalse(response.context['task_window']['has_next'])
 
-        response = self.client.get(f'{url}?view=all-tasks&page_size=10&page=999')
+        response = self.client.get(f'{url}?view=all-tasks&tab=public&page_size=10&page=999')
         self.assertContains(response, 'task-row tasks-issue-row', count=10)
         self.assertEqual(response.context['task_window']['page'], 6)
-        response = self.client.get(f'{url}?view=all-tasks&q=missing')
+        response = self.client.get(f'{url}?view=all-tasks&tab=public&q=missing')
         self.assertContains(response, '0 z 0')
         self.assertFalse(response.context['task_window']['has_previous'])
         self.assertFalse(response.context['task_window']['has_next'])
@@ -2300,7 +2303,7 @@ class TaskProjectCreationTests(TestCase):
             assignee=assignee,
         )
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks&tab=public")
 
         self.assertContains(response, 'data-server-directory-filters="true"')
         self.assertContains(response, 'data-project-sort-menu')
@@ -2366,7 +2369,7 @@ class TaskProjectCreationTests(TestCase):
         )
 
         response = self.client.get(
-            f"{reverse('tasks:tasks')}?view=all-tasks&q=Alpha&priority=high&status=new"
+            f"{reverse('tasks:tasks')}?view=all-tasks&tab=public&q=Alpha&priority=high&status=new"
             f"&task_project={project.id}&task_section={section.id}&task_assignee={assignee.id}"
             f"&task_type=call&task_due=overdue&sort=title_desc&page_size=25"
         )
@@ -2514,7 +2517,7 @@ class TaskProjectCreationTests(TestCase):
     def test_directory_headers_offer_contextual_creation_actions(self):
         for query, label, control in [('', 'Dodaj projekt', 'project-modal'),
                                       ('?view=all-groups', 'Dodaj grupę', 'section-create-modal'),
-                                      ('?view=all-tasks', 'Dodaj zadanie', 'issue-modal'),
+                                      ('?view=all-tasks&tab=public', 'Dodaj zadanie', 'issue-modal'),
                                       ('?view=tags', 'Dodaj tag', 'tag-modal')]:
             with self.subTest(view=query):
                 response = self.client.get(reverse('tasks:tasks') + query)
@@ -2744,9 +2747,9 @@ class TaskProjectCreationTests(TestCase):
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
         )
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public")
 
-        self.assertContains(response, 'Wszystkie grupy')
+        self.assertContains(response, 'Grupy')
         self.assertContains(response, 'title="Dodaj grupę"')
         self.assertContains(response, 'data-open-section-create')
         self.assertContains(response, 'data-section-create-project-select')
@@ -2862,10 +2865,10 @@ class TaskProjectCreationTests(TestCase):
         TaskSection.objects.create(project=project, title='Backend')
         TaskTag.objects.create(user=self.user, name='Design')
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
 
-        self.assertContains(response, 'Wszystkie projekty')
-        self.assertContains(response, 'Wszystkie grupy')
+        self.assertContains(response, 'Projekty')
+        self.assertContains(response, 'Grupy')
         self.assertContains(response, 'Tagi')
         self.assertContains(response, 'tasks-directory-header')
         self.assertContains(response, 'data-select-all-target="projects"')
@@ -3245,10 +3248,10 @@ class TaskProjectCreationTests(TestCase):
 
         section_response = self.client.get(reverse('tasks:task_group', args=[section.id]))
         project_response = self.client.get(f"{reverse('tasks:tasks')}?project={project.id}")
-        all_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
+        all_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks&tab=public")
         my_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=my-tasks")
-        projects_response = self.client.get(reverse('tasks:tasks'))
-        groups_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups")
+        projects_response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
+        groups_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public")
         tags_response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
 
         self.assertContains(section_response, 'id="delete-selected-task-menu-btn"')
@@ -3862,25 +3865,25 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(activity.metadata['from_label'], 'Nowe')
         self.assertEqual(activity.metadata['to_label'], 'Realizowane')
 
-    def test_my_tasks_view_is_available_from_secondary_navigation(self):
+    def test_unassigned_tasks_view_is_available_from_secondary_navigation(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
-        Task.objects.create(user=self.user, section=section, title='Moje zadanie testowe', assignee=self.user)
+        Task.objects.create(user=self.user, section=section, title='Nieprzydzielone zadanie testowe', assignee=None)
 
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=my-tasks")
+        response = self.client.get(f"{reverse('tasks:tasks')}?view=unassigned-tasks")
 
-        self.assertContains(response, 'Moje zadania')
-        self.assertContains(response, 'Moje zadanie testowe')
+        self.assertContains(response, 'Zadania nieprzydzielone')
+        self.assertContains(response, 'Nieprzydzielone zadanie testowe')
         self.assertRegex(response.content.decode(),
                          r'<a[^>]+class="nav-link sidebar-subnav-link active"[^>]+data-sidebar-source-item="tasks-my"')
 
     def test_main_navigation_groups_tasks_and_hides_disabled_sharing(self):
         response = self.client.get(reverse('tasks:tasks'))
 
-        self.assertContains(response, 'Moje zadania')
-        self.assertContains(response, 'Wszystkie zadania')
-        self.assertContains(response, 'Wszystkie projekty')
-        self.assertContains(response, 'Wszystkie grupy')
+        self.assertContains(response, 'Zadania nieprzydzielone')
+        self.assertContains(response, 'Zadania')
+        self.assertContains(response, 'Projekty')
+        self.assertContains(response, 'Grupy')
         self.assertContains(response, 'Tagi')
         self.assertContains(response, 'id="sidebar-tasks-subnav"')
         self.assertNotContains(response, 'Udostępnione zadania')
@@ -3890,7 +3893,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'data-sidebar-group="tasks"')
         self.assertNotContains(response, 'data-rail-nav-group-toggle')
 
-        all_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks")
+        all_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-tasks&tab=public")
 
         self.assertRegex(all_tasks_response.content.decode(),
                          r'<a[^>]+class="nav-link sidebar-subnav-link active"[^>]+data-sidebar-source-item="tasks-all"')
@@ -3961,7 +3964,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(note.message, 'Poprawiona notatka')
         self.assertIsNotNone(note.edited_at)
 
-        page_response = self.client.get(reverse('tasks:tasks'))
+        page_response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
         self.assertContains(page_response, '| Edytowano:')
         self.assertContains(
             page_response,

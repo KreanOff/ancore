@@ -232,6 +232,24 @@ w `Task` nie są synchronizowane z dziennikiem.
 
 ## 7. Katalogi, filtry i wydajność
 
+Katalogi projektów, wszystkich grup i wszystkich zadań używają `tasks/directory.py` do
+wyboru `tab=private|shared|public|favorites` (domyślnie `private`). Filtr zakładki
+jest nakładany po `visible_to` i ograniczeniu Workspace, przed sortowaniem,
+licznikami i paginacją. Publiczne grupy dziedziczą kategorię projektu; własna
+prywatna grupa trafia do „Prywatne” także w projekcie udostępnionym odbiorcy.
+Katalog zadań nadal filtruje `parent__isnull=True`. Własne prywatne zadanie
+trafia do „Prywatne”, publiczne dziedziczy kategorię grupy/projektu, a publiczne
+bez grupy jest „Publiczne”. Filtr obejmuje dane przed liczeniem i stronicowaniem
+każdego statusu. Widoki nieprzydzielonych, dawny „Moje zadania” i lista konkretnej grupy go nie stosują.
+Stan ulubionych jest adnotacją `Exists` względem relacji `favorited_by` aktualnego
+odbiorcy, bez osobnego zapytania dla każdego wiersza. Endpoint POST
+`/tasks/favorites/<project|section|task>/<pk>/` i jego wariant scoped przyjmują
+`favorite_action=add|remove`; operacje są idempotentne i wymagają aktualnego
+dostępu do obiektu, ale nie uprawnienia edycji. Ulubione nie nadają dostępu.
+Pole `user` nadal wskazuje właściciela Workspace; relacja ulubionych wskazuje
+faktycznego odbiorcę `request.user`.
+Wariant `task` obsługuje zadania główne; podzadania nie należą do katalogu ulubionych.
+
 Tasks i Kanban mają rozbudowane funkcje `*_window_for_request()`, które
 filtrują, sortują i wycinają okno wyników po stronie serwera. Widoki używają
 `select_related`, `prefetch_related`, agregacji i adnotacji do liczników.
@@ -239,10 +257,14 @@ Tasks ma osobne mechanizmy katalogów projektów, grup, tagów i zadań oraz
 grupowania/paginacji po statusach.
 
 W `_task_window_for_request()` liczności statusów są liczone jednym agregatem
-na identyfikatorach przefiltrowanego zbioru. Katalogi Wszystkie/Moje zadania
+na identyfikatorach przefiltrowanego zbioru. Katalogi zadań, nieprzydzielonych oraz dawny widok Moje zadania
 pobierają następnie najwyżej `page_size` rekordów z każdego stanu, z tym samym
 offsetem strony. Liczba stron zależy od największej liczności statusu.
 Krótsze sekcje nie powtarzają ostatnich rekordów na dalszych stronach.
+Widok `unassigned-tasks` nakłada `assignee__isnull=True` po `visible_to`,
+a przed filtrami i paginacją; parametr `task_assignee` jest w nim ignorowany.
+Historyczny klucz preferencji sidebaru `tasks-my` pozostaje zachowany, ale wskazuje
+nową nazwę i adres nieprzydzielonych. Stary URL `my-tasks` zachowuje swój filtr osoby.
 Zakres właściciela, Workspace, wykonawcy i zadań głównych jest ustalany przed
 filtrowaniem, agregacją i paginacją.
 

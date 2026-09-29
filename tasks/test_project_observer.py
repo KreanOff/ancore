@@ -61,7 +61,7 @@ class ProjectObserverTests(TestCase):
 
     def test_observer_reads_lists_details_team_search_calendar_and_downloads(self):
         for base in ['/tasks/', self.url()]:
-            for suffix in ['', f'?project={self.project.pk}', '?view=all-groups', '?view=all-tasks',
+            for suffix in ['', f'?project={self.project.pk}', '?view=all-groups', '?view=all-tasks&tab=shared',
                            f'groups/{self.section.pk}/', f'view-task/{self.task.task_id}/?task_pk={self.task.pk}',
                            f'view-subtask/{self.child.task_id}/?task_pk={self.child.pk}']:
                 with self.subTest(base=base, suffix=suffix):

@@ -179,8 +179,8 @@ zadania nadrzędnego. „Prywatne — wybrane osoby” dodatkowo ogranicza go do
 prywatnego właściciela i osób z nadanym dostępem. Istniejące zadania zachowują
 dotychczasowy dostęp; nowe zadania i podzadania w formularzach oraz szybkim
 dodawaniu domyślnie są prywatne faktycznego autora. Samo przypisanie wykonawcy
-nadal nie daje dostępu. „Moje zadania” dodatkowo wymagają przypisania; inne
-udostępnione zadania są widoczne na liście „Wszystkie zadania”.
+nadal nie daje dostępu. „Zadania nieprzydzielone” pokazują dostępne zadania
+bez wykonawcy; zadania przypisane pozostają na liście „Zadania”.
 
 Szczegóły zadania mają pole „Widoczność” oraz zakładkę „Członkowie”. Właściciel
 udostępnia zadanie rolom administrator/członek/obserwator i zarządza rolami;
@@ -248,7 +248,7 @@ przekierowuje do właściwej zakładki; POST nadal waliduje zaproszenie i przy
 błędzie renderuje okno wysyłania nad zakładką „Wysłane zaproszenia”.
 Zamknięcie błędu przywraca fokus widocznemu przyciskowi „Zaproś osobę”.
 
-Tabele członków i wysłanych zaproszeń korzystają ze wspólnego komponentu „Wszystkie projekty”:
+Tabele członków i wysłanych zaproszeń korzystają ze wspólnego komponentu „Projekty”:
 wiersze 35px, nagłówki z ikonami, siatka i turkusowe podświetlenie. Kolumny
 obejmują zaznaczenie, działania, nazwę z avatarem, e-mail, rolę i datę dołączenia lub
 ważności zaproszenia. Menu zaproszenia pozwala je anulować zgodnie z rolą
@@ -312,7 +312,8 @@ osobistych preferencji widoku.
 Nie wystarczy usunąć filtrów właściciela. Formularze relacji korzystają z tego
 samego zakresu danych co widoki. Wykonawcy zadań oraz odpowiedzialni za projekty
 i grupy pochodzą z aktywnych kont zespołu i właściciela; spreparowany wybór
-osoby spoza zespołu jest błędem walidacji. „Moje zadania” filtrują wykonawcę
+osoby spoza zespołu jest błędem walidacji. Widok „Zadania nieprzydzielone”
+filtruje brak wykonawcy. Dawny adres `view=my-tasks` nadal filtruje wykonawcę
 według rzeczywiście zalogowanej osoby. Kanban zachowuje swój osobny model;
 nie dodano pola wykonawcy do kart.
 

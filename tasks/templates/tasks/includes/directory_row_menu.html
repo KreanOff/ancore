@@ -4,6 +4,9 @@
     </button>
     <div id="directory-{{ kind }}-{{ item_id }}-actions" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {{ item_name }}" data-row-actions-panel>
         <div class="documents-menu-actions">
+            {% if favorite_url %}
+            <button type="button" class="tasks-project-menu-button" data-directory-favorite="{{ favorite_url }}" data-favorite-action="{% if is_favorite %}remove{% else %}add{% endif %}" aria-pressed="{% if is_favorite %}true{% else %}false{% endif %}"><i data-icon="star" aria-hidden="true"></i><span>{% if is_favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}</span></button>
+            {% endif %}
             {% if can_manage %}
             <button type="button" class="tasks-project-menu-button" data-directory-row-action="action"{% if edit_modal %} aria-haspopup="dialog" aria-controls="{{ edit_modal }}"{% endif %}><i data-icon="pencil" aria-hidden="true"></i><span>{{ edit_label }}</span></button>
             {% elif can_preview_section %}

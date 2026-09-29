@@ -56,7 +56,7 @@ class SidebarActiveStateTests(SimpleTestCase):
 
     def test_active_subnav_does_not_activate_primary_link(self):
         cases = (
-            ('tasks', 'projects', '', 'Zadania', 'Wszystkie projekty'),
+            ('tasks', 'projects', '', 'Zadania', 'Projekty'),
             ('kanban', 'projects', '', 'Kanban', 'Przestrzenie robocze'),
             ('contacts', '', 'all', 'Kontakty', 'Kontakty'),
         )
@@ -133,10 +133,10 @@ class SidebarActiveStateTests(SimpleTestCase):
         positions = [
             subnav_html.index(f'<span>{label}</span>')
             for label in (
-                'Wszystkie projekty',
-                'Wszystkie grupy',
-                'Wszystkie zadania',
-                'Moje zadania',
+                'Projekty',
+                'Grupy',
+                'Zadania',
+                'Zadania nieprzydzielone',
             )
         ]
 

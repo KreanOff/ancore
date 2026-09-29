@@ -389,6 +389,43 @@ function initTasksPage() {
         window.location.href = viewUrl;
     }
 
+    document.querySelectorAll('[data-directory-favorite]').forEach(button => {
+        button.addEventListener('click', async () => {
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                const response = await fetch(button.dataset.directoryFavorite, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': window.getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' },
+                    body: new URLSearchParams({ favorite_action: button.dataset.favoriteAction }),
+                    signal: pageListenersController?.signal,
+                });
+                if (!response.ok) throw new Error('Nie udało się zapisać ulubionych. Spróbuj ponownie.');
+                const data = await response.json();
+                if (pageListenersController?.signal.aborted) return;
+                button.dataset.favoriteAction = data.is_favorite ? 'remove' : 'add';
+                button.setAttribute('aria-pressed', String(data.is_favorite));
+                const favoriteLabel = data.is_favorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych';
+                const label = button.querySelector('span');
+                if (label) label.textContent = favoriteLabel;
+                if (button.hasAttribute('aria-label')) button.setAttribute('aria-label', favoriteLabel);
+                if (button.hasAttribute('title')) button.title = favoriteLabel;
+                showMessage(data.is_favorite ? 'Dodano do ulubionych.' : 'Usunięto z ulubionych.', 'success');
+                if (!data.is_favorite && document.querySelector('[data-directory-tabs="favorites"]')) {
+                    if (window.AncoreApp?.canNavigatePartially?.(window.location.href)) {
+                        await window.AncoreApp.navigate(window.location.href, { replace: true });
+                        document.querySelector('[data-directory-tabs] [aria-current="page"]')?.focus();
+                    } else window.location.reload();
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') showMessage(error.message || 'Nie udało się zapisać ulubionych.', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }, pageListenerOptions);
+    });
+
     function taskStatusBlockSelector(block) {
         if (block?.id && window.CSS?.escape) {
             return `#${CSS.escape(block.id)}`;
@@ -504,6 +541,7 @@ function initTasksPage() {
         const currentUrl = new URL(window.location.href);
         const viewValue = (formData?.get('view') || currentUrl.searchParams.get('view') || '').toString();
         const projectValue = (formData?.get('project') || currentUrl.searchParams.get('project') || '').toString();
+        const directoryTab = formData?.get('tab');
         const searchValue = filterSearch?.value?.trim() || '';
         const priorityValue = filterPriority?.value || '';
         const pageSizeValue = projectPageSizeSelect ? String(getProjectPageSize()) : (projectSearchPageSizeInput?.value || '');
@@ -511,6 +549,7 @@ function initTasksPage() {
         ['after', 'before', 'page'].forEach(param => {
             url.searchParams.delete(param);
         });
+        if (directoryTab) url.searchParams.set('tab', directoryTab);
         currentUrl.searchParams.forEach((value, key) => {
             if (/^task_[a-z_]+_page_size$/.test(key)) {
                 url.searchParams.set(key, value);

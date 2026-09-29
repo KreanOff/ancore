@@ -104,6 +104,15 @@ Testy migracji mogą przebudowywać schemat bazy testowej. Nie uruchamiaj ich
 ręcznie na bazie z danymi użytkownika. Samo `manage.py check` nie potwierdza
 stanu migracji, poprawnego połączenia z bazą ani działania UI.
 
+Zakładki katalogów i osobiste ulubione wymagają migracji Tasks
+`0061_directory_favorites`, dodającej dwie relacje many-to-many bez zmiany
+dotychczasowych rekordów i dostępu. `0062_task_favorites` dodaje analogiczną
+relację `Task.favorited_by`. Testy `tasks.test_directory_tabs` obejmują
+kategorie, dziedziczenie grup i zadań, oba warianty URL, filtry/paginację, osobiste ulubione,
+obserwatorów, cofnięcie dostępu, obcy Workspace i CSRF. Dawne testy katalogów
+z publicznymi danymi wybierają jawnie `tab=public`, ponieważ domyślną zakładką
+jest teraz „Prywatne”.
+
 ### Istniejące obszary testów
 
 | Moduł | Co sprawdzają istniejące testy |

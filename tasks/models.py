@@ -100,6 +100,9 @@ class TaskProject(models.Model):
     shared_with = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name='shared_task_projects', through='TaskProjectMembership',
     )
+    favorited_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name='favorite_task_projects',
+    )
 
     PRIORITY_CHOICES = [
         ('none', 'Brak'),
@@ -505,6 +508,9 @@ class TaskSection(models.Model):
     shared_with = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name='shared_task_sections', through='TaskSectionMembership',
     )
+    favorited_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name='favorite_task_sections',
+    )
 
     PRIORITY_CHOICES = TaskProject.PRIORITY_CHOICES
     CODE_PREFIX = 'G'
@@ -812,6 +818,9 @@ class Task(models.Model):
     )
     shared_with = models.ManyToManyField(
         settings.AUTH_USER_MODEL, through='TaskMembership', related_name='shared_tasks', blank=True,
+    )
+    favorited_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name='favorite_tasks', blank=True,
     )
 
     task_id = models.PositiveIntegerField(default=0)

@@ -1,4 +1,4 @@
-<article class="task-row tasks-issue-row {% if compact %}tasks-issue-row--compact{% endif %} {% if task.status == 'closed' %}completed{% endif %}"
+<article class="task-row tasks-issue-row {% if compact %}tasks-issue-row--compact{% endif %} {% if task.favorite_url %}tasks-issue-row--with-favorite{% endif %} {% if task.status == 'closed' %}completed{% endif %}"
          draggable="{% if task.can_edit %}true{% else %}false{% endif %}"
          {% if not task.can_edit %}data-readonly="true" aria-readonly="true"{% endif %}
          data-task-id="{{ task.task_id }}" data-task-pk="{{ task.pk }}"
@@ -70,5 +70,15 @@
         <i data-icon="flame" aria-hidden="true"></i>
         {% endif %}
     </span>
+    {% endif %}
+    {% if task.favorite_url %}
+    <button type="button" class="tasks-icon-button tasks-row-favorite"
+            data-directory-favorite="{{ task.favorite_url }}"
+            data-favorite-action="{% if task.is_favorite %}remove{% else %}add{% endif %}"
+            aria-pressed="{{ task.is_favorite|yesno:'true,false' }}"
+            aria-label="{% if task.is_favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}"
+            title="{% if task.is_favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}">
+        <i data-icon="star" aria-hidden="true"></i>
+    </button>
     {% endif %}
 </article>

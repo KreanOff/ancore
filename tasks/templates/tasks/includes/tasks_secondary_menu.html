@@ -19,30 +19,29 @@
     </div>
 
     <nav class="tasks-rail-nav">
-        <a href="{% url 'tasks:tasks' %}?view=my-tasks" class="tasks-rail-link {% if active_view == 'my_tasks' %}is-active{% endif %}">
-            <span class="tasks-rail-icon" aria-hidden="true">
-                <i data-icon="list-todo" aria-hidden="true"></i>
-            </span>
-            Moje zadania
-        </a>
-        <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
-            <span class="tasks-rail-icon" aria-hidden="true">
-                <i data-icon="list-checks" aria-hidden="true"></i>
-            </span>
-            Wszystkie zadania
-        </a>
-        <div class="tasks-rail-nav-separator" role="separator" aria-hidden="true"></div>
         <a href="{% url 'tasks:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
             <span class="tasks-rail-icon" aria-hidden="true">
                 <i data-icon="folders" aria-hidden="true"></i>
             </span>
-            Wszystkie projekty
+            Projekty
         </a>
         <a href="{% url 'tasks:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
             <span class="tasks-rail-icon" aria-hidden="true">
                 <i data-icon="folder-open" aria-hidden="true"></i>
             </span>
-            Wszystkie grupy
+            Grupy
+        </a>
+        <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
+            <span class="tasks-rail-icon" aria-hidden="true">
+                <i data-icon="list-checks" aria-hidden="true"></i>
+            </span>
+            Zadania
+        </a>
+        <a href="{% url 'tasks:tasks' %}?view=unassigned-tasks" class="tasks-rail-link {% if active_view == 'unassigned_tasks' %}is-active{% endif %}">
+            <span class="tasks-rail-icon" aria-hidden="true">
+                <i data-icon="list-todo" aria-hidden="true"></i>
+            </span>
+            Zadania nieprzydzielone
         </a>
         <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
             <span class="tasks-rail-icon" aria-hidden="true">

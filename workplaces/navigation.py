@@ -5,10 +5,11 @@ from .services import scoped_workplace_app_path
 
 SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'dashboard', 'label': 'Dashboard', 'icon': 'layout-dashboard', 'route_name': 'home'},
-    {'key': 'tasks-my', 'label': 'Moje zadania', 'icon': 'user-round-check', 'app': 'tasks', 'query': 'view=my-tasks'},
-    {'key': 'tasks-all', 'label': 'Wszystkie zadania', 'icon': 'list-checks', 'app': 'tasks', 'query': 'view=all-tasks'},
-    {'key': 'tasks-projects', 'label': 'Wszystkie projekty', 'icon': 'briefcase-business', 'app': 'tasks'},
-    {'key': 'tasks-groups', 'label': 'Wszystkie grupy', 'icon': 'layers-3', 'app': 'tasks', 'query': 'view=all-groups'},
+    # Preserve the saved sidebar preference key when replacing the menu entry.
+    {'key': 'tasks-my', 'label': 'Zadania nieprzydzielone', 'icon': 'user-round-check', 'app': 'tasks', 'query': 'view=unassigned-tasks'},
+    {'key': 'tasks-all', 'label': 'Zadania', 'icon': 'list-checks', 'app': 'tasks', 'query': 'view=all-tasks'},
+    {'key': 'tasks-projects', 'label': 'Projekty', 'icon': 'briefcase-business', 'app': 'tasks'},
+    {'key': 'tasks-groups', 'label': 'Grupy', 'icon': 'layers-3', 'app': 'tasks', 'query': 'view=all-groups'},
     {'key': 'kanban-spaces', 'label': 'Przestrzenie robocze', 'icon': 'folders', 'app': 'kanban'},
     {'key': 'kanban-boards', 'label': 'Tablice', 'icon': 'kanban', 'app': 'kanban', 'query': 'view=all-groups'},
     {'key': 'contacts-all', 'label': 'Kontakty', 'icon': 'users', 'app': 'contacts'},
@@ -58,7 +59,7 @@ def sidebar_favorite_is_active(item_key, request, active_view='', active_contact
         if app_name not in {'tasks', 'workplace_tasks', 'kanban', 'workplace_kanban'}:
             return False
         expected_view = {
-            'tasks-my': 'my_tasks',
+            'tasks-my': 'unassigned_tasks',
             'tasks-all': 'all_tasks',
             'tasks-projects': ('projects', 'project'),
             'tasks-groups': ('all_groups', 'section'),

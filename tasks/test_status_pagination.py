@@ -45,7 +45,7 @@ class TaskStatusPaginationTests(TestCase):
         for url in urls:
             for view in ('all-tasks', 'my-tasks'):
                 with self.subTest(url=url, view=view):
-                    response = self.client.get(url, {'view': view})
+                    response = self.client.get(url, {'view': view, 'tab': 'public'})
                     self.assertEqual(response.status_code, 200)
                     window = response.context['task_window']
                     self.assertEqual(window['total_tasks'], 265)
@@ -75,18 +75,18 @@ class TaskStatusPaginationTests(TestCase):
     def test_page_size_validation_and_out_of_range_pages(self):
         for size, expected, pages in ((10, 50, 6), (25, 125, 3), (100, 265, 1), ('bad', 250, 2), (0, 250, 2)):
             with self.subTest(size=size):
-                response = self.client.get(reverse('tasks:tasks'), {'view': 'all-tasks', 'page_size': size})
+                response = self.client.get(reverse('tasks:tasks'), {'view': 'all-tasks', 'tab': 'public', 'page_size': size})
                 self.assertEqual(len(response.context['task_window']['queryset']), expected)
                 self.assertEqual(response.context['task_window']['total_pages'], pages)
-        response = self.client.get(reverse('tasks:tasks'), {'view': 'all-tasks', 'page_size': 10, 'page': 999})
+        response = self.client.get(reverse('tasks:tasks'), {'view': 'all-tasks', 'tab': 'public', 'page_size': 10, 'page': 999})
         self.assertEqual(response.context['task_window']['page'], 6)
         self.assertContains(response, 'Pokazano 251-265 z 265 zadań')
-        response = self.client.get(reverse('tasks:tasks'), {'view': 'all-tasks', 'page': -1})
+        response = self.client.get(reverse('tasks:tasks'), {'view': 'all-tasks', 'tab': 'public', 'page': -1})
         self.assertEqual(response.context['task_window']['page'], 1)
 
     def test_filters_and_sort_apply_before_each_status_is_paginated(self):
         response = self.client.get(reverse('tasks:tasks'), {
-            'view': 'all-tasks', 'q': 'Zadanie', 'status': 'closed',
+            'view': 'all-tasks', 'tab': 'public', 'q': 'Zadanie', 'status': 'closed',
             'task_project': self.project.pk, 'sort': 'title_desc', 'page_size': 25,
         })
         window = response.context['task_window']
@@ -107,7 +107,7 @@ class TaskStatusPaginationTests(TestCase):
         for name in ('Znacznik pierwszy', 'Znacznik drugi'):
             task.tags.add(TaskTag.objects.create(user=self.user, workplace=self.workplace, name=name))
         response = self.client.get(reverse('tasks:tasks'), {
-            'view': 'all-tasks', 'q': 'Znacznik', 'sort': 'activity_desc',
+            'view': 'all-tasks', 'tab': 'public', 'q': 'Znacznik', 'sort': 'activity_desc',
         })
         self.assertEqual(response.context['task_window']['total_tasks'], 1)
         self.assertEqual(response.context['task_window']['queryset'], [task])
@@ -126,10 +126,29 @@ class TaskStatusPaginationTests(TestCase):
         self.assertNotContains(response, 'Podzadanie poza katalogiem')
 
     def test_empty_results_have_no_pages(self):
-        response = self.client.get(reverse('tasks:tasks'), {'view': 'all-tasks', 'q': 'Nieistniejące'})
+        response = self.client.get(reverse('tasks:tasks'), {'view': 'all-tasks', 'tab': 'public', 'q': 'Nieistniejące'})
         window = response.context['task_window']
         self.assertEqual(window['total_tasks'], 0)
         self.assertEqual(window['queryset'], [])
         self.assertFalse(window['has_previous'])
         self.assertFalse(window['has_next'])
         self.assertContains(response, '0 z 0')
+
+    def test_unassigned_tasks_filter_search_sort_and_paginate_before_rendering(self):
+        tasks = Task.objects.filter(user=self.user, workplace=self.workplace, status='new')
+        tasks.update(assignee=None)
+        params = {'view': 'unassigned-tasks', 'q': 'Zadanie new', 'status': 'new',
+                  'task_project': self.project.pk, 'sort': 'title_desc', 'page_size': 25}
+        url = f'/workplaces/{self.workplace.slug}/tasks/'
+        response = self.client.get(url, params)
+        window = response.context['task_window']
+        self.assertEqual(window['total_tasks'], 53)
+        self.assertEqual(len(window['queryset']), 25)
+        self.assertEqual(window['queryset'][0].title, 'Zadanie new 052')
+        self.assertIn('view=unassigned-tasks', window['next_url'])
+        self.assertTrue(window['next_url'].startswith(url))
+        response = self.client.get(window['next_url'])
+        self.assertEqual(response.context['task_window']['queryset'][0].title, 'Zadanie new 027')
+        self.assertEqual(response.context['task_window']['project_filter'], str(self.project.pk))
+        response = self.client.get(url, {**params, 'q': 'Brak dopasowania'})
+        self.assertContains(response, 'Nie znaleziono zadań.')
