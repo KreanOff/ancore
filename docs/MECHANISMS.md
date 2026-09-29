@@ -261,8 +261,11 @@ na identyfikatorach przefiltrowanego zbioru. Katalogi zadań, nieprzydzielonych 
 pobierają następnie najwyżej `page_size` rekordów z każdego stanu, z tym samym
 offsetem strony. Liczba stron zależy od największej liczności statusu.
 Krótsze sekcje nie powtarzają ostatnich rekordów na dalszych stronach.
-Widok `unassigned-tasks` nakłada `assignee__isnull=True` po `visible_to`,
-a przed filtrami i paginacją; parametr `task_assignee` jest w nim ignorowany.
+Widok `unassigned-tasks` nakłada `section__isnull=True` po `visible_to`,
+a przed filtrami i paginacją. Parametry `task_project` i `task_section` są w nim
+ignorowane, a `task_assignee` filtruje wykonawcę. Projekt zadania wynika z grupy.
+Tworzenie bez grupy zapisuje właściciela przez `workspace_owner(request)`,
+aktywny Workspace oraz faktycznego autora historii; nie tworzy zastępczego projektu/grupy.
 Historyczny klucz preferencji sidebaru `tasks-my` pozostaje zachowany, ale wskazuje
 nową nazwę i adres nieprzydzielonych. Stary URL `my-tasks` zachowuje swój filtr osoby.
 Zakres właściciela, Workspace, wykonawcy i zadań głównych jest ustalany przed

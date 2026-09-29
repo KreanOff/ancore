@@ -136,7 +136,7 @@ class TaskStatusPaginationTests(TestCase):
 
     def test_unassigned_tasks_filter_search_sort_and_paginate_before_rendering(self):
         tasks = Task.objects.filter(user=self.user, workplace=self.workplace, status='new')
-        tasks.update(assignee=None)
+        tasks.update(section=None)
         params = {'view': 'unassigned-tasks', 'q': 'Zadanie new', 'status': 'new',
                   'task_project': self.project.pk, 'sort': 'title_desc', 'page_size': 25}
         url = f'/workplaces/{self.workplace.slug}/tasks/'
@@ -149,6 +149,6 @@ class TaskStatusPaginationTests(TestCase):
         self.assertTrue(window['next_url'].startswith(url))
         response = self.client.get(window['next_url'])
         self.assertEqual(response.context['task_window']['queryset'][0].title, 'Zadanie new 027')
-        self.assertEqual(response.context['task_window']['project_filter'], str(self.project.pk))
+        self.assertEqual(response.context['task_window']['project_filter'], '')
         response = self.client.get(url, {**params, 'q': 'Brak dopasowania'})
         self.assertContains(response, 'Nie znaleziono zadań.')

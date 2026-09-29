@@ -165,8 +165,9 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 
 Menu Zadań i nagłówki katalogów używają nazw „Projekty”, „Grupy”, „Zadania”
 oraz „Zadania nieprzydzielone”, w tej kolejności. Ostatni widok pokazuje dostępne
-zadania główne bez przypisanej osoby, zachowuje filtry i paginację po statusach,
-ale pomija zbędny filtr wykonawcy. Pusty stan wyjaśnia brak zadań bez wykonawcy.
+zadania główne bez projektu i grupy, niezależnie od wykonawcy. Zachowuje filtr
+wykonawcy i paginację po statusach, ale pomija filtry projektu i grupy.
+Pusty stan wyjaśnia brak zadań bez projektu i grupy.
 Nazwy i adresy skrótów w ulubionych sidebaru odpowiadają temu menu.
 Na telefonie `tasks-topbar--unassigned` pozostawia 2.5rem miejsca na przycisk
 menu, a przyciski nagłówka w razie potrzeby przechodzą do następnego wiersza.
@@ -932,6 +933,15 @@ częściową nawigację. Dashboard nie wymaga osobnego JavaScriptu. Puste stany
 prowadzą do odpowiedniego modułu; pełne nazwy pozostają w tekście i `title`.
 
 ## 6. Modale
+
+„Nowe zadanie” otwiera się z pustymi polami „Projekt” i „Grupa”, również
+na ekranie konkretnego projektu lub grupy i po ponownym otwarciu.
+Wybór projektu nie wybiera automatycznie pierwszej grupy. Opcje „Brak projektu”
+i „Brak grupy” pozwalają wyczyścić wybór; usunięcie projektu zeruje też grupę.
+Zapis obu pustych pól kieruje do „Zadań nieprzydzielonych”, także w pustym Workspace.
+Wybrany projekt wymaga wskazania jego grupy; błąd zachowuje tytuł i wybrane pola.
+Wariant `data-allow-unassigned` dotyczy wyłącznie formularza Zadań; Kanban
+zachowuje istniejący wybór przestrzeni i tablicy.
 
 Zakładka „Główna” szczegółów zadania i podzadania nie pokazuje „Powodu blokady”,
 dawnych kontrolek „Czasu pracy”, „Szacowanego czasu” ani bocznej „Historii statusu”. Modal tworzenia

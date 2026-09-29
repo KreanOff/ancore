@@ -140,6 +140,13 @@ jest teraz „Prywatne”.
 Lista klas i liczba zdefiniowanych metod testowych jest generowana w
 [CODE_INDEX.md](CODE_INDEX.md). Nie jest to raport wykonania testów ani procent pokrycia.
 
+`tasks.test_unassigned_creation` sprawdza puste powiązania nowego zadania,
+tworzenie bez projektu/grupy (także w pustym Workspace), oba warianty URL,
+autora historii, prywatność, wykonawcę, zakończenie, edycję i późniejsze przypisanie
+grupy oraz odrzucanie obcych, prywatnych i niespójnych grup.
+Regresje katalogu i paginacji są w `tasks.test_directory_tabs`
+i `tasks.test_status_pagination`; wspólny skrypt wymaga też sprawdzenia Kanbana w przeglądarce.
+
 ## 5. Dobór zakresu sprawdzenia
 
 | Zmiana | Minimalny sensowny zakres |

@@ -1217,6 +1217,7 @@ function initTasksPage() {
     const issueProjectInput = issueForm ? issueForm.querySelector('[name="project_id"]') : null;
     const issueColumnInput = issueForm ? issueForm.querySelector('[name="column_id"]') : null;
     const issueSectionSelect = issueForm ? issueForm.querySelector('[name="section"]') : null;
+    const issueAllowsUnassigned = issueForm?.dataset.allowUnassigned === 'true';
     const issueStatusSelect = issueForm ? issueForm.querySelector('[name="status"]') : null;
     const issueProjectPicker = issueForm ? issueForm.querySelector('[data-issue-project-picker]') : null;
     const issueSectionPicker = issueForm ? issueForm.querySelector('[data-issue-section-picker]') : null;
@@ -3028,9 +3029,18 @@ function initTasksPage() {
     }
 
     function selectIssueSection(sectionId) {
+        if (issueAllowsUnassigned && !sectionId && issueSectionSelect) {
+            issueSectionSelect.value = '';
+            setIssueChip(issueSectionPicker, 'Wybierz grupę');
+            return true;
+        }
         const sectionOption = findIssueSectionRecord(sectionId);
         if (!sectionOption || !issueSectionSelect) return false;
 
+        // A validation response may contain native options only for the posted project.
+        if (issueAllowsUnassigned && !Array.from(issueSectionSelect.options).some(option => option.value === sectionOption.sectionId)) {
+            issueSectionSelect.add(new Option(sectionOption.sectionTitle, sectionOption.sectionId));
+        }
         issueSectionSelect.value = sectionOption.sectionId || '';
         setIssueChip(issueSectionPicker, sectionOption.sectionTitle || sectionCopy.emptyLabel);
         return true;
@@ -3055,6 +3065,13 @@ function initTasksPage() {
     }
 
     function selectIssueProject(projectId, preferredSectionId = '') {
+        if (issueAllowsUnassigned && !projectId) {
+            if (issueProjectInput) issueProjectInput.value = '';
+            setIssueChip(issueProjectPicker, 'Wybierz projekt');
+            selectIssueSection('');
+            filterIssueSections('');
+            return;
+        }
         const projectOption = findIssueProjectRecord(projectId);
         if (!projectOption) return;
 
@@ -3068,6 +3085,10 @@ function initTasksPage() {
         const firstVisibleSectionId = filterIssueSections(selectedProjectId);
         const currentSectionOption = getSelectedSectionOption();
         const currentSectionFits = currentSectionOption?.sectionProjectId === selectedProjectId;
+        if (issueAllowsUnassigned) {
+            selectIssueSection(preferredSectionId || (currentSectionFits ? currentSectionOption.sectionId : ''));
+            return;
+        }
         const nextSectionId = preferredSectionId || (currentSectionFits ? currentSectionOption.sectionId : '') || projectOption.defaultSectionId || firstVisibleSectionId;
 
         if (!selectIssueSection(nextSectionId) && firstVisibleSectionId) {
@@ -3077,10 +3098,10 @@ function initTasksPage() {
 
     function syncIssuePickers() {
         const projectOptions = getIssueProjectRecords();
-        if (!issueForm || !projectOptions.length) return;
+        if (!issueForm) return;
 
         const selectedSectionOption = getSelectedSectionOption();
-        const projectId = issueProjectInput?.value || selectedSectionOption?.sectionProjectId || projectOptions[0]?.projectId || '';
+        const projectId = issueProjectInput?.value || selectedSectionOption?.sectionProjectId || (!issueAllowsUnassigned && projectOptions[0]?.projectId) || '';
         selectIssueProject(projectId, selectedSectionOption?.sectionId || '');
     }
 
@@ -4345,7 +4366,9 @@ function initTasksPage() {
         button.addEventListener('click', () => {
             if (button.disabled) return;
             const sectionId = button.dataset.issueSectionId || '';
-            if (!selectIssueSectionContext(sectionId)) {
+            if (issueAllowsUnassigned) {
+                selectIssueProject('');
+            } else if (!selectIssueSectionContext(sectionId)) {
                 syncIssuePickers();
             }
             setIssueColumn(button.dataset.issueColumnId || '');
@@ -4397,15 +4420,25 @@ function initTasksPage() {
     }, pageListenerOptions);
 
     issueProjectPicker?.addEventListener('click', function(e) {
+        if (e.target.closest('[data-clear-issue-project]')) {
+            selectIssueProject('');
+            closeIssuePickers();
+            return;
+        }
         const option = e.target.closest('[data-project-option]');
         if (option && issueProjectPicker.contains(option)) {
             e.stopPropagation();
-            selectIssueProject(option.dataset.projectId || '', option.dataset.defaultSectionId || '');
+            selectIssueProject(option.dataset.projectId || '', issueAllowsUnassigned ? '' : (option.dataset.defaultSectionId || ''));
             closeIssuePickers();
         }
     }, pageListenerOptions);
 
     issueSectionPicker?.addEventListener('click', function(e) {
+        if (e.target.closest('[data-clear-issue-section]')) {
+            selectIssueSection('');
+            closeIssuePickers();
+            return;
+        }
         const option = e.target.closest('[data-section-option]');
         if (option && issueSectionPicker.contains(option)) {
             e.stopPropagation();

@@ -131,7 +131,12 @@ pełną macierz dostępu opisuje
 | `TaskWorkLog` | Wpis dziennika pracy: zadanie, autor, rozpoczęcie, zakończenie, opis i daty zapisu; liczba minut wynika z przedziału czasu |
 
 „Zadania nieprzydzielone” (`view=unassigned-tasks`) pokazują dostępne zadania
-główne bez wykonawcy w aktywnym Workspace. Przypisanie osoby usuwa zadanie z tej listy.
+główne bez projektu i grupy w aktywnym Workspace, niezależnie od wykonawcy.
+Przypisanie grupy usuwa zadanie z tej listy; przypisanie osoby nie zmienia jego obecności.
+Modal nowego zadania domyślnie pozostawia projekt i grupę puste. Zapis bez nich
+działa również w Workspace bez projektów i przekierowuje do nieprzydzielonych.
+Projekt wynika z grupy, dlatego po wybraniu projektu trzeba wybrać jego grupę
+albo wyczyścić oba pola. Szczegóły pozwalają edytować zadanie bez grupy i później ją przypisać.
 Dawny adres `view=my-tasks` nadal pokazuje zadania przypisane zalogowanej osobie,
 ale nie występuje w nowym menu.
 Wykonawcy i odpowiedzialni są ograniczeni do aktywnych kont zespołu.

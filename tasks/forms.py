@@ -193,7 +193,7 @@ class TaskForm(TaskAccessForm):
             self.fields['section'].initial = current_section
         elif project:
             self.fields['project'].initial = project
-        self.fields['section'].required = True
+        self.fields['section'].required = False
         self.fields['section'].label = 'Grupa projektu'
         self.fields['parent'].required = bool(getattr(self.instance, 'parent_id', None))
         self.fields['title'].label = 'Tytuł'
@@ -225,6 +225,8 @@ class TaskForm(TaskAccessForm):
             project = section.project
         if project and section and section.project_id != project.id:
             self.add_error('section', 'Wybierz grupę z wybranego projektu.')
+        if project and not section and 'section' not in self.errors:
+            self.add_error('section', 'Wybierz grupę z wybranego projektu lub usuń wybór projektu.')
         return cleaned_data
 
     def clean_task_type(self):
@@ -1157,6 +1159,7 @@ class TaskModalForm(TaskAccessForm):
         viewer = kwargs.pop('viewer', None) or user
         workplace = kwargs.pop('workplace', None)
         project = kwargs.pop('project', None)
+        self.project = project
         section = kwargs.pop('section', None)
         sections_queryset = kwargs.pop('sections_queryset', None)
         super().__init__(*args, viewer=viewer, **kwargs)
@@ -1179,7 +1182,7 @@ class TaskModalForm(TaskAccessForm):
             _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user, workplace), 'Brak osoby')
         else:
             _replace_optional_model_choice(self, 'assignee', get_user_model().objects.none(), 'Brak osoby')
-        self.fields['section'].required = True
+        self.fields['section'].required = False
         self.fields['section'].label = 'Grupa projektu'
         self.fields['tags'].required = False
         self.fields['tags'].label = 'Tagi'
@@ -1193,6 +1196,12 @@ class TaskModalForm(TaskAccessForm):
         self.fields['task_type'].required = False
         if section:
             self.fields['section'].initial = section
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.project and not cleaned_data.get('section') and 'section' not in self.errors:
+            self.add_error('section', 'Wybierz grupę z wybranego projektu lub usuń wybór projektu.')
+        return cleaned_data
 
     def clean_task_type(self):
         return self.cleaned_data.get('task_type') or 'general'

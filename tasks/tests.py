@@ -3402,7 +3402,7 @@ class TaskProjectCreationTests(TestCase):
 
         subtask = Task.objects.get(user=self.user, title='Pierwsze podzadanie')
 
-        self.assertRedirects(response, reverse('tasks:view-task', args=[task.task_id]))
+        self.assertRedirects(response, f"{reverse('tasks:view-task', args=[task.task_id])}?task_pk={task.pk}&tab=subtasks")
         self.assertEqual(subtask.parent, task)
         self.assertEqual(subtask.section, section)
         self.assertEqual(subtask.description, 'Opis podzadania')
@@ -3868,7 +3868,7 @@ class TaskProjectCreationTests(TestCase):
     def test_unassigned_tasks_view_is_available_from_secondary_navigation(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
-        Task.objects.create(user=self.user, section=section, title='Nieprzydzielone zadanie testowe', assignee=None)
+        Task.objects.create(user=self.user, title='Nieprzydzielone zadanie testowe', assignee=self.user)
 
         response = self.client.get(f"{reverse('tasks:tasks')}?view=unassigned-tasks")
 

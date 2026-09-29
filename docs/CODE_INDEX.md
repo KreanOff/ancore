@@ -20,7 +20,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 17 | 0 | 10 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
-| [tasks](../tasks) | 38 | 62 | 40 | 341 |
+| [tasks](../tasks) | 39 | 62 | 40 | 349 |
 | [kanban](../kanban) | 10 | 37 | 9 | 73 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 6 | 7 | 91 |
@@ -1585,6 +1585,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `TaskSharingTests`: 17 metod testowych.
 - `TaskSharingMigrationTests`: 1 metod testowych.
+
+### tasks/test_unassigned_creation.py
+
+Źródło: [tasks/test_unassigned_creation.py](../tasks/test_unassigned_creation.py).
+
+- `UnassignedTaskCreationTests`: 8 metod testowych.
 
 ### tasks/test_work_logs.py
 

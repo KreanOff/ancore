@@ -573,7 +573,7 @@ def _user_can_create_issue(user, active_project=None, active_section=None, workp
         return editable_sections.filter(pk=active_section.pk).exists()
     if active_project:
         return editable_sections.filter(project=active_project).exists()
-    return editable_sections.exists()
+    return bool(user and getattr(user, 'is_authenticated', False))
 
 
 def _task_share_owner(obj):
@@ -1577,7 +1577,8 @@ def _task_window_for_request(request, queryset):
     section = (request.GET.get('task_section') or '').strip()
     assignee = (request.GET.get('task_assignee') or '').strip()
     if request.GET.get('view') == 'unassigned-tasks':
-        assignee = ''
+        project_filter = ''
+        section = ''
     task_type = (request.GET.get('task_type') or '').strip()
     due = (request.GET.get('task_due') or '').strip()
     sort = _task_sort_value((request.GET.get('sort') or '').strip())
@@ -3219,15 +3220,10 @@ def _tasks_page(request, active_section=None):
         viewer=request.user,
     )
     task_modal_sections = _editable_sections_queryset(workspace_owner(request), workplace, viewer=request.user)
-    if active_project_for_form:
-        task_modal_sections = task_modal_sections.filter(project=active_project_for_form)
-    else:
-        task_modal_sections = task_modal_sections.filter(project_id__in=project_option_ids_for_form)
+    task_modal_sections = task_modal_sections.filter(project_id__in=project_option_ids_for_form)
     task_modal_form = TaskModalForm(
         user=workspace_owner(request),
         workplace=workplace,
-        project=active_project_for_form,
-        section=active_section,
         sections_queryset=task_modal_sections,
         viewer=request.user,
     )
@@ -3682,22 +3678,25 @@ def _tasks_page(request, active_section=None):
                 user=workspace_owner(request),
                 workplace=workplace,
                 project=project,
-                section=active_section,
                 sections_queryset=task_modal_sections,
                 viewer=request.user,
             )
             if task_modal_form.is_valid():
                 task = task_modal_form.save(commit=False)
-                if not _user_can_create_task_in_section(workspace_owner(request), task.section):
+                if task.section_id and not _user_can_create_task_in_section(workspace_owner(request), task.section):
                     raise PermissionDenied
-                task.user = task.section.project.user
+                task.user = workspace_owner(request)
                 task.workplace = workplace
                 task._activity_actor = request.user
                 task.save()
                 task_modal_form.save_m2m()
                 task.activities.filter(action='created').update(metadata={'title': task.title})
                 messages.success(request, 'Zadanie dodane.')
-                return redirect('tasks:task_group', section_id=task.section_id)
+                if task.section_id:
+                    return redirect('tasks:task_group', section_id=task.section_id)
+                tasks_url = (scoped_workplace_app_path(workplace, 'tasks')
+                             if request.resolver_match.namespace == 'workplace_tasks' else reverse('tasks:tasks'))
+                return redirect(f'{tasks_url}?view=unassigned-tasks')
             task_modal_open = True
             messages.error(request, 'Nie udało się dodać zadania.')
 
@@ -3739,7 +3738,7 @@ def _tasks_page(request, active_section=None):
     if my_tasks_view:
         tasks_qs = tasks_qs.filter(assignee=request.user)
     elif unassigned_tasks_view:
-        tasks_qs = tasks_qs.filter(assignee__isnull=True)
+        tasks_qs = tasks_qs.filter(section__isnull=True)
     if active_view == 'all_tasks':
         tasks_qs = directory_queryset(tasks_qs, request.user, directory_tab(request))
 
@@ -3955,6 +3954,7 @@ def _tasks_page(request, active_section=None):
         'navigation_projects': navigation_projects,
         'project_options': project_options,
         'issue_picker_options': _task_modal_picker_options(project_options),
+        'issue_project_id': request.POST.get('project_id', '') if task_modal_open else '',
         'project_window': project_window,
         'project_query': project_window['query'],
         'project_name_filter': project_window['name'],

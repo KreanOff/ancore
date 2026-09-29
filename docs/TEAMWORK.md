@@ -180,7 +180,8 @@ prywatnego właściciela i osób z nadanym dostępem. Istniejące zadania zachow
 dotychczasowy dostęp; nowe zadania i podzadania w formularzach oraz szybkim
 dodawaniu domyślnie są prywatne faktycznego autora. Samo przypisanie wykonawcy
 nadal nie daje dostępu. „Zadania nieprzydzielone” pokazują dostępne zadania
-bez wykonawcy; zadania przypisane pozostają na liście „Zadania”.
+bez projektu i grupy, niezależnie od wykonawcy; przypisanie grupy usuwa zadanie
+z tej listy. Wszystkie widoczne zadania główne pozostają dostępne w katalogu „Zadania”.
 
 Szczegóły zadania mają pole „Widoczność” oraz zakładkę „Członkowie”. Właściciel
 udostępnia zadanie rolom administrator/członek/obserwator i zarządza rolami;

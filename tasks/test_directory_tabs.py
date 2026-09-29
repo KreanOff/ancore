@@ -227,30 +227,35 @@ class DirectoryTabsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         return {task.pk for task in response.context['task_window']['queryset']}
 
-    def test_unassigned_directory_shows_only_visible_roots_without_an_assignee(self):
+    def test_unassigned_directory_shows_only_visible_roots_without_a_group(self):
         visible = {self.own_task.pk, self.shared_task.pk, self.public_task.pk, self.orphan_task.pk}
-        hidden = {self.hidden_task.pk, self.hidden_group_task.pk, self.hidden_project_task.pk,
-                  self.foreign_task.pk, self.child_task.pk}
-        Task.objects.filter(pk__in=visible | hidden).update(assignee=None)
+        Task.objects.filter(pk__in=visible | {self.hidden_task.pk, self.foreign_task.pk, self.child_task.pk}).update(section=None)
         self.client.get(self.url)
         for url in (self.url, '/tasks/'):
             response = self.client.get(url, {'view': 'unassigned-tasks', 'tab': 'favorites',
-                                             'task_assignee': self.member.pk}, follow=True)
+                                             'task_project': self.public.pk, 'task_section': self.public_group.pk}, follow=True)
             self.assertEqual(self.task_ids(response), visible)
             self.assertEqual(response.context['active_view'], 'unassigned_tasks')
             self.assertNotContains(response, 'data-directory-tabs=')
-            self.assertNotContains(response, 'data-project-filter-menu="task_assignee"')
+            self.assertContains(response, 'data-project-filter-menu="task_assignee"')
+            self.assertNotContains(response, 'data-project-filter-menu="task_project"')
+            self.assertNotContains(response, 'data-project-filter-menu="task_section"')
             self.assertContains(response, '<span>Zadania nieprzydzielone</span>')
-        self.shared_task.assignee = self.member
-        self.shared_task.save(update_fields=['assignee'])
+        response = self.client.get(self.url, {'view': 'unassigned-tasks', 'task_assignee': self.owner.pk})
+        self.assertEqual(self.task_ids(response), set())
+        self.shared_task.section = self.public_group
+        self.shared_task.save(update_fields=['section'])
         response = self.client.get(self.url, {'view': 'unassigned-tasks'})
         self.assertNotIn(self.shared_task.pk, self.task_ids(response))
 
     def test_unassigned_empty_state_and_saved_sidebar_shortcut(self):
         from workplaces.navigation import sidebar_favorite_catalog, sidebar_favorite_is_active
 
+        self.orphan_task.section = self.public_group
+        self.orphan_task.save(update_fields=['section'])
         response = self.client.get(self.url, {'view': 'unassigned-tasks'})
         self.assertContains(response, 'Brak zadań nieprzydzielonych.')
+        self.assertContains(response, 'Tutaj pojawią się zadania bez projektu i grupy.')
         item = sidebar_favorite_catalog(self.workspace)['tasks-my']
         self.assertEqual(item['label'], 'Zadania nieprzydzielone')
         self.assertEqual(item['url'], self.url + '?view=unassigned-tasks')

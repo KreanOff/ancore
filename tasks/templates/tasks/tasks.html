@@ -531,6 +531,7 @@
                 </div>
                 {% endif %}
                 {% if active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
+                {% if active_view != 'unassigned_tasks' %}
                 <div class="tasks-filter-dropdown" data-project-filter-menu="task_project">
                     <button type="button" class="tasks-filter-button{% if task_project_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="task_project">
                         <i data-icon="folder-kanban" aria-hidden="true"></i>
@@ -573,7 +574,7 @@
                         <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
                     </div>
                 </div>
-                {% if active_view != 'unassigned_tasks' %}
+                {% endif %}
                 <div class="tasks-filter-dropdown" data-project-filter-menu="task_assignee">
                     <button type="button" class="tasks-filter-button{% if task_assignee_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="task_assignee">
                         <i data-icon="circle-user-round" aria-hidden="true"></i>
@@ -595,7 +596,6 @@
                         <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
                     </div>
                 </div>
-                {% endif %}
                 <div class="tasks-filter-dropdown" data-project-filter-menu="task_type">
                     <button type="button" class="tasks-filter-button{% if task_type_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="task_type">
                         <i data-icon="list-filter" aria-hidden="true"></i>
@@ -824,7 +824,7 @@
                     {% include 'tasks/includes/directory_empty_copy.html' with noun='zadań' query=task_window.query has_filters=task_has_active_filters %}
                     {% elif active_view == 'unassigned_tasks' and not task_has_active_filters %}
                     <h2>Brak zadań nieprzydzielonych.</h2>
-                    <p>Tutaj pojawią się zadania bez przypisanej osoby.</p>
+                    <p>Tutaj pojawią się zadania bez projektu i grupy.</p>
                     {% else %}
                     <h2>{% if task_has_active_filters %}Nie znaleziono zadań.{% else %}Nie ma jeszcze zadań.{% endif %}</h2>
                     <p>{% if task_has_active_filters %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Nowe zadania pojawią się tutaj po ich utworzeniu.{% endif %}</p>
@@ -1957,10 +1957,10 @@
 
 <div class="tasks-modal app-modal-panel tasks-issue-modal {% if task_modal_open %}is-open{% endif %}" id="issue-modal" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title" aria-hidden="{% if task_modal_open %}false{% else %}true{% endif %}">
     <div class="tasks-modal__dialog tasks-issue-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form">
+        <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="issue-create-form" data-allow-unassigned="true">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_task_modal">
-            <input type="hidden" name="project_id" id="issue-project-id" value="{% if active_project %}{{ active_project.id }}{% endif %}">
+            <input type="hidden" name="project_id" id="issue-project-id" value="{{ issue_project_id }}">
             {{ issue_picker_options|json_script:"issue-picker-options" }}
             <header class="tasks-modal__header tasks-issue-modal__header">
                 <div class="tasks-issue-modal__crumbs">
@@ -2009,7 +2009,7 @@
                             <span>Projekt</span>
                             <div class="tasks-chip-picker tasks-issue-chip-picker" data-issue-project-picker>
                                 <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
-                                    <span data-picker-label>{% if active_project %}{{ active_project.name }}{% else %}Wybierz projekt{% endif %}</span>
+                                    <span data-picker-label>Wybierz projekt</span>
                                     <i data-icon="chevron-down" aria-hidden="true"></i>
                                 </button>
                                 <div class="tasks-chip-picker__menu" role="menu">
@@ -2017,6 +2017,7 @@
                                         <i data-icon="search" aria-hidden="true"></i>
                                         <input type="search" placeholder="Szukaj projektu" aria-label="Szukaj projektu" data-picker-search data-picker-search-type="project">
                                     </div>
+                                    <button type="button" role="menuitem" data-clear-issue-project>Brak projektu</button>
                                 </div>
                             </div>
                         </div>
@@ -2024,7 +2025,7 @@
                             <span>Grupa</span>
                             <div class="tasks-chip-picker tasks-issue-chip-picker" data-issue-section-picker>
                                 <button type="button" class="tasks-project-chip tasks-picker-chip" aria-haspopup="menu" aria-expanded="false" data-picker-toggle>
-                                    <span data-picker-label>{% if active_section %}{{ active_section.title }}{% else %}Wybierz grupę{% endif %}</span>
+                                    <span data-picker-label>Wybierz grupę</span>
                                     <i data-icon="chevron-down" aria-hidden="true"></i>
                                 </button>
                                 <div class="tasks-chip-picker__menu" role="menu">
@@ -2032,6 +2033,7 @@
                                         <i data-icon="search" aria-hidden="true"></i>
                                         <input type="search" placeholder="Szukaj grupy" aria-label="Szukaj grupy" data-picker-search data-picker-search-type="section">
                                     </div>
+                                    <button type="button" role="menuitem" data-clear-issue-section>Brak grupy</button>
                                 </div>
                             </div>
                         </div>
