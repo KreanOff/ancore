@@ -50,17 +50,11 @@
                 </span>
                 Grupy
             </a>
-            <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
+            <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' or active_view == 'unassigned_tasks' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <i data-icon="list-checks" aria-hidden="true"></i>
                 </span>
                 Zadania
-            </a>
-            <a href="{% url 'tasks:tasks' %}?view=unassigned-tasks" class="tasks-rail-link {% if active_view == 'unassigned_tasks' %}is-active{% endif %}">
-                <span class="tasks-rail-icon" aria-hidden="true">
-                    <i data-icon="list-todo" aria-hidden="true"></i>
-                </span>
-                Zadania nieprzydzielone
             </a>
             <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
@@ -149,7 +143,7 @@
 {% block content %}
 <div class="tasks-page tasks-list-page" data-task-app="tasks" data-task-base-url="{{ workplace_app_urls.tasks }}">
     <section class="tasks-workspace" aria-label="Lista zadań">
-        <header class="tasks-topbar{% if not active_project or active_view == 'project' %} tasks-topbar--directory tasks-topbar--project-directory{% endif %}{% if directory_tabs %} tasks-topbar--with-tabs{% endif %}{% if active_view == 'unassigned_tasks' %} tasks-topbar--unassigned{% endif %}">
+        <header class="tasks-topbar{% if not active_project or active_view == 'project' %} tasks-topbar--directory tasks-topbar--project-directory{% endif %}{% if directory_tabs %} tasks-topbar--with-tabs{% endif %}">
             <div class="tasks-titlebar-left{% if active_view == 'project' or active_view == 'section' %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
                 {% if active_view == 'project' and active_project %}
                 <a href="{% url 'tasks:tasks' %}" class="tasks-issue-close" title="Wróć do wszystkich projektów" aria-label="Wróć do wszystkich projektów" data-projects-back-link>
@@ -178,12 +172,10 @@
                         <span>{{ active_project.name }}</span>
                     </span>
                     {% else %}
-                    {% if active_view == 'all_tasks' %}
+                    {% if active_view == 'all_tasks' or active_view == 'unassigned_tasks' %}
                     <span>Zadania</span>
                     {% elif active_view == 'my_tasks' %}
                     <span>Moje zadania</span>
-                    {% elif active_view == 'unassigned_tasks' %}
-                    <span>Zadania nieprzydzielone</span>
                     {% elif active_view == 'all_groups' %}
                     <span>Grupy</span>
                     {% elif active_view == 'tags' %}
@@ -195,7 +187,7 @@
                 </span>
                 {% endif %}
                 {% if directory_tabs %}
-                <nav class="notifications-tabs tasks-directory-tabs" aria-label="{% if active_view == 'projects' %}Widok projektów{% elif active_view == 'all_tasks' %}Widok zadań{% else %}Widok grup{% endif %}" data-directory-tabs="{{ directory_tab }}">
+                <nav class="notifications-tabs tasks-directory-tabs" aria-label="{% if active_view == 'projects' %}Widok projektów{% elif active_view == 'all_tasks' or active_view == 'unassigned_tasks' %}Widok zadań{% else %}Widok grup{% endif %}" data-directory-tabs="{{ directory_tab }}">
                     {% for tab in directory_tabs %}
                     <a href="{{ tab.url }}"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }}</a>
                     {% endfor %}
@@ -204,7 +196,7 @@
             </div>
             {% if active_view == 'projects' or active_view == 'project' or active_view == 'all_groups' or active_view == 'tags' or active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %}
             <form hidden id="projects-search-form" method="get" action="{% url 'tasks:tasks' %}" data-project-search-form{% if active_view == 'all_tasks' or active_view == 'my_tasks' or active_view == 'unassigned_tasks' %} data-server-directory-filters="true"{% endif %}>
-                {% if directory_tabs %}<input type="hidden" name="tab" value="{{ directory_tab }}">{% endif %}
+                {% if directory_tabs and active_view != 'unassigned_tasks' %}<input type="hidden" name="tab" value="{{ directory_tab }}">{% endif %}
                 {% if active_view == 'project' and active_project %}
                 <input type="hidden" name="project" value="{{ active_project.id }}">
                 {% elif active_view == 'all_groups' %}
@@ -820,7 +812,7 @@
                     <i data-icon="{% if active_view == 'all_tasks' %}list-checks{% else %}list-todo{% endif %}" aria-hidden="true"></i>
                 </span>
                 <div class="tasks-empty-state__copy">
-                    {% if directory_tabs %}
+                    {% if active_view == 'all_tasks' %}
                     {% include 'tasks/includes/directory_empty_copy.html' with noun='zadań' query=task_window.query has_filters=task_has_active_filters %}
                     {% elif active_view == 'unassigned_tasks' and not task_has_active_filters %}
                     <h2>Brak zadań nieprzydzielonych.</h2>

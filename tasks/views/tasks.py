@@ -3737,10 +3737,9 @@ def _tasks_page(request, active_section=None):
 
     if my_tasks_view:
         tasks_qs = tasks_qs.filter(assignee=request.user)
-    elif unassigned_tasks_view:
-        tasks_qs = tasks_qs.filter(section__isnull=True)
-    if active_view == 'all_tasks':
-        tasks_qs = directory_queryset(tasks_qs, request.user, directory_tab(request))
+    if active_view in {'all_tasks', 'unassigned_tasks'}:
+        selected_tab = 'unassigned' if unassigned_tasks_view else directory_tab(request)
+        tasks_qs = directory_queryset(tasks_qs, request.user, selected_tab)
 
     project_window = _project_window_for_request(
         request,
@@ -3925,7 +3924,7 @@ def _tasks_page(request, active_section=None):
             paginate=True,
         )
     elif all_tasks_view or my_tasks_view or unassigned_tasks_view:
-        if active_view == 'all_tasks':
+        if active_view in {'all_tasks', 'unassigned_tasks'}:
             decorate_favorites(task_window['queryset'], request, 'task')
         all_status_groups = _status_groups_for_tasks(
             task_window['queryset'],
@@ -4096,9 +4095,12 @@ def _tasks_page(request, active_section=None):
         'can_create_issue': can_create_issue,
     }
     context.update(follow_context(request.user, active_project, 'tasks', 'project'))
-    if active_view in {'projects', 'all_groups', 'all_tasks'}:
-        context['directory_tab'] = directory_tab(request)
-        context['directory_tabs'] = directory_tabs(request, context['directory_tab'])
+    if active_view in {'projects', 'all_groups', 'all_tasks', 'unassigned_tasks'}:
+        context['directory_tab'] = 'unassigned' if unassigned_tasks_view else directory_tab(request)
+        context['directory_tabs'] = directory_tabs(
+            request, context['directory_tab'],
+            include_unassigned=active_view in {'all_tasks', 'unassigned_tasks'},
+        )
     return render(request, 'tasks/tasks.html', context)
 
 

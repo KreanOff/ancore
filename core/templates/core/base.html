@@ -59,7 +59,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260929-unassigned-navigation">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260929-directory-tab-hover">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
@@ -197,10 +197,8 @@
                     {% sidebar_favorite_toggle 'tasks-projects' 'Projekty' 'briefcase-business' sidebar_tasks_url %}
                     <a href="{{ sidebar_tasks_url }}?view=all-groups" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_groups' or active_view == 'section' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-groups" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="layers-3"></i></span><span>Grupy</span></a>
                     {% sidebar_favorite_toggle 'tasks-groups' 'Grupy' 'layers-3' sidebar_tasks_url|add:'?view=all-groups' %}
-                    <a href="{{ sidebar_tasks_url }}?view=all-tasks" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_tasks' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="list-checks"></i></span><span>Zadania</span></a>
+                    <a href="{{ sidebar_tasks_url }}?view=all-tasks" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_tasks' or active_view == 'unassigned_tasks' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="list-checks"></i></span><span>Zadania</span></a>
                     {% sidebar_favorite_toggle 'tasks-all' 'Zadania' 'list-checks' sidebar_tasks_url|add:'?view=all-tasks' %}
-                    <a href="{{ sidebar_tasks_url }}?view=unassigned-tasks" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'unassigned_tasks' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-my" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="user-round-check"></i></span><span>Zadania nieprzydzielone</span></a>
-                    {% sidebar_favorite_toggle 'tasks-my' 'Zadania nieprzydzielone' 'user-round-check' sidebar_tasks_url|add:'?view=unassigned-tasks' %}
                 </div>
             </section>
 

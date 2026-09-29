@@ -14739,6 +14739,9 @@ body.is-resizing-directory-columns {
     font-size: var(--font-size-lg);
     font-weight: 400 !important;
 }
+.tasks-directory-tabs.notifications-tabs a:not([aria-current="page"]):hover {
+    border-bottom-color: var(--system-interaction);
+}
 
 .tasks-issue-row.tasks-issue-row--with-favorite {
     grid-template-columns: 18px 22px 24px minmax(190px, 1fr) max-content max-content max-content 30px;

@@ -236,11 +236,13 @@ class DirectoryTabsTests(TestCase):
                                              'task_project': self.public.pk, 'task_section': self.public_group.pk}, follow=True)
             self.assertEqual(self.task_ids(response), visible)
             self.assertEqual(response.context['active_view'], 'unassigned_tasks')
-            self.assertNotContains(response, 'data-directory-tabs=')
+            self.assertContains(response, 'data-directory-tabs="unassigned"')
+            self.assertContains(response, 'aria-current="page">Nieprzydzielone</a>')
             self.assertContains(response, 'data-project-filter-menu="task_assignee"')
             self.assertNotContains(response, 'data-project-filter-menu="task_project"')
             self.assertNotContains(response, 'data-project-filter-menu="task_section"')
-            self.assertContains(response, '<span>Zadania nieprzydzielone</span>')
+            self.assertContains(response, '<span>Zadania</span>')
+            self.assertNotContains(response, 'data-sidebar-source-item="tasks-my"')
         response = self.client.get(self.url, {'view': 'unassigned-tasks', 'task_assignee': self.owner.pk})
         self.assertEqual(self.task_ids(response), set())
         self.shared_task.section = self.public_group
@@ -260,6 +262,32 @@ class DirectoryTabsTests(TestCase):
         self.assertEqual(item['label'], 'Zadania nieprzydzielone')
         self.assertEqual(item['url'], self.url + '?view=unassigned-tasks')
         self.assertTrue(sidebar_favorite_is_active('tasks-my', response.wsgi_request, 'unassigned_tasks'))
+        self.assertTrue(sidebar_favorite_is_active('tasks-all', response.wsgi_request, 'unassigned_tasks'))
+
+    def test_unassigned_tab_navigation_preserves_filters_and_resets_page(self):
+        response = self.client.get(self.url, {
+            'view': 'all-tasks', 'tab': 'public', 'page': 2, 'page_size': 25,
+            'q': 'Bez grupy', 'sort': 'title_desc', 'task_assignee': self.member.pk,
+            'task_project': self.public.pk, 'task_section': self.public_group.pk,
+        })
+        tab = response.context['directory_tabs'][-1]
+        self.assertEqual(tab['label'], 'Nieprzydzielone')
+        params = parse_qs(urlsplit(tab['url']).query)
+        self.assertEqual(params, {
+            'view': ['unassigned-tasks'], 'page_size': ['25'], 'q': ['Bez grupy'],
+            'sort': ['title_desc'], 'task_assignee': [str(self.member.pk)],
+        })
+        response = self.client.get(tab['url'])
+        self.assertEqual(self.task_ids(response), {self.orphan_task.pk})
+        self.assertTrue(response.context['directory_tabs'][-1]['active'])
+        for tab in response.context['directory_tabs'][:-1]:
+            params = parse_qs(urlsplit(tab['url']).query)
+            self.assertEqual(params['view'], ['all-tasks'])
+            self.assertEqual(params['tab'], [tab['value']])
+            self.assertEqual(params['q'], ['Bez grupy'])
+        for params in ({}, {'view': 'all-groups'}):
+            response = self.client.get(self.url, params)
+            self.assertNotIn('unassigned', [tab['value'] for tab in response.context['directory_tabs']])
 
     def test_tasks_partition_respects_inherited_access_and_excludes_children(self):
         expected = {
@@ -362,7 +390,7 @@ class DirectoryTabsTests(TestCase):
             values = parse_qs(urlsplit(tab['url']).query)
             self.assertNotIn('page', values)
             self.assertEqual(values['q'], ['Próba'])
-            self.assertEqual(values['view'], ['all-tasks'])
+            self.assertEqual(values['view'], ['unassigned-tasks' if tab['value'] == 'unassigned' else 'all-tasks'])
         response = self.client.get(self.url, {**params, 'tab': 'favorites'})
         self.assertContains(response, 'Nie znaleziono zadań.')
         response = self.client.get(self.url, {'view': 'all-tasks', 'tab': 'favorites'})

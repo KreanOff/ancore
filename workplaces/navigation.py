@@ -60,7 +60,7 @@ def sidebar_favorite_is_active(item_key, request, active_view='', active_contact
             return False
         expected_view = {
             'tasks-my': 'unassigned_tasks',
-            'tasks-all': 'all_tasks',
+            'tasks-all': ('all_tasks', 'unassigned_tasks'),
             'tasks-projects': ('projects', 'project'),
             'tasks-groups': ('all_groups', 'section'),
             'tags': 'tags',

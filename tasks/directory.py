@@ -22,6 +22,8 @@ def directory_tab(request):
 def directory_queryset(queryset, viewer, tab):
     favorites = queryset.model.objects.filter(pk=OuterRef('pk'), favorited_by=viewer)
     queryset = queryset.annotate(is_favorite=Exists(favorites))
+    if tab == 'unassigned' and queryset.model is Task:
+        return queryset.filter(section__isnull=True)
     if tab == 'favorites':
         return queryset.filter(is_favorite=True)
     private = Q(visibility='private', private_owner=viewer)
@@ -44,12 +46,20 @@ def directory_queryset(queryset, viewer, tab):
     return queryset.exclude(private).exclude(public)
 
 
-def directory_tabs(request, selected):
+def directory_tabs(request, selected, *, include_unassigned=False):
     params = request.GET.copy()
     params.pop('page', None)
     tabs = []
-    for value, label in DIRECTORY_TABS:
-        params['tab'] = value
+    choices = DIRECTORY_TABS + (('unassigned', 'Nieprzydzielone'),) if include_unassigned else DIRECTORY_TABS
+    for value, label in choices:
+        if include_unassigned:
+            params['view'] = 'unassigned-tasks' if value == 'unassigned' else 'all-tasks'
+        if value == 'unassigned':
+            params.pop('tab', None)
+            params.pop('task_project', None)
+            params.pop('task_section', None)
+        else:
+            params['tab'] = value
         tabs.append({'value': value, 'label': label, 'active': value == selected,
                      'url': f'{request.path}?{params.urlencode()}'})
     return tabs

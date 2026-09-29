@@ -70,7 +70,7 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 - Katalog projektów — domyślny widok modułu.
 - Projekt — lista jego grup.
 - Grupy oraz widok konkretnej grupy.
-- Zadania i Zadania nieprzydzielone.
+- Zadania z zakładką „Nieprzydzielone”.
 - Szczegóły zadania/podzadania, komentarze z plikami, zdjęciami i `@Imię Nazwisko` oraz historia; nagłówek nie udostępnia przycisku obserwowania.
 - Obserwowanie projektu: nowe komentarze i zmiany jego zadań w filtrze „Obserwowane”.
 - Katalog tagów oraz formularze tworzenia i edycji.
@@ -80,7 +80,7 @@ serwera. UI ma wybór widocznych kolumn, zmianę szerokości/kolejności oraz ak
 zbiorcze. Zakres funkcji różni się między typami list; nie należy automatycznie
 przenosić każdej funkcji jednego katalogu do wszystkich pozostałych.
 
-„Projekty”, „Grupy” i „Zadania” mają cztery zakładki:
+„Projekty”, „Grupy” i „Zadania” współdzielą cztery zakładki:
 „Prywatne” (domyślna, własne prywatne elementy, również udostępnione innym),
 „Udostępnione” (prywatne elementy innych osób dostępne odbiorcy), „Publiczne”
 (dostęp dla całego Workspace) i „Ulubione” (osobiste oznaczenia z dowolnej kategorii).
@@ -92,8 +92,9 @@ dziedziczy kategorię grupy i projektu; własne prywatne zadanie ma pierwszeńst
 przed kategorią rodziców. Publiczne zadanie bez grupy trafia do „Publiczne”.
 Katalog nadal zawiera zadania główne, a podzadania są dostępne w szczegółach rodzica.
 Relacje `favorited_by` są osobne dla każdego konta i niezależne od skrótów sidebaru.
-Odebranie dostępu ukrywa również ulubiony element. „Zadania nieprzydzielone”, zadania grupy
-oraz grupy wewnątrz konkretnego projektu zachowują listę bez tych zakładek.
+Odebranie dostępu ukrywa również ulubiony element. „Zadania” mają dodatkowo
+zakładkę „Nieprzydzielone” po „Ulubione”, zamiast osobnej pozycji menu bocznego.
+Zadania grupy oraz grupy wewnątrz konkretnego projektu zachowują listę bez zakładek.
 
 Lista grup projektu współdzieli z „Grupy” wyszukiwanie, sortowanie,
 filtry statusu, typu, odpowiedzialnego i priorytetu oraz paginację w pasku
@@ -130,7 +131,7 @@ pełną macierz dostępu opisuje
 | `TaskAttachment` | Plik przypisany do zadania, nazwa i rozmiar |
 | `TaskWorkLog` | Wpis dziennika pracy: zadanie, autor, rozpoczęcie, zakończenie, opis i daty zapisu; liczba minut wynika z przedziału czasu |
 
-„Zadania nieprzydzielone” (`view=unassigned-tasks`) pokazują dostępne zadania
+Zakładka „Nieprzydzielone” (`view=unassigned-tasks`) pokazuje dostępne zadania
 główne bez projektu i grupy w aktywnym Workspace, niezależnie od wykonawcy.
 Przypisanie grupy usuwa zadanie z tej listy; przypisanie osoby nie zmienia jego obecności.
 Modal nowego zadania domyślnie pozostawia projekt i grupę puste. Zapis bez nich

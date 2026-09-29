@@ -240,7 +240,8 @@ prywatna grupa trafia do „Prywatne” także w projekcie udostępnionym odbior
 Katalog zadań nadal filtruje `parent__isnull=True`. Własne prywatne zadanie
 trafia do „Prywatne”, publiczne dziedziczy kategorię grupy/projektu, a publiczne
 bez grupy jest „Publiczne”. Filtr obejmuje dane przed liczeniem i stronicowaniem
-każdego statusu. Widoki nieprzydzielonych, dawny „Moje zadania” i lista konkretnej grupy go nie stosują.
+każdego statusu. Zakładka „Nieprzydzielone” nie stosuje podziału według widoczności.
+Dawny „Moje zadania” i lista konkretnej grupy nie stosują filtrów zakładek.
 Stan ulubionych jest adnotacją `Exists` względem relacji `favorited_by` aktualnego
 odbiorcy, bez osobnego zapytania dla każdego wiersza. Endpoint POST
 `/tasks/favorites/<project|section|task>/<pk>/` i jego wariant scoped przyjmują
@@ -261,13 +262,18 @@ na identyfikatorach przefiltrowanego zbioru. Katalogi zadań, nieprzydzielonych 
 pobierają następnie najwyżej `page_size` rekordów z każdego stanu, z tym samym
 offsetem strony. Liczba stron zależy od największej liczności statusu.
 Krótsze sekcje nie powtarzają ostatnich rekordów na dalszych stronach.
-Widok `unassigned-tasks` nakłada `section__isnull=True` po `visible_to`,
+Zakładka „Nieprzydzielone” zachowuje URL `view=unassigned-tasks` i nakłada
+`section__isnull=True` po `visible_to`,
 a przed filtrami i paginacją. Parametry `task_project` i `task_section` są w nim
 ignorowane, a `task_assignee` filtruje wykonawcę. Projekt zadania wynika z grupy.
 Tworzenie bez grupy zapisuje właściciela przez `workspace_owner(request)`,
 aktywny Workspace oraz faktycznego autora historii; nie tworzy zastępczego projektu/grupy.
 Historyczny klucz preferencji sidebaru `tasks-my` pozostaje zachowany, ale wskazuje
-nową nazwę i adres nieprzydzielonych. Stary URL `my-tasks` zachowuje swój filtr osoby.
+zakładkę nieprzydzielonych. Linki `directory_tabs(..., include_unassigned=True)`
+łączą ją z czterema kategoriami `view=all-tasks`, zachowują wspólne filtry
+i zerują stronę; wejście do nieprzydzielonych usuwa filtry projektu i grupy.
+Menu boczne oznacza „Zadania” jako aktywne w obu widokach.
+Stary URL `my-tasks` zachowuje swój filtr osoby.
 Zakres właściciela, Workspace, wykonawcy i zadań głównych jest ustalany przed
 filtrowaniem, agregacją i paginacją.
 

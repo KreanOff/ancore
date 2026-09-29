@@ -163,27 +163,30 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 
 ## 2. Powłoka aplikacji
 
-Menu Zadań i nagłówki katalogów używają nazw „Projekty”, „Grupy”, „Zadania”
-oraz „Zadania nieprzydzielone”, w tej kolejności. Ostatni widok pokazuje dostępne
-zadania główne bez projektu i grupy, niezależnie od wykonawcy. Zachowuje filtr
-wykonawcy i paginację po statusach, ale pomija filtry projektu i grupy.
-Pusty stan wyjaśnia brak zadań bez projektu i grupy.
-Nazwy i adresy skrótów w ulubionych sidebaru odpowiadają temu menu.
-Na telefonie `tasks-topbar--unassigned` pozostawia 2.5rem miejsca na przycisk
-menu, a przyciski nagłówka w razie potrzeby przechodzą do następnego wiersza.
+Menu Zadań używa nazw „Projekty”, „Grupy” i „Zadania”, w tej kolejności.
+„Nieprzydzielone” jest ostatnią zakładką katalogu „Zadania”, po „Ulubione”,
+bez osobnej pozycji w menu. Pokazuje dostępne zadania główne bez projektu
+i grupy, niezależnie od wykonawcy. Zachowuje filtr wykonawcy, gwiazdki ulubionych
+oraz paginację po statusach, ale pomija filtry projektu i grupy.
+Pusty stan wyjaśnia brak zadań bez projektu i grupy. Stary adres
+`view=unassigned-tasks` oraz zapisane skróty sidebaru otwierają tę zakładkę.
+Nagłówek pozostaje „Zadania”, a aktywna pozycja menu to również „Zadania”.
 
 Katalogi „Projekty”, „Grupy” i „Zadania” mają zakładki „Prywatne”,
 „Udostępnione”, „Publiczne” i „Ulubione” w nagłówku, po prawej stronie tytułu.
 Wariant `tasks-topbar--with-tabs` umieszcza je w `tasks-titlebar-left` z odstępem
 1.5rem od tytułu. `notifications-tabs tasks-directory-tabs` korzysta ze wspólnego
 turkusowego podkreślenia i tekstu 15px/400, bez osobnej dolnej ramki całego paska.
+Najechanie na nieaktywną zakładkę pokazuje identyczne podkreślenie w szarym
+kolorze `--system-interaction`; aktywna zakładka zachowuje turkusowy pasek.
 Na wąskim ekranie zakładki przechodzą do kolejnego wiersza wewnątrz nagłówka;
 tytuł pozostawia miejsce na mobilny przycisk menu. Poniżej pozostaje pasek filtrów,
 wyszukiwania i paginacji. Zakładki są linkami z `aria-current="page"`,
 obsługiwanymi przez wspólną częściową nawigację i historię przeglądarki.
 Parametr `tab` zachowuje się podczas wyszukiwania, sortowania, filtrowania
 i paginacji; przełączenie kategorii zeruje numer strony, zachowując filtry.
-Nieznana lub pominięta wartość wybiera „Prywatne”.
+Nieznana lub pominięta wartość wybiera „Prywatne”; adres
+`view=unassigned-tasks` wybiera osobno zakładkę „Nieprzydzielone”.
 Menu wiersza zawiera „Dodaj do ulubionych” / „Usuń z ulubionych”. Zapis przez POST
 jest wspólny ze stale widoczną gwiazdką po prawej stronie wiersza zadania.
 Wariant `tasks-issue-row--with-favorite` dodaje kolumnę 30px, a przycisk

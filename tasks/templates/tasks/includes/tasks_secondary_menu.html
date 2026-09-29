@@ -31,17 +31,11 @@
             </span>
             Grupy
         </a>
-        <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' %}is-active{% endif %}">
+        <a href="{% url 'tasks:tasks' %}?view=all-tasks" class="tasks-rail-link {% if active_view == 'all_tasks' or active_view == 'unassigned_tasks' %}is-active{% endif %}">
             <span class="tasks-rail-icon" aria-hidden="true">
                 <i data-icon="list-checks" aria-hidden="true"></i>
             </span>
             Zadania
-        </a>
-        <a href="{% url 'tasks:tasks' %}?view=unassigned-tasks" class="tasks-rail-link {% if active_view == 'unassigned_tasks' %}is-active{% endif %}">
-            <span class="tasks-rail-icon" aria-hidden="true">
-                <i data-icon="list-todo" aria-hidden="true"></i>
-            </span>
-            Zadania nieprzydzielone
         </a>
         <a href="{% url 'tasks:tasks' %}?view=tags" class="tasks-rail-link {% if active_view == 'tags' %}is-active{% endif %}">
             <span class="tasks-rail-icon" aria-hidden="true">

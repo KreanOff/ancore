@@ -3865,22 +3865,22 @@ class TaskProjectCreationTests(TestCase):
         self.assertEqual(activity.metadata['from_label'], 'Nowe')
         self.assertEqual(activity.metadata['to_label'], 'Realizowane')
 
-    def test_unassigned_tasks_view_is_available_from_secondary_navigation(self):
+    def test_unassigned_tasks_view_is_available_from_directory_tabs(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
         Task.objects.create(user=self.user, title='Nieprzydzielone zadanie testowe', assignee=self.user)
 
         response = self.client.get(f"{reverse('tasks:tasks')}?view=unassigned-tasks")
 
-        self.assertContains(response, 'Zadania nieprzydzielone')
+        self.assertContains(response, 'aria-current="page">Nieprzydzielone</a>')
         self.assertContains(response, 'Nieprzydzielone zadanie testowe')
         self.assertRegex(response.content.decode(),
-                         r'<a[^>]+class="nav-link sidebar-subnav-link active"[^>]+data-sidebar-source-item="tasks-my"')
+                         r'<a[^>]+class="nav-link sidebar-subnav-link active"[^>]+data-sidebar-source-item="tasks-all"')
 
     def test_main_navigation_groups_tasks_and_hides_disabled_sharing(self):
         response = self.client.get(reverse('tasks:tasks'))
 
-        self.assertContains(response, 'Zadania nieprzydzielone')
+        self.assertNotContains(response, 'data-sidebar-source-item="tasks-my"')
         self.assertContains(response, 'Zadania')
         self.assertContains(response, 'Projekty')
         self.assertContains(response, 'Grupy')

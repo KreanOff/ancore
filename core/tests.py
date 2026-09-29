@@ -136,11 +136,11 @@ class SidebarActiveStateTests(SimpleTestCase):
                 'Projekty',
                 'Grupy',
                 'Zadania',
-                'Zadania nieprzydzielone',
             )
         ]
 
         self.assertEqual(positions, sorted(positions))
+        self.assertNotIn('Zadania nieprzydzielone', subnav_html)
 
     def test_tasks_sidebar_uses_project_and_group_directory_icons(self):
         request = SimpleNamespace(

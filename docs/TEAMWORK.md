@@ -313,8 +313,8 @@ osobistych preferencji widoku.
 Nie wystarczy usunąć filtrów właściciela. Formularze relacji korzystają z tego
 samego zakresu danych co widoki. Wykonawcy zadań oraz odpowiedzialni za projekty
 i grupy pochodzą z aktywnych kont zespołu i właściciela; spreparowany wybór
-osoby spoza zespołu jest błędem walidacji. Widok „Zadania nieprzydzielone”
-filtruje brak wykonawcy. Dawny adres `view=my-tasks` nadal filtruje wykonawcę
+osoby spoza zespołu jest błędem walidacji. Zakładka „Nieprzydzielone” w katalogu „Zadania”
+filtruje brak projektu i grupy, niezależnie od wykonawcy. Dawny adres `view=my-tasks` nadal filtruje wykonawcę
 według rzeczywiście zalogowanej osoby. Kanban zachowuje swój osobny model;
 nie dodano pola wykonawcy do kart.
 
