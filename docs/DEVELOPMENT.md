@@ -512,3 +512,20 @@ W przeglądarce sprawdź dwa konta, członka i obserwatora, odebranie dostępu,
 zapis widoczności przez AJAX, szkic formularza, tworzenie zadania/podzadania,
 błąd i pusty wynik pickera, telefon, fokus i Escape, zakładki klawiaturą,
 ponowne wejście przez częściową nawigację oraz referencyjne okna projektu/grupy.
+
+## Moduł Zasoby
+
+Przed uruchomieniem zastosuj `resources/0001_initial.py` przez
+`manage.py migrate`. Migracja dodaje osobną tabelę, relacje do kont i Workspace,
+indeks zakresu/statusu oraz ograniczenia numeru ewidencyjnego, typu, statusu i dat.
+Nie zmienia istniejących danych innych modułów ani nie wymaga nowych zależności.
+
+Uruchamiaj `manage.py test resources dashboard.test_search_regressions workplaces.tests`
+oraz regresje uprawnień Workspace. Testy Zasobów obejmują zwykłe/scoped URL,
+CRUD, autora operacji, dwa Workspace jednego właściciela i obcy zespół,
+cofnięcie dostępu, wybór osoby, daty i unikalność w bazie, filtry, paginację,
+wyszukiwanie globalne, CSRF, escapowanie, usuwanie konta i kaskadę Workspace.
+Browser QA: pusty katalog, tworzenie, edycja, duplikat numeru, błąd sieci/ponowienie,
+filtry, usuwanie/anulowanie, fokus, Escape, telefon, ponowne wejście przez menu
+oraz ekran referencyjny Projektów/Firm. Częściowa nawigacja obejmuje listę
+oraz bezpośrednie adresy tworzenia i edycji zasobów.

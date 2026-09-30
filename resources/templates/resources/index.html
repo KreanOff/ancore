@@ -1,0 +1,76 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Zasoby | ancore{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">
+<link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20260929">
+<script src="{% static 'js/resources.js' %}?v=20260929" defer></script>
+{% endblock %}
+{% block content %}
+<div class="tasks-page tasks-list-page resources-page" data-resources-page data-resource-list-url="{{ list_url }}">
+    <section class="tasks-workspace" aria-label="Zasoby">
+        <header class="tasks-topbar tasks-topbar--directory">
+            <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Zasoby</h1></div>
+            <div class="tasks-titlebar-actions">
+                <a href="{{ create_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-resource-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj zasób</span></a>
+            </div>
+        </header>
+        <form hidden id="resource-search-form" action="{{ resources_url }}" method="get" data-project-search-form>
+            <input type="hidden" name="page_size" value="{{ resource_window.page_size }}" data-project-search-page-size>
+            <input type="hidden" name="sort" value="{{ sort }}" data-project-sort-input>
+            {% for filter in filters %}<input type="hidden" name="{{ filter.name }}" value="{{ filter.value }}" data-project-filter-input="{{ filter.name }}">{% endfor %}
+        </form>
+        <div class="tasks-filterbar tasks-filterbar--directory resources-filterbar">
+            <div class="tasks-filterbar-left">
+                {% for filter in filters %}
+                <div class="tasks-filter-dropdown" data-project-filter-menu="{{ filter.name }}">
+                    <button type="button" class="tasks-filter-button{% if filter.value %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="{{ filter.name }}"><i data-icon="{{ filter.icon }}" aria-hidden="true"></i><span>{{ filter.label }}{% if filter.selected_label %}: {{ filter.selected_label }}{% endif %}</span></button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="{{ filter.label }} zasobów">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not filter.value %}true{% else %}false{% endif %}" data-project-filter-option data-project-filter-param="{{ filter.name }}" data-project-filter-value="">Wszystkie</button>
+                        {% for value, label in filter.options %}<button type="button" role="menuitemradio" aria-checked="{% if filter.value == value %}true{% else %}false{% endif %}" data-project-filter-option data-project-filter-param="{{ filter.name }}" data-project-filter-value="{{ value }}">{{ label }}</button>{% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="name">
+                    <button type="button" class="tasks-filter-button" aria-label="Sortowanie: {{ sort_label }}" aria-haspopup="menu" aria-expanded="false" data-project-sort-toggle><i data-icon="arrow-up-down" aria-hidden="true"></i><span>Sortuj</span></button>
+                    <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie zasobów">{% for value, label in sort_options %}<button type="button" role="menuitemradio" aria-checked="{% if sort == value %}true{% else %}false{% endif %}" data-project-sort-value="{{ value }}">{{ label }}</button>{% endfor %}</div>
+                </div>
+            </div>
+            <div class="tasks-filterbar-right">
+                <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-icon="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="resource-search-form" value="{{ query }}" placeholder="Szukaj zasobu" aria-label="Szukaj zasobu" autocomplete="off"></label>
+                {% include 'tasks/includes/directory_pagination_toolbar.html' with window=resource_window items_exist=resources pages_label='Strony zasobów' previous_label='Poprzednie zasoby' next_label='Następne zasoby' page_size_label='Liczba zasobów na stronie' only %}
+            </div>
+        </div>
+        {% if resources %}
+        <div class="documents-table-scroll resources-table-scroll">
+            <table class="documents-table resources-table" aria-label="Lista zasobów">
+                <thead><tr><th scope="col">Nazwa</th><th scope="col">Nr ewidencyjny</th><th scope="col">Typ</th><th scope="col">Status</th><th scope="col">Odpowiedzialny</th><th scope="col">Lokalizacja</th><th scope="col">Ważność / gwarancja</th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+                <tbody>{% for resource in resources %}
+                    <tr>
+                        <td><a class="resources-name" href="{{ resource.edit_url }}" data-resource-open aria-haspopup="dialog"><i data-icon="{{ resource.icon }}" aria-hidden="true"></i><span title="{{ resource.name }}">{{ resource.name }}</span></a></td>
+                        <td title="{{ resource.inventory_number }}">{{ resource.inventory_number|default:'—' }}</td>
+                        <td>{{ resource.get_kind_display }}</td>
+                        <td>{{ resource.get_status_display }}</td>
+                        <td title="{% if resource.assigned_to %}{{ resource.assigned_to.get_full_name|default:resource.assigned_to.email }}{% endif %}">{% if resource.assigned_to %}{{ resource.assigned_to.get_full_name|default:resource.assigned_to.email }}{% else %}Nieprzypisany{% endif %}</td>
+                        <td title="{{ resource.location }}">{{ resource.location|default:'—' }}</td>
+                        <td>{% if resource.expires_on %}<span class="resources-expiry">{% if resource.expires_on < today %}<i data-icon="circle-alert" aria-hidden="true"></i><span class="u-sr-only">Termin minął: </span>{% endif %}{{ resource.expires_on|date:'d.m.Y' }}</span>{% else %}—{% endif %}</td>
+                        <td><div class="documents-row-actions">
+                            <a href="{{ resource.edit_url }}" class="tasks-icon-button" aria-label="Edytuj zasób {{ resource.name }}" title="Edytuj zasób" data-resource-open><i data-icon="pencil" aria-hidden="true"></i></a>
+                            <form method="post" action="{{ resource.delete_url }}" data-resource-delete data-resource-name="{{ resource.name }}">{% csrf_token %}<button type="submit" class="tasks-icon-button" aria-label="Usuń zasób {{ resource.name }}" title="Usuń zasób"><i data-icon="trash-2" aria-hidden="true"></i></button></form>
+                        </div></td>
+                    </tr>
+                {% endfor %}</tbody>
+            </table>
+        </div>
+        {% else %}
+        <section class="tasks-empty-state tasks-empty-state--centered resources-empty" role="status">
+            <div class="tasks-empty-state__icon"><i data-icon="package" aria-hidden="true"></i></div>
+            <div class="tasks-empty-state__copy"><h2>{% if has_filters %}Nie znaleziono zasobów.{% else %}Nie ma jeszcze zasobów.{% endif %}</h2><p>{% if has_filters %}Zmień wyszukiwanie lub filtry, aby zobaczyć inne wyniki.{% else %}Dodaj sprzęt, licencje i narzędzia, aby uporządkować zasoby Workspace.{% endif %}</p></div>
+            {% if has_filters %}<a class="btn btn-secondary" href="{{ resources_url }}">Wyczyść filtry</a>{% else %}<a class="btn btn-primary" href="{{ create_url }}" data-resource-open>Dodaj zasób</a>{% endif %}
+        </section>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+{% block page_modals %}<div data-resource-modal-host>{% if modal %}{% include 'resources/form.html' %}{% endif %}</div>{% endblock %}

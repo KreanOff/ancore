@@ -1,0 +1,35 @@
+/* Compact directory and two-column form, using the shared table/modal shells. */
+.resources-page .resources-filterbar { flex-wrap: wrap; gap: 8px; }
+.resources-page .resources-filterbar .tasks-filterbar-left,
+.resources-page .resources-filterbar .tasks-filterbar-right { flex-wrap: wrap; }
+.resources-page .tasks-topbar-title { margin: 0; }
+.resources-page .tasks-titlebar-actions a { text-decoration: none; }
+.resources-table-scroll { flex: 1; }
+.resources-table { min-width: 1160px; }
+.resources-table :is(th, td) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resources-table :is(th, td):first-child { width: 220px; padding-left: 24px; }
+.resources-table :is(th, td):nth-child(2) { width: 140px; }
+.resources-table :is(th, td):nth-child(3) { width: 100px; }
+.resources-table :is(th, td):nth-child(4) { width: 110px; }
+.resources-table :is(th, td):nth-child(5) { width: 180px; }
+.resources-table :is(th, td):nth-child(6) { width: 130px; }
+.resources-table :is(th, td):nth-child(7) { width: 165px; }
+.resources-page .resources-table :is(th, td):last-child { width: 96px; }
+.resources-name, .resources-expiry { display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
+.resources-name span { overflow: hidden; text-overflow: ellipsis; }
+.resources-name:hover span { text-decoration: underline; }
+.resources-name svg, .resources-expiry svg { width: 16px; height: 16px; flex-shrink: 0; }
+.resources-page .documents-row-actions { gap: 4px; }
+.resources-page .documents-row-actions form { margin: 0; }
+.resources-empty { flex: 1; margin-inline: auto; }
+.resources-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.resources-form-wide { grid-column: 1 / -1; }
+.resources-form .tasks-form-field { min-width: 0; }
+.resources-form small { font-size: var(--font-size-sm); line-height: 1.5; }
+.resources-form [hidden] { display: none; }
+.resources-page :is(a, button):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
+@media (max-width: 767px) {
+    .resources-page .tasks-topbar--directory { padding-left: 3.5rem; }
+    .resources-page .resources-filterbar .tasks-filterbar-right { width: 100%; justify-content: space-between; }
+    .resources-form { grid-template-columns: minmax(0, 1fr); }
+}

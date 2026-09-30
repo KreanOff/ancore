@@ -5,6 +5,7 @@
 {% url 'planner:index' as sidebar_calendar_fallback_url %}
 {% url 'documents:library' as sidebar_documents_fallback_url %}
 {% url 'office:index' as sidebar_office_fallback_url %}
+{% url 'resources:index' as sidebar_resources_fallback_url %}
 {% url 'home' as sidebar_dashboard_url %}
 {% url 'notifications' as sidebar_notifications_url %}
 {% firstof workplace_app_urls.tasks sidebar_tasks_fallback_url as sidebar_tasks_url %}
@@ -13,6 +14,7 @@
 {% firstof workplace_app_urls.calendar sidebar_calendar_fallback_url as sidebar_calendar_url %}
 {% firstof workplace_app_urls.documents sidebar_documents_fallback_url as sidebar_documents_url %}
 {% firstof workplace_app_urls.office sidebar_office_fallback_url as sidebar_office_url %}
+{% firstof workplace_app_urls.resources sidebar_resources_fallback_url as sidebar_resources_url %}
 <!DOCTYPE html>
 <html lang="pl" class="{% block html_class %}{% endblock %}">
 <head>
@@ -252,6 +254,10 @@
                 <span class="nav-label">Dokumenty</span>
             </a>
             {% sidebar_favorite_toggle 'office' 'Dokumenty' 'file-text' sidebar_office_url %}
+            <a href="{{ sidebar_resources_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'resources' or request.resolver_match.app_name == 'workplace_resources' %}active{% endif %}" aria-label="Zasoby" title="Zasoby" data-sidebar-source-item="resources" draggable="true">
+                <i class="nav-icon" data-icon="package" aria-hidden="true"></i><span class="nav-label">Zasoby</span>
+            </a>
+            {% sidebar_favorite_toggle 'resources' 'Zasoby' 'package' sidebar_resources_url %}
             </section>
 
         </nav>
@@ -382,7 +388,7 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260928-navigation-skeleton"></script>
+    <script src="{% static 'js/layout.js' %}?v=20260929-resources"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260923-notification-actions"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>

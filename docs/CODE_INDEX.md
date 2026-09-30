@@ -26,6 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [dashboard](../dashboard) | 17 | 6 | 7 | 91 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
+| [resources](../resources) | 7 | 1 | 2 | 19 |
 
 ## 2. Modele i relacje
 
@@ -733,6 +734,24 @@ Pola zadeklarowane tutaj: `document` (ForeignKey), `drive_document` (ForeignKey)
 | `document` | `WorkspaceDocument` | on_delete=models.CASCADE; related_name='versions'; null=True |
 | `drive_document` | `Document` | on_delete=models.CASCADE; related_name='versions'; null=True |
 
+## Modele: resources
+
+### `Resource`
+
+Źródło: [resources/models.py](../resources/models.py).
+
+Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `name` (CharField), `kind` (CharField), `inventory_number` (CharField), `serial_number` (CharField), `status` (CharField), `assigned_to` (ForeignKey), `location` (CharField), `purchased_on` (DateField), `expires_on` (DateField), `notes` (TextField), `created_by` (ForeignKey), `updated_by` (ForeignKey), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='owned_resources' |
+| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='resources' |
+| `assigned_to` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='assigned_resources'; null=True |
+| `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='created_resources'; null=True |
+| `updated_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='updated_resources'; null=True |
+
+Metody/properties: `icon`, `__str__`.
+
 ## 3. Formularze
 
 Wypisane są deklaracje klas, także bazowe klasy i widgety.
@@ -827,6 +846,12 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `FolderForm` — Meta.fields: `['name', 'color']`
 - `DocumentForm` — Meta.fields: `['title', 'description', 'folder']`
 
+### resources
+
+Źródło: [resources/forms.py](../resources/forms.py).
+
+- `ResourceForm` — Meta.fields: `['name', 'kind', 'inventory_number', 'serial_number', 'status', 'assigned_to', 'location', 'purchased_on', 'expires_on', 'notes']`
+
 ## 4. Routing
 
 Ścieżki modułowe są względne wobec include'a w głównym routingu.
@@ -851,6 +876,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'^workplaces/[-a-zA-Z0-9_]+/documents/'` | `include((documents_urls.urlpatterns, 'workplace_documents'), namespace='workplace_documents')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/office/'` | `include((office_urls.urlpatterns, 'workplace_office'), namespace='workplace_office')` | — |
 | `'workplaces/'` | `include('workplaces.urls')` | — |
+| `'^workplaces/[-a-zA-Z0-9_]+/resources/'` | `include((resources_urls.urlpatterns, 'workplace_resources'), namespace='workplace_resources')` | — |
+| `'resources/'` | `include('resources.urls')` | — |
 | `'documents/'` | `include('documents.urls')` | — |
 | `'office/'` | `include('documents.workspace_urls')` | — |
 | `'tasks/'` | `include('tasks.urls')` | — |
@@ -1017,6 +1044,17 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'<uuid:pk>/trash/'` | `views.trash` | 'trash' |
 | `'<uuid:pk>/restore/'` | `views.restore` | 'restore' |
 
+### resources/urls.py
+
+Źródło: [resources/urls.py](../resources/urls.py).
+
+| Ścieżka / regex | Widok / include | Nazwa |
+| --- | --- | --- |
+| `''` | `views.index` | 'index' |
+| `'create/'` | `views.edit` | 'create' |
+| `'<int:pk>/edit/'` | `views.edit` | 'edit' |
+| `'<int:pk>/delete/'` | `views.delete` | 'delete' |
+
 ## 5. Pliki backendu i punkty wejścia
 
 Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
@@ -1170,6 +1208,15 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/urls.py](../documents/urls.py)
 - [documents/views.py](../documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `detail`, `preview`, `preview_content`, `download`, `star`, `trash`, `restore`
 - [documents/workspace_urls.py](../documents/workspace_urls.py)
+
+### resources
+
+- [resources/__init__.py](../resources/__init__.py)
+- [resources/apps.py](../resources/apps.py) — `ResourcesConfig`
+- [resources/forms.py](../resources/forms.py) — `ResourceForm`
+- [resources/models.py](../resources/models.py) — `Resource`
+- [resources/urls.py](../resources/urls.py)
+- [resources/views.py](../resources/views.py) — `index`, `edit`, `delete`
 
 ## 6. Szablony
 
@@ -1330,6 +1377,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [documents/templates/documents/sidebar.html](../documents/templates/documents/sidebar.html)
 - [documents/templates/documents/toolbar.html](../documents/templates/documents/toolbar.html)
 
+### resources
+
+- [resources/templates/resources/form.html](../resources/templates/resources/form.html)
+- [resources/templates/resources/index.html](../resources/templates/resources/index.html)
+
 ## 7. Zasoby frontendowe
 
 ### css
@@ -1357,6 +1409,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/notifications.css](../static/css/components/notifications.css)
 - [static/css/components/office.css](../static/css/components/office.css)
 - [static/css/components/profile.css](../static/css/components/profile.css)
+- [static/css/components/resources.css](../static/css/components/resources.css)
 - [static/css/components/settings.css](../static/css/components/settings.css)
 - [static/css/components/sticky-note.css](../static/css/components/sticky-note.css)
 - [static/css/components/tables.css](../static/css/components/tables.css)
@@ -1394,6 +1447,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/profile.js](../static/js/profile.js)
 - [static/js/project-team.js](../static/js/project-team.js)
 - [static/js/project-templates.js](../static/js/project-templates.js)
+- [static/js/resources.js](../static/js/resources.js)
 - [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
@@ -1781,6 +1835,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DocumentLibraryTests`: 39 metod testowych.
 
+### resources/tests.py
+
+Źródło: [resources/tests.py](../resources/tests.py).
+
+- `ResourceTests`: 19 metod testowych.
+
 ## 9. Migracje obecne lokalnie
 
 Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
@@ -1947,3 +2007,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [documents/migrations/0009_drive_office_editor.py](../documents/migrations/0009_drive_office_editor.py)
 - [documents/migrations/0010_icon_colors.py](../documents/migrations/0010_icon_colors.py)
 - [documents/migrations/0011_workspacedocument_is_pdf_form_and_more.py](../documents/migrations/0011_workspacedocument_is_pdf_form_and_more.py)
+
+### resources
+
+- [resources/migrations/0001_initial.py](../resources/migrations/0001_initial.py)

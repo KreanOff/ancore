@@ -741,3 +741,26 @@ przed podwójnymi listenerami na tym samym elemencie.
 
 Przed zmianą usuwania czytaj zarówno model, jak i akcję widoku oraz test.
 Nie wyciągaj zachowania całego scenariusza tylko z jednej deklaracji `on_delete`.
+
+## 15. Ewidencja zasobów
+
+`resources.views` ogranicza każdy odczyt i zapis jednocześnie przez
+`workspace_owner(request)` i `request.workplace`, w obu wariantach adresów.
+`ResourceForm` dopuszcza przypisanie wyłącznie aktywnych osób z
+`workplace_people`; nie przyjmuje właściciela, Workspace ani autora z POST.
+`created_by` i `updated_by` wskazują faktyczne konto wykonujące operację.
+Usunięcie Workspace usuwa zasoby; usunięcie przypisanej osoby lub autora
+zeruje odpowiednią relację, zachowując zasób.
+
+Opcjonalny numer ewidencyjny ma częściowe ograniczenie unikalności
+`Lower(inventory_number)` + Workspace. Formularz usuwa otaczające spacje,
+wyjaśnia duplikat, a zapis obsługuje także konflikt równoczesnych żądań.
+Status, typ i kolejność dat mają ograniczenia bazodanowe.
+Terminy i przypisanie są informacją ewidencyjną, bez automatycznych zmian statusu.
+
+GET katalogu łączy filtry i paginację. Formularze używają scoped adresów,
+więc zmiana Workspace w drugiej karcie nie zmienia celu zapisu. Nagłówek
+`X-Resource-Modal: true` wybiera JSON z HTML formularza (400 dla walidacji)
+lub potwierdzenie zapisu; zwykłe wejście renderuje katalog z otwartym oknem.
+Usuwanie wymaga POST i CSRF. Query string przekazuje wyłącznie znane parametry
+katalogu; klient nie może wskazać dowolnego adresu przekierowania.

@@ -3,7 +3,7 @@
 ## Zakres pierwszej wersji
 
 Workspace obejmuje wspólne Projekty i Zadania, Kanban, Kontakty i firmy,
-Kalendarz, Dysk oraz Dokumenty. Dołączenie udostępnia wspólne dane Workspace.
+Kalendarz, Dysk, Dokumenty oraz Zasoby. Dołączenie udostępnia wspólne dane Workspace.
 Projekty Zadań mają widoczność **Publiczny** (cały Workspace) lub **Prywatny**
 (osoba, która ustawiła prywatność, i osoby, którym udostępniono projekt). Rola „Obserwator” zapewnia dostęp tylko do odczytu w konkretnym prywatnym projekcie. Nie ma roli gościa Workspace. Historyczne `SharedItem` i linki udostępniania
 pozostają wyłączone.
@@ -17,6 +17,13 @@ pozostają wyłączone.
 Właściciel wynika z `Workplace.owner`; nie można go usunąć z zespołu ani
 zmienić tą ścieżką. Przenoszenie własności i usuwanie kont właścicieli nie
 wchodzą w zakres tej wersji.
+
+Zasoby są wspólne dla właściciela i aktywnych członków Workspace. Obowiązuje
+ten sam zakres tworzenia, edycji i usuwania co dla innych wspólnych danych.
+Osobą odpowiedzialną może być aktywne konto właściciela lub członka tego Workspace;
+samo przypisanie nie nadaje dostępu. Odebranie członkostwa odbiera dostęp także
+do przypisanych zasobów. Dawne przypisanie pozostaje w ewidencji do edycji,
+podczas której formularz wymaga wyboru aktywnej osoby lub wyczyszczenia przypisania.
 
 ## Widoczność projektów Zadań
 

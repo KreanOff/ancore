@@ -22,6 +22,7 @@ def current_workplace(request):
             'calendar': scoped_workplace_app_path(active_workplace, 'calendar'),
             'documents': scoped_workplace_app_path(active_workplace, 'documents'),
             'office': scoped_workplace_app_path(active_workplace, 'office'),
+            'resources': scoped_workplace_app_path(active_workplace, 'resources'),
         }
         sidebar_favorite_keys = list(
             SidebarFavorite.objects.filter(user=user, workplace=active_workplace)

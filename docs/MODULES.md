@@ -620,3 +620,34 @@ Pozostałe lokalne preferencje UI opisuje [MECHANISMS.md](MECHANISMS.md).
 | „Dokumenty” | Lokalny moduł bibliotek i plików; nie integracja SharePoint/Drive |
 
 Przed rozwinięciem tych obszarów sprawdź ich aktualne wywołania i testy.
+
+## 12. Zasoby — Resources
+
+Źródła: [modele](../resources/models.py), [formularz](../resources/forms.py),
+[widoki](../resources/views.py), [katalog](../resources/templates/resources/index.html).
+
+Katalog „Zasoby” jest dostępny w menu Workspace pod `/resources/` oraz
+`/workplaces/<slug>/resources/`. Przechowuje sprzęt, licencje i narzędzia:
+nazwę, opcjonalny numer ewidencyjny i seryjny, status (Dostępny, W użyciu,
+W serwisie, Wycofany), osobę odpowiedzialną, lokalizację, datę zakupu,
+termin ważności/gwarancji i notatki. Numer ewidencyjny jest unikalny w Workspace
+bez rozróżniania wielkości liter; puste numery mogą się powtarzać.
+Termin ważności nie może poprzedzać daty zakupu. Miniony termin ma oznaczenie
+w tabeli, ale nie zmienia automatycznie statusu ani nie wysyła przypomnienia.
+
+Lista udostępnia wyszukiwanie nazwy, numerów, lokalizacji i notatek,
+łączone filtry typu, statusu i przypisania (do mnie / nieprzypisane),
+sortowanie według nazwy, daty utworzenia i ważności oraz paginację 25/50/100.
+Globalne wyszukiwanie ma osobną kategorię Zasoby z limitem 20 wyników i linkami
+do edycji. Moduł można dodać do osobistych ulubionych menu.
+
+Dodawanie i edycja używają standardowego modala nad katalogiem; błędy walidacji
+zachowują pola, błędy sieci pozwalają ponowić zapis. Zamknięcie niezapisanego
+formularza wymaga potwierdzenia. Usuwanie jest trwałe, przez POST po potwierdzeniu.
+Po zapisie/usunięciu lista zachowuje filtry, sortowanie i bieżącą stronę
+(z ograniczeniem do ostatniej istniejącej strony).
+
+Dane należą do właściciela i aktywnego Workspace; rzeczywisty autor utworzenia
+oraz ostatniej zmiany jest zapisany osobno. Formularz przypisania ogranicza
+osoby do aktywnego zespołu. Model nie zawiera kluczy licencyjnych, załączników,
+rezerwacji, amortyzacji ani automatycznego śledzenia dostępności.

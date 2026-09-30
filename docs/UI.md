@@ -1597,3 +1597,21 @@ wstawiane jako tekst. Dane osób są przekazywane przez bezpieczne `json_script`
 `collaboration.js` inicjalizuje UI także po `ancore:content-loaded` i usuwa
 stare listenery przez `AbortController`. Centrum używa istniejących zakładek
 z dodatkowymi filtrami „Wzmianki” i „Obserwowane”, w tym stanami pustymi.
+
+## 14. Katalog Zasobów
+
+Zasoby rozszerzają `core/base.html`, `tasks-topbar`, `tasks-filterbar`, wspólne
+menu filtrów/sortowania i `directory_pagination_toolbar.html`. Tabela korzysta
+z `documents-table` z wąskim wariantem `resources-table`: ikona typu i nazwa,
+numer ewidencyjny, typ, status, osoba, lokalizacja, ważność oraz akcje edycji/usunięcia.
+Kolumny przewijają się poziomo, a pasek narzędzi zawija na telefonie.
+Pusty katalog i brak wyników mają osobne komunikaty i działające akcje.
+
+`resources.css` ustala jedynie szerokości kolumn i dwukolumnowy układ formularza,
+który przechodzi w jedną kolumnę na telefonie. Powłoka, pola i przyciski
+pozostają wspólne (`tasks-modal app-modal-panel`, `documents-field`, `form-input`).
+`resources.js` korzysta z `AncoreTaskModals`, ikon, custom selectów,
+`showConfirmModal` oraz `AncoreApp.navigate`. Inicjalizuje się na pierwszym
+wejściu i `ancore:content-loaded`, anulując poprzednie listenery i żądania.
+Modal blokuje tło przez `inert`, zachowuje fokus, Escape i potwierdzenie
+porzucenia zmian. Pobranie/zapis/usunięcie pokazują błędy umożliwiające ponowienie.

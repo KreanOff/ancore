@@ -13,7 +13,7 @@ from .models import SidebarFavorite, Workplace, WorkplaceInvitation, WorkplaceMe
 ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
 WORKPLACE_URL_SCOPE_SESSION_KEY = 'workspace_url_scope_enabled'
 DEFAULT_WORKPLACE_NAME = 'Moje miejsce pracy'
-SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'contacts', 'calendar', 'documents', 'office'}
+SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'contacts', 'calendar', 'documents', 'office', 'resources'}
 
 
 def workplace_management_url(workplace, view='members'):

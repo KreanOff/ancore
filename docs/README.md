@@ -32,6 +32,7 @@ Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 | Kanban, kolumna, przeciąganie | Moduły: Kanban; Mechanizmy: status/kolumna; `kanban/views/tasks.py`, `static/js/tasks.js` |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
 | Kontakty, firmy, profil | Odpowiedni moduł; Mechanizmy: tożsamość, dostęp, obrazy |
+| Zasoby, ewidencja sprzętu i licencji | Moduły: Zasoby; `resources/`, wspólne filtry/paginacja w `static/js/tasks.js`, modale w `static/js/resources.js` |
 | Nawigacja lub nowy moduł | Architektura; Mechanizmy: Workspace, URL i podmiana treści |
 | Dysk i upload | Moduły: Dysk; Mechanizmy: pliki; `documents/`, `core/upload_validation.py` |
 | Dokumenty i edycja treści | [Pełne edytory](OFFICE.md); `documents/editor_views.py`, `suite_views.py`, `office_service.py`, `frontend/board/` |

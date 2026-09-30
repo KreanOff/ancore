@@ -9,6 +9,7 @@ from tasks import urls as tasks_urls
 from documents import urls as documents_urls
 from documents import workspace_urls as office_urls
 from documents import suite_views
+from resources import urls as resources_urls
 from core.media import public_media
 
 urlpatterns = [
@@ -26,6 +27,8 @@ urlpatterns = [
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/documents/', include((documents_urls.urlpatterns, 'workplace_documents'), namespace='workplace_documents')),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/office/', include((office_urls.urlpatterns, 'workplace_office'), namespace='workplace_office')),
     path('workplaces/', include('workplaces.urls')),
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/resources/', include((resources_urls.urlpatterns, 'workplace_resources'), namespace='workplace_resources')),
+    path('resources/', include('resources.urls')),
     path('documents/', include('documents.urls')),
     path('office/', include('documents.workspace_urls')),
     path('tasks/', include('tasks.urls')),
