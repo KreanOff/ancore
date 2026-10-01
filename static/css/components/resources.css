@@ -4,23 +4,23 @@
 .resources-page .resources-filterbar .tasks-filterbar-right { flex-wrap: wrap; }
 .resources-page .tasks-topbar-title { margin: 0; }
 .resources-page .tasks-titlebar-actions a { text-decoration: none; }
-.resources-table-scroll { flex: 1; }
-.resources-table { min-width: 1160px; }
-.resources-table :is(th, td) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.resources-table :is(th, td):first-child { width: 220px; padding-left: 24px; }
-.resources-table :is(th, td):nth-child(2) { width: 140px; }
-.resources-table :is(th, td):nth-child(3) { width: 100px; }
-.resources-table :is(th, td):nth-child(4) { width: 110px; }
-.resources-table :is(th, td):nth-child(5) { width: 180px; }
-.resources-table :is(th, td):nth-child(6) { width: 130px; }
-.resources-table :is(th, td):nth-child(7) { width: 165px; }
-.resources-page .resources-table :is(th, td):last-child { width: 96px; }
-.resources-name, .resources-expiry { display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
-.resources-name span { overflow: hidden; text-overflow: ellipsis; }
+/* A compact variant of the Projects directory; the shared manager owns its grid. */
+.tasks-directory-board.resources-sheet {
+    --tasks-directory-grid: 40px 40px 190px 250px 130px 140px 245px 180px 200px;
+}
+.tasks-directory-board.resources-sheet .tasks-directory-header,
+.tasks-directory-board.resources-sheet .tasks-directory-list .tasks-directory-row {
+    --tasks-directory-grid: inherit;
+    min-width: 100%;
+    padding-inline: 0;
+}
+.resources-page .resources-sheet[hidden],
+.resources-sheet .tasks-directory-header[hidden] { display: none; }
+.resources-sheet [data-column] { grid-area: auto; }
+.resources-name { display: flex; align-items: center; gap: 8px; min-width: 0; color: inherit; text-decoration: none; }
+.resources-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .resources-name:hover span { text-decoration: underline; }
-.resources-name svg, .resources-expiry svg { width: 16px; height: 16px; flex-shrink: 0; }
-.resources-page .documents-row-actions { gap: 4px; }
-.resources-page .documents-row-actions form { margin: 0; }
+.resources-name svg { width: 16px; height: 16px; flex-shrink: 0; }
 .resources-empty { flex: 1; margin-inline: auto; }
 .resources-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .resources-form-wide { grid-column: 1 / -1; }

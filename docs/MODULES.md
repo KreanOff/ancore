@@ -638,6 +638,9 @@ w tabeli, ale nie zmienia automatycznie statusu ani nie wysyła przypomnienia.
 Lista udostępnia wyszukiwanie nazwy, numerów, lokalizacji i notatek,
 łączone filtry typu, statusu i przypisania (do mnie / nieprzypisane),
 sortowanie według nazwy, daty utworzenia i ważności oraz paginację 25/50/100.
+Układ listy odpowiada katalogowi Projektów: zarządzanie kolumnami, zbiorcze
+menu filtrów, checkboxy z podświetleniem zaznaczenia i menu działań wiersza
+z edycją/usunięciem. Ustawienia kolumn są zapisywane lokalnie dla Zasobów.
 Globalne wyszukiwanie ma osobną kategorię Zasoby z limitem 20 wyników i linkami
 do edycji. Moduł można dodać do osobistych ulubionych menu.
 

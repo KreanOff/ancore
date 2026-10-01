@@ -1601,13 +1601,24 @@ z dodatkowymi filtrami „Wzmianki” i „Obserwowane”, w tym stanami pustymi
 ## 14. Katalog Zasobów
 
 Zasoby rozszerzają `core/base.html`, `tasks-topbar`, `tasks-filterbar`, wspólne
-menu filtrów/sortowania i `directory_pagination_toolbar.html`. Tabela korzysta
-z `documents-table` z wąskim wariantem `resources-table`: ikona typu i nazwa,
-numer ewidencyjny, typ, status, osoba, lokalizacja, ważność oraz akcje edycji/usunięcia.
-Kolumny przewijają się poziomo, a pasek narzędzi zawija na telefonie.
+menu filtrów/sortowania i `directory_pagination_toolbar.html`. Lista używa
+wspólnej tabeli Projektów (`tasks-directory-sheet tasks-project-sheet`) z wariantem
+`resources-sheet`: wiersze 35px, separatory, nagłówki z ikonami, checkboxy
+z podświetleniem zaznaczenia oraz menu działań po lewej. Dalej są numer ewidencyjny,
+nazwa z ikoną typu, typ, status, osoba, lokalizacja i ważność/gwarancja.
+Miniony termin korzysta ze wspólnego oznaczenia `tasks-project-value-badge--due-overdue`.
+Menu wiersza używa `row-actions.js`, oferuje edycję i usunięcie z potwierdzeniem.
+Zamknięcie edycji przywraca fokus do przycisku menu.
+
+Pasek zawiera `directory_column_manager.html`, wspólny agregat „Filtruj”
+i sortowanie z widoczną bieżącą opcją. `tasks.js` obsługuje szerokości,
+kolejność i widoczność kolumn; Zasoby mają oddzielny klucz ustawień `resources`,
+wspólny dla zwykłego i scoped URL. Checkbox nagłówka zaznacza bieżącą stronę,
+a częściowy wybór pokazuje stan pośredni; nie uruchamia operacji zbiorczych.
+Kolumny przewijają się poziomo także na telefonie, a pasek narzędzi zawija.
 Pusty katalog i brak wyników mają osobne komunikaty i działające akcje.
 
-`resources.css` ustala jedynie szerokości kolumn i dwukolumnowy układ formularza,
+`resources.css` ustala wariant siatki oraz dwukolumnowy układ formularza,
 który przechodzi w jedną kolumnę na telefonie. Powłoka, pola i przyciski
 pozostają wspólne (`tasks-modal app-modal-panel`, `documents-field`, `form-input`).
 `resources.js` korzysta z `AncoreTaskModals`, ikon, custom selectów,

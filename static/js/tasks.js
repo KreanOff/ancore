@@ -7029,6 +7029,15 @@ function initTasksPage() {
             related_tags: 220,
             task_count: 250
         };
+        const resourceColumnDefaultWidths = {
+            inventory_number: 190,
+            name: 250,
+            kind: 130,
+            status: 140,
+            assigned_to: 245,
+            location: 180,
+            expires_on: 200
+        };
         const workplaceColumnDefaultWidths = {
             name: 300,
             code: 180,
@@ -7332,6 +7341,12 @@ function initTasksPage() {
         function syncDirectoryResizeGrid(board) {
             const header = board.querySelector('.tasks-directory-header');
 
+            if (header && board.classList.contains('resources-sheet') && !resizeMediaQuery.matches) {
+                const cells = getDirectoryHeaderCells(board, header);
+                setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
+                return;
+            }
+
             if (header && board.classList.contains('tasks-directory-menu-sheet') && !resizeMediaQuery.matches) {
                 // Build the compact grid from visible columns, retaining CSS breakpoint widths.
                 const widthTokens = {
@@ -7450,6 +7465,9 @@ function initTasksPage() {
                     if (isProjectDirectoryCell(cell)) return projectColumnDefaultWidths.select;
                     return getDirectorySelectColumnWidth(cell);
                 }
+                if (cell.closest('.resources-sheet') && Object.prototype.hasOwnProperty.call(resourceColumnDefaultWidths, column)) {
+                    return resourceColumnDefaultWidths[column];
+                }
                 if (isTagDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(tagColumnDefaultWidths, column)) {
                     return tagColumnDefaultWidths[column];
                 }
@@ -7518,6 +7536,7 @@ function initTasksPage() {
         }
 
         function getDirectoryStorageSegment() {
+            if (document.querySelector('[data-resources-page]')) return 'resources';
             const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
 
             if (pathSegment === 'contacts') return 'contacts';

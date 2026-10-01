@@ -10,6 +10,24 @@
         const page = document.querySelector('[data-resources-page]');
         const host = document.querySelector('[data-resource-modal-host]');
         if (!page || !host) return;
+        const selectAll = page.querySelector('[data-resource-select-all]');
+        const selections = [...page.querySelectorAll('[data-resource-select]')];
+        function updateSelection() {
+            const selected = selections.filter(input => input.checked);
+            selections.forEach(input => input.closest('.resources-row').classList.toggle('checked', input.checked));
+            if (selectAll) {
+                selectAll.checked = selections.length > 0 && selected.length === selections.length;
+                selectAll.indeterminate = selected.length > 0 && selected.length < selections.length;
+                selectAll.disabled = !selections.length;
+            }
+        }
+        selectAll?.addEventListener('change', () => {
+            selections.forEach(input => { input.checked = selectAll.checked; });
+            updateSelection();
+        }, { signal });
+        selections.forEach(input => input.addEventListener('change', updateSelection, { signal }));
+        updateSelection();
+
         let pending = false;
         let discard = false;
         let initial = '';
@@ -65,7 +83,7 @@
             event.preventDefault();
             if (pending || modal()) return;
             pending = true;
-            previousFocus = trigger;
+            previousFocus = trigger.closest('[data-row-actions]')?.querySelector('[data-row-actions-toggle]') || trigger;
             trigger.setAttribute('aria-busy', 'true');
             try {
                 const result = await request(trigger.href);
