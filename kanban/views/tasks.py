@@ -607,6 +607,7 @@ def _project_window_for_request(request):
     _decorate_project_directory_metrics(projects)
 
     base_params = {
+        'view': 'projects',
         'q': query,
         'priority': priority,
         'status': status,
@@ -698,12 +699,17 @@ def _section_window_for_request(request):
     sort = request.GET.get('sort') or 'name_asc'
     if sort not in ('name_asc', 'name_desc'):
         sort = 'name_asc'
-    queryset = queryset.order_by('-title' if sort == 'name_desc' else 'title', 'id')
+    queryset = queryset.order_by('project__name', 'project_id', '-title' if sort == 'name_desc' else 'title', 'id')
     total_sections = queryset.count()
     total_pages = max(1, (total_sections + page_size - 1) // page_size)
     current_page = min(requested_page, total_pages)
     offset = (current_page - 1) * page_size
     sections = list(queryset[offset:offset + page_size])
+    space_groups = []
+    for section in sections:
+        if not space_groups or space_groups[-1]['project'].pk != section.project_id:
+            space_groups.append({'project': section.project, 'sections': []})
+        space_groups[-1]['sections'].append(section)
 
     base_params = {
         'view': 'all-groups',
@@ -735,6 +741,7 @@ def _section_window_for_request(request):
 
     return {
         'sections': sections,
+        'space_groups': space_groups,
         'project_filter': project_filter,
         'project_options': _filter_workplace(KanbanProject.objects.filter(user=workspace_owner(request)), _active_workplace(request)).order_by('name'),
         'sort': sort,
@@ -1206,7 +1213,11 @@ def _tasks_page(request, active_section=None):
     board_column_form = KanbanBoardColumnForm()
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
-    all_groups_view = request.GET.get('view') == 'all-groups' and not active_section
+    # Keep older filtered space URLs working; a plain module entry opens boards.
+    all_groups_view = not active_section and (
+        request.GET.get('view') == 'all-groups'
+        or not request.GET
+    )
     tags_view = request.GET.get('view') == 'tags' and not active_section
     active_project_id = request.POST.get('project_id') if request.method == 'POST' else request.GET.get('project')
     if all_tasks_view or my_tasks_view or all_groups_view or tags_view:
@@ -1671,6 +1682,7 @@ def _tasks_page(request, active_section=None):
     else:
         active_view = 'projects'
 
+    request.sidebar_active_view = active_view
     project_window = _project_window_for_request(request) if active_view == 'projects' else {
         'projects': [],
         'query': '',

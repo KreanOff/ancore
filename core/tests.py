@@ -57,7 +57,7 @@ class SidebarActiveStateTests(SimpleTestCase):
     def test_active_subnav_does_not_activate_primary_link(self):
         cases = (
             ('tasks', 'projects', '', 'Zadania', 'Projekty'),
-            ('kanban', 'projects', '', 'Kanban', 'Przestrzenie robocze'),
+            ('kanban', 'projects', '', 'Kanban', 'Przestrzenie Kanban'),
             ('contacts', '', 'all', 'Kontakty', 'Kontakty'),
         )
 

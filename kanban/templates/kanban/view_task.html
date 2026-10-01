@@ -20,7 +20,7 @@
     <div class="tasks-issue-shell">
         <header class="tasks-issue-header">
             <div class="tasks-issue-breadcrumb">
-                <a href="{% if task.parent %}{% url 'kanban:view-task' task.parent.task_id %}{% elif task.section %}{% url 'kanban:task_group' task.section.id %}{% else %}{% url 'kanban:tasks' %}{% endif %}"
+                <a href="{% if task.parent %}{% url 'kanban:view-task' task.parent.task_id %}{% elif task.section %}{% url 'kanban:task_group' task.section.id %}{% else %}{% url 'kanban:tasks' %}?view=all-tasks{% endif %}"
                    class="tasks-issue-close"
                    aria-label="{% if task.parent %}Wróć do karty{% elif task.section %}Wróć do tablicy {{ task.section.title }}{% else %}Wróć do kart{% endif %}"
                    title="{% if task.parent %}Wróć do karty{% elif task.section %}Wróć do tablicy {{ task.section.title }}{% else %}Wróć do kart{% endif %}">

@@ -30,12 +30,74 @@ class KanbanProjectCreationTests(TestCase):
         self.client.force_login(self.user)
 
     def _rail_link_html(self, response, label):
-        keys = {'Przestrzenie robocze': 'kanban-spaces', 'Tablice': 'kanban-boards', 'Tagi': 'tags'}
+        keys = {'Przestrzenie Kanban': 'kanban-spaces', 'Tablice': 'kanban-boards', 'Tagi': 'tags'}
         match = re.search(r'<a\b[^>]*data-sidebar-source-item="' + keys[label] + r'"[^>]*>.*?</a>',
                           response.content.decode(), re.DOTALL)
         self.assertIsNotNone(match)
         self.assertIn(label, match.group())
         return match.group()
+
+    def test_kanban_entry_and_saved_shortcuts_use_the_new_navigation(self):
+        from workplaces.models import SidebarFavorite
+
+        response = self.client.get(reverse('kanban:tasks'))
+        workplace = response.wsgi_request.workplace
+        invalid = self.client.post(reverse('kanban:tasks'), {'action': 'create_project'})
+        self.assertEqual(invalid.context['active_view'], 'all_groups')
+        self.assertTrue(invalid.context['project_modal_open'])
+        for key in ('kanban-spaces', 'kanban-boards', 'kanban-cards'):
+            SidebarFavorite.objects.create(user=self.user, workplace=workplace, item_key=key)
+
+        for base_url in (reverse('kanban:tasks'), f'/workplaces/{workplace.slug}/kanban/'):
+            for query, view, active_key in (
+                ('', 'all_groups', 'kanban-boards'),
+                ('?view=all-groups', 'all_groups', 'kanban-boards'),
+                ('?view=projects', 'projects', 'kanban-spaces'),
+            ):
+                with self.subTest(url=base_url + query):
+                    response = self.client.get(base_url + query)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(response.context['active_view'], view)
+                    html = response.content.decode()
+                    keys = ('kanban-spaces', 'kanban-boards')
+                    self.assertNotIn('data-sidebar-source-item="kanban-cards"', html)
+                    positions = [html.index(f'data-sidebar-source-item="{key}"') for key in keys]
+                    self.assertEqual(positions, sorted(positions))
+                    for label, key, target in (
+                        ('Tablice', 'kanban-boards', 'all-groups'),
+                        ('Przestrzenie Kanban', 'kanban-spaces', 'projects'),
+                    ):
+                        link = self._rail_link_html(response, label)
+                        self.assertIn(f'?view={target}', link)
+                        self.assertEqual(' active' in link, key == active_key)
+                    favorites = {item['key']: item for item in response.context['sidebar_favorites']}
+                    self.assertNotIn('kanban-cards', favorites)
+                    self.assertTrue(favorites[active_key]['is_active'])
+                    self.assertEqual(sum(item['is_active'] for item in favorites.values()), 1)
+                    self.assertTrue(favorites['kanban-spaces']['url'].endswith('?view=projects'))
+                    self.assertEqual(favorites['kanban-spaces']['label'], 'Przestrzenie Kanban')
+
+    def test_cards_entry_shows_cards_from_workspace_boards_only(self):
+        from workplaces.models import create_workplace_for_user, WorkplaceMembership
+
+        workspace = create_workplace_for_user(self.user, 'Zespół Kanban')
+        other_workspace = create_workplace_for_user(self.user, 'Inny zespół')
+        member = get_user_model().objects.create_user(username='kanban-member')
+        WorkplaceMembership.objects.create(workplace=workspace, user=member)
+        for scope, title in ((workspace, 'Pierwsza karta'), (workspace, 'Druga karta'), (other_workspace, 'Obca karta')):
+            project = KanbanProject.objects.create(user=self.user, workplace=scope, name=title)
+            section = KanbanSection.objects.create(project=project, title=title)
+            column = KanbanBoardColumn.objects.create(section=section, title='Do zrobienia')
+            Kanban.objects.create(user=self.user, workplace=scope, section=section, column=column, title=title)
+        self.client.force_login(member)
+        response = self.client.get(f'/workplaces/{workspace.slug}/kanban/?view=all-tasks')
+        self.assertContains(response, 'Pierwsza karta')
+        self.assertContains(response, 'Druga karta')
+        self.assertNotContains(response, 'Obca karta')
+        self.assertContains(response, 'placeholder="Szukaj kart"')
+        self.assertContains(response, 'id="filter-search"', count=1)
+        self.assertContains(response, 'data-status-filter-toggle')
+        self.assertContains(response, 'data-priority-filter-toggle')
 
     def test_create_project_adds_default_group(self):
         response = self.client.post(reverse('kanban:tasks'), {
@@ -198,7 +260,7 @@ class KanbanProjectCreationTests(TestCase):
         KanbanProjectNote.objects.create(project=project_with_icon, author=self.user, message='Moja notatka przestrzeni')
         KanbanProjectNote.objects.create(project=project_with_icon, author=other_user, message='Cudza notatka przestrzeni')
 
-        response = self.client.get(reverse('kanban:tasks'))
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
         html = response.content.decode()
 
         self.assertNotContains(response, 'tasks-project-row-icon')
@@ -309,7 +371,7 @@ class KanbanProjectCreationTests(TestCase):
             source='Polecenie',
         )
 
-        response = self.client.get(reverse('kanban:tasks'))
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-project-list tasks-directory-list')
         table_end = html.index('</section>', table_start)
@@ -363,7 +425,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(note.message, 'Poprawiona notatka przestrzeni')
         self.assertIsNotNone(note.edited_at)
 
-        page_response = self.client.get(reverse('kanban:tasks'))
+        page_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
         self.assertContains(page_response, '| Edytowano:')
 
         response = self.client.post(reverse('kanban:tasks'), {
@@ -462,7 +524,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(note.message, 'Cudza notatka')
 
     def test_workspace_and_board_icon_pickers_are_not_rendered(self):
-        response = self.client.get(reverse('kanban:tasks'))
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
 
         self.assertNotContains(response, 'data-project-icon-picker')
         self.assertNotContains(response, 'Ikona przestrzeni roboczej')
@@ -471,7 +533,7 @@ class KanbanProjectCreationTests(TestCase):
     def test_projects_view_bars_match_all_tasks_layout(self):
         KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
 
-        response = self.client.get(reverse('kanban:tasks'))
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
         html = response.content.decode()
         topbar_start = html.index('class="tasks-topbar ')
         topbar_end = html.index('</header>', topbar_start)
@@ -480,7 +542,7 @@ class KanbanProjectCreationTests(TestCase):
         filterbar_end = html.index('<div class="tasks-table-wrap', filterbar_start)
         filterbar_html = html[filterbar_start:filterbar_end]
 
-        self.assertIn('Przestrzenie robocze', topbar_html)
+        self.assertIn('Przestrzenie Kanban', topbar_html)
         self.assertIn('tasks-titlebar-actions', topbar_html)
         self.assertNotIn('id="filter-search"', topbar_html)
         self.assertIn('data-project-search-form', topbar_html)
@@ -667,13 +729,13 @@ class KanbanProjectCreationTests(TestCase):
 
         response = self.client.get(f'{reverse("kanban:tasks")}?project={project.id}')
 
-        self.assertContains(response, f'href="{reverse("kanban:tasks")}"')
+        self.assertContains(response, f'href="{reverse("kanban:tasks")}?view=projects"')
         self.assertContains(response, 'aria-label="Wróć do wszystkich przestrzeni"')
         self.assertContains(response, 'class="tasks-issue-close"')
         self.assertContains(response, 'class="tasks-issue-divider"')
         self.assertContains(response, 'data-spaces-back-link')
 
-        spaces_response = self.client.get(reverse('kanban:tasks'))
+        spaces_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
         spaces_html = spaces_response.content.decode()
         spaces_topbar_start = spaces_html.index('<header class="tasks-topbar ')
         spaces_topbar_end = spaces_html.index('</header>', spaces_topbar_start)
@@ -703,7 +765,7 @@ class KanbanProjectCreationTests(TestCase):
         response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
 
         self.assertContains(response, 'Tablice')
-        self.assertContains(response, 'tasks-all-groups-board')
+        self.assertContains(response, 'tasks-space-board')
         self.assertContains(response, 'data-server-pagination="true"')
         self.assertContains(response, 'Na stronie')
         self.assertContains(response, 'tablic')
@@ -714,6 +776,12 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, 'Druga przestrzeń')
         self.assertContains(response, first_project.code)
         self.assertContains(response, second_project.code)
+        groups = response.context['section_window']['space_groups']
+        self.assertEqual([group['project'].pk for group in groups], [second_project.pk, first_project.pk])
+        self.assertEqual([[board.title for board in group['sections']] for group in groups], [['Backend'], ['Frontend']])
+        self.assertContains(response, 'class="tasks-group-caret"', count=2)
+        self.assertContains(response, 'data-board-show-covers')
+        self.assertContains(response, 'data-kanban-wallpaper-preview', count=2)
 
     def test_all_groups_view_renders_only_server_side_window(self):
         project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa', code='SPACE')
@@ -792,13 +860,52 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(response.context['section_window']['total_sections'], 0)
         self.assertNotContains(response, 'Prywatna tablica')
 
+    def test_board_space_groups_preserve_identity_pagination_and_workspace_scope(self):
+        from workplaces.models import create_workplace_for_user, WorkplaceMembership
+        from workplaces.services import scoped_workplace_app_path
+
+        workspace = create_workplace_for_user(self.user, 'Tablice zespołu')
+        other_workspace = create_workplace_for_user(self.user, 'Inny Workspace')
+        member = get_user_model().objects.create_user(username='board-group-member')
+        WorkplaceMembership.objects.create(workplace=workspace, user=member)
+        projects = []
+        for name in ('Studio', 'Studio', 'Zespół'):
+            project = KanbanProject.objects.create(user=self.user, workplace=workspace, name=name)
+            projects.append(project)
+            for index in range(6):
+                KanbanSection.objects.create(project=project, title=f'Tablica {index}')
+        outside = KanbanProject.objects.create(user=self.user, workplace=other_workspace, name='Obca przestrzeń')
+        KanbanSection.objects.create(project=outside, title='Niedostępna tablica')
+        self.client.force_login(member)
+        scoped_url = scoped_workplace_app_path(workspace, 'kanban')
+
+        for base_url in (scoped_url, reverse('kanban:tasks')):
+            with self.subTest(base_url=base_url):
+                response = self.client.get(base_url, {'view': 'all-groups', 'sort': 'name_desc', 'page_size': 10}, follow=True)
+                window = response.context['section_window']
+                self.assertEqual(window['total_sections'], 18)
+                self.assertEqual([group['project'].pk for group in window['space_groups']], [projects[0].pk, projects[1].pk])
+                self.assertEqual([len(group['sections']) for group in window['space_groups']], [6, 4])
+                self.assertEqual([board.title for board in window['space_groups'][0]['sections']],
+                                 [f'Tablica {index}' for index in range(5, -1, -1)])
+                self.assertNotContains(response, 'Obca przestrzeń')
+                self.assertNotContains(response, 'Niedostępna tablica')
+                response = self.client.get(window['next_url'], follow=True)
+                groups = response.context['section_window']['space_groups']
+                self.assertEqual([group['project'].pk for group in groups], [projects[1].pk, projects[2].pk])
+                self.assertEqual([len(group['sections']) for group in groups], [2, 6])
+                response = self.client.get(base_url, {'view': 'all-groups', 'q': 'brak-takiej-tablicy'}, follow=True)
+                self.assertEqual(response.context['section_window']['space_groups'], [])
+                self.assertContains(response, 'Nie znaleziono tablic.')
+                self.assertNotContains(response, 'data-board-space=')
+
     def test_projects_link_hides_workspace_count(self):
         KanbanProject.objects.create(user=self.user, name='Pierwsza przestrzeń', code='ONE')
         KanbanProject.objects.create(user=self.user, name='Druga przestrzeń', code='TWO')
 
-        response = self.client.get(reverse('kanban:tasks'))
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
 
-        link_html = self._rail_link_html(response, 'Przestrzenie robocze')
+        link_html = self._rail_link_html(response, 'Przestrzenie Kanban')
         self.assertNotIn('tasks-rail-count', link_html)
 
     def test_all_groups_link_hides_board_count(self):
@@ -807,7 +914,7 @@ class KanbanProjectCreationTests(TestCase):
         KanbanSection.objects.create(project=project, title='Backend')
         TaskTag.objects.create(user=self.user, name='Design')
 
-        response = self.client.get(reverse('kanban:tasks'))
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
 
         self.assertContains(response, 'Tablice')
         link_html = self._rail_link_html(response, 'Tablice')
@@ -1065,7 +1172,7 @@ class KanbanProjectCreationTests(TestCase):
         TaskTag.objects.create(user=self.user, name='Frontend')
         TaskTag.objects.create(user=self.user, name='Backend')
 
-        response = self.client.get(reverse('kanban:tasks'))
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
 
         self.assertContains(response, 'Tagi')
         link_html = self._rail_link_html(response, 'Tagi')
@@ -1257,7 +1364,7 @@ class KanbanProjectCreationTests(TestCase):
         project_response = self.client.get(f"{reverse('kanban:tasks')}?project={project.id}")
         all_tasks_response = self.client.get(f"{reverse('kanban:tasks')}?view=all-tasks")
         my_tasks_response = self.client.get(f"{reverse('kanban:tasks')}?view=my-tasks")
-        projects_response = self.client.get(reverse('kanban:tasks'))
+        projects_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
         boards_response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
         tags_response = self.client.get(f"{reverse('kanban:tasks')}?view=tags")
 
@@ -1894,7 +2001,7 @@ class KanbanProjectCreationTests(TestCase):
         project = KanbanProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         section = KanbanSection.objects.create(project=project, title='Backend', description='Stary opis')
 
-        response = self.client.post(reverse('kanban:tasks'), {
+        response = self.client.post(f"{reverse('kanban:tasks')}?view=projects", {
             'action': 'edit_section',
             'section_id': section.id,
             'title': 'API',

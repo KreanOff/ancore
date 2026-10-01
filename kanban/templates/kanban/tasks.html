@@ -36,11 +36,11 @@
 
         <nav class="tasks-rail-nav">
             <div class="tasks-rail-nav-group">
-                <a href="{% url 'kanban:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
+                <a href="{% url 'kanban:tasks' %}?view=projects" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
                     <span class="tasks-rail-icon" aria-hidden="true">
                         <i data-icon="folders" aria-hidden="true"></i>
                     </span>
-                    Przestrzenie robocze
+                    Przestrzenie Kanban
                 </a>
                 <a href="{% url 'kanban:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
                     <span class="tasks-rail-icon" aria-hidden="true">
@@ -124,7 +124,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="tasks-page tasks-list-page" data-task-app="kanban" data-task-base-url="{{ workplace_app_urls.kanban }}"
+<div class="tasks-page tasks-list-page{% if active_view == 'all_groups' %} tasks-space-directory-page{% endif %}" data-task-app="kanban" data-task-base-url="{{ workplace_app_urls.kanban }}"
      data-section-empty-label="Wybierz tablicę"
      data-section-delete-fallback="tę tablicę"
      data-section-delete-title="Usuń tablicę"
@@ -138,7 +138,7 @@
                     <i data-icon="arrow-left" aria-hidden="true"></i>
                 </a>
                 {% elif active_project %}
-                <a href="{% url 'kanban:tasks' %}" class="tasks-issue-close" title="Wróć do wszystkich przestrzeni" aria-label="Wróć do wszystkich przestrzeni" data-spaces-back-link>
+                <a href="{% url 'kanban:tasks' %}?view=projects" class="tasks-issue-close" title="Wróć do wszystkich przestrzeni" aria-label="Wróć do wszystkich przestrzeni" data-spaces-back-link>
                     <i data-icon="arrow-left" aria-hidden="true"></i>
                 </a>
                 {% endif %}
@@ -164,7 +164,7 @@
                     {% elif active_view == 'tags' %}
                     <span>Tagi</span>
                     {% else %}
-                    <span>Przestrzenie robocze</span>
+                    <span>Przestrzenie Kanban</span>
                     {% endif %}
                     {% endif %}
                 </span>
@@ -182,6 +182,7 @@
             </form>
             {% elif active_view == 'projects' %}
             <form hidden id="kanban-directory-search-form" method="get" action="{% url 'kanban:tasks' %}" data-project-search-form>
+                <input type="hidden" name="view" value="projects">
                 <input type="hidden" id="filter-priority" name="priority" value="{{ project_priority_filter }}" data-project-filter-input="priority">
                 <input type="hidden" name="status" value="{{ project_status_filter }}" data-project-filter-input="status">
                 <input type="hidden" name="stage" value="{{ project_stage_filter }}" data-project-filter-input="stage">
@@ -205,7 +206,7 @@
                     <input id="filter-search" type="search" placeholder="Szukaj" autocomplete="off">
                 </label>
             </div>
-            {% else %}
+            {% elif active_view == 'section' %}
             <div class="tasks-titlebar-search tasks-search-actions">
                 <label class="tasks-search-field" for="filter-search">
                     <i data-icon="search" aria-hidden="true"></i>
@@ -625,7 +626,7 @@
                 {% if not active_project %}
                 <label class="tasks-search-field tasks-project-search" for="filter-search">
                     <i data-icon="search" aria-hidden="true"></i>
-                    <input id="filter-search" type="search" name="q" form="kanban-directory-search-form" value="{% if active_view == 'all_groups' %}{{ section_query }}{% elif active_view == 'tags' %}{{ tag_query }}{% else %}{{ project_query }}{% endif %}" placeholder="{% if active_view == 'all_groups' %}Szukaj tablic{% elif active_view == 'tags' %}Szukaj tagów{% else %}Szukaj przestrzeni{% endif %}" aria-label="{% if active_view == 'all_groups' %}Szukaj tablic{% elif active_view == 'tags' %}Szukaj tagów{% else %}Szukaj przestrzeni{% endif %}" autocomplete="off">
+                    <input id="filter-search" type="search"{% if active_view == 'projects' or active_view == 'all_groups' or active_view == 'tags' %} name="q" form="kanban-directory-search-form"{% endif %} value="{% if active_view == 'all_groups' %}{{ section_query }}{% elif active_view == 'tags' %}{{ tag_query }}{% else %}{{ project_query }}{% endif %}" placeholder="{% if active_view == 'all_groups' %}Szukaj tablic{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}Szukaj kart{% else %}Szukaj przestrzeni{% endif %}" aria-label="{% if active_view == 'all_groups' %}Szukaj tablic{% elif active_view == 'tags' %}Szukaj tagów{% elif active_view == 'all_tasks' or active_view == 'my_tasks' %}Szukaj kart{% else %}Szukaj przestrzeni{% endif %}" autocomplete="off">
                 </label>
                 {% if active_view == 'projects' %}
                 {% include 'tasks/includes/directory_pagination_toolbar.html' with window=project_window items_exist=project_window.projects pages_label='Strony przestrzeni' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
@@ -826,35 +827,47 @@
             {% endif %}
         </div>
         {% elif active_view == 'all_groups' %}
-        <div class="tasks-table-wrap tasks-board tasks-all-groups-board{% if not all_sections %} tasks-group-board--empty{% endif %}">
-            <section class="tasks-issue-group tasks-all-groups-board__group" data-section-status="" data-search-index="{{ section_window.query|default:''|striptags }}">
-                <div class="tasks-issue-list tasks-section-list tasks-section-card-grid" aria-label="Lista tablic">
-                {% for section in all_sections %}
-                <article class="tasks-section-row tasks-section-card tasks-section-card--accent-{% cycle 'blue' 'teal' 'violet' 'green' %}" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }}" data-view-url="{% url 'kanban:task_group' section.id %}" data-kanban-wallpaper-key="{% url 'kanban:task_group' section.id %}">
-                    <div class="tasks-section-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
-                        <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
-                        <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
-                    </div>
-                    <div class="tasks-section-card__body">
-                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
-                        <span class="tasks-row-title tasks-section-row-title tasks-section-card__title">
-                            <span>{{ section.title }}</span>
-                        </span>
-                    </div>
-                </article>
-                {% empty %}
+        <div class="tasks-table-wrap tasks-board tasks-space-board{% if not all_sections %} tasks-board--empty{% endif %}">
+            {% for space_group in section_window.space_groups %}
+            <section class="tasks-issue-group tasks-status-block" data-board-space="{{ space_group.project.pk }}" aria-labelledby="board-space-title-{{ space_group.project.pk }}">
+                <header class="tasks-issue-group-header tasks-status-block-header">
+                    <button type="button" class="tasks-group-caret" aria-label="Zwiń przestrzeń {{ space_group.project.name }}" aria-expanded="true" aria-controls="board-space-list-{{ space_group.project.pk }}" data-group-label="przestrzeń {{ space_group.project.name }}">
+                        <i data-icon="chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-space-group-title">
+                        <i data-icon="folders" aria-hidden="true"></i>
+                        <span id="board-space-title-{{ space_group.project.pk }}" title="{{ space_group.project.name }}">{{ space_group.project.name }}</span>
+                    </span>
+                    <span class="tasks-rail-count" title="Liczba tablic tej przestrzeni na bieżącej stronie">{{ space_group.sections|length }}</span>
+                </header>
+                <div class="tasks-issue-list tasks-section-list tasks-section-card-grid" id="board-space-list-{{ space_group.project.pk }}" aria-label="Tablice przestrzeni {{ space_group.project.name }}">
+                    {% for section in space_group.sections %}
+                    <article class="tasks-section-row tasks-section-card tasks-section-card--accent-{% cycle 'blue' 'teal' 'violet' 'green' %}" role="link" tabindex="0" data-search-primary="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }}" data-search-index="{{ section.title|default:''|striptags }} {{ section.description|default:''|striptags }} {{ section.project.name|default:''|striptags }} {{ section.project.code|default:'' }}" data-view-url="{% url 'kanban:task_group' section.id %}" data-kanban-wallpaper-key="{% url 'kanban:task_group' section.id %}">
+                        <div class="tasks-section-card__cover" aria-hidden="true" data-kanban-wallpaper-preview>
+                            <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
+                            <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
+                        </div>
+                        <div class="tasks-section-card__body">
+                            <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
+                            <span class="tasks-row-title tasks-section-row-title tasks-section-card__title" title="{{ section.title }}">
+                                <span>{{ section.title }}</span>
+                            </span>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% empty %}
                 <div class="tasks-empty-state tasks-empty-state--centered tasks-group-empty-state" role="status" aria-live="polite">
                     <span class="tasks-empty-state__icon" aria-hidden="true">
                         <i data-icon="kanban" aria-hidden="true"></i>
                     </span>
                     <div class="tasks-empty-state__copy">
-                        <h2>{% if section_query %}Nie znaleziono tablic.{% else %}Nie ma jeszcze tablic.{% endif %}</h2>
-                        <p>{% if section_query %}Zmień wyszukiwanie, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą tablicę, aby uporządkować karty.{% endif %}</p>
+                        <h2>{% if section_query or section_window.project_filter %}Nie znaleziono tablic.{% else %}Nie ma jeszcze tablic.{% endif %}</h2>
+                        <p>{% if section_query or section_window.project_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą tablicę, aby uporządkować karty.{% endif %}</p>
                     </div>
                 </div>
-                {% endfor %}
-                </div>
-            </section>
+            {% endfor %}
         </div>
         {% elif active_view == 'tags' %}
         <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-directory-menu-sheet{% if not tags %} tasks-tag-board--empty{% endif %}" data-directory-default-hidden="action info notes">

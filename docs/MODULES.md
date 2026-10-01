@@ -271,6 +271,20 @@ usuwa projektów. Dane są ograniczone do właściciela i aktywnego Workspace.
 **Hierarchia:** `KanbanProject` (przestrzeń robocza) → `KanbanSection` (tablica)
 → `KanbanBoardColumn` → `Kanban` (karta), z opcjonalnymi podkartami.
 
+Menu modułu: „Przestrzenie Kanban” i „Tablice”. Domyślne wejście bez
+parametrów pokazuje tablice; `view=projects` otwiera przestrzenie,
+a dotychczasowy adres `view=all-tasks` nadal otwiera karty z tablic aktywnego
+Workspace z wyszukiwaniem oraz filtrami stanu i priorytetu. Nie ma osobnej
+pozycji „Karty” w menu ani w Ulubionych. Zmiana menu zachowuje hierarchię danych.
+
+Katalog tablic grupuje kafelki według przestrzeni Kanban w zwijanych sekcjach,
+tak jak sekcje statusów w Zadaniach. Pokazuje wyłącznie przestrzenie mające
+tablice w bieżącym wyniku. Przestrzenie sortuje alfabetycznie, tablice wewnątrz
+każdej grupy według wybranego A–Z/Z–A. Filtry i wyszukiwanie poprzedzają
+globalną paginację tablic; licznik nagłówka dotyczy bieżącej strony.
+Kafelki mają ten sam wygląd i okładki co w widoku pojedynczej przestrzeni;
+ustawienia katalogu pozwalają ukryć okładki we wszystkich grupach.
+
 **Funkcje:** katalog przestrzeni, katalog tablic, tablica z kolumnami,
 tworzenie/edycja kart, komentarze z plikami i zdjęciami (`KanbanCommentImage`) i wzmiankami, obserwowanie kart i przestrzeni, historia, załączniki, czas pracy,
 priorytety, tagi, dodawanie/nazywanie/usuwanie i przestawianie kolumn,

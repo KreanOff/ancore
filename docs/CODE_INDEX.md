@@ -21,7 +21,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
-| [kanban](../kanban) | 10 | 37 | 9 | 73 |
+| [kanban](../kanban) | 10 | 37 | 9 | 76 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 6 | 7 | 91 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
@@ -1669,7 +1669,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [kanban/tests.py](../kanban/tests.py).
 
-- `KanbanProjectCreationTests`: 71 metod testowych.
+- `KanbanProjectCreationTests`: 74 metod testowych.
 
 ### contacts/tests.py
 

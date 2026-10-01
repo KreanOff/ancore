@@ -13996,11 +13996,11 @@ body.is-resizing-directory-columns {
     padding: 0.85rem;
 }
 
-.tasks-table-wrap.tasks-board:has(> .tasks-issue-group > .tasks-section-card-grid) {
+.tasks-table-wrap.tasks-board:not(.tasks-space-board):has(> .tasks-issue-group > .tasks-section-card-grid) {
     padding: 0;
 }
 
-.tasks-board > .tasks-issue-group:has(> .tasks-section-card-grid) {
+.tasks-board:not(.tasks-space-board) > .tasks-issue-group:has(> .tasks-section-card-grid) {
     overflow: visible;
     border: 0;
     border-radius: 0;
@@ -14519,7 +14519,8 @@ body.is-resizing-directory-columns {
     flex-direction: row;
 }
 
-.tasks-all-groups-board .tasks-section-card__cover[hidden] {
+.tasks-all-groups-board .tasks-section-card__cover[hidden],
+.tasks-space-board .tasks-section-card__cover[hidden] {
     display: none;
 }
 
@@ -14842,4 +14843,37 @@ body.is-resizing-directory-columns {
 .tasks-directory-board.tasks-directory-menu-sheet:not(.contacts-project-sheet) .tasks-directory-list .tasks-directory-row > :is([data-column="menu"], [data-column="action"], [data-column="info"], [data-column="notes"]):not([hidden]) {
     display: flex;
     align-items: center;
+}
+
+/* Kanban boards reuse the task list's collapsible groups, grouped by space. */
+.tasks-space-board .tasks-issue-group-header {
+    background: var(--panel-bg);
+}
+
+.tasks-space-group-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.tasks-space-group-title > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tasks-space-group-title > [data-icon] {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+    .tasks-space-directory-page .tasks-titlebar-left {
+        padding-left: 3.5rem;
+    }
 }

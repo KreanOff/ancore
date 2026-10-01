@@ -13,7 +13,7 @@ function initTasksPage() {
         let showCovers = true;
         try { showCovers = localStorage.getItem('ancore:board-show-covers') !== 'false'; } catch (_) {}
         const applyBoardDisplay = () => {
-            document.querySelectorAll('.tasks-all-groups-board .tasks-section-card__cover').forEach(cover => {
+            document.querySelectorAll('.tasks-all-groups-board .tasks-section-card__cover, .tasks-space-board .tasks-section-card__cover').forEach(cover => {
                 cover.hidden = !boardDisplayToggle.checked;
             });
         };
@@ -6848,7 +6848,8 @@ function initTasksPage() {
             group.classList.toggle('is-collapsed');
             const isCollapsed = group.classList.contains('is-collapsed');
             button.setAttribute('aria-expanded', String(!isCollapsed));
-            button.setAttribute('aria-label', isCollapsed ? 'Rozwiń sekcję' : 'Zwiń sekcję');
+            const groupLabel = button.dataset.groupLabel || 'sekcję';
+            button.setAttribute('aria-label', `${isCollapsed ? 'Rozwiń' : 'Zwiń'} ${groupLabel}`);
         });
 
         header.addEventListener('click', function(event) {

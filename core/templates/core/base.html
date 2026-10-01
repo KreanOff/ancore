@@ -61,7 +61,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260929-directory-tab-hover">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261001-kanban-space-tiles">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
@@ -211,8 +211,8 @@
                     <i class="sidebar-group-chevron" data-icon="chevron-down" aria-hidden="true"></i>
                 </button>
                 <div class="sidebar-subnav" id="sidebar-kanban-subnav" data-sidebar-group-label="Kanban">
-                    <a href="{{ sidebar_kanban_url }}" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'kanban' or request.resolver_match.app_name == 'workplace_kanban' %}{% if active_view == 'projects' or active_view == 'project' %}active{% endif %}{% endif %}" data-sidebar-source-item="kanban-spaces" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="folders"></i></span><span>Przestrzenie robocze</span></a>
-                    {% sidebar_favorite_toggle 'kanban-spaces' 'Przestrzenie robocze' 'folders' sidebar_kanban_url %}
+                    <a href="{{ sidebar_kanban_url }}?view=projects" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'kanban' or request.resolver_match.app_name == 'workplace_kanban' %}{% if active_view == 'projects' or active_view == 'project' %}active{% endif %}{% endif %}" data-sidebar-source-item="kanban-spaces" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="folders"></i></span><span>Przestrzenie Kanban</span></a>
+                    {% sidebar_favorite_toggle 'kanban-spaces' 'Przestrzenie Kanban' 'folders' sidebar_kanban_url|add:'?view=projects' %}
                     <a href="{{ sidebar_kanban_url }}?view=all-groups" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'kanban' or request.resolver_match.app_name == 'workplace_kanban' %}{% if active_view == 'all_groups' or active_view == 'section' %}active{% endif %}{% endif %}" data-sidebar-source-item="kanban-boards" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="kanban"></i></span><span>Tablice</span></a>
                     {% sidebar_favorite_toggle 'kanban-boards' 'Tablice' 'kanban' sidebar_kanban_url|add:'?view=all-groups' %}
                 </div>
@@ -398,7 +398,7 @@
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20260926-unified-small-dialogs"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20260921-dropdown-search"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20261001-resource-directory"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20261001-kanban-space-tiles"></script>
     <script src="{% static 'js/profile.js' %}?v=20260921-dropdown-layer"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260927-option-icons"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>

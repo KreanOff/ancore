@@ -163,6 +163,31 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 
 ## 2. Powłoka aplikacji
 
+Menu Kanbana ma dwie pozycje: „Przestrzenie Kanban” i „Tablice”, w tej kolejności.
+Wejście do modułu bez parametrów otwiera katalog tablic. Katalog przestrzeni
+używa jawnego `view=projects`, także w wyszukiwaniu, paginacji i powrocie
+z przestrzeni. Dawne adresy z filtrami przestrzeni nadal działają.
+Skróty tablic i przestrzeni w Ulubionych zachowują dotychczasowe klucze;
+pozycja „Karty” jest pomijana również w zapisanych ulubionych. Przekrojowy widok
+kart nadal działa pod dotychczasowym adresem `view=all-tasks`.
+Zwykłe i scoped adresy używają tego samego menu.
+
+Katalog „Tablice” używa wariantu `tasks-space-board`: osobne zwijane grupy
+według przestrzeni Kanban, oparte na `tasks-status-block` z katalogu Zadań.
+Nagłówek ma ikonę folderów, nazwę przestrzeni i liczbę jej tablic na bieżącej
+stronie. Neutralne tło pochodzi z `--panel-bg`; nazwa przestrzeni zastępuje
+status. Każda grupa zawiera siatkę `tasks-section-card-grid` z kafelkami
+tablic `tasks-section-card`, takimi jak w widoku pojedynczej przestrzeni:
+okładką, nazwą i checkboxem. Kafelki zachowują otwieranie myszą/klawiaturą
+oraz menu działań zaznaczonej tablicy. Przełącznik „Pokaż okładki” w ustawieniach
+widoku steruje okładkami wszystkich grup i zapamiętuje wybór lokalnie.
+Przestrzenie są uporządkowane alfabetycznie, a wybrane sortowanie A–Z/Z–A
+dotyczy tablic wewnątrz przestrzeni. Wyszukiwanie i filtr przestrzeni działają
+przed globalną paginacją; grupa może być kontynuowana na następnej stronie.
+Puste przestrzenie nie tworzą pustych nagłówków. Zwijanie używa wspólnego JS,
+`aria-expanded` i `aria-controls`; opcjonalne `data-group-label` zachowuje
+nazwę przestrzeni w etykiecie przycisku także po zwinięciu.
+
 Menu Zadań używa nazw „Projekty”, „Grupy” i „Zadania”, w tej kolejności.
 „Nieprzydzielone” jest ostatnią zakładką katalogu „Zadania”, po „Ulubione”,
 bez osobnej pozycji w menu. Pokazuje dostępne zadania główne bez projektu

@@ -10,7 +10,7 @@ SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'tasks-all', 'label': 'Zadania', 'icon': 'list-checks', 'app': 'tasks', 'query': 'view=all-tasks'},
     {'key': 'tasks-projects', 'label': 'Projekty', 'icon': 'briefcase-business', 'app': 'tasks'},
     {'key': 'tasks-groups', 'label': 'Grupy', 'icon': 'layers-3', 'app': 'tasks', 'query': 'view=all-groups'},
-    {'key': 'kanban-spaces', 'label': 'Przestrzenie robocze', 'icon': 'folders', 'app': 'kanban'},
+    {'key': 'kanban-spaces', 'label': 'Przestrzenie Kanban', 'icon': 'folders', 'app': 'kanban', 'query': 'view=projects'},
     {'key': 'kanban-boards', 'label': 'Tablice', 'icon': 'kanban', 'app': 'kanban', 'query': 'view=all-groups'},
     {'key': 'contacts-all', 'label': 'Kontakty', 'icon': 'users', 'app': 'contacts'},
     {'key': 'contacts-companies', 'label': 'Firmy', 'icon': 'building-2', 'app': 'contacts', 'suffix': 'companies/'},

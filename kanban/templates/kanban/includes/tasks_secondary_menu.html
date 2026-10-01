@@ -20,11 +20,11 @@
 
     <nav class="tasks-rail-nav">
         <div class="tasks-rail-nav-group">
-            <a href="{% url 'kanban:tasks' %}" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
+            <a href="{% url 'kanban:tasks' %}?view=projects" class="tasks-rail-link {% if active_view == 'projects' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
                     <i data-icon="folders" aria-hidden="true"></i>
                 </span>
-                Przestrzenie robocze
+                Przestrzenie Kanban
             </a>
             <a href="{% url 'kanban:tasks' %}?view=all-groups" class="tasks-rail-link {% if active_view == 'all_groups' %}is-active{% endif %}">
                 <span class="tasks-rail-icon" aria-hidden="true">
