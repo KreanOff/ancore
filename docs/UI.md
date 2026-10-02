@@ -172,6 +172,32 @@ pozycja „Karty” jest pomijana również w zapisanych ulubionych. Przekrojowy
 kart nadal działa pod dotychczasowym adresem `view=all-tasks`.
 Zwykłe i scoped adresy używają tego samego menu.
 
+Nagłówki katalogów „Przestrzenie Kanban” i „Tablice” mają cztery zakładki:
+„Prywatne”, „Udostępnione”, „Publiczne” i „Ulubione”. Korzystają z tego samego
+`tasks-topbar--with-tabs` i `notifications-tabs tasks-directory-tabs` co Zadania.
+Domyślna jest „Prywatne”. Zakładki odpowiadają rzeczywistej widoczności i osobistym
+ulubionym; starsze przestrzenie i tablice pozostają w „Publiczne”.
+Dodawanie i edycja przestrzeni oraz tablic korzystają z tych samych powłok
+`tasks-project-create-modal` i `tasks-project-edit-modal` co projekty i grupy Zadań.
+Nazwa i widoczność tworzą `tasks-project-heading-fields`, opis zajmuje osobny
+wiersz, a parametry korzystają ze wspólnej siatki pól. Zakładki edycji „Główna”
+i „Członkowie” znajdują się wewnątrz białego panelu formularza, nad jego treścią.
+Kod przestrzeni pozostaje nadawany automatycznie; formularze zachowują pola Kanbana.
+Dodawanie tablicy z katalogu zawiera wybór przestrzeni spośród tych z prawem
+edycji. Formularz otwierany w kontekście przestrzeni zachowuje jej identyfikator.
+Obsługa członków używa wspólnego `project-team.js` i pickera osób.
+`data-team-app="kanban"` dobiera nazewnictwo przestrzeni i tablic. Hosty okien
+udostępniania są umieszczone po oknach edycji, aby zachować kolejność nakładania.
+Obserwator może otworzyć podgląd ustawień i członków; kontrolki edycji,
+komentarzy, kolumn i przeciągania kart są zablokowane. Ustawienia tablicy
+są dostępne także w menu nagłówka otwartej tablicy.
+Ulubione przestrzenie oznacza się w menu wiersza, a tablice gwiazdką na kafelku.
+Minimalny wariant `tasks-section-card__body--with-favorite` rezerwuje miejsce
+na wspólny przycisk `tasks-row-favorite` po prawej stronie nazwy.
+Kliknięcie gwiazdki nie otwiera tablicy. Usunięcie ulubionego odświeża katalog
+i przywraca fokus zakładce. Filtry, sortowanie i paginacja zachowują `tab`;
+przełączenie zakładki zeruje stronę. Wnętrze przestrzeni i tablicy nie ma tych zakładek.
+
 Katalog „Tablice” używa wariantu `tasks-space-board`: osobne zwijane grupy
 według przestrzeni Kanban, oparte na `tasks-status-block` z katalogu Zadań.
 Nagłówek ma ikonę folderów, nazwę przestrzeni i liczbę jej tablic na bieżącej

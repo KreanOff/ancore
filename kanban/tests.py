@@ -260,7 +260,7 @@ class KanbanProjectCreationTests(TestCase):
         KanbanProjectNote.objects.create(project=project_with_icon, author=self.user, message='Moja notatka przestrzeni')
         KanbanProjectNote.objects.create(project=project_with_icon, author=other_user, message='Cudza notatka przestrzeni')
 
-        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
         html = response.content.decode()
 
         self.assertNotContains(response, 'tasks-project-row-icon')
@@ -371,7 +371,7 @@ class KanbanProjectCreationTests(TestCase):
             source='Polecenie',
         )
 
-        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-project-list tasks-directory-list')
         table_end = html.index('</section>', table_start)
@@ -425,7 +425,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(note.message, 'Poprawiona notatka przestrzeni')
         self.assertIsNotNone(note.edited_at)
 
-        page_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        page_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
         self.assertContains(page_response, '| Edytowano:')
 
         response = self.client.post(reverse('kanban:tasks'), {
@@ -524,7 +524,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertEqual(note.message, 'Cudza notatka')
 
     def test_workspace_and_board_icon_pickers_are_not_rendered(self):
-        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
 
         self.assertNotContains(response, 'data-project-icon-picker')
         self.assertNotContains(response, 'Ikona przestrzeni roboczej')
@@ -533,7 +533,7 @@ class KanbanProjectCreationTests(TestCase):
     def test_projects_view_bars_match_all_tasks_layout(self):
         KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
 
-        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
         html = response.content.decode()
         topbar_start = html.index('class="tasks-topbar ')
         topbar_end = html.index('</header>', topbar_start)
@@ -589,7 +589,7 @@ class KanbanProjectCreationTests(TestCase):
         )
 
         response = self.client.get(
-            f"{reverse('kanban:tasks')}?status=active&stage=implementation&health=ok"
+            f"{reverse('kanban:tasks')}?tab=public&status=active&stage=implementation&health=ok"
             f"&company={company.id}&responsible={responsible.id}&priority=high&sort=company_asc"
         )
         html = response.content.decode()
@@ -628,7 +628,7 @@ class KanbanProjectCreationTests(TestCase):
         project = KanbanProject.objects.create(user=self.user, name='Przestrzeń testowa')
         KanbanSection.objects.create(project=project, title='Tablica testowa')
 
-        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&tab=public")
         html = response.content.decode()
         topbar_start = html.index('class="tasks-topbar ')
         topbar_end = html.index('</header>', topbar_start)
@@ -735,7 +735,7 @@ class KanbanProjectCreationTests(TestCase):
         self.assertContains(response, 'class="tasks-issue-divider"')
         self.assertContains(response, 'data-spaces-back-link')
 
-        spaces_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        spaces_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
         spaces_html = spaces_response.content.decode()
         spaces_topbar_start = spaces_html.index('<header class="tasks-topbar ')
         spaces_topbar_end = spaces_html.index('</header>', spaces_topbar_start)
@@ -762,7 +762,7 @@ class KanbanProjectCreationTests(TestCase):
         KanbanSection.objects.create(project=first_project, title='Frontend', description='Prace po stronie UI')
         KanbanSection.objects.create(project=second_project, title='Backend')
 
-        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&tab=public")
 
         self.assertContains(response, 'Tablice')
         self.assertContains(response, 'tasks-space-board')
@@ -792,7 +792,7 @@ class KanbanProjectCreationTests(TestCase):
                 description=f'Opis tablicy {index:03d}',
             )
 
-        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&tab=public")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-section-list tasks-section-card-grid"')
         table_end = html.index('</section>', table_start)
@@ -805,10 +805,10 @@ class KanbanProjectCreationTests(TestCase):
         self.assertIn('Tablica 049', table_html)
         self.assertNotIn('Tablica 050', table_html)
         self.assertContains(response, 'Pokazano 1-50 z 60 tablic')
-        self.assertIn('data-project-page-url="/kanban/?view=all-groups&amp;page_size=50&amp;page=2"', html)
+        self.assertIn('data-project-page-url="/kanban/?view=all-groups&amp;tab=public&amp;page_size=50&amp;page=2"', html)
         self.assertIn('aria-current="page">1</button>', html)
 
-        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&page_size=50&page=2")
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&tab=public&page_size=50&page=2")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-section-list tasks-section-card-grid"')
         table_end = html.index('</section>', table_start)
@@ -820,9 +820,9 @@ class KanbanProjectCreationTests(TestCase):
         self.assertNotIn('Tablica 049', table_html)
         self.assertContains(response, 'Pokazano 51-60 z 60 tablic')
         self.assertIn('aria-current="page">2</button>', html)
-        self.assertIn('data-project-page-url="/kanban/?view=all-groups&amp;page_size=50"', html)
+        self.assertIn('data-project-page-url="/kanban/?view=all-groups&amp;tab=public&amp;page_size=50"', html)
 
-        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&q=059&page_size=10")
+        response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&tab=public&q=059&page_size=10")
         html = response.content.decode()
         table_start = html.index('class="tasks-issue-list tasks-section-list tasks-section-card-grid"')
         table_end = html.index('</section>', table_start)
@@ -843,7 +843,7 @@ class KanbanProjectCreationTests(TestCase):
         private_project = KanbanProject.objects.create(user=outsider, name='Prywatna')
         KanbanSection.objects.create(project=private_project, title='Prywatna tablica')
         response = self.client.get(reverse('kanban:tasks'), {
-            'view': 'all-groups', 'board_project': project.pk,
+            'view': 'all-groups', 'tab': 'public', 'board_project': project.pk,
             'q': 'Tablica', 'sort': 'name_desc', 'page_size': 10,
         })
         window = response.context['section_window']
@@ -855,7 +855,7 @@ class KanbanProjectCreationTests(TestCase):
                          ['Tablica 01', 'Tablica 00'])
         self.assertContains(response, '11-12 z 12')
         response = self.client.get(reverse('kanban:tasks'), {
-            'view': 'all-groups', 'board_project': private_project.pk,
+            'view': 'all-groups', 'tab': 'public', 'board_project': private_project.pk,
         })
         self.assertEqual(response.context['section_window']['total_sections'], 0)
         self.assertNotContains(response, 'Prywatna tablica')
@@ -881,7 +881,7 @@ class KanbanProjectCreationTests(TestCase):
 
         for base_url in (scoped_url, reverse('kanban:tasks')):
             with self.subTest(base_url=base_url):
-                response = self.client.get(base_url, {'view': 'all-groups', 'sort': 'name_desc', 'page_size': 10}, follow=True)
+                response = self.client.get(base_url, {'view': 'all-groups', 'tab': 'public', 'sort': 'name_desc', 'page_size': 10}, follow=True)
                 window = response.context['section_window']
                 self.assertEqual(window['total_sections'], 18)
                 self.assertEqual([group['project'].pk for group in window['space_groups']], [projects[0].pk, projects[1].pk])
@@ -894,7 +894,7 @@ class KanbanProjectCreationTests(TestCase):
                 groups = response.context['section_window']['space_groups']
                 self.assertEqual([group['project'].pk for group in groups], [projects[1].pk, projects[2].pk])
                 self.assertEqual([len(group['sections']) for group in groups], [2, 6])
-                response = self.client.get(base_url, {'view': 'all-groups', 'q': 'brak-takiej-tablicy'}, follow=True)
+                response = self.client.get(base_url, {'view': 'all-groups', 'tab': 'public', 'q': 'brak-takiej-tablicy'}, follow=True)
                 self.assertEqual(response.context['section_window']['space_groups'], [])
                 self.assertContains(response, 'Nie znaleziono tablic.')
                 self.assertNotContains(response, 'data-board-space=')
@@ -903,7 +903,7 @@ class KanbanProjectCreationTests(TestCase):
         KanbanProject.objects.create(user=self.user, name='Pierwsza przestrzeń', code='ONE')
         KanbanProject.objects.create(user=self.user, name='Druga przestrzeń', code='TWO')
 
-        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
 
         link_html = self._rail_link_html(response, 'Przestrzenie Kanban')
         self.assertNotIn('tasks-rail-count', link_html)
@@ -914,7 +914,7 @@ class KanbanProjectCreationTests(TestCase):
         KanbanSection.objects.create(project=project, title='Backend')
         TaskTag.objects.create(user=self.user, name='Design')
 
-        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
 
         self.assertContains(response, 'Tablice')
         link_html = self._rail_link_html(response, 'Tablice')
@@ -1172,7 +1172,7 @@ class KanbanProjectCreationTests(TestCase):
         TaskTag.objects.create(user=self.user, name='Frontend')
         TaskTag.objects.create(user=self.user, name='Backend')
 
-        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
+        response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
 
         self.assertContains(response, 'Tagi')
         link_html = self._rail_link_html(response, 'Tagi')
@@ -1364,8 +1364,8 @@ class KanbanProjectCreationTests(TestCase):
         project_response = self.client.get(f"{reverse('kanban:tasks')}?project={project.id}")
         all_tasks_response = self.client.get(f"{reverse('kanban:tasks')}?view=all-tasks")
         my_tasks_response = self.client.get(f"{reverse('kanban:tasks')}?view=my-tasks")
-        projects_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects'})
-        boards_response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups")
+        projects_response = self.client.get(reverse('kanban:tasks'), {'view': 'projects', 'tab': 'public'})
+        boards_response = self.client.get(f"{reverse('kanban:tasks')}?view=all-groups&tab=public")
         tags_response = self.client.get(f"{reverse('kanban:tasks')}?view=tags")
 
         self.assertContains(section_response, 'id="delete-selected-task-menu-btn"')

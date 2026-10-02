@@ -96,11 +96,11 @@ def mention_people(task):
             workplace_memberships__is_active=True,
             workplace_memberships__role__in=['admin', 'member'],
         )).distinct()
-    if isinstance(task, Task):
+    if isinstance(task, (Task, Kanban)):
         current, seen = task, set()
         while current is not None and current.pk not in seen:
             seen.add(current.pk)
-            resources = [current]
+            resources = [current] if isinstance(current, Task) else []
             if current.section_id:
                 resources.extend([current.section, current.section.project])
             for resource in resources:

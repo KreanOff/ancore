@@ -196,7 +196,7 @@ def global_search(request):
         | Q(automation_rules__icontains=query)
         | Q(tag_notes__message__icontains=query)
     )
-    kanban_project_queryset = KanbanProject.objects.filter(user=user).filter(
+    kanban_project_queryset = visible_to(KanbanProject.objects.all(), request.user).filter(user=user).filter(
         Q(name__icontains=query)
         | Q(description__icontains=query)
         | Q(code__icontains=query)
@@ -204,12 +204,12 @@ def global_search(request):
         | Q(company__name__icontains=query)
         | Q(project_notes__message__icontains=query)
     )
-    kanban_section_queryset = KanbanSection.objects.filter(project__user=user).filter(
+    kanban_section_queryset = visible_to(KanbanSection.objects.all(), request.user).filter(project__user=user).filter(
         Q(title__icontains=query)
         | Q(description__icontains=query)
         | Q(project__name__icontains=query)
     )
-    kanban_card_queryset = Kanban.objects.filter(user=user).filter(kanban_card_filter)
+    kanban_card_queryset = visible_to(Kanban.objects.all(), request.user).filter(user=user).filter(kanban_card_filter)
     contact_queryset = Contact.objects.filter(user=user).filter(
         Q(first_name__icontains=query)
         | Q(middle_name__icontains=query)

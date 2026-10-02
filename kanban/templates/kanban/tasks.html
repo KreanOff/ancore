@@ -2,6 +2,9 @@
 {% load static %}
 
 {% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260927-section-sharing">
+    <script src="{% static 'js/workplace-team.js' %}?v=20260927-direct-sharing" defer></script>
+    <script src="{% static 'js/project-team.js' %}?v=20261001-kanban-sharing" defer></script>
     {% if active_view == 'projects' or active_view == 'tags' %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">{% endif %}
     {% include 'kanban/includes/tasks_project_tree_initial_state.html' %}
 {% endblock %}
@@ -82,13 +85,13 @@
                         <div class="tasks-project-menu" role="menu">
                             <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}">
                                 <i data-icon="pencil" aria-hidden="true"></i>
-                                Edytuj przestrzeń
+                                {% if project.can_edit %}Edytuj przestrzeń{% else %}Podgląd przestrzeni{% endif %}
                             </button>
                             <button type="button" class="tasks-project-menu-button" role="menuitem" aria-haspopup="dialog" aria-controls="project-notes-modal" data-open-project-notes data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}">
                                 <i data-icon="file-text" aria-hidden="true"></i>
                                 Notatki przestrzeni
                             </button>
-                            <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-section-create data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}">
+                            <button type="button" class="tasks-project-menu-button" role="menuitem" {% if not project.can_edit %}disabled{% endif %} data-open-section-create data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}">
                                 <i data-icon="plus" aria-hidden="true"></i>
                                 Dodaj tablicę
                             </button>
@@ -96,7 +99,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="delete_project">
                                 <input type="hidden" name="project_id" value="{{ project.id }}">
-                                <button type="submit" class="tasks-project-delete-button">
+                                <button type="submit" class="tasks-project-delete-button" {% if not project.can_edit %}disabled{% endif %}>
                                         {% include 'core/includes/trash_icon.html' %}
                                     Usuń przestrzeń
                                 </button>
@@ -131,7 +134,7 @@
      data-section-delete-confirm="Usuń tablicę"
      data-section-delete-message-template="Czy na pewno chcesz usunąć tablicę „{title}”? Karty z tablicy zostaną przeniesione do sekcji „Bez przestrzeni roboczej”.">
     <section class="tasks-workspace" aria-label="Lista kart">
-        <header class="tasks-topbar{% if not active_project %} tasks-topbar--directory{% endif %}">
+        <header class="tasks-topbar{% if not active_project %} tasks-topbar--directory{% endif %}{% if directory_tabs %} tasks-topbar--with-tabs{% endif %}">
             <div class="tasks-titlebar-left{% if active_project %} tasks-issue-breadcrumb tasks-project-breadcrumb{% endif %}">
                 {% if active_section %}
                 <a href="{% url 'kanban:tasks' %}?project={{ active_project.id }}" class="tasks-issue-close" title="Wróć do tablic przestrzeni {{ active_project.name }}" aria-label="Wróć do tablic przestrzeni {{ active_project.name }}">
@@ -168,6 +171,13 @@
                     {% endif %}
                     {% endif %}
                 </span>
+                {% if directory_tabs %}
+                <nav class="notifications-tabs tasks-directory-tabs" aria-label="{% if active_view == 'projects' %}Widok przestrzeni Kanban{% else %}Widok tablic{% endif %}" data-directory-tabs="{{ directory_tab }}">
+                    {% for tab in directory_tabs %}
+                    <a href="{{ tab.url }}"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }}</a>
+                    {% endfor %}
+                </nav>
+                {% endif %}
             </div>
             {% if active_view == 'tags' %}
             <form hidden id="kanban-directory-search-form" method="get" action="{% url 'kanban:tasks' %}" data-project-search-form>
@@ -183,6 +193,7 @@
             {% elif active_view == 'projects' %}
             <form hidden id="kanban-directory-search-form" method="get" action="{% url 'kanban:tasks' %}" data-project-search-form>
                 <input type="hidden" name="view" value="projects">
+                <input type="hidden" name="tab" value="{{ directory_tab }}">
                 <input type="hidden" id="filter-priority" name="priority" value="{{ project_priority_filter }}" data-project-filter-input="priority">
                 <input type="hidden" name="status" value="{{ project_status_filter }}" data-project-filter-input="status">
                 <input type="hidden" name="stage" value="{{ project_stage_filter }}" data-project-filter-input="stage">
@@ -195,6 +206,7 @@
             {% elif active_view == 'all_groups' %}
             <form hidden id="kanban-directory-search-form" method="get" action="{% url 'kanban:tasks' %}" data-project-search-form>
                 <input type="hidden" name="view" value="all-groups">
+                <input type="hidden" name="tab" value="{{ directory_tab }}">
                 <input type="hidden" name="board_project" value="{{ section_window.project_filter }}" data-project-filter-input="board_project">
                 <input type="hidden" name="sort" value="{{ section_window.sort }}" data-project-sort-input>
                 <input type="hidden" name="page_size" value="{{ section_window.page_size }}" data-project-search-page-size>
@@ -223,7 +235,7 @@
                 </button>
                 {% include 'kanban/includes/tasks_section_actions.html' %}
                 {% elif active_view == 'all_groups' %}
-                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj tablicę" aria-label="Dodaj tablicę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create>
+                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" title="Dodaj tablicę" aria-label="Dodaj tablicę" aria-haspopup="dialog" aria-controls="section-create-modal" data-open-section-create {% if not section_create_projects %}disabled{% endif %}>
                     <span aria-hidden="true"><i data-icon="plus"></i></span><span>Dodaj tablicę</span>
                 </button>
                 {% include 'kanban/includes/tasks_section_actions.html' %}
@@ -679,7 +691,7 @@
                         <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
                     </div>
                     <div class="tasks-section-card__body">
-                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
+                        <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-can-manage="{{ section.can_manage|yesno:'true,false' }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
                         <span class="tasks-row-title tasks-section-row-title tasks-section-card__title">
                             <span>{{ section.title }}</span>
                         </span>
@@ -714,24 +726,24 @@
         <div class="tasks-table-wrap tasks-board tasks-kanban-board tasks-section-board tasks-section-card--accent-{{ active_section_accent }}"
              data-kanban-column-reorder-url="{% url 'kanban:reorder_board_columns' active_section.id %}">
             {% for column in task_board_columns %}
-            <section class="tasks-kanban-column tasks-kanban-column--{{ column.key }} {% if column.is_done %}tasks-kanban-column--done{% endif %}"{% if column.id %} draggable="true" title="Przenieś kolumnę" data-drop-column-id="{{ column.id }}" data-kanban-column-id="{{ column.id }}"{% endif %}>
+            <section class="tasks-kanban-column tasks-kanban-column--{{ column.key }} {% if column.is_done %}tasks-kanban-column--done{% endif %}"{% if column.id %} draggable="{{ active_section.can_edit|yesno:'true,false' }}" title="Przenieś kolumnę" data-drop-column-id="{{ column.id }}" data-kanban-column-id="{{ column.id }}"{% endif %}>
                 <header class="tasks-kanban-column__header">
                     <form method="post" class="tasks-kanban-column__title-form">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="rename_board_column">
                         <input type="hidden" name="column_id" value="{{ column.id }}">
                         <span class="status-indicator status-label-plain" aria-hidden="true"></span>
-                        <input type="text" name="title" value="{{ column.title }}" aria-label="Nazwa kolumny {{ column.title }}" maxlength="80">
+                        <input type="text" name="title" value="{{ column.title }}" aria-label="Nazwa kolumny {{ column.title }}" maxlength="80" {% if not column.section.can_edit %}disabled{% endif %}>
                     </form>
                     <span class="tasks-rail-count">{{ column.count }}</span>
-                    <form method="post" class="tasks-kanban-column__delete-form">
+                    {% if column.section.can_edit %}<form method="post" class="tasks-kanban-column__delete-form">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="delete_board_column">
                         <input type="hidden" name="column_id" value="{{ column.id }}">
                         <button type="submit" aria-label="Usuń kolumnę {{ column.title }}" title="Usuń kolumnę">
                             <i data-icon="x" aria-hidden="true"></i>
                         </button>
-                    </form>
+                    </form>{% endif %}
                 </header>
                 <div class="tasks-issue-list tasks-kanban-column__list" data-drop-column-id="{{ column.id }}">
                     {% for task in column.tasks %}
@@ -749,7 +761,7 @@
                 </div>
             </section>
             {% endfor %}
-            <section class="tasks-kanban-column tasks-kanban-column--new">
+            {% if active_section.can_edit %}<section class="tasks-kanban-column tasks-kanban-column--new">
                 <button type="button" class="tasks-tag-topbar-button tasks-kanban-column__create-toggle" data-kanban-column-create-toggle>
                     <span aria-hidden="true"><i data-icon="plus"></i></span>
                     <span>Dodaj kolumnę</span>
@@ -765,6 +777,7 @@
                 </form>
             </section>
 
+            {% endif %}
             {% if active_section.tasks.count == 0 %}
             <div class="tasks-empty-state tasks-kanban-empty">
                 <p>Brak kart w tej tablicy.</p>
@@ -787,19 +800,19 @@
                         <input type="hidden" name="action" value="rename_board_column">
                         <input type="hidden" name="column_id" value="{{ column.id }}">
                         <span class="status-indicator status-label-plain" aria-hidden="true"></span>
-                        <input type="text" name="title" value="{{ column.title }}" aria-label="Nazwa kolumny {{ column.title }}" maxlength="80">
+                        <input type="text" name="title" value="{{ column.title }}" aria-label="Nazwa kolumny {{ column.title }}" maxlength="80" {% if not column.section.can_edit %}disabled{% endif %}>
                     </form>
                     {% endif %}
                     <span class="tasks-rail-count">{{ column.count }}</span>
                     {% if not column.is_virtual %}
-                    <form method="post" class="tasks-kanban-column__delete-form">
+                    {% if column.section.can_edit %}<form method="post" class="tasks-kanban-column__delete-form">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="delete_board_column">
                         <input type="hidden" name="column_id" value="{{ column.id }}">
                         <button type="submit" aria-label="Usuń kolumnę {{ column.title }}" title="Usuń kolumnę">
                             <i data-icon="x" aria-hidden="true"></i>
                         </button>
-                    </form>
+                    </form>{% endif %}
                     {% endif %}
                 </header>
                 <div class="tasks-issue-list tasks-kanban-column__list"{% if column.id %} data-drop-column-id="{{ column.id }}"{% endif %}>
@@ -812,7 +825,7 @@
                             data-open-issue
                             data-issue-column-id="{{ column.id }}"
                             data-issue-section-id="{{ column.section.id }}"
-                            {% if not can_create_issue %}disabled{% endif %}>
+                            {% if not column.section.can_edit %}disabled{% endif %}>
                         <span aria-hidden="true"><i data-icon="plus"></i></span>
                         <span>Dodaj kartę</span>
                     </button>
@@ -847,8 +860,9 @@
                             <span class="tasks-section-card__shape tasks-section-card__shape--wide"></span>
                             <span class="tasks-section-card__shape tasks-section-card__shape--tall"></span>
                         </div>
-                        <div class="tasks-section-card__body">
-                            <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
+                        <div class="tasks-section-card__body tasks-section-card__body--with-favorite">
+                            <button type="button" class="tasks-icon-button tasks-row-favorite" data-directory-favorite="{{ section.favorite_url }}" data-favorite-action="{% if section.is_favorite %}remove{% else %}add{% endif %}" aria-pressed="{% if section.is_favorite %}true{% else %}false{% endif %}" aria-label="{% if section.is_favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}" title="{% if section.is_favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}"><i data-icon="star" aria-hidden="true"></i></button>
+                            <input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz tablicę {{ section.title }}" data-can-manage="{{ section.can_manage|yesno:'true,false' }}" data-section-id="{{ section.id }}" data-section-title="{{ section.title|escape }}" data-section-description="{{ section.description|default:''|escape }}">
                             <span class="tasks-row-title tasks-section-row-title tasks-section-card__title" title="{{ section.title }}">
                                 <span>{{ section.title }}</span>
                             </span>
@@ -863,8 +877,7 @@
                         <i data-icon="kanban" aria-hidden="true"></i>
                     </span>
                     <div class="tasks-empty-state__copy">
-                        <h2>{% if section_query or section_window.project_filter %}Nie znaleziono tablic.{% else %}Nie ma jeszcze tablic.{% endif %}</h2>
-                        <p>{% if section_query or section_window.project_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą tablicę, aby uporządkować karty.{% endif %}</p>
+                        {% include 'kanban/includes/directory_empty_copy.html' with noun='tablic' query=section_query has_filters=section_window.project_filter %}
                     </div>
                 </div>
             {% endfor %}
@@ -1008,9 +1021,9 @@
                 </div>
                 <div class="tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista przestrzeni Kanban">
                 {% for project in project_window.projects %}
-                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} Przestrzeń Kanban {{ project.get_priority_display|default:'' }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-view-url="{% url 'kanban:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
-                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz przestrzeń {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="true">
-                    {% include 'tasks/includes/directory_row_menu.html' with kind='project' item_id=project.pk item_name=project.name can_manage=True edit_label='Edytuj przestrzeń' info_label='Informacje o przestrzeni' notes_label='Notatki przestrzeni' edit_modal='project-rename-modal' delete_label='Usuń przestrzeń' only %}
+                <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="link" tabindex="0" data-search-primary="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-search-index="{{ project.name|default:''|striptags }} {{ project.description|default:''|striptags }} {{ project.code|default:'' }} Przestrzeń Kanban {{ project.get_priority_display|default:'' }} {{ project.get_status_display }} {{ project.get_stage_display }} {{ project.get_health_display }} {{ project.source|default:'' }} {{ project.sections_count_label }} {{ project.cards_count_label }} {% if project.company %}{{ project.company.name }}{% endif %} {% if project.responsible_user %}{{ project.responsible_user.get_full_name }} {{ project.responsible_user.username }} {{ project.responsible_user.email }}{% endif %}" data-view-url="{% url 'kanban:tasks' %}?project={{ project.id }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="{{ project.can_manage|yesno:'true,false' }}">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz przestrzeń {{ project.name }}" data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-type="kanban-space" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}" data-can-manage="{{ project.can_manage|yesno:'true,false' }}">
+                    {% include 'tasks/includes/directory_row_menu.html' with kind='project' item_id=project.pk item_name=project.name can_manage=project.can_manage can_preview_project=True preview_label='Podgląd przestrzeni' edit_label='Edytuj przestrzeń' info_label='Informacje o przestrzeni' notes_label='Notatki przestrzeni' edit_modal='project-rename-modal' delete_label='Usuń przestrzeń' favorite_url=project.favorite_url is_favorite=project.is_favorite only %}
                     <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action">
                         <button type="button" class="tasks-project-sheet__edit-button" title="Edytuj przestrzeń" aria-label="Edytuj przestrzeń {{ project.name }}" aria-haspopup="dialog" aria-controls="project-rename-modal" data-open-project-rename data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-priority="{{ project.priority|default:'none' }}" data-project-status="{{ project.status|default:'active' }}" data-project-stage="{{ project.stage|default:'implementation' }}" data-project-health="{{ project.health|default:'ok' }}" data-project-company-id="{{ project.company_id|default:'' }}" data-project-responsible-user-id="{{ project.responsible_user_id|default:'' }}" data-project-start-at="{{ project.start_at|date:'Y-m-d' }}" data-project-due-at="{{ project.due_at|date:'Y-m-d' }}" data-project-budget-amount="{{ project.budget_amount|default:'' }}" data-project-currency="{{ project.currency|default:'PLN' }}" data-project-source="{{ project.source|default:''|escape }}">
                             <i data-icon="pencil" aria-hidden="true"></i>
@@ -1082,8 +1095,8 @@
                         <i data-icon="folders" aria-hidden="true"></i>
                     </span>
                     <div class="tasks-empty-state__copy">
-                        <h2>{% if project_query or project_priority_filter or project_status_filter or project_stage_filter or project_health_filter or project_company_filter or project_responsible_filter %}Nie znaleziono przestrzeni.{% else %}Nie ma jeszcze przestrzeni.{% endif %}</h2>
-                        <p>{% if project_query or project_priority_filter or project_status_filter or project_stage_filter or project_health_filter or project_company_filter or project_responsible_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszą przestrzeń, aby rozpocząć pracę.{% endif %}</p>
+                        {% firstof project_priority_filter project_status_filter project_stage_filter project_health_filter project_company_filter project_responsible_filter as project_has_filters %}
+                        {% include 'kanban/includes/directory_empty_copy.html' with noun='przestrzeni' query=project_query has_filters=project_has_filters %}
                     </div>
                 </div>
                 {% endfor %}
@@ -1242,9 +1255,9 @@
                 </form>
                 <div class="tasks-project-notes-list" data-project-notes-feed>
                     {% for project in projects %}
-                    <section class="tasks-project-notes-thread" data-project-notes-thread data-project-id="{{ project.id }}" hidden>
+                    <section class="tasks-project-notes-thread" data-project-notes-thread data-can-edit="{{ project.can_edit|yesno:'true,false' }}" data-project-id="{{ project.id }}" hidden>
                         {% for note in project.project_notes.all %}
-                        <article class="tasks-project-note {% if note.author_id == request.user.id %}tasks-project-note--owned{% endif %}" data-project-note-item data-project-note-id="{{ note.id }}">
+                        <article class="tasks-project-note {% if project.can_edit and note.author_id == request.user.id %}tasks-project-note--owned{% endif %}" data-project-note-item data-project-note-id="{{ note.id }}">
                             <div class="tasks-project-note__heading">
                                 <span class="tasks-project-note__icon" aria-hidden="true">
                                     <i data-icon="file-text"></i>
@@ -1256,7 +1269,7 @@
                                     <span class="tasks-project-note__edited">| Edytowano: <time datetime="{{ note.edited_at|date:'c' }}">{{ note.edited_at|date:"d.m.Y, H:i" }}</time></span>
                                     {% endif %}
                                 </div>
-                                {% if note.author_id == request.user.id %}
+                                {% if project.can_edit and note.author_id == request.user.id %}
                                 <div class="tasks-project-note__actions">
                                     <button type="button" class="tasks-project-note__icon-button" title="Edytuj notatkę" aria-label="Edytuj notatkę" data-project-note-edit-toggle>
                                         <i data-icon="pencil" aria-hidden="true"></i>
@@ -1276,7 +1289,7 @@
                             </div>
                             <div class="tasks-project-note__body">
                                 <div class="tasks-project-note__message" data-project-note-message>{{ note.message|linebreaksbr }}</div>
-                                {% if note.author_id == request.user.id %}
+                                {% if project.can_edit and note.author_id == request.user.id %}
                                 <form method="post" class="tasks-project-note__edit-form" data-project-note-edit-form hidden>
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="edit_project_note">
@@ -1360,19 +1373,23 @@
 
 {% include 'tasks/includes/project_info_modal.html' %}
 
-<div class="tasks-modal app-modal-panel tasks-form-modal tasks-project-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
-    <div class="tasks-modal__dialog tasks-project-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-project-modal__form" id="project-create-form">
+
+<div class="tasks-modal app-modal-panel tasks-form-modal tasks-project-modal tasks-project-create-modal {% if project_modal_open %}is-open{% endif %}" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" aria-hidden="{% if project_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-create-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form" id="project-create-form">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_project">
-            <header class="tasks-modal__header">
-                <h2 id="project-modal-title">Nowa przestrzeń robocza</h2>
-                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <i data-icon="x" aria-hidden="true"></i>
-                </button>
+            <header class="tasks-modal__header tasks-project-create-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                        <i data-icon="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong id="project-modal-title">Nowa przestrzeń robocza</strong>
+                </div>
             </header>
 
-            <div class="tasks-modal__body tasks-project-modal__body">
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-create-modal__body tasks-issue-modal__body">
                 {% if project_form.errors %}
                 <div class="tasks-modal__errors" role="alert">
                     {% for field in project_form %}
@@ -1386,13 +1403,15 @@
                 </div>
                 {% endif %}
 
-                <div class="tasks-form-field">
-                    <label for="{{ project_form.name.id_for_label }}">Nazwa przestrzeni roboczej</label>
-                    {{ project_form.name }}
-                </div>
-                <div class="tasks-form-field">
-                    <label for="{{ project_form.section_title.id_for_label }}">Nazwa pierwszej tablicy</label>
-                    {{ project_form.section_title }}
+                <div class="tasks-project-heading-fields">
+                    <div class="tasks-form-field">
+                        <label for="{{ project_form.name.id_for_label }}">Nazwa przestrzeni roboczej</label>
+                        {{ project_form.name }}
+                    </div>
+                    <div class="tasks-form-field">
+                        <label for="{{ project_form.visibility.id_for_label }}">Widoczność</label>
+                        {{ project_form.visibility }}
+                    </div>
                 </div>
                 <div class="tasks-form-field">
                     <label for="{{ project_form.description.id_for_label }}">Opis</label>
@@ -1402,6 +1421,14 @@
                 <section class="tasks-project-parameters" aria-labelledby="project-create-parameters-title">
                     <h3 class="u-sr-only" id="project-create-parameters-title">Parametry przestrzeni</h3>
                     <div class="tasks-project-create-fields tasks-issue-fields">
+                        <label class="tasks-project-create-field--code">
+                            <span>Kod przestrzeni</span>
+                            <input type="text" class="tasks-inline-input" value="Zostanie nadany automatycznie" readonly>
+                        </label>
+                        <label class="tasks-project-create-field--section-title">
+                            <span>Pierwsza tablica</span>
+                            {{ project_form.section_title }}
+                        </label>
                         <label class="tasks-project-create-field--company">
                             <span>Firma</span>
                             {{ project_form.company }}
@@ -1469,28 +1496,33 @@
                 </section>
             </div>
 
-            <footer class="tasks-modal__footer">
+            <footer class="tasks-modal__footer tasks-project-create-modal__footer tasks-issue-modal__footer">
                 <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
-                <button type="submit" class="tasks-modal__submit" id="project-create-submit">Utwórz</button>
+                <button type="submit" class="tasks-modal__submit" id="project-create-submit">Utwórz przestrzeń</button>
             </footer>
         </form>
     </div>
 </div>
 
-<div class="tasks-modal app-modal-panel tasks-form-modal tasks-project-modal {% if project_rename_modal_open %}is-open{% endif %}" id="project-rename-modal" role="dialog" aria-modal="true" aria-labelledby="project-rename-modal-title" aria-hidden="{% if project_rename_modal_open %}false{% else %}true{% endif %}">
-    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="project-rename-form">
+<div class="tasks-modal app-modal-panel tasks-form-modal tasks-project-modal tasks-project-edit-modal {% if project_rename_modal_open %}is-open{% endif %}" id="project-rename-modal" role="dialog" aria-modal="true" aria-labelledby="project-rename-modal-title" aria-hidden="{% if project_rename_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form" id="project-rename-form" data-team-app="kanban">
             {% csrf_token %}
             <input type="hidden" name="action" value="edit_project">
             <input type="hidden" name="project_id" value="{{ project_rename_project_id }}">
-            <header class="tasks-modal__header">
-                <h2 id="project-rename-modal-title">Edytuj przestrzeń roboczą</h2>
-                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <i data-icon="x" aria-hidden="true"></i>
-                </button>
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                        <i data-icon="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong class="tasks-project-edit-modal__title-chip" id="project-rename-modal-title">
+                        <span>Edytuj przestrzeń</span>
+                    </strong>
+                </div>
             </header>
 
-            <div class="tasks-modal__body tasks-project-modal__body">
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
                 {% if project_rename_form.errors %}
                 <div class="tasks-modal__errors" role="alert">
                     {% for field in project_rename_form %}
@@ -1504,22 +1536,31 @@
                 </div>
                 {% endif %}
 
-                <div class="tasks-form-field">
-                    <label for="project-rename-name">Nazwa przestrzeni roboczej</label>
-                    <input type="text" id="project-rename-name" name="name" class="tasks-inline-input" placeholder="Nazwa przestrzeni roboczej" value="{{ project_rename_form.name.value|default_if_none:'' }}" required>
+                {% include 'tasks/includes/project_access_tabs.html' with kind='project' label='Ustawienia i członkowie' only %}
+                <section id="project-rename-panel-main" role="tabpanel" aria-labelledby="project-tab-main" data-project-access-panel="main">
+
+                <div class="tasks-project-heading-fields">
+                    <div class="tasks-form-field">
+                        <label for="project-rename-name">Nazwa przestrzeni roboczej</label>
+                        <input type="text" id="project-rename-name" name="name" class="tasks-inline-input" placeholder="Nazwa przestrzeni roboczej" value="{{ project_rename_form.name.value|default_if_none:'' }}" required>
+                    </div>
+                    <div class="tasks-form-field">
+                        <label for="{{ project_rename_form.visibility.id_for_label }}">Widoczność</label>
+                        {{ project_rename_form.visibility }}
+                    </div>
                 </div>
                 <div class="tasks-form-field">
                     <label for="project-rename-description">Opis</label>
                     <textarea id="project-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ project_rename_form.description.value|default_if_none:'' }}</textarea>
                 </div>
-                <div class="tasks-form-field">
-                    <span>Kod przestrzeni</span>
-                    <span class="tasks-form-value" id="project-rename-code">{{ project_rename_form.instance.code|default:'Zostanie nadany automatycznie' }}</span>
-                </div>
 
                 <section class="tasks-project-parameters" aria-labelledby="project-rename-parameters-title">
                     <h3 class="u-sr-only" id="project-rename-parameters-title">Parametry przestrzeni</h3>
                     <div class="tasks-project-create-fields tasks-issue-fields">
+                        <label class="tasks-project-create-field--code">
+                            <span>Kod przestrzeni</span>
+                            <input type="text" id="project-rename-code" class="tasks-inline-input" value="{{ project_rename_form.instance.code|default:'Zostanie nadany automatycznie' }}" readonly>
+                        </label>
                         <label>
                             <span>Firma</span>
                             {{ project_rename_form.company }}
@@ -1564,6 +1605,10 @@
                             </div>
                         </label>
                         <label>
+                            <span>Źródło</span>
+                            {{ project_rename_form.source }}
+                        </label>
+                        <label>
                             <span>Start</span>
                             {{ project_rename_form.start_at }}
                         </label>
@@ -1579,15 +1624,13 @@
                             <span>Waluta</span>
                             {{ project_rename_form.currency }}
                         </label>
-                        <label>
-                            <span>Źródło</span>
-                            {{ project_rename_form.source }}
-                        </label>
                     </div>
                 </section>
+                </section>
+                {% include 'tasks/includes/project_access_panel.html' with kind='project' only %}
             </div>
 
-            <footer class="tasks-modal__footer">
+            <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
                 <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="project-rename-submit">Zapisz zmiany</button>
             </footer>
@@ -1595,20 +1638,25 @@
     </div>
 </div>
 
-<div class="tasks-modal app-modal-panel tasks-project-modal {% if section_create_modal_open %}is-open{% endif %}" id="section-create-modal" role="dialog" aria-modal="true" aria-labelledby="section-create-modal-title" aria-hidden="{% if section_create_modal_open %}false{% else %}true{% endif %}">
-    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="section-create-form">
+<div class="tasks-modal app-modal-panel tasks-project-modal tasks-project-create-modal {% if section_create_modal_open %}is-open{% endif %}" id="section-create-modal" role="dialog" aria-modal="true" aria-labelledby="section-create-modal-title" aria-hidden="{% if section_create_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-create-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-create-modal__form tasks-issue-modal__form" id="section-create-form">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_section">
+            {% if not section_create_uses_project_select %}
             <input type="hidden" name="project_id" value="{{ section_create_project_id }}">
-            <header class="tasks-modal__header">
-                <h2 id="section-create-modal-title">Nowa tablica</h2>
-                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <i data-icon="x" aria-hidden="true"></i>
-                </button>
+            {% endif %}
+            <header class="tasks-modal__header tasks-project-create-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                        <i data-icon="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong id="section-create-modal-title">Nowa tablica</strong>
+                </div>
             </header>
 
-            <div class="tasks-modal__body tasks-project-modal__body">
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-create-modal__body tasks-issue-modal__body">
                 {% if section_form.errors %}
                 <div class="tasks-modal__errors" role="alert">
                     {% for field in section_form %}
@@ -1622,16 +1670,39 @@
                 </div>
                 {% endif %}
 
-                <div class="tasks-settings-grid">
-                    <label for="{{ section_form.title.id_for_label }}">Nazwa tablicy</label>
-                    {{ section_form.title }}
-
+                <div class="tasks-project-heading-fields">
+                    <div class="tasks-form-field">
+                        <label for="{{ section_form.title.id_for_label }}">Nazwa tablicy</label>
+                        {{ section_form.title }}
+                    </div>
+                    <div class="tasks-form-field">
+                        <label for="{{ section_form.visibility.id_for_label }}">Widoczność</label>
+                        {{ section_form.visibility }}
+                    </div>
+                </div>
+                <div class="tasks-form-field">
                     <label for="{{ section_form.description.id_for_label }}">Opis</label>
                     {{ section_form.description }}
                 </div>
+                {% if section_create_uses_project_select %}
+                <section class="tasks-project-parameters" aria-labelledby="section-create-parameters-title">
+                    <h3 class="u-sr-only" id="section-create-parameters-title">Parametry tablicy</h3>
+                    <div class="tasks-project-create-fields tasks-issue-fields">
+                        <label class="tasks-section-create-field--project">
+                            <span>Przestrzeń Kanban</span>
+                            <select id="section-create-project-select" class="tasks-inline-select" name="project_id" data-section-create-project-select data-ancore-custom-select-search="true" data-ancore-custom-select-search-placeholder="Szukaj przestrzeni" required>
+                                <option value="">Wybierz przestrzeń</option>
+                                {% for project in section_create_projects %}
+                                <option value="{{ project.id }}" {% if section_create_project_id|stringformat:'s' == project.id|stringformat:'s' %}selected{% endif %}>{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                </section>
+                {% endif %}
             </div>
 
-            <footer class="tasks-modal__footer">
+            <footer class="tasks-modal__footer tasks-project-create-modal__footer tasks-issue-modal__footer">
                 <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="section-create-submit">Utwórz tablicę</button>
             </footer>
@@ -1639,20 +1710,23 @@
     </div>
 </div>
 
-<div class="tasks-modal app-modal-panel tasks-project-modal {% if section_rename_modal_open %}is-open{% endif %}" id="section-rename-modal" role="dialog" aria-modal="true" aria-labelledby="section-rename-modal-title" aria-hidden="{% if section_rename_modal_open %}false{% else %}true{% endif %}">
-    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog">
-        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form" id="section-rename-form">
+<div class="tasks-modal app-modal-panel tasks-project-modal tasks-project-edit-modal {% if section_rename_modal_open %}is-open{% endif %}" id="section-rename-modal" role="dialog" aria-modal="true" aria-labelledby="section-rename-modal-title" aria-hidden="{% if section_rename_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form" id="section-rename-form" data-team-app="kanban">
             {% csrf_token %}
             <input type="hidden" name="action" value="edit_section">
             <input type="hidden" name="section_id" value="{{ section_rename_section_id }}">
-            <header class="tasks-modal__header">
-                <h2 id="section-rename-modal-title">Edytuj tablicę</h2>
-                <button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij" title="Zamknij">
-                    <i data-icon="x" aria-hidden="true"></i>
-                </button>
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                        <i data-icon="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong id="section-rename-modal-title">Edytuj tablicę</strong>
+                </div>
             </header>
 
-            <div class="tasks-modal__body tasks-project-modal__body">
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
                 {% if section_rename_form.errors %}
                 <div class="tasks-modal__errors" role="alert">
                     {% for field in section_rename_form %}
@@ -1666,16 +1740,28 @@
                 </div>
                 {% endif %}
 
-                <div class="tasks-settings-grid">
-                    <label for="section-rename-title">Nazwa tablicy</label>
-                    <input type="text" id="section-rename-title" name="title" class="tasks-inline-input" placeholder="Nazwa tablicy" value="{{ section_rename_form.title.value|default_if_none:'' }}" required>
+                {% include 'tasks/includes/project_access_tabs.html' with kind='section' label='Ustawienia i członkowie' only %}
+                <section id="section-rename-panel-main" role="tabpanel" aria-labelledby="section-tab-main" data-project-access-panel="main">
 
-                    <label for="section-rename-description">Opis</label>
-                    <textarea id="section-rename-description" name="description" class="tasks-inline-input tasks-modal-textarea" placeholder="Dodaj opis..." rows="3">{{ section_rename_form.description.value|default_if_none:'' }}</textarea>
+                <div class="tasks-project-heading-fields">
+                    <div class="tasks-form-field">
+                        <label for="section-rename-title">Nazwa tablicy</label>
+                        {{ section_rename_form.title }}
+                    </div>
+                    <div class="tasks-form-field">
+                        <label for="{{ section_rename_form.visibility.id_for_label }}">Widoczność</label>
+                        {{ section_rename_form.visibility }}
+                    </div>
                 </div>
+                <div class="tasks-form-field">
+                        <label for="section-rename-description">Opis</label>
+                        {{ section_rename_form.description }}
+                    </div>
+                </section>
+                {% include 'tasks/includes/project_access_panel.html' with kind='section' only %}
             </div>
 
-            <footer class="tasks-modal__footer">
+            <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
                 <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
                 <button type="submit" class="tasks-modal__submit" id="section-rename-submit">Zapisz zmiany</button>
             </footer>
@@ -1846,4 +1932,8 @@
         </form>
     </div>
 </div>
+<div data-project-team-modal-host="project"></div>
+<div data-project-team-modal-host="section"></div>
+{{ project_access_data|json_script:"project-access-data" }}
+{{ section_access_data|json_script:"section-access-data" }}
 {% endblock %}

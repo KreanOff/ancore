@@ -22,6 +22,19 @@ KanbanTagNote = TaskTagNote
 
 
 class KanbanProject(models.Model):
+    class Visibility(models.TextChoices):
+        PUBLIC = 'public', 'Publiczna'
+        PRIVATE = 'private', 'Prywatna'
+
+    visibility = models.CharField(max_length=7, choices=Visibility.choices, default=Visibility.PUBLIC)
+    private_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='private_kanban_projects', editable=False,
+    )
+    shared_with = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name='shared_kanban_projects', through='KanbanProjectMembership',
+    )
+
     PRIORITY_CHOICES = [
         ('none', 'Brak'),
         ('low', 'Niski'),
@@ -74,6 +87,7 @@ class KanbanProject(models.Model):
     company = models.ForeignKey('contacts.Company', on_delete=models.SET_NULL, related_name='kanban_projects', null=True, blank=True)
     responsible_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='responsible_kanban_projects', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='kanban_projects')
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='favorite_kanban_projects')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='kanban_projects', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -146,6 +160,19 @@ class KanbanProjectNote(models.Model):
 
 
 class KanbanSection(models.Model):
+    class Visibility(models.TextChoices):
+        PUBLIC = 'public', 'Publiczna'
+        PRIVATE = 'private', 'Prywatna'
+
+    visibility = models.CharField(max_length=7, choices=Visibility.choices, default=Visibility.PUBLIC)
+    private_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='private_kanban_sections', editable=False,
+    )
+    shared_with = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name='shared_kanban_sections', through='KanbanSectionMembership',
+    )
+
     KIND_CHOICES = [
         ('issues', 'Kwestie'),
         ('components', 'Komponenty'),
@@ -155,6 +182,7 @@ class KanbanSection(models.Model):
     ]
 
     project = models.ForeignKey(KanbanProject, on_delete=models.CASCADE, related_name='sections')
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='favorite_kanban_sections')
     title = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, default='issues')
@@ -438,3 +466,23 @@ def create_task_activity_on_create(sender, instance, created, **kwargs):
             message='utworzył kartę',
             metadata={'title': instance.title},
         )
+
+
+class KanbanProjectMembership(models.Model):
+    project = models.ForeignKey(KanbanProject, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('observer', 'Obserwator')], default='member')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['project', 'user'], name='unique_kanban_project_member')]
+
+
+class KanbanSectionMembership(models.Model):
+    section = models.ForeignKey(KanbanSection, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('observer', 'Obserwator')], default='member')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['section', 'user'], name='unique_kanban_section_member')]

@@ -1,10 +1,18 @@
 from django.urls import path
 from dashboard.collaboration import follow_object
 from .views import tasks
+from .views.directory import directory_favorite
+from .views.project_team import project_team, project_candidates
+from .views.section_team import section_team, section_candidates
 
 app_name = 'kanban'
 
 urlpatterns = [
+    path('projects/<int:project_id>/team/', project_team, name='project_team'),
+    path('projects/<int:project_id>/team/candidates/', project_candidates, name='project_candidates'),
+    path('groups/<int:section_id>/team/', section_team, name='section_team'),
+    path('groups/<int:section_id>/team/candidates/', section_candidates, name='section_candidates'),
+    path('favorites/<str:kind>/<int:object_id>/', directory_favorite, name='directory_favorite'),
     path('comment-images/<int:image_id>/', tasks.comment_image, name='comment_image'),
     path('follow/<str:kind>/<int:object_id>/', follow_object, {'app': 'kanban'}, name='follow_object'),
     path('', tasks.tasks, name='tasks'),

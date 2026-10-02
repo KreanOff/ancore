@@ -157,7 +157,7 @@ def notification_sources(user, workspace='', *, include_deleted=False):
     sources = {
         'workplace': pending_invitations_for_user(user),
         'tasks': visible_to(TaskActivity.objects.all(), user).filter(access),
-        'kanban': KanbanActivity.objects.filter(access),
+        'kanban': visible_to(KanbanActivity.objects.all(), user).filter(access),
         'reminders': reminders_for_user(user),
     }
     for source, queryset in sources.items():

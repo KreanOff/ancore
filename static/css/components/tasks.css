@@ -14198,6 +14198,17 @@ body.is-resizing-directory-columns {
     line-height: 1.25;
 }
 
+.tasks-section-card__body--with-favorite {
+    padding-right: 4.25rem;
+}
+
+.tasks-section-card__body--with-favorite > .tasks-row-favorite {
+    position: absolute;
+    right: 1.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .tasks-section-card__title > span:last-child {
     display: block;
     overflow: hidden;

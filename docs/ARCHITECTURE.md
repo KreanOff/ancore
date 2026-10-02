@@ -128,7 +128,9 @@ flowchart LR
   pozostają wyłącznie historyczne.
   Projekt, grupa, zadanie i Workspace współdzielą szablony tabel zespołu oraz picker osoby.
 - Zadania i Kanban mają różne hierarchie i osobne tabele. Kanban nie jest
-  jedynie innym sposobem wyświetlenia `Task`.
+  jedynie innym sposobem wyświetlenia `Task`. `kanban.access` ogranicza przestrzenie,
+  tablice i dziedziczoną zawartość; wspólne `tasks.access` deleguje do niego modele Kanbana.
+  Członkostwa przestrzeni/tablic mają własne tabele i wspólne komponenty UI zespołu.
 - Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
   Zadań i Kanbana, zaproszeń oraz osobistych przypomnień `TaskReminder`.

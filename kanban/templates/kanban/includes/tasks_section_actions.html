@@ -4,6 +4,9 @@
     </button>
     <div class="tasks-section-menu" role="menu">
         {% if active_section %}
+        <button type="button" class="tasks-project-menu-button" role="menuitem" data-open-section-rename data-section-id="{{ active_section.pk }}" data-section-title="{{ active_section.title|escape }}" data-section-description="{{ active_section.description|escape }}" aria-haspopup="dialog" aria-controls="section-rename-modal"><i data-icon="users" aria-hidden="true"></i>Ustawienia i członkowie tablicy</button>
+        {% endif %}
+        {% if active_section %}
         <button type="button" class="tasks-project-menu-button tasks-kanban-wallpaper-toggle" role="menuitem" title="Tapety tablicy" aria-label="Tapety tablicy" aria-haspopup="dialog" aria-expanded="false" data-kanban-wallpaper-toggle>
             <i data-icon="image" aria-hidden="true"></i>
             Tapety tablicy

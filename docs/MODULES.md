@@ -277,6 +277,19 @@ a dotychczasowy adres `view=all-tasks` nadal otwiera karty z tablic aktywnego
 Workspace z wyszukiwaniem oraz filtrami stanu i priorytetu. Nie ma osobnej
 pozycji „Karty” w menu ani w Ulubionych. Zmiana menu zachowuje hierarchię danych.
 
+Oba katalogi mają zakładki „Prywatne”, „Udostępnione”, „Publiczne” i „Ulubione”.
+Domyślne „Prywatne” pokazują własne prywatne elementy. „Udostępnione” obejmują
+prywatne elementy innych osób, do których odbiorca ma dostęp. Publiczna tablica
+prywatnej przestrzeni dziedziczy kategorię przestrzeni; „Publiczne” obejmują
+wspólny dostęp aktywnego Workspace. Nowe formularze domyślnie tworzą prywatny
+element, a pierwsza tablica nowej przestrzeni dziedziczy jej dostęp.
+`KanbanProjectMembership` i `KanbanSectionMembership` zapewniają bezpośrednie
+udostępnianie z rolami administrator/członek/obserwator, bez zaproszeń.
+Szczegóły dziedziczenia, cofania dostępu i usuwania opisuje [TEAMWORK](TEAMWORK.md).
+Osobiste relacje `favorited_by` przestrzeni i tablic są niezależne: oznaczenie
+przestrzeni nie oznacza automatycznie jej tablic. Nie zmieniają dostępu.
+Ulubione przestrzeni dodaje menu wiersza, a tablic — gwiazdka na kafelku.
+
 Katalog tablic grupuje kafelki według przestrzeni Kanban w zwijanych sekcjach,
 tak jak sekcje statusów w Zadaniach. Pokazuje wyłącznie przestrzenie mające
 tablice w bieżącym wyniku. Przestrzenie sortuje alfabetycznie, tablice wewnątrz

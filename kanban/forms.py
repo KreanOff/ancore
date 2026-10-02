@@ -5,7 +5,8 @@ from workplaces.services import workplace_people
 
 from contacts.models import Company
 from tasks.models import TaskTag
-from tasks.forms import DateTimeLocalInput, DATETIME_LOCAL_INPUT_FORMATS
+from tasks.forms import DateTimeLocalInput, DATETIME_LOCAL_INPUT_FORMATS, ProjectVisibilitySelect
+from .access import editable_to, visible_to
 from .models import Kanban, KanbanAttachment, KanbanBoardColumn, KanbanProject, KanbanSection
 
 
@@ -107,6 +108,8 @@ class KanbanForm(DynamicStatusFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        viewer = kwargs.pop('viewer', None) or user
+        allowed = visible_to if kwargs.pop('read_only', False) else editable_to
         workplace = kwargs.pop('workplace', None)
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
@@ -115,13 +118,13 @@ class KanbanForm(DynamicStatusFormMixin, forms.ModelForm):
         if workplace is None and section is not None:
             workplace = getattr(section.project, 'workplace', None)
         if user:
-            projects = _filter_workplace(KanbanProject.objects.filter(user=user), workplace).prefetch_related('sections')
-            sections = KanbanSection.objects.filter(project__user=user).select_related('project')
+            projects = _filter_workplace(allowed(KanbanProject.objects.all(), viewer).filter(user=user), workplace)
+            sections = allowed(KanbanSection.objects.all(), viewer).filter(project__user=user).select_related('project')
             if workplace is not None:
                 sections = sections.filter(project__workplace=workplace)
             parents = Kanban.objects.none()
             if getattr(self.instance, 'parent_id', None):
-                parents = Kanban.objects.filter(user=user, parent__isnull=True).select_related('section', 'section__project').order_by('task_id')
+                parents = allowed(Kanban.objects.all(), viewer).filter(user=user, parent__isnull=True).select_related('section', 'section__project').order_by('task_id')
                 if workplace is not None:
                     parents = parents.filter(workplace=workplace)
                 if self.instance and self.instance.pk:
@@ -200,8 +203,62 @@ class KanbanForm(DynamicStatusFormMixin, forms.ModelForm):
         }
 
 
-class KanbanProjectBaseForm(forms.ModelForm):
+class KanbanAccessForm(forms.ModelForm):
+    visibility = forms.ChoiceField(
+        choices=[('private', 'Prywatna — wybrane osoby'), ('public', 'Publiczna — cały Workspace')],
+        required=False, label='Widoczność',
+        widget=ProjectVisibilitySelect(attrs={'class': 'tasks-inline-select'}),
+    )
+
     def __init__(self, *args, **kwargs):
+        self.viewer = kwargs.pop('viewer', None)
+        super().__init__(*args, **kwargs)
+        self.original_visibility = self.instance.visibility
+        self.can_manage_access = (not self.instance.pk or self.original_visibility == 'public'
+                                  or self.instance.private_owner_id == getattr(self.viewer, 'pk', None))
+        kind = 'section' if isinstance(self.instance, KanbanSection) else 'project'
+        mode = 'rename' if self.instance.pk or 'Rename' in type(self).__name__ else 'create'
+        self.fields['visibility'].widget.attrs['id'] = f'{kind}-{mode}-visibility'
+        if kind == 'section' and mode == 'rename':
+            for name in ['title', 'description']:
+                self.fields[name].widget.attrs['id'] = f'section-rename-{name}'
+        if kind == 'section':
+            self.fields['visibility'].choices = [('private', 'Prywatna — wybrane osoby'), ('public', 'Publiczna — uczestnicy przestrzeni')]
+        if not self.instance.pk:
+            self.initial['visibility'] = 'private'
+
+    def clean_visibility(self):
+        value = self.cleaned_data.get('visibility') or (self.original_visibility if self.instance.pk else 'private')
+        if not self.can_manage_access and value != self.original_visibility:
+            raise forms.ValidationError('Tylko właściciel może zmienić widoczność prywatnego elementu.')
+        return value
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.data.get('sharing_present') or self.data.get('shared_with'):
+            raise forms.ValidationError('Udostępniaj w zakładce „Członkowie”. Odśwież formularz.')
+        return cleaned
+
+    def _save_m2m(self):
+        if self.can_manage_access and self.instance.visibility == 'public':
+            self.instance.shared_with.clear()
+
+    def save(self, commit=True):
+        item = super().save(commit=False)
+        if item.visibility == 'private':
+            if not item.private_owner_id:
+                item.private_owner = self.viewer
+        else:
+            item.private_owner = None
+        if commit:
+            item.save()
+            self.save_m2m()
+        return item
+
+
+class KanbanProjectBaseForm(KanbanAccessForm):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('viewer', kwargs.get('user'))
         user = kwargs.pop('user', None)
         workplace = kwargs.pop('workplace', None)
         super().__init__(*args, **kwargs)
@@ -250,6 +307,7 @@ class KanbanProjectForm(KanbanProjectBaseForm):
     class Meta:
         model = KanbanProject
         fields = [
+            'visibility',
             'name',
             'section_title',
             'description',
@@ -336,6 +394,7 @@ class KanbanProjectRenameForm(KanbanProjectBaseForm):
     class Meta:
         model = KanbanProject
         fields = [
+            'visibility',
             'name',
             'description',
             'company',
@@ -417,10 +476,10 @@ class KanbanProjectRenameForm(KanbanProjectBaseForm):
         }
 
 
-class KanbanSectionForm(forms.ModelForm):
+class KanbanSectionForm(KanbanAccessForm):
     class Meta:
         model = KanbanSection
-        fields = ['title', 'description']
+        fields = ['visibility', 'title', 'description']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa tablicy',
@@ -434,10 +493,10 @@ class KanbanSectionForm(forms.ModelForm):
         }
 
 
-class KanbanSectionRenameForm(forms.ModelForm):
+class KanbanSectionRenameForm(KanbanAccessForm):
     class Meta:
         model = KanbanSection
-        fields = ['title', 'description']
+        fields = ['visibility', 'title', 'description']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'Nazwa tablicy',
@@ -608,6 +667,7 @@ class QuickKanbanForm(forms.ModelForm):
 class KanbanModalForm(DynamicStatusFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        viewer = kwargs.pop('viewer', None) or user
         workplace = kwargs.pop('workplace', None)
         project = kwargs.pop('project', None)
         section = kwargs.pop('section', None)
@@ -616,7 +676,7 @@ class KanbanModalForm(DynamicStatusFormMixin, forms.ModelForm):
         if workplace is None and section is not None:
             workplace = getattr(section.project, 'workplace', None)
         if user:
-            sections = KanbanSection.objects.filter(project__user=user)
+            sections = editable_to(KanbanSection.objects.all(), viewer).filter(project__user=user)
             if workplace is not None:
                 sections = sections.filter(project__workplace=workplace)
             if project:

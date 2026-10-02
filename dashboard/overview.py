@@ -24,7 +24,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     week_start = timezone.make_aware(datetime.combine(today - timedelta(days=6), time.min))
     focus = focus if focus in {'deadlines', 'priority', 'kanban'} else 'deadlines'
     tasks = visible_to(Task.objects.all(), viewer or user).filter(user=user, workplace=workplace, parent__isnull=True)
-    cards = Kanban.objects.filter(user=user, workplace=workplace, parent__isnull=True)
+    cards = visible_to(Kanban.objects.all(), viewer or user).filter(user=user, workplace=workplace, parent__isnull=True)
     tasks_url = scoped_workplace_app_path(workplace, 'tasks')
     kanban_url = scoped_workplace_app_path(workplace, 'kanban')
     calendar_url = scoped_workplace_app_path(workplace, 'calendar')

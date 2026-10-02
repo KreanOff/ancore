@@ -3759,17 +3759,17 @@ function initTasksPage() {
     }
 
     function resetProjectAccess(form, projectId) {
-        if (taskAppSegment !== 'tasks') return;
+        if (!['tasks', 'kanban'].includes(taskAppSegment)) return;
         const access = JSON.parse(document.getElementById('project-access-data')?.textContent || '{}')[projectId];
         const readonly = access?.canEdit === false;
         if (form) form.dataset.projectReadonly = String(readonly);
         form?.querySelectorAll('[data-project-access-panel="main"] input:not([type=hidden]), [data-project-access-panel="main"] textarea, [data-project-access-panel="main"] select, [data-project-access-panel="main"] button').forEach(control => { control.disabled = readonly; });
         const title = form?.querySelector('#project-rename-modal-title');
-        if (title) title.textContent = readonly ? 'Projekt — tylko odczyt' : 'Edytuj projekt';
+        if (title) title.textContent = taskAppSegment === 'kanban' ? (readonly ? 'Przestrzeń — tylko odczyt' : 'Edytuj przestrzeń') : (readonly ? 'Projekt — tylko odczyt' : 'Edytuj projekt');
         const settingsLink = form?.querySelector('[data-project-deadline-settings-link]');
         if (settingsLink) settingsLink.hidden = readonly;
         const visibility = form?.elements.namedItem('visibility');
-        if (visibility) visibility.disabled = !access?.canManage;
+        if (visibility) { if (access?.visibility) visibility.value = access.visibility; visibility.disabled = !access?.canManage; }
         window.AncoreCustomSelect?.refresh(form);
         form?.dispatchEvent(new CustomEvent('ancore:project-team-selected', { bubbles: true, detail: { url: access?.teamUrl } }));
     }
@@ -3795,7 +3795,7 @@ function initTasksPage() {
         projectNotesModal.querySelectorAll('[data-project-notes-thread]').forEach(thread => {
             thread.hidden = thread.dataset.projectId !== projectId;
         });
-        const canEdit = taskAppSegment !== 'tasks' || projectNotesModal.querySelector('[data-project-notes-thread]:not([hidden])')?.dataset.canEdit === 'true';
+        const canEdit = !['tasks', 'kanban'].includes(taskAppSegment) || projectNotesModal.querySelector('[data-project-notes-thread]:not([hidden])')?.dataset.canEdit === 'true';
         if (projectNotesForm) projectNotesForm.hidden = !canEdit;
         closeProjectActionMenus();
         openModal(projectNotesModal, canEdit ? projectNotesMessageInput : null);
@@ -5406,7 +5406,7 @@ function initTasksPage() {
 
     function openSectionRenameFromDataset(sectionDataset) {
         if (!sectionDataset || !sectionRenameModal) return;
-        if (sectionDataset.canManage === 'false' && taskAppSegment !== 'tasks') return;
+        if (sectionDataset.canManage === 'false' && !['tasks', 'kanban'].includes(taskAppSegment)) return;
 
         setFieldValue(sectionRenameIdInput, sectionDataset.sectionId);
         setFieldValue(sectionRenameTitleInput, sectionDataset.sectionTitle);
@@ -5419,14 +5419,14 @@ function initTasksPage() {
         syncInlineSelectForSelect(sectionRenamePriorityInput);
         setFieldValue(sectionRenameDueAtInput, sectionDataset.sectionDueAt);
         setFieldValue(sectionRenameWipLimitInput, sectionDataset.sectionWipLimit);
-        if (taskAppSegment === 'tasks') {
+        if (['tasks', 'kanban'].includes(taskAppSegment)) {
             const access = JSON.parse(document.getElementById('section-access-data')?.textContent || '{}')[sectionDataset.sectionId];
             const readonly = access?.canEdit === false;
             sectionRenameForm.dataset.projectReadonly = String(readonly);
             sectionRenameForm.querySelectorAll('[data-project-access-panel="main"] input, [data-project-access-panel="main"] textarea, [data-project-access-panel="main"] select, [data-project-access-panel="main"] button').forEach(control => { control.disabled = readonly; });
             const visibility = sectionRenameForm.elements.visibility;
             if (visibility) { visibility.value = access?.visibility || 'public'; visibility.disabled = !access?.canManage; }
-            sectionRenameForm.querySelector('#section-rename-modal-title').textContent = readonly ? 'Grupa — tylko odczyt' : 'Edytuj grupę';
+            sectionRenameForm.querySelector('#section-rename-modal-title').textContent = taskAppSegment === 'kanban' ? (readonly ? 'Tablica — tylko odczyt' : 'Edytuj tablicę') : (readonly ? 'Grupa — tylko odczyt' : 'Edytuj grupę');
             window.AncoreCustomSelect?.refresh(sectionRenameForm);
             sectionRenameForm.dispatchEvent(new CustomEvent('ancore:section-team-selected', { bubbles: true, detail: { url: access?.teamUrl } }));
         }
@@ -5746,7 +5746,7 @@ function initTasksPage() {
             row.querySelector(`:scope > [data-column="${action}"] :is(button, a)`)?.click();
         } else if (action === 'preview' && kind === 'section' && taskAppSegment === 'tasks') {
             openSectionRenameFromDataset(row.querySelector('[data-open-section-rename]').dataset);
-        } else if (action === 'preview' && kind === 'project' && taskAppSegment === 'tasks') {
+        } else if (action === 'preview' && kind === 'project' && ['tasks', 'kanban'].includes(taskAppSegment)) {
             row.querySelector('[data-open-project-rename]')?.click();
         } else if (action === 'template' && kind === 'project' && taskAppSegment === 'tasks') {
             saveSelectedProjectTemplate(checkbox, button);

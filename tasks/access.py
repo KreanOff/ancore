@@ -38,6 +38,9 @@ def require_deletable_tasks(roots, viewer):
 
 def editable_to(queryset, viewer):
     """Visible data excluding observed resources and their entire task trees."""
+    if queryset.model._meta.app_label == 'kanban':
+        from kanban.access import editable_to as kanban_editable_to
+        return kanban_editable_to(queryset, viewer)
     from .models import Task, TaskProject, TaskSection
 
     queryset = visible_to(queryset, viewer)
@@ -80,6 +83,9 @@ def require_editable(queryset, viewer):
 
 
 def visible_to(queryset, viewer):
+    if queryset.model._meta.app_label == 'kanban':
+        from kanban.access import visible_to as kanban_visible_to
+        return kanban_visible_to(queryset, viewer)
     from .models import Task, TaskProject, TaskProjectTemplate, TaskSection
 
     model = queryset.model

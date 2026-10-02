@@ -109,7 +109,7 @@ Nie kopiuje odbiorców udostępnienia projektu ani nie udostępnia im szablonu.
 Jest niezależnym snapshotem, więc późniejsze zmiany widoczności projektu nie
 zmieniają już zapisanych szablonów. Nowy projekt z szablonu domyślnie jest prywatny, niezależnie od widoczności
 szablonu; użytkownik może jawnie wybrać publiczny w formularzu.
-Kanban zachowuje dotychczasowy wspólny dostęp i własne modele.
+Kanban ma własne modele i analogiczne udostępnianie przestrzeni oraz tablic, opisane poniżej.
 
 Migracja Tasks `0054_project_visibility` zachowuje istniejące projekty i szablony
 jako publiczne. Starszy formularz bez pola widoczności zachowuje bieżącą wartość.
@@ -340,6 +340,42 @@ zawierają jego identyfikator; serwer ponownie sprawdza aktywność konta i dost
 Starsze podpisy właściciela pozostają zgodne. Usunięcie członka zmienia klucze
 Office także dla współdzielonych sesji; pliki już pobrane na urządzenie pozostają
 poza kontrolą aplikacji.
+
+## Widoczność i udostępnianie Kanbana
+
+Przestrzenie i tablice mają `visibility`, `private_owner` oraz `shared_with`
+przez `KanbanProjectMembership` / `KanbanSectionMembership`. Role i bezpośrednie
+udostępnianie działają jak w Zadaniach: właściciel zmienia widoczność i role,
+administrator udostępnia członkom/obserwatorom i odbiera im dostęp, członek edytuje,
+a obserwator tylko przegląda. Role Workspace nie omijają prywatności.
+„Publiczna” oznacza uczestników Workspace, a dla tablicy — uczestników przestrzeni.
+Nie oznacza dostępu anonimowego przez Internet i nie uruchamia `SharedItem`.
+
+Nowa przestrzeń i osobno tworzona tablica są domyślnie prywatne dla faktycznego
+`request.user`. Pierwsza tablica nowej przestrzeni jest publiczna w jej obrębie.
+Pole `user` przestrzeni/karty nadal wskazuje właściciela Workspace.
+Migracja `kanban/0039_sharing.py` pozostawia stare dane publiczne.
+Brak pola widoczności przy edycji zachowuje obecną wartość; brak właściciela
+prywatnego elementu zamyka dostęp także dawnym członkom.
+
+Kandydat tablicy musi mieć dostęp do przestrzeni i być aktywnym członkiem Workspace.
+Prywatna tablica zawęża dostęp przestrzeni, a karty, pliki i podkarty dziedziczą
+ograniczenia tablicy oraz wszystkich rodziców. Rola obserwatora przestrzeni
+zachowuje ograniczenie nawet dla właściciela tablicy. Nie ma osobnego udostępniania kart.
+Usunięcie członka przestrzeni czyści jego udostępnienia tablic; odebranie lub
+wyłączenie członkostwa Workspace czyści oba poziomy. Ponowne dodanie nie przywraca
+starych uprawnień. Publikacja przestrzeni czyści jej członkostwa, ale zachowuje
+niezależne prywatne tablice i ich członków.
+
+Dostęp jest sprawdzany także w zwykłych i scoped URL, formularzach relacji,
+wyszukiwaniu, Kalendarzu, metrykach, powiadomieniach, wzmiankach i pobieraniu plików.
+Nowa historia utworzenia podkarty przechowuje `subtask_pk`. Stare zdarzenia tego
+typu bez stabilnego PK są pomijane w odczycie, ponieważ zmienny `task_id` nie pozwala
+bezpiecznie ustalić odbiorców historycznego tytułu. Pozostała historia pozostaje dostępna.
+
+Usuwanie przestrzeni lub tablicy z prywatną zawartością wymaga wcześniejszego
+usunięcia jej kart, aby `SET_NULL` nie ujawniło zawartości całemu Workspace.
+Usuwanie rodzica jest blokowane, jeśli obejmowałoby niedostępną tablicę lub podkartę.
 
 ## Migracja i sprawdzenia
 

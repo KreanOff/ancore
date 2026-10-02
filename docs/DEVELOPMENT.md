@@ -113,6 +113,20 @@ obserwatorów, cofnięcie dostępu, obcy Workspace i CSRF. Dawne testy katalogó
 z publicznymi danymi wybierają jawnie `tab=public`, ponieważ domyślną zakładką
 jest teraz „Prywatne”.
 
+Zakładki Kanbana wymagają migracji `0038_directory_favorites`, dodającej osobiste
+relacje ulubionych przestrzeni i tablic bez zmiany istniejącego dostępu.
+`kanban.test_directory_tabs` sprawdza kategorie, oba warianty URL, filtry,
+paginację, osobiste oznaczenia, walidację POST/CSRF, obcy Workspace i cofnięcie
+członkostwa. Migracja `0039_sharing` dodaje prywatność i członkostwa przestrzeni/tablic,
+zachowując istniejące rekordy jako publiczne. Domyślna zakładka to „Prywatne”.
+`kanban.test_sharing` sprawdza role, dziedziczenie, cofanie dostępu, formularze,
+operacje zbiorcze, pliki, historię, integracje i migrację. Uruchamiaj też regresje
+`tasks.test_project_visibility`, `tasks.test_project_observer`, `tasks.test_section_sharing`,
+`tasks.test_directory_tabs`, `workplaces`, `planner`, `dashboard` i `core`.
+Browser QA: dwa konta, „Członkowie” → „Udostępnij”, role i odebranie dostępu,
+prywatna tablica w przestrzeni, tryb tylko do odczytu, błąd pobierania członków,
+ponowne wejście, klawiatura, szerokość telefonu oraz referencyjne okno Zadań.
+
 ### Istniejące obszary testów
 
 | Moduł | Co sprawdzają istniejące testy |

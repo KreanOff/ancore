@@ -7,6 +7,7 @@
         const form = document.getElementById(isTask ? 'task-detail-form' : `${kind}-rename-form`);
         const host = document.querySelector(`[data-project-team-modal-host="${kind}"]`);
         if (!form || !host) return () => {};
+        const isKanban = form.dataset.teamApp === 'kanban';
         const controller = new AbortController();
         const options = { signal: controller.signal };
         const main = form.closest('.tasks-modal');
@@ -136,7 +137,7 @@
             if (trigger.dataset.projectTeamAction) {
                 const body = new FormData(); body.set('action', trigger.dataset.projectTeamAction);
                 if (trigger.dataset.memberId) body.set('member_id', trigger.dataset.memberId);
-                if (body.get('action') === 'remove') window.showConfirmModal({ title: isTask ? 'Odebrać dostęp do zadania?' : kind === 'section' ? 'Odebrać dostęp do grupy?' : 'Odebrać dostęp do projektu?', message: isTask ? 'Osoba straci dostęp do prywatnego zadania, jego podzadań i plików. Zachowa pozostałe uprawnienia w Workspace.' : kind === 'section' ? 'Osoba straci dostęp do prywatnej grupy, jej zadań i plików. Pozostanie członkiem projektu i Workspace.' : 'Osoba straci dostęp do prywatnego projektu, jego zadań i plików. Pozostanie członkiem Workspace.', confirmText: 'Odbierz dostęp', onConfirm: () => mutate(body) });
+                if (body.get('action') === 'remove') window.showConfirmModal({ title: isKanban ? (kind === 'section' ? 'Odebrać dostęp do tablicy?' : 'Odebrać dostęp do przestrzeni?') : isTask ? 'Odebrać dostęp do zadania?' : kind === 'section' ? 'Odebrać dostęp do grupy?' : 'Odebrać dostęp do projektu?', message: isKanban ? 'Osoba straci dostęp do tego prywatnego elementu Kanban, jego kart i plików. Zachowa pozostałe uprawnienia w Workspace.' : isTask ? 'Osoba straci dostęp do prywatnego zadania, jego podzadań i plików. Zachowa pozostałe uprawnienia w Workspace.' : kind === 'section' ? 'Osoba straci dostęp do prywatnej grupy, jej zadań i plików. Pozostanie członkiem projektu i Workspace.' : 'Osoba straci dostęp do prywatnego projektu, jego zadań i plików. Pozostanie członkiem Workspace.', confirmText: 'Odbierz dostęp', onConfirm: () => mutate(body) });
                 else mutate(body);
             }
         }, options);

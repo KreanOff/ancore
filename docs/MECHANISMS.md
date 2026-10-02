@@ -251,6 +251,22 @@ Pole `user` nadal wskazuje właściciela Workspace; relacja ulubionych wskazuje
 faktycznego odbiorcę `request.user`.
 Wariant `task` obsługuje zadania główne; podzadania nie należą do katalogu ulubionych.
 
+Kanban używa tych samych etykiet i konstrukcji linków zakładek, ale własnego
+`kanban/directory.py`: domyślna i nieznana wartość `tab` wybiera `private`.
+Filtr kategorii jest nakładany po `kanban.access.visible_to`; publiczna tablica
+prywatnej przestrzeni dziedziczy jej kategorię. Nie używa historycznego `SharedItem`.
+`tasks.access` przekazuje modele Kanbana do `kanban.access`, dzięki czemu wspólne
+wyszukiwanie, Kalendarz, powiadomienia, obserwowanie i pobieranie plików respektują
+widoczność. Rekurencyjne CTE używa stabilnego PK, obejmuje ograniczenia wszystkich
+rodziców i kończy pracę również dla cyklicznych danych historycznych.
+`editable_to` dodatkowo wyklucza Obserwatorów. Operacje zbiorcze sprawdzają cały
+zestaw przed zapisem, a usuwanie uwzględnia ukryte tablice i potomków.
+Relacje `KanbanProject.favorited_by` i `KanbanSection.favorited_by` oraz adnotacja
+`Exists` filtrują `favorites` przed liczeniem i paginacją. Endpoint POST
+`/kanban/favorites/<project|section>/<pk>/` (również scoped) ogranicza obiekt do
+właściciela, aktywnego Workspace i widoczności, a zapisuje preferencję rzeczywistego odbiorcy.
+Akcje `add|remove` są idempotentne; ulubione nie nadają dostępu.
+
 Tasks i Kanban mają rozbudowane funkcje `*_window_for_request()`, które
 filtrują, sortują i wycinają okno wyników po stronie serwera. Widoki używają
 `select_related`, `prefetch_related`, agregacji i adnotacji do liczników.
@@ -732,7 +748,9 @@ przed podwójnymi listenerami na tym samym elemencie.
 
 - Usunięcie projektu Tasks kasuje jego grupy i zadania; widoki porządkują numery.
 - Grupa Tasks ma kaskadowe zadania; relacja karty Kanban do sekcji w modelu
-  jest `SET_NULL`, ale akcja UI może jawnie usuwać powiązane karty.
+  jest `SET_NULL`. Kanban blokuje usuwanie przestrzeni/tablicy zawierającej
+  prywatne karty: najpierw trzeba usunąć karty, aby nie ujawnić ich jako osieroconych.
+  Usunięcie publicznej przestrzeni/tablicy zachowuje dawne przeniesienie kart poza tablicę.
 - Usunięcie kolumny Kanban w aktywnym widoku usuwa jej karty.
 - Podzadania/podkarty mają rodzica z `CASCADE`.
 - Pliki/foldery/dyski używają `RESTRICT` dla ochrony niepustych

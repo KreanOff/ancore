@@ -21,7 +21,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
-| [kanban](../kanban) | 10 | 37 | 9 | 76 |
+| [kanban](../kanban) | 19 | 39 | 10 | 100 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
 | [dashboard](../dashboard) | 17 | 6 | 7 | 91 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
@@ -358,13 +358,16 @@ Pola zadeklarowane tutaj: `activity` (ForeignKey).
 
 Źródło: [kanban/models.py](../kanban/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `name` (CharField), `description` (TextField), `code` (CharField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `favorited_by` (ManyToManyField), `workplace` (ForeignKey), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
+| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_kanban_projects'; null=True |
+| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_kanban_projects'; through='KanbanProjectMembership' |
 | `company` | `'contacts.Company'` | on_delete=models.SET_NULL; related_name='kanban_projects'; null=True |
 | `responsible_user` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='responsible_kanban_projects'; null=True |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='kanban_projects' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_kanban_projects' |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='kanban_projects'; null=True |
 
 Metody/properties: `_code_scope_models`, `_code_exists`, `_generate_unique_code`, `save`, `__str__`.
@@ -386,11 +389,14 @@ Metody/properties: `__str__`.
 
 Źródło: [kanban/models.py](../kanban/models.py).
 
-Pola zadeklarowane tutaj: `project` (ForeignKey), `title` (CharField), `description` (TextField), `kind` (CharField), `icon` (CharField), `order` (PositiveIntegerField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `project` (ForeignKey), `favorited_by` (ManyToManyField), `title` (CharField), `description` (TextField), `kind` (CharField), `icon` (CharField), `order` (PositiveIntegerField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
+| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_kanban_sections'; null=True |
+| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_kanban_sections'; through='KanbanSectionMembership' |
 | `project` | `KanbanProject` | on_delete=models.CASCADE; related_name='sections' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_kanban_sections' |
 
 Metody/properties: `__str__`.
 
@@ -457,6 +463,28 @@ Pola zadeklarowane tutaj: `activity` (ForeignKey).
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `activity` | `KanbanActivity` | on_delete=models.CASCADE; related_name='images' |
+
+### `KanbanProjectMembership`
+
+Źródło: [kanban/models.py](../kanban/models.py).
+
+Pola zadeklarowane tutaj: `project` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `project` | `KanbanProject` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+
+### `KanbanSectionMembership`
+
+Źródło: [kanban/models.py](../kanban/models.py).
+
+Pola zadeklarowane tutaj: `section` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `section` | `KanbanSection` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
 
 ## Modele: contacts
 
@@ -808,11 +836,12 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `DynamicStatusFormMixin`
 - `MultipleFileInput`
 - `KanbanForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'due_at', 'time_spent_hours', 'time_spent_minutes']`
+- `KanbanAccessForm`
 - `KanbanProjectBaseForm`
-- `KanbanProjectForm` — Meta.fields: `['name', 'section_title', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'budget_amount', 'currency', 'source']`
-- `KanbanProjectRenameForm` — Meta.fields: `['name', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'budget_amount', 'currency', 'source']`
-- `KanbanSectionForm` — Meta.fields: `['title', 'description']`
-- `KanbanSectionRenameForm` — Meta.fields: `['title', 'description']`
+- `KanbanProjectForm` — Meta.fields: `['visibility', 'name', 'section_title', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'budget_amount', 'currency', 'source']`
+- `KanbanProjectRenameForm` — Meta.fields: `['visibility', 'name', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'budget_amount', 'currency', 'source']`
+- `KanbanSectionForm` — Meta.fields: `['visibility', 'title', 'description']`
+- `KanbanSectionRenameForm` — Meta.fields: `['visibility', 'title', 'description']`
 - `KanbanTagForm` — Meta.fields: `['name', 'description', 'category', 'color', 'icon', 'priority', 'scope', 'owner_label', 'status', 'usage_notes', 'automation_rules', 'related_tags']`
 - `KanbanBoardColumnForm` — Meta.fields: `['title']`
 - `QuickKanbanForm` — Meta.fields: `['title']`
@@ -954,6 +983,11 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'projects/<int:project_id>/team/'` | `project_team` | 'project_team' |
+| `'projects/<int:project_id>/team/candidates/'` | `project_candidates` | 'project_candidates' |
+| `'groups/<int:section_id>/team/'` | `section_team` | 'section_team' |
+| `'groups/<int:section_id>/team/candidates/'` | `section_candidates` | 'section_candidates' |
+| `'favorites/<str:kind>/<int:object_id>/'` | `directory_favorite` | 'directory_favorite' |
 | `'comment-images/<int:image_id>/'` | `tasks.comment_image` | 'comment_image' |
 | `'follow/<str:kind>/<int:object_id>/'` | `follow_object` | 'follow_object' |
 | `''` | `tasks.tasks` | 'tasks' |
@@ -1142,12 +1176,19 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### kanban
 
 - [kanban/__init__.py](../kanban/__init__.py)
+- [kanban/access.py](../kanban/access.py) — `card_tree_ids`, `visible_to`, `editable_to`, `require_editable`, `require_deletable`
 - [kanban/admin.py](../kanban/admin.py) — `KanbanAttachmentInline`, `TaskAdmin`, `KanbanSectionInline`, `KanbanBoardColumnInline`, `KanbanProjectNoteInline`, `KanbanProjectAdmin`, `KanbanProjectNoteAdmin`, `KanbanSectionAdmin`, `KanbanBoardColumnAdmin`, `KanbanAttachmentAdmin`
 - [kanban/apps.py](../kanban/apps.py) — `KanbanConfig`
-- [kanban/forms.py](../kanban/forms.py) — `LenientModelChoiceField`, `TwoDigitNumberInput`, `board_column_status_choices`, `DynamicStatusFormMixin`, `MultipleFileInput`, `KanbanForm`, `KanbanProjectBaseForm`, `KanbanProjectForm`, `KanbanProjectRenameForm`, `KanbanSectionForm`, `KanbanSectionRenameForm`, `KanbanTagForm`, `KanbanBoardColumnForm`, `QuickKanbanForm`, `KanbanModalForm`, `SubKanbanModalForm`
-- [kanban/models.py](../kanban/models.py) — `KanbanProject`, `KanbanProjectNote`, `KanbanSection`, `KanbanBoardColumn`, `Kanban`, `KanbanAttachment`, `KanbanActivity`, `KanbanCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
+- [kanban/directory.py](../kanban/directory.py) — `directory_tab`, `directory_queryset`, `decorate_favorites`
+- [kanban/forms.py](../kanban/forms.py) — `LenientModelChoiceField`, `TwoDigitNumberInput`, `board_column_status_choices`, `DynamicStatusFormMixin`, `MultipleFileInput`, `KanbanForm`, `KanbanAccessForm`, `KanbanProjectBaseForm`, `KanbanProjectForm`, `KanbanProjectRenameForm`, `KanbanSectionForm`, `KanbanSectionRenameForm`, `KanbanTagForm`, `KanbanBoardColumnForm`, `QuickKanbanForm`, `KanbanModalForm`, `SubKanbanModalForm`
+- [kanban/models.py](../kanban/models.py) — `KanbanProject`, `KanbanProjectNote`, `KanbanSection`, `KanbanBoardColumn`, `Kanban`, `KanbanAttachment`, `KanbanActivity`, `KanbanCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`, `KanbanProjectMembership`, `KanbanSectionMembership`
+- [kanban/sharing.py](../kanban/sharing.py) — `share_candidates`, `project_role`, `project_access_data`, `section_candidates`, `section_role`, `section_access_data`
+- [kanban/sharing_signals.py](../kanban/sharing_signals.py) — `revoke_workspace_shares`, `workspace_member_deleted`, `workspace_member_disabled`, `project_member_deleted`
 - [kanban/urls.py](../kanban/urls.py)
 - [kanban/views/__init__.py](../kanban/views/__init__.py)
+- [kanban/views/directory.py](../kanban/views/directory.py) — `directory_favorite`
+- [kanban/views/project_team.py](../kanban/views/project_team.py) — `ProjectShareForm`, `team_payload`, `project_team`, `project_candidates`
+- [kanban/views/section_team.py](../kanban/views/section_team.py) — `SectionShareForm`, `team_payload`, `section_team`, `section_candidates`
 - [kanban/views/tasks.py](../kanban/views/tasks.py) — `tasks`, `task_group`, `reorder_board_columns`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`, `comment_image`
 
 ### contacts
@@ -1306,6 +1347,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [kanban/templates/kanban/edit_task.html](../kanban/templates/kanban/edit_task.html)
 - [kanban/templates/kanban/includes/board_display_manager.html](../kanban/templates/kanban/includes/board_display_manager.html)
+- [kanban/templates/kanban/includes/directory_empty_copy.html](../kanban/templates/kanban/includes/directory_empty_copy.html)
 - [kanban/templates/kanban/includes/task_board_card.html](../kanban/templates/kanban/includes/task_board_card.html)
 - [kanban/templates/kanban/includes/task_issue_row.html](../kanban/templates/kanban/includes/task_issue_row.html)
 - [kanban/templates/kanban/includes/tasks_project_tree_initial_state.html](../kanban/templates/kanban/includes/tasks_project_tree_initial_state.html)
@@ -1665,6 +1707,19 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `KanbanDeadlineTests`: 2 metod testowych.
 
+### kanban/test_directory_tabs.py
+
+Źródło: [kanban/test_directory_tabs.py](../kanban/test_directory_tabs.py).
+
+- `KanbanDirectoryTabsTests`: 6 metod testowych.
+
+### kanban/test_sharing.py
+
+Źródło: [kanban/test_sharing.py](../kanban/test_sharing.py).
+
+- `KanbanSharingTests`: 17 metod testowych.
+- `KanbanSharingMigrationTests`: 1 metod testowych.
+
 ### kanban/tests.py
 
 Źródło: [kanban/tests.py](../kanban/tests.py).
@@ -1968,6 +2023,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [kanban/migrations/0035_kanban_due_at.py](../kanban/migrations/0035_kanban_due_at.py)
 - [kanban/migrations/0036_comment_images.py](../kanban/migrations/0036_comment_images.py)
 - [kanban/migrations/0037_comment_attachment_size.py](../kanban/migrations/0037_comment_attachment_size.py)
+- [kanban/migrations/0038_directory_favorites.py](../kanban/migrations/0038_directory_favorites.py)
+- [kanban/migrations/0039_sharing.py](../kanban/migrations/0039_sharing.py)
 
 ### contacts
 

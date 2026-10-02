@@ -48,20 +48,20 @@
 
             <div class="tasks-issue-actions">
                 {% include 'tasks/includes/follow_button.html' %}
-                <button type="submit" form="task-detail-form" class="tasks-issue-save" title="Zapisz zmiany">
+                {% if can_edit_task %}<button type="submit" form="task-detail-form" class="tasks-issue-save" title="Zapisz zmiany">
                     Zapisz
-                </button>
+                </button>{% endif %}
             </div>
         </header>
 
-        <form id="activity-comment-form" method="POST" enctype="multipart/form-data" class="tasks-issue-comment-form">
+        {% if can_edit_task %}<form id="activity-comment-form" method="POST" enctype="multipart/form-data" class="tasks-issue-comment-form">
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="action" value="add_activity_comment">
             <input type="hidden" name="activity_mentions" value="{{ comment_mentions|default:'[]' }}" data-mention-values>
-        </form>
+        </form>{% endif %}
 
-        <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form">
+        <form id="task-detail-form" method="POST" enctype="multipart/form-data" class="tasks-issue-form {% if not can_edit_task %}tasks-issue-form--readonly{% endif %}" data-task-readonly="{{ can_edit_task|yesno:'false,true' }}">
             {% csrf_token %}
             <input type="hidden" name="task_pk" value="{{ task.pk }}">
             <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="">
@@ -116,9 +116,9 @@
                                         <span class="tasks-attachment-size">{{ attachment.get_formatted_size }}</span>
                                     </span>
                                 </a>
-                                <button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">
+                                {% if can_edit_task %}<button type="button" onclick="deleteAttachment({{ attachment.id }})" class="tasks-delete-attach-btn" title="Usuń załącznik">
                                     {% include 'core/includes/trash_icon.html' %}
-                                </button>
+                                </button>{% endif %}
                             </div>
                             {% endfor %}
                         </div>
@@ -176,7 +176,7 @@
                             </div>
                         </div>
 
-                        {% include 'tasks/includes/comment_composer.html' %}
+                        {% if can_edit_task %}{% include 'tasks/includes/comment_composer.html' %}{% endif %}
 
                         <div class="tasks-issue-feed" data-activity-feed tabindex="0" aria-label="Historia i czat zadania">
                             {% for item in activity_items %}
@@ -235,7 +235,7 @@
                             <div class="tasks-issue-select-wrap tasks-issue-status-wrap tasks-issue-dropdown-wrap">
                                 {{ form.status }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.status.id_for_label }}">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
                                         <span class="status-indicator status-label-plain tasks-filter-status-icon" aria-hidden="true" data-task-detail-status-icon></span>
                                         <span data-task-detail-label>Status</span>
                                     </button>
@@ -254,7 +254,7 @@
                             <div class="tasks-issue-select-wrap tasks-issue-priority-wrap tasks-issue-dropdown-wrap">
                                 {{ form.priority }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.priority.id_for_label }}">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
                                         <span class="tasks-filter-priority-icon" aria-hidden="true" data-task-detail-priority-icon></span>
                                         <span data-task-detail-label>Priorytet</span>
                                     </button>
@@ -280,7 +280,7 @@
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ form.tags }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-select="#{{ form.tags.id_for_label }}" data-task-detail-multiple>
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
                                         <i data-icon="tag" aria-hidden="true"></i>
                                         <span data-task-detail-label>Tagi</span>
                                     </button>
@@ -351,7 +351,7 @@
                                 <div class="tasks-issue-time-entries" aria-label="Dodany czas pracy">
                                     <div class="tasks-issue-time-entry">
                                         <span>{{ task.time_spent_label }}</span>
-                                        <button type="submit" name="action" value="clear_time_spent" title="Usuń czas pracy" aria-label="Usuń czas pracy" formnovalidate>
+                                        <button type="submit" name="action" value="clear_time_spent" {% if not can_edit_task %}disabled{% endif %} title="Usuń czas pracy" aria-label="Usuń czas pracy" formnovalidate>
                                             <i data-icon="x" aria-hidden="true"></i>
                                         </button>
                                     </div>
@@ -367,7 +367,7 @@
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ form.project }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-project-dropdown data-task-detail-select="#{{ form.project.id_for_label }}">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
                                         <span data-task-detail-label data-task-detail-default-label="Przestrzeń robocza">Przestrzeń robocza</span>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz przestrzeń roboczą">
@@ -385,7 +385,7 @@
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ form.section }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-section-dropdown data-task-detail-select="#{{ form.section.id_for_label }}">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
                                         <span data-task-detail-label data-task-detail-default-label="Tablica">Tablica</span>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz tablicę">
@@ -404,7 +404,7 @@
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ form.parent }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-parent-dropdown data-task-detail-select="#{{ form.parent.id_for_label }}">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle>
+                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
                                         <span data-task-detail-label data-task-detail-default-label="Karta">Karta</span>
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz kartę">
