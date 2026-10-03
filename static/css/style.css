@@ -3,7 +3,7 @@
 @import 'base/reset.css?v=20260902-app-scale-98';
 @import 'layout/sidebar.css?v=20260902-resizable-app-sidebar-v1';
 @import 'layout/main.css?v=20261003-collapse-panel';
-@import 'layout/responsive.css?v=20260829-pc-tablet-layout-v4';
+@import 'layout/responsive.css?v=20261003-sidebar-content-width';
 @import 'components/cards.css?v=20260902-system-accent-v1';
 @import 'components/buttons.css?v=20260923-secondary-gray-hover';
 @import 'components/toolbar.css?v=20260918-flaticon-v1';
@@ -2238,12 +2238,13 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
 
     .sidebar {
         transform: translateX(-100%);
-        box-shadow: 14px 0 34px rgba(15, 23, 42, 0.16);
+        box-shadow: none;
         transition: transform 0.16s ease;
     }
 
     .sidebar.sidebar--visible {
         transform: translateX(0);
+        box-shadow: 14px 0 34px rgba(15, 23, 42, 0.16);
     }
 
     .sidebar-resizer {

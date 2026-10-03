@@ -17,7 +17,7 @@ przestrzenie, Wszystkie zadania i Zespoły.
 
 Nagłówek otwartej przestrzeni pokazuje awatar i nazwę, bez strzałki powrotu
 i klucza obok niej. Ten sam nagłówek obowiązuje we wszystkich jej zakładkach.
-Awatar ma 32px w nagłówku, 24px w katalogu i 20px w menu bocznym.
+Awatar ma 32px w nagłówku, 24px w katalogu i 21px w menu bocznym.
 Include `spaces/avatar.html` rozszerza wspólny `profile-avatar`; globalny
 `space-avatars.css` zapewnia jego wygląd również poza modułem Przestrzeni.
 Zapis odświeża awatar w menu przy częściowej nawigacji.
@@ -251,10 +251,14 @@ Dashboardu: nagłówek katalogu, powitanie, panele, wiersze i podkreślane zakł
 Wariant `for-you-project` ustawia istniejący panel jako poziomy skrót projektu;
 siatka ma 4, 2 lub 1 kolumnę zależnie od szerokości. Pięć zakładek jest linkami
 z `aria-current`, a paginacja zachowuje kategorię i Workspace. Korzystają
-ze wspólnej nawigacji `AncoreApp`, także przy Wstecz/Dalej i ponownym wejściu;
-nie dodają osobnego JS ani listenerów. Puste stany wyjaśniają źródło danych
-każdej zakładki. Na telefonie zakładki zawijają się, a termin przechodzi pod
-tytuł; status pozostaje w osobnej kolumnie. Style są ograniczone do
+ze wspólnej nawigacji `AncoreApp`, także przy Wstecz/Dalej i ponownym wejściu.
+`for-you.js` utrzymuje aktywną zakładkę w widocznej części paska po wejściu,
+częściowej nawigacji i zmianie szerokości. Przewija wyłącznie zakładki, bez
+przesuwania strony lub fokusu; odłącza obserwator rozmiaru przy opuszczeniu widoku.
+Puste stany wyjaśniają źródło danych
+każdej zakładki. Zakładki pozostają w jednym wierszu i przewijają się poziomo,
+gdy brakuje miejsca, także na telefonie. Etykiety i licznik nie zawijają się.
+Na telefonie termin przechodzi pod tytuł; status pozostaje w osobnej kolumnie. Style są ograniczone do
 `for-you-*` w `components/dashboard.css`.
 
 Menu Kanbana ma dwie pozycje: „Przestrzenie Kanban” i „Tablice”, w tej kolejności.
@@ -391,7 +395,12 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 - Stała nawigacja z modułami, ulubionymi i Stickerem.
   Menu zaczyna się od Favorites, bez osobnego przycisku domu.
   Do strony głównej prowadzi istniejący link Dashboard.
-- Stan zwinięty/rozwinięty i regulowana szerokość sidebaru.
+- Stan zwinięty/rozwinięty i regulowana szerokość sidebaru. Odsunięcie i szerokość
+  treści korzystają z `--app-sidebar-total-width`, także przy szerokości
+  768–1024px; zwinięcie menu do ikon zwalnia miejsce dla treści. Na telefonie
+  menu otwiera się nad treścią, która zachowuje pełną szerokość. Cień menu
+  występuje wyłącznie w stanie otwartym (`sidebar--visible`); schowane menu
+  nie zacienia lewej krawędzi ani narożnika treści.
 - Biały obszar treści w `.main-content > .page-container`.
 - Na ekranach katalogów `full-width`, pasek tytułu, akcje, filtry, wyszukiwanie,
   paginacja i przewijana lista.

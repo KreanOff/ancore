@@ -1658,6 +1658,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/dropdown-layer.js](../static/js/dropdown-layer.js)
 - [static/js/file-upload.js](../static/js/file-upload.js)
 - [static/js/flaticon-icons.js](../static/js/flaticon-icons.js)
+- [static/js/for-you.js](../static/js/for-you.js)
 - [static/js/global-search.js](../static/js/global-search.js)
 - [static/js/layout.js](../static/js/layout.js)
 - [static/js/modal.js](../static/js/modal.js)

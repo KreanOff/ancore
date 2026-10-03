@@ -151,8 +151,8 @@
 .for-you-project:hover { background: var(--system-interaction-soft); }
 .for-you-project > i, .for-you-project > svg, .for-you-item > i, .for-you-item > svg { width: 18px; height: 18px; flex: 0 0 18px; }
 .for-you-project .dashboard-task-main { flex: 1; min-width: 0; }
-.for-you-tabs { flex-wrap: wrap; }
-.for-you-tabs a { gap: 8px; }
+.dashboard-overview-tabs.for-you-tabs { position: relative; flex-wrap: nowrap; overflow-x: auto; flex-shrink: 0; }
+.for-you-tabs a { gap: 8px; flex-shrink: 0; white-space: nowrap; }
 .for-you-count { padding: 2px 6px; border-radius: var(--radius); background: var(--system-interaction-soft); font-variant-numeric: tabular-nums; }
 .for-you-pagination, .for-you-pagination > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .for-you-pagination a { text-decoration: none; }

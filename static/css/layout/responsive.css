@@ -61,15 +61,15 @@ body.sidebar-open .sidebar-backdrop {
     }
 
     .main-content {
-        margin-left: var(--sidebar-width);
-        width: calc(100% - var(--sidebar-width));
+        margin-left: var(--app-sidebar-total-width);
+        width: calc(100% - var(--app-sidebar-total-width));
     }
 
     .modal-overlay,
     .dialog-overlay,
     .calendar-dialog-overlay {
-        left: var(--sidebar-width);
-        width: calc(100% - var(--sidebar-width));
+        left: var(--app-sidebar-total-width);
+        width: calc(100% - var(--app-sidebar-total-width));
     }
 
     .page-container {
