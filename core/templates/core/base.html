@@ -66,7 +66,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-border-visibility-2pct">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-search-no-close">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261003-sidebar-avatars-21px">
     {% block extra_head %}{% endblock %}
 </head>
@@ -166,9 +166,6 @@
                     <div class="global-search-filters" role="group" aria-label="Typ wyników" data-global-search-filters>
                         <button type="button" class="tasks-filter-button" aria-pressed="true" data-search-group="all">Wszystko</button>
                     </div>
-                    <button type="button" class="global-search-panel__close" aria-label="Zamknij wyszukiwanie" title="Zamknij wyszukiwanie" data-global-search-close>
-                        <i data-icon="x" aria-hidden="true"></i>
-                    </button>
                 </div>
                 <div class="global-search-results" data-global-search-results tabindex="-1"></div>
                 <footer class="global-search-quick-footer">
@@ -358,7 +355,7 @@
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/layout.js' %}?v=20261003-space-avatars"></script>
-    <script src="{% static 'js/global-search.js' %}?v=20261003-quick-search-v1"></script>
+    <script src="{% static 'js/global-search.js' %}?v=20261003-search-no-close"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/notifications-panel.js' %}?v=20261003-notifications-modal"></script>

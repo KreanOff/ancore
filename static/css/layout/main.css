@@ -1,14 +1,18 @@
 body:has(> .app-topbar) {
-    --app-topbar-height: var(--toolbar-height);
+    --app-topbar-height: calc(var(--dropdown-control-height) + 8px);
 }
 
 .app-topbar {
+    --app-topbar-control-height: var(--dropdown-control-height);
+    --app-topbar-avatar-size: 33px;
+    --app-topbar-icon-size: 20px;
+
     position: fixed;
     inset: 0 0 auto;
     height: var(--app-topbar-height);
     z-index: 211;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, min(560px, 46%)) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, min(672px, 55.2%)) minmax(0, 1fr);
     align-items: center;
     gap: 1rem;
     padding: 0 1rem;
@@ -16,7 +20,7 @@ body:has(> .app-topbar) {
 }
 
 .app-topbar__start {
-    --sidebar-icon-size: 18px;
+    --sidebar-icon-size: var(--app-topbar-icon-size);
 
     display: flex;
     align-items: center;
@@ -25,8 +29,8 @@ body:has(> .app-topbar) {
 }
 
 .app-topbar__workspace {
-    --sidebar-avatar-size: var(--control-height);
-    --sidebar-icon-size: 18px;
+    --sidebar-avatar-size: var(--app-topbar-avatar-size);
+    --sidebar-icon-size: var(--app-topbar-icon-size);
     --sidebar-avatar-inset: 0px;
 
     width: 100%;
@@ -35,12 +39,12 @@ body:has(> .app-topbar) {
 }
 
 .app-topbar .sidebar-workspace-toggle {
-    height: var(--control-height);
+    height: var(--app-topbar-control-height);
 }
 
 .app-topbar .sidebar-workspace-name {
     max-width: none;
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
 }
 
 .app-topbar .sidebar-workspace-menu {
@@ -54,15 +58,15 @@ body:has(> .app-topbar) {
     justify-content: flex-start;
     gap: 0.55rem;
     width: auto;
-    height: var(--control-height);
+    height: var(--app-topbar-control-height);
     background: transparent;
     color: var(--text-strong);
     text-decoration: none;
 }
 
 .app-topbar .logo img {
-    width: var(--control-height);
-    height: var(--control-height);
+    width: var(--app-topbar-control-height);
+    height: var(--app-topbar-control-height);
 }
 
 .app-topbar .app-topbar__search {
@@ -73,20 +77,21 @@ body:has(> .app-topbar) {
 }
 
 .app-topbar .app-topbar__search label {
-    min-height: var(--control-height);
+    height: var(--app-topbar-control-height);
+    min-height: var(--app-topbar-control-height);
     gap: 0.5rem;
     border-color: var(--border-color);
 }
 
 .app-topbar .app-topbar__search input {
-    height: var(--control-height);
-    font-size: var(--font-size-sm);
+    height: 100%;
+    font-size: var(--font-size-base);
 }
 
 .app-topbar .app-topbar__search label > svg {
-    width: 18px;
-    height: 18px;
-    flex-basis: 18px;
+    width: var(--app-topbar-icon-size);
+    height: var(--app-topbar-icon-size);
+    flex-basis: var(--app-topbar-icon-size);
 }
 
 .app-topbar__actions {
@@ -105,9 +110,9 @@ body:has(> .app-topbar) {
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    width: var(--control-height);
-    height: var(--control-height);
-    min-height: var(--control-height);
+    width: var(--app-topbar-control-height);
+    height: var(--app-topbar-control-height);
+    min-height: var(--app-topbar-control-height);
     padding: 0;
     border: 0;
     border-radius: var(--radius);
@@ -117,8 +122,8 @@ body:has(> .app-topbar) {
 }
 
 .app-topbar .app-topbar__action svg {
-    width: 18px;
-    height: 18px;
+    width: var(--app-topbar-icon-size);
+    height: var(--app-topbar-icon-size);
 }
 
 .app-topbar .app-topbar__profile {
@@ -127,13 +132,13 @@ body:has(> .app-topbar) {
     width: auto;
     gap: 0.5rem;
     padding-right: 0.5rem;
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
 }
 
 .app-topbar .app-topbar__avatar {
-    width: var(--control-height);
-    height: var(--control-height);
-    flex: 0 0 var(--control-height);
+    width: var(--app-topbar-avatar-size);
+    height: var(--app-topbar-avatar-size);
+    flex: 0 0 var(--app-topbar-avatar-size);
     border-radius: 50%;
 }
 
@@ -178,7 +183,7 @@ body:has(> .app-topbar) {
     }
 
     .app-topbar__workspace {
-        width: var(--control-height);
+        width: var(--app-topbar-control-height);
     }
 
     .app-topbar .sidebar-workspace-toggle {
@@ -192,7 +197,7 @@ body:has(> .app-topbar) {
     }
 
     .app-topbar {
-        --app-topbar-actions-width: calc(3 * var(--control-height) + 0.5rem);
+        --app-topbar-actions-width: calc(3 * var(--app-topbar-control-height) + 0.5rem);
 
         grid-template-columns: var(--app-topbar-actions-width) minmax(0, 1fr) var(--app-topbar-actions-width);
         gap: 0.5rem;

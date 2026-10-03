@@ -3,7 +3,7 @@
 @import 'base/variables.css?v=20261003-border-visibility-2pct';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261003-border-visibility-2pct';
-@import 'layout/main.css?v=20261003-border-visibility-2pct';
+@import 'layout/main.css?v=20261003-topbar-search-wider';
 @import 'layout/responsive.css?v=20261003-sidebar-content-width';
 @import 'components/cards.css?v=20261003-border-visibility-2pct';
 @import 'components/buttons.css?v=20260923-secondary-gray-hover';
@@ -27,7 +27,7 @@
 @import 'components/profile.css?v=20261003-border-visibility-2pct';
 @import 'components/modal-system.css?v=20260927-project-heading';
 @import 'components/dropdown-layer.css?v=20260921-dropdown-search';
-@import 'components/global-search.css?v=20261003-border-visibility-2pct';
+@import 'components/global-search.css?v=20261003-search-no-close';
 @import 'components/notifications-panel.css?v=20261003-notifications-modal';
 
 /* App-wide text palette: #40444C and #FFFFFF. */

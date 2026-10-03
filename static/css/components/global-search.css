@@ -82,7 +82,6 @@ body.global-search-open .sidebar-header-action--search {
     font-size: 12px;
 }
 
-.global-search-panel__close,
 .global-search-form__clear {
     appearance: none;
     display: inline-grid;
@@ -95,38 +94,16 @@ body.global-search-open .sidebar-header-action--search {
     transition: none;
 }
 
-.global-search-panel__close {
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
-    border-radius: 8px;
-}
-
-.global-search-panel__close:hover {
-    background: #f1f3f6;
-    color: #343840;
-}
-
 .global-search-form__clear:hover {
     color: #343840;
 }
 
-.global-search-panel__close:focus-visible {
-    background: #f1f3f6;
-}
-
-.global-search-panel__close:focus-visible,
 .global-search-form__clear:focus-visible,
 .global-search-state__retry:focus-visible,
 .global-search-result:focus-visible {
     outline: 2px solid #777d87;
     outline-offset: 1px;
     box-shadow: none;
-}
-
-.global-search-panel__close svg {
-    width: 19px;
-    height: 19px;
 }
 
 .global-search-form {
@@ -497,7 +474,7 @@ body.global-search-open .sidebar-header-action--search {
     inset: calc(100% + 8px) auto auto 50%;
     width: min(680px, calc(var(--app-viewport-width) - 16px));
     min-width: 0;
-    max-height: min(620px, calc(var(--app-viewport-height) - var(--toolbar-height) - 24px));
+    max-height: min(620px, calc(var(--app-viewport-height) - var(--app-topbar-height) - 24px));
     transform: translateX(-50%);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
@@ -547,12 +524,6 @@ body.global-search-open .global-search-form__shortcut {
 .global-search-filters button:focus-visible {
     outline: 2px solid var(--system-interaction);
     outline-offset: -2px;
-}
-
-.global-search-panel--quick .global-search-panel__close {
-    width: 28px;
-    height: 28px;
-    flex-basis: 28px;
 }
 
 .global-search-panel--quick .global-search-results {
@@ -644,7 +615,7 @@ body.global-search-open .global-search-form__shortcut {
 @media (max-width: 767px) {
     body.global-search-open .app-topbar__search {
         position: absolute;
-        top: 9px;
+        top: calc((var(--app-topbar-height) - var(--app-topbar-control-height)) / 2);
         left: 8px;
         width: calc(100% - 16px);
     }
@@ -655,7 +626,7 @@ body.global-search-open .global-search-form__shortcut {
 
     .global-search-panel.global-search-panel--quick {
         width: 100%;
-        max-height: calc(var(--app-viewport-height) - var(--toolbar-height) - 24px);
+        max-height: calc(var(--app-viewport-height) - var(--app-topbar-height) - 24px);
     }
 
     .global-search-quick-keys {

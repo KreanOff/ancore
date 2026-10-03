@@ -1,7 +1,6 @@
 (function () {
     if (window.AncoreGlobalSearch) return;
     const panel = document.querySelector('[data-global-search-panel]');
-    const closeButton = document.querySelector('[data-global-search-close]');
     const form = document.querySelector('[data-global-search-form]');
     const input = document.querySelector('[data-global-search-input]');
     const clearButton = document.querySelector('[data-global-search-clear]');
@@ -365,9 +364,6 @@
     });
     input.addEventListener('click', function () {
         setOpen(true, { focus: false });
-    });
-    closeButton?.addEventListener('click', function () {
-        setOpen(false);
     });
     form?.addEventListener('submit', function (event) {
         event.preventDefault();

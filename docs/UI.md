@@ -350,16 +350,25 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 Źródło: [core/base.html](../core/templates/core/base.html).
 
 - Stały pasek u góry całej aplikacji (`app-topbar`) ma tło
-  `--sidebar-bg`, identyczne jak boczna nawigacja, i wysokość `--toolbar-height`
-  (52px przed skalowaniem UI). Po lewej zawiera przełącznik Workspace
+  `--sidebar-bg`, identyczne jak boczna nawigacja, i wysokość `--app-topbar-height`
+  (44px przed skalowaniem UI). Po lewej zawiera przełącznik Workspace
   z avatarem i nazwą, na środku jedno pole globalnego wyszukiwania,
   a po prawej powiadomienia, ustawienia i profil z avatarem.
   Symetryczne boczne kolumny utrzymują wyszukiwarkę na środku całego paska,
   niezależnie od szerokości sidebaru oraz długości nazw Workspace i profilu.
-  Pole ma maksymalnie 560px i zwęża się na mniejszych ekranach.
+  Pole ma maksymalnie 672px i zajmuje do 55,2% szerokości wewnętrznej paska.
+  Na telefonie wypełnia miejsce między bocznymi kontrolkami.
+  Kontrolki paska mają wspólną wysokość `--app-topbar-control-height`
+  (36px z `--dropdown-control-height`), ikony 20px, a tekst nazw i pola 14px.
+  Awatary Workspace i profilu mają po 33px (`--app-topbar-avatar-size`)
+  i są wyśrodkowane pionowo w kontrolkach.
+  Pasek zostawia po 4px nad i pod kontrolkami; rozmiary kontrolek są lokalne dla paska.
+  Odsunięcie treści i menu oraz wysokość panelu wyszukiwania uwzględniają wysokość paska.
+  Wysokość pola wyszukiwania obejmuje ramkę; wewnętrzny input wypełnia jej wnętrze.
+  Także aktywna wyszukiwarka na telefonie zachowuje tę wysokość i pionowe wyśrodkowanie.
   Przycisk zwijania i rozwijania menu znajduje się przy lewej krawędzi
   górnego paska, przed przełącznikiem Workspace. Korzysta z `tasks-icon-button`
-  i wariantu `app-topbar__action`: ma 32px, standardowe zaokrąglenie oraz
+  i wariantu `app-topbar__action`: ma 36px, standardowe zaokrąglenie oraz
   ikonę `panel-left` ze wspólnego zestawu. Szare tło oznacza rozwinięte menu.
   Na telefonie otwiera i zamyka boczne menu, zastępując osobny przycisk
   pod paskiem. Zmiana stanu aktualizuje tło, etykietę i `aria-expanded`;
@@ -385,6 +394,7 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   Workspace z ponowną kontrolą dostępu; pustą historię zastępuje podpowiedź.
   Przy wynikach przyciski „Wszystko” i dostępne typy filtrują pobrane grupy.
   Filtry przewijają się poziomo, a stopka podaje liczbę wyników i skróty.
+  Nagłówek panelu zawiera wyłącznie filtry, bez osobnego przycisku zamknięcia.
   Strzałki przenoszą fokus na linki, Enter otwiera wynik, Escape zamyka panel
   i przywraca fokus polu. Tab zachowuje naturalną kolejność, a kliknięcie lub
   przeniesienie fokusu poza formularz zamyka wyszukiwanie. Na telefonie aktywne
