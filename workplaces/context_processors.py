@@ -16,6 +16,7 @@ def current_workplace(request):
     sidebar_favorites = []
     if active_workplace:
         workplace_app_urls = {
+            'for_you': scoped_workplace_app_path(active_workplace, 'for-you'),
             'tasks': scoped_workplace_app_path(active_workplace, 'tasks'),
             'kanban': scoped_workplace_app_path(active_workplace, 'kanban'),
             'contacts': scoped_workplace_app_path(active_workplace, 'contacts'),

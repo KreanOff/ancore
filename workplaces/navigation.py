@@ -4,6 +4,7 @@ from .services import scoped_workplace_app_path
 
 
 SIDEBAR_FAVORITE_DEFINITIONS = (
+    {'key': 'for-you', 'label': 'Dla ciebie', 'icon': 'user-round-check', 'app': 'for-you'},
     {'key': 'dashboard', 'label': 'Dashboard', 'icon': 'layout-dashboard', 'route_name': 'home'},
     # Preserve the saved sidebar preference key when replacing the menu entry.
     {'key': 'tasks-my', 'label': 'Zadania nieprzydzielone', 'icon': 'user-round-check', 'app': 'tasks', 'query': 'view=unassigned-tasks'},
@@ -46,6 +47,9 @@ def sidebar_favorite_is_active(item_key, request, active_view='', active_contact
     resolver_match = getattr(request, 'resolver_match', None)
     app_name = getattr(resolver_match, 'app_name', '') or ''
     view_name = getattr(resolver_match, 'url_name', '') or ''
+
+    if item_key == 'for-you':
+        return view_name in {'for_you', 'workplace_for_you'}
 
     if item_key == 'dashboard':
         return view_name == 'home'

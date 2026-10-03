@@ -7,6 +7,8 @@
 {% url 'office:index' as sidebar_office_fallback_url %}
 {% url 'resources:index' as sidebar_resources_fallback_url %}
 {% url 'home' as sidebar_dashboard_url %}
+{% url 'for_you' as sidebar_for_you_fallback_url %}
+{% firstof workplace_app_urls.for_you sidebar_for_you_fallback_url as sidebar_for_you_url %}
 {% url 'notifications' as sidebar_notifications_url %}
 {% firstof workplace_app_urls.tasks sidebar_tasks_fallback_url as sidebar_tasks_url %}
 {% firstof workplace_app_urls.kanban sidebar_kanban_fallback_url as sidebar_kanban_url %}
@@ -183,6 +185,11 @@
 
             <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-workspace-title">
                 <h2 class="sidebar-menu-section-title" id="sidebar-workspace-title">Workspace</h2>
+            <a href="{{ sidebar_for_you_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.url_name == 'for_you' or request.resolver_match.url_name == 'workplace_for_you' %}active{% endif %}" aria-label="Dla ciebie" title="Dla ciebie" data-sidebar-source-item="for-you" draggable="true">
+                <i class="nav-icon" data-icon="user-round-check" aria-hidden="true"></i>
+                <span class="nav-label">Dla ciebie</span>
+            </a>
+            {% sidebar_favorite_toggle 'for-you' 'Dla ciebie' 'user-round-check' sidebar_for_you_url %}
             <a href="{{ sidebar_dashboard_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone sidebar-source-dashboard {% if request.resolver_match.url_name == 'home' %}active{% endif %}" aria-label="Dashboard" title="Dashboard" data-sidebar-source-item="dashboard" draggable="true">
                 <i class="nav-icon nav-icon--dashboard" data-icon="layout-dashboard" aria-hidden="true"></i>
                 <span class="nav-label">Dashboard</span>
@@ -388,7 +395,7 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20260929-resources"></script>
+    <script src="{% static 'js/layout.js' %}?v=20261002-for-you"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260923-notification-actions"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>

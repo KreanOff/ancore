@@ -24,6 +24,7 @@ from resources.models import Resource
 from tasks.models import Task, TaskProject, TaskSection, TaskTag
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
 from .overview import dashboard_overview
+from .for_you import for_you_context
 from .notification_service import DASHBOARD_NOTIFICATION_LIMIT, _dashboard_notifications
 from .notification_service import change_notification_state, notification_filters, notification_page, notification_summary
 
@@ -100,6 +101,7 @@ def _navigation_search_results(query, workplace):
     contacts_url = _workspace_app_url(workplace, 'contacts')
     calendar_url = _workspace_app_url(workplace, 'calendar')
     entries = (
+        ('Dla ciebie', 'Twoje zadania, ulubione i ostatnia praca', scoped_workplace_app_path(workplace, 'for-you') if workplace else reverse('for_you'), 'user-round-check', 'dla ciebie for you przypisane ostatnie'),
         ('Dashboard', 'Strona główna i podsumowanie', reverse('home'), 'layout-dashboard', 'dashboard start podsumowanie'),
         ('Moje zadania', 'Zadania przypisane do Ciebie', _search_url(tasks_url, view='my-tasks'), 'user-round-check', 'tasks moje zadania'),
         ('Wszystkie zadania', 'Pełna lista zadań', _search_url(tasks_url, view='all-tasks'), 'list-checks', 'tasks lista'),
@@ -515,6 +517,16 @@ def settings(request):
         'switch_accounts': _switch_account_context(request),
         'settings_timezone': timezone.get_current_timezone_name(),
     })
+
+
+@login_required
+@require_GET
+def for_you(request):
+    if getattr(request, 'workplace', None) is None:
+        return redirect('workplaces:workplaces')
+    response = render(request, 'dashboard/for_you.html', for_you_context(request))
+    response['Cache-Control'] = 'no-store'
+    return response
 
 
 @login_required

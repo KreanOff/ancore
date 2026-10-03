@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 
 from dashboard.collaboration import follow_context, mention_choices
+from dashboard.recent import remember_view
 from workplaces.services import workspace_owner
 from workplaces.models import Workplace
 from ..access import editable_to, require_editable, require_deletable, visible_to
@@ -1919,7 +1920,10 @@ def _tasks_page(request, active_section=None):
     context['project_access_data'] = project_access_data(workplace, request.user)
     context['section_access_data'] = section_access_data(workplace, request.user)
     context.update(follow_context(request.user, active_project, 'kanban', 'project'))
-    return render(request, 'kanban/tasks.html', context)
+    response = render(request, 'kanban/tasks.html', context)
+    if active_view in {'project', 'section'}:
+        remember_view(request, active_section if active_view == 'section' else active_project)
+    return response
 
 @login_required
 @require_POST
@@ -2314,7 +2318,9 @@ def _task_detail_response(request, task_id):
     }
     context.update(follow_context(request.user, task, 'kanban', 'task'))
     context['mention_people'] = mention_choices(task)
-    return render(request, 'kanban/view_task.html', context)
+    response = render(request, 'kanban/view_task.html', context)
+    remember_view(request, task)
+    return response
 
 
 @login_required

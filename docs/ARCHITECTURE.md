@@ -178,6 +178,10 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 ## 7. Adresy i punkt wejścia
 
 - `/` pokazuje Dashboard z podsumowaniem aktywnego Workspace.
+- `/for-you/` oraz `/workplaces/<slug>/for-you/` pokazują osobisty widok
+  „Dla ciebie”, składany przez `dashboard/for_you.py` z dostępnych danych.
+  `dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;
+  nie tworzy dodatkowych modeli ani kopii danych biznesowych.
 - `/accounts/...` obsługuje konto; `/workplaces/...` Workspace.
 - Moduły mają adresy bazowe `/tasks/`, `/kanban/`, `/contacts/`, `/calendar/`,
   `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty

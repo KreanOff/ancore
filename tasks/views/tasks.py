@@ -22,6 +22,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 
 from dashboard.collaboration import follow_context, mention_choices
+from dashboard.recent import remember_view
 from tasks.access import editable_to, require_editable, visible_to, require_deletable_tasks
 from tasks.directory import decorate_favorites, directory_queryset, directory_tab, directory_tabs
 from tasks.views.task_team import team_payload as _task_team_payload
@@ -4101,7 +4102,10 @@ def _tasks_page(request, active_section=None):
             request, context['directory_tab'],
             include_unassigned=active_view in {'all_tasks', 'unassigned_tasks'},
         )
-    return render(request, 'tasks/tasks.html', context)
+    response = render(request, 'tasks/tasks.html', context)
+    if active_view in {'project', 'section'}:
+        remember_view(request, active_section if active_view == 'section' else active_project)
+    return response
 
 
 @login_required
@@ -4676,7 +4680,9 @@ def _task_detail(request, task_id=None, task_pk=None, *, lock=False):
     }
     context.update(follow_context(request.user, task, 'tasks', 'task'))
     context['mention_people'] = mention_choices(task)
-    return render(request, 'tasks/view_task.html', context)
+    response = render(request, 'tasks/view_task.html', context)
+    remember_view(request, task)
+    return response
 
 
 @login_required

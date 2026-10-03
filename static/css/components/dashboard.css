@@ -142,13 +142,34 @@
 .dashboard-overview-empty h3 { margin: 0; font-size: var(--font-size-base); }
 .dashboard-overview-empty p { margin: 0; max-width: 320px; font-size: var(--font-size-sm); line-height: 1.6; }
 
+/* Personal work hub: reuse overview panels, rows and navigation tabs. */
+.for-you-section-heading { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+.for-you-section-heading h2 { margin: 0; font-size: var(--font-size-base); }
+.for-you-section-heading > span { font-size: var(--font-size-sm); }
+.for-you-project-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.for-you-project { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 18px; text-decoration: none; }
+.for-you-project:hover { background: var(--system-interaction-soft); }
+.for-you-project > i, .for-you-project > svg, .for-you-item > i, .for-you-item > svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.for-you-project .dashboard-task-main { flex: 1; min-width: 0; }
+.for-you-tabs { flex-wrap: wrap; }
+.for-you-tabs a { gap: 8px; }
+.for-you-count { padding: 2px 6px; border-radius: var(--radius); background: var(--system-interaction-soft); font-variant-numeric: tabular-nums; }
+.for-you-pagination, .for-you-pagination > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.for-you-pagination a { text-decoration: none; }
+.for-you-item .dashboard-task-main small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 @media (max-width: 1200px) {
+    .for-you-project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dashboard-overview .dashboard-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dashboard-overview-grid { grid-template-columns: minmax(0, 1fr); }
     .dashboard-overview .dashboard-summary { align-items: flex-start; flex-direction: column; }
 }
 
 @media (max-width: 767px) {
+    .for-you-project-grid { grid-template-columns: minmax(0, 1fr); }
+    .for-you-page .for-you-item { grid-template-columns: 18px minmax(0, 1fr) 18px; }
+    .for-you-item > :last-child { grid-column: 3; grid-row: 1; }
+    .for-you-page .for-you-item .dashboard-task-state:empty { display: none; }
     .dashboard-overview .dashboard-main { padding: 20px 14px; gap: 20px; }
     .dashboard-overview-grid { gap: 20px; }
     .dashboard-overview .dashboard-summary-copy h2 { font-size: 20px; }

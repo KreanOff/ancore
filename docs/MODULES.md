@@ -579,6 +579,19 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
 
 Źródła: [widoki](../dashboard/views.py), [routing](../dashboard/urls.py).
 
+- **Dla ciebie:** osobisty przegląd pod `/for-you/` i
+  `/workplaces/<slug>/for-you/`, dostępny w menu nad Dashboardem, globalnym
+  wyszukiwaniu i ulubionych menu. Zakładki mają paginację po 25 pozycji:
+  „Polecane” (otwarte zadania wykonawcy, zaległe, do 7 dni lub wysoki/pilny
+  priorytet), „Przypisane do mnie” (również podzadania), „Ulubione”
+  (osobiste gwiazdki zadań, projektów, grup, przestrzeni Kanban i tablic),
+  „Ostatnia praca” (ostatnia aktywność zalogowanej osoby w zadaniach i kartach),
+  „Ostatnio oglądane” (zadania, karty, projekty, grupy i tablice otwarte w sesji).
+  Cztery skróty projektów Zadań pochodzą z ulubionych lub własnej aktywności
+  w dostępnych zadaniach. Każda lista ponownie sprawdza dostęp w aktywnym
+  Workspace; przypisanie, historia ani ulubione nie nadają uprawnień.
+  Kanban nie ma wykonawcy, a karty nie mają osobistych gwiazdek — pojawiają
+  się w ostatniej pracy i oglądanych. Funkcja nie wymaga migracji.
 - **Dashboard:** `/` pokazuje dane właściciela w aktywnym Workspace:
   liczbę otwartych zadań i kart Kanban, ich wysokich/pilnych priorytetów,
   zaległych zadań oraz pozycji zamkniętych w ostatnich 7 dniach.

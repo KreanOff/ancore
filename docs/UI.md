@@ -163,6 +163,18 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 
 ## 2. Powłoka aplikacji
 
+„Dla ciebie” jest osobną pozycją nad Dashboardem, z ikoną `user-round-check`
+i obsługą ulubionych menu. Widok rozszerza `core/base.html` i komponenty
+Dashboardu: nagłówek katalogu, powitanie, panele, wiersze i podkreślane zakładki.
+Wariant `for-you-project` ustawia istniejący panel jako poziomy skrót projektu;
+siatka ma 4, 2 lub 1 kolumnę zależnie od szerokości. Pięć zakładek jest linkami
+z `aria-current`, a paginacja zachowuje kategorię i Workspace. Korzystają
+ze wspólnej nawigacji `AncoreApp`, także przy Wstecz/Dalej i ponownym wejściu;
+nie dodają osobnego JS ani listenerów. Puste stany wyjaśniają źródło danych
+każdej zakładki. Na telefonie zakładki zawijają się, a termin przechodzi pod
+tytuł; status pozostaje w osobnej kolumnie. Style są ograniczone do
+`for-you-*` w `components/dashboard.css`.
+
 Menu Kanbana ma dwie pozycje: „Przestrzenie Kanban” i „Tablice”, w tej kolejności.
 Wejście do modułu bez parametrów otwiera katalog tablic. Katalog przestrzeni
 używa jawnego `view=projects`, także w wyszukiwaniu, paginacji i powrocie

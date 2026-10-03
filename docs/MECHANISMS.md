@@ -74,9 +74,12 @@ sprawdź oczekiwany kontekst i zachowanie aktywnego middleware.
 ## 3. Routing zwykły i scoped
 
 `scoped_workplace_app_path()` buduje adresy modułów. Zestaw obsługiwanych
-segmentów to `tasks`, `kanban`, `contacts`, `calendar`, `documents`, `office`.
+segmentów to `tasks`, `kanban`, `contacts`, `calendar`, `documents`, `office`,
+`resources` i `for-you`.
 Wariant scoped ma namespace `workplace_tasks`, `workplace_kanban`,
-`workplace_contacts`, `workplace_planner`, `workplace_documents` albo `workplace_office`.
+`workplace_contacts`, `workplace_planner`, `workplace_documents`, `workplace_office`
+albo `workplace_resources`. „Dla ciebie” ma nazwy tras `for_you` i
+`workplace_for_you` bez osobnego namespace.
 
 Po włączeniu zakresu URL middleware przekierowuje bazowe GET/HEAD do
 odpowiedniego Workspace i zachowuje query string. POST nie jest w ten sam
@@ -707,7 +710,7 @@ pełnego przeładowania, aby osobiste elementy, ulubione i adresy operacji
 nie pozostały z poprzedniego kontekstu. Tak samo działa odpowiedź bez powłoki
 aplikacji (np. logowanie) lub z edytorem `data-app-full-navigation`.
 
-Lista obejmuje Dashboard, ustawienia i pola projektów, zarządzanie Workspace,
+Lista obejmuje Dashboard, „Dla ciebie”, ustawienia i pola projektów, zarządzanie Workspace,
 profil, katalogi Zadań/Kanbana, grupy, szczegóły zadań/podzadań/kart, szablony
 projektów, Kontakty, Kalendarz oraz katalogi Dysku i Dokumentów. Działa dla
 bazowych i scoped URL, łącznie z query string filtrów i paginacji. Otwieranie
@@ -721,6 +724,18 @@ sprawdzanie istnienia elementu oraz sprzątanie/ochronę listenerów.
 Nie opieraj całej inicjalizacji wyłącznie na jednorazowym `DOMContentLoaded`.
 
 ## 13. Stan w przeglądarce
+
+„Ostatnio oglądane” w „Dla ciebie” używa serwerowej sesji Django, klucza
+`for_you_recent`: maksymalnie 60 ostatnich unikalnych kombinacji konta,
+Workspace, modelu i PK wraz z czasem otwarcia. Udane GET szczegółów i widoków
+projektu/grupy zapisują wpis, również po częściowej nawigacji. Tytuły i URL
+nie są zapisywane; aktualne rekordy przechodzą `visible_to` oraz filtr
+właściciela/Workspace przy każdym odczycie. Cofnięty dostęp i usunięte rekordy
+znikają z widoku. Historia jest osobna dla kont i Workspace, ograniczona do sesji
+i nie synchronizuje urządzeń. Linki zadań oraz kart zawierają `task_pk`, dlatego
+renumeracja nie zmienia ich celu. „Ostatnia praca” opiera się na ostatniej dacie
+aktywności z `actor=request.user`, nie na dacie zmiany przez dowolnego członka.
+
 
 | Stan | Miejsce i zakres w obecnym kodzie |
 | --- | --- |

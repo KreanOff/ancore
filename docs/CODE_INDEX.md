@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
 | [kanban](../kanban) | 19 | 39 | 10 | 100 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 17 | 6 | 7 | 91 |
+| [dashboard](../dashboard) | 20 | 6 | 8 | 106 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -1027,6 +1027,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'for-you/'` | `views.for_you` | 'for_you' |
+| `'^workplaces/[-a-zA-Z0-9_]+/for-you/$'` | `views.for_you` | 'workplace_for_you' |
 | `'global-search/'` | `views.global_search` | 'global_search' |
 | `'settings/'` | `views.settings` | 'settings' |
 | `'settings/project-fields/'` | `project_field_settings` | 'project_field_settings' |
@@ -1209,12 +1211,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/admin.py](../dashboard/admin.py)
 - [dashboard/apps.py](../dashboard/apps.py) — `DashboardConfig`
 - [dashboard/collaboration.py](../dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`, `follow_context`, `follow_object`, `deliver_activity_interest`
+- [dashboard/for_you.py](../dashboard/for_you.py) — `for_you_context`
 - [dashboard/models.py](../dashboard/models.py) — `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
 - [dashboard/notification_service.py](../dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [dashboard/overview.py](../dashboard/overview.py) — `dashboard_overview`
+- [dashboard/recent.py](../dashboard/recent.py) — `remember_view`, `recent_views`
 - [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`
 - [dashboard/urls.py](../dashboard/urls.py)
-- [dashboard/views.py](../dashboard/views.py) — `global_search`, `settings`, `home`, `notifications`, `notification_action`
+- [dashboard/views.py](../dashboard/views.py) — `global_search`, `settings`, `for_you`, `home`, `notifications`, `notification_action`
 
 ### planner
 
@@ -1372,6 +1376,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### dashboard
 
+- [dashboard/templates/dashboard/for_you.html](../dashboard/templates/dashboard/for_you.html)
 - [dashboard/templates/dashboard/home.html](../dashboard/templates/dashboard/home.html)
 - [dashboard/templates/dashboard/includes/notification_controls.html](../dashboard/templates/dashboard/includes/notification_controls.html)
 - [dashboard/templates/dashboard/includes/notification_list.html](../dashboard/templates/dashboard/includes/notification_list.html)
@@ -1738,6 +1743,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [dashboard/test_collaboration.py](../dashboard/test_collaboration.py).
 
 - `CollaborationTests`: 21 metod testowych.
+
+### dashboard/test_for_you.py
+
+Źródło: [dashboard/test_for_you.py](../dashboard/test_for_you.py).
+
+- `ForYouTests`: 15 metod testowych.
 
 ### dashboard/test_notifications.py
 

@@ -129,6 +129,14 @@ ponowne wejście, klawiatura, szerokość telefonu oraz referencyjne okno Zadań
 
 ### Istniejące obszary testów
 
+`dashboard.test_for_you` sprawdza osobisty widok „Dla ciebie”: wykonawcę,
+podzadania, terminy, ulubione, historię autora, zapis oglądanych, paginację,
+zwykły/scoped URL, stabilne linki, zmianę Workspace i cofnięcie dostępu.
+Przy zmianach uruchom też Dashboard, testy prywatności Zadań i Kanbana,
+`core.test_task_integrity.TaskIdentityTests`, Workplaces i testy menu Core.
+W przeglądarce sprawdź wszystkie zakładki, paginację, wejście w element i powrót,
+Dashboard jako referencję, nawigację modułów, telefon, puste stany oraz błąd sieci.
+
 | Moduł | Co sprawdzają istniejące testy |
 | --- | --- |
 | Accounts | Konto/profil, kadrowanie i walidacja obrazu, obecność, przełączanie kont |

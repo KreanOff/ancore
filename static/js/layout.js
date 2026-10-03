@@ -66,8 +66,9 @@
 
     function isPartialNavigationPath(pathname) {
         // Scoped module URLs use the same views and shell as their base URLs.
-        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|kanban|contacts|calendar|documents|office|resources)(\/|$))/, '/');
+        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|kanban|contacts|calendar|documents|office|resources|for-you)(\/|$))/, '/');
         const appShellPaths = [
+            /^\/for-you\/?$/,
             /^\/$/,
             /^\/settings\/?$/,
             /^\/settings\/project-fields\/?$/,
