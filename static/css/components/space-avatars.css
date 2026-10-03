@@ -1,0 +1,64 @@
+/* Shared avatar surface, visible in the sidebar on every module. */
+.profile-avatar.space-avatar { width: 24px; height: 24px; flex: 0 0 24px; }
+.profile-avatar.space-avatar--heading { width: 32px; height: 32px; flex-basis: 32px; }
+.profile-avatar.space-avatar--picker { width: 56px; height: 56px; flex-basis: 56px; }
+.space-avatar.sidebar-subnav-icon { width: 20px; height: 20px; flex-basis: 20px; }
+.space-avatar-trigger { display: inline-flex; flex: none; border-radius: 6px; }
+.space-avatar-trigger:hover { opacity: .8; }
+.space-avatar-picker { display: grid; gap: 24px; min-width: 0; }
+.space-avatar-presets { min-width: 0; border: 0; margin: 0; padding: 0; }
+.space-avatar-presets legend { padding: 0; margin-bottom: 16px; font-size: var(--font-size-sm); }
+.space-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, 64px); gap: 12px; }
+.space-avatar-option { display: inline-flex; padding: 4px; border-radius: var(--radius); cursor: pointer; position: relative; }
+.space-avatar-option:hover { background: var(--system-interaction-soft); }
+.space-avatar-option:has(input:checked) { box-shadow: inset 0 0 0 2px var(--system-accent); }
+.space-avatar-option:has(input:focus-visible) { background: var(--system-interaction-soft); outline: 2px solid var(--system-interaction); outline-offset: 2px; }
+.space-avatar-auto { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); cursor: pointer; }
+.space-avatar-presets > .space-avatar-auto { margin-top: 20px; }
+.space-avatar-auto input { accent-color: var(--system-accent); }
+.space-avatar-upload { border-top: 1px solid var(--border-color); padding-top: 20px; display: grid; gap: 16px; }
+.space-avatar-upload__content { display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px dashed var(--system-interaction); border-radius: var(--radius); }
+.space-avatar-upload.is-drag-over .space-avatar-upload__content { background: var(--system-interaction-soft); border-color: var(--system-accent); }
+.space-avatar-upload__actions { min-width: 0; display: grid; gap: 8px; justify-items: start; position: relative; }
+.space-avatar-upload__actions small { line-height: 1.6; }
+.space-avatar-upload__actions [data-space-avatar-file] { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+.space-avatar-upload__actions:has(input:focus-visible) [data-space-avatar-file-label] { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
+.space-avatar-upload [data-space-avatar-filename] { max-width: 100%; overflow-wrap: anywhere; }
+.space-avatar-picker [hidden] { display: none; }
+@media (max-width: 600px) {
+    .space-avatar-grid { grid-template-columns: repeat(auto-fill, 48px); gap: 8px; }
+    .space-avatar-option .space-avatar { width: 40px; height: 40px; flex-basis: 40px; }
+    .space-avatar-upload__content { padding: 12px; }
+}
+
+/* One locally served atlas; square regions avoid neighbouring tile edges. */
+.profile-avatar.space-avatar-art {
+    background-image: url("../../img/space-avatars/illustrations-v1.png");
+    background-repeat: no-repeat;
+    background-size: 640% 426.666667%;
+    background-position: var(--space-avatar-x) var(--space-avatar-y);
+}
+.space-avatar-art--rocket { --space-avatar-x: 0.617284%; --space-avatar-y: 1.020408%; }
+.space-avatar-art--compass { --space-avatar-x: 20.370370%; --space-avatar-y: 1.020408%; }
+.space-avatar-art--lightbulb { --space-avatar-x: 40.123457%; --space-avatar-y: 1.020408%; }
+.space-avatar-art--leaf { --space-avatar-x: 59.876543%; --space-avatar-y: 1.020408%; }
+.space-avatar-art--palette { --space-avatar-x: 79.629630%; --space-avatar-y: 1.020408%; }
+.space-avatar-art--globe { --space-avatar-x: 99.382716%; --space-avatar-y: 1.020408%; }
+.space-avatar-art--flask-conical { --space-avatar-x: 0.617284%; --space-avatar-y: 33.673469%; }
+.space-avatar-art--target { --space-avatar-x: 20.370370%; --space-avatar-y: 33.673469%; }
+.space-avatar-art--laptop { --space-avatar-x: 40.123457%; --space-avatar-y: 33.673469%; }
+.space-avatar-art--flag { --space-avatar-x: 59.876543%; --space-avatar-y: 33.673469%; }
+.space-avatar-art--puzzle { --space-avatar-x: 79.629630%; --space-avatar-y: 33.673469%; }
+.space-avatar-art--cloud { --space-avatar-x: 99.382716%; --space-avatar-y: 33.673469%; }
+.space-avatar-art--plane { --space-avatar-x: 0.617284%; --space-avatar-y: 65.306122%; }
+.space-avatar-art--book-open { --space-avatar-x: 20.370370%; --space-avatar-y: 65.306122%; }
+.space-avatar-art--heart { --space-avatar-x: 40.123457%; --space-avatar-y: 65.306122%; }
+.space-avatar-art--zap { --space-avatar-x: 59.876543%; --space-avatar-y: 65.306122%; }
+.space-avatar-art--shield-check { --space-avatar-x: 79.629630%; --space-avatar-y: 65.306122%; }
+.space-avatar-art--layers { --space-avatar-x: 99.382716%; --space-avatar-y: 65.306122%; }
+.space-avatar-art--megaphone { --space-avatar-x: 0.617284%; --space-avatar-y: 97.959184%; }
+.space-avatar-art--trophy { --space-avatar-x: 20.370370%; --space-avatar-y: 97.959184%; }
+.space-avatar-art--wrench { --space-avatar-x: 40.123457%; --space-avatar-y: 97.959184%; }
+.space-avatar-art--star { --space-avatar-x: 59.876543%; --space-avatar-y: 97.959184%; }
+.space-avatar-art--ship { --space-avatar-x: 79.629630%; --space-avatar-y: 97.959184%; }
+.space-avatar-art--smile { --space-avatar-x: 99.382716%; --space-avatar-y: 97.959184%; }

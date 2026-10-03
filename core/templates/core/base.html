@@ -68,6 +68,7 @@
         })();
     </script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-notifications-modal">
+    <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261003-illustrated-avatars">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
@@ -243,7 +244,7 @@
                 </div>
                 {% sidebar_favorite_toggle 'spaces' 'Przestrzenie' 'folders' sidebar_spaces_url %}
                 <div class="sidebar-subnav" id="sidebar-spaces-subnav" data-sidebar-group-label="Przestrzenie" aria-label="Ulubione i ostatnie przestrzenie">
-                    {% for nav_space in navigation_spaces %}<a href="{{ sidebar_spaces_url }}{{ nav_space.pk }}/" class="nav-link sidebar-subnav-link{% if space.pk == nav_space.pk %} active{% endif %}"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="folder" aria-hidden="true"></i></span><span>{{ nav_space.project.name }}</span></a>{% endfor %}
+                    {% for nav_space in navigation_spaces %}<a href="{{ sidebar_spaces_url }}{{ nav_space.pk }}/" class="nav-link sidebar-subnav-link{% if space.pk == nav_space.pk %} active{% endif %}">{% include 'spaces/avatar.html' with space=nav_space avatar_class='sidebar-subnav-icon' %}<span>{{ nav_space.project.name }}</span></a>{% endfor %}
                 </div>
             </section>
             <a href="{{ sidebar_spaces_url }}items/" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.url_name == 'items' %}active{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><i class="nav-icon" data-icon="list-checks" aria-hidden="true"></i><span class="nav-label">Wszystkie zadania</span></a>
@@ -357,7 +358,7 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20261003-sidebar-no-home"></script>
+    <script src="{% static 'js/layout.js' %}?v=20261003-space-avatars"></script>
     <script src="{% static 'js/global-search.js' %}?v=20261003-quick-search-v1"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>

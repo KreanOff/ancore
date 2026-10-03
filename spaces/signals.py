@@ -45,3 +45,10 @@ def deleted_team_photo(sender, instance, using, **kwargs):
         from django.db import transaction
         storage, name = instance.photo.storage, instance.photo.name
         transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
+
+
+@receiver(post_delete, sender='spaces.Space')
+def deleted_space_avatar(sender, instance, using, **kwargs):
+    from .avatars import delete_avatar_after_commit
+    if instance.avatar_photo:
+        delete_avatar_after_commit(instance.avatar_photo.storage, instance.avatar_photo.name, using)

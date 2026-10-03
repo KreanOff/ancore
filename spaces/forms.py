@@ -10,6 +10,7 @@ from tasks.access import editable_to
 from tasks.models import Task, TaskSection
 from workplaces.services import can_manage_team, workplace_people
 from .defaults import KINDS, MANAGEMENT, TEMPLATES
+from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
 from .services import teams_for, visible_items, visible_spaces
 
@@ -24,6 +25,29 @@ class StyledForm(forms.Form):
             field.widget.attrs['class'] = 'form-select' if isinstance(field.widget, forms.Select) else 'form-input'
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs['class'] = 'tasks-row-checkbox'
+
+
+class SpaceAvatarForm(StyledForm):
+    avatar = forms.ChoiceField(label='Awatar przestrzeni', choices=AVATAR_CHOICES, widget=forms.RadioSelect)
+    avatar_photo = forms.FileField(
+        label='Własny obraz', required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/png,image/jpeg,image/webp', 'data-space-avatar-file': ''}),
+        validators=[validate_image_upload],
+    )
+    compact = True
+
+    def __init__(self, *args, space, **kwargs):
+        self.space = space
+        kwargs['initial'] = {'avatar': 'upload' if space.avatar_photo else space.avatar or 'auto'}
+        super().__init__(*args, **kwargs)
+        self.current_avatar = space_avatar(space)
+        self.avatar_options = [preset_avatar(key) for key, _ in AVATARS]
+
+    def clean(self):
+        data = super().clean()
+        if data.get('avatar') == 'upload' and not data.get('avatar_photo') and not self.space.avatar_photo and not self.errors.get('avatar_photo'):
+            self.add_error('avatar_photo', 'Wybierz obraz do przesłania.')
+        return data
 
 
 class SpaceForm(StyledForm):

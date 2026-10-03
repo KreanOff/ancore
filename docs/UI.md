@@ -15,10 +15,27 @@ Przegląd, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Wszystkie zadania i Zespoły.
 
-Nagłówek otwartej przestrzeni pokazuje samą nazwę, bez strzałki powrotu
+Nagłówek otwartej przestrzeni pokazuje awatar i nazwę, bez strzałki powrotu
 i klucza obok niej. Ten sam nagłówek obowiązuje we wszystkich jej zakładkach.
-Zakładki widoków mają wariant `work-tabs--views`: tekst 15px z tokenu
-`--font-size-lg` oraz dekoracyjne ikony 18px z `AncoreIcons`, odsunięte o 8px
+Awatar ma 32px w nagłówku, 24px w katalogu i 20px w menu bocznym.
+Include `spaces/avatar.html` rozszerza wspólny `profile-avatar`; globalny
+`space-avatars.css` zapewnia jego wygląd również poza modułem Przestrzeni.
+Zapis odświeża awatar w menu przy częściowej nawigacji.
+
+Osoby zarządzające przestrzenią klikają jej awatar lub „Zmień awatar”
+w ustawieniach. Okno korzysta z `app-modal-panel--compact`, standardowej
+stopki i `AncoreTaskModals`. Zawiera 24 kolorowe ilustracje, wybór automatyczny
+oraz upload z podglądem i przeciąganiem. Natywna grupa radio zapewnia wybór
+klawiaturą; zaznaczenie ma turkusową ramkę. Na telefonie siatka dopasowuje
+liczbę kolumn. Zapis, błędy, szkic, Escape i fokus obsługuje `spaces.js`.
+Ilustracje mają pełnokolorowe tła i wypełnione kształty. Korzystają z jednego
+lokalnego atlasu PNG w `static/img/space-avatars/` i klas `space-avatar-art--*`.
+Zachowują stabilne identyfikatory wcześniejszych ikon. W pickerze mają 56px
+(40px na telefonie); pozostałe rozmiary awatarów pozostają bez zmian.
+Zestaw dotyczy wyłącznie awatarów przestrzeni, a ikony kontrolek nadal używają
+`AncoreIcons`. Wybór ilustracji czyści niezapisany plik, a zamknięcie zwalnia jego podgląd.
+Zakładki widoków mają wariant `work-tabs--views`: tekst 13,5px
+oraz dekoracyjne ikony 18px z `AncoreIcons`, odsunięte o 8px
 od etykiety. Zachowują wspólne podkreślenie aktywnego widoku i przewijanie
 poziome na wąskim ekranie. Najechanie na nieaktywną zakładkę pokazuje szare
 podkreślenie (`--system-interaction`), tak jak w katalogu Zadań; po odsunięciu

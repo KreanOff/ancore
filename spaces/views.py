@@ -2,6 +2,8 @@ from urllib.parse import urlencode
 from datetime import timedelta
 import hashlib
 import json
+import logging
+import mimetypes
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,7 +12,7 @@ from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
 from django.forms import formset_factory
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import FileResponse, Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -20,9 +22,11 @@ from core.task_numbering import lock_task_numbers
 from dashboard.recent import remember_view
 from tasks.access import editable_to, visible_to
 from tasks.models import Task, TaskProject, TaskProjectMembership
+from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
+from .avatars import delete_avatar_after_commit
 from .defaults import TEMPLATES, template_settings
-from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceForm, SprintForm, StatusForm, TypeForm
+from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, default_section, ensure_space, ensure_work_item, manage_configuration, manage_space, record, set_status, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 
@@ -239,6 +243,67 @@ def edit(request, pk=None):
         else:
             return dialog_response(request, form, '', url, saved=True)
     return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def avatar_edit(request, pk):
+    space = space_object(request, pk)
+    if not manage_space(request, space):
+        raise PermissionDenied
+    form = SpaceAvatarForm(request.POST if request.method == 'POST' else None, request.FILES or None, space=space)
+    url = app_url(request, f'{pk}/')
+    if request.method == 'POST' and form.is_valid():
+        saved_file = None
+        try:
+            with transaction.atomic():
+                Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+                TaskProject.objects.select_for_update().get(pk=space.project_id)
+                space = get_object_or_404(visible_spaces(request).select_for_update(of=('self',)), pk=pk)
+                if not manage_space(request, space):
+                    raise PermissionDenied
+                old_photo, storage = space.avatar_photo.name, space.avatar_photo.storage
+                uploaded = form.cleaned_data.get('avatar_photo')
+                choice = form.cleaned_data['avatar']
+                if uploaded:
+                    space.avatar_photo.save(uploaded.name, uploaded, save=False)
+                    saved_file = (storage, space.avatar_photo.name)
+                elif choice != 'upload':
+                    space.avatar_photo = ''
+                elif not old_photo:
+                    form.add_error('avatar_photo', 'Obraz został usunięty. Wybierz go ponownie.')
+                if not form.errors:
+                    if choice != 'upload':
+                        space.avatar = '' if choice == 'auto' else choice
+                    space.save(update_fields=['avatar', 'avatar_photo'])
+                    if old_photo != space.avatar_photo.name:
+                        delete_avatar_after_commit(storage, old_photo)
+        except Exception:
+            if saved_file:
+                try:
+                    saved_file[0].delete(saved_file[1])
+                except OSError:
+                    logging.getLogger(__name__).exception('Failed to clean up a space avatar after rollback')
+            raise
+        if not form.errors:
+            return dialog_response(request, form, '', url, saved=True)
+    return dialog_response(request, form, 'Wybierz awatar', url)
+
+
+@login_required
+@require_GET
+def avatar_photo(request, pk):
+    space = space_object(request, pk)
+    if not space.avatar_photo:
+        raise Http404
+    try:
+        photo = space.avatar_photo.open('rb')
+    except FileNotFoundError:
+        raise Http404
+    response = FileResponse(photo, content_type=mimetypes.guess_type(space.avatar_photo.name)[0] or 'application/octet-stream')
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 @login_required

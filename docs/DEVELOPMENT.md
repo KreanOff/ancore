@@ -96,6 +96,14 @@ Django. Przy wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
 
+Awatary przestrzeni wymagają migracji `spaces.0003_space_avatar_space_avatar_photo`.
+`spaces.test_avatars` sprawdza domyślny wybór, zapis ikon, zwykłe/scoped adresy,
+role, prywatny upload, walidację, cofnięcie dostępu, CSRF, podmianę i usuwanie
+plików oraz rollback. Przy zmianach sprawdzaj też `spaces`, `core.tests`,
+`core.test_file_lifecycle` i `workplaces`. W przeglądarce: kliknięcie awatara,
+wybór, zapis i ponowne wejście, aktualizacja menu, własny obraz, przeciąganie,
+błędy plików, Escape/fokus oraz desktop i telefon.
+
 Projekt używa testów Django (`TestCase`, `TransactionTestCase`) w modułach.
 Polecenia wymagające bazy uruchamiaj na środowisku testowym/developerskim
 z możliwością utworzenia bazy testowej. Runner Django tworzy osobną bazę testową.

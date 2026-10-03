@@ -143,6 +143,13 @@
             if (!nextLink) return;
 
             link.classList.toggle('active', nextLink.classList.contains('active'));
+            const avatar = link.querySelector('[data-space-avatar]');
+            const nextAvatar = nextLink.querySelector('[data-space-avatar]');
+            if (avatar && nextAvatar) {
+                const replacement = nextAvatar.cloneNode(true);
+                avatar.replaceWith(replacement);
+                window.AncoreIcons?.render(replacement);
+            }
             if (nextLink.hasAttribute('aria-current')) {
                 link.setAttribute('aria-current', nextLink.getAttribute('aria-current'));
             } else {

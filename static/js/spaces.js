@@ -10,11 +10,12 @@
         const page = document.querySelector('[data-work-page]');
         const host = document.querySelector('[data-work-modal-host]');
         if (!page || !host) return;
-        let pending = false, discard = false, initial = '', previousFocus, background = [];
+        let pending = false, discard = false, initial = '', previousFocus, background = [], previewUrl;
         const modal = () => host.querySelector('[data-work-modal]');
-        const values = () => JSON.stringify([...new FormData(host.querySelector('form'))].map(([key, value]) => [key, value instanceof File ? [value.name, value.size, value.lastModified] : value]));
+        const values = () => JSON.stringify([...new FormData(host.querySelector('form'))].map(([key, value]) => [key, value instanceof File ? (value.name ? [value.name, value.size, value.lastModified] : null) : value]));
         const dirty = () => modal() && values() !== initial;
         const restore = () => { background.forEach(element => { element.inert = false; }); background = []; };
+        const clearPreview = () => { if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; };
         function inertBackground() {
             for (let node = host; node && node !== document.body; node = node.parentElement) {
                 [...node.parentElement.children].forEach(sibling => {
@@ -48,13 +49,67 @@
             const sync = () => { if (management && config) { config.disabled = management.value !== 'company'; if (config.disabled) config.value = ''; window.AncoreCustomSelect?.refresh(host); } };
             management?.addEventListener('change', sync, { signal }); sync();
         }
+        function configureAvatarPicker() {
+            const picker = host.querySelector('[data-space-avatar-picker]');
+            if (!picker) return;
+            const file = picker.querySelector('[data-space-avatar-file]');
+            const preview = picker.querySelector('[data-space-avatar-preview]');
+            const filename = picker.querySelector('[data-space-avatar-filename]');
+            const error = picker.querySelector('[data-space-avatar-upload-error]');
+            const drop = picker.querySelector('[data-space-avatar-drop]');
+            file.setAttribute('aria-describedby', 'space-avatar-upload-help');
+            function updateFile() {
+                const selected = file.files[0];
+                if (!selected) return;
+                error.hidden = true;
+                if (selected.size > 5 * 1024 * 1024 || !/\.(png|jpe?g|webp)$/i.test(selected.name)) {
+                    error.textContent = 'Wybierz obraz PNG, JPG lub WebP o rozmiarze do 5 MB.';
+                    error.hidden = false; file.value = ''; return;
+                }
+                clearPreview();
+                previewUrl = URL.createObjectURL(selected);
+                const img = document.createElement('img');
+                img.src = previewUrl; img.alt = 'Podgląd własnego awatara';
+                preview.replaceChildren(img); preview.hidden = false;
+                filename.textContent = selected.name;
+                picker.querySelector('[name=avatar][value=upload]').checked = true;
+            }
+            file.addEventListener('change', updateFile, { signal });
+            picker.addEventListener('change', event => {
+                if (event.target.name === 'avatar' && event.target.value !== 'upload') {
+                    file.value = ''; filename.textContent = ''; error.hidden = true;
+                    // Keep a saved photo available until the new selection is saved.
+                    clearPreview();
+                    const savedPreview = picker.dataset.savedPreview;
+                    if (savedPreview) { preview.querySelector('img').src = savedPreview; preview.hidden = false; }
+                    else { preview.replaceChildren(); preview.hidden = true; }
+                }
+            }, { signal });
+            picker.dataset.savedPreview = preview.querySelector('img')?.getAttribute('src') || '';
+            drop.addEventListener('dragover', event => { event.preventDefault(); if (!pending) drop.classList.add('is-drag-over'); }, { signal });
+            drop.addEventListener('dragleave', event => { if (!drop.contains(event.relatedTarget)) drop.classList.remove('is-drag-over'); }, { signal });
+            drop.addEventListener('drop', event => {
+                event.preventDefault(); drop.classList.remove('is-drag-over');
+                if (pending) return;
+                if (event.dataTransfer.files.length !== 1) {
+                    error.textContent = 'Wybierz jeden obraz.'; error.hidden = false; return;
+                }
+                file.files = event.dataTransfer.files; updateFile();
+            }, { signal });
+            updateFile();
+        }
         function display(html, preserve = false) {
+            const oldFile = preserve ? host.querySelector('[data-space-avatar-file]') : null;
+            clearPreview();
             restore(); host.innerHTML = html;
             if (!modal()) throw new Error('Brak formularza.');
+            const newFile = host.querySelector('[data-space-avatar-file]');
+            if (oldFile?.files.length && newFile) newFile.files = oldFile.files;
             configureWizard();
+            configureAvatarPicker();
             if (!preserve) initial = values();
             window.AncoreIcons?.render(host);
-            window.AncoreTaskModals.open(modal(), host.querySelector('[aria-invalid=true], input:not([type=hidden])'));
+            window.AncoreTaskModals.open(modal(), host.querySelector('[aria-invalid=true], input:checked') || host.querySelector('input:not([type=hidden])'));
             inertBackground();
         }
         document.addEventListener('click', async event => {
@@ -88,10 +143,11 @@
             event.preventDefault();
             window.showConfirmModal({ title: 'Niezapisane zmiany', message: 'Zamknąć okno bez zapisania zmian?', confirmText: 'Zamknij bez zapisu', cancelText: 'Wróć do edycji', onConfirm: () => { if (!signal.aborted) { discard = true; window.AncoreTaskModals.close(modal()); } } });
         }, { signal });
-        host.addEventListener('ancore:task-modal-closed', () => { restore(); host.replaceChildren(); discard = false; previousFocus?.focus({ preventScroll: true }); }, { signal });
+        host.addEventListener('ancore:task-modal-closed', () => { clearPreview(); restore(); host.replaceChildren(); discard = false; previousFocus?.focus({ preventScroll: true }); }, { signal });
         document.addEventListener('ancore:before-navigate', event => { if (modal() && (pending || dirty())) { event.preventDefault(); window.AncoreTaskModals.close(modal()); } }, { signal });
         window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } }, { signal });
         signal.addEventListener('abort', restore, { once: true });
+        signal.addEventListener('abort', clearPreview, { once: true });
 
         async function action(url, body) {
             if (pending) return;

@@ -19,7 +19,7 @@ def app_url(request, suffix='', app='spaces'):
 
 def visible_spaces(request):
     projects = visible_to(TaskProject.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
-    return Space.objects.filter(project__in=projects).select_related('project', 'configuration')
+    return Space.objects.filter(project__in=projects).select_related('project', 'configuration', 'workplace')
 
 
 def visible_items(request):

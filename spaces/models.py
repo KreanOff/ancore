@@ -4,6 +4,7 @@ from django.db.models import Q
 from core.comment_images import comment_image_storage
 
 from .defaults import KINDS, MANAGEMENT, TEMPLATES, template_settings
+from .avatars import avatar_upload_path
 
 
 class SpaceConfiguration(models.Model):
@@ -26,6 +27,8 @@ class Space(models.Model):
     management = models.CharField(max_length=8, choices=MANAGEMENT, default='team')
     configuration = models.ForeignKey(SpaceConfiguration, on_delete=models.RESTRICT, related_name='spaces')
     next_number = models.PositiveIntegerField(default=1)
+    avatar = models.CharField(max_length=32, blank=True, default='')
+    avatar_photo = models.FileField(upload_to=avatar_upload_path, storage=comment_image_storage, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

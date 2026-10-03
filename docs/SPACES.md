@@ -1,5 +1,39 @@
 # Przestrzenie i zespoły
 
+## Awatary przestrzeni
+
+Każda przestrzeń ma awatar widoczny w menu bocznym, katalogu i nagłówku
+wszystkich jej widoków. Domyślny wariant dobierany jest stabilnie według ID
+przestrzeni z 24 kolorowych ilustracji. Kliknięcie awatara w nagłówku lub
+„Zmień awatar” w ustawieniach otwiera okno wyboru. Zapis wymaga tego samego
+prawa zarządzania co edycja przestrzeni (`manage_space`); członek i obserwator
+widzą awatar, ale go nie zmieniają.
+
+Można wybrać ilustrację, przywrócić awatar automatyczny albo przesłać własny PNG,
+JPG lub WebP do 5 MB, również przez przeciągnięcie. Gotowe awatary to pełnokolorowe
+ilustracje z lokalnego atlasu `static/img/space-avatars/illustrations-v1.png`,
+wygenerowanego przez ImageGen; dokładny prompt zapisano obok w `PROMPT.txt`.
+Wspólny CSS wybiera kwadratowy fragment dla każdego motywu. Pole `Space.avatar`
+przechowuje stabilny identyfikator motywu, a `Space.avatar_photo` opcjonalny obraz.
+Zamiana wcześniejszych ikon konturowych na ilustracje zachowuje zapisane wybory
+i automatyczne przypisania; nie wymaga kolejnej migracji.
+Zmiana awatara nie zmienia nazwy, konfiguracji, zadań ani uprawnień przestrzeni.
+
+Obrazy mają losowe nazwy w prywatnym storage; pobieranie przez
+`/spaces/<pk>/avatar/photo/` i scoped odpowiednik sprawdza aktywny Workspace
+oraz widoczność projektu. Odpowiedź ma `private, no-store` i `nosniff`.
+Wybór ikony usuwa własny obraz po zatwierdzeniu transakcji. Podmiana i usunięcie
+przestrzeni sprzątają nieużywany plik dopiero po commit; nieudany zapis usuwa
+nowo przesłany plik. Wymagana migracja: `spaces.0003_space_avatar_space_avatar_photo`.
+
+Weryfikacja awatarów (3.10.2026): 43 testy `spaces` i `core.test_file_lifecycle`
+przeszły; lokalna migracja została zastosowana. Playwright/Chrome na izolowanej
+bazie sprawdził wybór i trwałość ikony, aktualizację menu, upload i przeciąganie,
+błędy walidacji, Escape/fokus, pusty katalog i ponowne wejście przy 1440×1000
+oraz 390×844. Szerszy zestaw Core/Workplaces ma wcześniejsze błędy; porównanie
+z ostatnim commitem potwierdziło te same 13 nieudanych asercji i 14 błędów
+w starszych testach nawigacji oraz Workspace.
+
 ## Model pracy
 
 Od 3.10.2026 główna nawigacja prowadzi do katalogu Przestrzeni, Wszystkich

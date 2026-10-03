@@ -38,7 +38,7 @@
                 <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                     <form method="post" action="{{ space.favorite_url }}">{% csrf_token %}<button class="tasks-icon-button tasks-row-favorite" type="submit" aria-label="{% if space.favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}: {{ space.project.name }}" aria-pressed="{{ space.favorite|yesno:'true,false' }}"><i data-icon="star" aria-hidden="true"></i></button></form>
                 </div>
-                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell"><a href="{{ space.url }}" title="{{ space.project.name }}">{{ space.project.name }}</a></span>
+                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{{ space.url }}" title="{{ space.project.name }}">{{ space.project.name }}</a></span>
                 <span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>
                 <span class="tasks-directory-sheet__cell" data-column="kind" role="cell" title="{{ space.get_kind_display }}">{{ space.get_kind_display }}</span>
                 <span class="tasks-directory-sheet__cell" data-column="template" role="cell" title="{{ space.get_template_display }}">{{ space.get_template_display }}</span>

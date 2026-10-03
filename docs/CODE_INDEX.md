@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 15 | 2 | 15 | 26 |
+| [spaces](../spaces) | 17 | 3 | 17 | 37 |
 
 ## 2. Modele i relacje
 
@@ -799,7 +799,7 @@ Metody/properties: `__str__`.
 
 Źródło: [spaces/models.py](../spaces/models.py).
 
-Pola zadeklarowane tutaj: `project` (OneToOneField), `workplace` (ForeignKey), `key` (CharField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `project` (OneToOneField), `workplace` (ForeignKey), `key` (CharField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `avatar` (CharField), `avatar_photo` (FileField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -978,6 +978,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 Źródło: [spaces/forms.py](../spaces/forms.py).
 
 - `StyledForm`
+- `SpaceAvatarForm`
 - `SpaceForm`
 - `ItemForm`
 - `SprintForm`
@@ -1214,6 +1215,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'items/<int:pk>/action/'` | `views.item_action` | 'item_action' |
 | `'<int:pk>/'` | `views.detail` | 'detail' |
 | `'<int:pk>/edit/'` | `views.edit` | 'edit' |
+| `'<int:pk>/avatar/'` | `views.avatar_edit` | 'avatar' |
+| `'<int:pk>/avatar/photo/'` | `views.avatar_photo` | 'avatar_photo' |
 | `'<int:pk>/favorite/'` | `views.favorite` | 'favorite' |
 | `'<int:space_pk>/items/create/'` | `views.item_edit` | 'item_create' |
 | `'<int:pk>/sprints/create/'` | `views.sprint_create` | 'sprint_create' |
@@ -1399,18 +1402,19 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [spaces/__init__.py](../spaces/__init__.py)
 - [spaces/apps.py](../spaces/apps.py) — `SpacesConfig`
+- [spaces/avatars.py](../spaces/avatars.py) — `avatar_upload_path`, `preset_avatar`, `space_avatar`, `delete_avatar_after_commit`
 - [spaces/defaults.py](../spaces/defaults.py) — `template_settings`
-- [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
+- [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
 - [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
 - [spaces/services.py](../spaces/services.py) — `app_url`, `visible_spaces`, `visible_items`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
-- [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`
+- [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`, `deleted_space_avatar`
 - [spaces/team_urls.py](../spaces/team_urls.py)
 - [spaces/teams.py](../spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
 - [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
-- [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `status_groups`
+- [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `space_avatar`, `status_groups`
 - [spaces/urls.py](../spaces/urls.py)
-- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `index`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `index`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
 
 ## 6. Szablony
 
@@ -1580,6 +1584,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### spaces
 
+- [spaces/templates/spaces/avatar.html](../spaces/templates/spaces/avatar.html)
+- [spaces/templates/spaces/avatar_picker.html](../spaces/templates/spaces/avatar_picker.html)
 - [spaces/templates/spaces/base.html](../spaces/templates/spaces/base.html)
 - [spaces/templates/spaces/card.html](../spaces/templates/spaces/card.html)
 - [spaces/templates/spaces/configuration.html](../spaces/templates/spaces/configuration.html)
@@ -1625,6 +1631,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/profile.css](../static/css/components/profile.css)
 - [static/css/components/resources.css](../static/css/components/resources.css)
 - [static/css/components/settings.css](../static/css/components/settings.css)
+- [static/css/components/space-avatars.css](../static/css/components/space-avatars.css)
 - [static/css/components/spaces.css](../static/css/components/spaces.css)
 - [static/css/components/sticky-note.css](../static/css/components/sticky-note.css)
 - [static/css/components/tables.css](../static/css/components/tables.css)
@@ -1675,6 +1682,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [static/img/favicon-ancore-large.png](../static/img/favicon-ancore-large.png)
 - [static/img/logo-ancore.png](../static/img/logo-ancore.png)
+- [static/img/space-avatars/PROMPT.txt](../static/img/space-avatars/PROMPT.txt)
+- [static/img/space-avatars/illustrations-v1.png](../static/img/space-avatars/illustrations-v1.png)
 
 ## 8. Testy
 
@@ -2076,6 +2085,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ResourceTests`: 19 metod testowych.
 
+### spaces/test_avatars.py
+
+Źródło: [spaces/test_avatars.py](../spaces/test_avatars.py).
+
+- `SpaceAvatarTests`: 11 metod testowych.
+
 ### spaces/tests.py
 
 Źródło: [spaces/tests.py](../spaces/tests.py).
@@ -2260,3 +2275,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 
 - [spaces/migrations/0001_initial.py](../spaces/migrations/0001_initial.py)
 - [spaces/migrations/0002_unify_work.py](../spaces/migrations/0002_unify_work.py)
+- [spaces/migrations/0003_space_avatar_space_avatar_photo.py](../spaces/migrations/0003_space_avatar_space_avatar_photo.py)

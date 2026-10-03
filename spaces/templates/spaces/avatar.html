@@ -1,0 +1,4 @@
+{% load space_ui %}{% space_avatar space as avatar %}
+<span class="profile-avatar space-avatar {{ avatar_class }}{% if avatar.photo_url %} has-photo{% else %} space-avatar-art {{ avatar.preset_class }}{% endif %}" aria-hidden="true" data-space-avatar="{{ space.pk }}">
+    {% if avatar.photo_url %}<img src="{{ avatar.photo_url }}" alt="">{% endif %}
+</span>

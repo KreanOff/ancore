@@ -3,6 +3,12 @@ from django import template
 register = template.Library()
 
 
+@register.simple_tag
+def space_avatar(space):
+    from spaces.avatars import space_avatar as get_avatar
+    return get_avatar(space)
+
+
 @register.filter
 def status_groups(items):
     """Group an already permission-filtered page without hiding custom statuses."""
