@@ -232,7 +232,11 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, reverse('workplaces:switch', args=[self.second_workplace.pk]))
         self.assertContains(response, 'class="sidebar-workspace-option is-active"')
         self.assertLess(content.index('data-sidebar-workspace-search'), content.index('data-sidebar-workspace-item'))
-        self.assertLess(content.index('data-sidebar-workspace-switcher'), content.index('class="sidebar-navigation"'))
+        topbar = content[content.index('<header class="app-topbar"'):content.index('</header>')]
+        sidebar = content[content.index('<aside class="sidebar"'):content.index('</aside>')]
+        self.assertIn('data-sidebar-workspace-switcher', topbar)
+        self.assertNotIn('data-sidebar-workspace-switcher', sidebar)
+        self.assertLess(topbar.index('data-sidebar-workspace-switcher'), topbar.index('data-global-search-input'))
 
     def test_sidebar_favorite_can_be_added_and_removed_without_page_reload(self):
         self.client.force_login(self.user)

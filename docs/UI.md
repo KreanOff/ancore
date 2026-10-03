@@ -328,7 +328,36 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 
 Źródło: [core/base.html](../core/templates/core/base.html).
 
-- Stała nawigacja z przełącznikiem Workspace, modułami, ulubionymi i profilem.
+- Stały pasek u góry całej aplikacji (`app-topbar`) ma tło
+  `--sidebar-bg`, identyczne jak boczna nawigacja, i wysokość `--toolbar-height`
+  (52px przed skalowaniem UI). Po lewej zawiera przełącznik Workspace
+  z avatarem i nazwą, na środku jedno pole globalnego wyszukiwania,
+  a po prawej powiadomienia, ustawienia i profil z avatarem.
+  Symetryczne boczne kolumny utrzymują wyszukiwarkę na środku całego paska,
+  niezależnie od szerokości sidebaru oraz długości nazw Workspace i profilu.
+  Pole ma maksymalnie 560px i zwęża się na mniejszych ekranach.
+  Przycisk zwijania i rozwijania menu znajduje się przy lewej krawędzi
+  górnego paska, przed przełącznikiem Workspace. Korzysta z `tasks-icon-button`
+  i wariantu `app-topbar__action`: ma 32px, standardowe zaokrąglenie oraz
+  ikonę `panel-left` ze wspólnego zestawu. Szare tło oznacza rozwinięte menu.
+  Na telefonie otwiera i zamyka boczne menu, zastępując osobny przycisk
+  pod paskiem. Zmiana stanu aktualizuje tło, etykietę i `aria-expanded`;
+  użycie przycisku zamyka otwarte panele wyszukiwania i powiadomień.
+  Pole używa istniejącego `global-search-form`; wpisywanie, strzałki i skrót
+  Ctrl/Cmd+K otwierają wspólny panel wyników. Na telefonie nazwy Workspace
+  i profilu oraz podpowiedź skrótu są ukryte; wszystkie kontrolki pozostają
+  dostępne. Zwinięcie sidebaru nie zmienia przełącznika Workspace ani
+  położenia jego menu, które rozwija się pod avatarem w górnym pasku.
+  Na telefonie menu Workspace wyrównuje się do lewej krawędzi paska,
+  aby mieściło się w szerokości ekranu.
+  Menu, treść, szkielet ładowania oraz panele
+  wyszukiwania i powiadomień zaczynają się pod nim, także na telefonie.
+  Wysokość treści uwzględnia pasek, zachowując przewijanie i widoczną dolną
+  krawędź. Pasek należy do bloku `app_navigation`, więc nie występuje w osobnym
+  edytorze Dokumentów ani na ekranach uwierzytelniania.
+- Stała nawigacja z modułami, ulubionymi i Stickerem.
+  Menu zaczyna się od Favorites, bez osobnego przycisku domu.
+  Do strony głównej prowadzi istniejący link Dashboard.
 - Stan zwinięty/rozwinięty i regulowana szerokość sidebaru.
 - Biały obszar treści w `.main-content > .page-container`.
 - Na ekranach katalogów `full-width`, pasek tytułu, akcje, filtry, wyszukiwanie,
@@ -363,16 +392,23 @@ dla zalogowanego konta. Po przełączeniu konta pojawia się jego własna notatk
 bez właściciela nie są automatycznie przypisywane ani wyświetlane innemu kontu.
 Powtórna inicjalizacja po nawigacji nie powiela obsługi przycisku.
 
-Przełącznik Workspace w nagłówku pokazuje avatar i nazwę bez strzałki.
-Kliknięcie avatara lub nazwy nadal otwiera menu wyboru Workspace.
+Przełącznik Workspace w górnym pasku pokazuje avatar i nazwę bez strzałki.
+Kliknięcie avatara lub nazwy otwiera dotychczasowe menu wyboru Workspace
+z wyszukiwaniem, stanem „Brak wyników” i linkiem zarządzania.
+Escape zamyka menu i przywraca fokus na przełączniku. Wybór zachowuje
+istniejący formularz POST i pełne przeładowanie kontekstu Workspace.
 
 Nagłówek strony profilu pokazuje tekst „Profil użytkownika” bez poprzedzającej
 go ikony. Avatar użytkownika pozostaje w treści profilu. Do 767px nagłówek
 zachowuje 3.5rem odstępu po lewej na przycisk nawigacji, jak paski katalogów.
 
-Aktywna ikona w przełączniku domu, powiadomień i wyszukiwania używa
+Otwarty dzwonek używa
 `color-mix(in srgb, var(--system-accent) 15%, #ffffff)`, także przy zwiniętym
-sidebarze.
+sidebarze. Pozostałe interakcje w górnym pasku korzystają z szarego
+`--system-interaction-soft`. Linki profilu i ustawień zachowują aktywny stan
+po częściowej nawigacji. Menu Workspace, wyszukiwanie i powiadomienia zamykają się przed
+podmianą strony oraz wzajemnie przy przełączaniu, bez przejmowania fokusu
+przez zamykany panel.
 
 Nową stronę modułu oprzyj na aktywnych blokach `title`, `extra_head`,
 `page_container_class`, `content` i `page_modals`. Niektóre starsze szablony
@@ -1666,12 +1702,11 @@ przesuwania treści. Stany puste mają opis zależny od filtra. Błąd pobrania 
 akcję ponowienia; błąd zapisu pozostawia wpis i komunikat `role=alert`.
 Żądania mają limit czasu, a zmiana filtra anuluje starsze pobranie.
 
-Panel blokuje treść strony i pozostałe części menu przez `inert`, pozostawiając
-dostępny przełącznik dom–powiadomienia–wyszukiwanie. Domek zamyka panel i przywraca
-bazowy ekran, tak jak w wyszukiwaniu; lupa przełącza bezpośrednio do wyszukiwarki,
+Panel blokuje treść strony i całe menu boczne przez `inert`, pozostawiając
+dostępny górny pasek. Pole w górnym pasku przełącza do wyszukiwarki,
 a ponowne kliknięcie dzwonka zamyka powiadomienia. Aktywny stan wskazuje otwarty panel.
-Panel nie deklaruje `aria-modal`, ponieważ przełącznik pozostaje dostępny poza nim.
-Tab i Shift+Tab obejmują panel oraz widoczne kontrolki przełącznika; Escape
+Oba panele nie deklarują `aria-modal`, ponieważ pole i przyciski pozostają dostępne poza nimi.
+Tab i Shift+Tab obejmują panel i górny pasek; Escape
 zamyka panel i przywraca fokus. Przejście skrótem do wyszukiwania nie przywraca
 fokusu do ukrytego panelu. Na telefonie panel zajmuje ekran,
 a na najwęższym układzie toolbar przechodzi do dwóch wierszy.

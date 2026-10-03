@@ -4,8 +4,7 @@
     const toggle = document.querySelector('[data-notifications-toggle]');
     const backdrop = document.querySelector('[data-notifications-backdrop]');
     if (!panel || !toggle) return;
-    const switcher = toggle.closest('[data-sidebar-view-switcher]');
-    const defaultView = switcher?.querySelector('[data-sidebar-default-view]');
+    const topbar = document.querySelector('[data-app-topbar]');
     const controllers = new Map();
     let summaryRequest = null;
     let refreshTimer = null;
@@ -285,25 +284,17 @@
         });
     }
 
-    function setOpen(open) {
+    function setOpen(open, options = {}) {
         if (open === isOpen()) return;
         if (!open) closeActionMenus();
         toggle.setAttribute('aria-expanded', String(open));
         document.body.classList.toggle('notifications-panel-open', open);
         panel.hidden = !open;
         backdrop.hidden = !open;
-        const items = Array.from(switcher?.querySelectorAll('.sidebar-view-switcher__item') || []);
-        const expandedItem = items.find(item => item.getAttribute('aria-expanded') === 'true');
-        items.forEach(item => item.classList.toggle('is-active', expandedItem ? item === expandedItem : item.getAttribute('aria-current') === 'page'));
         if (open) {
             restoreFocus = document.activeElement.closest('.global-search-panel') ? toggle : document.activeElement;
             window.dispatchEvent(new CustomEvent('ancore:notifications-open'));
-            const background = Array.from(document.querySelectorAll('main.main-content'));
-            const sidebar = switcher?.closest('.sidebar');
-            // Keep the shared view switcher usable while blocking the rest of the background.
-            for (let node = switcher; sidebar && node !== sidebar; node = node.parentElement) {
-                background.push(...Array.from(node.parentElement.children).filter(sibling => sibling !== node));
-            }
+            const background = Array.from(document.querySelectorAll('main.main-content, .sidebar'));
             inertElements = background.filter(element => element instanceof HTMLElement && !element.inert);
             inertElements.forEach(element => { element.inert = true; });
             controllers.get(panel).load();
@@ -312,34 +303,35 @@
             controllers.get(panel)?.abort();
             inertElements.forEach(element => { element.inert = false; });
             inertElements = [];
-            restoreFocus?.focus?.({ preventScroll: true });
+            if (options.restoreFocus !== false) restoreFocus?.focus?.({ preventScroll: true });
             restoreFocus = null;
         }
     }
     toggle.addEventListener('click', event => { event.preventDefault(); setOpen(!isOpen()); });
-    defaultView?.addEventListener('click', event => {
-        if (!isOpen()) return;
-        event.preventDefault();
-        setOpen(false);
-    });
     panel.querySelector('[data-notifications-close]').addEventListener('click', () => setOpen(false));
     backdrop.addEventListener('click', () => setOpen(false));
-    window.addEventListener('ancore:global-search-open', () => setOpen(false));
+    window.addEventListener('ancore:global-search-open', () => setOpen(false, { restoreFocus: false }));
+    window.addEventListener('ancore:workspace-menu-open', () => setOpen(false, { restoreFocus: false }));
+    window.addEventListener('ancore:sidebar-toggle', () => setOpen(false, { restoreFocus: false }));
+    document.addEventListener('ancore:content-unloading', () => setOpen(false, { restoreFocus: false }));
     document.addEventListener('keydown', event => {
         if (!isOpen() || document.querySelector('.confirm-modal-overlay')) return;
         if (event.key === 'Escape') { event.preventDefault(); setOpen(false); }
         if (event.key !== 'Tab') return;
         const selector = 'button:not(:disabled), a[href], select:not(:disabled), input:not([type="hidden"]):not(:disabled), [tabindex="0"]';
-        const elements = [...(switcher?.querySelectorAll(selector) || []), ...panel.querySelectorAll(selector)]
+        const elements = [...(topbar?.querySelectorAll(selector) || []), ...panel.querySelectorAll(selector)]
             .filter(element => {
                 const rect = element.getBoundingClientRect();
                 return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden'
                     && !element.closest('[inert]') && rect.right > 0 && rect.left < innerWidth;
             });
-        const first = elements[0], last = elements[elements.length - 1];
-        const inFocusArea = panel.contains(document.activeElement) || switcher?.contains(document.activeElement);
-        if (event.shiftKey && (document.activeElement === first || !inFocusArea)) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && (document.activeElement === last || !inFocusArea)) { event.preventDefault(); first?.focus(); }
+        if (elements.length) {
+            const index = elements.indexOf(document.activeElement);
+            const next = index < 0 ? (event.shiftKey ? elements.length - 1 : 0)
+                : (index + (event.shiftKey ? -1 : 1) + elements.length) % elements.length;
+            event.preventDefault();
+            elements[next].focus();
+        }
     });
     document.addEventListener('ancore:content-loaded', () => { setOpen(false); init(); refreshSummary(); scheduleRefresh(); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSummary(); scheduleRefresh(); });

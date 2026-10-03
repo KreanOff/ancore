@@ -2,7 +2,7 @@
 @import 'base/variables.css?v=20260923-no-interaction-rings';
 @import 'base/reset.css?v=20260902-app-scale-98';
 @import 'layout/sidebar.css?v=20260902-resizable-app-sidebar-v1';
-@import 'layout/main.css?v=20260928-navigation-skeleton';
+@import 'layout/main.css?v=20261003-collapse-panel';
 @import 'layout/responsive.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/cards.css?v=20260902-system-accent-v1';
 @import 'components/buttons.css?v=20260923-secondary-gray-hover';
@@ -1611,32 +1611,32 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         display: none !important;
     }
 
-    html.sidebar-collapsed .sidebar-workspace-switcher {
+    html.sidebar-collapsed .sidebar .sidebar-workspace-switcher {
         display: block;
         width: var(--sidebar-compact-control-size);
         flex: 0 0 var(--sidebar-compact-control-size);
     }
 
-    html.sidebar-collapsed .sidebar-workspace-toggle {
+    html.sidebar-collapsed .sidebar .sidebar-workspace-toggle {
         width: var(--sidebar-compact-control-size);
         height: var(--sidebar-compact-control-size);
         justify-content: flex-start;
         padding: 0 var(--sidebar-avatar-inset);
     }
 
-    html.sidebar-collapsed .sidebar-workspace-avatar {
+    html.sidebar-collapsed .sidebar .sidebar-workspace-avatar {
         width: var(--sidebar-avatar-size);
         height: var(--sidebar-avatar-size);
         flex-basis: var(--sidebar-avatar-size);
     }
 
-    html.sidebar-collapsed .sidebar-workspace-name,
-    html.sidebar-collapsed .sidebar-workspace-chevron,
-    html.sidebar-collapsed .sidebar-brand-name {
+    html.sidebar-collapsed .sidebar .sidebar-workspace-name,
+    html.sidebar-collapsed .sidebar .sidebar-workspace-chevron,
+    html.sidebar-collapsed .sidebar .sidebar-brand-name {
         display: none;
     }
 
-    html.sidebar-collapsed .sidebar-workspace-menu {
+    html.sidebar-collapsed .sidebar .sidebar-workspace-menu {
         position: fixed;
         top: 0.5rem;
         left: calc(var(--sidebar-collapsed-width) + 0.5rem);
@@ -2086,7 +2086,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         transition-delay: 0.08s;
     }
 
-    html.sidebar-is-collapsing .sidebar-workspace-toggle {
+    html.sidebar-is-collapsing .sidebar .sidebar-workspace-toggle {
         transition:
             width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
             flex-basis 0.34s cubic-bezier(0.22, 1, 0.36, 1),
@@ -2102,9 +2102,9 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         padding-inline: var(--sidebar-rail-gutter);
     }
 
-    html.sidebar-collapsed .sidebar-workspace-name,
-    html.sidebar-collapsed .sidebar-workspace-chevron,
-    html.sidebar-collapsed .sidebar-brand-name {
+    html.sidebar-collapsed .sidebar .sidebar-workspace-name,
+    html.sidebar-collapsed .sidebar .sidebar-workspace-chevron,
+    html.sidebar-collapsed .sidebar .sidebar-brand-name {
         display: block;
         max-width: 0;
         opacity: 0;
@@ -2113,11 +2113,11 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         transition-delay: 0s, 0s, 0s, 0.16s;
     }
 
-    html.sidebar-collapsed .sidebar-workspace-chevron {
+    html.sidebar-collapsed .sidebar .sidebar-workspace-chevron {
         flex-basis: 0;
     }
 
-    html.sidebar-collapsed .sidebar-workspace-toggle,
+    html.sidebar-collapsed .sidebar .sidebar-workspace-toggle,
     html.sidebar-collapsed .sidebar .logo {
         gap: 0;
     }
@@ -2252,7 +2252,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
 
     .mobile-sidebar-toggle {
         position: fixed;
-        top: 0.65rem;
+        top: calc(var(--app-topbar-height, 0px) + 0.65rem);
         left: 0.65rem;
         z-index: 89;
         display: inline-grid;

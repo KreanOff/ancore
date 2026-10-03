@@ -67,7 +67,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-sidebar-space-icon">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-collapse-panel">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
@@ -89,89 +89,96 @@
         </div>
     </div>
     {% block app_navigation %}
-    <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
-    <button type="button" class="mobile-sidebar-toggle" id="sidebar-toggle" aria-label="Otwórz menu" aria-controls="app-sidebar" aria-expanded="false">
-        <i data-icon="menu" aria-hidden="true"></i>
-    </button>
-    <aside class="sidebar" id="app-sidebar">
-        <div class="sidebar-header">
-            {% if request.user.is_authenticated and current_workplace %}
-            <div class="sidebar-workspace-switcher" data-sidebar-workspace-switcher>
-                {% workplace_avatar current_workplace as current_workplace_logo %}
-                <button type="button" class="sidebar-workspace-toggle" aria-label="Zmień Workspace. Bieżący: {{ current_workplace.name }}" aria-haspopup="menu" aria-expanded="false" aria-controls="sidebar-workspace-menu" data-sidebar-workspace-toggle>
-                    <span class="sidebar-workspace-avatar {{ current_workplace_logo.color_class }}{% if current_workplace_logo.photo_url %} has-photo{% endif %}" style="{{ current_workplace_logo.color_style }}" aria-hidden="true">
-                        {% if current_workplace_logo.photo_url %}
-                        <img src="{{ current_workplace_logo.photo_url }}" alt="">
-                        {% else %}
-                        <i data-icon="briefcase" aria-hidden="true"></i>
-                        {% endif %}
-                    </span>
-                    <span class="sidebar-workspace-name">{{ current_workplace.name }}</span>
-                </button>
-                <div class="sidebar-workspace-menu" id="sidebar-workspace-menu" role="menu" aria-label="Dostępne Workspace" data-sidebar-workspace-menu hidden>
-                    <span class="sidebar-workspace-menu__title">Workspace</span>
-                    <div class="sidebar-workspace-search" role="search" data-sidebar-workspace-search>
-                        <label for="sidebar-workspace-search-input">
-                            <span class="u-sr-only">Szukaj Workspace</span>
-                            <i data-icon="search" aria-hidden="true"></i>
-                            <input id="sidebar-workspace-search-input" type="search" placeholder="Szukaj Workspace" autocomplete="off" spellcheck="false" data-sidebar-workspace-search-input>
-                        </label>
-                        <p class="sidebar-workspace-search__empty" aria-live="polite" data-sidebar-workspace-search-empty hidden>Brak wyników</p>
+    <header class="app-topbar" aria-label="Narzędzia aplikacji" data-app-topbar>
+        <div class="app-topbar__start">
+            <button type="button" class="tasks-icon-button app-topbar__action app-topbar__collapse" aria-label="Zwiń menu boczne" title="Zwiń menu boczne" aria-controls="app-sidebar" aria-expanded="true" data-sidebar-collapse-toggle>
+                <i data-icon="panel-left" aria-hidden="true"></i>
+            </button>
+            <div class="app-topbar__workspace">
+                {% if request.user.is_authenticated and current_workplace %}
+                <div class="sidebar-workspace-switcher" data-sidebar-workspace-switcher>
+                    {% workplace_avatar current_workplace as current_workplace_logo %}
+                    <button type="button" class="sidebar-workspace-toggle" aria-label="Zmień Workspace. Bieżący: {{ current_workplace.name }}" aria-haspopup="menu" aria-expanded="false" aria-controls="sidebar-workspace-menu" data-sidebar-workspace-toggle>
+                        <span class="sidebar-workspace-avatar {{ current_workplace_logo.color_class }}{% if current_workplace_logo.photo_url %} has-photo{% endif %}" style="{{ current_workplace_logo.color_style }}" aria-hidden="true">
+                            {% if current_workplace_logo.photo_url %}
+                            <img src="{{ current_workplace_logo.photo_url }}" alt="">
+                            {% else %}
+                            <i data-icon="briefcase" aria-hidden="true"></i>
+                            {% endif %}
+                        </span>
+                        <span class="sidebar-workspace-name">{{ current_workplace.name }}</span>
+                    </button>
+                    <div class="sidebar-workspace-menu" id="sidebar-workspace-menu" role="menu" aria-label="Dostępne Workspace" data-sidebar-workspace-menu hidden>
+                        <span class="sidebar-workspace-menu__title">Workspace</span>
+                        <div class="sidebar-workspace-search" role="search" data-sidebar-workspace-search>
+                            <label for="sidebar-workspace-search-input">
+                                <span class="u-sr-only">Szukaj Workspace</span>
+                                <i data-icon="search" aria-hidden="true"></i>
+                                <input id="sidebar-workspace-search-input" type="search" placeholder="Szukaj Workspace" autocomplete="off" spellcheck="false" data-sidebar-workspace-search-input>
+                            </label>
+                            <p class="sidebar-workspace-search__empty" aria-live="polite" data-sidebar-workspace-search-empty hidden>Brak wyników</p>
+                        </div>
+                        <div class="sidebar-workspace-menu__list">
+                            {% for workplace in available_workplaces %}
+                            {% workplace_avatar workplace as workplace_logo %}
+                            <form method="post" action="{% url 'workplaces:switch' workplace.id %}" data-sidebar-workspace-item data-sidebar-workspace-search-text="{{ workplace.name }}">
+                                {% csrf_token %}
+                                <button type="submit" class="sidebar-workspace-option{% if workplace.id == current_workplace.id %} is-active{% endif %}" role="menuitem"{% if workplace.id == current_workplace.id %} aria-current="true"{% endif %}>
+                                    <span class="sidebar-workspace-avatar sidebar-workspace-avatar--option {{ workplace_logo.color_class }}{% if workplace_logo.photo_url %} has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
+                                        {% if workplace_logo.photo_url %}
+                                        <img src="{{ workplace_logo.photo_url }}" alt="">
+                                        {% else %}
+                                        <i data-icon="briefcase" aria-hidden="true"></i>
+                                        {% endif %}
+                                    </span>
+                                    <span>{{ workplace.name }}</span>
+                                    {% if workplace.id == current_workplace.id %}<i class="sidebar-workspace-option__check" data-icon="check" aria-hidden="true"></i>{% endif %}
+                                </button>
+                            </form>
+                            {% endfor %}
+                        </div>
+                        <a class="sidebar-workspace-manage" href="{% url 'workplaces:workplaces' %}" role="menuitem">
+                            <i data-icon="settings-2" aria-hidden="true"></i>
+                            <span>Zarządzaj Workspace</span>
+                        </a>
                     </div>
-                    <div class="sidebar-workspace-menu__list">
-                        {% for workplace in available_workplaces %}
-                        {% workplace_avatar workplace as workplace_logo %}
-                        <form method="post" action="{% url 'workplaces:switch' workplace.id %}" data-sidebar-workspace-item data-sidebar-workspace-search-text="{{ workplace.name }}">
-                            {% csrf_token %}
-                            <button type="submit" class="sidebar-workspace-option{% if workplace.id == current_workplace.id %} is-active{% endif %}" role="menuitem"{% if workplace.id == current_workplace.id %} aria-current="true"{% endif %}>
-                                <span class="sidebar-workspace-avatar sidebar-workspace-avatar--option {{ workplace_logo.color_class }}{% if workplace_logo.photo_url %} has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
-                                    {% if workplace_logo.photo_url %}
-                                    <img src="{{ workplace_logo.photo_url }}" alt="">
-                                    {% else %}
-                                    <i data-icon="briefcase" aria-hidden="true"></i>
-                                    {% endif %}
-                                </span>
-                                <span>{{ workplace.name }}</span>
-                                {% if workplace.id == current_workplace.id %}<i class="sidebar-workspace-option__check" data-icon="check" aria-hidden="true"></i>{% endif %}
-                            </button>
-                        </form>
-                        {% endfor %}
-                    </div>
-                    <a class="sidebar-workspace-manage" href="{% url 'workplaces:workplaces' %}" role="menuitem">
-                        <i data-icon="settings-2" aria-hidden="true"></i>
-                        <span>Zarządzaj Workspace</span>
-                    </a>
                 </div>
-            </div>
-            {% else %}
-            <a href="{% url 'home' %}" class="logo" aria-label="Ancore" title="Ancore">
-                <img src="{% static 'img/logo-ancore.png' %}" alt="">
-                <span class="sidebar-brand-name">ancore</span>
-            </a>
-            {% endif %}
-        </div>
-        <div class="sidebar-view-controls">
-            <div class="sidebar-view-switcher" role="group" aria-label="Widok domyślny, powiadomienia i wyszukiwanie" data-sidebar-view-switcher>
-                <a href="{{ sidebar_dashboard_url }}" class="sidebar-view-switcher__item is-active" aria-label="Widok domyślny" aria-current="page" title="Widok domyślny" data-sidebar-default-view>
-                    <i data-icon="house" aria-hidden="true"></i>
+                {% else %}
+                <a href="{% url 'home' %}" class="logo" aria-label="Ancore" title="Ancore">
+                    <img src="{% static 'img/logo-ancore.png' %}" alt="">
+                    <span class="sidebar-brand-name">ancore</span>
                 </a>
-                <button type="button" class="sidebar-view-switcher__item" aria-label="Powiadomienia" aria-controls="notifications-panel" aria-expanded="false" aria-describedby="notifications-invitation-status" title="Powiadomienia" data-notifications-toggle>
-                    <i data-icon="bell" aria-hidden="true"></i>
-                    <span class="notifications-toggle__indicator" data-notifications-pending aria-hidden="true" hidden></span>
-                    <span class="notifications-toggle__invitation-count" data-notifications-invitation-badge aria-hidden="true"{% if not pending_notification_invitation_count %} hidden{% endif %}>{% if pending_notification_invitation_count > 9 %}9+{% else %}{{ pending_notification_invitation_count|default:0 }}{% endif %}</span>
-                    <span id="notifications-invitation-status" class="u-sr-only" data-notifications-invitation-status>{% if pending_notification_invitation_count %}Oczekujące zaproszenia: {{ pending_notification_invitation_count }}.{% endif %}</span>
-                </button>
-                <button type="button" class="sidebar-view-switcher__item sidebar-view-switcher__item--search" aria-label="Wyszukaj w Ancore" title="Wyszukaj w Ancore" aria-controls="global-search-panel" aria-expanded="false" data-global-search-toggle>
-                    <i data-icon="search" aria-hidden="true"></i>
-                </button>
-            </div>
-            <div class="sidebar-view-switcher sidebar-view-switcher--collapse" role="group" aria-label="Sterowanie paskiem bocznym">
-                <button type="button" class="sidebar-view-switcher__item sidebar-collapse-toggle" aria-label="Zwiń menu boczne" title="Zwiń menu boczne" aria-controls="app-sidebar" aria-expanded="true" data-sidebar-collapse-toggle>
-                    <i class="sidebar-collapse-icon sidebar-collapse-icon--close" data-icon="chevron-left" aria-hidden="true"></i>
-                    <i class="sidebar-collapse-icon sidebar-collapse-icon--open" data-icon="chevron-right" aria-hidden="true"></i>
-                </button>
+                {% endif %}
             </div>
         </div>
+        <form class="global-search-form app-topbar__search" role="search" data-global-search-form>
+            <label for="global-search-input">
+                <i data-icon="search" aria-hidden="true"></i>
+                <input id="global-search-input" type="search" role="combobox" aria-label="Globalne wyszukiwanie" aria-controls="global-search-panel" aria-expanded="false" aria-haspopup="dialog" aria-autocomplete="none" placeholder="Szukaj zadań, osób, projektów…" autocomplete="off" spellcheck="false" data-global-search-input>
+                <span class="global-search-form__shortcut" aria-hidden="true">⌘ K</span>
+                <button type="button" class="global-search-form__clear" aria-label="Wyczyść wyszukiwanie" title="Wyczyść wyszukiwanie" data-global-search-clear hidden>
+                    <i data-icon="circle-x" aria-hidden="true"></i>
+                </button>
+            </label>
+        </form>
+        <nav class="app-topbar__actions" aria-label="Powiadomienia i konto">
+            <button type="button" class="tasks-icon-button app-topbar__action" aria-label="Powiadomienia" aria-controls="notifications-panel" aria-expanded="false" aria-describedby="notifications-invitation-status" title="Powiadomienia" data-notifications-toggle>
+                <i data-icon="bell" aria-hidden="true"></i>
+                <span class="notifications-toggle__indicator" data-notifications-pending aria-hidden="true" hidden></span>
+                <span class="notifications-toggle__invitation-count" data-notifications-invitation-badge aria-hidden="true"{% if not pending_notification_invitation_count %} hidden{% endif %}>{% if pending_notification_invitation_count > 9 %}9+{% else %}{{ pending_notification_invitation_count|default:0 }}{% endif %}</span>
+                <span id="notifications-invitation-status" class="u-sr-only" data-notifications-invitation-status>{% if pending_notification_invitation_count %}Oczekujące zaproszenia: {{ pending_notification_invitation_count }}.{% endif %}</span>
+            </button>
+            <a href="{% url 'settings' %}" class="nav-link tasks-icon-button app-topbar__action {% if request.resolver_match.view_name == 'settings' or request.resolver_match.view_name == 'project_field_settings' or request.resolver_match.app_name == 'workplaces' %}active{% endif %}" aria-label="Ustawienia Ancore" title="Ustawienia Ancore">
+                <i data-icon="settings" aria-hidden="true"></i>
+            </a>
+            <a href="{% url 'profile' %}" class="nav-link app-topbar__profile {% if request.resolver_match.view_name == 'profile' %}active{% endif %}" aria-label="Profil użytkownika: {{ request.user.get_full_name|default:request.user.username }}" title="Profil użytkownika">
+                {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='app-topbar__avatar' only %}
+                <span class="app-topbar__username">{{ request.user.get_full_name|default:request.user.username }}</span>
+            </a>
+        </nav>
+    </header>
+    <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+    <aside class="sidebar" id="app-sidebar">
         <nav class="sidebar-navigation" aria-label="Główne menu">
             <section class="sidebar-menu-section sidebar-menu-section--favorites" aria-labelledby="sidebar-favorites-title" data-sidebar-favorites-dropzone>
                 <h2 class="sidebar-menu-section-title">
@@ -253,14 +260,6 @@
                 <i class="nav-icon nav-icon--notes" data-icon="sticky-note" aria-hidden="true"></i>
                 <span class="nav-label">Sticker</span>
             </button>
-            <a href="{% url 'settings' %}" class="nav-link {% if request.resolver_match.view_name == 'settings' or request.resolver_match.view_name == 'project_field_settings' or request.resolver_match.app_name == 'workplaces' %}active{% endif %}" aria-label="Ustawienia Ancore" title="Ustawienia Ancore">
-                <i class="nav-icon nav-icon--admin" data-icon="settings" aria-hidden="true"></i>
-                <span class="nav-label">Ustawienia</span>
-            </a>
-            <a href="{% url 'profile' %}" class="nav-link nav-link--profile {% if request.resolver_match.view_name == 'profile' %}active{% endif %}" aria-label="{{ request.user.first_name }} {{ request.user.last_name }}" title="{{ request.user.first_name }} {{ request.user.last_name }}">
-                {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='sidebar-profile-avatar' only %}
-                <span class="nav-label">{{ request.user.first_name }} {{ request.user.last_name }}</span>
-            </a>
         </div>
         <div class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Zmień szerokość menu bocznego" aria-valuemin="220" aria-valuemax="420" aria-valuenow="272" tabindex="0" data-sidebar-resizer></div>
     </aside>
@@ -274,7 +273,7 @@
         <nav class="sidebar-collapsed-flyout__links" aria-label="Podmenu" data-sidebar-collapsed-flyout-links></nav>
     </div>
     <div class="global-search-backdrop" data-global-search-backdrop hidden></div>
-    <aside class="global-search-panel" id="global-search-panel" role="dialog" aria-modal="true" aria-labelledby="global-search-title" aria-describedby="global-search-description" data-global-search-panel data-search-url="{% url 'global_search' %}" hidden>
+    <aside class="global-search-panel" id="global-search-panel" role="dialog" aria-labelledby="global-search-title" aria-describedby="global-search-description" data-global-search-panel data-search-url="{% url 'global_search' %}" hidden>
         <header class="global-search-panel__header">
             <div class="global-search-panel__heading">
                 <span class="global-search-panel__mark" aria-hidden="true"><i data-icon="sparkles"></i></span>
@@ -287,16 +286,7 @@
                 <i data-icon="x" aria-hidden="true"></i>
             </button>
         </header>
-        <form class="global-search-form" role="search" data-global-search-form>
-            <label for="global-search-input">
-                <i data-icon="search" aria-hidden="true"></i>
-                <input id="global-search-input" type="search" aria-label="Globalne wyszukiwanie" placeholder="Szukaj zadań, osób, projektów…" autocomplete="off" spellcheck="false" data-global-search-input>
-                <span class="global-search-form__shortcut" aria-hidden="true">⌘ K</span>
-                <button type="button" class="global-search-form__clear" aria-label="Wyczyść wyszukiwanie" title="Wyczyść wyszukiwanie" data-global-search-clear hidden>
-                    <i data-icon="circle-x" aria-hidden="true"></i>
-                </button>
-            </label>
-        </form>
+
         <div class="global-search-results" data-global-search-results tabindex="-1">
             <div class="global-search-state global-search-state--welcome" data-global-search-welcome>
                 <span class="global-search-state__icon" aria-hidden="true"><i data-icon="scan-search"></i></span>
@@ -375,11 +365,11 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20261003-sidebar-space-actions"></script>
-    <script src="{% static 'js/global-search.js' %}?v=20260923-notification-actions"></script>
+    <script src="{% static 'js/layout.js' %}?v=20261003-sidebar-no-home"></script>
+    <script src="{% static 'js/global-search.js' %}?v=20261003-sidebar-no-home"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>
-    <script src="{% static 'js/notifications-panel.js' %}?v=20260928-workspace-navigation"></script>
+    <script src="{% static 'js/notifications-panel.js' %}?v=20261003-sidebar-no-home"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>

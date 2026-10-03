@@ -225,56 +225,29 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('Usuń z Favorites', html)
         self.assertNotIn('data-sidebar-workspace-dropzone', html)
 
-    def test_sidebar_view_switcher_is_below_workspace_header(self):
+    def test_global_tools_are_in_topbar_and_sidebar_has_no_home_button(self):
         request = SimpleNamespace(
             resolver_match=SimpleNamespace(app_name='', view_name=''),
             user=AnonymousUser(),
         )
-        html = render_to_string('core/base.html', {
-            'request': request,
-            'workplace_app_urls': {},
-            'active_view': '',
-            'active_contact_status': '',
-        })
+        html = render_to_string('core/base.html', {'request': request, 'workplace_app_urls': {}})
+        topbar = html[html.index('<header class="app-topbar"'):html.index('<aside class="sidebar"')]
+        sidebar = html[html.index('<aside class="sidebar"'):html.index('id="sidebar-collapsed-flyout"')]
 
-        header_position = html.index('class="sidebar-header"')
-        controls_position = html.index('class="sidebar-view-controls"')
-        switcher_position = html.index('data-sidebar-view-switcher')
-        search_position = html.index('data-global-search-toggle')
-        collapse_group_position = html.index('class="sidebar-view-switcher sidebar-view-switcher--collapse"')
-        collapse_position = html.index('data-sidebar-collapse-toggle')
-        navigation_position = html.index('class="sidebar-navigation"')
-
-        self.assertLess(header_position, controls_position)
-        self.assertLess(controls_position, switcher_position)
-        self.assertLess(switcher_position, search_position)
-        self.assertLess(search_position, collapse_group_position)
-        self.assertLess(collapse_group_position, collapse_position)
-        self.assertLess(collapse_position, navigation_position)
-        switcher_end = html.index('</div>', switcher_position)
-        switcher_html = html[switcher_position:switcher_end]
-        collapse_group_end = html.index('</div>', collapse_group_position)
-        collapse_group_html = html[collapse_group_position:collapse_group_end]
-
-        self.assertIn('aria-label="Widok domyślny, powiadomienia i wyszukiwanie"', html)
-        self.assertEqual(switcher_html.count('class="sidebar-view-switcher__item'), 3)
-        self.assertIn('data-icon="house"', html[switcher_position:])
-        self.assertIn('data-icon="bell"', html[switcher_position:])
-        self.assertIn('data-icon="search"', switcher_html)
-        self.assertIn('aria-label="Widok domyślny"', html[switcher_position:])
-        self.assertIn('data-sidebar-default-view', switcher_html)
-        self.assertIn('aria-label="Powiadomienia"', html[switcher_position:])
-        self.assertIn('aria-label="Wyszukaj w Ancore"', switcher_html)
-        self.assertIn('href="/notifications/"', html[switcher_position:])
-        self.assertIn('data-notifications-toggle', html[switcher_position:])
-        self.assertIn('aria-controls="notifications-panel"', html[switcher_position:])
-        self.assertIn('role="group" aria-label="Sterowanie paskiem bocznym"', collapse_group_html)
-        self.assertEqual(collapse_group_html.count('class="sidebar-view-switcher__item'), 1)
-        self.assertIn('class="sidebar-view-switcher__item sidebar-collapse-toggle"', collapse_group_html)
-        self.assertIn('id="notifications-panel"', html)
+        for marker in ('data-global-search-input', 'data-notifications-toggle', 'data-sidebar-collapse-toggle',
+                       'aria-label="Ustawienia Ancore"', 'title="Profil użytkownika"'):
+            with self.subTest(control=marker):
+                self.assertIn(marker, topbar)
+                self.assertNotIn(marker, sidebar)
+                self.assertEqual(html.count(marker), 1)
+        self.assertNotIn('data-sidebar-default-view', html)
+        self.assertNotIn('class="sidebar-view-controls"', sidebar)
+        self.assertLess(topbar.index('data-sidebar-collapse-toggle'), topbar.index('data-global-search-input'))
+        self.assertNotIn('class="mobile-sidebar-toggle"', html)
+        self.assertIn('data-sticky-note-toggle', sidebar)
         self.assertIn('data-notifications-url="/notifications/"', html)
-        self.assertIn('Zamknij powiadomienia', html)
-        self.assertNotIn('disabled', html[switcher_position:navigation_position])
+        self.assertIn('aria-controls="global-search-panel"', topbar)
+        self.assertIn('aria-controls="notifications-panel"', topbar)
 
     def test_sidebar_view_switcher_uses_turquoise_active_state(self):
         css_path = finders.find('css/style.css')
@@ -366,7 +339,7 @@ class SidebarActiveStateTests(SimpleTestCase):
 
                 self.assertIn(' active', self._sidebar_link_html(html, 'Tagi'))
 
-    def test_sidebar_header_has_global_search_and_collapse_controls(self):
+    def test_topbar_search_controls_existing_panel_and_sidebar_can_collapse(self):
         request = SimpleNamespace(
             resolver_match=SimpleNamespace(app_name='', view_name=''),
             user=AnonymousUser(),
@@ -378,15 +351,16 @@ class SidebarActiveStateTests(SimpleTestCase):
             'active_contact_status': '',
         })
 
-        self.assertIn('data-global-search-toggle', html)
+        self.assertIn('data-global-search-input', html)
         self.assertIn('id="global-search-panel"', html)
         self.assertIn('data-search-url="/global-search/"', html)
-        self.assertIn('aria-modal="true"', html)
+        self.assertIn('role="combobox" aria-label="Globalne wyszukiwanie"', html)
+        self.assertIn('aria-haspopup="dialog"', html)
         self.assertIn('Szukaj zadań, osób, projektów…', html)
         self.assertNotIn('id="sidebar-quick-search"', html)
         self.assertIn('data-sidebar-collapse-toggle', html)
-        self.assertIn('data-icon="chevron-left"', html)
-        self.assertIn('data-icon="chevron-right"', html)
+        self.assertIn('data-icon="panel-left"', html)
+        self.assertNotIn('class="sidebar-collapse-icon', html)
 
     def test_collapsed_sidebar_keeps_all_navigation_actions_available(self):
         request = SimpleNamespace(
@@ -473,9 +447,9 @@ class SidebarActiveStateTests(SimpleTestCase):
             '        display: block;',
             css,
         )
-        self.assertIn('html.sidebar-collapsed .sidebar-workspace-switcher {', css)
+        self.assertIn('html.sidebar-collapsed .sidebar .sidebar-workspace-switcher {', css)
         self.assertIn(
-            'html.sidebar-collapsed .sidebar-workspace-toggle,\n'
+            'html.sidebar-collapsed .sidebar .sidebar-workspace-toggle,\n'
             '    html.sidebar-collapsed .sidebar .logo {\n'
             '        gap: 0;',
             css,
@@ -486,9 +460,9 @@ class SidebarActiveStateTests(SimpleTestCase):
             '        padding-inline: var(--sidebar-rail-gutter);',
             css,
         )
-        self.assertIn('html.sidebar-is-collapsing .sidebar-workspace-toggle {', css)
+        self.assertIn('html.sidebar-is-collapsing .sidebar .sidebar-workspace-toggle {', css)
         self.assertIn(
-            'html.sidebar-collapsed .sidebar-workspace-avatar {\n'
+            'html.sidebar-collapsed .sidebar .sidebar-workspace-avatar {\n'
             '        width: var(--sidebar-avatar-size);\n'
             '        height: var(--sidebar-avatar-size);\n'
             '        flex-basis: var(--sidebar-avatar-size);',

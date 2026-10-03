@@ -1,6 +1,6 @@
 (function () {
+    if (window.AncoreGlobalSearch) return;
     const panel = document.querySelector('[data-global-search-panel]');
-    const toggle = document.querySelector('[data-global-search-toggle]');
     const closeButton = document.querySelector('[data-global-search-close]');
     const backdrop = document.querySelector('[data-global-search-backdrop]');
     const form = document.querySelector('[data-global-search-form]');
@@ -8,8 +8,7 @@
     const clearButton = document.querySelector('[data-global-search-clear]');
     const results = document.querySelector('[data-global-search-results]');
     const status = document.querySelector('[data-global-search-status]');
-    const switcher = toggle?.closest('[data-sidebar-view-switcher]');
-    const defaultView = switcher?.querySelector('[data-sidebar-default-view]');
+    const topbar = document.querySelector('[data-app-topbar]');
     const searchUrl = panel?.dataset.searchUrl || '';
     const minimumQueryLength = 2;
     const debounceDelay = 180;
@@ -17,8 +16,9 @@
     let debounceTimer = null;
     let restoreFocusTo = null;
     let activeResultIndex = -1;
+    let inertElements = [];
 
-    if (!panel || !toggle || !input || !results || !searchUrl) return;
+    if (!panel || !input || !results || !searchUrl) return;
 
     function iconNode(iconName) {
         const icon = document.createElement('i');
@@ -293,53 +293,43 @@
     }
 
     function isOpen() {
-        return toggle.getAttribute('aria-expanded') === 'true';
+        return !panel.hidden;
     }
 
-    function syncSwitcher() {
-        const items = Array.from(switcher?.querySelectorAll('.sidebar-view-switcher__item') || []);
-        const expandedItem = items.find(item => item.getAttribute('aria-expanded') === 'true');
-
-        items.forEach(function (item) {
-            const isCurrentPage = item.getAttribute('aria-current') === 'page';
-            item.classList.toggle('is-active', expandedItem ? item === expandedItem : isCurrentPage);
-        });
-    }
-
-    function setOpen(open) {
+    function setOpen(open, options = {}) {
         if (open === isOpen()) {
-            if (open) input.focus({ preventScroll: true });
+            if (open && options.focus !== false) input.focus({ preventScroll: true });
             return;
         }
 
-        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        syncSwitcher();
+        input.setAttribute('aria-expanded', String(open));
         document.body.classList.toggle('global-search-open', open);
         panel.hidden = !open;
         backdrop.hidden = !open;
 
         if (open) {
-            restoreFocusTo = document.activeElement.closest('.global-search-panel') ? toggle : document.activeElement;
+            restoreFocusTo = document.activeElement.closest('.global-search-panel') ? input : document.activeElement;
             window.dispatchEvent(new CustomEvent('ancore:global-search-open'));
-            window.setTimeout(function () {
+            const background = Array.from(document.querySelectorAll('main.main-content, .sidebar'));
+            inertElements = background.filter(element => element instanceof HTMLElement && !element.inert);
+            inertElements.forEach(element => { element.inert = true; });
+            if (options.focus !== false) {
                 input.focus({ preventScroll: true });
                 input.select();
-            }, 20);
+            }
+            if (options.search !== false) queueSearch();
         } else {
             window.clearTimeout(debounceTimer);
             requestController?.abort();
-            restoreFocusTo?.focus?.({ preventScroll: true });
+            inertElements.forEach(element => { element.inert = false; });
+            inertElements = [];
+            if (options.restoreFocus !== false) restoreFocusTo?.focus?.({ preventScroll: true });
             restoreFocusTo = null;
         }
     }
 
-    toggle.addEventListener('click', function () {
-        setOpen(!isOpen());
-    });
-    defaultView?.addEventListener('click', function (event) {
-        if (!isOpen()) return;
-        event.preventDefault();
-        setOpen(false);
+    input.addEventListener('click', function () {
+        setOpen(true, { focus: false });
     });
     closeButton?.addEventListener('click', function () {
         setOpen(false);
@@ -351,8 +341,16 @@
         event.preventDefault();
         openSelectedResult();
     });
-    input.addEventListener('input', queueSearch);
+    input.addEventListener('input', function () {
+        setOpen(true, { focus: false, search: false });
+        queueSearch();
+    });
     input.addEventListener('keydown', function (event) {
+        if (!isOpen() && ['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) {
+            event.preventDefault();
+            setOpen(true);
+            return;
+        }
         if (event.key === 'ArrowDown') {
             event.preventDefault();
             setActiveResult(activeResultIndex + 1);
@@ -365,6 +363,7 @@
         }
     });
     clearButton?.addEventListener('click', function () {
+        setOpen(true, { focus: false, search: false });
         input.value = '';
         clearButton.hidden = true;
         runSearch('');
@@ -379,7 +378,16 @@
         if (event.target.closest('[data-global-search-result]')) setOpen(false);
     });
     window.addEventListener('ancore:notifications-open', function () {
-        setOpen(false);
+        setOpen(false, { restoreFocus: false });
+    });
+    window.addEventListener('ancore:workspace-menu-open', function () {
+        setOpen(false, { restoreFocus: false });
+    });
+    window.addEventListener('ancore:sidebar-toggle', function () {
+        setOpen(false, { restoreFocus: false });
+    });
+    document.addEventListener('ancore:content-unloading', function () {
+        setOpen(false, { restoreFocus: false });
     });
 
     document.addEventListener('keydown', function (event) {
@@ -393,18 +401,19 @@
             return;
         }
         if (event.key === 'Tab' && isOpen()) {
-            const focusable = Array.from(panel.querySelectorAll('button:not([hidden]), input, a[href]'))
-                .filter(element => !element.disabled && element.offsetParent !== null);
+            const selector = 'button:not(:disabled), input:not(:disabled), a[href]';
+            const focusable = [...(topbar?.querySelectorAll(selector) || []), ...panel.querySelectorAll(selector)]
+                .filter(element => {
+                    const rect = element.getBoundingClientRect();
+                    return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden'
+                        && !element.closest('[inert]') && rect.right > 0 && rect.left < innerWidth;
+                });
             if (focusable.length) {
-                const first = focusable[0];
-                const last = focusable[focusable.length - 1];
-                if (event.shiftKey && document.activeElement === first) {
-                    event.preventDefault();
-                    last.focus();
-                } else if (!event.shiftKey && document.activeElement === last) {
-                    event.preventDefault();
-                    first.focus();
-                }
+                const index = focusable.indexOf(document.activeElement);
+                const next = index < 0 ? (event.shiftKey ? focusable.length - 1 : 0)
+                    : (index + (event.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
+                event.preventDefault();
+                focusable[next].focus();
             }
             return;
         }
@@ -416,4 +425,5 @@
             setOpen(true);
         }
     });
+    window.AncoreGlobalSearch = { close: () => setOpen(false) };
 })();
