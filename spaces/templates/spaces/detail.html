@@ -1,8 +1,14 @@
 {% extends 'spaces/base.html' %}
 {% block work_title %}{{ space.project.name }}{% endblock %}
-{% block work_heading %}<a href="{{ spaces_url }}" class="tasks-issue-close" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title">{{ space.project.name }}</h1><span class="work-caption">{{ space.key }}</span>{% endblock %}
+{% block work_heading %}<h1 class="tasks-topbar-title">{{ space.project.name }}</h1>{% endblock %}
 {% block work_actions %}{% if can_edit %}<a href="{{ create_item_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie</a>{% endif %}{% endblock %}
-{% block work_navigation %}<nav class="notifications-tabs work-tabs" aria-label="Widoki przestrzeni">{% for nav in navigation %}<a href="{{ nav.url }}"{% if view == nav.key %} aria-current="page"{% endif %}>{{ nav.label }}</a>{% endfor %}</nav>{% endblock %}
+{% block work_navigation %}
+<nav class="notifications-tabs work-tabs work-tabs--views" aria-label="Widoki przestrzeni">
+    {% for nav in navigation %}
+    <a href="{{ nav.url }}"{% if view == nav.key %} aria-current="page"{% endif %}><i data-icon="{{ nav.icon }}" aria-hidden="true"></i>{{ nav.label }}</a>
+    {% endfor %}
+</nav>
+{% endblock %}
 {% block work_toolbar %}{% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/item_toolbar.html' %}{% endif %}{% endblock %}
 {% block work_content_class %}{% if view == 'list' or view == 'board' %} work-content--tasks{% endif %}{% endblock %}
 {% block work_content %}

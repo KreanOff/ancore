@@ -15,6 +15,16 @@ Przegląd, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Wszystkie zadania i Zespoły.
 
+Nagłówek otwartej przestrzeni pokazuje samą nazwę, bez strzałki powrotu
+i klucza obok niej. Ten sam nagłówek obowiązuje we wszystkich jej zakładkach.
+Zakładki widoków mają wariant `work-tabs--views`: tekst 15px z tokenu
+`--font-size-lg` oraz dekoracyjne ikony 18px z `AncoreIcons`, odsunięte o 8px
+od etykiety. Zachowują wspólne podkreślenie aktywnego widoku i przewijanie
+poziome na wąskim ekranie. Najechanie na nieaktywną zakładkę pokazuje szare
+podkreślenie (`--system-interaction`), tak jak w katalogu Zadań; po odsunięciu
+kursora podkreślenie znika. Aktywna zakładka zachowuje turkusowe podkreślenie
+także pod kursorem. Katalogi przestrzeni i zespołów zachowują zwykłe zakładki.
+
 Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
 `data-sidebar-group="spaces"` w `layout.js`. Stan zapisuje istniejąca
 preferencja `ancoreSidebarCollapsedGroups`; pozostaje zachowany po odświeżeniu

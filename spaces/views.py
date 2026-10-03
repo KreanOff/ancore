@@ -91,12 +91,20 @@ def detail_context(request, space, view):
     if view not in allowed_views:
         view = 'overview'
     base = app_url(request, f'{space.pk}/')
-    navigation = [('overview', 'Przegląd'), ('list', 'Lista zadań'), ('board', 'Aktywny sprint' if space.template == 'scrum' else 'Tablica')]
+    navigation = [
+        ('overview', 'Przegląd', 'layout-dashboard'),
+        ('list', 'Lista zadań', 'list-checks'),
+        ('board', 'Aktywny sprint' if space.template == 'scrum' else 'Tablica', 'kanban'),
+    ]
     if 'backlog' in allowed_views:
-        navigation.insert(1, ('backlog', 'Backlog'))
+        navigation.insert(1, ('backlog', 'Backlog', 'layers'))
     if space.kind == 'service':
-        navigation[1] = ('list', 'Kolejka zgłoszeń')
-    navigation += [('timeline', 'Oś czasu'), ('reports', 'Raporty'), ('settings', 'Ustawienia przestrzeni')]
+        navigation[1] = ('list', 'Kolejka zgłoszeń', 'list-checks')
+    navigation += [
+        ('timeline', 'Oś czasu', 'calendar-range'),
+        ('reports', 'Raporty', 'chart-no-axes-combined'),
+        ('settings', 'Ustawienia przestrzeni', 'settings'),
+    ]
     query = request.GET.get('q', '').strip()[:120]
     items = visible_items(request).filter(space=space)
     group = request.GET.get('group', '')
@@ -150,7 +158,7 @@ def detail_context(request, space, view):
         sprint.finished_count = all_items.filter(sprint=sprint, task__status='closed').count()
     now = timezone.now()
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
-    return {**base_context(request), 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.project.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'group_filter': group if group.isdecimal() and len(group) < 19 else '', 'assignee_filter': request.GET.get('assignee', '')}
+    return {**base_context(request), 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.project.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'group_filter': group if group.isdecimal() and len(group) < 19 else '', 'assignee_filter': request.GET.get('assignee', '')}
 
 
 @login_required
