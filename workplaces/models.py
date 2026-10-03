@@ -18,6 +18,7 @@ class Workplace(models.Model):
     description = models.TextField(blank=True)
     code = models.CharField(max_length=20, blank=True)
     slug = models.SlugField(max_length=160, blank=True, unique=True)
+    avatar = models.CharField(max_length=32, blank=True, default='')
     workplace_photo = models.FileField(
         blank=True,
         upload_to='workplace_photos/',
@@ -190,13 +191,14 @@ class SidebarFavorite(models.Model):
         return f'{self.user} - {self.workplace} - {self.item_key}'
 
 
-def create_workplace_for_user(user, name, workplace_photo=None, description='', code=''):
+def create_workplace_for_user(user, name, workplace_photo=None, description='', code='', avatar=''):
     with transaction.atomic():
         workplace_data = {
             'owner': user,
             'name': name,
             'description': description,
             'code': code,
+            'avatar': avatar,
         }
         if workplace_photo:
             workplace_data['workplace_photo'] = workplace_photo

@@ -3,15 +3,21 @@ import uuid
 from django import forms
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.db import transaction
 
+from core.avatars import AVATARS, AVATAR_CHOICES, preset_avatar
 from core.upload_validation import validate_image_crop, validate_image_upload
 from .models import Workplace
+from .templatetags.workplace_avatar import workplace_avatar
 
 
 WORKPLACE_PHOTO_MAX_SIZE = getattr(settings, 'MAX_WORKPLACE_PHOTO_SIZE', 5 * 1024 * 1024)
 
 
 class WorkplaceForm(forms.ModelForm):
+    avatar = forms.ChoiceField(
+        label='Awatar Workspace', choices=AVATAR_CHOICES, required=False, widget=forms.RadioSelect,
+    )
     workplace_photo = forms.FileField(
         label='Logo miejsca pracy',
         required=False,
@@ -39,7 +45,7 @@ class WorkplaceForm(forms.ModelForm):
 
     class Meta:
         model = Workplace
-        fields = ['workplace_photo', 'name', 'code', 'description']
+        fields = ['avatar', 'workplace_photo', 'name', 'code', 'description']
         error_messages = {
             'name': {
                 'required': 'Wpisz nazwę miejsca pracy.',
@@ -74,6 +80,34 @@ class WorkplaceForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
+        self.initial['avatar'] = 'upload' if self.instance.workplace_photo else self.instance.avatar or 'auto'
+        self.avatar_options = [preset_avatar(key) for key, _ in AVATARS]
+        self.automatic_avatar = preset_avatar(seed=self.instance.pk or 0)
+        self.current_avatar = workplace_avatar(self.instance)
+        self.original_photo = self.instance.workplace_photo.name
+
+    def clean_avatar(self):
+        # Older clients can still submit only the existing photo/settings fields.
+        if 'avatar' not in self.data:
+            if self.data.get('workplace_photo_remove') == '1':
+                return 'auto'
+            if self.files.get('workplace_photo') or self.data.get('workplace_photo_crop'):
+                return 'upload'
+            return self.initial['avatar']
+        return self.cleaned_data.get('avatar') or 'auto'
+
+    def clean(self):
+        data = super().clean()
+        self.avatar_mode = data.get('avatar', 'auto')
+        if self.avatar_mode == 'upload':
+            if (not data.get('workplace_photo') and not data.get('workplace_photo_crop')
+                    and not self.original_photo and not self.errors.get('workplace_photo')
+                    and not self.errors.get('workplace_photo_crop')):
+                self.add_error('workplace_photo', 'Wybierz obraz do przesłania.')
+        else:
+            data['workplace_photo'] = None
+        data['avatar'] = self.avatar_mode if self.avatar_mode not in {'auto', 'upload'} else ''
+        return data
 
     def clean_name(self):
         name = ' '.join((self.cleaned_data.get('name') or '').split())
@@ -108,6 +142,8 @@ class WorkplaceForm(forms.ModelForm):
         return (self.cleaned_data.get('description') or '').strip()
 
     def clean_workplace_photo(self):
+        if 'avatar' in self.data and self.data.get('avatar') != 'upload':
+            return None
         workplace_photo = self.cleaned_data.get('workplace_photo')
 
         if not workplace_photo:
@@ -116,6 +152,8 @@ class WorkplaceForm(forms.ModelForm):
         return validate_image_upload(workplace_photo, WORKPLACE_PHOTO_MAX_SIZE)
 
     def clean_workplace_photo_crop(self):
+        if 'avatar' in self.data and self.data.get('avatar') != 'upload':
+            return None
         return validate_image_crop(
             self.cleaned_data.get('workplace_photo_crop'), WORKPLACE_PHOTO_MAX_SIZE,
             error_message='Nie udało się odczytać przyciętego logo.',
@@ -129,15 +167,30 @@ class WorkplaceForm(forms.ModelForm):
         self.apply_photo(workplace, commit=False)
 
         if commit:
-            workplace.save()
+            with transaction.atomic():
+                workplace.save()
+                self.cleanup_previous_photo(workplace)
 
         return workplace
+
+    def cleanup_previous_photo(self, workplace):
+        old_name = self.original_photo
+        if old_name and old_name != workplace.workplace_photo.name:
+            storage = workplace._meta.get_field('workplace_photo').storage
+
+            def cleanup():
+                if not Workplace.objects.filter(workplace_photo=old_name).exists():
+                    storage.delete(old_name)
+            transaction.on_commit(cleanup, robust=True)
 
     def apply_photo(self, workplace, commit=True):
         photo_crop = self.cleaned_data.get('workplace_photo_crop')
 
-        if self.cleaned_data.get('workplace_photo_remove') and not photo_crop:
-            workplace.workplace_photo.delete(save=False)
+        if self.avatar_mode != 'upload':
+            workplace.workplace_photo = ''
+            photo_crop = None
+        elif self.cleaned_data.get('workplace_photo_remove') and not photo_crop:
+            workplace.workplace_photo = ''
 
         if photo_crop:
             filename = f'workplace_{workplace.pk or "new"}_{uuid.uuid4().hex}.{photo_crop["extension"]}'

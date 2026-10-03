@@ -38,7 +38,7 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, reverse('project_field_settings'))
         self.assertContains(response, 'Wartości pól projektu')
         self.assertContains(response, 'data-sticky-note-toggle')
-        self.assertContains(response, 'sidebar-sticker-toggle')
+        self.assertNotContains(response, 'sidebar-sticker-toggle')
         self.assertContains(response, 'id="app-sticky-note"')
         self.assertContains(response, 'data-sticky-note-resize')
         self.assertContains(response, 'src="/static/js/sticky-note.js?v=')

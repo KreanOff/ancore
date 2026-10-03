@@ -1,5 +1,7 @@
 from django import template
 
+from core.avatars import preset_avatar
+
 from accounts.avatar import avatar_color_class, avatar_color_style_from_seed
 
 
@@ -32,6 +34,7 @@ def workplace_avatar(workplace):
             photo_url = ''
 
     return {
+        **preset_avatar(getattr(workplace, 'avatar', ''), seed),
         'color_class': avatar_color_class(seed),
         'photo_url': photo_url,
         **avatar_color_style_from_seed(seed),

@@ -96,6 +96,18 @@ Django. Przy wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
 
+Awatary Workspace wymagają migracji `workplaces.0009_workplace_avatar`.
+Dodaje ona puste pole motywu; zachowuje istniejące obrazy. Uruchamiaj
+`manage.py test workplaces.test_avatars spaces.test_avatars core.test_file_lifecycle`
+oraz regresje `workplaces` i `spaces`. Testy obejmują tworzenie/edycję, wszystkie
+motywy, zwykłe/scoped ekrany, role, CSRF, walidację uploadu i kadru, zachowanie
+starszych formularzy, zastępowanie obrazu i rollback. W przeglądarce sprawdź
+Workspace → edycja → kliknięcie awatara lub „Zmień” → okno wyboru → zatwierdzenie
+→ zapis Workspace, tabelę i przełącznik, ponowne wejście, własny obraz z kadrowaniem,
+anulowanie motywu i kadru, zachowanie szkicu głównego formularza, błąd formularza,
+Escape/fokus/Tab w zagnieżdżonych oknach oraz desktop i telefon.
+
+
 Awatary przestrzeni wymagają migracji `spaces.0003_space_avatar_space_avatar_photo`.
 `spaces.test_avatars` sprawdza domyślny wybór, zapis ikon, zwykłe/scoped adresy,
 role, prywatny upload, walidację, cofnięcie dostępu, CSRF, podmianę i usuwanie

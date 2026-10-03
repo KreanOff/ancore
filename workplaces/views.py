@@ -38,8 +38,9 @@ def workplaces(request):
                 ),
                 description=form.cleaned_data.get('description', ''),
                 code=form.cleaned_data.get('code', ''),
+                avatar=form.cleaned_data.get('avatar', ''),
             )
-            if form.cleaned_data.get('workplace_photo_crop'):
+            if form.avatar_mode == 'upload' and form.cleaned_data.get('workplace_photo_crop'):
                 form.apply_photo(workplace)
             messages.success(request, 'Miejsce pracy utworzone.')
             return redirect(workplace_management_url(workplace, 'workspaces'))
@@ -110,6 +111,11 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
     )
     if management_view in {'members', 'invitations'}:
         management_view = 'workspaces'
+    avatar_edit_form = edit_form
+    if avatar_edit_form is None and team_workplace is not None:
+        avatar_edit_form = WorkplaceForm(
+            instance=team_workplace, user=team_workplace.owner, auto_id='workplace-edit-%s',
+        )
     return render(request, 'workplaces/workplaces.html', {
         'pending_invitations': pending_invitations,
         'response_invitation': pending_invitations[invitation_index] if pending_invitations else None,
@@ -124,6 +130,7 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
         'workplace_edit_modal_open': workplace_edit_modal_open,
         'workplace_edit_tab': workplace_edit_tab,
         'edit_form': edit_form,
+        'avatar_edit_form': avatar_edit_form,
         **selected_team_context,
         'management_view': management_view,
         'show_invitations': workplace_edit_tab == 'invitations',
@@ -277,7 +284,7 @@ def update_workplace(request, workplace_id):
     workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
     if not can_manage_team(request.user, workplace):
         raise PermissionDenied
-    form = WorkplaceForm(request.POST, request.FILES, instance=workplace, user=workplace.owner)
+    form = WorkplaceForm(request.POST, request.FILES, instance=workplace, user=workplace.owner, auto_id='workplace-edit-%s')
     if form.is_valid():
         form.save()
         messages.success(request, 'Ustawienia miejsca pracy zapisane.')

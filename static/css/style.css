@@ -3,7 +3,7 @@
 @import 'base/variables.css?v=20261003-border-visibility-2pct';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261003-border-visibility-2pct';
-@import 'layout/main.css?v=20261003-topbar-search-wider';
+@import 'layout/main.css?v=20261003-topbar-sticker';
 @import 'layout/responsive.css?v=20261003-sidebar-content-width';
 @import 'components/cards.css?v=20261003-border-visibility-2pct';
 @import 'components/buttons.css?v=20260923-secondary-gray-hover';
@@ -670,8 +670,8 @@ body :where(input, textarea)::placeholder {
 }
 
 .sidebar-header-action svg {
-    width: 20px;
-    height: 20px;
+    width: 13px;
+    height: 13px;
     stroke-width: 2;
 }
 
@@ -1278,19 +1278,33 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
 .sidebar-group-header {
     display: flex;
     align-items: center;
+    padding-right: 4px;
+    border-radius: 8px;
+}
+
+.sidebar-group-header:hover,
+.sidebar-group-header:focus-within,
+.sidebar-group-header:has(.sidebar-header-action[aria-expanded="true"]) {
+    background: var(--system-interaction-soft);
 }
 
 .sidebar .sidebar-group-header .sidebar-group-toggle {
     flex: 1;
     min-width: 0;
     width: auto;
+    background: transparent;
 }
 
 .sidebar-group-actions .sidebar-header-action {
-    width: var(--control-height);
-    height: var(--control-height);
+    width: calc(var(--control-height) - 4px);
+    height: calc(var(--control-height) - 4px);
     cursor: pointer;
     text-decoration: none;
+}
+
+.sidebar-group-actions .sidebar-header-action:is(:hover, :focus-visible, [aria-expanded="true"]) {
+    border-color: transparent;
+    background: var(--system-interaction-soft);
 }
 
 .sidebar-group-menu {
@@ -1610,6 +1624,10 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
     html.sidebar-collapsed .sidebar-group-actions,
     html.sidebar-collapsed .sidebar-group-chevron {
         display: none !important;
+    }
+
+    html.sidebar-collapsed .sidebar-group-header {
+        padding-right: 0;
     }
 
     html.sidebar-collapsed .sidebar .sidebar-workspace-switcher {

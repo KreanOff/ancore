@@ -43,10 +43,18 @@ obsługuje osobny mechanizm opisany w Mechanizmach.
 [middleware](../workplaces/middleware.py), [widoki](../workplaces/views.py),
 [nawigacja](../workplaces/navigation.py).
 
-**Funkcje:** wspólny panel z zakładkami „Workspace” i „Zaproszenia”
-(otrzymane) oraz zakładkami „Członkowie” i „Wysłane zaproszenia”
-w oknie edycji miejsca pracy; utworzenie, edycja, usunięcie i przełączenie;
-nazwa, opis, kod, slug i obraz; ulubione miejsca w nawigacji oraz ich kolejność.
+**Funkcje:** katalog Workspace oraz zakładki „Główna”, „Członkowie”
+i „Wysłane zaproszenia” w oknie edycji miejsca pracy. Otrzymane zaproszenia
+są dostępne przez powiadomienia. Utworzenie, edycja, usunięcie i przełączenie;
+nazwa, opis, kod, slug i awatar; ulubione miejsca w nawigacji oraz ich kolejność.
+`Workplace.avatar` zapisuje identyfikator jednej z 24 ilustracji współdzielonych
+z Przestrzeniami; pusta wartość oznacza wybór automatyczny według ID.
+`workplace_photo` zachowuje istniejący upload i kadrowanie własnego obrazu.
+Wybór ilustracji usuwa poprzedni plik po zatwierdzeniu transakcji.
+Właściciel i administrator otwierają wybór kliknięciem awatara lub „Dodaj”/„Zmień”
+w formularzu tworzenia lub edycji. Wybór zatwierdzają w osobnym oknie,
+a następnie zapisują Workspace. Anulowanie okna przywraca poprzedni awatar.
+Zwykły członek ma podgląd. Zapis jest widoczny w katalogu i przełączniku Workspace.
 Po zalogowaniu, jeśli nie ma Workspace, usługa może utworzyć domyślne
 „Moje miejsce pracy”.
 

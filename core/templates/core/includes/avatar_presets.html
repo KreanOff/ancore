@@ -1,0 +1,14 @@
+<fieldset class="space-avatar-presets">
+    <legend>Wybierz gotowy awatar</legend>
+    <div class="space-avatar-grid">
+        {% for option in form.avatar_options %}
+        <label class="space-avatar-option" title="{{ option.label }}">
+            <input class="u-sr-only" type="radio" name="avatar" value="{{ option.key }}"{% if form.avatar.value == option.key %} checked{% endif %}>
+            <span class="profile-avatar space-avatar space-avatar--picker space-avatar-art {{ option.preset_class }}" aria-hidden="true"></span>
+            <span class="u-sr-only">{{ option.label }}</span>
+        </label>
+        {% endfor %}
+    </div>
+    <label class="space-avatar-auto"><input type="radio" name="avatar" value="auto"{% if form.avatar.value == 'auto' %} checked{% endif %}> Automatyczny awatar</label>
+    {% if form.avatar.errors %}<div class="tasks-modal__errors" role="alert">{{ form.avatar.errors }}</div>{% endif %}
+</fieldset>

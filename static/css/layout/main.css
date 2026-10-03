@@ -162,6 +162,10 @@ body:has(> .app-topbar) {
 }
 
 @media (max-width: 1024px) {
+    .app-topbar {
+        grid-template-columns: minmax(0, 1fr) minmax(0, min(672px, 55.2%)) minmax(calc(3 * var(--app-topbar-control-height) + var(--app-topbar-avatar-size) + 1.5rem), 1fr);
+    }
+
     .app-topbar__username {
         display: none;
     }
@@ -197,9 +201,7 @@ body:has(> .app-topbar) {
     }
 
     .app-topbar {
-        --app-topbar-actions-width: calc(3 * var(--app-topbar-control-height) + 0.5rem);
-
-        grid-template-columns: var(--app-topbar-actions-width) minmax(0, 1fr) var(--app-topbar-actions-width);
+        grid-template-columns: auto minmax(0, 1fr) auto;
         gap: 0.5rem;
         padding-inline: 0.65rem;
     }

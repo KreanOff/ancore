@@ -24,7 +24,7 @@
                         <input type="hidden" name="view" value="{{ management_view }}">
                         {% if edit_form.errors %}<div class="tasks-modal__errors" role="alert">{% for field in edit_form %}{% for error in field.errors %}<p>{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}{% for error in edit_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
                         <div class="workplace-modal__content" data-profile-photo-layout>
-                            {% if can_manage_team %}{% include 'workplaces/includes/workplace_photo_editor.html' with workplace_logo=workplace_logo photo_button_label='Zmień' %}{% endif %}
+                            {% if can_manage_team %}{% include 'workplaces/includes/workplace_photo_editor.html' with form=avatar_edit_form workplace_logo=workplace_logo photo_button_label='Zmień' form_id='workplace-edit-form' %}{% endif %}
                             <div class="workplace-modal__details">
                                 <div class="tasks-form-field">
                                     <label for="workplace-edit-name">Nazwa miejsca pracy</label>

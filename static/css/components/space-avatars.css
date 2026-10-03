@@ -62,3 +62,9 @@
 .space-avatar-art--star { --space-avatar-x: 59.876543%; --space-avatar-y: 97.959184%; }
 .space-avatar-art--ship { --space-avatar-x: 79.629630%; --space-avatar-y: 97.959184%; }
 .space-avatar-art--smile { --space-avatar-x: 99.382716%; --space-avatar-y: 97.959184%; }
+
+/* Workspace keeps its existing row/header sizes and photo cropper. */
+.profile-avatar.profile-avatar--workplace.space-avatar-art,
+.profile-avatar.sidebar-workspace-avatar.space-avatar-art { border-radius: var(--radius); }
+.workplace-avatar-modal .tasks-modal__body { display: block; }
+.workplace-avatar-modal .profile-photo-input[hidden] { display: none; }

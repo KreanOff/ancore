@@ -32,7 +32,7 @@ Ilustracje mają pełnokolorowe tła i wypełnione kształty. Korzystają z jedn
 lokalnego atlasu PNG w `static/img/space-avatars/` i klas `space-avatar-art--*`.
 Zachowują stabilne identyfikatory wcześniejszych ikon. W pickerze mają 56px
 (40px na telefonie); pozostałe rozmiary awatarów pozostają bez zmian.
-Zestaw dotyczy wyłącznie awatarów przestrzeni, a ikony kontrolek nadal używają
+Zestaw jest współdzielony z Workspace, a ikony kontrolek nadal używają
 `AncoreIcons`. Wybór ilustracji czyści niezapisany plik, a zamknięcie zwalnia jego podgląd.
 Zakładki widoków mają wariant `work-tabs--views`: tekst 13,5px
 oraz dekoracyjne ikony 18px z `AncoreIcons`, odsunięte o 8px
@@ -49,7 +49,12 @@ i częściowej nawigacji. Przycisk ma `aria-controls` i `aria-expanded`
 oraz obsługuje Enter/Spację. Ikona folderów jest stale widoczna przed nazwą;
 nagłówek nie pokazuje strzałki zwijania. Wspólny wariant `sidebar-group-header` umieszcza
 obok przycisku zwijania „+” otwierający kreator i „…” z opcją „Zarządzaj
-przestrzeniami”. Menu korzysta z `row-actions.js`, natywnego popovera i stylów
+przestrzeniami”. Obie ikony mają 13px w przyciskach 28px
+(`--control-height` minus 4px). Nagłówek ma wspólne zaokrąglone szare tło
+po najechaniu, przy fokusie lub otwartym menu. Plus i trzy kropki otrzymują
+dodatkowe szare podświetlenie bez ramki przy najechaniu, fokusie klawiatury
+lub otwarciu menu. Obie warstwy używają `--system-interaction-soft`.
+Menu korzysta z `row-actions.js`, natywnego popovera i stylów
 menu Zadań; obsługuje klawiaturę, Escape i przywrócenie fokusu. Link do katalogu
 w menu zachowuje klucz ulubionego `spaces`. Podmenu zawiera same przestrzenie,
 bez pozycji „Wszystkie przestrzenie” i powtórzonego kreatora. Przy zwiniętym
@@ -353,11 +358,13 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   `--sidebar-bg`, identyczne jak boczna nawigacja, i wysokość `--app-topbar-height`
   (44px przed skalowaniem UI). Po lewej zawiera przełącznik Workspace
   z avatarem i nazwą, na środku jedno pole globalnego wyszukiwania,
-  a po prawej powiadomienia, ustawienia i profil z avatarem.
+  a po prawej Sticker, powiadomienia, ustawienia i profil z avatarem.
   Symetryczne boczne kolumny utrzymują wyszukiwarkę na środku całego paska,
   niezależnie od szerokości sidebaru oraz długości nazw Workspace i profilu.
   Pole ma maksymalnie 672px i zajmuje do 55,2% szerokości wewnętrznej paska.
-  Na telefonie wypełnia miejsce między bocznymi kontrolkami.
+  Na telefonie wypełnia miejsce między bocznymi kontrolkami, których kolumny
+  dopasowują się do zawartości. Na tablecie prawa kolumna rezerwuje miejsce
+  na wszystkie cztery kontrolki, aby nie nachodziły na wyszukiwanie.
   Kontrolki paska mają wspólną wysokość `--app-topbar-control-height`
   (36px z `--dropdown-control-height`), ikony 20px, a tekst nazw i pola 14px.
   Awatary Workspace i profilu mają po 33px (`--app-topbar-avatar-size`)
@@ -402,7 +409,7 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   są ukryte. `ancore:content-loaded` czyści frazę i wyniki bez ponownego podpinania
   listenerów. Zmiana frazy od razu usuwa stare wyniki, aby Enter nie otworzył
   elementu z poprzedniego zapytania; anulowane odpowiedzi i błędy są ignorowane.
-- Stała nawigacja z modułami, ulubionymi i Stickerem.
+- Stała nawigacja z modułami i ulubionymi.
   Menu zaczyna się od Favorites, bez osobnego przycisku domu.
   Do strony głównej prowadzi istniejący link Dashboard.
 - Stan zwinięty/rozwinięty i regulowana szerokość sidebaru. Odsunięcie i szerokość
@@ -438,7 +445,11 @@ a pod wynikami pojawia się prośba o doprecyzowanie frazy. Komunikat czytnika
 ekranu podaje wtedy liczbę pokazanych wyników, nie całkowitą liczbę dopasowań.
 Wygląd panelu, obsługa klawiatury i stany pusty/błąd pozostają wspólne.
 
-Sticker zachowuje wygląd i kontrolki, ale zapisuje treść oraz geometrię osobno
+Sticker otwiera przycisk z ikoną `sticky-note` po prawej stronie górnego paska,
+przed dzwonkiem, z etykietą dostępną i podpowiedzią „Sticker”. Używa wspólnego
+`tasks-icon-button app-topbar__action`; `aria-expanded` oznacza otwartą notatkę.
+Menu boczne nie zawiera już tego przycisku ani pustej stopki z separatorem.
+Sticker zachowuje wygląd i kontrolki oraz zapisuje treść i geometrię osobno
 dla zalogowanego konta. Po przełączeniu konta pojawia się jego własna notatka
 (pusta przy pierwszym użyciu); powrót przywraca poprzednią. Dane starej notatki
 bez właściciela nie są automatycznie przypisywane ani wyświetlane innemu kontu.
@@ -1557,6 +1568,34 @@ Wynik weryfikacji zapisuj w podsumowaniu zadania. Jeśli nie oglądano ekranu
 w przeglądarce, nazwij weryfikację przeglądem kodu, a nie wizualnym testem.
 
 ## 12. Zarządzanie Workspace i zespołem
+
+Workspace korzysta z tych samych 24 ilustracji co Przestrzenie. Wspólne
+`core/avatars.py` i `core/includes/avatar_presets.html` definiują motywy
+oraz siatkę radio; `space-avatars.css` obsługuje atlas i zaznaczenie.
+W formularzach tworzenia i edycji kliknięcie awatara albo „Dodaj”/„Zmień”
+otwiera osobne okno „Wybierz awatar” z powłoką `app-modal-panel--compact`,
+tak jak w Przestrzeniach. Siatka nie jest widoczna w głównym formularzu.
+Okno zawiera ilustracje, wybór automatyczny i własny obraz z przyciskiem
+„Wybierz obraz”, przeciąganiem oraz istniejącym kadrowaniem. Zatwierdzenie
+kadru zaznacza „Własny obraz”. „Zapisz” w oknie zatwierdza wybór w formularzu
+Workspace; zapis Workspace utrwala go w bazie. „Anuluj”, krzyżyk, tło i Escape
+przywracają poprzedni wybór wraz z obrazem, pozostawiając formularz otwarty
+i zachowując jego pozostałe pola. Fokus wraca do klikniętego awatara lub przycisku.
+Na czas otwarcia okno jest przenoszone nad formularz, a tło staje się `inert`.
+Pola zachowują powiązanie z formularzem przez atrybut `form`; po zamknięciu
+wracają na swoje miejsce. Tab pozostaje w najwyższym oknie, także przy kadrowaniu.
+Awatar automatyczny jest stabilnie dobierany według ID, dotychczasowe obrazy
+pozostają widoczne. Błędy zachowują wybrany motyw.
+Edycja wymaga właściciela lub administratora.
+Ilustracje mają zaokrąglone kwadratowe tło; rozmiary tabeli i przełącznika
+pozostają dotychczasowe. Te same motywy pojawiają się w katalogu, bieżącym
+Workspace i menu przełączania. `workplace-avatars.js` inicjalizuje picker
+również po `ancore:content-loaded`, bez powielania listenerów.
+`profile.js` udostępnia snapshot/restore zaakceptowanego kadru oraz zdarzenia
+`ancore:photo-preview`, `ancore:photo-saved` i `ancore:photo-error`. Pozwala to
+cofnąć szkic obrazu przy anulowaniu okna awatara i wyświetlić błąd odczytu.
+Spóźniony odczyt anulowanego obrazu nie otwiera ponownie kadrowania.
+
 
 Oczekujące zaproszenia odbiorcy są widoczne w istniejącym panelu powiadomień,
 przed aktywnością zadań. Karta podaje autora, Workspace, rolę, termin i przycisk

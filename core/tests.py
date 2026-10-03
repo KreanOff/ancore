@@ -235,7 +235,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         sidebar = html[html.index('<aside class="sidebar"'):html.index('id="sidebar-collapsed-flyout"')]
 
         for marker in ('data-global-search-input', 'data-notifications-toggle', 'data-sidebar-collapse-toggle',
-                       'aria-label="Ustawienia Ancore"', 'title="Profil użytkownika"'):
+                       'data-sticky-note-toggle', 'aria-label="Ustawienia Ancore"', 'title="Profil użytkownika"'):
             with self.subTest(control=marker):
                 self.assertIn(marker, topbar)
                 self.assertNotIn(marker, sidebar)
@@ -244,7 +244,8 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertNotIn('class="sidebar-view-controls"', sidebar)
         self.assertLess(topbar.index('data-sidebar-collapse-toggle'), topbar.index('data-global-search-input'))
         self.assertNotIn('class="mobile-sidebar-toggle"', html)
-        self.assertIn('data-sticky-note-toggle', sidebar)
+        self.assertIn('data-sticky-note-toggle', topbar.split('class="app-topbar__actions"', 1)[1])
+        self.assertIn('aria-controls="app-sticky-note"', topbar)
         self.assertIn('data-notifications-url="/notifications/"', html)
         self.assertIn('aria-controls="global-search-panel"', topbar)
         self.assertIn('aria-controls="notifications-panel"', topbar)
@@ -629,11 +630,12 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('aria-valuemax="420"', html)
         self.assertIn('tabindex="0"', html)
 
-    def test_sidebar_footer_does_not_include_workspace_link(self):
+    def test_sidebar_has_no_empty_footer_after_tools_move_to_topbar(self):
         request = SimpleNamespace(
             resolver_match=SimpleNamespace(app_name='', view_name=''),
             user=SimpleNamespace(
                 is_authenticated=True,
+                username='anna',
                 first_name='Anna',
                 last_name='Kowalska',
             ),
@@ -645,13 +647,6 @@ class SidebarActiveStateTests(SimpleTestCase):
             'active_contact_status': '',
         })
 
-        footer_start = html.index('class="sidebar-footer"')
-        footer_end = html.index('class="sidebar-resizer"', footer_start)
-        footer_html = html[footer_start:footer_end]
-
-        self.assertNotIn('nav-link--workplace', footer_html)
-        self.assertNotIn('>Workspace</span>', footer_html)
-        self.assertIn('>Sticker</span>', footer_html)
-        self.assertIn('>Ustawienia</span>', footer_html)
-        self.assertIn('>Anna Kowalska</span>', footer_html)
-        self.assertNotIn('Profil użytkownika', footer_html)
+        sidebar = html[html.index('<aside class="sidebar"'):html.index('id="sidebar-collapsed-flyout"')]
+        self.assertNotIn('class="sidebar-footer"', sidebar)
+        self.assertIn('data-sidebar-resizer', sidebar)

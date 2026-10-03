@@ -217,6 +217,7 @@
         }
 
         editor.dataset.profilePhotoInitialized = 'true';
+        let photoLoadVersion = 0;
         let acceptedCrop = cropInput.value;
         let acceptedRemove = removeInput?.value || '';
         let acceptedPhotoUrl = acceptedRemove === '1' ? '' : (acceptedCrop || currentPhotoUrl);
@@ -330,6 +331,7 @@
         }
 
         function closePhotoEditor() {
+            photoLoadVersion += 1;
             setModalOpen(false);
             fileInput.value = '';
             cropInput.value = acceptedCrop;
@@ -347,6 +349,7 @@
         function updatePreview(photoUrl) {
             if (!preview) return;
 
+            editor.dispatchEvent(new CustomEvent('ancore:photo-preview', { bubbles: true, detail: { photoUrl } }));
             preview.classList.toggle('has-photo', Boolean(photoUrl));
             if (photoUrl) {
                 preview.innerHTML = `<img src="${photoUrl}" alt="">`;
@@ -383,11 +386,16 @@
         }
 
         function loadPhotoSource(src, nextObjectUrl, shouldExport) {
+            const loadVersion = ++photoLoadVersion;
             clearObjectUrl();
 
             const image = new Image();
 
             image.onload = () => {
+                if (loadVersion !== photoLoadVersion) {
+                    if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
+                    return;
+                }
                 state.image = image;
                 state.objectUrl = nextObjectUrl || '';
                 state.shouldExport = Boolean(shouldExport);
@@ -404,6 +412,11 @@
             };
 
             image.onerror = () => {
+                if (loadVersion !== photoLoadVersion) {
+                    if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
+                    return;
+                }
+                editor.dispatchEvent(new CustomEvent('ancore:photo-error', { bubbles: true }));
                 state.image = null;
                 state.shouldExport = false;
                 state.removed = false;
@@ -467,6 +480,7 @@
         }
 
         function removePhoto() {
+            photoLoadVersion += 1;
             state.image = null;
             state.shouldExport = false;
             state.removed = true;
@@ -480,6 +494,7 @@
             acceptedPhotoUrl = '';
             acceptedCrop = '';
             acceptedRemove = '1';
+            editor.dispatchEvent(new CustomEvent('ancore:photo-saved', { bubbles: true, detail: { photoUrl: '' } }));
             setCropperVisible(false);
             setModalOpen(false);
         }
@@ -508,7 +523,9 @@
 
             acceptedCrop = cropInput.value;
             acceptedRemove = removeInput?.value || '';
-            acceptedPhotoUrl = preview?.querySelector('img')?.getAttribute('src') || '';
+            acceptedPhotoUrl = acceptedRemove === '1' ? '' : (acceptedCrop || currentPhotoUrl);
+            updatePreview(acceptedPhotoUrl);
+            editor.dispatchEvent(new CustomEvent('ancore:photo-saved', { bubbles: true, detail: { photoUrl: acceptedPhotoUrl } }));
             setModalOpen(false);
         }
 
@@ -658,6 +675,13 @@
             open: openPhotoEditor,
             remove: removePhoto,
             save: savePhoto,
+            snapshot: () => ({ crop: acceptedCrop, remove: acceptedRemove, url: acceptedPhotoUrl }),
+            restore: snapshot => {
+                acceptedCrop = snapshot.crop;
+                acceptedRemove = snapshot.remove;
+                acceptedPhotoUrl = snapshot.url;
+                closePhotoEditor();
+            },
         };
     }
 

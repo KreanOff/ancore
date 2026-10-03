@@ -1,18 +1,5 @@
 <div class="space-avatar-picker resources-form-wide" data-space-avatar-picker>
-    <fieldset class="space-avatar-presets">
-        <legend>Wybierz gotowy awatar</legend>
-        <div class="space-avatar-grid">
-            {% for option in modal.form.avatar_options %}
-            <label class="space-avatar-option" title="{{ option.label }}">
-                <input class="u-sr-only" type="radio" name="avatar" value="{{ option.key }}"{% if modal.form.avatar.value == option.key %} checked{% endif %}>
-                <span class="profile-avatar space-avatar space-avatar--picker space-avatar-art {{ option.preset_class }}" aria-hidden="true"></span>
-                <span class="u-sr-only">{{ option.label }}</span>
-            </label>
-            {% endfor %}
-        </div>
-        <label class="space-avatar-auto"><input type="radio" name="avatar" value="auto"{% if modal.form.avatar.value == 'auto' %} checked{% endif %}> Automatyczny awatar</label>
-        {% if modal.form.avatar.errors %}<div class="tasks-modal__errors" role="alert">{{ modal.form.avatar.errors }}</div>{% endif %}
-    </fieldset>
+    {% include 'core/includes/avatar_presets.html' with form=modal.form only %}
     <div class="space-avatar-upload" data-space-avatar-drop>
         <label class="space-avatar-auto"><input type="radio" name="avatar" value="upload"{% if modal.form.avatar.value == 'upload' %} checked{% endif %}> Własny obraz</label>
         <div class="space-avatar-upload__content">

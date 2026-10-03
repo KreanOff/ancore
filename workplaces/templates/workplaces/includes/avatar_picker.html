@@ -1,0 +1,36 @@
+<div class="tasks-modal app-modal-panel app-modal-panel--compact tasks-form-modal workplace-avatar-modal" id="{{ form_id }}-avatar-modal" role="dialog" aria-modal="true" aria-labelledby="{{ form_id }}-avatar-title" aria-hidden="true" data-workplace-avatar-modal>
+    <div class="tasks-modal__dialog">
+        <div class="tasks-modal__form">
+            <header class="tasks-modal__header">
+                <h2 id="{{ form_id }}-avatar-title">Wybierz awatar</h2>
+                <button type="button" class="tasks-modal__close" aria-label="Zamknij" data-close-modal></button>
+            </header>
+            <div class="tasks-modal__body">
+                <div class="space-avatar-picker" data-workplace-avatar-picker data-automatic-avatar="{{ form.automatic_avatar.preset_class }}">
+                    {% include 'core/includes/avatar_presets.html' with form=form only %}
+                    <div class="space-avatar-upload" data-workplace-avatar-drop>
+                        <label class="space-avatar-auto"><input type="radio" name="avatar" value="upload"{% if form.avatar.value == 'upload' %} checked{% endif %}> Własny obraz</label>
+                        <div class="space-avatar-upload__content">
+                            <span class="profile-avatar space-avatar space-avatar--picker has-photo" data-workplace-avatar-upload-preview hidden></span>
+                            <div class="space-avatar-upload__actions">
+                                <button type="button" class="btn btn-secondary" data-workplace-avatar-upload>Wybierz obraz</button>
+                                {{ form.workplace_photo }}
+                                {{ form.workplace_photo_crop }}
+                                {{ form.workplace_photo_remove }}
+                                <small>lub przeciągnij i upuść tutaj · PNG, JPG, WebP · do 5 MB</small>
+                            </div>
+                        </div>
+                        <div class="tasks-modal__errors" role="alert" data-workplace-avatar-error hidden></div>
+                        {% for error in form.workplace_photo.errors %}<div class="tasks-modal__errors" role="alert">{{ error }}</div>{% endfor %}
+                        {% for error in form.workplace_photo_crop.errors %}<div class="tasks-modal__errors" role="alert">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+            </div>
+            <footer class="tasks-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
+                <button type="button" class="tasks-modal__submit" data-workplace-avatar-save>Zapisz</button>
+            </footer>
+        </div>
+    </div>
+    {% include 'core/includes/photo_crop_dialog.html' with editor_title='Edytuj logo miejsca pracy' canvas_label='Kadr logo miejsca pracy' empty_label='Wybierz logo miejsca pracy' only %}
+</div>

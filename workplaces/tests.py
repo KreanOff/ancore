@@ -158,7 +158,7 @@ class WorkplaceSelectionTests(TestCase):
             content.index('data-workplace-name="Drugi Workplace"'),
         )
 
-    def test_workplace_avatar_uses_workplace_specific_background_color(self):
+    def test_workplace_avatar_uses_stable_workspace_illustrations(self):
         first_avatar = workplace_avatar(self.first_workplace)
         second_avatar = workplace_avatar(self.second_workplace)
 
@@ -172,7 +172,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, second_avatar['color_style'])
         self.assertContains(
             response,
-            'class="profile-avatar-icon" data-icon="briefcase"',
+            first_avatar['preset_class'],
         )
         self.assertNotContains(response, 'data-icon="landmark"')
 
@@ -208,7 +208,7 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="sidebar-workspace-manage"')
-        self.assertContains(response, 'data-icon="briefcase"')
+        self.assertContains(response, workplace_avatar(self.second_workplace)['preset_class'])
         self.assertNotContains(response, 'sidebar-workplace__avatar')
         self.assertContains(response, 'sidebar-workspace-avatar')
         self.assertContains(response, '/media/workplace_photos/moje-miejsce.webp', count=2)
@@ -519,18 +519,20 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'data-sidebar-source-item="dashboard" draggable="true"')
         self.assertContains(response, '>Dashboard</span>', count=2)
 
-    def test_sidebar_workspace_management_is_in_header_and_footer_keeps_sticker_and_settings(self):
+    def test_workspace_management_sticker_and_settings_are_in_topbar(self):
         self.client.force_login(self.user)
 
         response = self.client.get(reverse('tasks:tasks'))
         content = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="sidebar-header"')
+        topbar = content[content.index('<header class="app-topbar"'):content.index('<aside class="sidebar"')]
+        self.assertIn('data-sticky-note-toggle', topbar)
         self.assertContains(response, 'data-sidebar-workspace-switcher')
         self.assertContains(response, 'data-sidebar-workspace-toggle')
         self.assertNotContains(response, 'class="nav-separator"')
-        self.assertLess(content.index('class="sidebar-header"'), content.index('class="sidebar-workspace-manage"'))
+        self.assertIn('class="sidebar-workspace-manage"', topbar)
+        self.assertIn('aria-label="Ustawienia Ancore"', topbar)
         self.assertLess(content.index('class="sidebar-workspace-manage"'), content.index('data-sticky-note-toggle'))
         self.assertLess(content.index('class="sidebar-workspace-manage"'), content.index('aria-label="Ustawienia Ancore"'))
 

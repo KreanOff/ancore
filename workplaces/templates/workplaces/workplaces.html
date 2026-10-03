@@ -91,11 +91,9 @@
                                     </div>
                                     {% workplace_avatar workplace as workplace_logo %}
                                     <span class="workplaces-directory__cell workplace-row__name tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell">
-                                        <span class="profile-avatar profile-avatar--workplace workplace-row__avatar {{ workplace_logo.color_class }} {% if workplace_logo.photo_url %}has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
+                                        <span class="profile-avatar profile-avatar--workplace workplace-row__avatar {{ workplace_logo.color_class }}{% if not workplace_logo.photo_url %} space-avatar-art {{ workplace_logo.preset_class }}{% endif %} {% if workplace_logo.photo_url %}has-photo{% endif %}" style="{{ workplace_logo.color_style }}" aria-hidden="true">
                                             {% if workplace_logo.photo_url %}
                                             <img src="{{ workplace_logo.photo_url }}" alt="">
-                                            {% else %}
-                                            <i class="profile-avatar-icon" data-icon="briefcase" aria-hidden="true" focusable="false"></i>
                                             {% endif %}
                                         </span>
                                         <span class="tasks-row-title-main">
@@ -157,7 +155,7 @@
                     {% endif %}
 
                     <div class="workplace-modal__content" data-profile-photo-layout>
-                        {% include 'workplaces/includes/workplace_photo_editor.html' with form=form photo_button_label='Dodaj' %}
+                        {% include 'workplaces/includes/workplace_photo_editor.html' with form=form workplace_logo=form.current_avatar photo_button_label='Dodaj' form_id='workplace-create-form' %}
 
                         <div class="workplace-modal__details">
                             <div class="tasks-form-field">

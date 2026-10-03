@@ -17,9 +17,9 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 18 | 0 | 10 | 58 |
+| [core](../core) | 19 | 0 | 11 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
-| [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
+| [workplaces](../workplaces) | 20 | 9 | 13 | 99 |
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
 | [kanban](../kanban) | 19 | 39 | 10 | 100 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
@@ -51,7 +51,7 @@ Metody/properties: `presence_status_class`, `get_full_name`, `__str__`.
 
 Źródło: [workplaces/models.py](../workplaces/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `slug` (SlugField), `workplace_photo` (FileField), `owner` (ForeignKey), `members` (ManyToManyField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `slug` (SlugField), `avatar` (CharField), `workplace_photo` (FileField), `owner` (ForeignKey), `members` (ManyToManyField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -892,7 +892,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 Źródło: [workplaces/forms.py](../workplaces/forms.py).
 
-- `WorkplaceForm` — Meta.fields: `['workplace_photo', 'name', 'code', 'description']`
+- `WorkplaceForm` — Meta.fields: `['avatar', 'workplace_photo', 'name', 'code', 'description']`
 
 ### tasks
 
@@ -1242,6 +1242,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/__init__.py](../core/__init__.py)
 - [core/admin.py](../core/admin.py)
 - [core/apps.py](../core/apps.py) — `CoreConfig`
+- [core/avatars.py](../core/avatars.py) — `preset_avatar`
 - [core/comment_images.py](../core/comment_images.py) — `comment_image_storage`, `comment_image_path`, `CommentImage`, `delete_comment_image_file`, `save_comment`, `comment_image_response`
 - [core/forms.py](../core/forms.py)
 - [core/media.py](../core/media.py) — `public_media`
@@ -1402,7 +1403,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [spaces/__init__.py](../spaces/__init__.py)
 - [spaces/apps.py](../spaces/apps.py) — `SpacesConfig`
-- [spaces/avatars.py](../spaces/avatars.py) — `avatar_upload_path`, `preset_avatar`, `space_avatar`, `delete_avatar_after_commit`
+- [spaces/avatars.py](../spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`
 - [spaces/defaults.py](../spaces/defaults.py) — `template_settings`
 - [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
@@ -1423,6 +1424,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/base.html](../core/templates/core/base.html)
 - [core/templates/core/includes/attachment_icon.html](../core/templates/core/includes/attachment_icon.html)
 - [core/templates/core/includes/attachment_upload_icon.html](../core/templates/core/includes/attachment_upload_icon.html)
+- [core/templates/core/includes/avatar_presets.html](../core/templates/core/includes/avatar_presets.html)
 - [core/templates/core/includes/bootstrap.html](../core/templates/core/includes/bootstrap.html)
 - [core/templates/core/includes/content_skeleton.html](../core/templates/core/includes/content_skeleton.html)
 - [core/templates/core/includes/icon_credit.html](../core/templates/core/includes/icon_credit.html)
@@ -1444,6 +1446,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### workplaces
 
+- [workplaces/templates/workplaces/includes/avatar_picker.html](../workplaces/templates/workplaces/includes/avatar_picker.html)
 - [workplaces/templates/workplaces/includes/edit_modal.html](../workplaces/templates/workplaces/includes/edit_modal.html)
 - [workplaces/templates/workplaces/includes/invitation_person.html](../workplaces/templates/workplaces/includes/invitation_person.html)
 - [workplaces/templates/workplaces/includes/invitation_response_modal.html](../workplaces/templates/workplaces/includes/invitation_response_modal.html)
@@ -1678,6 +1681,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
 - [static/js/task-work-log.js](../static/js/task-work-log.js)
 - [static/js/tasks.js](../static/js/tasks.js)
+- [static/js/workplace-avatars.js](../static/js/workplace-avatars.js)
 - [static/js/workplace-team.js](../static/js/workplace-team.js)
 
 ### img
@@ -1746,6 +1750,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `AuthPageViewTests`: 2 metod testowych.
 - `ProfileViewTests`: 13 metod testowych.
 - `AccountSwitcherTests`: 11 metod testowych.
+
+### workplaces/test_avatars.py
+
+Źródło: [workplaces/test_avatars.py](../workplaces/test_avatars.py).
+
+- `WorkplaceAvatarTests`: 8 metod testowych.
 
 ### workplaces/test_invitation_candidates.py
 
@@ -2122,6 +2132,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [workplaces/migrations/0006_sidebarfavorite.py](../workplaces/migrations/0006_sidebarfavorite.py)
 - [workplaces/migrations/0007_sidebarfavorite_position.py](../workplaces/migrations/0007_sidebarfavorite_position.py)
 - [workplaces/migrations/0008_team_invitations.py](../workplaces/migrations/0008_team_invitations.py)
+- [workplaces/migrations/0009_workplace_avatar.py](../workplaces/migrations/0009_workplace_avatar.py)
 
 ### tasks
 

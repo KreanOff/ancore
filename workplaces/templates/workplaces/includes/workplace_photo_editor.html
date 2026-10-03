@@ -3,36 +3,21 @@
      {% if workplace_logo.photo_url %}data-profile-photo-url="{{ workplace_logo.photo_url }}"{% endif %}>
     <button type="button"
             class="profile-photo-preview-button"
-            aria-label="Edytuj logo miejsca pracy"
-            title="Edytuj logo miejsca pracy"
-            data-profile-photo-open>
-        <span class="profile-avatar profile-page-avatar profile-avatar--workplace {{ workplace_logo.color_class|default:'profile-avatar--teal' }} {% if workplace_logo.photo_url %}has-photo{% endif %}"
+            aria-label="Wybierz awatar Workspace"
+            title="Wybierz awatar Workspace"
+            data-workplace-avatar-open aria-haspopup="dialog" aria-expanded="false" aria-controls="{{ form_id }}-avatar-modal">
+        <span class="profile-avatar profile-page-avatar profile-avatar--workplace {{ workplace_logo.color_class }}{% if not workplace_logo.photo_url %} space-avatar-art {{ workplace_logo.preset_class }}{% endif %} {% if workplace_logo.photo_url %}has-photo{% endif %}"
               {% if workplace_logo.color_style %}style="{{ workplace_logo.color_style }}"{% endif %}
               aria-hidden="true"
               data-profile-photo-preview>
             {% if workplace_logo.photo_url %}
             <img src="{{ workplace_logo.photo_url }}" alt="">
-            {% else %}
-            <i class="profile-avatar-icon" data-icon="briefcase" aria-hidden="true" focusable="false"></i>
             {% endif %}
         </span>
     </button>
-    <template data-profile-photo-fallback>
-        <i class="profile-avatar-icon" data-icon="briefcase" aria-hidden="true" focusable="false"></i>
-    </template>
-    <button type="button" class="profile-photo-button" title="{{ photo_button_label }} logo" data-profile-photo-open>{{ photo_button_label }}</button>
+    <template data-profile-photo-fallback></template>
+    <button type="button" class="profile-photo-button" title="Wybierz awatar Workspace" data-workplace-avatar-open aria-haspopup="dialog" aria-expanded="false" aria-controls="{{ form_id }}-avatar-modal">{{ photo_button_label }}</button>
 
-    {% if workplace %}
-    <input id="workplace-edit-photo-{{ workplace.id }}" type="file" name="workplace_photo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" class="profile-photo-input" hidden>
-    <input id="workplace-edit-photo-crop-{{ workplace.id }}" type="hidden" name="workplace_photo_crop" class="profile-photo-crop-input" data-profile-photo-crop-input>
-    <input id="workplace-edit-photo-remove-{{ workplace.id }}" type="hidden" name="workplace_photo_remove" data-profile-photo-remove-input>
-    {% else %}
-    {{ form.workplace_photo }}
-    {{ form.workplace_photo_crop }}
-    {{ form.workplace_photo_remove }}
-    {% for error in form.workplace_photo.errors %}<span class="workplace-photo-control__error" role="alert">{{ error }}</span>{% endfor %}
-    {% for error in form.workplace_photo_crop.errors %}<span class="workplace-photo-control__error" role="alert">{{ error }}</span>{% endfor %}
-    {% endif %}
-
-    {% include 'core/includes/photo_crop_dialog.html' with editor_title='Edytuj logo miejsca pracy' canvas_label='Kadr logo miejsca pracy' empty_label='Wybierz logo miejsca pracy' only %}
+    {% if form.workplace_photo.errors or form.workplace_photo_crop.errors or form.avatar.errors %}<span class="workplace-photo-control__error" role="alert">Popraw wybór awatara.</span>{% endif %}
+    {% include 'workplaces/includes/avatar_picker.html' with form=form form_id=form_id only %}
 </div>
