@@ -16,13 +16,14 @@
             if (!form || !preview || !editor.profilePhotoEditorApi) return;
             picker.dataset.initialized = 'true';
             const api = editor.profilePhotoEditorApi;
+            const artClass = picker.dataset.avatarArtClass || 'space-avatar-art';
             const file = picker.querySelector('[type=file]');
             const drop = picker.querySelector('[data-workplace-avatar-drop]');
             const uploadPreview = picker.querySelector('[data-workplace-avatar-upload-preview]');
             const error = picker.querySelector('[data-workplace-avatar-error]');
             const triggers = [...editor.querySelectorAll('[data-workplace-avatar-open]')];
             const radios = [...picker.querySelectorAll('input[name="avatar"]')];
-            // Keep fields in their Workspace form while the dialog is above its parent.
+            // Keep fields in their owning form while the shared dialog is above its parent.
             modal.querySelectorAll('input').forEach(input => input.setAttribute('form', form.id));
             let photoUrl = api.snapshot().url;
             let snapshot, anchor, committed = false, inertElements = [];
@@ -32,7 +33,7 @@
             const showError = message => { error.textContent = message; error.hidden = false; };
             function render() {
                 const choice = selected();
-                [...preview.classList].filter(name => name.startsWith('space-avatar-art')).forEach(name => preview.classList.remove(name));
+                [...preview.classList].filter(name => name.startsWith('space-avatar-art') || name.startsWith('user-avatar-art')).forEach(name => preview.classList.remove(name));
                 preview.replaceChildren();
                 preview.classList.toggle('has-photo', choice === 'upload' && Boolean(photoUrl));
                 if (choice === 'upload' && photoUrl) {
@@ -41,8 +42,8 @@
                     image.alt = '';
                     preview.append(image);
                 } else {
-                    const art = choice === 'auto' || choice === 'upload' ? picker.dataset.automaticAvatar : `space-avatar-art--${choice}`;
-                    preview.classList.add('space-avatar-art', art);
+                    const art = choice === 'auto' || choice === 'upload' ? picker.dataset.automaticAvatar : `${artClass}--${choice}`;
+                    preview.classList.add(artClass, art);
                 }
                 uploadPreview.replaceChildren();
                 uploadPreview.hidden = !photoUrl;
@@ -58,7 +59,7 @@
                 snapshot = { choice: selected(), photo: api.snapshot() };
                 committed = false;
                 clearError();
-                anchor = document.createComment('Workspace avatar dialog');
+                anchor = document.createComment('Avatar dialog');
                 modal.before(anchor);
                 document.body.append(modal);
                 inertElements = [...document.body.children].filter(element => element !== modal && !element.inert);

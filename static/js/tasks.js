@@ -1979,6 +1979,8 @@ function initTasksPage() {
 
         const avatar = button.querySelector('.tasks-responsible-select__avatar');
         if (avatar) {
+            [...avatar.classList].filter(name => name.startsWith('user-avatar-art')).forEach(name => avatar.classList.remove(name));
+            avatar.classList.add('profile-avatar--user');
             avatar.classList.toggle('has-photo', Boolean(user.avatar?.photo_url));
             avatar.classList.add(user.avatar?.color_class || '');
             if (user.avatar?.color_style) avatar.setAttribute('style', user.avatar.color_style);
@@ -1988,6 +1990,8 @@ function initTasksPage() {
                 image.src = user.avatar.photo_url;
                 image.alt = '';
                 avatar.appendChild(image);
+            } else if (user.avatar?.preset_class) {
+                avatar.classList.add('user-avatar-art', user.avatar.preset_class);
             } else {
                 avatar.textContent = user.avatar?.initials || labelText.trim().charAt(0).toUpperCase() || 'O';
             }

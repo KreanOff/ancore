@@ -50,7 +50,9 @@
                 <div class="profile-detail-form profile-summary">
                     <div class="profile-title-area profile-summary-area">
                         <div class="profile-photo-control profile-photo-control--static">
-                            {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='profile-page-avatar' only %}
+                            <button type="button" class="profile-photo-preview-button" aria-label="Zmień awatar użytkownika" title="Zmień awatar użytkownika" data-profile-edit-open data-profile-edit-avatar>
+                                {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='profile-page-avatar' only %}
+                            </button>
                         </div>
                         <div class="profile-title-fields">
                             <div class="tasks-issue-title-field profile-name-fields profile-display-name-fields" aria-label="Imię, drugie imię i nazwisko">
@@ -263,81 +265,24 @@
                              {% if current_account_avatar.photo_url %}data-profile-photo-url="{{ current_account_avatar.photo_url }}"{% endif %}>
                             <button type="button"
                                     class="profile-photo-preview-button"
-                                    aria-label="Edytuj zdjęcie użytkownika"
-                                    title="Edytuj zdjęcie użytkownika"
-                                    data-profile-photo-open>
-                                <span class="profile-avatar profile-page-avatar profile-avatar--user {{ current_account_avatar.color_class }} {% if current_account_avatar.photo_url %}has-photo{% endif %}"
+                                    aria-label="Zmień awatar użytkownika"
+                                    title="Zmień awatar użytkownika"
+                                    aria-haspopup="dialog" aria-expanded="false"
+                                    data-workplace-avatar-open>
+                                <span class="profile-avatar profile-page-avatar profile-avatar--user {{ current_account_avatar.color_class }} {% if current_account_avatar.photo_url %}has-photo{% else %}user-avatar-art {{ current_account_avatar.preset_class }}{% endif %}"
                                       style="{{ current_account_avatar.color_style }}"
                                       aria-hidden="true"
                                       data-profile-photo-preview>
                                     {% if current_account_avatar.photo_url %}
                                     <img src="{{ current_account_avatar.photo_url }}" alt="">
-                                    {% else %}
-                                    {% include 'accounts/includes/user_avatar_icon.html' %}
                                     {% endif %}
                                 </span>
                             </button>
                             <template data-profile-photo-fallback>
                                 {% include 'accounts/includes/user_avatar_icon.html' %}
                             </template>
-                            <button type="button" class="profile-photo-button" title="Zmień zdjęcie" data-profile-photo-open>Zmień</button>
-                            {{ form.profile_photo }}
-                            {{ form.profile_photo_crop }}
-                            {{ form.profile_photo_remove }}
-
-                            <div class="contacts-photo-editor-overlay" role="dialog" aria-modal="true" aria-label="Edytuj zdjęcie użytkownika" hidden data-profile-photo-modal>
-                                <div class="contacts-photo-editor-dialog">
-                                    <header class="contacts-photo-editor-header">
-                                        <strong>Edytuj zdjęcie użytkownika</strong>
-                                        <button type="button" class="contacts-photo-editor-close" aria-label="Zamknij edycję zdjęcia" title="Zamknij" data-profile-photo-close>
-                                            <i data-icon="x" aria-hidden="true"></i>
-                                        </button>
-                                    </header>
-
-                                    <div class="profile-photo-cropper contacts-photo-editor-cropper" data-profile-photo-cropper>
-                                        <div class="profile-photo-crop-stage contacts-photo-editor-stage" data-profile-photo-crop-stage>
-                                            <canvas class="profile-photo-crop-canvas"
-                                                    width="640"
-                                                    height="640"
-                                                    aria-label="Kadr zdjęcia użytkownika"
-                                                    data-profile-photo-canvas></canvas>
-                                            <div class="contacts-photo-editor-empty" data-profile-photo-empty>
-                                                <span>Wybierz zdjęcie użytkownika</span>
-                                            </div>
-                                        </div>
-                                        <div class="profile-photo-zoom-controls contacts-photo-editor-zoom">
-                                            <button type="button"
-                                                    class="profile-photo-zoom-button"
-                                                    aria-label="Pomniejsz zdjęcie"
-                                                    title="Pomniejsz zdjęcie"
-                                                    data-profile-photo-zoom-out>
-                                                <i data-icon="minus" aria-hidden="true"></i>
-                                            </button>
-                                            <input type="range"
-                                                   class="profile-photo-zoom-range"
-                                                   min="1"
-                                                   max="4"
-                                                   step="0.01"
-                                                   value="1"
-                                                   aria-label="Powiększenie zdjęcia"
-                                                   data-profile-photo-zoom>
-                                            <button type="button"
-                                                    class="profile-photo-zoom-button"
-                                                    aria-label="Powiększ zdjęcie"
-                                                    title="Powiększ zdjęcie"
-                                                    data-profile-photo-zoom-in>
-                                                <i data-icon="plus" aria-hidden="true"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <footer class="contacts-photo-editor-footer">
-                                        <button type="button" class="contacts-photo-editor-secondary" data-profile-photo-remove>Usuń</button>
-                                        <button type="button" class="contacts-photo-editor-secondary" data-profile-photo-change>Zmień</button>
-                                        <button type="button" class="contacts-photo-editor-primary" data-profile-photo-save>Zapisz</button>
-                                    </footer>
-                                </div>
-                            </div>
+                            <button type="button" class="profile-photo-button" title="Zmień awatar" aria-haspopup="dialog" aria-expanded="false" data-workplace-avatar-open>Zmień</button>
+                            {% include 'core/includes/avatar_picker.html' with form=form form_id='profile-detail-form' photo_field=form.profile_photo photo_crop_field=form.profile_photo_crop photo_remove_field=form.profile_photo_remove editor_title='Edytuj zdjęcie użytkownika' canvas_label='Kadr zdjęcia użytkownika' empty_label='Wybierz zdjęcie użytkownika' only %}
                         </div>
 
                         <div class="profile-edit-fields">

@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from tasks.models import TaskProjectMembership
 from workplaces.models import WorkplaceMembership
-from .avatars import space_avatar
+from .avatars import AVATARS, preset_avatar, space_avatar
 from .models import Space
 
 
@@ -49,9 +49,13 @@ class SpaceAvatarTests(TestCase):
         self.space.refresh_from_db()
         self.assertEqual(before, space_avatar(self.space))
         self.assertNotEqual(before, space_avatar(self.hidden_project.space))
+        self.assertEqual(preset_avatar(seed=24)['key'], 'rocket')
+        self.assertEqual(preset_avatar(seed=29)['key'], 'globe')
 
     def test_preset_plain_and_scoped_persists_in_header_directory_and_sidebar(self):
-        for url, choice in [(f'/spaces/{self.space.pk}/avatar/', 'rocket'), (self.url(), 'leaf')]:
+        choices = [(f'/spaces/{self.space.pk}/avatar/', 'rocket'), (self.url(), 'leaf')]
+        choices += [(self.url(), key) for key, _ in AVATARS[-6:]]
+        for url, choice in choices:
             response = self.client.post(url, {'avatar': choice}, HTTP_X_WORK_MODAL='true')
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.json()['saved'])

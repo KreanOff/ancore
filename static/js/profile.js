@@ -729,6 +729,11 @@
         if (editOpen) {
             closeProfileActionMenus(null);
             openEditModal();
+            if (editOpen.hasAttribute('data-profile-edit-avatar')) {
+                const avatarTrigger = editModal()?.querySelector('[data-workplace-avatar-open]');
+                avatarTrigger?.focus();
+                avatarTrigger?.click();
+            }
             return;
         }
 

@@ -17,8 +17,8 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 19 | 0 | 11 | 58 |
-| [accounts](../accounts) | 15 | 5 | 8 | 34 |
+| [core](../core) | 19 | 0 | 12 | 58 |
+| [accounts](../accounts) | 17 | 7 | 8 | 43 |
 | [workplaces](../workplaces) | 20 | 9 | 13 | 99 |
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
 | [kanban](../kanban) | 19 | 39 | 10 | 100 |
@@ -41,7 +41,7 @@ Brak zadeklarowanych modeli domenowych w tym pliku.
 
 Źródło: [accounts/models.py](../accounts/models.py).
 
-Pola zadeklarowane tutaj: `email` (EmailField), `first_name` (CharField), `middle_name` (CharField), `last_name` (CharField), `profile_photo` (FileField), `phone_number` (CharField), `job_title` (CharField), `bio` (TextField), `presence_status` (CharField), `last_seen_at` (DateTimeField).
+Pola zadeklarowane tutaj: `email` (EmailField), `first_name` (CharField), `middle_name` (CharField), `last_name` (CharField), `avatar` (CharField), `profile_photo` (FileField), `phone_number` (CharField), `job_title` (CharField), `bio` (TextField), `presence_status` (CharField), `last_seen_at` (DateTimeField).
 
 Metody/properties: `presence_status_class`, `get_full_name`, `__str__`.
 
@@ -886,7 +886,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 Źródło: [accounts/forms.py](../accounts/forms.py).
 
 - `UserRegistrationForm` — Meta.fields: `('first_name', 'middle_name', 'last_name', 'email')`
-- `UserProfileForm` — Meta.fields: `('profile_photo', 'first_name', 'middle_name', 'last_name', 'email', 'username', 'phone_number', 'job_title', 'bio', 'presence_status')`
+- `UserProfileForm` — Meta.fields: `('avatar', 'profile_photo', 'first_name', 'middle_name', 'last_name', 'email', 'username', 'phone_number', 'job_title', 'bio', 'presence_status')`
 
 ### workplaces
 
@@ -1259,6 +1259,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [accounts/admin.py](../accounts/admin.py) — `CustomUserAdmin`
 - [accounts/apps.py](../accounts/apps.py) — `AccountsConfig`
 - [accounts/avatar.py](../accounts/avatar.py) — `avatar_color_seed`, `avatar_color_style`, `avatar_color_style_from_seed`, `avatar_color_class`, `account_avatar`
+- [accounts/avatar_presets.py](../accounts/avatar_presets.py) — `preset_avatar`
 - [accounts/context_processors.py](../accounts/context_processors.py) — `current_account_avatar`
 - [accounts/forms.py](../accounts/forms.py) — `UserRegistrationForm`, `UserProfileForm`
 - [accounts/middleware.py](../accounts/middleware.py) — `UserPresenceMiddleware`
@@ -1424,6 +1425,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/base.html](../core/templates/core/base.html)
 - [core/templates/core/includes/attachment_icon.html](../core/templates/core/includes/attachment_icon.html)
 - [core/templates/core/includes/attachment_upload_icon.html](../core/templates/core/includes/attachment_upload_icon.html)
+- [core/templates/core/includes/avatar_picker.html](../core/templates/core/includes/avatar_picker.html)
 - [core/templates/core/includes/avatar_presets.html](../core/templates/core/includes/avatar_presets.html)
 - [core/templates/core/includes/bootstrap.html](../core/templates/core/includes/bootstrap.html)
 - [core/templates/core/includes/content_skeleton.html](../core/templates/core/includes/content_skeleton.html)
@@ -1688,8 +1690,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [static/img/favicon-ancore-large.png](../static/img/favicon-ancore-large.png)
 - [static/img/logo-ancore.png](../static/img/logo-ancore.png)
+- [static/img/space-avatars/PROMPT-extra.txt](../static/img/space-avatars/PROMPT-extra.txt)
 - [static/img/space-avatars/PROMPT.txt](../static/img/space-avatars/PROMPT.txt)
+- [static/img/space-avatars/illustrations-extra-v1.png](../static/img/space-avatars/illustrations-extra-v1.png)
 - [static/img/space-avatars/illustrations-v1.png](../static/img/space-avatars/illustrations-v1.png)
+- [static/img/user-avatars/PROMPT-extra.txt](../static/img/user-avatars/PROMPT-extra.txt)
+- [static/img/user-avatars/PROMPT.txt](../static/img/user-avatars/PROMPT.txt)
+- [static/img/user-avatars/illustrations-extra-v1.png](../static/img/user-avatars/illustrations-extra-v1.png)
+- [static/img/user-avatars/illustrations-v1.png](../static/img/user-avatars/illustrations-v1.png)
 
 ## 8. Testy
 
@@ -1734,6 +1742,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `UploadValidationTests`: 3 metod testowych.
 - `SidebarActiveStateTests`: 16 metod testowych.
+
+### accounts/test_avatars.py
+
+Źródło: [accounts/test_avatars.py](../accounts/test_avatars.py).
+
+- `UserAvatarTests`: 9 metod testowych.
 
 ### accounts/test_email_identity.py
 
@@ -2121,6 +2135,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [accounts/migrations/0006_user_last_seen_auto_presence.py](../accounts/migrations/0006_user_last_seen_auto_presence.py)
 - [accounts/migrations/0007_alter_user_profile_photo.py](../accounts/migrations/0007_alter_user_profile_photo.py)
 - [accounts/migrations/0008_user_email_case_insensitive.py](../accounts/migrations/0008_user_email_case_insensitive.py)
+- [accounts/migrations/0009_user_avatar.py](../accounts/migrations/0009_user_avatar.py)
+- [accounts/migrations/0010_user_avatar_thirty.py](../accounts/migrations/0010_user_avatar_thirty.py)
 
 ### workplaces
 

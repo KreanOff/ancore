@@ -9,10 +9,13 @@ przestrzeni z 24 kolorowych ilustracji. Kliknięcie awatara w nagłówku lub
 prawa zarządzania co edycja przestrzeni (`manage_space`); członek i obserwator
 widzą awatar, ale go nie zmieniają.
 
-Można wybrać ilustrację, przywrócić awatar automatyczny albo przesłać własny PNG,
+Można wybrać jedną z 30 ilustracji, przywrócić awatar automatyczny albo przesłać własny PNG,
 JPG lub WebP do 5 MB, również przez przeciągnięcie. Gotowe awatary to pełnokolorowe
-ilustracje z lokalnego atlasu `static/img/space-avatars/illustrations-v1.png`,
-wygenerowanego przez ImageGen; dokładny prompt zapisano obok w `PROMPT.txt`.
+ilustracje z lokalnych atlasów `static/img/space-avatars/illustrations-v1.png`
+oraz `illustrations-extra-v1.png`, wygenerowanych przez ImageGen. Dokładne prompty
+zapisano obok w `PROMPT.txt` i `PROMPT-extra.txt`. Dodatkowe sześć motywów to
+aparat, słuchawki, góry, diament, kawa i balon. Zestaw współdzielą Przestrzenie
+i Workspace. Rozszerzenie zachowuje pierwotne ilustracje i automatyczne przypisania.
 Wspólny CSS wybiera kwadratowy fragment dla każdego motywu. Pole `Space.avatar`
 przechowuje stabilny identyfikator motywu, a `Space.avatar_photo` opcjonalny obraz.
 Zamiana wcześniejszych ikon konturowych na ilustracje zachowuje zapisane wybory

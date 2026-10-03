@@ -1,3 +1,6 @@
+from .avatar_presets import preset_avatar
+
+
 AVATAR_COLOR_CLASSES = [
     'profile-avatar--blue',
     'profile-avatar--teal',
@@ -71,6 +74,7 @@ def account_avatar(user, color_index=None):
         color_index = avatar_color_seed(user)
 
     return {
+        **(preset_avatar(getattr(user, 'avatar', ''), avatar_color_seed(user)) if user is not None else {}),
         'initials': initials,
         'color_class': avatar_color_class(color_index),
         'photo_url': photo_url,

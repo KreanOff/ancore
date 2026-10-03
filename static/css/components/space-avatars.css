@@ -31,11 +31,11 @@
     .space-avatar-upload__content { padding: 12px; }
 }
 
-/* One locally served atlas; square regions avoid neighbouring tile edges. */
+/* Locally served atlases; square regions avoid neighbouring tile edges. */
 .profile-avatar.space-avatar-art {
-    background-image: url("../../img/space-avatars/illustrations-v1.png");
+    background-image: var(--space-avatar-image, url("../../img/space-avatars/illustrations-v1.png"));
     background-repeat: no-repeat;
-    background-size: 640% 426.666667%;
+    background-size: var(--space-avatar-size, 640% 426.666667%);
     background-position: var(--space-avatar-x) var(--space-avatar-y);
 }
 .space-avatar-art--rocket { --space-avatar-x: 0.617284%; --space-avatar-y: 1.020408%; }
@@ -63,8 +63,74 @@
 .space-avatar-art--ship { --space-avatar-x: 79.629630%; --space-avatar-y: 97.959184%; }
 .space-avatar-art--smile { --space-avatar-x: 99.382716%; --space-avatar-y: 97.959184%; }
 
+.space-avatar-art--camera,
+.space-avatar-art--headphones,
+.space-avatar-art--mountain,
+.space-avatar-art--gem,
+.space-avatar-art--coffee,
+.space-avatar-art--hot-air-balloon {
+    --space-avatar-image: url("../../img/space-avatars/illustrations-extra-v1.png");
+    --space-avatar-size: 320% 213.333333%;
+}
+.space-avatar-art--camera { --space-avatar-x: 1.515152%; --space-avatar-y: 2.941176%; }
+.space-avatar-art--headphones { --space-avatar-x: 50%; --space-avatar-y: 2.941176%; }
+.space-avatar-art--mountain { --space-avatar-x: 98.484848%; --space-avatar-y: 2.941176%; }
+.space-avatar-art--gem { --space-avatar-x: 1.515152%; --space-avatar-y: 97.058824%; }
+.space-avatar-art--coffee { --space-avatar-x: 50%; --space-avatar-y: 97.058824%; }
+.space-avatar-art--hot-air-balloon { --space-avatar-x: 98.484848%; --space-avatar-y: 97.058824%; }
+
 /* Workspace keeps its existing row/header sizes and photo cropper. */
 .profile-avatar.profile-avatar--workplace.space-avatar-art,
 .profile-avatar.sidebar-workspace-avatar.space-avatar-art { border-radius: var(--radius); }
 .workplace-avatar-modal .tasks-modal__body { display: block; }
 .workplace-avatar-modal .profile-photo-input[hidden] { display: none; }
+
+/* Personal accounts have their own atlas; inset tiles avoid neighbouring edges. */
+.profile-avatar.user-avatar-art,
+.profile-avatar.profile-avatar--user.user-avatar-art {
+    background-image: var(--user-avatar-image, url("../../img/user-avatars/illustrations-v1.png"));
+    background-repeat: no-repeat;
+    background-size: var(--user-avatar-size, 640% 426.666667%);
+    background-position: var(--user-avatar-x) var(--user-avatar-y);
+}
+.user-avatar-art--fox { --user-avatar-x: 0.617284%; --user-avatar-y: 1.020408%; }
+.user-avatar-art--cat { --user-avatar-x: 20.370370%; --user-avatar-y: 1.020408%; }
+.user-avatar-art--panda { --user-avatar-x: 40.123457%; --user-avatar-y: 1.020408%; }
+.user-avatar-art--koala { --user-avatar-x: 59.876543%; --user-avatar-y: 1.020408%; }
+.user-avatar-art--rabbit { --user-avatar-x: 79.629630%; --user-avatar-y: 1.020408%; }
+.user-avatar-art--bear { --user-avatar-x: 99.382716%; --user-avatar-y: 1.020408%; }
+.user-avatar-art--owl { --user-avatar-x: 0.617284%; --user-avatar-y: 33.673469%; }
+.user-avatar-art--penguin { --user-avatar-x: 20.370370%; --user-avatar-y: 33.673469%; }
+.user-avatar-art--tiger { --user-avatar-x: 40.123457%; --user-avatar-y: 33.673469%; }
+.user-avatar-art--lion { --user-avatar-x: 59.876543%; --user-avatar-y: 33.673469%; }
+.user-avatar-art--dog { --user-avatar-x: 79.629630%; --user-avatar-y: 33.673469%; }
+.user-avatar-art--raccoon { --user-avatar-x: 99.382716%; --user-avatar-y: 33.673469%; }
+.user-avatar-art--red-panda { --user-avatar-x: 0.617284%; --user-avatar-y: 65.306122%; }
+.user-avatar-art--hedgehog { --user-avatar-x: 20.370370%; --user-avatar-y: 65.306122%; }
+.user-avatar-art--otter { --user-avatar-x: 40.123457%; --user-avatar-y: 65.306122%; }
+.user-avatar-art--frog { --user-avatar-x: 59.876543%; --user-avatar-y: 65.306122%; }
+.user-avatar-art--deer { --user-avatar-x: 79.629630%; --user-avatar-y: 65.306122%; }
+.user-avatar-art--wolf { --user-avatar-x: 99.382716%; --user-avatar-y: 65.306122%; }
+.user-avatar-art--seal { --user-avatar-x: 0.617284%; --user-avatar-y: 97.959184%; }
+.user-avatar-art--sloth { --user-avatar-x: 20.370370%; --user-avatar-y: 97.959184%; }
+.user-avatar-art--squirrel { --user-avatar-x: 40.123457%; --user-avatar-y: 97.959184%; }
+.user-avatar-art--parrot { --user-avatar-x: 59.876543%; --user-avatar-y: 97.959184%; }
+.user-avatar-art--chameleon { --user-avatar-x: 79.629630%; --user-avatar-y: 97.959184%; }
+.user-avatar-art--capybara { --user-avatar-x: 99.382716%; --user-avatar-y: 97.959184%; }
+
+/* The extension leaves all original illustrations and automatic choices intact. */
+.user-avatar-art--octopus,
+.user-avatar-art--whale,
+.user-avatar-art--turtle,
+.user-avatar-art--bat,
+.user-avatar-art--bee,
+.user-avatar-art--dinosaur {
+    --user-avatar-image: url("../../img/user-avatars/illustrations-extra-v1.png");
+    --user-avatar-size: 320% 213.333333%;
+}
+.user-avatar-art--octopus { --user-avatar-x: 1.515152%; --user-avatar-y: 2.941176%; }
+.user-avatar-art--whale { --user-avatar-x: 50%; --user-avatar-y: 2.941176%; }
+.user-avatar-art--turtle { --user-avatar-x: 98.484848%; --user-avatar-y: 2.941176%; }
+.user-avatar-art--bat { --user-avatar-x: 1.515152%; --user-avatar-y: 97.058824%; }
+.user-avatar-art--bee { --user-avatar-x: 50%; --user-avatar-y: 97.058824%; }
+.user-avatar-art--dinosaur { --user-avatar-x: 98.484848%; --user-avatar-y: 97.058824%; }

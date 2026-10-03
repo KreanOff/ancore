@@ -24,12 +24,15 @@ Zapis odświeża awatar w menu przy częściowej nawigacji.
 
 Osoby zarządzające przestrzenią klikają jej awatar lub „Zmień awatar”
 w ustawieniach. Okno korzysta z `app-modal-panel--compact`, standardowej
-stopki i `AncoreTaskModals`. Zawiera 24 kolorowe ilustracje, wybór automatyczny
+stopki i `AncoreTaskModals`. Zawiera 30 kolorowych ilustracji, wybór automatyczny
 oraz upload z podglądem i przeciąganiem. Natywna grupa radio zapewnia wybór
 klawiaturą; zaznaczenie ma turkusową ramkę. Na telefonie siatka dopasowuje
 liczbę kolumn. Zapis, błędy, szkic, Escape i fokus obsługuje `spaces.js`.
-Ilustracje mają pełnokolorowe tła i wypełnione kształty. Korzystają z jednego
-lokalnego atlasu PNG w `static/img/space-avatars/` i klas `space-avatar-art--*`.
+Ilustracje mają pełnokolorowe tła i wypełnione kształty. Korzystają z dwóch
+lokalnych atlasów PNG w `static/img/space-avatars/` i klas `space-avatar-art--*`.
+Atlas `illustrations-extra-v1.png` dodaje aparat, słuchawki, góry, diament, kawę
+i balon. Wybór automatyczny nadal korzysta z pierwotnych 24 ilustracji,
+dzięki czemu rozszerzenie nie zmienia istniejących przypisań.
 Zachowują stabilne identyfikatory wcześniejszych ikon. W pickerze mają 56px
 (40px na telefonie); pozostałe rozmiary awatarów pozostają bez zmian.
 Zestaw jest współdzielony z Workspace, a ikony kontrolek nadal używają
@@ -1593,9 +1596,24 @@ w przeglądarce, nazwij weryfikację przeglądem kodu, a nie wizualnym testem.
 
 ## 12. Zarządzanie Workspace i zespołem
 
-Workspace korzysta z tych samych 24 ilustracji co Przestrzenie. Wspólne
+Profil użytkownika korzysta ze wspólnego okna `core/includes/avatar_picker.html`
+i `workplace-avatars.js`, z osobną pulą 30 zwierzęcych maskotek w
+`accounts/avatar_presets.py`. Lokalne atlasy `static/img/user-avatars/illustrations-v1.png`
+oraz `illustrations-extra-v1.png` zachowują proste wypełnione kształty i kolorystykę
+Przestrzeni i Workspace; nie zawierają portretów ludzi. Dodatkowe sześć ilustracji
+to ośmiornica, wieloryb, żółw, nietoperz, pszczoła i dinozaur. Pierwotne 24 grafiki
+i wybór automatyczny pozostają niezmienione. Klasy `user-avatar-art--*` są oddzielone od motywów
+Workspace. Siatka wyboru zachowuje kwadratowe kafelki, a awatary użytkownika
+w aplikacji pozostają okrągłe w dotychczasowych rozmiarach.
+Kliknięcie awatara na profilu otwiera edycję oraz okno wyboru; w edycji dostępny
+jest także przycisk „Zmień”. Zapis w pickerze zatwierdza szkic, a „Zapisz” profilu
+utrwala go. Wspólna obsługa zapewnia wybór automatyczny, upload z kadrowaniem,
+przeciąganie, anulowanie, Escape, fokus i inicjalizację po częściowej nawigacji.
+Pula kont nie zmienia dostępnych motywów Przestrzeni ani Workspace.
+
+Workspace korzysta z tych samych 30 ilustracji co Przestrzenie. Wspólne
 `core/avatars.py` i `core/includes/avatar_presets.html` definiują motywy
-oraz siatkę radio; `space-avatars.css` obsługuje atlas i zaznaczenie.
+oraz siatkę radio; `space-avatars.css` obsługuje atlasy i zaznaczenie.
 W formularzach tworzenia i edycji kliknięcie awatara albo „Dodaj”/„Zmień”
 otwiera osobne okno „Wybierz awatar” z powłoką `app-modal-panel--compact`,
 tak jak w Przestrzeniach. Siatka nie jest widoczna w głównym formularzu.

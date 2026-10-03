@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.executor import MigrationExecutor
@@ -70,13 +72,17 @@ class EmailIdentityMigrationTests(TransactionTestCase):
         executor.migrate(previous)
         duplicate = None
         try:
-            User = get_user_model()
+            # Use the model matching the historical schema (before later profile fields).
+            apps = executor.loader.project_state(previous).apps
+            User = apps.get_model('accounts', 'User')
+            Workplace = apps.get_model('workplaces', 'Workplace')
             owner = User.objects.create_user(username='migration-owner', email='owner@example.test')
             first = User.objects.create_user(username='first-email', email='same@example.test')
             duplicate = User.objects.create_user(username='second-email', email='SAME@example.test')
-            workspace = create_workplace_for_user(owner, 'Legacy email')
+            workspace = Workplace.objects.create(owner=owner, name='Legacy email', slug='legacy-email')
             form = InvitationForm(data={'email': duplicate.email, 'role': 'member'}, workplace=workspace, actor=owner)
-            self.assertFalse(form.is_valid())
+            with patch('workplaces.team_views.get_user_model', return_value=User):
+                self.assertFalse(form.is_valid())
             self.assertIn('email', form.errors)
             self.assertFalse(workspace.invitations.exists())
             with self.assertRaisesMessage(RuntimeError, 'Żadne konto nie zostało zmienione'):

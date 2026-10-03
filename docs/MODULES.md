@@ -18,13 +18,24 @@ Zasady wspólne znajdują się w [MECHANISMS.md](MECHANISMS.md).
 [formularze](../accounts/forms.py), [obecność](../accounts/presence.py).
 
 **Funkcje:** rejestracja, logowanie przez e-mail, wylogowanie, edycja profilu,
-zdjęcie z kadrowaniem/usuwaniem, publiczny identyfikator Ancore, dane kontaktowe,
+30 gotowych awatarów zwierzęcych, wybór automatyczny oraz zdjęcie z kadrowaniem/usuwaniem,
+publiczny identyfikator Ancore, dane kontaktowe,
 status obecności i przełączanie między kontami dodanymi do jednej sesji.
 
 `User` rozszerza `AbstractUser`. E-mail jest unikalny bez względu na wielkość
 liter (formularze oraz ograniczenie bazy `Lower(email)`) i służy do logowania;
 `username` pozostaje osobnym publicznym identyfikatorem. Profil zawiera imiona,
 nazwisko, telefon, stanowisko, opis, zdjęcie i dane obecności.
+
+`User.avatar` zapisuje wybraną ilustrację z osobnej puli `accounts/avatar_presets.py`;
+nie korzysta z motywów Przestrzeni i Workspace. Pusty identyfikator oznacza
+stabilny wybór automatyczny według użytkownika z pierwotnych 24 ilustracji;
+rozszerzenie katalogu nie zmienia wcześniejszych przypisań. Istniejące zdjęcie ma pierwszeństwo.
+Zmiana na ilustrację lub wybór automatyczny usuwa powiązanie ze zdjęciem;
+poprzedni plik jest sprzątany dopiero po zatwierdzeniu transakcji.
+Wspólny helper `accounts.avatar.account_avatar` i include avatara udostępniają
+wybór w profilu, pasku konta, przełączniku kont, zespołach, komentarzach i powiadomieniach.
+Profil zapisuje wyłącznie konto aktualnie zalogowanej osoby.
 
 Dodanie kolejnego konta wymaga jego uwierzytelnienia. Przełącznik przechowuje
 identyfikatory i hashe sesyjne wcześniej uwierzytelnionych kont. Po zmianie hasła
@@ -47,8 +58,9 @@ obsługuje osobny mechanizm opisany w Mechanizmach.
 i „Wysłane zaproszenia” w oknie edycji miejsca pracy. Otrzymane zaproszenia
 są dostępne przez powiadomienia. Utworzenie, edycja, usunięcie i przełączenie;
 nazwa, opis, kod, slug i awatar; ulubione miejsca w nawigacji oraz ich kolejność.
-`Workplace.avatar` zapisuje identyfikator jednej z 24 ilustracji współdzielonych
-z Przestrzeniami; pusta wartość oznacza wybór automatyczny według ID.
+`Workplace.avatar` zapisuje identyfikator jednej z 30 ilustracji współdzielonych
+z Przestrzeniami; pusta wartość oznacza wybór automatyczny według ID z pierwotnej
+puli 24 motywów, zachowujący wcześniejsze przypisania.
 `workplace_photo` zachowuje istniejący upload i kadrowanie własnego obrazu.
 Wybór ilustracji usuwa poprzedni plik po zatwierdzeniu transakcji.
 Właściciel i administrator otwierają wybór kliknięciem awatara lub „Dodaj”/„Zmień”

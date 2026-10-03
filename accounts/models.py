@@ -6,6 +6,8 @@ from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractUser
 from django.utils.text import slugify
 
+from .avatar_presets import AVATARS
+
 
 PUBLIC_USERNAME_RE = re.compile(r'^@[a-z0-9][a-z0-9._-]{2,148}$')
 
@@ -22,6 +24,7 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=150)
     middle_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150)
+    avatar = models.CharField(max_length=32, blank=True, choices=AVATARS)
     profile_photo = models.FileField(
         upload_to='profile_photos/',
         blank=True,

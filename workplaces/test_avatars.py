@@ -51,7 +51,7 @@ class WorkplaceAvatarTests(TestCase):
                 self.workspace.refresh_from_db()
                 self.assertEqual(self.workspace.avatar, key)
         for path in [reverse('workplaces:workplaces'), f'/workplaces/{self.workspace.slug}/spaces/']:
-            self.assertContains(self.client.get(path), 'space-avatar-art--smile')
+            self.assertContains(self.client.get(path), 'space-avatar-art--hot-air-balloon')
         self.post(avatar='auto')
         self.workspace.refresh_from_db()
         self.assertEqual(self.workspace.avatar, '')

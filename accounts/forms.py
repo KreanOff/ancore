@@ -6,7 +6,10 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from django.core.files.base import ContentFile
+from django.db import transaction
 from core.upload_validation import validate_image_bytes, validate_image_upload
+from .avatar import avatar_color_seed
+from .avatar_presets import AVATARS, AVATAR_CHOICES, preset_avatar
 from .models import (
     PUBLIC_USERNAME_RE,
     User,
@@ -80,6 +83,10 @@ class UserProfileForm(forms.ModelForm):
     _input_attrs = {'class': 'form-input'}
     _profile_input_attrs = {'class': 'form-input profile-field-input'}
 
+    avatar = forms.ChoiceField(
+        label='Awatar użytkownika', choices=AVATAR_CHOICES, required=False, widget=forms.RadioSelect,
+    )
+
     first_name = forms.CharField(label='Imię', max_length=150, required=True, widget=forms.TextInput(attrs={
         **{'placeholder': 'Imię'},
         **_input_attrs,
@@ -101,7 +108,7 @@ class UserProfileForm(forms.ModelForm):
         **_profile_input_attrs,
     }))
     profile_photo = forms.FileField(label='Zdjęcie użytkownika', required=False, widget=forms.FileInput(attrs={
-        'accept': 'image/*',
+        'accept': '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
         'class': 'profile-photo-input',
         'hidden': True,
     }))
@@ -145,6 +152,7 @@ class UserProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = (
+            'avatar',
             'profile_photo',
             'first_name',
             'middle_name',
@@ -157,7 +165,40 @@ class UserProfileForm(forms.ModelForm):
             'presence_status',
         )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.original_photo = self.instance.profile_photo.name
+        self.initial['avatar'] = 'upload' if self.original_photo else self.instance.avatar or 'auto'
+        self.avatar_options = [preset_avatar(key) for key, _ in AVATARS]
+        self.automatic_avatar = preset_avatar(seed=avatar_color_seed(self.instance))
+        self.avatar_art_class = 'user-avatar-art'
+
+    def clean_avatar(self):
+        # Preserve existing selections when older clients only edit profile fields.
+        if 'avatar' not in self.data:
+            if self.data.get('profile_photo_crop') or self.files.get('profile_photo'):
+                return 'upload'
+            if self.data.get('profile_photo_remove') == '1':
+                return 'auto'
+            return self.initial['avatar']
+        return self.cleaned_data.get('avatar') or 'auto'
+
+    def clean(self):
+        data = super().clean()
+        self.avatar_mode = data.get('avatar', 'auto')
+        if self.avatar_mode == 'upload':
+            if (not data.get('profile_photo') and not data.get('profile_photo_crop')
+                    and not self.original_photo and not self.errors.get('profile_photo')
+                    and not self.errors.get('profile_photo_crop')):
+                self.add_error('profile_photo', 'Wybierz obraz do przesłania.')
+        else:
+            data['profile_photo'] = None
+        data['avatar'] = self.avatar_mode if self.avatar_mode not in {'auto', 'upload'} else ''
+        return data
+
     def clean_profile_photo_crop(self):
+        if 'avatar' in self.data and self.data.get('avatar') != 'upload':
+            return None
         crop_data = (self.cleaned_data.get('profile_photo_crop') or '').strip()
 
         if not crop_data:
@@ -181,6 +222,8 @@ class UserProfileForm(forms.ModelForm):
         }
 
     def clean_profile_photo(self):
+        if 'avatar' in self.data and self.data.get('avatar') != 'upload':
+            return None
         profile_photo = self.cleaned_data.get('profile_photo')
 
         if not profile_photo:
@@ -216,14 +259,26 @@ class UserProfileForm(forms.ModelForm):
         user = super().save(commit=False)
         photo_crop = self.cleaned_data.get('profile_photo_crop')
 
-        if self.cleaned_data.get('profile_photo_remove') and not photo_crop:
-            user.profile_photo.delete(save=False)
+        if self.avatar_mode != 'upload':
+            user.profile_photo = ''
+            photo_crop = None
+        elif self.cleaned_data.get('profile_photo_remove') and not photo_crop:
+            user.profile_photo = ''
 
         if photo_crop:
             filename = f'profile_{user.pk or "new"}_{uuid.uuid4().hex}.{photo_crop["extension"]}'
             user.profile_photo.save(filename, ContentFile(photo_crop['content']), save=False)
 
         if commit:
-            user.save()
+            with transaction.atomic():
+                user.save()
+                old_name = self.original_photo
+                if old_name and old_name != user.profile_photo.name:
+                    storage = user._meta.get_field('profile_photo').storage
+
+                    def cleanup():
+                        if not User.objects.filter(profile_photo=old_name).exists():
+                            storage.delete(old_name)
+                    transaction.on_commit(cleanup, robust=True)
 
         return user

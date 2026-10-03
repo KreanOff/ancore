@@ -1,7 +1,7 @@
-<span class="profile-avatar profile-avatar--user {{ avatar_class }} {{ avatar.color_class }} {% if avatar.photo_url %}has-photo{% endif %}" style="{{ avatar.color_style }}" aria-hidden="true">
+<span class="profile-avatar profile-avatar--user {{ avatar_class }} {{ avatar.color_class }} {% if avatar.photo_url %}has-photo{% elif avatar.preset_class %}user-avatar-art {{ avatar.preset_class }}{% endif %}" style="{{ avatar.color_style }}" aria-hidden="true">
     {% if avatar.photo_url %}
     <img src="{{ avatar.photo_url }}" alt="">
-    {% else %}
+    {% elif not avatar.preset_class %}
     {% include 'accounts/includes/user_avatar_icon.html' %}
     {% endif %}
 </span>

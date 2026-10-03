@@ -4,7 +4,7 @@
         {% for option in form.avatar_options %}
         <label class="space-avatar-option" title="{{ option.label }}">
             <input class="u-sr-only" type="radio" name="avatar" value="{{ option.key }}"{% if form.avatar.value == option.key %} checked{% endif %}>
-            <span class="profile-avatar space-avatar space-avatar--picker space-avatar-art {{ option.preset_class }}" aria-hidden="true"></span>
+            <span class="profile-avatar space-avatar space-avatar--picker {{ option.art_class|default:'space-avatar-art' }} {{ option.preset_class }}" aria-hidden="true"></span>
             <span class="u-sr-only">{{ option.label }}</span>
         </label>
         {% endfor %}

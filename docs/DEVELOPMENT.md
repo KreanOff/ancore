@@ -96,8 +96,24 @@ Django. Przy wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
 
+Awatary użytkowników wymagają migracji `accounts.0009_user_avatar`, dodającej
+pole wyboru bez zmiany dotychczasowych zdjęć. `accounts.0010_user_avatar_thirty`
+rozszerza wybór do 30 ilustracji bez zmiany danych. Uruchamiaj `accounts.test_avatars`,
+`accounts.tests`, `accounts.test_email_identity`, `workplaces.test_avatars`,
+`spaces.test_avatars` i `core.test_file_lifecycle`. Testy obejmują odrębną pulę,
+stabilny wybór automatyczny, zapis zalogowanego konta, CSRF, zwykły/scoped kontekst,
+walidację obrazu/kadru, zachowanie starszych formularzy oraz sprzątanie po commit
+i rollback. Testy historycznych migracji Accounts muszą używać modeli historycznych,
+ponieważ starszy schemat nie zawiera pola `avatar`.
+Browser QA: Profil → kliknięcie awatara → wybór → zapis pickera → zapis profilu,
+przeładowanie, pasek konta, błąd formularza, anulowanie ilustracji i kadru, własny
+obraz, brak obrazu/błędny format, Escape/Tab/fokus, szkic profilu, częściowa nawigacja
+oraz desktop/telefon. Sprawdź również referencyjne pickery Workspace i Przestrzeni.
+
 Awatary Workspace wymagają migracji `workplaces.0009_workplace_avatar`.
-Dodaje ona puste pole motywu; zachowuje istniejące obrazy. Uruchamiaj
+Dodaje ona puste pole motywu; zachowuje istniejące obrazy. Rozszerzenie wspólnej
+puli Przestrzeni i Workspace do 30 ilustracji nie wymaga kolejnej migracji:
+wybór walidują formularze przez `core.avatars`. Uruchamiaj
 `manage.py test workplaces.test_avatars spaces.test_avatars core.test_file_lifecycle`
 oraz regresje `workplaces` i `spaces`. Testy obejmują tworzenie/edycję, wszystkie
 motywy, zwykłe/scoped ekrany, role, CSRF, walidację uploadu i kadru, zachowanie
