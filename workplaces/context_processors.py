@@ -14,8 +14,16 @@ def current_workplace(request):
     workplace_app_urls = {}
     sidebar_favorite_keys = []
     sidebar_favorites = []
+    navigation_spaces = []
     if active_workplace:
+        from spaces.services import visible_spaces
+        from django.db.models import Exists, OuterRef
+        from tasks.models import TaskProject
+        favorite = TaskProject.favorited_by.through.objects.filter(taskproject_id=OuterRef('project_id'), user_id=user.pk)
+        navigation_spaces = list(visible_spaces(request).annotate(is_favorite=Exists(favorite)).order_by('-is_favorite', '-created_at')[:6])
         workplace_app_urls = {
+            'spaces': scoped_workplace_app_path(active_workplace, 'spaces'),
+            'teams': scoped_workplace_app_path(active_workplace, 'teams'),
             'for_you': scoped_workplace_app_path(active_workplace, 'for-you'),
             'tasks': scoped_workplace_app_path(active_workplace, 'tasks'),
             'kanban': scoped_workplace_app_path(active_workplace, 'kanban'),
@@ -37,6 +45,7 @@ def current_workplace(request):
 
     return {
         'current_workplace': active_workplace,
+        'navigation_spaces': navigation_spaces,
         'available_workplaces': user_workplaces,
         'available_workplace_count': len(user_workplaces),
         'workplace_app_urls': workplace_app_urls,

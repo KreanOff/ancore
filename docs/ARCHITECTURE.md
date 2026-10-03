@@ -23,8 +23,9 @@ Kod używa mechanizmów PostgreSQL, w tym indeksów GIN i rozszerzenia `pg_trgm`
 ancore/                 konfiguracja projektu, główny routing, WSGI/ASGI
 accounts/               użytkownik, logowanie, profil, wiele kont, obecność
 workplaces/             Workspace, aktywny kontekst, nawigacja, ulubione
-tasks/                  projekty, grupy, zadania, tagi, słowniki, terminy
-kanban/                 przestrzenie Kanban, tablice, kolumny i karty
+spaces/                 przestrzenie, konfiguracje, planowanie i zespoły
+tasks/                  kanoniczne zadania, uprawnienia, grupy, historia, pliki
+kanban/                 historyczne źródła kart i zgodność starych adresów
 contacts/               kontakty, firmy, powiązania z kontami Ancore
 planner/                wydarzenia i kalendarz
 resources/              ewidencja sprzętu, licencji i narzędzi Workspace
@@ -230,3 +231,12 @@ i zadań nie zapisują żywych modeli. Każda operacja blokuje wiersz szablonu,
 aby równoległe zmiany różnych elementów nie nadpisywały całej struktury.
 Aktualne ograniczenia i pozostałości historyczne są zebrane w
 [MODULES.md](MODULES.md) i [DEVELOPMENT.md](DEVELOPMENT.md).
+
+## Przestrzenie i zespoły (3.10.2026)
+
+`spaces` jest warstwą organizacji istniejących `TaskProject` i `Task`, nie
+osobnym silnikiem zadań. Nowe karty tablicy to te same zadania co na liście.
+Po migracji karty Kanbana mają kanoniczne odpowiedniki w Tasks; źródła są
+zachowane i wykluczone z bieżących list. `LegacyKanbanMiddleware` obsługuje
+historyczne adresy po ustaleniu Workspace. Szczegóły migracji, modeli,
+konfiguracji i ograniczeń: [SPACES.md](SPACES.md).

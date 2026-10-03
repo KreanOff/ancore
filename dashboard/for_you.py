@@ -43,7 +43,7 @@ def _row(obj, workplace, now):
     is_task = isinstance(obj, (Task, Kanban))
     is_project = isinstance(obj, (TaskProject, KanbanProject))
     labels = {Task: ('Zadanie', 'list-checks'), Kanban: ('Karta Kanban', 'kanban'),
-              TaskProject: ('Projekt', 'briefcase-business'), TaskSection: ('Grupa', 'layers-3'),
+              TaskProject: ('Przestrzeń', 'folders'), TaskSection: ('Grupa', 'layers-3'),
               KanbanProject: ('Przestrzeń Kanban', 'folders'), KanbanSection: ('Tablica', 'kanban')}
     label, icon = labels[type(obj)]
     location = label
@@ -54,7 +54,7 @@ def _row(obj, workplace, now):
                 and obj.section.project.workplace_id == workplace.pk):
             location += f' · {obj.section.project.name} · {obj.section.title}'
     elif is_project:
-        url = f'{base}?project={obj.pk}'
+        url = scoped_workplace_app_path(workplace, 'spaces', f'{obj.space.pk}/') if isinstance(obj, TaskProject) and hasattr(obj, 'space') else f'{base}?project={obj.pk}'
     else:
         url = f'{base}groups/{obj.pk}/'
         location += f' · {obj.project.name}'
@@ -153,5 +153,5 @@ def for_you_context(request):
         'for_you_next': f'{base_url}?tab={tab}&page={page.number + 1}' if page.has_next() else '',
         'for_you_empty': EMPTY_STATES[tab], 'for_you_assigned_count': assigned_count,
         'for_you_projects': [_row(obj, workplace, now) for obj in projects[:4]],
-        'for_you_projects_url': scoped_workplace_app_path(workplace, 'tasks'),
+        'for_you_projects_url': scoped_workplace_app_path(workplace, 'spaces'),
     }

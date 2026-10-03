@@ -6,16 +6,12 @@ from .services import scoped_workplace_app_path
 SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'for-you', 'label': 'Dla ciebie', 'icon': 'user-round-check', 'app': 'for-you'},
     {'key': 'dashboard', 'label': 'Dashboard', 'icon': 'layout-dashboard', 'route_name': 'home'},
-    # Preserve the saved sidebar preference key when replacing the menu entry.
-    {'key': 'tasks-my', 'label': 'Zadania nieprzydzielone', 'icon': 'user-round-check', 'app': 'tasks', 'query': 'view=unassigned-tasks'},
-    {'key': 'tasks-all', 'label': 'Zadania', 'icon': 'list-checks', 'app': 'tasks', 'query': 'view=all-tasks'},
-    {'key': 'tasks-projects', 'label': 'Projekty', 'icon': 'briefcase-business', 'app': 'tasks'},
-    {'key': 'tasks-groups', 'label': 'Grupy', 'icon': 'layers-3', 'app': 'tasks', 'query': 'view=all-groups'},
-    {'key': 'kanban-spaces', 'label': 'Przestrzenie Kanban', 'icon': 'folders', 'app': 'kanban', 'query': 'view=projects'},
-    {'key': 'kanban-boards', 'label': 'Tablice', 'icon': 'kanban', 'app': 'kanban', 'query': 'view=all-groups'},
-    {'key': 'contacts-all', 'label': 'Kontakty', 'icon': 'users', 'app': 'contacts'},
-    {'key': 'contacts-companies', 'label': 'Firmy', 'icon': 'building-2', 'app': 'contacts', 'suffix': 'companies/'},
-    {'key': 'contacts-guests', 'label': 'Goście', 'icon': 'user-round-alert', 'app': 'contacts', 'suffix': 'guests/'},
+    {'key': 'spaces', 'label': 'Przestrzenie', 'icon': 'folders', 'app': 'spaces'},
+    {'key': 'teams', 'label': 'Zespoły', 'icon': 'users', 'app': 'teams'},
+    {'key': 'tasks-all', 'label': 'Wszystkie zadania', 'icon': 'list-checks', 'app': 'spaces', 'suffix': 'items/'},
+    {'key': 'tasks-projects', 'label': 'Przestrzenie', 'icon': 'folders', 'app': 'spaces'},
+    {'key': 'kanban-spaces', 'label': 'Przestrzenie', 'icon': 'folders', 'app': 'spaces'},
+    {'key': 'kanban-boards', 'label': 'Przestrzenie', 'icon': 'folders', 'app': 'spaces'},
     {'key': 'calendar', 'label': 'Kalendarz', 'icon': 'calendar-days', 'app': 'calendar'},
     {'key': 'tags', 'label': 'Tagi', 'icon': 'tag', 'app': 'tasks', 'query': 'view=tags'},
     {'key': 'documents', 'label': 'Dysk', 'icon': 'hard-drive', 'app': 'documents'},
@@ -47,6 +43,13 @@ def sidebar_favorite_is_active(item_key, request, active_view='', active_contact
     resolver_match = getattr(request, 'resolver_match', None)
     app_name = getattr(resolver_match, 'app_name', '') or ''
     view_name = getattr(resolver_match, 'url_name', '') or ''
+
+    if item_key in {'spaces', 'tasks-projects', 'kanban-spaces', 'kanban-boards'}:
+        return app_name in {'spaces', 'workplace_spaces'} and view_name != 'items'
+    if item_key == 'teams':
+        return app_name in {'teams', 'workplace_teams'}
+    if item_key == 'tasks-all' and app_name in {'spaces', 'workplace_spaces'}:
+        return view_name == 'items'
 
     if item_key == 'for-you':
         return view_name in {'for_you', 'workplace_for_you'}

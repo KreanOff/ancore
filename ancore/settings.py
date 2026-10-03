@@ -105,6 +105,7 @@ INSTALLED_APPS = [
     'planner',
     'documents',
     'resources',
+    'spaces.apps.SpacesConfig',
 ]
 
 MIDDLEWARE = [
@@ -115,6 +116,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'accounts.middleware.UserPresenceMiddleware',
     'workplaces.middleware.ActiveWorkplaceMiddleware',
+    'spaces.middleware.LegacyKanbanMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

@@ -10,9 +10,14 @@ from documents import urls as documents_urls
 from documents import workspace_urls as office_urls
 from documents import suite_views
 from resources import urls as resources_urls
+from spaces import urls as spaces_urls, team_urls
 from core.media import public_media
 
 urlpatterns = [
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/spaces/', include((spaces_urls.urlpatterns, 'workplace_spaces'), namespace='workplace_spaces')),
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/teams/', include((team_urls.urlpatterns, 'workplace_teams'), namespace='workplace_teams')),
+    path('spaces/', include('spaces.urls')),
+    path('teams/', include('spaces.team_urls')),
     path('drive-office-service/<uuid:pk>/source/', suite_views.source, {'drive': True}, name='drive-office-service-source'),
     path('drive-office-service/<uuid:pk>/callback/', suite_views.callback, {'drive': True}, name='drive-office-service-callback'),
     path('office-service/<uuid:pk>/source/', suite_views.source, name='office-service-source'),

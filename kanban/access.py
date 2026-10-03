@@ -31,7 +31,10 @@ def visible_to(queryset, viewer):
     privacy = Q(visibility='public') | Q(visibility='private', private_owner=viewer) | Q(
         visibility='private', private_owner__isnull=False, shared_with=viewer,
     )
-    projects = KanbanProject.objects.filter(scope, privacy).order_by()
+    from spaces.models import LegacyKanbanLink
+    projects = KanbanProject.objects.filter(scope, privacy).exclude(
+        pk__in=LegacyKanbanLink.objects.filter(kind='project').values('source_id'),
+    ).order_by()
     sections = KanbanSection.objects.filter(privacy, project__in=projects).order_by()
     name = queryset.model._meta.model_name
     if name == 'kanbanproject':
@@ -49,7 +52,9 @@ def visible_to(queryset, viewer):
         hidden = Kanban.objects.filter(
             ~scope | (Q(section__isnull=False) & ~Q(section__in=sections)),
         )
-        cards = Kanban.objects.filter(scope).exclude(pk__in=card_tree_ids(hidden)).order_by()
+        cards = Kanban.objects.filter(scope).exclude(pk__in=card_tree_ids(hidden)).exclude(
+            pk__in=LegacyKanbanLink.objects.filter(kind='task').values('source_id'),
+        ).order_by()
         result = queryset.filter(**{paths[name] + '__in': cards.values('pk')})
         if name == 'kanbanactivity':
             ids = cards.annotate(json_pk=Func(F('pk'), function='to_jsonb', output_field=JSONField())).values('json_pk')

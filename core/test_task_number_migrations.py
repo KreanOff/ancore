@@ -8,12 +8,13 @@ class TaskNumberMigrationTests(TransactionTestCase):
     def test_existing_duplicates_are_repaired_without_changing_identity_or_relations(self):
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
-        previous = [node for node in latest if node[0] not in {'tasks', 'kanban', 'dashboard'}] + [
-            ('tasks', '0046_project_source_options'), ('kanban', '0033_retire_entity_icons'), ('dashboard', None),
+        previous = [node for node in latest if node[0] not in {'tasks', 'kanban', 'dashboard', 'spaces'}] + [
+            ('tasks', '0046_project_source_options'), ('kanban', '0033_retire_entity_icons'), ('dashboard', None), ('spaces', None),
         ]
         executor.migrate(previous)
         try:
-            apps = executor.loader.project_state([node for node in previous if node[1] is not None]).apps
+            loader = MigrationExecutor(connection).loader
+            apps = loader.project_state(list(loader.applied_migrations)).apps
             user = apps.get_model(settings.AUTH_USER_MODEL).objects.create(username='migration-owner', email='migration@example.test')
             workplace_model = apps.get_model('workplaces', 'Workplace')
             first = workplace_model.objects.create(owner=user, name='First', slug='first')

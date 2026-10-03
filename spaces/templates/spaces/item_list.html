@@ -1,0 +1,20 @@
+{% load space_ui %}
+<div class="tasks-table-wrap tasks-board work-item-list{% if not items %} tasks-board--empty{% endif %}">
+    {% for group in items|status_groups %}
+    <section class="tasks-issue-group tasks-status-block">
+        <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ group.category }}">
+            <button type="button" class="tasks-group-caret" aria-label="Zwiń status {{ group.label }}" data-group-label="status {{ group.label }}" aria-expanded="true"><i data-icon="chevron-down" aria-hidden="true"></i></button>
+            <span class="status-indicator status-{{ group.category }}">{{ group.label }}</span>
+            <span class="tasks-rail-count">{{ group.items|length }}</span>
+        </header>
+        <div class="tasks-issue-list">
+            {% for item in group.items %}{% include 'spaces/row.html' %}{% endfor %}
+        </div>
+    </section>
+    {% empty %}
+    <div class="tasks-empty-state tasks-empty-state--centered" role="status">
+        <span class="tasks-empty-state__icon" aria-hidden="true"><i data-icon="list-checks" aria-hidden="true"></i></span>
+        <div class="tasks-empty-state__copy"><h2>{% if query or assignee_filter or team_filter %}Nie znaleziono zadań.{% else %}Nie ma jeszcze zadań.{% endif %}</h2><p>{% if query or assignee_filter or team_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Nowe zadania pojawią się tutaj po ich utworzeniu.{% endif %}</p></div>
+    </div>
+    {% endfor %}
+</div>

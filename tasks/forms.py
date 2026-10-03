@@ -143,7 +143,7 @@ class TaskForm(TaskAccessForm):
     project = forms.ModelChoiceField(
         queryset=TaskProject.objects.none(),
         required=False,
-        label='Projekt',
+        label='Przestrzeń',
         widget=forms.Select(attrs={
             'class': 'form-input'
         }),
@@ -194,7 +194,7 @@ class TaskForm(TaskAccessForm):
         elif project:
             self.fields['project'].initial = project
         self.fields['section'].required = False
-        self.fields['section'].label = 'Grupa projektu'
+        self.fields['section'].label = 'Grupa przestrzeni'
         self.fields['parent'].required = bool(getattr(self.instance, 'parent_id', None))
         self.fields['title'].label = 'Tytuł'
         self.fields['description'].label = 'Opis'
@@ -212,6 +212,10 @@ class TaskForm(TaskAccessForm):
     def clean(self):
         cleaned_data = super().clean()
         parent = cleaned_data.get('parent')
+        if self.instance.pk and cleaned_data.get('status'):
+            from spaces.services import category_transition_allowed
+            if not category_transition_allowed(self.instance, cleaned_data['status']):
+                self.add_error('status', 'To przejście statusu nie jest dozwolone w przestrzeni.')
         project = cleaned_data.get('project')
         section = cleaned_data.get('section')
         if parent:
@@ -1183,7 +1187,7 @@ class TaskModalForm(TaskAccessForm):
         else:
             _replace_optional_model_choice(self, 'assignee', get_user_model().objects.none(), 'Brak osoby')
         self.fields['section'].required = False
-        self.fields['section'].label = 'Grupa projektu'
+        self.fields['section'].label = 'Grupa przestrzeni'
         self.fields['tags'].required = False
         self.fields['tags'].label = 'Tagi'
         self.fields['due_at'].label = 'Termin wykonania'

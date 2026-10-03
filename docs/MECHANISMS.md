@@ -1,5 +1,15 @@
 # Wspólne mechanizmy i przepływy
 
+## Wspólne zadania przestrzeni
+
+Nowe listy, tablice i backlog korzystają z `Task` i metadanych `WorkItem`.
+Numer klucza przestrzeni jest trwały i niezależny od renumerowanego `task_id`.
+Dostęp nadal wyznaczają istniejące projekty, grupy i zadania. Przejścia statusów
+w nowych i dotychczasowych formularzach/statusowych endpointach podlegają
+konfiguracji przestrzeni. Stare pliki współdzielone po imporcie są usuwane
+dopiero po ostatnim odwołaniu i zatwierdzeniu transakcji. [Szczegóły](SPACES.md).
+
+
 ## 1. Tożsamość, sesja i obecność
 
 Logowanie korzysta z Django Auth oraz `accounts.User`, gdzie `USERNAME_FIELD`

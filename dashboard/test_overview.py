@@ -112,10 +112,10 @@ class DashboardOverviewTests(TestCase):
         card = Kanban.objects.create(user=self.user, workplace=self.workplace, title='Karta', priority='urgent')
         context = self.overview('priority')
         self.assertEqual([row['object'] for row in context['dashboard_items']], [urgent, high])
-        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'tasks', f'view-task/{urgent.task_id}/'))
+        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'tasks', f'view-task/{urgent.task_id}/?task_pk={urgent.pk}'))
         context = self.overview('kanban')
         self.assertEqual([row['object'] for row in context['dashboard_items']], [card])
-        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'kanban', f'view-task/{card.task_id}/'))
+        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'kanban', f'view-task/{card.task_id}/?task_pk={card.pk}'))
 
     def test_calendar_includes_ongoing_and_all_day_events_but_excludes_finished(self):
         def event(title, start, end, **kwargs):
@@ -143,7 +143,7 @@ class DashboardOverviewTests(TestCase):
         row = context['dashboard_projects'][0]
         self.assertEqual(row['object'].item_count, 2)
         self.assertEqual(row['percent'], 50)
-        self.assertEqual(row['url'], f'{scoped_workplace_app_path(self.workplace, "tasks")}?project={project.pk}')
+        self.assertEqual(row['url'], scoped_workplace_app_path(self.workplace, 'spaces', f'{project.space.pk}/'))
 
     def test_empty_workspace_and_partial_navigation_response(self):
         response = self.client.get(reverse('home'), {'focus': 'kanban'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -151,7 +151,7 @@ class DashboardOverviewTests(TestCase):
         self.assertEqual(response.context['dashboard_totals']['total'], 0)
         self.assertEqual(response.context['dashboard_completed_percent'], 0)
         self.assertContains(response, 'Brak otwartych kart')
-        self.assertContains(response, 'Miejsce na kolejny projekt')
+        self.assertContains(response, 'Miejsce na kolejną przestrzeń')
         self.assertContains(response, 'Spokojny kalendarz')
         self.assertEqual(response['Cache-Control'], 'no-store')
 

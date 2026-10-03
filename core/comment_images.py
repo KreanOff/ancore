@@ -68,9 +68,8 @@ class CommentImage(models.Model):
 
 
 def delete_comment_image_file(sender, instance, using, **kwargs):
-    if instance.file:
-        storage, name = instance.file.storage, instance.file.name
-        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
+    from core.task_files import delete_after_commit
+    delete_after_commit(instance, using, comment=True)
 
 
 def save_comment(request, task, image_model, record_activity):

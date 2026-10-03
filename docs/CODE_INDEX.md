@@ -17,7 +17,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 17 | 0 | 10 | 58 |
+| [core](../core) | 18 | 0 | 10 | 58 |
 | [accounts](../accounts) | 15 | 5 | 8 | 34 |
 | [workplaces](../workplaces) | 19 | 8 | 12 | 91 |
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
@@ -27,6 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
+| [spaces](../spaces) | 15 | 2 | 15 | 26 |
 
 ## 2. Modele i relacje
 
@@ -780,6 +781,97 @@ Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `name`
 
 Metody/properties: `icon`, `__str__`.
 
+## Modele: spaces
+
+### `SpaceConfiguration`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `workplace` (ForeignKey), `name` (CharField), `shared` (BooleanField), `settings` (JSONField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE |
+
+Metody/properties: `__str__`.
+
+### `Space`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `project` (OneToOneField), `workplace` (ForeignKey), `key` (CharField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `project` | `'tasks.TaskProject'` | on_delete=models.CASCADE; related_name='space' |
+| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE |
+| `configuration` | `SpaceConfiguration` | on_delete=models.RESTRICT; related_name='spaces' |
+
+Metody/properties: `__str__`, `statuses`.
+
+### `Team`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `workplace` (ForeignKey), `owner` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `description` (TextField), `photo` (FileField), `members` (ManyToManyField), `spaces` (ManyToManyField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='teams' |
+| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='owned_work_teams' |
+| `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='created_work_teams'; null=True |
+| `members` | `settings.AUTH_USER_MODEL` | related_name='work_teams'; through='TeamMembership' |
+| `spaces` | `Space` | related_name='teams' |
+
+Metody/properties: `__str__`.
+
+### `TeamMembership`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `team` (ForeignKey), `user` (ForeignKey), `role` (CharField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `team` | `Team` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+
+### `Sprint`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `space` (ForeignKey), `name` (CharField), `goal` (TextField), `start_on` (DateField), `end_on` (DateField), `state` (CharField), `completed_at` (DateTimeField), `result` (JSONField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `space` | `Space` | on_delete=models.CASCADE; related_name='sprints' |
+
+Metody/properties: `__str__`.
+
+### `WorkItem`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_on` (DateField), `custom_values` (JSONField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `'tasks.Task'` | on_delete=models.CASCADE; related_name='work_item' |
+| `space` | `Space` | on_delete=models.CASCADE; related_name='items'; null=True |
+| `team` | `Team` | on_delete=models.SET_NULL; related_name='items'; null=True |
+| `sprint` | `Sprint` | on_delete=models.SET_NULL; related_name='items'; null=True |
+| `epic` | `'self'` | on_delete=models.SET_NULL; related_name='epic_items'; null=True |
+
+### `LegacyKanbanLink`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `kind` (CharField), `source_id` (PositiveBigIntegerField), `target_id` (PositiveBigIntegerField), `space` (ForeignKey).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `space` | `Space` | on_delete=models.SET_NULL; null=True |
+
 ## 3. Formularze
 
 Wypisane są deklaracje klas, także bazowe klasy i widgety.
@@ -881,6 +973,20 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 - `ResourceForm` — Meta.fields: `['name', 'kind', 'inventory_number', 'serial_number', 'status', 'assigned_to', 'location', 'purchased_on', 'expires_on', 'notes']`
 
+### spaces
+
+Źródło: [spaces/forms.py](../spaces/forms.py).
+
+- `StyledForm`
+- `SpaceForm`
+- `ItemForm`
+- `SprintForm`
+- `TeamForm`
+- `MemberForm`
+- `StatusForm`
+- `TypeForm`
+- `CustomFieldForm`
+
 ## 4. Routing
 
 Ścieżki modułowe są względne wobec include'a w głównym routingu.
@@ -891,6 +997,10 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'^workplaces/[-a-zA-Z0-9_]+/spaces/'` | `include((spaces_urls.urlpatterns, 'workplace_spaces'), namespace='workplace_spaces')` | — |
+| `'^workplaces/[-a-zA-Z0-9_]+/teams/'` | `include((team_urls.urlpatterns, 'workplace_teams'), namespace='workplace_teams')` | — |
+| `'spaces/'` | `include('spaces.urls')` | — |
+| `'teams/'` | `include('spaces.team_urls')` | — |
 | `'drive-office-service/<uuid:pk>/source/'` | `suite_views.source` | 'drive-office-service-source' |
 | `'drive-office-service/<uuid:pk>/callback/'` | `suite_views.callback` | 'drive-office-service-callback' |
 | `'office-service/<uuid:pk>/source/'` | `suite_views.source` | 'office-service-source' |
@@ -1091,6 +1201,27 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'<int:pk>/edit/'` | `views.edit` | 'edit' |
 | `'<int:pk>/delete/'` | `views.delete` | 'delete' |
 
+### spaces/urls.py
+
+Źródło: [spaces/urls.py](../spaces/urls.py).
+
+| Ścieżka / regex | Widok / include | Nazwa |
+| --- | --- | --- |
+| `''` | `views.index` | 'index' |
+| `'create/'` | `views.edit` | 'create' |
+| `'items/'` | `views.all_items` | 'items' |
+| `'items/<int:pk>/edit/'` | `views.item_edit` | 'item_edit' |
+| `'items/<int:pk>/action/'` | `views.item_action` | 'item_action' |
+| `'<int:pk>/'` | `views.detail` | 'detail' |
+| `'<int:pk>/edit/'` | `views.edit` | 'edit' |
+| `'<int:pk>/favorite/'` | `views.favorite` | 'favorite' |
+| `'<int:space_pk>/items/create/'` | `views.item_edit` | 'item_create' |
+| `'<int:pk>/sprints/create/'` | `views.sprint_create` | 'sprint_create' |
+| `'<int:pk>/sprints/<int:sprint_pk>/action/'` | `views.sprint_action` | 'sprint_action' |
+| `'<int:pk>/members/'` | `views.members` | 'members' |
+| `'<int:pk>/members/<int:member_pk>/remove/'` | `views.remove_member` | 'remove_member' |
+| `'<int:pk>/configuration/'` | `views.configuration` | 'configuration' |
+
 ## 5. Pliki backendu i punkty wejścia
 
 Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
@@ -1112,6 +1243,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/forms.py](../core/forms.py)
 - [core/media.py](../core/media.py) — `public_media`
 - [core/models.py](../core/models.py)
+- [core/task_files.py](../core/task_files.py) — `delete_after_commit`
 - [core/task_numbering.py](../core/task_numbering.py) — `lock_task_numbers`, `renumber_tasks`
 - [core/task_requests.py](../core/task_requests.py) — `task_detail_lookup`, `task_primary_keys`
 - [core/upload_validation.py](../core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
@@ -1262,6 +1394,23 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [resources/models.py](../resources/models.py) — `Resource`
 - [resources/urls.py](../resources/urls.py)
 - [resources/views.py](../resources/views.py) — `index`, `edit`, `delete`
+
+### spaces
+
+- [spaces/__init__.py](../spaces/__init__.py)
+- [spaces/apps.py](../spaces/apps.py) — `SpacesConfig`
+- [spaces/defaults.py](../spaces/defaults.py) — `template_settings`
+- [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
+- [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
+- [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
+- [spaces/services.py](../spaces/services.py) — `app_url`, `visible_spaces`, `visible_items`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
+- [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`
+- [spaces/team_urls.py](../spaces/team_urls.py)
+- [spaces/teams.py](../spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
+- [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
+- [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `status_groups`
+- [spaces/urls.py](../spaces/urls.py)
+- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `index`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
 
 ## 6. Szablony
 
@@ -1429,6 +1578,24 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [resources/templates/resources/form.html](../resources/templates/resources/form.html)
 - [resources/templates/resources/index.html](../resources/templates/resources/index.html)
 
+### spaces
+
+- [spaces/templates/spaces/base.html](../spaces/templates/spaces/base.html)
+- [spaces/templates/spaces/card.html](../spaces/templates/spaces/card.html)
+- [spaces/templates/spaces/configuration.html](../spaces/templates/spaces/configuration.html)
+- [spaces/templates/spaces/detail.html](../spaces/templates/spaces/detail.html)
+- [spaces/templates/spaces/form.html](../spaces/templates/spaces/form.html)
+- [spaces/templates/spaces/form_page.html](../spaces/templates/spaces/form_page.html)
+- [spaces/templates/spaces/index.html](../spaces/templates/spaces/index.html)
+- [spaces/templates/spaces/item_actions.html](../spaces/templates/spaces/item_actions.html)
+- [spaces/templates/spaces/item_list.html](../spaces/templates/spaces/item_list.html)
+- [spaces/templates/spaces/item_toolbar.html](../spaces/templates/spaces/item_toolbar.html)
+- [spaces/templates/spaces/items.html](../spaces/templates/spaces/items.html)
+- [spaces/templates/spaces/pagination.html](../spaces/templates/spaces/pagination.html)
+- [spaces/templates/spaces/row.html](../spaces/templates/spaces/row.html)
+- [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
+- [spaces/templates/spaces/teams.html](../spaces/templates/spaces/teams.html)
+
 ## 7. Zasoby frontendowe
 
 ### css
@@ -1458,6 +1625,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/profile.css](../static/css/components/profile.css)
 - [static/css/components/resources.css](../static/css/components/resources.css)
 - [static/css/components/settings.css](../static/css/components/settings.css)
+- [static/css/components/spaces.css](../static/css/components/spaces.css)
 - [static/css/components/sticky-note.css](../static/css/components/sticky-note.css)
 - [static/css/components/tables.css](../static/css/components/tables.css)
 - [static/css/components/task-edit.css](../static/css/components/task-edit.css)
@@ -1497,6 +1665,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/resources.js](../static/js/resources.js)
 - [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
+- [static/js/spaces.js](../static/js/spaces.js)
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
 - [static/js/task-work-log.js](../static/js/task-work-log.js)
 - [static/js/tasks.js](../static/js/tasks.js)
@@ -1907,6 +2076,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ResourceTests`: 19 metod testowych.
 
+### spaces/tests.py
+
+Źródło: [spaces/tests.py](../spaces/tests.py).
+
+- `SpaceTests`: 25 metod testowych.
+- `ImportTests`: 1 metod testowych.
+
 ## 9. Migracje obecne lokalnie
 
 Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
@@ -2079,3 +2255,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 ### resources
 
 - [resources/migrations/0001_initial.py](../resources/migrations/0001_initial.py)
+
+### spaces
+
+- [spaces/migrations/0001_initial.py](../spaces/migrations/0001_initial.py)
+- [spaces/migrations/0002_unify_work.py](../spaces/migrations/0002_unify_work.py)

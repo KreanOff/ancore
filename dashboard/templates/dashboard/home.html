@@ -24,8 +24,8 @@
             <time class="dashboard-overview-date" datetime="{{ dashboard_today|date:'Y-m-d' }}"><i data-icon="calendar-days" aria-hidden="true"></i>{{ dashboard_today|date:'l, j E Y' }}</time>
         </section>
 
-        <section class="dashboard-stat-grid" aria-label="Podsumowanie zadań i kart Kanban">
-            <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-icon="circle-dashed" aria-hidden="true"></i></div><div><p>Otwarte</p><strong>{{ dashboard_totals.open }}</strong><small>Zadania i karty Kanban</small></div></article>
+        <section class="dashboard-stat-grid" aria-label="Podsumowanie zadań">
+            <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-icon="circle-dashed" aria-hidden="true"></i></div><div><p>Otwarte</p><strong>{{ dashboard_totals.open }}</strong><small>Zadania we wszystkich przestrzeniach</small></div></article>
             <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-icon="flag" aria-hidden="true"></i></div><div><p>Wysoki priorytet</p><strong>{{ dashboard_totals.priority }}</strong><small>Otwarte: wysoki i pilny</small></div></article>
             <article class="dashboard-stat"><div class="dashboard-stat-icon"><i data-icon="clock-alert" aria-hidden="true"></i></div><div><p>Po terminie</p><strong>{{ dashboard_totals.overdue }}</strong><small>Otwarte zadania</small></div></article>
             <article class="dashboard-stat dashboard-overview-completed"><div class="dashboard-stat-icon"><i data-icon="circle-check" aria-hidden="true"></i></div><div><p>Zamknięte</p><strong>{{ dashboard_totals.closed_week }}</strong><small>Ostatnie 7 dni</small></div></article>
@@ -59,9 +59,9 @@
             </section>
 
             <section class="dashboard-panel" aria-labelledby="dashboard-projects-title">
-                <header class="dashboard-panel-header"><h2 id="dashboard-projects-title">Projekty <span class="dashboard-overview-count">{{ dashboard_project_count }}</span></h2><a class="dashboard-panel-link" href="{{ dashboard_projects_url }}">Wszystkie<i data-icon="arrow-up-right" aria-hidden="true"></i></a></header>
-                <p class="dashboard-overview-caption">Projekty w module Zadania, które nie są zakończone ani anulowane.</p>
-                {% for item in dashboard_projects %}<a class="dashboard-overview-project" href="{{ item.url }}"><div class="dashboard-overview-project-copy"><span title="{{ item.object.name }}">{{ item.object.name }}</span><small>{% if item.object.due_at %}Termin: {{ item.object.due_at|date:'j E Y' }}{% else %}Bez terminu{% endif %}</small></div><div class="dashboard-overview-project-progress"><span>{{ item.object.closed_count }} / {{ item.object.item_count }} zamkniętych</span><progress max="100" value="{{ item.percent }}" aria-label="Postęp projektu {{ item.object.name }}">{{ item.percent }}%</progress></div><i data-icon="chevron-right" aria-hidden="true"></i></a>{% empty %}<div class="dashboard-overview-empty"><i data-icon="folders" aria-hidden="true"></i><h3>Miejsce na kolejny projekt</h3><p>Utwórz projekt i zbierz zadania w jednym miejscu.</p><a class="dashboard-panel-link" href="{{ dashboard_projects_url }}">Otwórz projekty<i data-icon="arrow-right" aria-hidden="true"></i></a></div>{% endfor %}
+                <header class="dashboard-panel-header"><h2 id="dashboard-projects-title">Przestrzenie <span class="dashboard-overview-count">{{ dashboard_project_count }}</span></h2><a class="dashboard-panel-link" href="{{ dashboard_projects_url }}">Wszystkie<i data-icon="arrow-up-right" aria-hidden="true"></i></a></header>
+                <p class="dashboard-overview-caption">Przestrzenie, w których trwa praca.</p>
+                {% for item in dashboard_projects %}<a class="dashboard-overview-project" href="{{ item.url }}"><div class="dashboard-overview-project-copy"><span title="{{ item.object.name }}">{{ item.object.name }}</span><small>{% if item.object.due_at %}Termin: {{ item.object.due_at|date:'j E Y' }}{% else %}Bez terminu{% endif %}</small></div><div class="dashboard-overview-project-progress"><span>{{ item.object.closed_count }} / {{ item.object.item_count }} zamkniętych</span><progress max="100" value="{{ item.percent }}" aria-label="Postęp przestrzeni {{ item.object.name }}">{{ item.percent }}%</progress></div><i data-icon="chevron-right" aria-hidden="true"></i></a>{% empty %}<div class="dashboard-overview-empty"><i data-icon="folders" aria-hidden="true"></i><h3>Miejsce na kolejną przestrzeń</h3><p>Utwórz przestrzeń i zbierz zadania w jednym miejscu.</p><a class="dashboard-panel-link" href="{{ dashboard_projects_url }}">Otwórz przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a></div>{% endfor %}
             </section>
 
             </div>
@@ -70,8 +70,8 @@
                 <header class="dashboard-panel-header"><h2 id="dashboard-progress-title">Postęp pracy</h2><i data-icon="chart-no-axes-combined" aria-hidden="true"></i></header>
                 <div class="dashboard-overview-progress">
                     <div class="dashboard-overview-progress-total"><strong>{{ dashboard_completed_percent }}<span>%</span></strong><span>Zamknięte: {{ dashboard_closed_count }} z {{ dashboard_totals.total }}</span></div>
-                    <progress max="100" value="{{ dashboard_completed_percent }}" aria-label="Odsetek zamkniętych zadań i kart">{{ dashboard_completed_percent }}%</progress>
-                    <p class="dashboard-overview-caption">Zadania i karty Kanban w tej przestrzeni</p>
+                    <progress max="100" value="{{ dashboard_completed_percent }}" aria-label="Odsetek zamkniętych zadań">{{ dashboard_completed_percent }}%</progress>
+                    <p class="dashboard-overview-caption">Zadania we wszystkich przestrzeniach Workspace</p>
                     <dl class="dashboard-overview-statuses">{% for status in dashboard_statuses %}<div><dt><span class="status-indicator status-{{ status.key }}" aria-hidden="true"></span>{{ status.label }}</dt><dd>{{ status.count }}</dd></div>{% endfor %}</dl>
                 </div>
             </section>

@@ -450,9 +450,8 @@ post_delete.connect(delete_comment_image_file, sender=KanbanCommentImage)
 @receiver(post_delete, sender=KanbanAttachment)
 def auto_delete_file_on_delete(sender, instance, using, **kwargs):
     """Keep the file if the surrounding deletion is rolled back."""
-    if instance.file:
-        storage, name = instance.file.storage, instance.file.name
-        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
+    from core.task_files import delete_after_commit
+    delete_after_commit(instance, using)
 
 
 @receiver(post_save, sender=Kanban)

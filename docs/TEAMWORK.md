@@ -1,5 +1,15 @@
 # Praca zespołowa w Workspace
 
+## Zespoły pracy a członkostwo Workspace
+
+Moduł `/teams/` grupuje aktywnych członków Workspace w zespoły z własnymi
+administratorami i profilami. Powiązanie z przestrzenią i przypisanie zadania
+do zespołu nie nadaje dostępu do danych. Dotychczasowe role Workspace,
+projektów, grup i zadań nadal obowiązują. „Zarządzana przez zespół” w kreatorze
+przestrzeni oznacza niezależną konfigurację, nie automatyczne udostępnienie
+członkom zespołu. [Pełny opis](SPACES.md).
+
+
 ## Zakres pierwszej wersji
 
 Workspace obejmuje wspólne Projekty i Zadania, Kanban, Kontakty i firmy,

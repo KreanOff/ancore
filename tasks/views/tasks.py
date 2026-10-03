@@ -2998,6 +2998,9 @@ def _set_task_status(task, status):
     valid_statuses = {choice for choice, _label in Task.STATUS_CHOICES}
     if status not in valid_statuses:
         return False
+    from spaces.services import category_transition_allowed
+    if not category_transition_allowed(task, status):
+        return False
     task.status = status
     task.save(update_fields=['status', 'is_completed', 'completion_date'])
     return True
@@ -4213,7 +4216,8 @@ def update_task_status(request, task_id):
                     return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy status'}, status=400)
             else:
                 is_completed = data.get('is_completed', False)
-                _set_task_status(task, 'closed' if is_completed else 'reopened')
+                if not _set_task_status(task, 'closed' if is_completed else 'reopened'):
+                    return JsonResponse({'status': 'error', 'message': 'To przejście statusu nie jest dozwolone w przestrzeni.'}, status=400)
 
             if previous_status != task.status:
                 status_labels = dict(Task.STATUS_CHOICES)
@@ -4338,7 +4342,11 @@ def bulk_update_status(request):
         updated_count = 0
         with lock_task_numbers(user.pk):
             require_editable(tasks_to_update, request.user)
-            for task in tasks_to_update.select_for_update():
+            locked_tasks = list(tasks_to_update.select_for_update())
+            from spaces.services import category_transition_allowed
+            if any(not category_transition_allowed(task, status) for task in locked_tasks):
+                return JsonResponse({'status': 'error', 'message': 'Przestrzeń nie pozwala na tę zmianę statusu dla wszystkich zaznaczonych zadań.'}, status=400)
+            for task in locked_tasks:
                 previous_status = task.status
                 _set_task_status(task, status)
                 updated_count += 1

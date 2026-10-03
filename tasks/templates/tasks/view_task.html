@@ -25,6 +25,7 @@
     <div class="tasks-issue-shell">
         <header class="tasks-issue-header">
             <div class="tasks-issue-breadcrumb">
+                {% if task.work_item.space %}<a class="tasks-issue-crumb" href="{{ workplace_app_urls.spaces }}{{ task.work_item.space_id }}/">{{ task.work_item.space.project.name }}</a><span class="tasks-issue-divider" aria-hidden="true"></span><span class="tasks-issue-crumb">{{ task.work_item.key }}</span>{% endif %}
                 <a href="{% if task.parent %}{% url 'tasks:view-task' task.parent.task_id %}{% else %}{% url 'tasks:tasks' %}{% endif %}"
                    class="tasks-issue-close"
                    aria-label="{% if task.parent %}Wróć do zadania{% else %}Wróć do poprzedniej strony{% endif %}"
@@ -39,6 +40,7 @@
             </div>
 
             <div class="tasks-issue-actions">
+                {% if can_edit_task and task.work_item.space %}<a class="tasks-filter-button" href="{{ workplace_app_urls.spaces }}items/{{ task.work_item.pk }}/edit/">Planowanie i zespół</a>{% endif %}
                 {% if can_edit_task %}
                 <button type="submit" form="task-detail-form" class="tasks-issue-save" data-task-save data-state="idle" disabled>
                     Zapisz
@@ -391,15 +393,15 @@
                     <section class="tasks-issue-side-section">
                         <div class="tasks-issue-field">
                             <span class="tasks-issue-field-label">
-                                <label for="{{ form.project.id_for_label }}">Projekt</label>
+                                <label for="{{ form.project.id_for_label }}">Przestrzeń</label>
                             </span>
                             <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
                                 {{ form.project }}
                                 <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-project-dropdown data-task-detail-select="#{{ form.project.id_for_label }}">
                                     <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
-                                        <span data-task-detail-label data-task-detail-default-label="Projekt">Projekt</span>
+                                        <span data-task-detail-label data-task-detail-default-label="Przestrzeń">Przestrzeń</span>
                                     </button>
-                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz projekt">
+                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz przestrzeń">
                                         {% for project in form.project.field.queryset %}
                                         <button type="button" role="menuitem" data-task-detail-value="{{ project.id }}" data-task-detail-default-section="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
                                             <span>{{ project.name }}</span>

@@ -1,0 +1,17 @@
+<form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get">
+    {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
+    {% if group_filter %}<input type="hidden" name="group" value="{{ group_filter }}">{% endif %}
+    <div class="tasks-filterbar-left">
+        <select class="tasks-inline-select" name="assignee" aria-label="Wykonawca"><option value="">Wszyscy wykonawcy</option><option value="me"{% if assignee_filter == 'me' %} selected{% endif %}>Przypisane do mnie</option></select>
+        {% if space %}<select name="team" class="tasks-inline-select" aria-label="Zespół"><option value="">Wszystkie zespoły</option>{% for team in space_teams %}<option value="{{ team.pk }}"{% if team_filter == team.pk|stringformat:'s' %} selected{% endif %}>{{ team.name }}</option>{% endfor %}</select>{% endif %}
+        <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>
+    </div>
+    <div class="tasks-filterbar-right">
+        <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj zadań" aria-label="Szukaj zadania lub oznaczenia"></label>
+        <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony zadań">
+            {% if page.has_previous %}<a class="tasks-project-pagination__button" href="{% querystring page=page.previous_page_number %}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Poprzednia strona" disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>{% endif %}
+            <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-live="polite">{{ page.start_index }}–{{ page.end_index }} z {{ page.paginator.count }}</span>
+            {% if page.has_next %}<a class="tasks-project-pagination__button" href="{% querystring page=page.next_page_number %}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Następna strona" disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>{% endif %}
+        </nav>
+    </div>
+</form>

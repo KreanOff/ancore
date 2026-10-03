@@ -55,7 +55,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     open_tasks = tasks.exclude(status='closed').select_related('section__project')
     open_cards = cards.exclude(status='closed').select_related('section__project')
     if focus == 'kanban':
-        selected = open_cards.order_by(priority_order, '-created_at', '-pk')
+        selected = (open_cards if open_cards.exists() else open_tasks.filter(work_item__space__template__in=['kanban', 'scrum'])).order_by(priority_order, '-created_at', '-pk')
     elif focus == 'priority':
         selected = open_tasks.filter(priority__in=['urgent', 'high']).order_by(
             priority_order, F('due_at').asc(nulls_last=True), 'pk',
@@ -65,7 +65,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
 
     items = []
     for item in selected[:OVERVIEW_LIMIT]:
-        app = 'kanban' if focus == 'kanban' else 'tasks'
+        app = item._meta.app_label
         due = getattr(item, 'due_at', None)
         source = 'Kanban' if app == 'kanban' else 'Zadania'
         location = f'{source} · Bez grupy'
@@ -75,7 +75,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
                 location = f'{project.name} · {item.section.title}'
         items.append({
             'object': item,
-            'url': scoped_workplace_app_path(workplace, app, f'view-task/{item.task_id}/'),
+            'url': scoped_workplace_app_path(workplace, app, f'view-task/{item.task_id}/', f'task_pk={item.pk}'),
             'location': location,
             'due_at': due,
             'overdue': bool(due and due < now),
@@ -95,6 +95,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     project_task_scope = Q(
         sections__tasks__user=user, sections__tasks__workplace=workplace,
         sections__tasks__parent__isnull=True,
+        sections__tasks__in=visible_to(Task.objects.all(), viewer or user),
     )
     projects = visible_to(TaskProject.objects.all(), viewer or user).filter(user=user, workplace=workplace).exclude(
         status__in=['completed', 'cancelled'],
@@ -108,7 +109,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
         project_rows.append({
             'object': project,
             'percent': round(project.closed_count * 100 / project.item_count) if project.item_count else 0,
-            'url': f'{tasks_url}?{urlencode({"project": project.pk})}',
+            'url': scoped_workplace_app_path(workplace, 'spaces', f'{project.space.pk}/') if hasattr(project, 'space') else f'{tasks_url}?{urlencode({"project": project.pk})}',
         })
 
     return {
@@ -127,8 +128,8 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
         'dashboard_event_count': event_count,
         'dashboard_projects': project_rows,
         'dashboard_project_count': project_count,
-        'dashboard_tasks_url': f'{tasks_url}?view=all-tasks',
-        'dashboard_projects_url': tasks_url,
-        'dashboard_kanban_url': f'{kanban_url}?view=all-tasks',
+        'dashboard_tasks_url': scoped_workplace_app_path(workplace, 'spaces', 'items/'),
+        'dashboard_projects_url': scoped_workplace_app_path(workplace, 'spaces'),
+        'dashboard_kanban_url': scoped_workplace_app_path(workplace, 'spaces'),
         'dashboard_calendar_url': f'{calendar_url}?date={today.isoformat()}',
     }

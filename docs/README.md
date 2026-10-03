@@ -22,6 +22,8 @@ nie był ustalany. Przy zmianie zachowania aktualizuj odpowiedni rozdział.
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
 do szczegółowych opisów i wymaga zachowania istniejących wzorców.
 
+Przestrzenie, wspólne zadania, sprinty i zespoły: [Przestrzenie](SPACES.md).
+
 Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 
 ## Co czytać przed konkretnym zadaniem
@@ -29,7 +31,8 @@ Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 | Zadanie | Opis i punkty wejścia |
 | --- | --- |
 | Nowe pole zadania/projektu | Moduły: Zadania; Mechanizmy: numeracja, zapis, słowniki; `tasks/models.py`, `tasks/forms.py`, `tasks/views/tasks.py` |
-| Kanban, kolumna, przeciąganie | Moduły: Kanban; Mechanizmy: status/kolumna; `kanban/views/tasks.py`, `static/js/tasks.js` |
+| Przestrzenie, zespoły, sprinty, wspólna tablica | [Przestrzenie](SPACES.md); `spaces/`, `static/js/spaces.js` |
+| Historyczny Kanban, kolumna, przeciąganie | Moduły: Kanban; Mechanizmy: status/kolumna; `kanban/views/tasks.py`, `static/js/tasks.js` |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
 | Kontakty, firmy, profil | Odpowiedni moduł; Mechanizmy: tożsamość, dostęp, obrazy |
 | Zasoby, ewidencja sprzętu i licencji | Moduły: Zasoby; `resources/`, wspólne filtry/paginacja w `static/js/tasks.js`, modale w `static/js/resources.js` |

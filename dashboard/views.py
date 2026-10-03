@@ -105,9 +105,8 @@ def _navigation_search_results(query, workplace):
         ('Dashboard', 'Strona główna i podsumowanie', reverse('home'), 'layout-dashboard', 'dashboard start podsumowanie'),
         ('Moje zadania', 'Zadania przypisane do Ciebie', _search_url(tasks_url, view='my-tasks'), 'user-round-check', 'tasks moje zadania'),
         ('Wszystkie zadania', 'Pełna lista zadań', _search_url(tasks_url, view='all-tasks'), 'list-checks', 'tasks lista'),
-        ('Projekty', 'Projekty w bieżącym Workspace', tasks_url, 'folders', 'tasks projekty'),
-        ('Kanban', 'Przestrzenie i tablice Kanban', kanban_url, 'kanban', 'karty tablice przestrzenie'),
-        ('Kontakty', 'Osoby zapisane w aplikacji', contacts_url, 'contact', 'osoby klienci'),
+        ('Przestrzenie', 'Przestrzenie w bieżącym Workspace', _workspace_app_url(workplace, 'spaces'), 'folders', 'przestrzenie projekty kanban scrum'),
+        ('Zespoły', 'Osoby i ich zespoły', _workspace_app_url(workplace, 'teams'), 'users', 'zespoly osoby teams'),
         ('Firmy', 'Baza firm i organizacji', f'{contacts_url}companies/', 'building-2', 'organizacje companies'),
         ('Kalendarz', 'Wydarzenia i terminy', calendar_url, 'calendar-days', 'wydarzenia terminy'),
         ('Tagi', 'Wspólne oznaczenia', _search_url(tasks_url, view='tags'), 'tag', 'etykiety labels'),
@@ -149,6 +148,7 @@ def global_search(request):
 
     task_filter = (
         Q(title__icontains=query)
+        | Q(work_item__key__icontains=query)
         | Q(description__icontains=query)
         | Q(blocked_reason__icontains=query)
         | Q(section__title__icontains=query)
@@ -284,7 +284,7 @@ def global_search(request):
         ),
         _global_search_group(
             'projects',
-            'Projekty',
+            'Przestrzenie',
             'folders',
             _ranked_search_queryset(
                 project_queryset.select_related('company', 'responsible_user').distinct(),
@@ -293,8 +293,8 @@ def global_search(request):
             ).order_by('_global_search_rank', 'name', 'id'),
             lambda project: _global_search_result(
                 project.name,
-                'Projekt',
-                _search_url(tasks_url, project=project.id),
+                'Przestrzeń',
+                _workspace_app_url(workplace, 'spaces') + f'{project.space.pk}/' if hasattr(project, 'space') else _search_url(tasks_url, project=project.id),
                 '',
                 ' · '.join(part for part in (project.code, project.company.name if project.company_id else '') if part),
             ),

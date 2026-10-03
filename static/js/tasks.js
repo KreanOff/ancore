@@ -6029,6 +6029,8 @@ function initTasksPage() {
     }
 
     function updateGroupVisibility() {
+        // Spaces reuse the visual groups; their filtering and counts are server-side.
+        if (document.querySelector('[data-work-page]')) return;
         document.querySelectorAll('.tasks-group-row').forEach(groupRow => {
             let hasVisibleTask = false;
             let nextRow = groupRow.nextElementSibling;

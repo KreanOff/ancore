@@ -1274,6 +1274,46 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     border-color: var(--sidebar-active);
 }
 
+.sidebar-group-header {
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .sidebar-group-header .sidebar-group-toggle {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+.sidebar-group-actions .sidebar-header-action {
+    width: var(--control-height);
+    height: var(--control-height);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.sidebar-group-menu {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    overflow: auto;
+}
+
+.sidebar-group-menu:popover-open {
+    display: grid;
+}
+
+.sidebar .sidebar-group-menu .tasks-project-menu-button {
+    margin: 0;
+    min-height: var(--dropdown-menu-item-height);
+    padding: 0 0.65rem;
+    gap: 0.5rem;
+    font-size: var(--dropdown-menu-font-size);
+}
+
 .sidebar-group-toggle .sidebar-group-chevron {
     width: 16px;
     height: 16px;
@@ -1566,6 +1606,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
     html.sidebar-collapsed .sidebar-quick-search,
     html.sidebar-collapsed .sidebar-menu-section-title,
     html.sidebar-collapsed .sidebar-subnav,
+    html.sidebar-collapsed .sidebar-group-actions,
     html.sidebar-collapsed .sidebar-group-chevron {
         display: none !important;
     }
@@ -1756,8 +1797,8 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         margin-top: 0.125rem;
     }
 
-    html.sidebar-collapsed .sidebar-nav-group.is-flyout-open > .sidebar-group-toggle,
-    html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) > .sidebar-group-toggle {
+    html.sidebar-collapsed .sidebar-nav-group.is-flyout-open .sidebar-group-toggle,
+    html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) .sidebar-group-toggle {
         border-color: transparent;
         background: #eceef1;
         color: var(--text-primary);

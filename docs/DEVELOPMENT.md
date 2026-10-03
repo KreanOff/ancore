@@ -1,5 +1,20 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Uruchomienie przestrzeni i zespołów
+
+Przed nowym kodem wykonaj backup i `manage.py migrate`. Migracje `spaces/0001`
+i `spaces/0002` dodają model przestrzeni i importują Kanban; oryginały oraz
+pliki zostają zachowane. Cofnięcie wdrożenia wymaga backupu, nie tylko migracji
+odwrotnej. [Procedura i ograniczenia](SPACES.md).
+
+Testy: `manage.py test spaces`, regresje statusów i plików w Core, prywatności
+i ról w Tasks, zespołu Workspace oraz Dashboard/Planner. Testy historycznych
+migracji muszą wycofać zależny moduł `spaces` i odczytać stan faktycznie
+zastosowanych migracji. Browser QA obejmuje katalog pusty i z danymi,
+kreator/szablony, błędy formularzy, zadanie na liście i tablicy, sprint,
+zespół i powiązania, szeroki/wąski ekran, Escape/fokus i częściową nawigację.
+
+
 ## 1. Wymagania i wersje
 
 Źródła: [requirements.txt](../requirements.txt), [settings.py](../ancore/settings.py).

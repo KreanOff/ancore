@@ -1,5 +1,13 @@
 # Moduły i funkcje aplikacji
 
+## Przestrzenie i zespoły — aktualna nawigacja
+
+Główne menu używa teraz Przestrzeni, Wszystkich zadań i Zespołów zamiast
+osobnych sekcji Zadania/Kanban/Kontakty. Opisy Tasks i Kanbana poniżej
+pozostają referencją mechanizmów oraz historycznych adresów; nowy przepływ
+pracy, katalog, kreator, sprinty i profile zespołów opisuje [SPACES.md](SPACES.md).
+
+
 Ten dokument opisuje aktywny kod lokalny. Szczegółowe modele, relacje,
 formularze, endpointy i szablony są w [indeksie kodu](CODE_INDEX.md).
 Zasady wspólne znajdują się w [MECHANISMS.md](MECHANISMS.md).

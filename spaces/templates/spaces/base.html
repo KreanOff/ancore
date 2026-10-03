@@ -1,0 +1,24 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}{% block work_title %}Przestrzenie{% endblock %} | ancore{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">
+<link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261001-project-list">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261003-standard-back">
+<script src="{% static 'js/spaces.js' %}?v=20261003-task-style" defer></script>
+{% endblock %}
+{% block content %}
+<div class="tasks-page tasks-list-page work-page" data-work-page>
+    <section class="tasks-workspace">
+        <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
+            <div class="tasks-titlebar-left">{% block work_heading %}<h1 class="tasks-topbar-title">Przestrzenie</h1>{% endblock %}</div>
+            <div class="tasks-titlebar-actions">{% block work_actions %}{% endblock %}</div>
+        </header>
+        {% block work_navigation %}{% endblock %}
+        {% block work_toolbar %}{% endblock %}
+        <div class="work-content{% block work_content_class %}{% endblock %}">{% block work_content %}{% endblock %}</div>
+    </section>
+</div>
+{% endblock %}
+{% block page_modals %}<div data-work-modal-host>{% if modal %}{% include 'spaces/form.html' %}{% endif %}</div>{% endblock %}

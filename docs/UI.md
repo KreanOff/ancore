@@ -1,5 +1,60 @@
 # Standard UI Ancore
 
+## Przestrzenie i zespoły
+
+`spaces/base.html` rozszerza `core/base.html` i wspólny kontener katalogu.
+Katalog przestrzeni używa listy `tasks-directory-sheet`, `tasks-project-sheet`
+i `tasks-spreadsheet-sheet`, tak jak projekty i grupy. Wariant `work-space-sheet`
+określa kolumny: ulubione, nazwa, klucz, rodzaj, szablon, opis i liczba zadań.
+Zachowuje wspólne wysokości wierszy, separatory, zmianę szerokości kolumn,
+poziome przewijanie oraz pasek filtrów, wyszukiwania i paginacji. Nazwa otwiera
+przestrzeń, a gwiazdka zmienia osobiste ulubione. Pusty wynik ukrywa nagłówki
+i pokazuje komunikat zależny od filtrów/zakładki. Katalog zespołów używa kart.
+Przestrzeń ma kontekstowe zakładki
+Przegląd, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
+Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
+przestrzenie, Wszystkie zadania i Zespoły.
+
+Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
+`data-sidebar-group="spaces"` w `layout.js`. Stan zapisuje istniejąca
+preferencja `ancoreSidebarCollapsedGroups`; pozostaje zachowany po odświeżeniu
+i częściowej nawigacji. Przycisk ma `aria-controls` i `aria-expanded`
+oraz obsługuje Enter/Spację. Ikona folderów jest stale widoczna przed nazwą;
+nagłówek nie pokazuje strzałki zwijania. Wspólny wariant `sidebar-group-header` umieszcza
+obok przycisku zwijania „+” otwierający kreator i „…” z opcją „Zarządzaj
+przestrzeniami”. Menu korzysta z `row-actions.js`, natywnego popovera i stylów
+menu Zadań; obsługuje klawiaturę, Escape i przywrócenie fokusu. Link do katalogu
+w menu zachowuje klucz ulubionego `spaces`. Podmenu zawiera same przestrzenie,
+bez pozycji „Wszystkie przestrzenie” i powtórzonego kreatora. Przy zwiniętym
+całym sidebarze ikona otwiera panel skrótów zawierający także tworzenie
+i zarządzanie przestrzeniami (`data-sidebar-group-action`). Na telefonie
+zwijanie działa wewnątrz otwartego menu, a wybór akcji nawigacyjnej je zamyka.
+
+`spaces/form.html` korzysta z `AncoreTaskModals`, wspólnych klas formularza,
+ikon i `AncoreCustomSelect`. `spaces.js` obsługuje fokus, Escape, ostrzeżenie
+o szkicu, błędy zapisu, inert tła i ponowne wejście przez `ancore:content-loaded`.
+Listy zadań w przestrzeni, „Wszystkie zadania”, przegląd oraz zadania zespołu zachowują
+wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
+wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.
+Grupowanie dotyczy dostępnej strony wyników; rozróżnia nazwy własnych statusów
+nawet wtedy, gdy mają tę samą kategorię. Backlog zachowuje kolejność planowania.
+Na telefonie lista zachowuje kolumny i przewija się poziomo we własnym obszarze.
+Tablica używa dotychczasowych `tasks-kanban-column` i `tasks-kanban-card`,
+włącznie z oznaczeniem zakończonych kart. Nie ma osobnej tabeli ani szarych
+paneli zastępujących te komponenty. Filtry i paginacja korzystają z paska Zadań.
+
+`item_actions.html` używa wspólnego menu `row-actions.js`: otwarcie zadania,
+edycja, dozwolone przejścia statusów i planowanie. Menu działa klawiaturą,
+zamyka się przez Escape i przywraca fokus; zastępuje stałe formularze na karcie.
+Przeciąganie tablicy nadal obsługuje `spaces.js`. Elementy nie mają klasy
+`task-row` ani danych dawnego API Kanbana. `tasks.js` pomija lokalne filtrowanie
+grup na `data-work-page`, aby nie ukrywać wyników filtrowanych przez serwer.
+
+`spaces.css` zawiera tylko adaptery kontekstu przestrzeni oraz style katalogów,
+osi czasu, raportów i konfiguracji. Geometria wierszy, kolumn, kart i menu
+pochodzi ze wspólnych komponentów. [Funkcje](SPACES.md).
+
+
 ## 1. Cel i punkt odniesienia
 
 Nowe funkcje mają wyglądać i zachowywać się jak część obecnego Ancore.
@@ -484,6 +539,8 @@ Domyślnie mają przezroczyste tło i kolor `--text-primary`; hover oraz fokus
 klawiatury dodają szare tło `--system-interaction-soft`, bez obrysu.
 Powrót zachowuje strzałkę Flaticon, a zamknięcie używa maski `x-mask.svg`
 z tego samego lokalnego zestawu, generowanej przez `build_flaticon_icons.py`.
+Nagłówki przestrzeni, zespołu i konfiguracji przestrzeni używają tego samego
+`tasks-issue-close`; lokalne style fokusu Przestrzeni nie nadpisują tego przycisku.
 Wspólna reguła obejmuje także puste przyciski zamknięcia doładowywanych
 formularzy Dysku i Dokumentów. Pozycja przycisków, etykiety, Escape,
 powrót fokusu i dotychczasowa nawigacja pozostają odpowiedzialnością

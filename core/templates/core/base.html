@@ -1,5 +1,9 @@
 {% load static workplace_avatar sidebar_favorites %}
 {% url 'tasks:tasks' as sidebar_tasks_fallback_url %}
+{% url 'spaces:index' as sidebar_spaces_fallback_url %}
+{% url 'teams:index' as sidebar_teams_fallback_url %}
+{% firstof workplace_app_urls.spaces sidebar_spaces_fallback_url as sidebar_spaces_url %}
+{% firstof workplace_app_urls.teams sidebar_teams_fallback_url as sidebar_teams_url %}
 {% url 'kanban:tasks' as sidebar_kanban_fallback_url %}
 {% url 'contacts:contacts' as sidebar_contacts_fallback_url %}
 {% url 'planner:index' as sidebar_calendar_fallback_url %}
@@ -63,7 +67,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261001-kanban-directory-tabs">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-sidebar-space-icon">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
@@ -195,62 +199,38 @@
                 <span class="nav-label">Dashboard</span>
             </a>
             {% sidebar_favorite_toggle 'dashboard' 'Dashboard' 'layout-dashboard' sidebar_dashboard_url %}
-            <section class="sidebar-nav-group" aria-labelledby="sidebar-tasks-title" data-sidebar-group="tasks">
-                <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Zadania" title="Zwiń sekcję Zadania" aria-controls="sidebar-tasks-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Zadania">
-                    <i class="nav-icon nav-icon--tasks" data-icon="list-todo" aria-hidden="true"></i>
-                    <span id="sidebar-tasks-title" class="nav-label">Zadania</span>
-                    <i class="sidebar-group-chevron" data-icon="chevron-down" aria-hidden="true"></i>
-                </button>
-                <div class="sidebar-subnav" id="sidebar-tasks-subnav" data-sidebar-group-label="Zadania">
-                    <a href="{{ sidebar_tasks_url }}" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'projects' or active_view == 'project' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-projects" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="briefcase-business"></i></span><span>Projekty</span></a>
-                    {% sidebar_favorite_toggle 'tasks-projects' 'Projekty' 'briefcase-business' sidebar_tasks_url %}
-                    <a href="{{ sidebar_tasks_url }}?view=all-groups" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_groups' or active_view == 'section' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-groups" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="layers-3"></i></span><span>Grupy</span></a>
-                    {% sidebar_favorite_toggle 'tasks-groups' 'Grupy' 'layers-3' sidebar_tasks_url|add:'?view=all-groups' %}
-                    <a href="{{ sidebar_tasks_url }}?view=all-tasks" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'tasks' or request.resolver_match.app_name == 'workplace_tasks' %}{% if active_view == 'all_tasks' or active_view == 'unassigned_tasks' %}active{% endif %}{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="list-checks"></i></span><span>Zadania</span></a>
-                    {% sidebar_favorite_toggle 'tasks-all' 'Zadania' 'list-checks' sidebar_tasks_url|add:'?view=all-tasks' %}
+            <section class="sidebar-nav-group" aria-labelledby="sidebar-spaces-title" data-sidebar-group="spaces">
+                <div class="sidebar-group-header">
+                    <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Przestrzenie" title="Zwiń sekcję Przestrzenie" aria-controls="sidebar-spaces-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Przestrzenie">
+                        <i class="nav-icon" data-icon="folders" aria-hidden="true"></i>
+                        <span id="sidebar-spaces-title" class="nav-label">Przestrzenie</span>
+                    </button>
+                    <div class="sidebar-header-actions sidebar-group-actions">
+                        <a href="{{ sidebar_spaces_url }}create/" class="sidebar-header-action" aria-label="Utwórz przestrzeń" title="Utwórz przestrzeń" data-sidebar-group-action>
+                            <i data-icon="plus" aria-hidden="true"></i><span class="u-sr-only">Utwórz przestrzeń</span>
+                        </a>
+                        <div data-row-actions>
+                            <button type="button" class="sidebar-header-action" aria-label="Opcje przestrzeni" title="Opcje przestrzeni" aria-expanded="false" aria-controls="sidebar-spaces-actions" popovertarget="sidebar-spaces-actions" data-row-actions-toggle><i data-icon="ellipsis" aria-hidden="true"></i></button>
+                            <div id="sidebar-spaces-actions" class="tasks-section-menu sidebar-group-menu" popover="auto" role="group" aria-label="Opcje przestrzeni" data-row-actions-panel>
+                                <a href="{{ sidebar_spaces_url }}" class="nav-link tasks-project-menu-button {% if request.resolver_match.app_name == 'spaces' or request.resolver_match.app_name == 'workplace_spaces' %}{% if request.resolver_match.url_name == 'index' %}active{% endif %}{% endif %}" data-sidebar-source-item="spaces" draggable="true" data-sidebar-group-action><i data-icon="settings" aria-hidden="true"></i><span>Zarządzaj przestrzeniami</span></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% sidebar_favorite_toggle 'spaces' 'Przestrzenie' 'folders' sidebar_spaces_url %}
+                <div class="sidebar-subnav" id="sidebar-spaces-subnav" data-sidebar-group-label="Przestrzenie" aria-label="Ulubione i ostatnie przestrzenie">
+                    {% for nav_space in navigation_spaces %}<a href="{{ sidebar_spaces_url }}{{ nav_space.pk }}/" class="nav-link sidebar-subnav-link{% if space.pk == nav_space.pk %} active{% endif %}"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="folder" aria-hidden="true"></i></span><span>{{ nav_space.project.name }}</span></a>{% endfor %}
                 </div>
             </section>
-
-            <section class="sidebar-nav-group" aria-labelledby="sidebar-kanban-title" data-sidebar-group="kanban">
-                <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Kanban" title="Zwiń sekcję Kanban" aria-controls="sidebar-kanban-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Kanban">
-                    <i class="nav-icon nav-icon--kanban" data-icon="kanban" aria-hidden="true"></i>
-                    <span id="sidebar-kanban-title" class="nav-label">Kanban</span>
-                    <i class="sidebar-group-chevron" data-icon="chevron-down" aria-hidden="true"></i>
-                </button>
-                <div class="sidebar-subnav" id="sidebar-kanban-subnav" data-sidebar-group-label="Kanban">
-                    <a href="{{ sidebar_kanban_url }}?view=projects" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'kanban' or request.resolver_match.app_name == 'workplace_kanban' %}{% if active_view == 'projects' or active_view == 'project' %}active{% endif %}{% endif %}" data-sidebar-source-item="kanban-spaces" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="folders"></i></span><span>Przestrzenie Kanban</span></a>
-                    {% sidebar_favorite_toggle 'kanban-spaces' 'Przestrzenie Kanban' 'folders' sidebar_kanban_url|add:'?view=projects' %}
-                    <a href="{{ sidebar_kanban_url }}?view=all-groups" class="nav-link sidebar-subnav-link {% if request.resolver_match.app_name == 'kanban' or request.resolver_match.app_name == 'workplace_kanban' %}{% if active_view == 'all_groups' or active_view == 'section' %}active{% endif %}{% endif %}" data-sidebar-source-item="kanban-boards" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="kanban"></i></span><span>Tablice</span></a>
-                    {% sidebar_favorite_toggle 'kanban-boards' 'Tablice' 'kanban' sidebar_kanban_url|add:'?view=all-groups' %}
-                </div>
-            </section>
-
-            <section class="sidebar-nav-group" aria-labelledby="sidebar-contacts-title" data-sidebar-group="contacts">
-                <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Kontakty" title="Zwiń sekcję Kontakty" aria-controls="sidebar-contacts-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Kontakty">
-                    <i class="nav-icon nav-icon--contacts" data-icon="contact" aria-hidden="true"></i>
-                    <span id="sidebar-contacts-title" class="nav-label">Kontakty</span>
-                    <i class="sidebar-group-chevron" data-icon="chevron-down" aria-hidden="true"></i>
-                </button>
-                <div class="sidebar-subnav" id="sidebar-contacts-subnav" data-sidebar-group-label="Kontakty">
-                    <a href="{{ sidebar_contacts_url }}" class="nav-link sidebar-subnav-link {% if active_contact_status == 'all' %}active{% endif %}" data-sidebar-source-item="contacts-all" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="users"></i></span><span>Kontakty</span></a>
-                    {% sidebar_favorite_toggle 'contacts-all' 'Kontakty' 'users' sidebar_contacts_url %}
-                    <a href="{{ sidebar_contacts_url }}companies/" class="nav-link sidebar-subnav-link {% if active_contact_status == 'companies' %}active{% endif %}" data-sidebar-source-item="contacts-companies" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="building-2"></i></span><span>Firmy</span></a>
-                    {% sidebar_favorite_toggle 'contacts-companies' 'Firmy' 'building-2' sidebar_contacts_url|add:'companies/' %}
-                    <a href="{{ sidebar_contacts_url }}guests/" class="nav-link sidebar-subnav-link {% if active_contact_status == 'guests' %}active{% endif %}" data-sidebar-source-item="contacts-guests" draggable="true"><span class="sidebar-subnav-icon" aria-hidden="true"><i data-icon="user-round-alert"></i></span><span>Goście</span></a>
-                    {% sidebar_favorite_toggle 'contacts-guests' 'Goście' 'user-round-alert' sidebar_contacts_url|add:'guests/' %}
-                </div>
-            </section>
-
+            <a href="{{ sidebar_spaces_url }}items/" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.url_name == 'items' %}active{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><i class="nav-icon" data-icon="list-checks" aria-hidden="true"></i><span class="nav-label">Wszystkie zadania</span></a>
+            {% sidebar_favorite_toggle 'tasks-all' 'Wszystkie zadania' 'list-checks' sidebar_spaces_url|add:'items/' %}
+            <a href="{{ sidebar_teams_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'teams' or request.resolver_match.app_name == 'workplace_teams' %}active{% endif %}" data-sidebar-source-item="teams" draggable="true"><i class="nav-icon" data-icon="users" aria-hidden="true"></i><span class="nav-label">Zespoły</span></a>
+            {% sidebar_favorite_toggle 'teams' 'Zespoły' 'users' sidebar_teams_url %}
             <a href="{{ sidebar_calendar_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'planner' or request.resolver_match.app_name == 'workplace_planner' %}active{% endif %}" aria-label="Kalendarz" title="Kalendarz" data-sidebar-source-item="calendar" draggable="true">
                 <i class="nav-icon nav-icon--calendar" data-icon="calendar-days" aria-hidden="true"></i>
                 <span class="nav-label">Kalendarz</span>
             </a>
             {% sidebar_favorite_toggle 'calendar' 'Kalendarz' 'calendar-days' sidebar_calendar_url %}
-            <a href="{{ sidebar_tasks_url }}?view=tags" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if active_view == 'tags' %}active{% endif %}" aria-label="Tagi" title="Tagi" data-sidebar-source-item="tags" draggable="true">
-                <i class="nav-icon nav-icon--tags" data-icon="tag" aria-hidden="true"></i>
-                <span class="nav-label">Tagi</span>
-            </a>
-            {% sidebar_favorite_toggle 'tags' 'Tagi' 'tag' sidebar_tasks_url|add:'?view=tags' %}
             <a href="{{ sidebar_documents_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'documents' or request.resolver_match.app_name == 'workplace_documents' %}active{% endif %}" aria-label="Dysk" title="Dysk" data-sidebar-source-item="documents" draggable="true">
                 <i class="nav-icon" data-icon="hard-drive" aria-hidden="true"></i>
                 <span class="nav-label">Dysk</span>
@@ -395,7 +375,7 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20261002-for-you"></script>
+    <script src="{% static 'js/layout.js' %}?v=20261003-sidebar-space-actions"></script>
     <script src="{% static 'js/global-search.js' %}?v=20260923-notification-actions"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>
@@ -405,7 +385,7 @@
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20260926-unified-small-dialogs"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20260921-dropdown-search"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20261001-kanban-sharing"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20261003-spaces-style"></script>
     <script src="{% static 'js/profile.js' %}?v=20260921-dropdown-layer"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260927-option-icons"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>

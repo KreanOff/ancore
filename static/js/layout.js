@@ -66,8 +66,9 @@
 
     function isPartialNavigationPath(pathname) {
         // Scoped module URLs use the same views and shell as their base URLs.
-        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|kanban|contacts|calendar|documents|office|resources|for-you)(\/|$))/, '/');
+        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|kanban|contacts|calendar|documents|office|resources|for-you|spaces|teams)(\/|$))/, '/');
         const appShellPaths = [
+            /^\/(spaces|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
             /^\/$/,
             /^\/settings\/?$/,
@@ -713,10 +714,17 @@
         setWorkspaceMenuOpen(false);
 
         sidebarCollapsedFlyoutTitle.textContent = toggleButton.dataset.sidebarGroupName || '';
-        sourceSubnav.querySelectorAll('a.sidebar-subnav-link').forEach(function (sourceLink) {
+        const sourceLinks = [
+            ...sourceSubnav.querySelectorAll('a.sidebar-subnav-link'),
+            ...group.querySelectorAll('a[data-sidebar-group-action]'),
+        ];
+        sourceLinks.forEach(function (sourceLink) {
             const flyoutLink = sourceLink.cloneNode(true);
-            flyoutLink.classList.remove('nav-link', 'sidebar-subnav-link');
+            flyoutLink.classList.remove('nav-link', 'sidebar-subnav-link', 'sidebar-header-action', 'tasks-project-menu-button');
             flyoutLink.classList.add('sidebar-collapsed-flyout__link');
+            flyoutLink.querySelector('.u-sr-only')?.classList.remove('u-sr-only');
+            flyoutLink.removeAttribute('data-sidebar-source-item');
+            flyoutLink.removeAttribute('data-sidebar-group-action');
             flyoutLink.removeAttribute('draggable');
             flyoutLink.removeAttribute('hidden');
             flyoutLink.setAttribute('title', sourceLink.textContent.trim());
@@ -2025,7 +2033,7 @@
         backdrop.addEventListener('click', closeSidebar);
     }
 
-    sidebar.querySelectorAll('a.nav-link, button.nav-link:not([data-sidebar-group-toggle]), a.sidebar-view-switcher__item').forEach(function (link) {
+    sidebar.querySelectorAll('a.nav-link, a[data-sidebar-group-action], button.nav-link:not([data-sidebar-group-toggle]), a.sidebar-view-switcher__item').forEach(function (link) {
         link.addEventListener('click', function () {
             setSidebarSearchOpen(false);
             if (isOverlayMode()) {

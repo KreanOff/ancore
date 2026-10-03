@@ -307,13 +307,15 @@ class TeamSlugMigrationTests(TransactionTestCase):
         latest = executor.loader.graph.leaf_nodes()
         # Inbox state and project templates depend on Workspace 0008. Roll
         # both back so the historical app state agrees with the database.
-        previous = [node for node in latest if node[0] not in {'workplaces', 'dashboard', 'tasks'}] + [
+        previous = [node for node in latest if node[0] not in {'workplaces', 'dashboard', 'tasks', 'spaces'}] + [
             ('workplaces', '0007_sidebarfavorite_position'), ('dashboard', None),
+            ('spaces', None),
             ('tasks', '0047_task_unique_tasks_number_per_workspace'),
         ]
         executor.migrate(previous)
         try:
-            state = executor.loader.project_state([node for node in previous if node[1] is not None]).apps
+            loader = MigrationExecutor(connection).loader
+            state = loader.project_state(list(loader.applied_migrations)).apps
             users = state.get_model(settings.AUTH_USER_MODEL)
             owner = users.objects.create(username='slug-owner', email='slug-owner@example.test')
             other = users.objects.create(username='slug-other', email='slug-other@example.test')

@@ -1,0 +1,119 @@
+/* Spaces reuse Ancore's directory, tab, form, modal and status components. */
+.work-page .tasks-workspace { min-height: 0; display: flex; flex-direction: column; }
+.work-page .tasks-topbar-title { margin: 0; }
+.work-page .tasks-titlebar-left { gap: 10px; min-width: 0; }
+.work-page .tasks-titlebar-actions a { text-decoration: none; }
+.work-tabs { flex-shrink: 0; padding: 0 24px; overflow-x: auto; white-space: nowrap; }
+.work-content { overflow: auto; flex: 1; min-height: 0; padding: 20px 24px 32px; font-size: var(--font-size-sm, 13px); }
+.work-page a { color: inherit; }
+.work-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; }
+.work-toolbar .form-select { width: auto; max-width: 240px; }
+.work-toolbar .ancore-custom-select { flex: 0 1 190px; width: 190px; }
+.work-toolbar .tasks-search-field { flex: 1 1 220px; max-width: 360px; }
+.work-toolbar .tasks-search-field { min-width: 210px; }
+.work-directory { display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 16px; }
+.work-space-card, .work-panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; }
+.work-space-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.work-space-card p { line-height: 1.6; margin: 0; overflow-wrap: anywhere; flex: 1; }
+.work-card-heading, .work-card-footer, .work-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.work-card-heading form { margin: 0; }
+.work-card-title { font-size: 15px; text-decoration: none; overflow-wrap: anywhere; }
+.work-card-title:hover, .work-task-title:hover { text-decoration: underline; }
+.work-caption { display: block; font-size: 12px; opacity: .76; }
+.work-card-footer { font-size: 12px; padding-top: 10px; }
+.work-symbol { display: inline-flex; width: 42px; height: 42px; border-radius: var(--radius); align-items: center; justify-content: center; background: var(--panel-bg); flex-shrink: 0; }
+.work-symbol svg { width: 22px; height: 22px; }
+.work-symbol img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.work-empty { text-align: center; padding: 48px 20px; grid-column: 1 / -1; }
+.work-empty > svg { width: 30px; height: 30px; margin-bottom: 12px; }
+.work-page h2 { font-size: 15px; margin: 0 0 12px; }
+.work-page p { line-height: 1.6; }
+.work-overview { display: grid; gap: 20px; }
+.work-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+.work-metrics strong { display: block; font-size: 28px; margin-top: 14px; }
+.work-panel .btn + .btn { margin-left: 8px; }
+/* Task rows, status headers, columns and cards use the existing Tasks/Kanban CSS. */
+.work-content--tasks { padding: 0; }
+.work-content--directory { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.tasks-directory-board.work-space-sheet {
+    --tasks-directory-grid: 40px 320px 150px 190px 220px 320px 130px;
+    flex: 1;
+    min-height: 0;
+}
+.tasks-directory-board.work-space-sheet .tasks-directory-header,
+.tasks-directory-board.work-space-sheet .tasks-directory-list .tasks-directory-row {
+    --tasks-directory-grid: inherit;
+    min-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+}
+.tasks-directory-board.work-space-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
+.work-space-sheet [data-column="action"] form { margin: 0; }
+.work-space-sheet [data-column="name"] > a {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-decoration: none;
+}
+.work-space-sheet [data-column="name"] > a:hover { text-decoration: underline; }
+.work-item-list { flex: none; }
+.work-item-toolbar { flex-shrink: 0; }
+.work-item-toolbar .ancore-custom-select { width: auto; min-width: 140px; max-width: 190px; }
+.work-item-toolbar .tasks-project-pagination__pages { flex-shrink: 0; }
+.work-issue-row .tasks-row-title { text-decoration: none; min-width: 0; }
+.work-issue-row .tasks-row-title:hover { text-decoration: underline; }
+.work-item-key { color: var(--text-secondary); font-size: var(--font-size-sm); flex-shrink: 0; }
+.work-issue-row .documents-item-actions { width: 18px; }
+.work-issue-row .documents-icon-button { width: 22px; height: 28px; min-height: 0; }
+.work-kanban-card .tasks-kanban-card__title { display: block; text-decoration: none; }
+.work-kanban-card .tasks-kanban-card__title:hover { text-decoration: underline; }
+.work-kanban-card > .tasks-kanban-card__header > .work-item-actions { position: absolute; top: 4px; right: 4px; }
+.work-kanban-card[draggable=true] { cursor: grab; }
+.work-kanban-context { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--text-secondary); font-size: var(--font-size-sm); }
+.work-kanban-context > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.work-page [data-work-column] { cursor: default; }
+.work-page [data-work-column] .tasks-kanban-column__header > .tasks-rail-count { margin-left: auto; }
+.work-backlog-items { margin-top: 12px; overflow-x: auto; }
+.work-backlog-items .work-issue-row { min-width: 460px; }
+.work-panel .work-item-list { padding: 0; }
+.work-content--tasks > .work-panel-heading { padding: 12px 16px 0; }
+.work-sprint { margin-bottom: 20px; }
+.work-member { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 12px 0; border-top: 1px solid var(--border-color); }
+.work-member > :first-child { flex: 1; min-width: 180px; }
+.work-member form { margin: 0; }
+.work-team-spaces { display: flex; flex-wrap: wrap; gap: 10px; }
+.work-report-row { display: grid; grid-template-columns: minmax(120px,1fr) 2fr 40px; align-items: center; gap: 18px; padding: 12px 0; }
+.work-report-row progress { width: 100%; accent-color: var(--system-accent); height: 8px; }
+.work-timeline-row { display: grid; grid-template-columns: minmax(180px,1fr) 160px 20px 160px 32px; align-items: center; gap: 12px; border-top: 1px solid var(--border-color); padding: 16px 0; }
+.work-timeline-row > svg { width: 16px; }
+.work-pagination { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: flex-end; margin-top: 20px; }
+.work-modal .documents-form { gap: 16px; }
+.work-modal .documents-field input[type=checkbox] { width: 16px; height: 16px; min-height: 16px; padding: 0; justify-self: start; }
+.work-modal select[multiple] { min-height: 90px; }
+.work-modal .resources-form-wide { grid-column: 1 / -1; }
+.work-configuration { display: grid; gap: 20px; }
+.work-configuration-row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 14px; border-top: 1px solid var(--border-color); padding: 16px 0; }
+.work-configuration-row .tasks-form-field { flex: 1 1 140px; min-width: 0; }
+.work-configuration-row select[multiple] { min-height: 120px; }
+.work-configuration-row label { display: block; margin-bottom: 8px; }
+.work-configuration .errorlist { color: var(--text-primary); padding-left: 16px; }
+.work-page :is(a,button,select,input):not(.tasks-issue-close):focus-visible { outline: 2px solid var(--system-accent); outline-offset: 2px; }
+@media (max-width: 767px) {
+    .work-page .tasks-topbar--directory { padding-left: 52px; flex-wrap: wrap; gap: 8px; }
+    .work-page .tasks-titlebar-left { flex-wrap: wrap; }
+    .work-content { padding: 16px 12px; }
+    .work-content--tasks, .work-content--directory { padding: 0; }
+    .work-item-list { overflow-x: auto; }
+    .work-item-list > .tasks-issue-group { min-width: 560px; }
+    .work-tabs { padding: 0 12px; }
+    .work-directory { grid-template-columns: minmax(0,1fr); }
+    .work-panel { padding: 14px; }
+    .work-panel-heading { flex-wrap: wrap; }
+    .work-timeline-row { display: flex; flex-wrap: wrap; }
+    .work-timeline-row > a:first-child { width: 100%; }
+    .work-toolbar .tasks-search-field { min-width: 0; width: 100%; }
+}
+
+.work-timeline-scale { display:flex; justify-content:space-between; color:var(--text-secondary); padding:12px 0; }
+.work-timeline-track { position:relative; grid-column:1 / -1; width:100%; height:18px; background:var(--panel-bg); border-radius:var(--radius); }
+.work-timeline-track span { position:absolute; height:100%; min-width:4px; background:var(--system-accent); border-radius:var(--radius); opacity:.65; }
