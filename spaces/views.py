@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from core.task_numbering import lock_task_numbers
+from dashboard.recent import remember_view
 from tasks.access import editable_to, visible_to
 from tasks.models import Task, TaskProject, TaskProjectMembership
 from workplaces.services import workplace_people, workspace_owner
@@ -165,7 +166,9 @@ def detail_context(request, space, view):
 @require_GET
 def detail(request, pk):
     space = space_object(request, pk)
-    return render(request, 'spaces/detail.html', detail_context(request, space, request.GET.get('view', 'overview')))
+    response = render(request, 'spaces/detail.html', detail_context(request, space, request.GET.get('view', 'overview')))
+    remember_view(request, space.project)
+    return response
 
 
 @login_required

@@ -538,7 +538,20 @@ skrótów nawigacji pozostaje kompletny. Panel oznacza obciętą grupę jako „
 i prosi o doprecyzowanie frazy; nie ma paginacji wyników.
 
 Frontend obsługuje opóźnienie wyszukiwania, anulowanie starszego requestu,
-stany pusty/ładowanie/błąd oraz nawigację po wynikach.
+stany pusty/ładowanie/błąd oraz nawigację po wynikach. Wyniki pojawiają się
+w rozwijanym panelu pod polem górnego paska; przyciski typów filtrują pobrane
+wyniki bez zmiany uprawnień ani limitów serwera.
+
+GET `/global-search/?recent=1` przy pustej frazie zwraca do 8 ostatnio oglądanych
+zadań, projektów i grup (także historycznego Kanbana). Korzysta z identyfikatorów
+`dashboard.recent` zapisanych dla konta i Workspace w bieżącej sesji.
+Przy każdym odczycie ponownie stosuje `workspace_owner`, Workspace i `visible_to`;
+usunięte elementy oraz te, do których cofnięto dostęp, nie trafiają do odpowiedzi.
+Otwarcie bieżącej Przestrzeni również zapisuje jej projekt w tej historii,
+po sprawdzeniu uprawnień i wyrenderowaniu widoku. Tytuły i numery są pobierane
+z aktualnych rekordów, a linki zadań zawierają
+`task_pk`. Odpowiedź ma `Cache-Control: no-store`; frontend nie zapisuje wyników
+w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszukiwania.
 
 ## 11. Historia a powiadomienia
 

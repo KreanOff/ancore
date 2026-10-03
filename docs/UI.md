@@ -344,7 +344,7 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   pod paskiem. Zmiana stanu aktualizuje tło, etykietę i `aria-expanded`;
   użycie przycisku zamyka otwarte panele wyszukiwania i powiadomień.
   Pole używa istniejącego `global-search-form`; wpisywanie, strzałki i skrót
-  Ctrl/Cmd+K otwierają wspólny panel wyników. Na telefonie nazwy Workspace
+  Ctrl/Cmd+K otwierają panel szybkiego wyszukiwania. Na telefonie nazwy Workspace
   i profilu oraz podpowiedź skrótu są ukryte; wszystkie kontrolki pozostają
   dostępne. Zwinięcie sidebaru nie zmienia przełącznika Workspace ani
   położenia jego menu, które rozwija się pod avatarem w górnym pasku.
@@ -355,6 +355,21 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   Wysokość treści uwzględnia pasek, zachowując przewijanie i widoczną dolną
   krawędź. Pasek należy do bloku `app_navigation`, więc nie występuje w osobnym
   edytorze Dokumentów ani na ekranach uwierzytelniania.
+- Wyszukiwanie używa wariantu `global-search-panel--quick` wewnątrz formularza
+  górnego paska. Panel jest wyśrodkowany pod polem, ma maksymalnie 680px szerokości
+  i 620px wysokości, własne przewijanie, wspólny cień oraz zaokrąglenia dropdownów.
+  Nie przyciemnia ani nie blokuje treści strony. Powiadomienia zachowują boczny panel.
+  Przed wpisaniem frazy pokazuje do 8 ostatnio oglądanych elementów bieżącego
+  Workspace z ponowną kontrolą dostępu; pustą historię zastępuje podpowiedź.
+  Przy wynikach przyciski „Wszystko” i dostępne typy filtrują pobrane grupy.
+  Filtry przewijają się poziomo, a stopka podaje liczbę wyników i skróty.
+  Strzałki przenoszą fokus na linki, Enter otwiera wynik, Escape zamyka panel
+  i przywraca fokus polu. Tab zachowuje naturalną kolejność, a kliknięcie lub
+  przeniesienie fokusu poza formularz zamyka wyszukiwanie. Na telefonie aktywne
+  pole zajmuje szerokość paska, panel mieści się w ekranie, a podpowiedzi klawiszy
+  są ukryte. `ancore:content-loaded` czyści frazę i wyniki bez ponownego podpinania
+  listenerów. Zmiana frazy od razu usuwa stare wyniki, aby Enter nie otworzył
+  elementu z poprzedniego zapytania; anulowane odpowiedzi i błędy są ignorowane.
 - Stała nawigacja z modułami, ulubionymi i Stickerem.
   Menu zaczyna się od Favorites, bez osobnego przycisku domu.
   Do strony głównej prowadzi istniejący link Dashboard.

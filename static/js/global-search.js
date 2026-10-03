@@ -2,21 +2,22 @@
     if (window.AncoreGlobalSearch) return;
     const panel = document.querySelector('[data-global-search-panel]');
     const closeButton = document.querySelector('[data-global-search-close]');
-    const backdrop = document.querySelector('[data-global-search-backdrop]');
     const form = document.querySelector('[data-global-search-form]');
     const input = document.querySelector('[data-global-search-input]');
     const clearButton = document.querySelector('[data-global-search-clear]');
     const results = document.querySelector('[data-global-search-results]');
     const status = document.querySelector('[data-global-search-status]');
-    const topbar = document.querySelector('[data-app-topbar]');
+    const filters = document.querySelector('[data-global-search-filters]');
+    const summary = document.querySelector('[data-global-search-summary]');
     const searchUrl = panel?.dataset.searchUrl || '';
     const minimumQueryLength = 2;
     const debounceDelay = 180;
     let requestController = null;
     let debounceTimer = null;
-    let restoreFocusTo = null;
+    let suppressFocusOpen = false;
+    let currentPayload = null;
+    let selectedGroup = 'all';
     let activeResultIndex = -1;
-    let inertElements = [];
 
     if (!panel || !input || !results || !searchUrl) return;
 
@@ -52,11 +53,12 @@
         results.replaceChildren(stateElement(
             'welcome',
             'scan-search',
-            'Zacznij od nazwy lub słowa kluczowego',
-            'Wpisz co najmniej 2 znaki. Przeszukamy cały bieżący Workspace.'
+            'Znajdź zadanie, przestrzeń lub dokument',
+            'Wpisz co najmniej 2 znaki. Ostatnio oglądane elementy pojawią się tutaj, gdy je otworzysz.'
         ));
         activeResultIndex = -1;
-        status.textContent = '';
+        status.textContent = 'Brak ostatnio oglądanych elementów.';
+        summary.textContent = 'Wyszukaj w bieżącym Workspace';
         renderIcons(results);
     }
 
@@ -69,6 +71,7 @@
         ));
         activeResultIndex = -1;
         status.textContent = 'Wpisz co najmniej 2 znaki.';
+        summary.textContent = status.textContent;
         renderIcons(results);
     }
 
@@ -85,6 +88,7 @@
         results.replaceChildren(loading);
         activeResultIndex = -1;
         status.textContent = 'Wyszukiwanie…';
+        summary.textContent = status.textContent;
     }
 
     function renderEmpty(query) {
@@ -96,6 +100,7 @@
         ));
         activeResultIndex = -1;
         status.textContent = `Brak wyników dla frazy ${query}.`;
+        summary.textContent = 'Brak wyników';
         renderIcons(results);
     }
 
@@ -111,16 +116,18 @@
         retry.className = 'global-search-state__retry';
         retry.textContent = 'Spróbuj ponownie';
         retry.addEventListener('click', function () {
+            focusInput();
             runSearch(input.value.trim());
         });
         errorState.appendChild(retry);
         results.replaceChildren(errorState);
         activeResultIndex = -1;
         status.textContent = 'Wystąpił błąd wyszukiwania.';
+        summary.textContent = 'Spróbuj ponownie';
         renderIcons(results);
     }
 
-    function createResult(result, resultIndex) {
+    function createResult(result, resultIndex, groupIcon) {
         const link = document.createElement('a');
         link.className = 'global-search-result';
         link.href = result.url;
@@ -131,11 +138,11 @@
         link.dataset.globalSearchResult = '';
         link.dataset.resultIndex = String(resultIndex);
 
-        if (result.icon) {
+        if (result.icon || groupIcon) {
             const visual = document.createElement('span');
             visual.className = 'global-search-result__icon';
             visual.setAttribute('aria-hidden', 'true');
-            visual.appendChild(iconNode(result.icon));
+            visual.appendChild(iconNode(result.icon || groupIcon));
             link.appendChild(visual);
         }
 
@@ -146,6 +153,7 @@
         const title = document.createElement('strong');
         title.className = 'global-search-result__title';
         title.textContent = result.title;
+        title.title = result.title;
         const type = document.createElement('span');
         type.className = 'global-search-result__type';
         type.textContent = result.type;
@@ -174,15 +182,33 @@
         return link;
     }
 
+    function renderFilters(payload) {
+        const groups = payload?.recent ? [] : (payload?.groups || []);
+        if (!groups.some(group => group.key === selectedGroup)) selectedGroup = 'all';
+        const fragment = document.createDocumentFragment();
+        [{ key: 'all', label: 'Wszystko' }, ...groups].forEach(group => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'tasks-filter-button';
+            button.dataset.searchGroup = group.key;
+            button.setAttribute('aria-pressed', String(group.key === selectedGroup));
+            button.textContent = group.label;
+            fragment.appendChild(button);
+        });
+        filters.replaceChildren(fragment);
+    }
+
     function renderSearchResults(payload) {
         if (!payload.groups?.length || payload.total === 0) {
-            renderEmpty(payload.query || input.value.trim());
+            if (payload.recent) renderWelcome();
+            else renderEmpty(payload.query || input.value.trim());
             return;
         }
 
         const fragment = document.createDocumentFragment();
         let resultIndex = 0;
-        payload.groups.forEach(function (group) {
+        const groups = payload.groups.filter(group => selectedGroup === 'all' || group.key === selectedGroup);
+        groups.forEach(function (group) {
             const section = document.createElement('section');
             section.className = 'global-search-group';
 
@@ -202,14 +228,15 @@
             const list = document.createElement('div');
             list.className = 'global-search-group__list';
             group.results.forEach(function (item) {
-                list.appendChild(createResult(item, resultIndex));
+                list.appendChild(createResult(item, resultIndex, group.icon));
                 resultIndex += 1;
             });
             section.appendChild(list);
             fragment.appendChild(section);
         });
 
-        if (payload.truncated) {
+        const truncated = groups.some(group => group.has_more);
+        if (truncated) {
             const note = document.createElement('p');
             note.className = 'global-search-results__limit-note';
             note.textContent = 'Pokazujemy najtrafniejsze wyniki. Doprecyzuj frazę, aby zawęzić listę.';
@@ -218,9 +245,12 @@
 
         results.replaceChildren(fragment);
         activeResultIndex = -1;
-        status.textContent = payload.truncated
-            ? `Pokazano ${payload.total} wyników. Doprecyzuj frazę, aby zawęzić listę.`
-            : `Znaleziono ${payload.total} wyników.`;
+        const total = groups.reduce((count, group) => count + group.results.length, 0);
+        status.textContent = payload.recent ? `Ostatnio oglądane: ${total}.` : truncated
+            ? `Pokazano ${total} wyników. Doprecyzuj frazę, aby zawęzić listę.`
+            : `Znaleziono ${total} wyników.`;
+        summary.textContent = payload.recent ? 'Ostatnio oglądane w tym Workspace'
+            : `Wyniki: ${total}${truncated ? '+' : ''}`;
         renderIcons(results);
     }
 
@@ -228,11 +258,8 @@
         window.clearTimeout(debounceTimer);
         requestController?.abort();
 
-        if (!query) {
-            renderWelcome();
-            return;
-        }
-        if (query.length < minimumQueryLength) {
+        requestController = null;
+        if (query && query.length < minimumQueryLength) {
             renderPrompt(query);
             return;
         }
@@ -244,6 +271,7 @@
         try {
             const url = new URL(searchUrl, window.location.origin);
             url.searchParams.set('q', query);
+            if (!query) url.searchParams.set('recent', '1');
             const response = await fetch(url, {
                 credentials: 'same-origin',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -251,10 +279,12 @@
             });
             if (!response.ok) throw new Error(`Search failed with ${response.status}`);
             const payload = await response.json();
-            if (controller !== requestController || input.value.trim() !== query) return;
+            if (controller.signal.aborted || controller !== requestController || !isOpen() || input.value.trim() !== query) return;
+            currentPayload = payload;
+            renderFilters(payload);
             renderSearchResults(payload);
         } catch (error) {
-            if (error.name !== 'AbortError') renderError();
+            if (error.name !== 'AbortError' && controller === requestController && !controller.signal.aborted && isOpen()) renderError();
         }
     }
 
@@ -263,25 +293,32 @@
         clearButton.hidden = !input.value;
         window.clearTimeout(debounceTimer);
         requestController?.abort();
+        requestController = null;
+        currentPayload = null;
+        selectedGroup = 'all';
+        renderFilters(null);
         if (!query || query.length < minimumQueryLength) {
             runSearch(query);
             return;
         }
+        renderLoading();
         debounceTimer = window.setTimeout(function () {
             runSearch(query);
         }, debounceDelay);
     }
 
-    function setActiveResult(nextIndex) {
+    function setActiveResult(nextIndex, focus = false) {
         const items = Array.from(results.querySelectorAll('[data-global-search-result]'));
         if (!items.length) return;
         activeResultIndex = (nextIndex + items.length) % items.length;
         items.forEach(function (item, index) {
             const active = index === activeResultIndex;
             item.classList.toggle('is-active', active);
-            item.setAttribute('aria-current', active ? 'true' : 'false');
         });
-        items[activeResultIndex].scrollIntoView({ block: 'nearest' });
+        if (focus) {
+            items[activeResultIndex].focus({ preventScroll: true });
+            items[activeResultIndex].scrollIntoView({ block: 'nearest' });
+        }
     }
 
     function openSelectedResult() {
@@ -296,45 +333,40 @@
         return !panel.hidden;
     }
 
+    function focusInput(select = false) {
+        suppressFocusOpen = true;
+        input.focus({ preventScroll: true });
+        if (select) input.select();
+        suppressFocusOpen = false;
+    }
+
     function setOpen(open, options = {}) {
         if (open === isOpen()) {
-            if (open && options.focus !== false) input.focus({ preventScroll: true });
+            if (open && options.focus !== false) focusInput(true);
             return;
         }
-
         input.setAttribute('aria-expanded', String(open));
         document.body.classList.toggle('global-search-open', open);
         panel.hidden = !open;
-        backdrop.hidden = !open;
-
         if (open) {
-            restoreFocusTo = document.activeElement.closest('.global-search-panel') ? input : document.activeElement;
             window.dispatchEvent(new CustomEvent('ancore:global-search-open'));
-            const background = Array.from(document.querySelectorAll('main.main-content, .sidebar'));
-            inertElements = background.filter(element => element instanceof HTMLElement && !element.inert);
-            inertElements.forEach(element => { element.inert = true; });
-            if (options.focus !== false) {
-                input.focus({ preventScroll: true });
-                input.select();
-            }
+            if (options.focus !== false) focusInput(true);
             if (options.search !== false) queueSearch();
         } else {
             window.clearTimeout(debounceTimer);
             requestController?.abort();
-            inertElements.forEach(element => { element.inert = false; });
-            inertElements = [];
-            if (options.restoreFocus !== false) restoreFocusTo?.focus?.({ preventScroll: true });
-            restoreFocusTo = null;
+            requestController = null;
+            if (options.restoreFocus !== false) focusInput();
         }
     }
 
+    input.addEventListener('focus', function () {
+        if (!suppressFocusOpen) setOpen(true, { focus: false });
+    });
     input.addEventListener('click', function () {
         setOpen(true, { focus: false });
     });
     closeButton?.addEventListener('click', function () {
-        setOpen(false);
-    });
-    backdrop?.addEventListener('click', function () {
         setOpen(false);
     });
     form?.addEventListener('submit', function (event) {
@@ -346,6 +378,7 @@
         queueSearch();
     });
     input.addEventListener('keydown', function (event) {
+        if (event.isComposing) return;
         if (!isOpen() && ['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) {
             event.preventDefault();
             setOpen(true);
@@ -353,10 +386,10 @@
         }
         if (event.key === 'ArrowDown') {
             event.preventDefault();
-            setActiveResult(activeResultIndex + 1);
+            setActiveResult(0, true);
         } else if (event.key === 'ArrowUp') {
             event.preventDefault();
-            setActiveResult(activeResultIndex - 1);
+            setActiveResult(-1, true);
         } else if (event.key === 'Enter') {
             event.preventDefault();
             openSelectedResult();
@@ -366,8 +399,8 @@
         setOpen(true, { focus: false, search: false });
         input.value = '';
         clearButton.hidden = true;
-        runSearch('');
-        input.focus({ preventScroll: true });
+        queueSearch();
+        focusInput();
     });
     results.addEventListener('mousemove', function (event) {
         const item = event.target.closest('[data-global-search-result]');
@@ -375,7 +408,7 @@
         setActiveResult(Number(item.dataset.resultIndex));
     });
     results.addEventListener('click', function (event) {
-        if (event.target.closest('[data-global-search-result]')) setOpen(false);
+        if (event.target.closest('[data-global-search-result]')) setOpen(false, { restoreFocus: false });
     });
     window.addEventListener('ancore:notifications-open', function () {
         setOpen(false, { restoreFocus: false });
@@ -400,30 +433,50 @@
             setOpen(true);
             return;
         }
-        if (event.key === 'Tab' && isOpen()) {
-            const selector = 'button:not(:disabled), input:not(:disabled), a[href]';
-            const focusable = [...(topbar?.querySelectorAll(selector) || []), ...panel.querySelectorAll(selector)]
-                .filter(element => {
-                    const rect = element.getBoundingClientRect();
-                    return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden'
-                        && !element.closest('[inert]') && rect.right > 0 && rect.left < innerWidth;
-                });
-            if (focusable.length) {
-                const index = focusable.indexOf(document.activeElement);
-                const next = index < 0 ? (event.shiftKey ? focusable.length - 1 : 0)
-                    : (index + (event.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
-                event.preventDefault();
-                focusable[next].focus();
-            }
-            return;
-        }
         if (event.key === 'Escape' && isOpen()) {
             event.preventDefault();
+            event.stopPropagation();
             setOpen(false);
         } else if (!typing && event.key === '/' && !isOpen()) {
             event.preventDefault();
             setOpen(true);
         }
     });
-    window.AncoreGlobalSearch = { close: () => setOpen(false) };
+    results.addEventListener('focusin', function (event) {
+        const item = event.target.closest('[data-global-search-result]');
+        if (item) setActiveResult(Number(item.dataset.resultIndex));
+    });
+    results.addEventListener('keydown', function (event) {
+        if (!event.target.closest('[data-global-search-result]') || event.isComposing) return;
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        if (event.key === 'ArrowUp' && activeResultIndex === 0) focusInput();
+        else setActiveResult(event.key === 'Home' ? 0 : event.key === 'End' ? -1
+            : activeResultIndex + (event.key === 'ArrowDown' ? 1 : -1), true);
+    });
+    filters.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-search-group]');
+        if (!button || !currentPayload) return;
+        selectedGroup = button.dataset.searchGroup;
+        filters.querySelectorAll('button').forEach(item => {
+            item.setAttribute('aria-pressed', String(item === button));
+        });
+        renderSearchResults(currentPayload);
+        results.scrollTop = 0;
+    });
+    document.addEventListener('pointerdown', function (event) {
+        if (isOpen() && !form.contains(event.target)) setOpen(false, { restoreFocus: false });
+    });
+    document.addEventListener('focusin', function (event) {
+        if (isOpen() && !form.contains(event.target)) setOpen(false, { restoreFocus: false });
+    });
+    document.addEventListener('ancore:content-loaded', function () {
+        setOpen(false, { restoreFocus: false });
+        input.value = '';
+        clearButton.hidden = true;
+        currentPayload = null;
+        selectedGroup = 'all';
+        renderFilters(null);
+    });
+    window.AncoreGlobalSearch = { close: () => setOpen(false, { restoreFocus: false }) };
 })();

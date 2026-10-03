@@ -67,7 +67,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-collapse-panel">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-quick-search-v1">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
@@ -154,12 +154,29 @@
         <form class="global-search-form app-topbar__search" role="search" data-global-search-form>
             <label for="global-search-input">
                 <i data-icon="search" aria-hidden="true"></i>
-                <input id="global-search-input" type="search" role="combobox" aria-label="Globalne wyszukiwanie" aria-controls="global-search-panel" aria-expanded="false" aria-haspopup="dialog" aria-autocomplete="none" placeholder="Szukaj zadań, osób, projektów…" autocomplete="off" spellcheck="false" data-global-search-input>
+                <input id="global-search-input" type="search" role="combobox" aria-label="Globalne wyszukiwanie" aria-controls="global-search-panel" aria-expanded="false" aria-haspopup="dialog" aria-autocomplete="none" maxlength="120" placeholder="Szukaj zadań, osób, projektów…" autocomplete="off" spellcheck="false" data-global-search-input>
                 <span class="global-search-form__shortcut" aria-hidden="true">⌘ K</span>
                 <button type="button" class="global-search-form__clear" aria-label="Wyczyść wyszukiwanie" title="Wyczyść wyszukiwanie" data-global-search-clear hidden>
                     <i data-icon="circle-x" aria-hidden="true"></i>
                 </button>
             </label>
+            <aside class="global-search-panel global-search-panel--quick" id="global-search-panel" role="dialog" aria-labelledby="global-search-title" data-global-search-panel data-search-url="{% url 'global_search' %}" hidden>
+                <h2 id="global-search-title" class="u-sr-only">Wyszukaj w Ancore</h2>
+                <div class="global-search-quick-toolbar">
+                    <div class="global-search-filters" role="group" aria-label="Typ wyników" data-global-search-filters>
+                        <button type="button" class="tasks-filter-button" aria-pressed="true" data-search-group="all">Wszystko</button>
+                    </div>
+                    <button type="button" class="global-search-panel__close" aria-label="Zamknij wyszukiwanie" title="Zamknij wyszukiwanie" data-global-search-close>
+                        <i data-icon="x" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="global-search-results" data-global-search-results tabindex="-1"></div>
+                <footer class="global-search-quick-footer">
+                    <span data-global-search-summary>Wyszukaj w bieżącym Workspace</span>
+                    <span class="global-search-quick-keys" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> wybierz</span><span><kbd>↵</kbd> otwórz</span><span><kbd>esc</kbd> zamknij</span></span>
+                </footer>
+                <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-global-search-status></span>
+            </aside>
         </form>
         <nav class="app-topbar__actions" aria-label="Powiadomienia i konto">
             <button type="button" class="tasks-icon-button app-topbar__action" aria-label="Powiadomienia" aria-controls="notifications-panel" aria-expanded="false" aria-describedby="notifications-invitation-status" title="Powiadomienia" data-notifications-toggle>
@@ -272,30 +289,6 @@
         </header>
         <nav class="sidebar-collapsed-flyout__links" aria-label="Podmenu" data-sidebar-collapsed-flyout-links></nav>
     </div>
-    <div class="global-search-backdrop" data-global-search-backdrop hidden></div>
-    <aside class="global-search-panel" id="global-search-panel" role="dialog" aria-labelledby="global-search-title" aria-describedby="global-search-description" data-global-search-panel data-search-url="{% url 'global_search' %}" hidden>
-        <header class="global-search-panel__header">
-            <div class="global-search-panel__heading">
-                <span class="global-search-panel__mark" aria-hidden="true"><i data-icon="sparkles"></i></span>
-                <div>
-                    <h2 id="global-search-title">Wyszukaj w Ancore</h2>
-                    <p id="global-search-description">Jedno miejsce do przeszukiwania całego Workspace.</p>
-                </div>
-            </div>
-            <button type="button" class="global-search-panel__close" aria-label="Zamknij wyszukiwanie" title="Zamknij wyszukiwanie" data-global-search-close>
-                <i data-icon="x" aria-hidden="true"></i>
-            </button>
-        </header>
-
-        <div class="global-search-results" data-global-search-results tabindex="-1">
-            <div class="global-search-state global-search-state--welcome" data-global-search-welcome>
-                <span class="global-search-state__icon" aria-hidden="true"><i data-icon="scan-search"></i></span>
-                <h3>Zacznij od nazwy lub słowa kluczowego</h3>
-                <p>Przeszukamy bieżący Workspace, kontakty, kalendarz i główne miejsca w aplikacji.</p>
-            </div>
-        </div>
-        <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-global-search-status></span>
-    </aside>
     <div class="global-search-backdrop notifications-panel-backdrop" data-notifications-backdrop hidden></div>
     <aside class="global-search-panel notifications-panel" id="notifications-panel" role="dialog" aria-labelledby="notifications-panel-title" data-notifications-panel data-notifications-center data-notifications-url="{{ sidebar_notifications_url }}" data-notifications-action-url="{% url 'notification_action' %}" hidden>
         <header class="global-search-panel__header">
@@ -366,7 +359,7 @@
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/layout.js' %}?v=20261003-sidebar-no-home"></script>
-    <script src="{% static 'js/global-search.js' %}?v=20261003-sidebar-no-home"></script>
+    <script src="{% static 'js/global-search.js' %}?v=20261003-quick-search-v1"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/notifications-panel.js' %}?v=20261003-sidebar-no-home"></script>

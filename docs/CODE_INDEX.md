@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
 | [kanban](../kanban) | 19 | 39 | 10 | 100 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 20 | 6 | 8 | 106 |
+| [dashboard](../dashboard) | 20 | 6 | 8 | 113 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -1941,7 +1941,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_search_regressions.py](../dashboard/test_search_regressions.py).
 
-- `GlobalSearchRegressionTests`: 6 metod testowych.
+- `GlobalSearchRegressionTests`: 13 metod testowych.
 
 ### dashboard/test_workspace_invitations.py
 

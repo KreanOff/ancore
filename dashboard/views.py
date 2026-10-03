@@ -25,12 +25,14 @@ from tasks.models import Task, TaskProject, TaskSection, TaskTag
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
 from .overview import dashboard_overview
 from .for_you import for_you_context
+from .recent import recent_views
 from .notification_service import DASHBOARD_NOTIFICATION_LIMIT, _dashboard_notifications
 from .notification_service import change_notification_state, notification_filters, notification_page, notification_summary
 
 
 GLOBAL_SEARCH_QUERY_LIMIT = 120
 GLOBAL_SEARCH_GROUP_LIMIT = 20
+GLOBAL_SEARCH_RECENT_LIMIT = 8
 
 
 def _normalized_search_text(value):
@@ -126,10 +128,76 @@ def _navigation_search_results(query, workplace):
     return results
 
 
+def _recent_search_results(request):
+    """Resolve session IDs against today's Workspace and visibility rules."""
+    workplace = getattr(request, 'workplace', None)
+    if workplace is None:
+        return []
+    entries = recent_views(request)
+    owner = workspace_owner(request)
+    results = {}
+    kinds = (
+        (Task, 'Zadanie', 'list-checks'),
+        (TaskProject, 'Przestrzeń', 'folders'),
+        (TaskSection, 'Grupa', 'layers-3'),
+        (Kanban, 'Karta Kanban', 'kanban'),
+        (KanbanProject, 'Przestrzeń Kanban', 'folders'),
+        (KanbanSection, 'Tablica', 'kanban'),
+    )
+    for model, label, icon in kinds:
+        ids = [entry['identity'][3] for entry in entries if entry['identity'][2] == model._meta.label_lower]
+        if not ids:
+            continue
+        query = visible_to(model.objects.filter(pk__in=ids), request.user)
+        is_task = model in (Task, Kanban)
+        is_project = model in (TaskProject, KanbanProject)
+        if is_task or is_project:
+            query = query.filter(user=owner, workplace=workplace)
+            if is_task:
+                query = query.select_related('section__project', 'parent')
+            elif model is TaskProject:
+                query = query.select_related('space')
+        else:
+            query = query.filter(project__user=owner, project__workplace=workplace).select_related('project')
+        base = _workspace_app_url(workplace, model._meta.app_label)
+        for obj in query:
+            meta = ''
+            type_label = label
+            if is_task:
+                detail = 'view-subtask' if obj.parent_id else 'view-task'
+                url = _search_url(f'{base}{detail}/{obj.task_id}/', task_pk=obj.pk)
+                type_label = 'Podzadanie' if model is Task and obj.parent_id else label
+                meta = f'#{obj.task_id}'
+                if (obj.section_id and obj.section.project.user_id == owner.pk
+                        and obj.section.project.workplace_id == workplace.pk):
+                    meta += f' · {obj.section.project.name} · {obj.section.title}'
+            elif is_project:
+                url = (_workspace_app_url(workplace, 'spaces', f'{obj.space.pk}/')
+                       if model is TaskProject and hasattr(obj, 'space') else _search_url(base, project=obj.pk))
+                meta = obj.code
+            else:
+                url = f'{base}groups/{obj.pk}/'
+                meta = obj.project.name
+            results[(model._meta.label_lower, obj.pk)] = _global_search_result(
+                obj.name if is_project else obj.title, type_label, url, icon, meta,
+            )
+    return [results[tuple(entry['identity'][2:])] for entry in entries
+            if tuple(entry['identity'][2:]) in results][:GLOBAL_SEARCH_RECENT_LIMIT]
+
+
 @login_required
 @require_GET
 def global_search(request):
     query = (request.GET.get('q') or '').strip()[:GLOBAL_SEARCH_QUERY_LIMIT]
+    if not query and request.GET.get('recent') == '1':
+        recent = _recent_search_results(request)
+        response = JsonResponse({
+            'query': '', 'recent': True, 'total': len(recent), 'truncated': False,
+            'groups': [{'key': 'recent', 'label': 'Ostatnio oglądane', 'icon': 'history',
+                        'results': recent, 'has_more': False}] if recent else [],
+        })
+        response['Cache-Control'] = 'no-store'
+        return response
     if len(query) < 2:
         return JsonResponse({
             'query': query,
