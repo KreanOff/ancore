@@ -222,7 +222,7 @@
             <section class="sidebar-nav-group" aria-labelledby="sidebar-spaces-title" data-sidebar-group="spaces">
                 <div class="sidebar-group-header">
                     <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Przestrzenie" title="Zwiń sekcję Przestrzenie" aria-controls="sidebar-spaces-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Przestrzenie">
-                        <i class="nav-icon" data-icon="folders" aria-hidden="true"></i>
+                        <i class="nav-icon" data-icon="layers" aria-hidden="true"></i>
                         <span id="sidebar-spaces-title" class="nav-label">Przestrzenie</span>
                     </button>
                     <div class="sidebar-header-actions sidebar-group-actions">
@@ -237,7 +237,7 @@
                         </div>
                     </div>
                 </div>
-                {% sidebar_favorite_toggle 'spaces' 'Przestrzenie' 'folders' sidebar_spaces_url %}
+                {% sidebar_favorite_toggle 'spaces' 'Przestrzenie' 'layers' sidebar_spaces_url %}
                 <div class="sidebar-subnav" id="sidebar-spaces-subnav" data-sidebar-group-label="Przestrzenie" aria-label="Ulubione i ostatnie przestrzenie">
                     {% for nav_space in navigation_spaces %}<a href="{{ sidebar_spaces_url }}{{ nav_space.pk }}/" class="nav-link sidebar-subnav-link{% if space.pk == nav_space.pk %} active{% endif %}">{% include 'spaces/avatar.html' with space=nav_space avatar_class='sidebar-subnav-icon' %}<span>{{ nav_space.project.name }}</span></a>{% endfor %}
                 </div>

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from urllib.parse import parse_qs, urlsplit
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -217,3 +218,88 @@ class ForYouTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(self.url, response.json()['html'])
         self.assertContains(self.page(), 'data-sidebar-favorite-item="for-you"')
+
+    def test_search_and_space_filter_apply_before_pagination_and_survive_navigation(self):
+        other_project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Druga przestrzeń')
+        other_section = TaskSection.objects.create(project=other_project, title='Inna grupa')
+        wanted = [self.task(f'Wdrożenie {i:02d}') for i in range(27)]
+        self.task('Wdrożenie w innej przestrzeni', section=other_section)
+        self.task('Inna nazwa')
+        self.task('Wdrożenie prywatne', section=self.hidden_section)
+        params = {'q': 'Wdrożenie', 'space': str(self.project.space.pk)}
+        first = self.page('assigned', **params)
+        second = self.page('assigned', page=2, **params)
+        self.assertEqual(first.context['for_you_page'].paginator.count, 27)
+        self.assertEqual(set(self.objects(first) + self.objects(second)), set(wanted))
+        for url in [first.context['for_you_next'], second.context['for_you_previous'],
+                    *[tab['url'] for tab in first.context['for_you_tabs']]]:
+            query = parse_qs(urlsplit(url).query)
+            self.assertEqual(query['q'], [params['q']])
+            self.assertEqual(query['space'], [params['space']])
+        self.assertNotContains(first, self.hidden_project.name)
+        self.assertEqual(self.objects(self.page(q=wanted[-1].work_item.key)), [wanted[-1]])
+        response = self.client.get(reverse('for_you'), {'tab': 'assigned', **params}, follow=True)
+        self.assertEqual(self.objects(response), self.objects(first))
+
+    def test_filters_cover_merged_tabs_and_do_not_grant_access(self):
+        task = self.task('Dopasowane zadanie', priority='high')
+        other = self.task('Pozostałe zadanie', priority='high')
+        for obj in (task, other):
+            obj.favorited_by.add(self.member)
+            TaskActivity.objects.create(task=obj, actor=self.member)
+            self.visit(obj)
+        for tab in ('recommended', 'assigned', 'starred', 'worked', 'viewed'):
+            with self.subTest(tab=tab):
+                self.assertEqual(self.objects(self.page(tab, q='Dopasowane', space=str(self.project.space.pk))), [task])
+                for space in (str(self.hidden_project.space.pk), '999999', '9' * 40, 'bad', '²'):
+                    response = self.page(tab, space=space)
+                    self.assertEqual(self.objects(response), [])
+                    self.assertContains(response, 'Niedostępna przestrzeń')
+                    self.assertContains(response, 'Brak pasujących wyników')
+        self.assertEqual(self.objects(self.page('starred', q='<script>"&')), [])
+        self.assertNotContains(self.page('starred', q='<script>"&'), '<script>"&')
+
+    def test_recent_space_shortcuts_and_assignments_recheck_access(self):
+        self.task()
+        self.task('Zamknięte', status='closed')
+        self.task('Właściciela', assignee=self.owner)
+        self.task('Ukryte', visibility='private', private_owner=self.owner)
+        self.assertEqual(self.page().context['for_you_projects'], [])
+        space_url = scoped_workplace_app_path(self.workspace, 'spaces', f'{self.project.space.pk}/')
+        self.assertEqual(self.client.get(space_url).status_code, 200)
+        shortcuts = self.page().context['for_you_projects']
+        self.assertEqual([item['object'] for item in shortcuts], [self.project])
+        self.assertEqual(shortcuts[0]['url'], space_url)
+        assignments = self.page(space=self.project.space.pk)
+        self.assertEqual(assignments.context['for_you_assigned_count'], 1)
+        self.assertEqual(assignments.context['for_you_page'].paginator.count, 1)
+        self.project.visibility, self.project.private_owner = 'private', self.owner
+        self.project.save()
+        self.assertEqual(self.page().context['for_you_projects'], [])
+        self.assertEqual(self.objects(self.page('viewed')), [])
+
+    def test_favorite_spaces_precede_recent_activity_without_duplicates(self):
+        favorite = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Ulubiona')
+        favorite.favorited_by.add(self.member)
+        self.project.favorited_by.add(self.member, self.owner)
+        TaskActivity.objects.create(task=self.task(), actor=self.member)
+        shortcuts = self.page().context['for_you_projects']
+        self.assertEqual([row['object'] for row in shortcuts], [self.project, favorite])
+        self.assertTrue(all(row['object'].is_starred for row in shortcuts))
+
+    def test_worked_groups_use_local_dates_and_custom_status_labels(self):
+        tasks = [self.task(f'Historia {i}') for i in range(4)]
+        now = timezone.localtime().replace(hour=12, minute=0, second=0, microsecond=0)
+        for task, days in zip(tasks, [0, 1, 3, 10]):
+            activity = TaskActivity.objects.create(task=task, actor=self.member)
+            TaskActivity.objects.filter(pk=activity.pk).update(created_at=now - timedelta(days=days))
+        config = self.project.space.configuration
+        config.settings['statuses'][0]['label'] = 'Do analizy'
+        config.save()
+        response = self.page('worked')
+        rows = response.context['for_you_rows']
+        self.assertEqual([row['date_group'] for row in rows], ['Dzisiaj', 'Wczoraj', 'Ostatnie 7 dni', 'Wcześniej'])
+        self.assertEqual(rows[0]['key'], tasks[0].work_item.key)
+        self.assertEqual(rows[0]['status_label'], 'Do analizy')
+        self.assertContains(response, 'Do analizy')
+        self.assertContains(response, tasks[0].work_item.key)

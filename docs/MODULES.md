@@ -600,14 +600,25 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   wyszukiwaniu i ulubionych menu. Zakładki mają paginację po 25 pozycji:
   „Polecane” (otwarte zadania wykonawcy, zaległe, do 7 dni lub wysoki/pilny
   priorytet), „Przypisane do mnie” (również podzadania), „Ulubione”
-  (osobiste gwiazdki zadań, projektów, grup, przestrzeni Kanban i tablic),
-  „Ostatnia praca” (ostatnia aktywność zalogowanej osoby w zadaniach i kartach),
-  „Ostatnio oglądane” (zadania, karty, projekty, grupy i tablice otwarte w sesji).
-  Cztery skróty projektów Zadań pochodzą z ulubionych lub własnej aktywności
-  w dostępnych zadaniach. Każda lista ponownie sprawdza dostęp w aktywnym
-  Workspace; przypisanie, historia ani ulubione nie nadają uprawnień.
-  Kanban nie ma wykonawcy, a karty nie mają osobistych gwiazdek — pojawiają
-  się w ostatniej pracy i oglądanych. Funkcja nie wymaga migracji.
+  (osobiste gwiazdki przestrzeni, grup i zadań), „Ostatnia praca”
+  (ostatnia aktywność zalogowanej osoby), „Ostatnio oglądane” (elementy otwarte
+  w sesji). Każda zakładka ma wyszukiwanie po nazwie, zadania także po kluczu
+  `WorkItem`, oraz filtr dostępnej przestrzeni. Filtry działają przed paginacją,
+  pozostają w adresach zakładek i kolejnych stron; „Wyczyść” zachowuje zakładkę.
+  Niedostępna lub błędna przestrzeń daje pusty wynik, bez rozszerzania zakresu.
+  Historia ma grupy Dzisiaj, Wczoraj, Ostatnie 7 dni i Wcześniej według lokalnej
+  strefy czasu. Wiersze pokazują stabilny klucz oraz własną nazwę statusu przestrzeni;
+  URL zadania nadal zawiera `task_pk`.
+  Cztery karty „Rekomendowane przestrzenie” pochodzą z osobistych ulubionych, odwiedzin
+  przestrzeni w sesji lub własnej aktywności w dostępnych zadaniach. Ulubione
+  są pierwsze, dalej decyduje ostatnie użycie. Karty pokazują awatar, nazwę i rodzaj;
+  kliknięcie kafelka otwiera przestrzeń. Nie zawierają dodatkowych skrótów ani
+  liczników zadań. Filtry listy nie zmieniają kart ani licznika
+  wszystkich przypisanych zadań. Każda lista i licznik ponownie sprawdza dostęp
+  w aktywnym Workspace; przypisanie, historia, odwiedziny i ulubione nie nadają uprawnień.
+  Pozostałe, niezaimportowane elementy historycznego Kanbana zachowują obsługę
+  ulubionych/historii; filtr konkretnej przestrzeni obejmuje kanoniczne Tasks.
+  Zaimportowane źródła Kanbana wyklucza wspólny filtr dostępu. Funkcja nie wymaga migracji.
 - **Dashboard:** `/` pokazuje dane właściciela w aktywnym Workspace:
   liczbę otwartych zadań i kart Kanban, ich wysokich/pilnych priorytetów,
   zaległych zadań oraz pozycji zamkniętych w ostatnich 7 dniach.

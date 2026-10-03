@@ -167,6 +167,10 @@ ponowne wejście, klawiatura, szerokość telefonu oraz referencyjne okno Zadań
 `dashboard.test_for_you` sprawdza osobisty widok „Dla ciebie”: wykonawcę,
 podzadania, terminy, ulubione, historię autora, zapis oglądanych, paginację,
 zwykły/scoped URL, stabilne linki, zmianę Workspace i cofnięcie dostępu.
+Obejmuje też filtry przed paginacją i zachowanie ich w adresach, wyszukiwanie
+kluczy, niedostępną przestrzeń, własne nazwy statusów, lokalne grupy dat oraz
+skróty przestrzeni z odwiedzin/ulubionych oraz licznik zakładki przypisanych,
+ograniczone dostępem.
 Przy zmianach uruchom też Dashboard, testy prywatności Zadań i Kanbana,
 `core.test_task_integrity.TaskIdentityTests`, Workplaces i testy menu Core.
 W przeglądarce sprawdź wszystkie zakładki, paginację, wejście w element i powrót,

@@ -66,8 +66,7 @@
 .work-issue-row .tasks-row-title { text-decoration: none; min-width: 0; }
 .work-issue-row .tasks-row-title:hover { text-decoration: underline; }
 .work-item-key { color: var(--text-secondary); font-size: var(--font-size-sm); flex-shrink: 0; }
-.work-issue-row .documents-item-actions { width: 18px; }
-.work-issue-row .documents-icon-button { width: 22px; height: 28px; min-height: 0; }
+.work-issue-row > .tasks-row-checkbox { opacity: 1; }
 .work-kanban-card .tasks-kanban-card__title { display: block; text-decoration: none; }
 .work-kanban-card .tasks-kanban-card__title:hover { text-decoration: underline; }
 .work-kanban-card > .tasks-kanban-card__header > .work-item-actions { position: absolute; top: 4px; right: 4px; }

@@ -143,14 +143,38 @@
 .dashboard-overview-empty p { margin: 0; max-width: 320px; font-size: var(--font-size-sm); line-height: 1.6; }
 
 /* Personal work hub: reuse overview panels, rows and navigation tabs. */
+.for-you-page .tasks-topbar-title {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+}
+.for-you-page .dashboard-main > section { flex-shrink: 0; }
 .for-you-section-heading { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
-.for-you-section-heading h2 { margin: 0; font-size: var(--font-size-base); }
+.for-you-page .for-you-section-heading h2 {
+    margin: 0;
+    font-size: 17px;
+    /* This heading intentionally overrides the shared normal-weight rule. */
+    font-weight: 700 !important;
+}
 .for-you-section-heading > span { font-size: var(--font-size-sm); }
+.for-you-section-heading > a { margin-left: auto; }
 .for-you-project-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.for-you-project { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 18px; text-decoration: none; }
-.for-you-project:hover { background: var(--system-interaction-soft); }
-.for-you-project > i, .for-you-project > svg, .for-you-item > i, .for-you-item > svg { width: 18px; height: 18px; flex: 0 0 18px; }
-.for-you-project .dashboard-task-main { flex: 1; min-width: 0; }
+.for-you-project-heading { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; height: 100%; min-height: 120px; padding: 16px; text-decoration: none; }
+.for-you-project-heading:hover { background: var(--system-interaction-soft); }
+.for-you-project-heading > i, .for-you-project-heading > svg { width: 32px; height: 32px; flex: 0 0 32px; }
+.for-you-item > i, .for-you-item > svg { width: 18px; height: 18px; flex: 0 0 18px; }
+.for-you-project .dashboard-task-main { width: 100%; min-width: 0; gap: 2px; }
+.for-you-project .dashboard-task-main strong { font-size: var(--font-size-lg); font-weight: 700 !important; }
+.for-you-spaces-empty { display: flex; align-items: center; gap: 12px; padding: 18px; font-size: var(--font-size-sm); }
+.for-you-spaces-empty p { margin: 0; line-height: 1.5; flex: 1; }
+.for-you-spaces-empty > svg { width: 24px; height: 24px; flex-shrink: 0; }
+.for-you-page .for-you-toolbar { flex-wrap: wrap; gap: 12px; padding: 12px 18px; }
+.for-you-toolbar .tasks-filterbar-left, .for-you-toolbar .tasks-filterbar-right { flex-wrap: wrap; min-width: 0; }
+.for-you-toolbar .ancore-custom-select { width: auto; min-width: 180px; max-width: 260px; }
+.for-you-toolbar a { text-decoration: none; }
+.for-you-date-heading { margin: 0; padding: 10px 18px; border-top: 1px solid var(--border-color); background: var(--secondary-menu-bg); font-size: var(--font-size-sm); }
+.for-you-page .for-you-item { grid-template-columns: 24px minmax(0, 1fr) auto 140px; }
+.for-you-status { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--font-size-sm); }
+.for-you-status > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dashboard-overview-tabs.for-you-tabs { position: relative; flex-wrap: nowrap; overflow-x: auto; flex-shrink: 0; }
 .for-you-tabs a { gap: 8px; flex-shrink: 0; white-space: nowrap; }
 .for-you-count { padding: 2px 6px; border-radius: var(--radius); background: var(--system-interaction-soft); font-variant-numeric: tabular-nums; }
@@ -167,9 +191,15 @@
 
 @media (max-width: 767px) {
     .for-you-project-grid { grid-template-columns: minmax(0, 1fr); }
-    .for-you-page .for-you-item { grid-template-columns: 18px minmax(0, 1fr) 18px; }
-    .for-you-item > :last-child { grid-column: 3; grid-row: 1; }
+    .for-you-page .for-you-item { grid-template-columns: 24px minmax(0, 1fr); }
+    .for-you-item > .for-you-status { grid-column: 2; }
+    .for-you-item > svg:last-child { display: none; }
     .for-you-page .for-you-item .dashboard-task-state:empty { display: none; }
+    .for-you-page .for-you-toolbar { padding: 12px; }
+    .for-you-toolbar .tasks-filterbar-left, .for-you-toolbar .tasks-filterbar-right, .for-you-toolbar .tasks-search-field { width: 100%; }
+    .for-you-toolbar .ancore-custom-select { max-width: 100%; }
+    .for-you-spaces-empty { flex-wrap: wrap; }
+    .for-you-spaces-empty > a { margin-left: 36px; }
     .dashboard-overview .dashboard-main { padding: 20px 14px; gap: 20px; }
     .dashboard-overview-grid { gap: 20px; }
     .dashboard-overview .dashboard-summary-copy h2 { font-size: 20px; }

@@ -46,8 +46,10 @@ Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
 `data-sidebar-group="spaces"` w `layout.js`. Stan zapisuje istniejąca
 preferencja `ancoreSidebarCollapsedGroups`; pozostaje zachowany po odświeżeniu
 i częściowej nawigacji. Przycisk ma `aria-controls` i `aria-expanded`
-oraz obsługuje Enter/Spację. Ikona folderów jest stale widoczna przed nazwą;
-nagłówek nie pokazuje strzałki zwijania. Wspólny wariant `sidebar-group-header` umieszcza
+oraz obsługuje Enter/Spację. Ikona warstw (`layers`) jest stale widoczna przed nazwą;
+nagłówek nie pokazuje strzałki zwijania. Ta sama ikona oznacza Przestrzenie
+w Favorites (także dla starszych zapisanych skrótów), nagłówku kolumny katalogu
+oraz jego pustym stanie. Wspólny wariant `sidebar-group-header` umieszcza
 obok przycisku zwijania „+” otwierający kreator i „…” z opcją „Zarządzaj
 przestrzeniami”. Obie ikony mają 13px w przyciskach 28px
 (`--control-height` minus 4px). Nagłówek ma wspólne zaokrąglone szare tło
@@ -68,6 +70,11 @@ o szkicu, błędy zapisu, inert tła i ponowne wejście przez `ancore:content-lo
 Listy zadań w przestrzeni, „Wszystkie zadania”, przegląd oraz zadania zespołu zachowują
 wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
 wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.
+Pierwsza kolumna wiersza zawiera stale widoczny, standardowy `tasks-row-checkbox`
+z etykietą zawierającą kod i tytuł zadania. Zaznaczenie myszą lub Spacją podświetla
+wiersz przez wspólne style; nie zmienia statusu zadania. Wiersze list, backlogu
+i sprintów nie pokazują menu trzech pasków. Checkbox służy lokalnemu zaznaczeniu,
+bez operacji zbiorczych i utrwalania wyboru po zmianie widoku.
 Grupowanie dotyczy dostępnej strony wyników; rozróżnia nazwy własnych statusów
 nawet wtedy, gdy mają tę samą kategorię. Backlog zachowuje kolejność planowania.
 Na telefonie lista zachowuje kolumny i przewija się poziomo we własnym obszarze.
@@ -75,7 +82,7 @@ Tablica używa dotychczasowych `tasks-kanban-column` i `tasks-kanban-card`,
 włącznie z oznaczeniem zakończonych kart. Nie ma osobnej tabeli ani szarych
 paneli zastępujących te komponenty. Filtry i paginacja korzystają z paska Zadań.
 
-`item_actions.html` używa wspólnego menu `row-actions.js`: otwarcie zadania,
+Karty tablicy w `item_actions.html` używają wspólnego menu `row-actions.js`: otwarcie zadania,
 edycja, dozwolone przejścia statusów i planowanie. Menu działa klawiaturą,
 zamyka się przez Escape i przywraca fokus; zastępuje stałe formularze na karcie.
 Przeciąganie tablicy nadal obsługuje `spaces.js`. Elementy nie mają klasy
@@ -252,10 +259,24 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 
 „Dla ciebie” jest osobną pozycją nad Dashboardem, z ikoną `user-round-check`
 i obsługą ulubionych menu. Widok rozszerza `core/base.html` i komponenty
-Dashboardu: nagłówek katalogu, powitanie, panele, wiersze i podkreślane zakładki.
-Wariant `for-you-project` ustawia istniejący panel jako poziomy skrót projektu;
-siatka ma 4, 2 lub 1 kolumnę zależnie od szerokości. Pięć zakładek jest linkami
-z `aria-current`, a paginacja zachowuje kategorię i Workspace. Korzystają
+Dashboardu: nagłówek katalogu, panele, wiersze i podkreślane zakładki.
+Treść zaczyna się od nagłówka „Rekomendowane przestrzenie” i kart, bez powitania
+oraz dodatkowego opisu. Po prawej pozostaje link do wszystkich przestrzeni.
+Nagłówek sekcji oraz tytuł „Dla ciebie” na górnym pasku mają 17px i wagę 700;
+lokalne warianty nadpisują wspólne reguły typografii.
+Wariant `for-you-project` to pionowy kafelek przestrzeni: wspólny awatar 32px
+z `spaces/avatar.html` znajduje się u góry po lewej, a pod nim nazwa 15px/700
+i rodzaj 13px/400. Kafelek ma minimum 120px wysokości, padding 16px i odstęp
+16px między awatarem a tekstem. Zachowuje wspólną ramkę i zaokrąglenie panelu.
+Cała powierzchnia linku otwiera przestrzeń; nie ma oznaczenia gwiazdką,
+dolnych skrótów do przypisanych zadań i tablicy/aktywnego sprintu ani licznika.
+Ulubione nadal decydują o kolejności. Siatka ma 4, 2 lub 1 kolumnę zależnie od
+szerokości. Brak skrótów pokazuje instrukcję i link do katalogu Przestrzeni.
+Pięć zakładek jest linkami z `aria-current`, a paginacja zachowuje kategorię,
+Workspace, wyszukiwanie i filtr przestrzeni. Pasek `for-you-toolbar` używa
+`tasks-filterbar`, `tasks-search-field`, `tasks-inline-select`, `AncoreCustomSelect`
+i przycisków Zadań. Formularz GET działa też bez JavaScriptu. Brak wyników
+filtrów ma osobny pusty stan z akcją „Wyczyść filtry”. Formularz i linki korzystają
 ze wspólnej nawigacji `AncoreApp`, także przy Wstecz/Dalej i ponownym wejściu.
 `for-you.js` utrzymuje aktywną zakładkę w widocznej części paska po wejściu,
 częściowej nawigacji i zmianie szerokości. Przewija wyłącznie zakładki, bez
@@ -263,7 +284,10 @@ przesuwania strony lub fokusu; odłącza obserwator rozmiaru przy opuszczeniu wi
 Puste stany wyjaśniają źródło danych
 każdej zakładki. Zakładki pozostają w jednym wierszu i przewijają się poziomo,
 gdy brakuje miejsca, także na telefonie. Etykiety i licznik nie zawijają się.
-Na telefonie termin przechodzi pod tytuł; status pozostaje w osobnej kolumnie. Style są ograniczone do
+Wiersz pokazuje klucz zadania, lokalizację i tekstową nazwę statusu przestrzeni
+obok wspólnej ikony kategorii. Historia i oglądane mają nagłówki grup dat
+(`for-you-date-heading`). Na telefonie termin i status przechodzą pod tytuł,
+a filtr i wyszukiwanie zawijają się w obrębie panelu. Style są ograniczone do
 `for-you-*` w `components/dashboard.css`.
 
 Menu Kanbana ma dwie pozycje: „Przestrzenie Kanban” i „Tablice”, w tej kolejności.

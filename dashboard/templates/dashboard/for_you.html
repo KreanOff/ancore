@@ -4,7 +4,7 @@
 {% block title %}Dla ciebie | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261003-for-you-tabs">
+<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261003-for-you-vertical-cards">
 <script src="{% static 'js/for-you.js' %}?v=20261003-scroll-tabs" defer></script>
 {% endblock %}
 
@@ -13,31 +13,27 @@
     <header class="tasks-topbar tasks-topbar--project-directory">
         <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Dla ciebie</h1></div>
         <div class="tasks-titlebar-actions">
-            <a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" href="{{ for_you_projects_url }}"><i data-icon="briefcase-business" aria-hidden="true"></i><span>Wszystkie projekty</span></a>
+            <a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" href="{{ for_you_tasks_url }}"><i data-icon="list-checks" aria-hidden="true"></i><span>Moje zadania</span></a>
         </div>
     </header>
     <div class="dashboard-main">
-        <section class="dashboard-summary" aria-labelledby="for-you-greeting">
-            <div class="dashboard-summary-copy">
-                <h2 id="for-you-greeting">Dzień dobry{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h2>
-                <span>Twoja praca i miejsca, do których chcesz wrócić · <span class="dashboard-workplace-name">{{ current_workplace.name }}</span></span>
-            </div>
-        </section>
-
-        {% if for_you_projects %}
         <section aria-labelledby="for-you-projects-title">
-            <div class="for-you-section-heading"><h2 id="for-you-projects-title">Wróć do projektu</h2><span>Ulubione i ostatnio używane</span></div>
+            <div class="for-you-section-heading"><h2 id="for-you-projects-title">Rekomendowane przestrzenie</h2><a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Wszystkie przestrzenie<i data-icon="arrow-up-right" aria-hidden="true"></i></a></div>
+            {% if for_you_projects %}
             <div class="for-you-project-grid">
                 {% for item in for_you_projects %}
-                <a class="dashboard-panel for-you-project" href="{{ item.url }}">
-                    <i data-icon="{{ item.icon }}" aria-hidden="true"></i>
-                    <span class="dashboard-task-main"><strong title="{{ item.title }}">{{ item.title }}</strong><small>{{ item.object.get_status_display }}</small></span>
-                    <i data-icon="chevron-right" aria-hidden="true"></i>
-                </a>
+                <article class="dashboard-panel for-you-project">
+                    <a class="for-you-project-heading" href="{{ item.url }}">
+                        {% if item.space %}{% include 'spaces/avatar.html' with space=item.space avatar_class='space-avatar--heading' %}{% else %}<i data-icon="{{ item.icon }}" aria-hidden="true"></i>{% endif %}
+                        <span class="dashboard-task-main"><strong title="{{ item.title }}">{{ item.title }}</strong><small>{% if item.space %}{{ item.space.get_kind_display }}{% else %}{{ item.object.get_status_display }}{% endif %}</small></span>
+                    </a>
+                </article>
                 {% endfor %}
             </div>
+            {% else %}
+            <div class="dashboard-panel for-you-spaces-empty"><i data-icon="folders" aria-hidden="true"></i><p>Otwórz przestrzeń lub dodaj ją do ulubionych, aby mieć ją pod ręką.</p><a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Przeglądaj przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a></div>
+            {% endif %}
         </section>
-        {% endif %}
 
         <section class="dashboard-panel" aria-label="Twoja praca">
             <nav class="dashboard-overview-tabs for-you-tabs" aria-label="Widok dla ciebie">
@@ -45,23 +41,40 @@
                 <a href="{{ tab.url }}"{% if for_you_tab == tab.key %} aria-current="page"{% endif %}>{{ tab.label }}{% if tab.key == 'assigned' %}<span class="for-you-count">{{ for_you_assigned_count }}</span>{% endif %}</a>
                 {% endfor %}
             </nav>
+            <form class="tasks-filterbar tasks-filterbar--directory for-you-toolbar" method="get" action="{{ for_you_url }}" aria-label="Filtry twojej pracy">
+                <input type="hidden" name="tab" value="{{ for_you_tab }}">
+                <div class="tasks-filterbar-left">
+                    <select class="tasks-inline-select" name="space" aria-label="Przestrzeń">
+                        <option value="">Wszystkie przestrzenie</option>
+                        {% if for_you_space_unavailable %}<option value="{{ for_you_space }}" selected>Niedostępna przestrzeń</option>{% endif %}
+                        {% for project in for_you_spaces %}<option value="{{ project.space.pk }}"{% if for_you_space == project.space.pk|stringformat:'s' %} selected{% endif %}>{{ project.name }}</option>{% endfor %}
+                    </select>
+                    <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>
+                    {% if for_you_filtered %}<a class="tasks-filter-button" href="{{ for_you_clear_url }}">Wyczyść</a>{% endif %}
+                </div>
+                <div class="tasks-filterbar-right">
+                    <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ for_you_search }}" maxlength="120" placeholder="Szukaj w tej zakładce" aria-label="Szukaj po nazwie lub kluczu zadania"></label>
+                </div>
+            </form>
             <p class="dashboard-overview-caption">{{ for_you_caption }}</p>
             <div class="dashboard-task-list">
                 {% for item in for_you_rows %}
+                {% if item.date_group %}{% ifchanged item.date_group %}<h3 class="for-you-date-heading">{{ item.date_group }}</h3>{% endifchanged %}{% endif %}
                 <a class="dashboard-task-item for-you-item" href="{{ item.url }}">
-                    <i data-icon="{{ item.icon }}" aria-hidden="true"></i>
-                    <span class="dashboard-task-main"><strong title="{{ item.title }}">{{ item.title }}</strong><small title="{{ item.location }}">{{ item.location }}</small></span>
+                    {% if item.space %}{% include 'spaces/avatar.html' with space=item.space %}{% else %}<i data-icon="{{ item.icon }}" aria-hidden="true"></i>{% endif %}
+                    <span class="dashboard-task-main"><strong title="{{ item.title }}">{{ item.title }}</strong><small title="{% if item.key %}{{ item.key }} · {% endif %}{{ item.location }}">{% if item.key %}{{ item.key }} · {% endif %}{{ item.location }}</small></span>
                     <span class="dashboard-task-state">
                         {% if item.recent_at %}<time datetime="{{ item.recent_at|date:'c' }}">{{ item.recent_at|date:'j E, H:i' }}</time>
                         {% elif item.due_at %}<time datetime="{{ item.due_at|date:'c' }}">{% if item.overdue %}<span class="dashboard-overview-overdue">Po terminie</span>{% endif %}{{ item.due_at|date:'j E, H:i' }}</time>{% endif %}
                     </span>
-                    {% if item.is_task %}<span class="status-indicator status-{{ item.object.status }}" title="{{ item.object.get_status_display }}" aria-label="{{ item.object.get_status_display }}"></span>{% else %}<i data-icon="chevron-right" aria-hidden="true"></i>{% endif %}
+                    {% if item.is_task %}<span class="for-you-status" title="{{ item.status_label }}"><span class="status-indicator status-{{ item.object.status }}" aria-hidden="true"></span><span>{{ item.status_label }}</span></span>{% else %}<i data-icon="chevron-right" aria-hidden="true"></i>{% endif %}
                 </a>
                 {% empty %}
                 <div class="dashboard-overview-empty">
-                    <i data-icon="{% if for_you_tab == 'starred' %}star{% elif for_you_tab == 'viewed' or for_you_tab == 'worked' %}clock{% else %}circle-check{% endif %}" aria-hidden="true"></i>
+                    {% if for_you_filtered %}<i data-icon="search" aria-hidden="true"></i><h3>Brak pasujących wyników</h3><p>Zmień nazwę, klucz zadania lub wybraną przestrzeń.</p><a class="dashboard-panel-link" href="{{ for_you_clear_url }}">Wyczyść filtry<i data-icon="arrow-right" aria-hidden="true"></i></a>
+                    {% else %}<i data-icon="{% if for_you_tab == 'starred' %}star{% elif for_you_tab == 'viewed' or for_you_tab == 'worked' %}clock{% else %}circle-check{% endif %}" aria-hidden="true"></i>
                     <h3>{{ for_you_empty.0 }}</h3><p>{{ for_you_empty.1 }}</p>
-                    <a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Otwórz projekty<i data-icon="arrow-right" aria-hidden="true"></i></a>
+                    <a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Otwórz przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a>{% endif %}
                 </div>
                 {% endfor %}
             </div>

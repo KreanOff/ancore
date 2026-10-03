@@ -1,5 +1,5 @@
 <article class="tasks-issue-row work-issue-row{% if item.task.status == 'closed' %} completed{% endif %}">
-    {% if item.editable %}{% include 'spaces/item_actions.html' %}{% else %}<span aria-hidden="true"></span>{% endif %}
+    <input type="checkbox" class="tasks-row-checkbox" value="{{ item.pk }}" aria-label="Zaznacz {{ item.key }} · {{ item.task.title }}">
     <span class="tasks-row-priority priority-{{ item.task.priority }}" title="Priorytet: {{ item.task.get_priority_display }}" aria-label="Priorytet: {{ item.task.get_priority_display }}">{% include 'core/includes/priority_icon.html' with priority=item.task.priority only %}</span>
     <span class="status-indicator status-{{ item.task.status }}" title="{{ item.status_label }}" aria-label="{{ item.status_label }}"></span>
     <a href="{{ item.url }}" class="tasks-row-title" title="{{ item.key }} · {{ item.task.title }}{% if item.space %} · {{ item.space.project.name }}{% endif %} · {{ item.type_label }}{% if item.task.assignee %} · {{ item.task.assignee.get_full_name|default:item.task.assignee.username }}{% endif %}{% if item.team %} · {{ item.team.name }}{% endif %}">

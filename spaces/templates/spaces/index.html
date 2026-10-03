@@ -25,7 +25,7 @@
     <section class="tasks-directory-group" role="table" aria-label="Lista przestrzeni">
         <div class="tasks-directory-header" role="row">
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Ulubione" title="Ulubione"><i data-icon="star" aria-hidden="true"></i></span>
-            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">PRZESTRZEŃ<i data-icon="folders" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">PRZESTRZEŃ<i data-icon="layers" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="columnheader">KLUCZ<i data-icon="hash" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="columnheader">RODZAJ<i data-icon="shapes" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="template" role="columnheader">SZABLON<i data-icon="layout-dashboard" aria-hidden="true"></i></span>
@@ -49,7 +49,7 @@
         </div>
     </section>
     {% else %}
-    <div class="tasks-empty-state"><i data-icon="folders" aria-hidden="true"></i><div>
+    <div class="tasks-empty-state"><i data-icon="layers" aria-hidden="true"></i><div>
         <h2>{% if query or kind %}Brak pasujących przestrzeni{% elif tab == 'favorites' %}Brak ulubionych przestrzeni{% elif tab == 'private' %}Brak prywatnych przestrzeni{% else %}Brak przestrzeni{% endif %}</h2>
         <p>{% if query or kind %}Zmień wyszukiwanie lub filtry.{% elif tab == 'favorites' %}Oznacz przestrzeń gwiazdką, aby pojawiła się na tej liście.{% else %}Utwórz przestrzeń i wybierz sposób pracy swojego zespołu.{% endif %}</p>
         {% if query or kind %}<a class="tasks-filter-button" href="{{ spaces_url }}?tab={{ tab|urlencode }}">Wyczyść filtry</a>{% elif tab == 'favorites' %}<a class="tasks-filter-button" href="{{ spaces_url }}">Przeglądaj przestrzenie</a>{% else %}<a class="tasks-filter-button" href="{{ create_url }}" data-work-open>Utwórz przestrzeń</a>{% endif %}
