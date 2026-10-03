@@ -27,7 +27,7 @@
 @import 'components/modal-system.css?v=20260927-project-heading';
 @import 'components/dropdown-layer.css?v=20260921-dropdown-search';
 @import 'components/global-search.css?v=20261003-quick-search-v1';
-@import 'components/notifications-panel.css?v=20260923-invitation-badge-color';
+@import 'components/notifications-panel.css?v=20261003-notifications-modal';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
 body :where(

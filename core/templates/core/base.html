@@ -67,7 +67,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-quick-search-v1">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-notifications-modal">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-account-id="{{ request.user.pk|default:'' }}" data-workplace-id="{{ current_workplace.pk|default:'' }}">
@@ -289,25 +289,24 @@
         </header>
         <nav class="sidebar-collapsed-flyout__links" aria-label="Podmenu" data-sidebar-collapsed-flyout-links></nav>
     </div>
-    <div class="global-search-backdrop notifications-panel-backdrop" data-notifications-backdrop hidden></div>
-    <aside class="global-search-panel notifications-panel" id="notifications-panel" role="dialog" aria-labelledby="notifications-panel-title" data-notifications-panel data-notifications-center data-notifications-url="{{ sidebar_notifications_url }}" data-notifications-action-url="{% url 'notification_action' %}" hidden>
-        <header class="global-search-panel__header">
-            <div class="global-search-panel__heading">
-                <span class="global-search-panel__mark" aria-hidden="true"><i data-icon="bell"></i></span>
-                <div>
-                    <h2 id="notifications-panel-title">Powiadomienia</h2>
-                </div>
+    <div class="tasks-modal app-modal-panel notifications-panel" id="notifications-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="notifications-panel-title" data-notifications-panel data-notifications-center data-notifications-url="{{ sidebar_notifications_url }}" data-notifications-action-url="{% url 'notification_action' %}">
+        <div class="tasks-modal__dialog">
+            <header class="tasks-modal__header">
+                <h2 id="notifications-panel-title">Powiadomienia</h2>
+                <button type="button" class="tasks-modal__close" aria-label="Zamknij powiadomienia" title="Zamknij powiadomienia" data-close-modal data-notifications-close></button>
+            </header>
+            <div class="tasks-modal__body notifications-panel__body">
+                {% include 'dashboard/includes/notification_controls.html' with notification_filters=None unread_count=0 filtered_unread_count=0 pending_invitation_count=pending_notification_invitation_count %}
+                <div class="notifications-panel__content" data-notifications-content tabindex="-1"></div>
             </div>
-            <button type="button" class="global-search-panel__close" aria-label="Zamknij powiadomienia" title="Zamknij powiadomienia" data-notifications-close>
-                <i data-icon="x" aria-hidden="true"></i>
-            </button>
-        </header>
-        {% include 'dashboard/includes/notification_controls.html' with notification_filters=None unread_count=0 filtered_unread_count=0 pending_invitation_count=pending_notification_invitation_count %}
-        <div class="notifications-panel__content" data-notifications-content tabindex="-1"></div>
-        {% include 'dashboard/includes/notification_pagination.html' with next_cursor='' %}
-        <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-notifications-status></span>
-        <div hidden>{% csrf_token %}</div>
-    </aside>
+            <footer class="tasks-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Zamknij</button>
+                {% include 'dashboard/includes/notification_pagination.html' with next_cursor='' %}
+            </footer>
+            <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-notifications-status></span>
+            <div hidden>{% csrf_token %}</div>
+        </div>
+    </div>
     {% endblock %}
     <main class="main-content">
         <div class="page-container {% block page_container_class %}{% endblock %}">
@@ -362,13 +361,13 @@
     <script src="{% static 'js/global-search.js' %}?v=20261003-quick-search-v1"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>
-    <script src="{% static 'js/notifications-panel.js' %}?v=20261003-sidebar-no-home"></script>
+    <script src="{% static 'js/notifications-panel.js' %}?v=20261003-notifications-modal"></script>
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20260926-unified-small-dialogs"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20260921-dropdown-search"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20261003-spaces-style"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20261003-notifications-modal"></script>
     <script src="{% static 'js/profile.js' %}?v=20260921-dropdown-layer"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260927-option-icons"></script>
     <script src="{% static 'js/notifications.js' %}?v=20260616-task-autosave"></script>

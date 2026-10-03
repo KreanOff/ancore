@@ -4657,7 +4657,7 @@ function initTasksPage() {
     });
 
     document.addEventListener('keydown', function(e) {
-        if (document.querySelector('.confirm-modal-overlay.is-visible')) return;
+        if (document.querySelector('.confirm-modal-overlay')) return;
         if (handleContactCustomSelectKeydown(e)) return;
 
         const openModalEl = Array.from(document.querySelectorAll('.tasks-modal.is-open')).at(-1);

@@ -13,8 +13,16 @@
     font-size: 10px; line-height: 1; pointer-events: none;
 }
 .notifications-toggle__invitation-count[hidden] { display: none; }
-.notifications-panel, .notifications-panel .global-search-panel__header { background: var(--card-bg); }
-.notifications-panel { border-left: 1px solid var(--border-color); }
+.tasks-modal.app-modal-panel .notifications-panel__body {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+.notifications-panel .notifications-controls { flex-shrink: 0; padding-inline: var(--app-panel-gutter); }
+.notifications-panel .notifications-panel__content { padding-inline: var(--app-panel-gutter); }
+.notifications-panel .tasks-modal__footer { gap: 0.75rem; }
+.notifications-panel .notifications-pagination { margin-left: auto; padding: 0; border: 0; }
 [data-notifications-center] [hidden] { display: none !important; }
 .notifications-controls { padding: 0 1.1rem; border-bottom: 1px solid var(--border-color); }
 .notifications-tabs {
@@ -92,17 +100,17 @@
 .notifications-panel__empty, .notifications-panel__state { min-height: 300px; }
 .notifications-panel__loading { padding-top: 0; }
 [data-notifications-center] button:focus-visible, .notification-card a:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
-body.notifications-panel-open { overflow: hidden; }
 @media (max-width: 767px) {
-    .notifications-panel { border-left: 0; }
     .notifications-controls { padding-inline: 0.85rem; }
     .notifications-panel__content { padding-inline: 0.85rem; }
     .notifications-toolbar .form-select { max-width: 190px; }
 }
-@media (max-width: 400px) {
-    .notifications-tabs { gap: 0.75rem; }
-    .notifications-tabs :is(button, a) { font-size: 11px; }
+@media (max-width: 600px) {
     .notifications-toolbar { flex-wrap: wrap; }
     .notifications-toolbar .form-select { max-width: none; flex-basis: 100%; }
     .notifications-toolbar .btn { margin-left: 0; margin-right: auto; }
+}
+@media (max-width: 400px) {
+    .notifications-tabs { gap: 0.75rem; }
+    .notifications-tabs :is(button, a) { font-size: 11px; }
 }

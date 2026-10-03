@@ -350,8 +350,9 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   położenia jego menu, które rozwija się pod avatarem w górnym pasku.
   Na telefonie menu Workspace wyrównuje się do lewej krawędzi paska,
   aby mieściło się w szerokości ekranu.
-  Menu, treść, szkielet ładowania oraz panele
-  wyszukiwania i powiadomień zaczynają się pod nim, także na telefonie.
+  Menu, treść, szkielet ładowania oraz panel wyszukiwania zaczynają się
+  pod nim, także na telefonie. Modal powiadomień przykrywa również górny pasek,
+  zgodnie ze wspólną powłoką „Utwórz zadanie”.
   Wysokość treści uwzględnia pasek, zachowując przewijanie i widoczną dolną
   krawędź. Pasek należy do bloku `app_navigation`, więc nie występuje w osobnym
   edytorze Dokumentów ani na ekranach uwierzytelniania.
@@ -1668,9 +1669,13 @@ Ustawienia prowadzą do wspólnego panelu przez „Zarządzaj Workspace”. Funk
 
 Powiadomienia są dostępne wyłącznie w panelu dzwonka. Panel używa include'ów
 `notification_controls.html`, `notification_list.html`, `notification_pagination.html`
-oraz `notifications-panel.js` i `notifications-panel.css`. Zachowuje powłokę panelu
-wyszukiwania, avatary kont, standardowe przyciski, ikony i tokeny kolorów Ancore.
-Nagłówek zawiera tytuł „Powiadomienia”, ikonę i zamknięcie, bez licznika ani podtytułu.
+oraz `notifications-panel.js` i `notifications-panel.css`. Używa tej samej powłoki
+`tasks-modal app-modal-panel` co „Utwórz zadanie”: szerokiego okna z jasnoszarym
+tłem, białą treścią, wspólnymi odstępami i animacją. Nagłówek zawiera tytuł
+„Powiadomienia” i standardowy krzyżyk. Stała stopka zawiera „Zamknij” oraz
+paginację „Pokaż starsze”, gdy są dalsze wpisy. Wariant `notifications-panel__body`
+układa filtry i niezależnie przewijaną listę pionowo we wspólnej białej powierzchni.
+Avatary kont, przyciski, ikony i tokeny kolorów pozostają wspólne.
 Białe karty mają delikatne ramki; nieprzeczytane dodatkowo kropkę i 5% akcentu
 w tle. Zaproszenia mają przycisk prowadzący do istniejącego modala decyzji.
 
@@ -1706,7 +1711,7 @@ Tab i Escape dotyczą wtedy potwierdzenia, bez zamykania panelu pod spodem.
 Zapis blokuje ponowne wysłanie; błąd zachowuje wpis i umożliwia ponowienie.
 Po potwierdzonym odczycie/usunięciu wyświetla się wspólny komunikat sukcesu.
 „Pokaż starsze” doczytuje listę.
-Panel nie ma dodatkowego dolnego paska z opisem zakresu aktywności.
+Stopka nie zawiera dodatkowego opisu zakresu aktywności.
 Dzwonek jest przyciskiem,
 a skrót w Ustawieniach otwiera ten sam panel. Osobna strona powiadomień
 i jej link w wyszukiwarce zostały usunięte; dawny adres przekierowuje do Dashboardu.
@@ -1717,14 +1722,13 @@ przesuwania treści. Stany puste mają opis zależny od filtra. Błąd pobrania 
 akcję ponowienia; błąd zapisu pozostawia wpis i komunikat `role=alert`.
 Żądania mają limit czasu, a zmiana filtra anuluje starsze pobranie.
 
-Panel blokuje treść strony i całe menu boczne przez `inert`, pozostawiając
-dostępny górny pasek. Pole w górnym pasku przełącza do wyszukiwarki,
-a ponowne kliknięcie dzwonka zamyka powiadomienia. Aktywny stan wskazuje otwarty panel.
-Oba panele nie deklarują `aria-modal`, ponieważ pole i przyciski pozostają dostępne poza nimi.
-Tab i Shift+Tab obejmują panel i górny pasek; Escape
-zamyka panel i przywraca fokus. Przejście skrótem do wyszukiwania nie przywraca
-fokusu do ukrytego panelu. Na telefonie panel zajmuje ekran,
-a na najwęższym układzie toolbar przechodzi do dwóch wierszy.
+Panel deklaruje `aria-modal="true"` i blokuje treść strony, menu boczne oraz
+górny pasek przez `inert`. Korzysta z `AncoreTaskModals.open/close` i zdarzeń
+otwarcia/zamknięcia, więc Tab i Shift+Tab pozostają w oknie, a Escape, krzyżyk,
+„Zamknij” i kliknięcie tła zamykają je z powrotem fokusu do przycisku otwierającego.
+Listy wyboru i potwierdzenie usunięcia obsługują Escape przed oknem powiadomień.
+Skrót wyszukiwania zamyka powiadomienia i ustawia fokus w wyszukiwarce.
+Na telefonie okno zajmuje ekran, a toolbar zawija kontrolki.
 Inicjalizacja po `ancore:content-loaded` nie powiela listenerów; polling działa
 wyłącznie w widocznej karcie. Dane są prywatne dla konta i nie trafiają do localStorage.
 

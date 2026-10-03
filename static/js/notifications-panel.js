@@ -2,18 +2,15 @@
     if (window.AncoreNotificationCenter) return;
     const panel = document.querySelector('[data-notifications-panel]');
     const toggle = document.querySelector('[data-notifications-toggle]');
-    const backdrop = document.querySelector('[data-notifications-backdrop]');
     if (!panel || !toggle) return;
-    const topbar = document.querySelector('[data-app-topbar]');
     const controllers = new Map();
     let summaryRequest = null;
     let refreshTimer = null;
-    let restoreFocus = null;
     let revision = null;
     let previousUnread = null;
     let previousPending = null;
     let inertElements = [];
-    const isOpen = () => !panel.hidden;
+    const isOpen = () => panel.classList.contains('is-open');
     const icons = scope => window.AncoreIcons?.render(scope);
 
     function closeActionMenus() {
@@ -45,7 +42,7 @@
         const nextRevision = JSON.stringify(payload.revision);
         if (revision !== null && (revision !== nextRevision || previousUnread !== unread || previousPending !== pending)) {
             controllers.forEach((controller, root) => {
-                if (!root.hidden && controller.loaded) root.querySelector('[data-notification-new-items]').hidden = false;
+                if (!root.hidden && root.getAttribute('aria-hidden') !== 'true' && controller.loaded) root.querySelector('[data-notification-new-items]').hidden = false;
             });
         }
         revision = nextRevision;
@@ -284,55 +281,34 @@
         });
     }
 
-    function setOpen(open, options = {}) {
+    function setOpen(open) {
         if (open === isOpen()) return;
-        if (!open) closeActionMenus();
-        toggle.setAttribute('aria-expanded', String(open));
-        document.body.classList.toggle('notifications-panel-open', open);
-        panel.hidden = !open;
-        backdrop.hidden = !open;
         if (open) {
-            restoreFocus = document.activeElement.closest('.global-search-panel') ? toggle : document.activeElement;
             window.dispatchEvent(new CustomEvent('ancore:notifications-open'));
-            const background = Array.from(document.querySelectorAll('main.main-content, .sidebar'));
-            inertElements = background.filter(element => element instanceof HTMLElement && !element.inert);
-            inertElements.forEach(element => { element.inert = true; });
-            controllers.get(panel).load();
-            panel.querySelector('[data-notifications-close]').focus({ preventScroll: true });
+            window.AncoreTaskModals.open(panel, panel.querySelector('[data-notifications-close]'));
         } else {
-            controllers.get(panel)?.abort();
-            inertElements.forEach(element => { element.inert = false; });
-            inertElements = [];
-            if (options.restoreFocus !== false) restoreFocus?.focus?.({ preventScroll: true });
-            restoreFocus = null;
+            window.AncoreTaskModals.close(panel);
         }
     }
-    toggle.addEventListener('click', event => { event.preventDefault(); setOpen(!isOpen()); });
-    panel.querySelector('[data-notifications-close]').addEventListener('click', () => setOpen(false));
-    backdrop.addEventListener('click', () => setOpen(false));
-    window.addEventListener('ancore:global-search-open', () => setOpen(false, { restoreFocus: false }));
-    window.addEventListener('ancore:workspace-menu-open', () => setOpen(false, { restoreFocus: false }));
-    window.addEventListener('ancore:sidebar-toggle', () => setOpen(false, { restoreFocus: false }));
-    document.addEventListener('ancore:content-unloading', () => setOpen(false, { restoreFocus: false }));
-    document.addEventListener('keydown', event => {
-        if (!isOpen() || document.querySelector('.confirm-modal-overlay')) return;
-        if (event.key === 'Escape') { event.preventDefault(); setOpen(false); }
-        if (event.key !== 'Tab') return;
-        const selector = 'button:not(:disabled), a[href], select:not(:disabled), input:not([type="hidden"]):not(:disabled), [tabindex="0"]';
-        const elements = [...(topbar?.querySelectorAll(selector) || []), ...panel.querySelectorAll(selector)]
-            .filter(element => {
-                const rect = element.getBoundingClientRect();
-                return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden'
-                    && !element.closest('[inert]') && rect.right > 0 && rect.left < innerWidth;
-            });
-        if (elements.length) {
-            const index = elements.indexOf(document.activeElement);
-            const next = index < 0 ? (event.shiftKey ? elements.length - 1 : 0)
-                : (index + (event.shiftKey ? -1 : 1) + elements.length) % elements.length;
-            event.preventDefault();
-            elements[next].focus();
-        }
+    panel.addEventListener('ancore:task-modal-opened', () => {
+        toggle.setAttribute('aria-expanded', 'true');
+        const background = document.querySelectorAll('main.main-content, .sidebar, [data-app-topbar]');
+        inertElements = Array.from(background).filter(element => !element.inert);
+        inertElements.forEach(element => { element.inert = true; });
+        controllers.get(panel).load();
     });
+    panel.addEventListener('ancore:task-modal-closed', () => {
+        closeActionMenus();
+        controllers.get(panel)?.abort();
+        toggle.setAttribute('aria-expanded', 'false');
+        inertElements.forEach(element => { element.inert = false; });
+        inertElements = [];
+    });
+    toggle.addEventListener('click', event => { event.preventDefault(); setOpen(!isOpen()); });
+    window.addEventListener('ancore:global-search-open', () => setOpen(false));
+    window.addEventListener('ancore:workspace-menu-open', () => setOpen(false));
+    window.addEventListener('ancore:sidebar-toggle', () => setOpen(false));
+    document.addEventListener('ancore:content-unloading', () => setOpen(false));
     document.addEventListener('ancore:content-loaded', () => { setOpen(false); init(); refreshSummary(); scheduleRefresh(); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSummary(); scheduleRefresh(); });
     window.addEventListener('pageshow', event => { if (event.persisted) refreshSummary(); scheduleRefresh(); });
