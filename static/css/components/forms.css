@@ -24,7 +24,7 @@
 
 .form-input:focus {
     outline: none;
-    border-color: #c3cad4;
+    border-color: #bfc6d0;
     box-shadow: var(--focus-ring);
 }
 
@@ -93,13 +93,13 @@ select.form-select {
 
 .ancore-custom-select__button:hover,
 .ancore-custom-select.is-open .ancore-custom-select__button {
-    border-color: #cfd6df;
+    border-color: #cbd2db;
     box-shadow: var(--focus-ring);
 }
 
 .ancore-custom-select__button:focus-visible {
     outline: none;
-    border-color: #c3cad4;
+    border-color: #bfc6d0;
     box-shadow: var(--focus-ring);
 }
 
@@ -179,7 +179,7 @@ select.form-select {
     gap: 0.45rem;
     margin-bottom: 0.25rem;
     padding: 0.4rem 0.55rem;
-    border-bottom: 1px solid #edf0f4;
+    border-bottom: 1px solid #e8ebef;
     background: #ffffff;
     color: #454b55;
 }
@@ -250,7 +250,7 @@ select.form-select {
     width: 14px;
     height: 14px;
     flex: 0 0 14px;
-    border: 1px solid #cbd2dc;
+    border: 1px solid #c7ced8;
     border-radius: 4px;
     background: #ffffff;
 }

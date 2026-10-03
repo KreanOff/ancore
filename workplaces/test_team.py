@@ -79,6 +79,8 @@ class TeamAccessTests(TestCase):
         self.assertContains(self.client.get(self.url('contacts', 'companies/')), self.company.name)
 
     def test_search_dashboard_and_notifications_use_team_scope(self):
+        for task in (self.task, self.other_task):
+            task.activities.create(actor=self.owner, kind='comment', action='commented', message='Komentarz')
         response = self.client.get(reverse('global_search'), {'q': 'Zespołow'})
         self.assertEqual(response.status_code, 200)
         self.assertIn(self.task.title, json.dumps(response.json(), ensure_ascii=False))

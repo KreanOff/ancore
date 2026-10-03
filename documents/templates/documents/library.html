@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Dysk | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state"><script src="{% static 'js/documents.js' %}?v=20260926-catalog-selection" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct"><script src="{% static 'js/documents.js' %}?v=20260926-catalog-selection" defer></script>{% endblock %}
 {% block content %}
 <div class="documents-page" data-document-display="{{ document_display }}" data-document-dnd="drive" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ library_view }}">
     {% include 'documents/toolbar.html' %}

@@ -171,20 +171,24 @@ class CollaborationTests(TestCase):
         second = self.comment(message='Kontakt login@example.test, wzmianka @login@example.test.')
         self.assertEqual(list(ActivityInterest.objects.filter(task_activity=second).values_list('user_id', flat=True)), [email_user.pk])
 
-    def test_status_and_bulk_status_changes_reach_followers(self):
+    def test_status_and_bulk_status_changes_stay_in_history_without_notifying_followers(self):
         for app, obj in [('tasks', self.task), ('kanban', self.card)]:
             self.follow(obj, app=app)
         self.login(self.owner)
         for app, obj in [('tasks', self.task), ('kanban', self.card)]:
+            history_count = obj.activities.filter(kind='system').count()
             response = self.client.post(f'/workplaces/{self.workspace.slug}/{app}/update/{obj.task_id}/',
                                        json.dumps({'task_pk': obj.pk, 'status': 'closed'}), content_type='application/json')
             self.assertEqual(response.status_code, 200)
-            self.assertTrue(ActivityInterest.objects.filter(user=self.member, followed=True,
-                **{('task_activity' if app == 'tasks' else 'kanban_activity') + '__task': obj}).exists())
             response = self.client.post(f'/workplaces/{self.workspace.slug}/{app}/bulk-update-status/',
                                        json.dumps({'task_pks': [obj.pk], 'status': 'reopened'}), content_type='application/json')
             self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.page('following')['dashboard_notification_count'], 4)
+            self.assertEqual(obj.activities.filter(kind='system').count(), history_count + 2)
+            obj.refresh_from_db()
+            self.assertEqual(obj.status, 'reopened')
+        self.assertFalse(ActivityInterest.objects.exists())
+        self.assertEqual(self.page('following')['dashboard_notification_count'], 0)
+        self.assertEqual(self.page('all')['dashboard_notification_count'], 0)
 
     def test_task_and_project_subscription_deduplicate_and_exclude_own_changes(self):
         for obj, kind in [(self.task, 'task'), (self.project, 'project')]:
@@ -198,10 +202,14 @@ class CollaborationTests(TestCase):
         self.assertEqual(self.page('following')['dashboard_notification_count'], 1)
         self.assertEqual(self.page('mentions')['dashboard_notification_count'], 1)
 
-    def test_project_observes_future_tasks_and_subtasks_but_not_other_projects(self):
+    def test_project_observes_comments_on_future_tasks_and_subtasks_but_not_their_creation(self):
         self.follow(self.project, kind='project')
         new = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, title='Nowe')
-        Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, parent=new, title='Podzadanie')
+        child = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, parent=new, title='Podzadanie')
+        self.assertFalse(ActivityInterest.objects.exists())
+        self.assertEqual(self.page('following')['dashboard_notification_count'], 0)
+        self.comment(new, message='Komentarz w nowym zadaniu')
+        self.comment(child, message='Komentarz w podzadaniu')
         unrelated = Task.objects.create(user=self.owner, workplace=self.workspace, title='Poza projektem')
         self.comment(unrelated, message='Bez wzmianki')
         self.assertEqual(self.page('following')['dashboard_notification_count'], 2)

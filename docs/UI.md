@@ -471,7 +471,8 @@ nie należy przenosić jego dekoracyjnej typografii do tabel aplikacji.
 [modal-system.css](../static/css/components/modal-system.css).
 
 ```text
-base/variables.css
+base/fonts.css (lokalny Atlassian Sans)
+  → base/variables.css
   → base/reset.css
   → layout/*.css
   → komponenty (m.in. buttons, forms, tables, tasks, contacts, workplaces)
@@ -497,7 +498,7 @@ zmiennej zamiast powielania wartości liczbowej.
 
 | Obszar | Token / obecna wartość |
 | --- | --- |
-| Font aplikacji | `Inter`, fallback systemowy |
+| Font aplikacji | `--font-family-ui`: `Atlassian Sans`, fallback systemowy |
 | Mały/podstawowy/większy tekst | `--font-size-sm: 13px`, `--font-size-base: 14px`, `--font-size-lg: 15px` |
 | Zwykły tekst | `--text-primary: #40444C` |
 | Tekst na akcencie | `--text-inverse: #FFFFFF` |
@@ -506,7 +507,7 @@ zmiennej zamiast powielania wartości liczbowej.
 | Główna powierzchnia | `--bg-main: #ffffff`, `--card-bg: #ffffff` |
 | Nawigacja pomocnicza | `--secondary-menu-bg: #FBFBFC` |
 | Tło panelu | `--panel-bg: #f7f6f4` |
-| Delikatna ramka | `--border-color: #ece9e5` |
+| Delikatna ramka | `--border-color: #e7e4e0` |
 | Standardowa kontrolka | `--control-height: 32px` |
 | Dropdown | kontrolka 36px, radius 6px; menu radius 7px, element 32px |
 | Checkbox | `--checkbox-size: 18px` |
@@ -514,6 +515,11 @@ zmiennej zamiast powielania wartości liczbowej.
 | Pasek narzędzi | `--toolbar-height: 52px` |
 | Sidebar | bazowo 272px; zwinięty 64px; JS pozwala regulować 220–420px |
 | Skala UI | `--app-ui-scale: 0.98`, stosowana przez `zoom` w resecie |
+
+Neutralne obramowania i separatory są przyciemnione o 2% względem wcześniejszej
+palety (kanały sRGB × 0,98, zaokrąglone do liczb całkowitych). Dotyczy to wspólnych
+tokenów oraz lokalnych odcieni ramek i tabel w komponentach. Grubości linii,
+przezroczystość, białe obwódki i kolory stanów/akcentów pozostają bez zmian.
 
 Ważne wyjątki:
 
@@ -1436,6 +1442,18 @@ obraz sygnalizuje ładowanie i błąd. Natywny czytnik PDF obsługuje własną k
 
 ## 7. Ikony i typografia
 
+Wspólna powłoka, formularze, logowanie i wybór Workspace używają **Atlassian Sans**,
+tego samego kroju co obecny interfejs Jiry. Token `--font-family-ui` w
+`base/variables.css` jest jedynym źródłem rodziny fontu interfejsu.
+`base/fonts.css` ładuje lokalne pliki WOFF2: latin i latin-ext (polskie znaki),
+zwykły krój i kursywę, ze zmienną wagą 100–900 oraz `font-display: swap`.
+Oba bazowe szablony wstępnie pobierają zwykły krój. Font nie wymaga CDN.
+Źródło, wersja, sumy kontrolne i licencja SIL OFL 1.1 znajdują się w
+[static/vendor/atlassian-sans](../static/vendor/atlassian-sans/README.md).
+Rozmiary, wagi i odstępy istniejących komponentów pozostają bez zmian;
+dekoracyjny Playfair Display na ekranach uwierzytelniania zachowuje swój krój.
+Osobne edytory w iframe (Excalidraw/ONLYOFFICE) zarządzają własną typografią.
+
 Biblioteka ikon to **Flaticon UIcons Regular Rounded 3.3.1**, ładowana lokalnie
 w bazowych szablonach aplikacji i uwierzytelniania. Lokalny adapter
 [flaticon-icons.js](../static/js/flaticon-icons.js) normalizuje nazwy i udostępnia
@@ -1716,8 +1734,11 @@ Wspólne odświeżanie aktualizuje oba miejsca po operacji, powrocie na stronę 
 zmiana liczby oczekujących także sygnalizuje potrzebę odświeżenia otwartej listy.
 Filtr Workspace zachowuje zwykłą cienką ramkę po najechaniu, uzyskaniu fokusu
 i otwarciu listy, bez dodatkowego obrysu ani poświaty, tak jak pola w modalach.
-Karty grupują się według daty, pokazują podgląd komentarza lub do trzech zmian,
-Workspace, moduł, numer rekordu i czas z pełną datą w tooltipie.
+Karty grupują się według daty, pokazują podgląd komentarza, szczegóły zaproszenia
+lub przypomnienia, Workspace, moduł, numer rekordu i czas z pełną datą w tooltipie.
+Wpisy historii zmian nie pojawiają się w żadnym filtrze ani liczniku panelu.
+Puste stany „Wszystkie” i „Obserwowane” opisują komentarze i pozostałe dostępne
+typy powiadomień, bez zapowiadania historii zmian.
 Na każdej karcie jest jeden stale widoczny przycisk z trzema paskami (`menu`).
 Otwiera wspólne menu `row-actions.js` z akcją odczytu, archiwizacji/przywrócenia
 i usunięcia; zaproszenia nie mają akcji archiwizacji. Menu korzysta z

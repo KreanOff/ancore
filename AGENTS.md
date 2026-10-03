@@ -70,8 +70,9 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
 - Kolory, fonty, wysokości i odstępy bierz z istniejących tokenów/wzorca.
   Nie dodawaj nowej palety, biblioteki ikon ani osobnego systemu kontrolek
   w ramach zwykłego dodawania funkcji.
-- Obecny interfejs używa Inter, niewielkich rozmiarów tekstu, turkusowego
-  akcentu i szarych interakcji. `style.css` wymusza w wielu miejscach wagę 400.
+- Obecny interfejs używa lokalnego Atlassian Sans (`--font-family-ui`),
+  niewielkich rozmiarów tekstu, turkusowego akcentu i szarych interakcji.
+  `style.css` wymusza w wielu miejscach wagę 400.
   Nazwy historyczne takie jak `--accent-red` nie określają faktycznego koloru.
 - Modale projektów i zadań są wzorcem standardowego okna aplikacji.
   Zachowuj wspólną powłokę, obsługę fokusu, Escape, błędów i zapisu.

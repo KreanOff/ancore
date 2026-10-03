@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260927-section-sharing">
     <script src="{% static 'js/workplace-team.js' %}?v=20260927-direct-sharing" defer></script>
     <script src="{% static 'js/project-team.js' %}?v=20261001-kanban-sharing" defer></script>
-    {% if active_view == 'projects' or active_view == 'tags' %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20260926-empty-state">{% endif %}
+    {% if active_view == 'projects' or active_view == 'tags' %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct">{% endif %}
     {% include 'kanban/includes/tasks_project_tree_initial_state.html' %}
 {% endblock %}
 

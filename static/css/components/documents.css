@@ -49,9 +49,9 @@
 .documents-table { width: 100%; min-width: 690px; border-collapse: collapse; table-layout: fixed; font-size: var(--font-size-sm); }
 :is(.documents-layout, .office-page) .documents-table { min-width: 870px; }
 .documents-table th { background: var(--bg-main); font-weight: 400; text-align: left; text-transform: uppercase; height: 35px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.documents-table :is(th, td) { padding: 2px 12px; border-bottom: 1px solid var(--tasks-directory-column-separator, #edf0f3); vertical-align: middle; }
+.documents-table :is(th, td) { padding: 2px 12px; border-bottom: 1px solid var(--tasks-directory-column-separator, #e8ebee); vertical-align: middle; }
 .documents-table td { height: 36px; }
-.documents-table :is(th, td) + :is(th, td):not(.documents-empty) { border-left: 1px solid var(--tasks-directory-column-separator, #edf0f3); }
+.documents-table :is(th, td) + :is(th, td):not(.documents-empty) { border-left: 1px solid var(--tasks-directory-column-separator, #e8ebee); }
 .documents-column-heading { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; }
 .documents-column-heading svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .documents-table :is(th, td):first-child { width: auto; }
@@ -266,7 +266,7 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-libraries-table .documents-row-actions { justify-content: flex-end; }
 .documents-libraries-table:has(.documents-empty) thead { display: none; }
 /* Shared horizontal navigation remains available for version history. */
-.documents-workspace-nav { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 8px var(--documents-index-padding-x); overflow-x: auto; border-bottom: 1px solid var(--tasks-directory-column-separator, #edf0f3); }
+.documents-workspace-nav { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 8px var(--documents-index-padding-x); overflow-x: auto; border-bottom: 1px solid var(--tasks-directory-column-separator, #e8ebee); }
 .documents-workspace-nav .tasks-rail-link { width: auto; flex: 0 0 auto; gap: 8px; white-space: nowrap; }
 .documents-workspace-nav svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .documents-workspace-nav small { font-size: 12px; font-variant-numeric: tabular-nums; }

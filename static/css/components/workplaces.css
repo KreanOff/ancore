@@ -132,7 +132,7 @@
     overflow: auto;
     background: #f7f8fb;
     color: var(--text-main);
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-family-ui);
 }
 
 .workplaces-skip-link {
@@ -165,7 +165,7 @@
     justify-content: space-between;
     gap: 1rem;
     padding: 0 1.5rem;
-    border-bottom: 1px solid #e4e8ef;
+    border-bottom: 1px solid #dfe3ea;
     background: #ffffff;
 }
 
@@ -256,7 +256,7 @@
     width: 100%;
     min-height: 38px;
     padding: 0 1rem 0 2.75rem;
-    border: 1px solid #e0e4eb;
+    border: 1px solid #dcdfe6;
     border-radius: 8px;
     background: #ffffff;
     color: #40444c;
@@ -267,7 +267,7 @@
 }
 
 .workplaces-search__input:focus {
-    border-color: #cfd7e6;
+    border-color: #cbd3e1;
     box-shadow: var(--focus-ring);
     outline: 0;
 }
@@ -285,7 +285,7 @@
     min-height: 34px;
     justify-content: center;
     padding: 0 0.75rem;
-    border: 1px solid #dde3ec;
+    border: 1px solid #d9dee7;
     border-radius: 7px;
     background: #ffffff;
     color: var(--text-main);
@@ -452,7 +452,7 @@
 
 .workplaces-workspace--standalone {
     min-height: calc(var(--app-dynamic-viewport-height) - 70px - 2rem);
-    border: 1px solid #e1e6ef;
+    border: 1px solid #dce1ea;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 18px 42px rgba(39, 45, 57, 0.06);
@@ -466,7 +466,7 @@
     justify-content: space-between;
     gap: 1rem;
     padding: 0 1.25rem;
-    border-bottom: 1px solid #edf0f3;
+    border-bottom: 1px solid #e8ebee;
 }
 
 .workplaces-topbar--standalone {
@@ -516,7 +516,7 @@
 .workplaces-create-form input[type="text"] {
     width: min(100%, 280px);
     min-height: 36px;
-    border-color: #dfe3e8;
+    border-color: #dbdee3;
     border-radius: 7px;
     background: #ffffff;
 }
@@ -576,7 +576,7 @@
     gap: 1rem;
     margin: 1rem;
     padding: 1.15rem;
-    border: 1px solid #e5e8ef;
+    border: 1px solid #e0e3ea;
     border-radius: 8px;
     background: linear-gradient(135deg, var(--workplaces-accent-hover-surface) 0%, #ffffff 52%, var(--workplaces-accent-soft) 100%);
 }
@@ -646,7 +646,7 @@
     align-content: center;
     gap: 0.2rem;
     padding: 0.65rem 0.75rem;
-    border: 1px solid #e4e7ee;
+    border: 1px solid #dfe2e9;
     border-radius: 8px;
     background: #ffffff;
 }
@@ -668,7 +668,7 @@
     display: flex;
     flex-direction: column;
     margin: 0 1rem 1rem;
-    border: 1px solid #e5e8ef;
+    border: 1px solid #e0e3ea;
     border-radius: 8px;
     background: #ffffff;
     overflow: hidden;
@@ -689,7 +689,7 @@
 .workplaces-list__header {
     min-height: 42px;
     padding: 0 0.95rem;
-    border-bottom: 1px solid #edf0f3;
+    border-bottom: 1px solid #e8ebee;
     background: #fbfcfd;
     color: var(--text-muted);
     font-size: 12px;
@@ -704,7 +704,7 @@
 .workplaces-empty {
     min-height: 68px;
     padding: 0.75rem 0.95rem;
-    border-bottom: 1px solid #edf0f3;
+    border-bottom: 1px solid #e8ebee;
     background: #ffffff;
 }
 
@@ -767,7 +767,7 @@
     align-items: center;
     justify-content: center;
     padding: 0 0.55rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: 999px;
     background: #ffffff;
     color: var(--text-muted);
@@ -795,7 +795,7 @@
 .workplace-open-button {
     min-height: 34px;
     padding: 0 0.75rem;
-    border: 1px solid #d7dde6;
+    border: 1px solid #d3d9e1;
     border-radius: 7px;
     background: #ffffff;
     color: #38404a;
@@ -824,7 +824,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #d7dde6;
+    border: 1px solid #d3d9e1;
     border-radius: 7px;
     background: #ffffff;
     color: #69717d;
@@ -857,7 +857,7 @@
     display: grid;
     gap: 0.75rem;
     padding: 0.85rem;
-    border: 1px solid #dfe5eb;
+    border: 1px solid #dbe0e6;
     border-radius: 8px;
     background: #ffffff;
     box-shadow: 0 18px 45px rgba(31, 36, 43, 0.14);
@@ -871,8 +871,8 @@
     width: 10px;
     height: 10px;
     transform: rotate(45deg);
-    border-top: 1px solid #dfe5eb;
-    border-left: 1px solid #dfe5eb;
+    border-top: 1px solid #dbe0e6;
+    border-left: 1px solid #dbe0e6;
     background: #ffffff;
 }
 
@@ -936,7 +936,7 @@
 .workplace-settings__delete-form {
     display: grid;
     padding-top: 0.75rem;
-    border-top: 1px solid #edf0f3;
+    border-top: 1px solid #e8ebee;
 }
 
 .workplace-settings__delete {
@@ -960,7 +960,7 @@
 .workplaces-shell-header {
     min-height: var(--workplaces-standalone-bar-height);
     padding: 0 clamp(1rem, 2.4vw, 2rem);
-    border-bottom-color: #e7ebf2;
+    border-bottom-color: #e2e6ed;
     box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
 }
 
@@ -979,7 +979,7 @@
 
 .workplaces-account-link {
     min-height: 36px;
-    border-color: #dbe2ec;
+    border-color: #d7dde7;
     box-shadow: 0 1px 2px rgba(33, 38, 49, 0.04);
 }
 
@@ -1070,7 +1070,7 @@
     width: 100%;
     min-height: 40px;
     padding: 0 0.9rem;
-    border-color: #dbe2ec;
+    border-color: #d7dde7;
     background: #ffffff;
     box-shadow: 0 1px 2px rgba(33, 38, 49, 0.04);
 }
@@ -1099,7 +1099,7 @@
     gap: 1rem;
     margin: 0;
     padding: 1rem 1.15rem;
-    border-color: #e4e9f1;
+    border-color: #dfe4ec;
     background: #ffffff;
     box-shadow: 0 14px 32px rgba(31, 36, 43, 0.05);
 }
@@ -1136,7 +1136,7 @@
     gap: 0;
     align-items: center;
     padding-left: 1rem;
-    border-left: 1px solid #edf0f4;
+    border-left: 1px solid #e8ebef;
 }
 
 .workplaces-summary__stats > span {
@@ -1150,7 +1150,7 @@
 }
 
 .workplaces-summary__stat + .workplaces-summary__stat {
-    border-left: 1px solid #edf0f4;
+    border-left: 1px solid #e8ebef;
 }
 
 .workplaces-summary__stats strong {
@@ -1173,7 +1173,7 @@
 .workplaces-list {
     flex: 0 0 auto;
     margin: 0;
-    border-color: #e4e9f1;
+    border-color: #dfe4ec;
     background: #ffffff;
     overflow: visible;
     box-shadow: 0 14px 32px rgba(31, 36, 43, 0.05);
@@ -1204,7 +1204,7 @@
 .workplaces-empty {
     min-height: 66px;
     padding: 0.8rem 1rem;
-    border-bottom-color: #eef1f5;
+    border-bottom-color: #e9ecf0;
 }
 
 .workplace-card {
@@ -1258,7 +1258,7 @@
 .workplace-card__status {
     min-height: 26px;
     padding: 0 0.62rem;
-    border-color: #dce3ec;
+    border-color: #d8dee7;
     font-weight: 600;
 }
 
@@ -1274,7 +1274,7 @@
     justify-content: center;
     gap: 0.38rem;
     padding: 0 0.78rem;
-    border-color: #d7dee8;
+    border-color: #d3dae3;
     border-radius: 8px;
     font-weight: 700;
     box-shadow: 0 1px 2px rgba(33, 38, 49, 0.04);
@@ -1292,7 +1292,7 @@
 .workplace-settings__toggle {
     width: 36px;
     height: 36px;
-    border-color: #d7dee8;
+    border-color: #d3dae3;
     border-radius: 8px;
     box-shadow: 0 1px 2px rgba(33, 38, 49, 0.04);
 }
@@ -1315,7 +1315,7 @@
         grid-column: 1 / -1;
         padding-top: 1rem;
         padding-left: 0;
-        border-top: 1px solid #edf0f4;
+        border-top: 1px solid #e8ebef;
         border-left: 0;
     }
 
@@ -1414,7 +1414,7 @@
 
     .workplaces-summary__stat + .workplaces-summary__stat {
         padding-top: 0.85rem;
-        border-top: 1px solid #edf0f4;
+        border-top: 1px solid #e8ebef;
         border-left: 0;
     }
 
@@ -1471,7 +1471,7 @@
 .workplaces-shell-header {
     min-height: var(--workplaces-standalone-bar-height);
     padding: 0 clamp(1rem, 2vw, 1.75rem);
-    border-bottom-color: #e7ebf2;
+    border-bottom-color: #e2e6ed;
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 1px 0 rgba(20, 24, 33, 0.03);
 }
@@ -1492,7 +1492,7 @@
 
 .workplaces-account-link {
     min-height: 36px;
-    border-color: #d9e0eb;
+    border-color: #d5dce6;
     border-radius: 8px;
     background: #ffffff;
     box-shadow: 0 1px 2px rgba(28, 35, 48, 0.04);
@@ -1588,7 +1588,7 @@
 .workplaces-create-panel {
     min-width: 0;
     padding: 1rem;
-    border: 1px solid #e2e8f1;
+    border: 1px solid #dde3ec;
     border-radius: 10px;
     background: #ffffff;
     box-shadow: 0 14px 34px rgba(31, 38, 52, 0.055);
@@ -1599,7 +1599,7 @@
     width: 100%;
     min-height: 42px;
     padding: 0 0.9rem;
-    border-color: #d9e0eb;
+    border-color: #d5dce6;
     border-radius: 8px;
     background: #ffffff;
     box-shadow: 0 1px 2px rgba(28, 35, 48, 0.04);
@@ -1636,7 +1636,7 @@
 .workplace-active,
 .workplaces-switcher {
     min-width: 0;
-    border: 1px solid #e2e8f1;
+    border: 1px solid #dde3ec;
     border-radius: 10px;
     background: #ffffff;
     box-shadow: 0 18px 42px rgba(31, 38, 52, 0.07);
@@ -1790,7 +1790,7 @@
     justify-content: space-between;
     gap: 0.75rem;
     padding: 0 1rem;
-    border-bottom: 1px solid #edf1f6;
+    border-bottom: 1px solid #e8ecf1;
 }
 
 .workplaces-switcher__header h2 {
@@ -1831,7 +1831,7 @@
     gap: 0.8rem;
     min-height: 86px;
     padding: 0.8rem;
-    border: 1px solid #e5eaf2;
+    border: 1px solid #e0e5ed;
     border-radius: 9px;
     background: #ffffff;
     transition: border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
@@ -1893,7 +1893,7 @@
     align-items: center;
     justify-content: center;
     padding: 0 0.62rem;
-    border: 1px solid #dce3ec;
+    border: 1px solid #d8dee7;
     border-radius: 999px;
     background: #ffffff;
     color: #69717d;
@@ -1922,7 +1922,7 @@
     justify-content: center;
     gap: 0.42rem;
     padding: 0 0.85rem;
-    border-color: #d7dee8;
+    border-color: #d3dae3;
     border-radius: 8px;
     background: #ffffff;
     font-weight: 750;
@@ -1952,7 +1952,7 @@
 .workplace-settings__toggle {
     width: 38px;
     height: 38px;
-    border-color: #d7dee8;
+    border-color: #d3dae3;
     border-radius: 8px;
     box-shadow: 0 1px 2px rgba(28, 35, 48, 0.04);
 }
@@ -2183,7 +2183,7 @@
 
 .workplaces-settings-page .workplaces-task-topbar,
 .workplaces-settings-page .workplaces-task-filterbar {
-    border-color: #edf0f3;
+    border-color: #e8ebee;
 }
 
 .workplaces-settings-page .workplaces-task-topbar .tasks-topbar-title {
@@ -2289,7 +2289,7 @@
     width: 100%;
     min-height: 38px;
     padding: 0 0.9rem;
-    border: 1px solid #d8dee8;
+    border: 1px solid #d4dae3;
     border-radius: 7px;
     background: #ffffff;
     color: var(--wp-text);
@@ -2699,7 +2699,7 @@
     justify-content: center;
     gap: 0.42rem;
     padding: 0 0.75rem;
-    border: 1px solid #d7dee8;
+    border: 1px solid #d3dae3;
     border-radius: 7px;
     background: #ffffff;
     color: var(--wp-text);
@@ -2726,7 +2726,7 @@
 .workplaces-console .workplace-settings__toggle {
     width: 34px;
     height: 34px;
-    border-color: #d7dee8;
+    border-color: #d3dae3;
     border-radius: 7px;
     box-shadow: none;
 }
@@ -2983,7 +2983,7 @@
     width: 100%;
     height: 42px;
     padding: 0 0.75rem;
-    border: 1px solid #d7dce3;
+    border: 1px solid #d3d8de;
     border-radius: 8px;
     background: #ffffff;
     color: #282d35;
@@ -3008,7 +3008,7 @@
 }
 
 .workplace-create-modal__body .workplace-create-modal__text-input:hover {
-    border-color: #c4cad3;
+    border-color: #c0c6cf;
 }
 
 .workplace-create-modal__body .workplace-create-modal__text-input:focus {
@@ -3061,7 +3061,7 @@
     align-items: center;
     gap: 0.85rem;
     padding: 0.85rem;
-    border: 1px dashed #cbd1db;
+    border: 1px dashed #c7cdd7;
     border-radius: 9px;
     background: #fafbfc;
     color: #4e5560;
@@ -3183,7 +3183,7 @@
     align-items: start;
     gap: 0.65rem;
     padding: 0.75rem;
-    border: 1px solid #e4e7ec;
+    border: 1px solid #dfe2e7;
     border-radius: 8px;
     background: #f7f8fa;
     color: #646c77;
@@ -3225,7 +3225,7 @@
     min-width: 82px;
     height: 36px;
     padding: 0 1rem;
-    border: 1px solid #d8dde4;
+    border: 1px solid #d4d9df;
     border-radius: 7px;
     background: #ffffff;
     color: #555c67;
@@ -3237,7 +3237,7 @@
 
 .workplace-create-modal__cancel:hover,
 .workplace-create-modal__cancel:focus-visible {
-    border-color: #c3c9d2;
+    border-color: #bfc5ce;
     background: #f7f8fa;
     outline: none;
 }
@@ -3250,7 +3250,7 @@
     --issue-create-control-height: 38px;
     --tasks-detail-control-height: var(--issue-create-control-height);
     --tasks-detail-control-radius: var(--dropdown-control-radius, 7px);
-    --tasks-detail-control-border: #dfe3e8;
+    --tasks-detail-control-border: #dbdee3;
     --tasks-detail-control-bg: #ffffff;
     --tasks-detail-control-text: #4e535d;
 
@@ -3305,7 +3305,7 @@
 .tasks-project-modal__body .workplace-edit-modal__code-field .tasks-inline-input,
 .tasks-project-modal__body .workplace-edit-modal__description-field .tasks-modal-textarea {
     width: 100%;
-    border: 1px solid var(--tasks-detail-control-border, #dfe3e8);
+    border: 1px solid var(--tasks-detail-control-border, #dbdee3);
     border-radius: var(--tasks-detail-control-radius, 7px);
     background: var(--tasks-detail-control-bg, #ffffff);
     color: var(--tasks-detail-control-text, #4e535d);
@@ -3340,7 +3340,7 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.6rem 0.75rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: var(--dropdown-control-radius, 7px);
     background: #ffffff;
     color: #4e535d;
@@ -3719,7 +3719,7 @@
 
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .tasks-directory-list .tasks-directory-row {
     position: relative;
-    --tasks-directory-row-separator: #e7e8eb;
+    --tasks-directory-row-separator: #e2e3e6;
     height: var(--tasks-project-row-height);
     min-height: var(--tasks-project-row-height);
     max-height: var(--tasks-project-row-height);
@@ -3989,7 +3989,7 @@
 .workplace-edit-modal__fields {
     --tasks-detail-control-height: 38px;
     --tasks-detail-control-radius: 7px;
-    --tasks-detail-control-border: #dfe3e8;
+    --tasks-detail-control-border: #dbdee3;
     --tasks-detail-control-bg: #ffffff;
     --tasks-detail-control-text: #23272f;
 
@@ -4035,7 +4035,7 @@
 
 .tasks-project-create-modal__body .workplace-modal__fields .workplace-create-modal__text-input:focus,
 .tasks-project-edit-modal__body .workplace-modal__fields .tasks-inline-input:focus {
-    border-color: #b8bec8;
+    border-color: #b4bac4;
     outline: 0;
     box-shadow: var(--focus-ring);
 }
@@ -4050,7 +4050,7 @@
     align-items: center;
     gap: 0.55rem;
     padding: 0 0.65rem;
-    border: 1px solid var(--tasks-detail-control-border, #dfe3e8);
+    border: 1px solid var(--tasks-detail-control-border, #dbdee3);
     border-radius: var(--tasks-detail-control-radius, 7px);
     background: #ffffff;
     box-shadow: none;
@@ -4060,7 +4060,7 @@
 .workplace-modal__fields label.workplace-create-modal__dropzone.is-dragging,
 .workplace-modal__fields label.workplace-edit-modal__photo-control:hover,
 .workplace-edit-modal__file-input:focus-visible + .workplace-create-modal__dropzone {
-    border-color: #b8bec8;
+    border-color: #b4bac4;
     background: #ffffff;
     outline: 0;
     box-shadow: var(--focus-ring);

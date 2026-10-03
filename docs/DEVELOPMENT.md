@@ -402,6 +402,14 @@ Szczegóły zakresu, przechowywania danych i testów: [TEAMWORK.md](TEAMWORK.md)
 
 ## Centrum powiadomień
 
+Wyłączenie powiadomień o historii zmian nie wymaga migracji. Historia Zadań
+i Kanbana pozostaje w bazie; panel i jego akcje pomijają `kind='system'`,
+także z dawnymi stanami lub dostawami do obserwujących. Nowe dostawy obserwowania
+obejmują komentarze. `dashboard.test_notifications` sprawdza wszystkie filtry,
+liczniki, puste stany, paginację oraz pomijanie historii w akcjach osobistych
+i zbiorczych; `dashboard.test_collaboration` sprawdza zapis statusów i historii
+bez powiadomień oraz komentarze w obserwowanych zadaniach i podzadaniach.
+
 Usuwanie powiadomień wymaga migracji `dashboard/0003_notificationstate_is_deleted.py`.
 Dodaje `is_deleted=False` do istniejących stanów; nie usuwa źródeł ani danych historycznych.
 Testy Dashboardu obejmują usuwanie osobiste i zbiorcze, więcej niż 500 wpisów,

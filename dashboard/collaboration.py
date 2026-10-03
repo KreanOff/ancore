@@ -141,7 +141,7 @@ def follow_object(request, app, kind, object_id):
 @receiver(post_save, sender=TaskActivity)
 @receiver(post_save, sender=KanbanActivity)
 def deliver_activity_interest(sender, instance, created, raw=False, **kwargs):
-    if not created or raw:
+    if not created or raw or instance.kind != 'comment':
         return
     task = instance.task
     if task.workplace_id and task.user_id != task.workplace.owner_id:

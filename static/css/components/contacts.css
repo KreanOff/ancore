@@ -234,7 +234,7 @@
 
 .contacts-directory-sheet {
     --tasks-directory-checkbox-offset: 0;
-    --contacts-directory-column-separator: #edf0f3;
+    --contacts-directory-column-separator: #e8ebee;
 }
 
 .contacts-directory-sheet__cell {
@@ -637,7 +637,7 @@
 }
 
 .contacts-directory-empty {
-    border-bottom: 1px solid #e7e8eb;
+    border-bottom: 1px solid #e2e3e6;
     background: #f7f7f8;
 }
 
@@ -869,7 +869,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
     display: none;
     gap: 2px;
     padding: var(--dropdown-menu-padding);
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: var(--dropdown-menu-radius);
     background: #ffffff;
     box-shadow: var(--dropdown-menu-shadow);
@@ -997,7 +997,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
     display: flex;
     align-items: center;
     padding: 0.5rem 0.65rem;
-    border: 1px solid #dfe3e9;
+    border: 1px solid #dbdee4;
     border-radius: 6px;
     background: #f7f8fa;
     box-sizing: border-box;
@@ -1060,7 +1060,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
     gap: 0.5rem;
     min-height: 36px;
     padding: 0.45rem 0;
-    border-top: 1px solid #eceff7;
+    border-top: 1px solid #e7eaf2;
     color: inherit;
     text-decoration: none;
 }
@@ -1081,7 +1081,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
 .contacts-share-row--link {
     grid-template-columns: minmax(0, 1fr) auto;
-    border: 1px solid #eceff7;
+    border: 1px solid #e7eaf2;
     border-radius: 6px;
     padding: 0.65rem 0.75rem;
 }
@@ -1172,7 +1172,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
     align-items: center;
     gap: 0.5rem;
     padding: 0 0.65rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: 6px;
     background: #ffffff;
     color: #242830;
@@ -1186,7 +1186,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
 .contacts-custom-select__button:hover,
 .contacts-custom-select.is-open .contacts-custom-select__button {
-    border-color: #cfd5de;
+    border-color: #cbd1da;
     background: #f7f8fa;
 }
 
@@ -1235,7 +1235,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
     display: none;
     gap: 2px;
     padding: var(--dropdown-menu-padding);
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: var(--dropdown-menu-radius);
     background: #ffffff;
     box-shadow: var(--dropdown-menu-shadow);
@@ -1402,7 +1402,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
 .contacts-photo-editor-header {
     justify-content: space-between;
-    border-bottom: 1px solid #e5e8ed;
+    border-bottom: 1px solid #e0e3e8;
 }
 
 .contacts-photo-editor-header strong {
@@ -1427,7 +1427,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
 .contacts-photo-editor-close:hover,
 .contacts-photo-editor-close:focus-visible {
-    border-color: #dfe3e8;
+    border-color: #dbdee3;
     background: #f7f8fa;
     outline: none;
 }
@@ -1501,13 +1501,13 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
 .profile-photo-zoom-controls.contacts-photo-editor-zoom {
     padding: 0.75rem 1rem;
-    border-top: 1px solid #e5e8ed;
+    border-top: 1px solid #e0e3e8;
     background: #ffffff;
 }
 
 .contacts-photo-editor-footer {
     justify-content: flex-end;
-    border-top: 1px solid #e5e8ed;
+    border-top: 1px solid #e0e3e8;
 }
 
 .contacts-photo-editor-secondary,
@@ -1525,14 +1525,14 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 }
 
 .contacts-photo-editor-secondary {
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     background: #ffffff;
     color: #4c5565;
 }
 
 .contacts-photo-editor-secondary:hover,
 .contacts-photo-editor-secondary:focus-visible {
-    border-color: #cfd5dd;
+    border-color: #cbd1d9;
     background: #f7f8fa;
     color: #242830;
     outline: none;
@@ -1687,7 +1687,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 .contacts-modal-fields .tasks-inline-select {
     height: 38px;
     padding: 0 0.65rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: 6px;
     background: #ffffff;
     color: #242830;
@@ -1702,7 +1702,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 .contacts-edit-readonly-value {
     height: 38px;
     padding: 0 0.65rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: 6px;
     background-color: #ffffff;
     color: #242830;
@@ -1767,7 +1767,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
     align-items: center;
     justify-content: center;
     padding: 0 1.15rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: 7px;
     background: #ffffff;
     color: #4c5565;
@@ -1779,7 +1779,7 @@ body .contacts-empty-state--directory .tasks-empty-state__icon svg {
 
 .contacts-edit-modal__cancel:hover,
 .contacts-edit-modal__cancel:focus-visible {
-    border-color: #cfd5dd;
+    border-color: #cbd1d9;
     background: #f7f8fa;
     color: #242830;
     outline: none;

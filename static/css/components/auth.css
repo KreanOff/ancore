@@ -4,13 +4,13 @@ body.auth-page {
     --auth-bg: #ffffff;
     --auth-ink: #11181f;
     --auth-muted: #626d7c;
-    --auth-border: #bbc5d0;
-    --auth-border-soft: #d6dee3;
+    --auth-border: #b7c1cc;
+    --auth-border-soft: #d2dade;
     --auth-teal: var(--system-accent);
     --auth-teal-dark: var(--system-accent-hover);
     --auth-input-bg: #fcfdfd;
     --auth-focus-bg: #f3f4f6;
-    --auth-focus-border: #6b7280;
+    --auth-focus-border: #69707d;
     --auth-placeholder: #8690a1;
     --auth-icon: #727d8d;
     --auth-step-line: #86b3bb;
@@ -22,7 +22,7 @@ body.auth-page {
     background: var(--auth-bg);
     background-color: var(--auth-bg) !important;
     color: var(--auth-ink);
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-family-ui);
 }
 
 body.auth-page .auth-shell {

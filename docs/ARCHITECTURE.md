@@ -134,7 +134,8 @@ flowchart LR
   Członkostwa przestrzeni/tablic mają własne tabele i wspólne komponenty UI zespołu.
 - Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
-  Zadań i Kanbana, zaproszeń oraz osobistych przypomnień `TaskReminder`.
+  typu komentarz z Zadań i Kanbana, zaproszeń oraz osobistych przypomnień `TaskReminder`.
+  Wpisy historii zmian pozostają wyłącznie w historii obiektów.
 - `core` dostarcza powłokę interfejsu i upload; `core` nie ma własnych modeli domenowych. `dashboard.NotificationState`
   zapisuje osobisty odczyt, archiwum i usunięcie powiadomień, odwołując się do istniejących
   aktywności, zaproszeń i dostarczonych przypomnień. `ObjectFollow` przechowuje

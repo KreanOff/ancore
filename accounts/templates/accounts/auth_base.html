@@ -8,9 +8,11 @@
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'img/favicon-ancore-large.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400&display=swap" rel="stylesheet">
+    <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin-ext.woff2' %}" as="font" type="font/woff2" crossorigin>
     {% include 'core/includes/bootstrap.html' %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260926-navigation-controls">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-border-visibility-2pct">
 </head>
 <body class="auth-page {% block auth_page_class %}auth-page--login{% endblock %}">
     <a class="auth-skip-link" href="#auth-form-title">Przejdź do formularza</a>

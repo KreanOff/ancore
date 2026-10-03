@@ -85,10 +85,10 @@ class WorkspaceInvitationNotificationTests(TestCase):
         self.assertEqual(self.panel().json()['count'], 0)
         self.assertEqual(self.summary().json()['pending_invitation_count'], 0)
 
-    def test_pending_invitation_stays_ahead_of_newer_task_activity(self):
+    def test_pending_invitation_stays_ahead_of_newer_task_comments(self):
         task = Task.objects.create(user=self.recipient, workplace=self.personal, title='Aktywne zadanie')
         for _ in range(DASHBOARD_NOTIFICATION_LIMIT + 1):
-            TaskActivity.objects.create(task=task, actor=self.recipient, action='updated', message='zmienił zadanie')
+            TaskActivity.objects.create(task=task, actor=self.recipient, kind='comment', action='commented', message='Nowy komentarz')
         notifications = _dashboard_notifications(self.recipient)
         self.assertEqual(len(notifications), DASHBOARD_NOTIFICATION_LIMIT)
         self.assertEqual(notifications[0]['source'], 'workplace')

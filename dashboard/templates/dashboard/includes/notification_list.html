@@ -40,9 +40,9 @@
         {% elif notification_filters.view == 'invitations' %}<h3>Brak oczekujących zaproszeń</h3><p>Tutaj znajdziesz zaproszenia do Workspace i projektów, które czekają na Twoją decyzję.</p>
         {% elif notification_filters.view == 'reminders' %}<h3>Brak przypomnień</h3><p>Ustaw datę przypomnienia w zadaniu. Pojawi się tutaj o wybranej porze — dla wykonawcy, a bez wykonawcy dla właściciela Workspace.</p>
         {% elif notification_filters.view == 'mentions' %}<h3>Brak wzmianek</h3><p>Tutaj zobaczysz komentarze, w których ktoś wspomniał o Tobie przez @.</p>
-        {% elif notification_filters.view == 'following' %}<h3>Brak nowych aktywności obserwowanych</h3><p>Wybierz „Obserwuj” w zadaniu lub projekcie. Nowe komentarze i zmiany innych osób pojawią się tutaj.</p>
+        {% elif notification_filters.view == 'following' %}<h3>Brak nowych komentarzy w obserwowanych</h3><p>Wybierz „Obserwuj” w zadaniu lub projekcie. Nowe komentarze innych osób pojawią się tutaj.</p>
         {% elif notification_filters.view == 'archived' %}<h3>Archiwum jest puste</h3><p>Zarchiwizowane powiadomienia możesz w każdej chwili przywrócić.</p>
-        {% else %}<h3>Brak nowych powiadomień.</h3><p>Zaproszenia, komentarze i zmiany w zadaniach pojawią się w tym miejscu.</p>{% endif %}
+        {% else %}<h3>Brak nowych powiadomień.</h3><p>Zaproszenia, komentarze, wzmianki i przypomnienia pojawią się w tym miejscu.</p>{% endif %}
     </div>
     {% endfor %}
 </div>

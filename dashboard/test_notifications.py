@@ -6,7 +6,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from dashboard.models import NotificationState
+from dashboard.models import ActivityInterest, NotificationState
 from dashboard.notification_service import DASHBOARD_NOTIFICATION_LIMIT, notification_page
 from kanban.models import Kanban, KanbanActivity
 from tasks.models import Task, TaskActivity
@@ -25,7 +25,7 @@ class NotificationCenterTests(TestCase):
         self.task = Task.objects.create(user=self.owner, workplace=self.workspace, title='Wdrożenie')
         self.activity = TaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', action='commented', message='Gotowe do sprawdzenia')
         self.card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Karta')
-        self.kanban_activity = self.card.activities.first()
+        self.kanban_activity = KanbanActivity.objects.create(task=self.card, actor=self.owner, kind='comment', action='commented', message='Komentarz do karty')
         self.client.force_login(self.member)
         session = self.client.session
         session['active_workplace_id'] = self.workspace.pk
@@ -40,8 +40,64 @@ class NotificationCenterTests(TestCase):
     def summary(self):
         return self.client.get(reverse('notifications'), {'summary': '1'}).json()
 
+    def test_history_is_excluded_from_every_view_and_summary_even_with_old_deliveries(self):
+        before = self.summary()
+        keys = []
+        for source, task in [('tasks', self.task), ('kanban', self.card)]:
+            field = 'task_activity' if source == 'tasks' else 'kanban_activity'
+            for index, action in enumerate(['created', 'updated', 'status_changed', 'attachments_added']):
+                activity = task.activities.create(actor=self.owner, kind='system', action=action,
+                                                  message='Historia nie jest powiadomieniem')
+                keys.append(f'{source}:{activity.pk}')
+                # Existing subscriptions and receipts cannot reintroduce old history.
+                ActivityInterest.objects.create(user=self.member, **{field: activity}, followed=True, mentioned=True)
+                NotificationState.objects.create(user=self.member, **{field: activity},
+                                                 is_read=False, is_archived=bool(index % 2))
+        for workspace in ['', str(self.workspace.pk)]:
+            for view in ['all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived']:
+                with self.subTest(workspace=workspace, view=view):
+                    payload = self.feed(view=view, workspace=workspace).json()
+                    self.assertEqual(payload['total'], 2 if view in {'all', 'unread'} else 0)
+                    for key in keys:
+                        self.assertNotIn(f'data-notification-key="{key}"', payload['html'])
+        self.assertEqual(self.summary(), before)
+        self.assertEqual(self.task.activities.filter(kind='system', message='Historia nie jest powiadomieniem').count(), 4)
+        self.assertEqual(self.card.activities.filter(kind='system', message='Historia nie jest powiadomieniem').count(), 4)
+
+    def test_history_cannot_be_changed_through_inbox_actions_or_bulk_snapshots(self):
+        receipts = []
+        for source, task in [('tasks', self.task), ('kanban', self.card)]:
+            activity = task.activities.filter(kind='system').first()
+            field = 'task_activity' if source == 'tasks' else 'kanban_activity'
+            receipt = NotificationState.objects.create(user=self.member, **{field: activity}, is_read=False)
+            receipts.append(receipt)
+            for action in ['read', 'unread', 'archive', 'restore', 'delete']:
+                with self.subTest(source=source, action=action):
+                    self.assertEqual(self.act(action, f'{source}:{activity.pk}').status_code, 404)
+        snapshot = self.feed().json()['snapshot']
+        for action in ['read_all', 'delete_all']:
+            self.assertEqual(self.act(action, snapshot=snapshot).status_code, 200)
+            for receipt in receipts:
+                receipt.refresh_from_db()
+                self.assertFalse(receipt.is_read or receipt.is_archived or receipt.is_deleted)
+        self.assertEqual(self.feed().json()['total'], 0)
+        self.assertEqual(self.summary()['unread_count'], 0)
+
+    def test_history_only_renders_empty_state_and_preserves_object_history(self):
+        self.activity.delete()
+        self.kanban_activity.delete()
+        self.assertTrue(self.task.activities.filter(kind='system').exists())
+        self.assertTrue(self.card.activities.filter(kind='system').exists())
+        for user in [self.member, self.owner]:
+            self.client.force_login(user)
+            payload = self.feed().json()
+            self.assertEqual(payload['total'], 0)
+            self.assertEqual(payload['unread_count'], 0)
+            self.assertIn('Brak nowych powiadomień.', payload['html'])
+            self.assertIn('Zaproszenia, komentarze, wzmianki i przypomnienia', payload['html'])
+
     def test_opening_is_read_only_and_own_actions_do_not_count_as_unread(self):
-        self.assertEqual(self.summary()['unread_count'], 3)
+        self.assertEqual(self.summary()['unread_count'], 2)
         self.feed()
         self.assertFalse(NotificationState.objects.exists())
         self.client.force_login(self.owner)
@@ -58,7 +114,7 @@ class NotificationCenterTests(TestCase):
         for _ in range(2):
             self.assertEqual(self.act('read').status_code, 200)
         self.assertEqual(NotificationState.objects.count(), 1)
-        self.assertEqual(self.summary()['unread_count'], 2)
+        self.assertEqual(self.summary()['unread_count'], 1)
         self.client.force_login(self.member)
         self.assertNotIn('Gotowe do sprawdzenia', self.feed(view='unread').json()['html'])
         self.act('unread')
@@ -69,16 +125,17 @@ class NotificationCenterTests(TestCase):
         self.assertEqual(self.act('archive').status_code, 200)
         self.assertNotIn('Gotowe do sprawdzenia', self.feed().json()['html'])
         self.assertIn('Gotowe do sprawdzenia', self.feed(view='archived').json()['html'])
-        self.assertEqual(self.summary()['unread_count'], 2)
+        self.assertEqual(self.summary()['unread_count'], 1)
         self.assertTrue(TaskActivity.objects.filter(pk=self.activity.pk).exists())
         self.assertEqual(self.act('restore').status_code, 200)
         self.assertIn('Gotowe do sprawdzenia', self.feed().json()['html'])
-        self.assertEqual(self.summary()['unread_count'], 2)
+        self.assertEqual(self.summary()['unread_count'], 1)
 
     def test_foreign_records_revoked_access_and_owner_mismatch_are_rejected(self):
         foreign = Task.objects.create(user=self.owner, workplace=self.other_workspace, title='Tajne')
         corrupt = Task.objects.create(user=self.outsider, workplace=self.workspace, title='Nieprawidłowy właściciel')
-        for activity in (foreign.activities.first(), corrupt.activities.first()):
+        for task in (foreign, corrupt):
+            activity = TaskActivity.objects.create(task=task, actor=self.owner, kind='comment', action='commented')
             self.assertEqual(self.act('read', f'tasks:{activity.pk}').status_code, 404)
         self.assertNotIn('Tajne', self.feed().json()['html'])
         self.assertNotIn('Nieprawidłowy właściciel', self.feed().json()['html'])
@@ -124,7 +181,7 @@ class NotificationCenterTests(TestCase):
         self.client.force_login(self.member)
         self.assertEqual(self.feed().json()['total'], original_total - 2)
         self.assertEqual(self.feed(view='archived').json()['total'], 0)
-        self.assertEqual(self.summary()['unread_count'], 1)
+        self.assertEqual(self.summary()['unread_count'], 0)
         self.assertTrue(TaskActivity.objects.filter(pk=self.activity.pk).exists())
         self.assertTrue(KanbanActivity.objects.filter(pk=self.kanban_activity.pk).exists())
         self.client.force_login(self.owner)
@@ -147,8 +204,9 @@ class NotificationCenterTests(TestCase):
 
     def test_delete_rechecks_access_and_rejects_foreign_keys(self):
         foreign = Task.objects.create(user=self.owner, workplace=self.other_workspace, title='Prywatne')
+        foreign_comment = foreign.activities.create(actor=self.owner, kind='comment', action='commented')
         invitation = WorkplaceInvitation.objects.create(workplace=self.workspace, invited_by=self.owner, recipient=self.outsider)
-        for key in (f'tasks:{foreign.activities.first().pk}', f'workplace:{invitation.pk}', 'tasks:bad', 'tasks:' + '9' * 100):
+        for key in (f'tasks:{foreign_comment.pk}', f'workplace:{invitation.pk}', 'tasks:bad', 'tasks:' + '9' * 100):
             self.assertEqual(self.act('delete', key).status_code, 404)
         snapshot = self.feed(workspace=self.workspace.pk).json()['snapshot']
         self.membership.is_active = False
@@ -159,10 +217,10 @@ class NotificationCenterTests(TestCase):
 
     def test_bulk_delete_covers_all_pages_but_preserves_archived_and_new_items(self):
         self.act('archive')
-        TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, message=f'Zmiana {i}') for i in range(505)])
+        TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, kind='comment', action='commented', message=f'Komentarz {i}') for i in range(505)])
         payload = self.feed(workspace=self.workspace.pk).json()
         self.assertGreater(payload['total'], 500)
-        new = TaskActivity.objects.create(task=self.task, actor=self.owner, message='Nowsze niż lista')
+        new = TaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', action='commented', message='Nowsze niż lista')
         for _ in range(2):
             self.assertEqual(self.act('delete_all', snapshot=payload['snapshot']).status_code, 200)
         self.assertEqual(NotificationState.objects.filter(user=self.member, is_deleted=True).count(), payload['total'])
@@ -178,6 +236,7 @@ class NotificationCenterTests(TestCase):
     def test_bulk_delete_respects_workspace_and_validates_snapshot(self):
         second = create_workplace_for_user(self.member, 'Osobiste')
         task = Task.objects.create(user=self.member, workplace=second, title='Pozostawione')
+        task.activities.create(actor=self.member, kind='comment', action='commented', message='Komentarz w drugim Workspace')
         payload = self.feed(workspace=self.workspace.pk).json()
         self.assertEqual(self.act('delete_all', snapshot='invalid').status_code, 400)
         self.client.force_login(self.outsider)
@@ -200,7 +259,7 @@ class NotificationCenterTests(TestCase):
 
     def test_bulk_read_uses_snapshot_and_filters_and_preserves_new_arrivals(self):
         payload = self.feed(workspace=self.workspace.pk).json()
-        new = TaskActivity.objects.create(task=self.task, actor=self.owner, message='Nowa wiadomość')
+        new = TaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', action='commented', message='Nowa wiadomość')
         self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 200)
         self.assertEqual(self.summary()['unread_count'], 1)
         self.assertFalse(NotificationState.objects.filter(user=self.member, task_activity=new).exists())
@@ -211,10 +270,10 @@ class NotificationCenterTests(TestCase):
         self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 400)
 
     def test_bulk_read_handles_more_than_one_page(self):
-        TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, message=f'Zmiana {i}') for i in range(30)])
+        TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, kind='comment', action='commented', message=f'Komentarz {i}') for i in range(30)])
         payload = self.feed(view='unread').json()
         self.assertEqual(payload['count'], DASHBOARD_NOTIFICATION_LIMIT)
-        self.assertEqual(payload['total'], 33)
+        self.assertEqual(payload['total'], 32)
         self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 200)
         self.assertEqual(self.summary()['unread_count'], 0)
 
@@ -222,27 +281,28 @@ class NotificationCenterTests(TestCase):
         self.act('archive')
         self.client.force_login(self.owner)
         private_task = Task.objects.create(user=self.owner, workplace=self.other_workspace, title='Druga przestrzeń')
-        private_activity = TaskActivity.objects.create(task=private_task, actor=self.outsider, message='Prywatna zmiana')
+        private_activity = TaskActivity.objects.create(task=private_task, actor=self.outsider, kind='comment', action='commented', message='Prywatny komentarz')
         payload = self.feed(workspace=self.workspace.pk).json()
         self.act('read_all', snapshot=payload['snapshot'])
         self.assertFalse(NotificationState.objects.filter(user=self.owner, task_activity=private_activity).exists())
         self.assertTrue(NotificationState.objects.get(user=self.member, task_activity=self.activity).is_archived)
 
     def test_cursor_pagination_is_stable_with_equal_timestamps_and_new_arrivals(self):
-        TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, message=f'Zmiana {i}') for i in range(25)])
+        TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, kind='comment', action='commented', message=f'Komentarz {i}') for i in range(25)])
+        TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, kind='system', message=f'Historia {i}') for i in range(30)])
         moment = timezone.now() - timedelta(days=1)
         TaskActivity.objects.filter(task=self.task).update(created_at=moment)
         KanbanActivity.objects.filter(task=self.card).update(created_at=moment)
         filters = {'view': 'all', 'workspace': ''}
         first = notification_page(self.member, filters)
-        new = TaskActivity.objects.create(task=self.task, actor=self.owner, message='Po otwarciu')
+        new = TaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', action='commented', message='Po otwarciu')
         seen = [item['key'] for item in first['dashboard_notifications']]
         cursor = first['next_cursor']
         while cursor:
             page = notification_page(self.member, filters, cursor)
             seen.extend(item['key'] for item in page['dashboard_notifications'])
             cursor = page['next_cursor']
-        self.assertEqual(len(seen), 28)
+        self.assertEqual(len(seen), 27)
         self.assertEqual(len(seen), len(set(seen)))
         self.assertNotIn(f'tasks:{new.pk}', seen)
         self.assertEqual(self.feed(cursor='bad').status_code, 400)
@@ -257,7 +317,7 @@ class NotificationCenterTests(TestCase):
         self.assertTrue(all(item['source'] == 'workplace' for item in first['dashboard_notifications']))
         second = notification_page(self.member, filters, first['next_cursor'])
         self.assertEqual([item['source'] for item in second['dashboard_notifications'][:2]], ['workplace', 'workplace'])
-        self.assertEqual(len(second['dashboard_notifications']), 5)
+        self.assertEqual(len(second['dashboard_notifications']), 4)
 
     def test_deleted_source_cleans_receipt(self):
         self.act('read')

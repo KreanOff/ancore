@@ -1,32 +1,33 @@
 /* Main Style Entry Point */
-@import 'base/variables.css?v=20260923-no-interaction-rings';
-@import 'base/reset.css?v=20260902-app-scale-98';
-@import 'layout/sidebar.css?v=20260902-resizable-app-sidebar-v1';
-@import 'layout/main.css?v=20261003-collapse-panel';
+@import 'base/fonts.css?v=20261003-atlassian-sans';
+@import 'base/variables.css?v=20261003-border-visibility-2pct';
+@import 'base/reset.css?v=20261003-atlassian-sans';
+@import 'layout/sidebar.css?v=20261003-border-visibility-2pct';
+@import 'layout/main.css?v=20261003-border-visibility-2pct';
 @import 'layout/responsive.css?v=20261003-sidebar-content-width';
-@import 'components/cards.css?v=20260902-system-accent-v1';
+@import 'components/cards.css?v=20261003-border-visibility-2pct';
 @import 'components/buttons.css?v=20260923-secondary-gray-hover';
 @import 'components/toolbar.css?v=20260918-flaticon-v1';
 @import 'components/alerts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/forms.css?v=20260927-option-icons';
+@import 'components/forms.css?v=20261003-border-visibility-2pct';
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20261001-kanban-directory-tabs';
-@import 'components/contacts.css?v=20260927-directory-row-menus';
+@import 'components/tasks.css?v=20261003-border-visibility-2pct';
+@import 'components/contacts.css?v=20261003-border-visibility-2pct';
 @import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/auth.css?v=20260923-no-interaction-rings';
-@import 'components/workplaces.css?v=20260927-workspace-row-menu';
-@import 'calendar.css?v=20260923-no-interaction-rings';
+@import 'components/auth.css?v=20261003-border-visibility-2pct';
+@import 'components/workplaces.css?v=20261003-border-visibility-2pct';
+@import 'calendar.css?v=20261003-border-visibility-2pct';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
 @import 'components/checkboxes.css?v=20260625-contacts-project-table-match';
-@import 'theme/elestio.css?v=20260928-task-selection';
-@import 'components/profile.css?v=20260926-profile-heading';
+@import 'theme/elestio.css?v=20261003-border-visibility-2pct';
+@import 'components/profile.css?v=20261003-border-visibility-2pct';
 @import 'components/modal-system.css?v=20260927-project-heading';
 @import 'components/dropdown-layer.css?v=20260921-dropdown-search';
-@import 'components/global-search.css?v=20261003-quick-search-v1';
+@import 'components/global-search.css?v=20261003-border-visibility-2pct';
 @import 'components/notifications-panel.css?v=20261003-notifications-modal';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
@@ -656,7 +657,7 @@ body :where(input, textarea)::placeholder {
 
 .sidebar-header-action:hover,
 .sidebar-header-action[aria-expanded="true"] {
-    border-color: #e2e5e9;
+    border-color: #dde0e4;
     background: #f1f2f4;
     color: var(--text-strong);
 }
@@ -690,7 +691,7 @@ body :where(input, textarea)::placeholder {
     gap: 0.25rem;
     padding: 0.4rem;
     overflow: hidden;
-    border: 1px solid #e1e4e8;
+    border: 1px solid #dcdfe3;
     border-radius: 10px;
     background: #ffffff;
     box-shadow: 0 18px 44px rgba(39, 43, 53, 0.16), 0 2px 8px rgba(39, 43, 53, 0.08);
@@ -728,7 +729,7 @@ body :where(input, textarea)::placeholder {
     align-items: center;
     gap: 0.45rem;
     padding: 0 0.6rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: 7px;
     background: #ffffff;
 }
@@ -824,7 +825,7 @@ body :where(input, textarea)::placeholder {
 
 .sidebar-workspace-manage {
     margin-top: 0.15rem;
-    border-top: 1px solid #eceef1;
+    border-top: 1px solid #e7e9ec;
     border-radius: 0 0 7px 7px;
 }
 
@@ -844,7 +845,7 @@ body :where(input, textarea)::placeholder {
     align-items: center;
     gap: 0.5rem;
     padding: 0 0.65rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: 8px;
     background: #ffffff;
 }
@@ -983,7 +984,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     flex: 0 0 auto;
     padding: 3px;
     margin: 0;
-    border: 2px solid #e9eaec;
+    border: 2px solid #e4e5e7;
     border-radius: 21px;
     background: #ffffff;
 }
@@ -1158,7 +1159,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     gap: 0.6rem;
     padding: 0 0.7rem;
     overflow: hidden;
-    border: 1px solid #d9dde3;
+    border: 1px solid #d5d9de;
     border-radius: 8px;
     background: #ffffff;
     color: var(--app-text-color);
@@ -1208,7 +1209,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     gap: 0.5rem;
     margin: 0.55rem 0 0;
     padding: 0.55rem 0.7rem;
-    border: 1px dashed #cfd4dc;
+    border: 1px dashed #cbd0d8;
     border-radius: 8px;
     background: #f7f8fa;
     color: var(--app-text-color);
@@ -1493,7 +1494,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     max-height: min(360px, calc(var(--app-dynamic-viewport-height) - 1.5rem));
     padding: 0.4rem;
     overflow: hidden;
-    border: 1px solid #e1e4e8;
+    border: 1px solid #dcdfe3;
     border-radius: 10px;
     background: #ffffff;
     box-shadow: 0 18px 44px rgba(39, 43, 53, 0.16), 0 2px 8px rgba(39, 43, 53, 0.08);
@@ -1510,7 +1511,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
     align-items: center;
     gap: 0.5rem;
     padding: 0 0.25rem 0.25rem 0.6rem;
-    border-bottom: 1px solid #eceef1;
+    border-bottom: 1px solid #e7e9ec;
 }
 
 .sidebar-collapsed-flyout__header strong {
@@ -1575,7 +1576,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
 }
 
 .sidebar-collapsed-flyout__link:hover {
-    border-color: #e2e7ed;
+    border-color: #dde2e8;
     background: #f5f7f9;
     color: var(--sidebar-active);
 }
@@ -1654,7 +1655,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         width: 42px;
         height: 42px;
         padding: 3px;
-        border: 2px solid #e9eaec;
+        border: 2px solid #e4e5e7;
         border-radius: 21px;
         background: #ffffff;
     }
@@ -1718,7 +1719,7 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         margin: 0 0 0.25rem;
         padding: 0 0 0.25rem;
         border: 0;
-        border-bottom: 1px solid #e3e5e8;
+        border-bottom: 1px solid #dee0e3;
         border-radius: 0;
     }
 

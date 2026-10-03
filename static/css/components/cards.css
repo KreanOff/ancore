@@ -129,7 +129,7 @@
 
 .dashboard-action:hover,
 .dashboard-panel-link:hover {
-    border-color: #c7cdd6;
+    border-color: #c3c9d2;
     background: var(--dashboard-soft);
     color: var(--dashboard-ink);
 }
@@ -697,7 +697,7 @@ a.settings-option:hover,
     flex-direction: column;
     gap: 0.25rem;
     padding: 0 0 0 0.75rem;
-    border-left: 3px solid #aeb5bf;
+    border-left: 3px solid #abb1bb;
 }
 
 .dashboard-event--red {
@@ -717,7 +717,7 @@ a.settings-option:hover,
 }
 
 .dashboard-event--slate {
-    border-left-color: #667085;
+    border-left-color: #646e82;
 }
 
 .dashboard-empty {

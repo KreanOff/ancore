@@ -556,9 +556,14 @@ w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszu
 ## 11. Historia a powiadomienia
 
 `TaskActivity`, `KanbanActivity` i `ContactActivity` są historią obiektów.
-Centrum powiadomień (`dashboard/notification_service.py`) odczytuje aktywności
-Zadań i Kanbana, ważne oczekujące zaproszenia oraz osobiste przypomnienia.
-Nie kopiuje historii; GET może utworzyć brakujące dostawy osiągniętych przypomnień.
+Centrum powiadomień (`dashboard/notification_service.py`) odczytuje wyłącznie
+komentarze (`kind='comment'`) Zadań i Kanbana, ważne oczekujące zaproszenia
+oraz osobiste przypomnienia. Wpisy historii (`kind='system'`), np. utworzenie,
+edycja lub zmiana statusu, pozostają tylko w historii obiektu. Nie trafiają
+do żadnej zakładki powiadomień, liczników ani akcji osobistych i zbiorczych,
+również gdy mają wcześniejszy `NotificationState` lub `ActivityInterest`.
+Zmiana nie usuwa historii ani dawnych stanów i nie wymaga migracji.
+GET może utworzyć brakujące dostawy osiągniętych przypomnień.
 `dashboard.NotificationState` przechowuje osobisty stan odczytu, archiwum i usunięcia,
 z FK do dokładnie jednego źródła oraz unikalnością użytkownik + źródło.
 Usunięcie źródła usuwa jego stan przez CASCADE.
@@ -663,17 +668,18 @@ aktywnego Workspace i prawidłowego właściciela danych. Stan `following`
 jest jawny, więc ponowienie żądania nie odwraca subskrypcji.
 
 `dashboard/collaboration.py` odbiera utworzenie `TaskActivity` i `KanbanActivity`.
-Nowe aktywności obserwowanego elementu oraz zadań/kart w obserwowanym projekcie
+Nowe komentarze obserwowanego elementu oraz zadań/kart w obserwowanym projekcie
 otrzymują `ActivityInterest` z odbiorcą i flagami `mentioned`/`followed`.
-Dotyczy to także nowo tworzonych zadań i podzadań projektu oraz historii
-operacji zbiorczych. Zmiany samych metadanych projektu nie mają historii
-`TaskActivity` i nie generują tego typu powiadomień. Własne działania są pomijane.
+Dotyczy to także komentarzy do nowo tworzonych zadań i podzadań projektu.
+Samo utworzenie, edycja i operacje zbiorcze nie tworzą dostaw historii do
+obserwujących. Zmiany metadanych projektu również nie generują powiadomień.
+Własne działania są pomijane.
 Zapis komentarza i jego dostaw odbywa się w jednej transakcji.
 
 Nie powstaje drugi wpis w centrum: filtry „Wzmianki” i „Obserwowane” wybierają
 istniejące aktywności, zachowując wspólny odczyt, archiwum, usunięcie, paginację
-i snapshoty operacji zbiorczych. „Wszystkie” nadal zawierają historię wszystkich
-dostępnych Workspace. Rozpoczęcie obserwowania nie dostarcza wstecz historii;
+i snapshoty operacji zbiorczych. „Wszystkie” zawierają komentarze ze wszystkich
+dostępnych Workspace. Rozpoczęcie obserwowania nie dostarcza wstecz komentarzy;
 wyłączenie zatrzymuje nowe dostawy, zachowując wcześniej dostarczone wpisy.
 Obserwowanie projektu działa niezależnie od obserwowania pojedynczego zadania.
 Cofnięcie członkostwa odcina odczyt i nowe dostawy, nawet gdy subskrypcja

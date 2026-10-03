@@ -5,7 +5,7 @@
     --calendar-selection-text: var(--text-inverse);
     --calendar-hover: var(--system-interaction-soft);
     --calendar-blue: #4f7edb;
-    --calendar-border: #e9ebef;
+    --calendar-border: #e4e6ea;
 }
 .calendar-page {
     width: 100%;
@@ -1021,7 +1021,7 @@
 }
 
 .calendar-dialog-header {
-    border-bottom: 1px solid #edf0f3;
+    border-bottom: 1px solid #e8ebee;
 }
 
 .calendar-dialog-actions {
@@ -1102,7 +1102,7 @@
     align-items: center;
     gap: 0.55rem;
     padding: 0 0.65rem;
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: var(--dropdown-control-radius);
     background: #ffffff;
     color: #242830;
@@ -1116,7 +1116,7 @@
 
 .calendar-color-select__button:hover,
 .calendar-color-select.is-open .calendar-color-select__button {
-    border-color: #cfd5de;
+    border-color: #cbd1da;
     background: #f7f8fa;
 }
 
@@ -1156,7 +1156,7 @@
     display: none;
     gap: 2px;
     padding: var(--dropdown-menu-padding);
-    border: 1px solid #dfe3e8;
+    border: 1px solid #dbdee3;
     border-radius: var(--dropdown-menu-radius);
     background: #ffffff;
     box-shadow: var(--dropdown-menu-shadow);

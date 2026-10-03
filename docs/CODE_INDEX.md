@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
 | [kanban](../kanban) | 19 | 39 | 10 | 100 |
 | [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 20 | 6 | 8 | 113 |
+| [dashboard](../dashboard) | 20 | 6 | 8 | 116 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -1606,6 +1606,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### css
 
+- [static/css/base/fonts.css](../static/css/base/fonts.css)
 - [static/css/base/reset.css](../static/css/base/reset.css)
 - [static/css/base/variables.css](../static/css/base/variables.css)
 - [static/css/calendar.css](../static/css/calendar.css)
@@ -1933,7 +1934,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_notifications.py](../dashboard/test_notifications.py).
 
-- `NotificationCenterTests`: 23 metod testowych.
+- `NotificationCenterTests`: 26 metod testowych.
 
 ### dashboard/test_overview.py
 

@@ -609,8 +609,9 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
 - **Ustawienia:** centrum linków do profilu, kont, Workspace, pól projektów
   i preferencji dostępnych na ekranie.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
-- **Powiadomienia:** centrum zaproszeń oraz aktywności Zadań i Kanbana,
+- **Powiadomienia:** centrum zaproszeń, przypomnień oraz komentarzy Zadań i Kanbana,
   z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
+  Historia utworzenia i zmian obiektów nie trafia do powiadomień, także obserwujących.
 
 Podsumowanie z [overview.py](../dashboard/overview.py) liczy główne zadania
 i karty, bez podzadań/podkart. Zamknięcie oznacza status `closed`; `resolved`
@@ -634,7 +635,7 @@ Zaproszenia czekają na decyzję także po odczytaniu. Centrum obejmuje dostępn
 Workspace; link określa przestrzeń konkretnego zadania/karty. Licznik odświeża
 się co 30 sekund w widocznej karcie. Szczegóły uprawnień, paginacji i zbiorczego
 odczytu: [Mechanizmy](MECHANISMS.md#11-historia-a-powiadomienia).
-Zakładki „Wzmianki” i „Obserwowane” pokazują nowe aktywności kierowane do
+Zakładki „Wzmianki” i „Obserwowane” pokazują nowe komentarze kierowane do
 użytkownika przez `@Imię Nazwisko` lub osobistą subskrypcję. Ten sam wpis zachowuje
 wspólny stan we wszystkich filtrach. Wyłączenie obserwowania zatrzymuje nowe
 dostawy, zachowując już otrzymane.

@@ -138,8 +138,11 @@ class TaskIdentityTests(TestCase):
         for app, model in MODULES:
             for workspace in [self.first, self.second]:
                 item = model.objects.create(user=self.user, workplace=workspace, title=f'{app}-{workspace.pk}')
+                item.activities.create(actor=self.user, kind='comment', action='commented', message='Komentarz')
                 expected[item.title] = (item.pk, workspace)
-        for notification in _dashboard_notifications(self.user):
+        notifications = _dashboard_notifications(self.user)
+        self.assertEqual(len(notifications), len(expected))
+        for notification in notifications:
             key, workspace = expected[notification['title']]
             self.client.get(scoped_workplace_app_path(self.first, 'calendar'))
             response = self.client.get(notification['url'], follow=True)

@@ -28,9 +28,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}ancore{% endblock %}</title>
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'img/favicon-ancore-large.png' %}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin-ext.woff2' %}" as="font" type="font/woff2" crossorigin>
     {% include 'core/includes/bootstrap.html' %}
     <script>
         (function () {
@@ -67,7 +66,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-sidebar-mobile-shadow">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-border-visibility-2pct">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261003-sidebar-avatars-21px">
     {% block extra_head %}{% endblock %}
 </head>

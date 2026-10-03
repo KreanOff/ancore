@@ -6,7 +6,7 @@
     --bg-main: #ffffff;
     --chrome-bg: #f7f6f4;
     --chrome-bg-soft: #faf9f7;
-    --chrome-border: #e9e6e2;
+    --chrome-border: #e4e1dd;
     --secondary-menu-bg: #FBFBFC;
     --sidebar-bg: var(--secondary-menu-bg);
     --text-primary: #40444C;
@@ -38,7 +38,7 @@
     --text-main: var(--text-primary);
     --text-strong: var(--text-primary);
     --text-muted: var(--text-primary);
-    --border-color: #ece9e5;
+    --border-color: #e7e4e0;
     --card-bg: #ffffff;
     --panel-bg: #f7f6f4;
     --surface-hover: #f2efeb;
@@ -65,8 +65,8 @@
     --control-height: 32px;
     --checkbox-size: 18px;
     --checkbox-bg: #ffffff;
-    --checkbox-border-color: #cfcac4;
-    --checkbox-hover-border-color: #a99f97;
+    --checkbox-border-color: #cbc6c0;
+    --checkbox-hover-border-color: #a69c94;
     --checkbox-checked-color: var(--system-accent);
     --checkbox-focus-ring: none;
     --icon-check-white: url("../../vendor/flaticon/check-white.svg");
@@ -93,6 +93,7 @@
     --dropdown-menu-shadow: 0 16px 36px rgba(63, 59, 56, 0.12);
     --modal-scrim-bg: rgba(20, 23, 29, 0.24);
     --modal-scrim-filter: blur(1px);
+    --font-family-ui: 'Atlassian Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     --font-size-sm: 13px;
     --font-size-base: 14px;
     --font-size-lg: 15px;

@@ -121,8 +121,9 @@ class DashboardViewTests(TestCase):
         TaskActivity.objects.create(
             task=Task.objects.create(user=user, title='Powiadomienie w panelu'),
             actor=user,
-            action='created',
-            message='utworzył zadanie',
+            kind='comment',
+            action='commented',
+            message='Komentarz w panelu',
         )
         self.client.force_login(user)
 
@@ -138,7 +139,7 @@ class DashboardViewTests(TestCase):
         self.assertIn('Powiadomienie w panelu', payload['html'])
         self.assertEqual(response['Cache-Control'], 'no-store')
 
-    def test_dashboard_notifications_include_task_and_kanban_activity(self):
+    def test_dashboard_notifications_include_task_and_kanban_comments(self):
         user = get_user_model().objects.create_user(
             username='dashboard-user',
             email='dashboard-user@example.com',
@@ -155,27 +156,22 @@ class DashboardViewTests(TestCase):
         TaskActivity.objects.create(
             task=task,
             actor=user,
-            action='updated',
-            message='zaktualizował zadanie',
-            metadata={
-                'changes': [{
-                    'field': 'status',
-                    'from_label': 'Ponownie otwarte',
-                    'to_label': 'Rozwiązane',
-                }],
-            },
+            kind='comment',
+            action='commented',
+            message='Komentarz do zadania',
         )
         kanban_card = Kanban.objects.create(user=user, title='Karta z Kanban')
-        Task.objects.create(user=other_user, title='Zadanie innej osoby')
+        kanban_card.activities.create(actor=user, kind='comment', action='commented', message='Komentarz do karty')
+        foreign = Task.objects.create(user=other_user, title='Zadanie innej osoby')
+        foreign.activities.create(actor=other_user, kind='comment', action='commented', message='Obcy komentarz')
 
         notifications = _dashboard_notifications(user)
         task_notification = next(
             notification
             for notification in notifications
-            if notification['object_id'] == task.task_id
-            and any(line['label'] == 'Status' for line in notification['detail_lines'])
+            if notification['source'] == 'tasks' and notification['object_id'] == task.task_id
         )
-        kanban_notification = next(notification for notification in notifications if notification['object_id'] == kanban_card.task_id)
+        kanban_notification = next(notification for notification in notifications if notification['source'] == 'kanban' and notification['object_id'] == kanban_card.task_id)
 
         self.assertEqual(task_notification['source'], 'tasks')
         self.assertEqual(task_notification['source_label'], 'Zadania')

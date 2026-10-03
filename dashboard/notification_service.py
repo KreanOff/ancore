@@ -1,4 +1,4 @@
-"""Permission-scoped, paginated inbox built from existing activity and invitations."""
+"""Permission-scoped inbox of comments, invitations and personal reminders."""
 from datetime import datetime, timedelta
 from itertools import islice
 
@@ -156,8 +156,9 @@ def notification_sources(user, workspace='', *, include_deleted=False):
     )
     sources = {
         'workplace': pending_invitations_for_user(user),
-        'tasks': visible_to(TaskActivity.objects.all(), user).filter(access),
-        'kanban': visible_to(KanbanActivity.objects.all(), user).filter(access),
+        # System activity remains in object history, never in the inbox.
+        'tasks': visible_to(TaskActivity.objects.filter(kind='comment'), user).filter(access),
+        'kanban': visible_to(KanbanActivity.objects.filter(kind='comment'), user).filter(access),
         'reminders': reminders_for_user(user),
     }
     for source, queryset in sources.items():
