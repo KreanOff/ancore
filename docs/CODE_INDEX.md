@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 18 | 3 | 20 | 51 |
+| [spaces](../spaces) | 18 | 3 | 21 | 54 |
 
 ## 2. Modele i relacje
 
@@ -1557,6 +1557,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/sidebar_picker.html](../spaces/templates/spaces/sidebar_picker.html)
 - [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
 - [spaces/templates/spaces/teams.html](../spaces/templates/spaces/teams.html)
+- [spaces/templates/spaces/template_picker.html](../spaces/templates/spaces/template_picker.html)
 
 ## 7. Zasoby frontendowe
 
@@ -1646,6 +1647,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/img/space-avatars/PROMPT.txt](../static/img/space-avatars/PROMPT.txt)
 - [static/img/space-avatars/illustrations-extra-v1.png](../static/img/space-avatars/illustrations-extra-v1.png)
 - [static/img/space-avatars/illustrations-v1.png](../static/img/space-avatars/illustrations-v1.png)
+- [static/img/space-templates/kanban.svg](../static/img/space-templates/kanban.svg)
+- [static/img/space-templates/marketing.svg](../static/img/space-templates/marketing.svg)
+- [static/img/space-templates/recruitment.svg](../static/img/space-templates/recruitment.svg)
+- [static/img/space-templates/scrum.svg](../static/img/space-templates/scrum.svg)
+- [static/img/space-templates/service.svg](../static/img/space-templates/service.svg)
+- [static/img/space-templates/tasks.svg](../static/img/space-templates/tasks.svg)
 - [static/img/user-avatars/PROMPT-extra.txt](../static/img/user-avatars/PROMPT-extra.txt)
 - [static/img/user-avatars/PROMPT.txt](../static/img/user-avatars/PROMPT.txt)
 - [static/img/user-avatars/illustrations-extra-v1.png](../static/img/user-avatars/illustrations-extra-v1.png)
@@ -2060,7 +2067,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [spaces/tests.py](../spaces/tests.py).
 
-- `SpaceTests`: 30 metod testowych.
+- `SpaceTests`: 33 metod testowych.
 - `ImportTests`: 1 metod testowych.
 
 ## 9. Migracje obecne lokalnie

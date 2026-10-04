@@ -9,7 +9,7 @@ from django.test import Client, TestCase
 from tasks.models import Task, TaskActivity, TaskProject, TaskProjectMembership, TaskSection, TaskSectionMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
-from .defaults import template_settings
+from .defaults import TEMPLATES, template_settings
 from .models import LegacyKanbanLink, Space, Sprint, Team, TeamMembership, WorkItem
 
 
@@ -141,6 +141,48 @@ class SpaceTests(TestCase):
                 self.assertContains(response, 'Szkic przestrzeni', status_code=400)
                 self.assertContains(response, 'Produkt', status_code=400)
         self.assertFalse(TaskProject.objects.filter(name='Szkic przestrzeni').exists())
+
+    def test_template_picker_is_only_used_when_creating_spaces(self):
+        for suffix in ('create/', 'manage/create/'):
+            response = self.client.get(self.url(suffix), HTTP_X_WORK_MODAL='true')
+            self.assertEqual(response.status_code, 200)
+            html = response.json()['html']
+            for key, template in TEMPLATES.items():
+                self.assertIn(f'data-space-template="{key}"', html)
+                self.assertIn(template['description'], html)
+            self.assertIn('data-space-fields disabled', html)
+            self.assertIn('data-space-create hidden', html)
+        response = self.client.get(self.url(f'{self.space.pk}/edit/'), HTTP_X_WORK_MODAL='true')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('data-space-wizard', response.json()['html'])
+        self.assertIn('<select name="template"', response.json()['html'])
+
+    def test_each_template_creates_its_matching_configuration(self):
+        for number, (key, template) in enumerate(TEMPLATES.items()):
+            with self.subTest(template=key):
+                payload = {'name': f'Przestrzeń {key}', 'key': f'TPL{number}', 'kind': template['kind'], 'template': key, 'management': 'team', 'visibility': 'private'}
+                response = self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true')
+                self.assertTrue(response.json()['saved'])
+                space = Space.objects.get(workplace=self.workspace, key=payload['key'])
+                self.assertEqual(space.template, key)
+                self.assertEqual(space.kind, template['kind'])
+                self.assertEqual(space.configuration.settings, template_settings(key))
+                self.assertEqual(space.project.private_owner, self.owner)
+
+    def test_template_error_keeps_selection_and_space_details(self):
+        payload = {'name': 'Szkic rekrutacji', 'key': '!', 'kind': 'business', 'template': 'recruitment', 'management': 'team', 'visibility': 'private'}
+        response = self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true')
+        self.assertEqual(response.status_code, 400)
+        html = response.json()['html']
+        self.assertIn('value="Szkic rekrutacji"', html)
+        self.assertIn('value="recruitment"', html)
+        self.assertIn('data-space-template-picker hidden', html)
+        self.assertNotIn('data-space-fields disabled', html)
+        payload.update(template='unknown')
+        response = self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('data-space-fields disabled', response.json()['html'])
+        self.assertFalse(TaskProject.objects.filter(name=payload['name']).exists())
 
     def test_member_cannot_create_organization_managed_space(self):
         self.client.force_login(self.member)

@@ -231,6 +231,34 @@
     syncManagementReturnLinks();
     saveManagementReturn(sidebar?.dataset.sidebarMode, managementReturn);
 
+    function syncSidebarSpaces(nextSidebar) {
+        const current = sidebar.querySelector('#sidebar-spaces-subnav');
+        const next = nextSidebar.querySelector('#sidebar-spaces-subnav');
+        if (!current || !next) return;
+
+        const focused = document.activeElement;
+        const hadFocus = current.contains(focused);
+        const links = new Map(Array.from(current.querySelectorAll('a[href]'), link => [link.getAttribute('href'), link]));
+        const more = current.querySelector('[data-sidebar-space-picker-toggle]');
+
+        // Keep the group and its collapsed state; reconcile the server's current list.
+        current.replaceChildren(...Array.from(next.children, child => {
+            if (child.matches('[data-sidebar-space-picker-toggle]') && more) return more;
+            const existing = child.matches('a[href]') && links.get(child.getAttribute('href'));
+            if (!existing) return child.cloneNode(true);
+            copyAttributes(child, existing);
+            existing.replaceChildren(...Array.from(child.childNodes, node => node.cloneNode(true)));
+            return existing;
+        }));
+        window.AncoreIcons?.render(current);
+        if (hadFocus) {
+            (current.contains(focused) ? focused : current.closest('[data-sidebar-group]').querySelector('[data-sidebar-group-toggle]'))?.focus({ preventScroll: true });
+        }
+        if (sidebarCollapsedFlyoutTrigger?.closest('[data-sidebar-group="spaces"]')) {
+            closeCollapsedSidebarFlyout({ restoreFocus: sidebarCollapsedFlyout.contains(document.activeElement) });
+        }
+    }
+
     function syncSidebarState(nextDocument) {
         const nextSidebar = nextDocument.querySelector('#app-sidebar');
         const focusedNavigation = document.activeElement?.closest('[data-sidebar-navigation]');
@@ -243,6 +271,7 @@
                 const nextNavigation = nextSidebar.querySelector(`[data-sidebar-navigation="${navigation.dataset.sidebarNavigation}"]`);
                 if (nextNavigation) navigation.hidden = nextNavigation.hidden;
             });
+            syncSidebarSpaces(nextSidebar);
         }
         const picker = document.querySelector('[data-space-picker]');
         const nextPicker = nextDocument.querySelector('[data-space-picker]');
@@ -280,6 +309,7 @@
         });
 
         syncFavoriteActiveStates();
+        if (sidebarSearchInput?.value) applySidebarSearch();
         if (focusedNavigation?.hidden) {
             const heading = document.querySelector('.main-content h1');
             heading?.setAttribute('tabindex', '-1');
@@ -2177,13 +2207,13 @@
         backdrop.addEventListener('click', closeSidebar);
     }
 
-    sidebar.querySelectorAll('a.nav-link, a[data-sidebar-group-action], button.nav-link:not([data-sidebar-group-toggle]):not([data-sidebar-space-picker-toggle])').forEach(function (link) {
-        link.addEventListener('click', function () {
-            setSidebarSearchOpen(false);
-            if (isOverlayMode()) {
-                closeSidebar();
-            }
-        });
+    sidebar.addEventListener('click', function (event) {
+        const link = event.target.closest('a.nav-link, a[data-sidebar-group-action], button.nav-link:not([data-sidebar-group-toggle]):not([data-sidebar-space-picker-toggle])');
+        if (!link || !sidebar.contains(link)) return;
+        setSidebarSearchOpen(false);
+        if (isOverlayMode()) {
+            closeSidebar();
+        }
     });
 
     document.addEventListener('keydown', function (e) {

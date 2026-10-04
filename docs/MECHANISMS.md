@@ -722,7 +722,12 @@ użytkownika i pozostają domyślnie nieprzeczytane również dla właściciela.
 5. Aktualizuje tytuł, historię, przewijanie i ikony, a następnie wysyła
    `ancore:content-loaded`. Wstecz/Dalej także podmienia treść. Odrzucenie wyjścia
    z niezapisanego zadania przywraca pozycję historii i zachowuje formularz.
-6. Boczne menu i dokument przeglądarki pozostają na miejscu. Pobieranie oznacza
+6. Boczne menu i dokument przeglądarki pozostają na miejscu. Lista przestrzeni
+   w menu jest synchronizowana z odpowiedzią serwera: nowe linki są dodawane,
+   nieobecne usuwane, a nazwy, awatary i kolejność aktualizowane. Grupa zachowuje
+   stan zwinięcia; istniejące linki i przycisk „Więcej przestrzeni” zachowują
+   swoje elementy. Delegowana obsługa kliknięć zamyka menu na telefonie także
+   dla nowych linków. Pobieranie oznacza
    `.main-content` przez `aria-busy`. `requestContentLoading()` po 180 ms pokazuje
    szkielet wyłącznie nad treścią i wyłącza zasłonięty kontener przez `inert`.
    Zakończenie bieżącego żądania usuwa szkielet, timer i tymczasowy stan kontenera;

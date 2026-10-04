@@ -65,6 +65,17 @@ class SpaceForm(StyledForm):
         if space:
             kwargs['initial'] = {'name': space.project.name, 'description': space.project.description, 'key': space.key, 'kind': space.kind, 'template': space.template, 'management': space.management, 'configuration': space.configuration_id if space.configuration.shared else None, 'visibility': space.project.visibility}
         super().__init__(*args, **kwargs)
+        if not space:
+            self.template_options = [
+                {'key': key, **template, 'kind_label': dict(KINDS)[template['kind']]}
+                for key, template in TEMPLATES.items()
+            ]
+            self.selected_template = next(
+                (template for template in self.template_options if template['key'] == self['template'].value()),
+                None,
+            )
+            self.fields['kind'].widget = forms.HiddenInput()
+            self.fields['template'].widget = forms.HiddenInput()
         self.fields['configuration'].queryset = SpaceConfiguration.objects.filter(workplace=request.workplace, shared=True)
         if not space and not can_manage_team(request.user, request.workplace):
             self.fields['management'].choices = [MANAGEMENT[0]]

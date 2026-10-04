@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200" fill="none">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="360" y2="200" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF1F6"/><stop offset="1" stop-color="#F7F6F4"/></linearGradient><linearGradient id="accent" x1="0" y1="0" x2="120" y2="100" gradientUnits="userSpaceOnUse"><stop stop-color="#ED87AD"/><stop offset="1" stop-color="#CF4E86"/></linearGradient><filter id="shadow" x="-40%" y="-40%" width="180%" height="200%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#40444C" flood-opacity=".10"/></filter></defs>
+<path fill="url(#bg)" d="M0 0h360v200H0z"/><circle cx="288" cy="44" r="68" fill="#FADDE9" opacity=".65"/><circle cx="64" cy="169" r="56" fill="#F8E5ED" opacity=".55"/>
+
+<g filter="url(#shadow)"><rect x="49" y="37" width="262" height="133" rx="9" fill="white"/><path d="M49 61h262" stroke="#E7ECEE"/><rect x="63" y="47" width="68" height="5" rx="2.5" fill="#CEDBDF"/><circle cx="285" cy="49" r="5" fill="#FADDE9"/>
+<rect x="63" y="74" width="68" height="80" rx="6" fill="#F2F5F6"/><rect x="229" y="74" width="68" height="80" rx="6" fill="#F2F5F6"/>
+<circle cx="97" cy="97" r="11" fill="#C5D9DE"/><path d="M79 122c0-16 36-16 36 0" fill="#C5D9DE"/><path d="M79 137h36m-28 7h20" stroke="#D2DDE1" stroke-width="3" stroke-linecap="round"/>
+<circle cx="263" cy="97" r="11" fill="#C5D9DE"/><path d="M245 122c0-16 36-16 36 0" fill="#C5D9DE"/><path d="M245 137h36m-28 7h20" stroke="#D2DDE1" stroke-width="3" stroke-linecap="round"/></g>
+<g transform="rotate(-4 180 112)" filter="url(#shadow)"><rect x="137" y="65" width="86" height="99" rx="8" fill="url(#accent)"/><circle cx="180" cy="93" r="13" fill="#FFF1F6"/><path d="M157 123c0-22 46-22 46 0" fill="#FFF1F6"/><path d="M157 139h46m-35 9h24" stroke="white" stroke-width="3" stroke-linecap="round" opacity=".8"/></g>
+<circle cx="222" cy="151" r="16" fill="#40444C" filter="url(#shadow)"/><path d="m215 151 5 5 9-10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="m174 37 5-8 4 8m140 90v9m-5-4h10m-279 8 3 5 5-3" stroke="#ED87AD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

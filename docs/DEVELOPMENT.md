@@ -35,6 +35,22 @@ po powrocie, historię Wstecz/Dalej, zwinięty pasek oraz menu na telefonie,
 Ustawienia jako ekran referencyjny, edycję/zapis, błędy kreatora, anulowanie,
 wyszukiwanie/pusty wynik, pusty Workspace, ponowne wejście i desktop/telefon.
 
+Dwukrokowy kreator sprawdzają także testy `SpaceTests.test_template_picker_is_only_used_when_creating_spaces`,
+`test_each_template_creates_its_matching_configuration` i
+`test_template_error_keeps_selection_and_space_details` (tworzenie i edycja,
+sześć konfiguracji, zachowanie szkicu i nieznany szablon). Browser QA:
+brak dostępnych pól/zapisu przed wyborem, każdy kafelek, Enter/Spacja,
+automatyczny rodzaj, cofnięcie i zmiana szablonu bez utraty danych,
+błąd walidacji/sieci i ponowienie, zapis, Escape/powrót fokusu,
+zwykłe/scoped adresy, tworzenie z zarządzania i plusa w menu,
+pusty katalog, częściowa nawigacja oraz desktop/tablet/telefon.
+Po zapisie sprawdź także natychmiastowe pojawienie się nowego linku w menu
+bocznym bez przeładowania dokumentu, jego nazwę/awatar i aktywność. Przy więcej
+niż sześciu przestrzeniach sprawdź limit i kolejność ulubionych/najnowszych,
+usunięcie nieobecnych linków po aktualizacji danych, zachowanie zwinięcia,
+panel skrótów i „Więcej przestrzeni” oraz zamknięcie menu na telefonie po
+wybraniu nowej pozycji.
+
 Centrum `/settings/` sprawdzaj razem z `dashboard.tests.DashboardViewTests`.
 Browser QA: wejście z codziennego katalogu i zarządzania przestrzeniami,
 zastąpienie głównego paska kategoriami ustawień, wybór każdej kategorii,

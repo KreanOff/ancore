@@ -82,6 +82,11 @@ W katalogu odstęp między awatarem a nazwą przestrzeni wynosi 8px.
 Include `spaces/avatar.html` rozszerza wspólny `profile-avatar`; globalny
 `space-avatars.css` zapewnia jego wygląd również poza modułem Przestrzeni.
 Zapis odświeża awatar w menu przy częściowej nawigacji.
+Przy każdej częściowej nawigacji `layout.js` synchronizuje całe podmenu
+przestrzeni z HTML serwera: dodaje nowe pozycje, usuwa nieobecne, aktualizuje
+nazwy, awatary i kolejność. Nowo utworzona przestrzeń pojawia się od razu po
+zapisie, bez ręcznego odświeżenia. Grupa, stan zwinięcia i „Więcej przestrzeni”
+pozostają zachowane; nowy link także zamyka menu na telefonie po wyborze.
 
 Osoby zarządzające przestrzenią klikają jej awatar lub „Zmień awatar”
 w ustawieniach. Okno korzysta z `app-modal-panel--compact`, standardowej
@@ -153,6 +158,23 @@ zwijanie działa wewnątrz otwartego menu, a wybór akcji nawigacyjnej je zamyka
 `spaces/form.html` korzysta z `AncoreTaskModals`, wspólnych klas formularza,
 ikon i `AncoreCustomSelect`. `spaces.js` obsługuje fokus, Escape, ostrzeżenie
 o szkicu, błędy zapisu, inert tła i ponowne wejście przez `ancore:content-loaded`.
+Tworzenie przestrzeni ma dwa kroki w tym samym oknie. Najpierw
+`spaces/template_picker.html` pokazuje sześć przycisków-kafelków z opisami
+oraz lokalnymi ilustracjami SVG w `static/img/space-templates/`. Każda ilustracja
+ma własny kolor akcentu i dopasowane jasne tło: Kanban — niebieski, Scrum —
+fioletowy, Zarządzanie zadaniami — zielony, Marketing — pomarańczowy,
+Rekrutacja — różowy, Obsługa zgłoszeń — turkusowy. Ten sam plik jest używany
+w podsumowaniu wyboru w drugim kroku. Kolory ilustracji są dekoracyjne;
+kontrolki i zaznaczenie zachowują wspólny akcent aplikacji. Wariant
+`work-template-card` rozszerza `work-space-card`; siatka ma trzy kolumny na
+desktopie, dwie na tablecie i jedną na telefonie. Enter/Spacja wybierają
+szablon i przenoszą fokus do nazwy. Rodzaj przestrzeni wynika z szablonu.
+Pola danych pozostają ukryte i wyłączone przed wyborem; przycisk tworzenia
+jest widoczny tylko w drugim kroku. Podsumowanie pokazuje ilustrację, szablon
+i rodzaj. „Zmień szablon” wraca do kafelków bez kasowania danych i przywraca
+fokus do wybranego kafelka. Błędy zapisu zachowują drugi krok, wybór i szkic;
+nieznany szablon wraca do pierwszego kroku z błędem. Edycja istniejącej
+przestrzeni oraz inne formularze nadal używają dotychczasowego układu.
 Kreator przestrzeni otwierany bezpośrednio przez URL pokazuje modal nad pełnym
 katalogiem (`spaces/index.html`), tak jak formularze Zasobów. Po zamknięciu
 `data-work-directory-url` przywraca adres katalogu bez przeładowania i bez

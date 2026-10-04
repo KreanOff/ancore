@@ -105,6 +105,37 @@
 .work-modal .documents-field input[type=checkbox] { width: 16px; height: 16px; min-height: 16px; padding: 0; justify-self: start; }
 .work-modal select[multiple] { min-height: 90px; }
 .work-modal .resources-form-wide { grid-column: 1 / -1; }
+/* Two-step space creation keeps the shared modal and form controls. */
+.work-modal [hidden] { display: none; }
+.work-modal .tasks-modal__footer .tasks-modal__submit[hidden] { display: none; }
+.work-template-picker, .work-space-details { min-width: 0; width: 100%; max-width: 1160px; margin-inline: auto; }
+.work-template-picker > .work-caption, .work-space-details > .work-caption { margin: 0 0 8px; }
+.work-template-picker h3, .work-space-details h3 { margin: 0 0 12px; font-size: 20px; line-height: 1.4; }
+.work-template-intro { margin: 0 0 28px; font-size: var(--font-size-base); line-height: 1.6; }
+.work-template-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.work-template-card { width: 100%; padding: 0; gap: 0; overflow: hidden; text-align: left; color: var(--text-primary); font: inherit; cursor: pointer; transition: border-color .15s, background .15s; }
+.work-template-card:hover { border-color: var(--system-interaction); background: var(--secondary-menu-bg); }
+.work-template-card:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 3px; }
+.work-template-card[aria-pressed=true] { border-color: var(--system-accent); box-shadow: inset 0 0 0 1px var(--system-accent); }
+.work-template-art { display: block; width: 100%; height: auto; aspect-ratio: 360 / 200; object-fit: contain; }
+.work-template-copy { display: flex; flex-direction: column; flex: 1; gap: 10px; padding: 20px; }
+.work-template-description { flex: 1; min-height: 42px; font-size: var(--font-size-sm); line-height: 1.6; }
+.work-template-link { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: var(--font-size-sm); }
+.work-template-link [data-icon] { width: 16px; height: 16px; }
+.work-template-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 24px 0; padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--secondary-menu-bg); }
+.work-template-summary > img { width: 108px; height: 60px; object-fit: contain; border-radius: var(--radius); flex-shrink: 0; }
+.work-template-summary > div { display: grid; flex: 1; min-width: 140px; gap: 4px; }
+.work-space-fields { min-width: 0; margin: 0; padding: 0; border: 0; }
+@media (max-width: 1099px) {
+    .work-template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    .work-template-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .work-template-intro { margin-bottom: 20px; }
+    .work-template-copy { padding: 16px; }
+    .work-template-summary { gap: 12px; padding: 12px; }
+    .work-template-summary > img { width: 90px; height: 50px; }
+}
 .work-configuration { display: grid; gap: 20px; }
 .work-configuration-row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 14px; border-top: 1px solid var(--border-color); padding: 16px 0; }
 .work-configuration-row .tasks-form-field { flex: 1 1 140px; min-width: 0; }

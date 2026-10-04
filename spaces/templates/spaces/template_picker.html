@@ -1,0 +1,41 @@
+{% load static %}
+{{ modal.form.kind }}{{ modal.form.template }}
+<section class="work-template-picker resources-form-wide" data-space-template-picker{% if modal.form.selected_template %} hidden{% endif %} aria-labelledby="space-template-heading">
+    <p class="work-caption">Krok 1 z 2 · Szablon przestrzeni</p>
+    <h3 id="space-template-heading" tabindex="-1">Wybierz sposób pracy swojego zespołu</h3>
+    <p class="work-template-intro">Zacznij od szablonu. W następnym kroku uzupełnisz nazwę i pozostałe dane przestrzeni.</p>
+    {% if modal.form.template.errors %}<div class="tasks-modal__errors" role="alert">{{ modal.form.template.errors }}</div>{% endif %}
+    <div class="work-template-grid">
+        {% for template in modal.form.template_options %}
+        <button type="button" class="work-space-card work-template-card" data-space-template="{{ template.key }}" data-space-kind="{{ template.kind }}" aria-label="Wybierz szablon: {{ template.label }}" aria-describedby="space-template-description-{{ template.key }}" aria-pressed="{% if modal.form.selected_template.key == template.key %}true{% else %}false{% endif %}">
+            {% with illustration='img/space-templates/'|add:template.key|add:'.svg' %}<img class="work-template-art" src="{% static illustration %}" width="360" height="200" alt="" aria-hidden="true">{% endwith %}
+            <span class="work-template-copy">
+                <span class="work-caption">{{ template.kind_label }}</span>
+                <span class="work-card-title" data-space-template-label>{{ template.label }}</span>
+                <span class="work-template-description" id="space-template-description-{{ template.key }}">{{ template.description }}</span>
+                <span class="work-template-link" aria-hidden="true">Wybierz szablon <i data-icon="arrow-right"></i></span>
+            </span>
+        </button>
+        {% endfor %}
+    </div>
+</section>
+<section class="work-space-details resources-form-wide" data-space-details{% if not modal.form.selected_template %} hidden{% endif %} aria-labelledby="space-details-heading">
+    <p class="work-caption">Krok 2 z 2 · Dane przestrzeni</p>
+    <h3 id="space-details-heading">Skonfiguruj swoją przestrzeń</h3>
+    <div class="work-template-summary">
+        <img{% if modal.form.selected_template %}{% with illustration='img/space-templates/'|add:modal.form.selected_template.key|add:'.svg' %} src="{% static illustration %}"{% endwith %}{% endif %} width="108" height="60" alt="" data-space-selected-art{% if not modal.form.selected_template %} hidden{% endif %}>
+        <div><span class="work-caption">Wybrany szablon</span><span class="work-card-title" data-space-selected-label>{{ modal.form.selected_template.label }}</span><span class="work-caption" data-space-selected-kind>{{ modal.form.selected_template.kind_label }}</span></div>
+        <button type="button" class="btn btn-secondary" data-space-change-template>Zmień szablon</button>
+    </div>
+    {% if modal.form.kind.errors %}<div class="tasks-modal__errors" role="alert">{{ modal.form.kind.errors }}</div>{% endif %}
+    {% if modal.form.template.errors %}<div class="tasks-modal__errors" role="alert">{{ modal.form.template.errors }}</div>{% endif %}
+    <fieldset class="documents-form resources-form tasks-project-heading-fields work-space-fields" data-space-fields{% if not modal.form.selected_template %} disabled{% endif %}>
+        <legend class="u-sr-only">Dane nowej przestrzeni</legend>
+        {% for field in modal.form %}{% if not field.is_hidden %}
+        <div class="documents-field tasks-form-field{% if field.name == 'name' or field.name == 'description' %} resources-form-wide{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>
+            {{ field }}{% if field.help_text %}<small id="{{ field.auto_id }}_helptext">{{ field.help_text }}</small>{% endif %}{% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}
+        </div>
+        {% endif %}{% endfor %}
+    </fieldset>
+</section>

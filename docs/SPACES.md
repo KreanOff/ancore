@@ -5,6 +5,11 @@
 „Przestrzenie” (`/spaces/` i scoped odpowiednik) jest katalogiem do codziennej
 pracy: wszystkie dostępne przestrzenie, ulubione, prywatne, rodzaj, wyszukiwanie
 i liczba widocznych zadań. Nazwa otwiera przegląd przestrzeni.
+Podmenu głównej nawigacji pokazuje do sześciu dostępnych przestrzeni,
+najpierw ulubione, potem najnowsze. Częściowa nawigacja odświeża linki z
+odpowiedzi serwera, więc utworzenie przestrzeni nie wymaga ręcznego przeładowania
+strony. Ten sam mechanizm aktualizuje nazwy, awatary i pozycje po zmianie
+ulubionych lub utracie dostępu, zachowując stan zwinięcia sekcji.
 
 „Zarządzaj przestrzeniami” (`/spaces/manage/` i scoped odpowiednik) to osobny
 ekran ustawień, dostępny z menu „…” przy Przestrzeniach oraz z Ustawień Ancore.
@@ -41,6 +46,21 @@ formularza oraz powłoki modalnej. Bezpośrednie wejście i błąd walidacji
 pozostawiają ekran zarządzania pod modalem; anulowanie i zapis wracają do
 niego. Tworzenie z codziennego katalogu zachowuje dotychczasowy przepływ.
 Nie powstają nowe modele ani kopie przestrzeni.
+
+## Tworzenie przestrzeni i wybór szablonu
+
+„Utwórz przestrzeń” w katalogu, zarządzaniu oraz plus w menu bocznym otwierają
+ten sam kreator. Pierwszy krok to ilustrowane kafelki wszystkich sześciu
+szablonów z `spaces/defaults.py`: Kanban, Scrum, Zarządzanie zadaniami,
+Marketing, Rekrutacja i Obsługa zgłoszeń. Wybranie kafelka otwiera drugi krok
+z nazwą, kluczem, opisem, sposobem zarządzania, wspólną konfiguracją
+i widocznością. Rodzaj przestrzeni jest automatycznie ustalany na podstawie
+szablonu; oba identyfikatory pozostają walidowanymi polami formularza.
+„Zmień szablon” zachowuje wpisane dane. Błąd formularza także zachowuje wybór
+i drugi krok, a nieznany szablon ponownie pokazuje kafelki z komunikatem.
+Przejście pomiędzy krokami nie zapisuje niczego w bazie. Dopiero końcowe
+„Utwórz przestrzeń” używa istniejącej transakcji i konfiguracji szablonu.
+Edycja istniejącej przestrzeni nie udostępnia zmiany szablonu.
 
 ## Szybkie wyszukiwanie przestrzeni
 

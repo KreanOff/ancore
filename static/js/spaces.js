@@ -34,17 +34,42 @@
             if (!await window.AncoreApp?.navigate(url, { replace: true })) window.location.href = url;
         }
         function configureWizard() {
-            const kind = host.querySelector('[name=kind]'), template = host.querySelector('[name=template]');
-            if (!kind || !template || kind.disabled) return;
-            const kinds = { scrum: 'software', kanban: 'software', tasks: 'business', marketing: 'business', recruitment: 'business', service: 'service' };
-            const templates = [...template.options].map(option => option.cloneNode(true));
-            const filter = () => {
-                const selected = template.value;
-                template.replaceChildren(...templates.filter(option => kinds[option.value] === kind.value).map(option => option.cloneNode(true)));
-                if (kinds[selected] === kind.value) template.value = selected;
+            const wizard = host.querySelector('[data-space-wizard]');
+            if (!wizard) return;
+            const kind = wizard.querySelector('[name=kind]'), template = wizard.querySelector('[name=template]');
+            const picker = wizard.querySelector('[data-space-template-picker]');
+            const details = wizard.querySelector('[data-space-details]');
+            const fields = wizard.querySelector('[data-space-fields]');
+            const submit = wizard.querySelector('[data-space-create]');
+            const cards = [...picker.querySelectorAll('[data-space-template]')];
+            function showDetails(show, focus = false) {
+                picker.hidden = show; details.hidden = !show;
+                fields.disabled = !show; submit.hidden = !show;
                 window.AncoreCustomSelect?.refresh(host);
-            };
-            filter(); kind.addEventListener('change', filter, { signal });
+                if (focus) {
+                    wizard.querySelector('.tasks-modal__body').scrollTop = 0;
+                    (show ? fields.querySelector('[name=name]') : cards.find(card => card.dataset.spaceTemplate === template.value) || cards[0])?.focus();
+                }
+            }
+            function selectTemplate(card, focus = false) {
+                template.value = card.dataset.spaceTemplate; kind.value = card.dataset.spaceKind;
+                cards.forEach(option => option.setAttribute('aria-pressed', String(option === card)));
+                const art = wizard.querySelector('[data-space-selected-art]');
+                art.src = card.querySelector('img').src; art.hidden = false;
+                wizard.querySelector('[data-space-selected-label]').textContent = card.querySelector('[data-space-template-label]').textContent;
+                wizard.querySelector('[data-space-selected-kind]').textContent = card.querySelector('.work-caption').textContent;
+                showDetails(true, focus);
+            }
+            const selected = cards.find(card => card.dataset.spaceTemplate === template.value);
+            if (selected) selectTemplate(selected);
+            else showDetails(false);
+            picker.addEventListener('click', event => {
+                const card = event.target.closest('[data-space-template]');
+                if (card && !pending) selectTemplate(card, true);
+            }, { signal });
+            wizard.querySelector('[data-space-change-template]').addEventListener('click', () => {
+                if (!pending) showDetails(false, true);
+            }, { signal });
             const management = host.querySelector('[name=management]'), config = host.querySelector('[name=configuration]');
             const sync = () => { if (management && config) { config.disabled = management.value !== 'company'; if (config.disabled) config.value = ''; window.AncoreCustomSelect?.refresh(host); } };
             management?.addEventListener('change', sync, { signal }); sync();
@@ -109,7 +134,12 @@
             configureAvatarPicker();
             if (!preserve) initial = values();
             window.AncoreIcons?.render(host);
-            window.AncoreTaskModals.open(modal(), host.querySelector('[aria-invalid=true], input:checked') || host.querySelector('input:not([type=hidden])'));
+            const focusTarget = host.querySelector('[aria-invalid=true]:not([type=hidden]):not(:disabled)')
+                || host.querySelector('input:checked:not(:disabled)')
+                || host.querySelector('input:not([type=hidden]):not(:disabled)')
+                || host.querySelector('[data-space-template][aria-pressed=true]')
+                || host.querySelector('[data-space-template]');
+            window.AncoreTaskModals.open(modal(), focusTarget);
             inertBackground();
         }
         document.addEventListener('click', async event => {
@@ -130,6 +160,7 @@
             const form = event.target.closest('[data-work-form]');
             if (!form) return;
             event.preventDefault(); if (pending) return;
+            if (form.querySelector('[data-space-template-picker]:not([hidden])')) return;
             const body = new FormData(form), buttons = [...form.querySelectorAll('button')];
             pending = true; buttons.forEach(button => { button.disabled = true; });
             const errorBox = form.querySelector('[data-work-error]'); errorBox.hidden = true;
