@@ -14,6 +14,14 @@ zastosowanych migracji. Browser QA obejmuje katalog pusty i z danymi,
 kreator/szablony, błędy formularzy, zadanie na liście i tablicy, sprint,
 zespół i powiązania, szeroki/wąski ekran, Escape/fokus i częściową nawigację.
 
+Wyszukiwanie z panelu „Więcej przestrzeni” obejmują testy `SpaceTests.test_space_search_*`:
+zwykłe/scoped adresy, członek/obserwator, cofnięcie dostępu, obcy Workspace,
+nazwa/klucz, limit wyników, escapowanie tekstu i wymóg logowania/GET.
+W przeglądarce sprawdź otwarcie, wpisanie frazy spoza skrótów menu, wybór wyniku,
+link do katalogu, Escape/fokus, kliknięcie poza panelem, brak wyników/błąd,
+ponowne wyszukiwanie po zmianie zapytania, kwadratowe awatary,
+zwinięty sidebar, telefon i ponowne wejście po częściowej nawigacji.
+
 
 ## Wycofanie Tablic Kanban
 

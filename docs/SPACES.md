@@ -1,5 +1,16 @@
 # Przestrzenie i zespoły
 
+## Szybkie wyszukiwanie przestrzeni
+
+„Więcej przestrzeni” w menu bocznym otwiera panel z wyszukiwaniem po nazwie
+lub kluczu i przejściem do pełnego katalogu. Endpoint GET `/spaces/search/`
+oraz jego scoped odpowiednik zwracają do 20 wyników przez `visible_spaces`:
+tylko aktywny Workspace, jego właściciel danych i projekty dostępne aktualnemu
+użytkownikowi. Obserwatorzy również mogą wyszukiwać; przydział wykonawcy nie
+nadaje dostępu. Odpowiedź jest prywatna i nie jest buforowana. Puste zapytanie
+nie zwraca wyników; katalog zachowuje wpisaną frazę. Panel korzysta ze wspólnych
+awatarów, nie pobiera plików poza kontrolowanym endpointem.
+
 ## Awatary przestrzeni
 
 Każda przestrzeń ma awatar widoczny w menu bocznym, katalogu i nagłówku
@@ -63,7 +74,7 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
 ## Dostępne funkcje
 
 - Katalog przestrzeni: lista w stylu projektów i grup, wyszukiwanie, rodzaj,
-  ulubione, prywatne i paginacja. Kolumny pokazują nazwę, klucz, rodzaj,
+  ulubione, prywatne i paginacja. Kolumny pokazują klucz, nazwę, rodzaj,
   szablon, opis i liczbę dostępnych zadań.
 - Kreator: nazwa, klucz, opis, rodzaj, szablon, zarządzanie i widoczność.
 - Rodzaje: programistyczny, biznesowy, obsługowy.

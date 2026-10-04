@@ -19,7 +19,7 @@
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/auth.css?v=20261003-border-visibility-2pct';
-@import 'components/workplaces.css?v=20261003-border-visibility-2pct';
+@import 'components/workplaces.css?v=20261004-page-titles-17';
 @import 'calendar.css?v=20261003-border-visibility-2pct';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
 @import 'components/checkboxes.css?v=20260625-contacts-project-table-match';
@@ -795,7 +795,7 @@ body :where(input, textarea)::placeholder {
     background: #f1f2f4;
 }
 
-.sidebar-workspace-option > span:not(.sidebar-workspace-avatar),
+.sidebar-workspace-option > span:not(.profile-avatar),
 .sidebar-workspace-manage > span {
     min-width: 0;
     flex: 1 1 auto;
@@ -827,6 +827,77 @@ body :where(input, textarea)::placeholder {
     margin-top: 0.15rem;
     border-top: 1px solid #e7e9ec;
     border-radius: 0 0 7px 7px;
+}
+
+/* Space navigation extends the Workspace search and flyout components. */
+.sidebar-spaces-more {
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+.sidebar .sidebar-spaces-more[aria-expanded="true"] {
+    background: var(--system-interaction-soft);
+}
+.sidebar-spaces-more__chevron {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    margin-left: auto;
+}
+.sidebar-space-picker {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    width: min(400px, calc(var(--app-viewport-width) - 16px));
+    max-height: min(480px, calc(var(--app-dynamic-viewport-height) - 16px));
+    padding: 8px;
+    color: var(--text-primary);
+}
+.sidebar-space-picker:not(:popover-open),
+.sidebar-space-picker [hidden] {
+    display: none;
+}
+.sidebar-space-picker .sidebar-collapsed-flyout__header {
+    border-bottom: 0;
+    padding: 0 0 8px 6px;
+}
+.sidebar-space-picker .sidebar-collapsed-flyout__header strong {
+    font-size: 14px;
+    font-weight: 700 !important;
+}
+.sidebar-space-picker .sidebar-workspace-search {
+    margin-bottom: 8px;
+}
+.sidebar-space-picker .sidebar-workspace-search label:focus-within {
+    border-color: var(--system-interaction);
+}
+.sidebar-space-picker .sidebar-workspace-menu__list {
+    flex: 0 1 auto;
+}
+.sidebar-space-picker .sidebar-space-picker__result {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    flex-shrink: 0;
+    gap: 8px;
+    min-height: 36px;
+    padding: 6px 8px;
+}
+.sidebar-space-picker__result > .space-avatar {
+    width: 24px;
+    min-width: 24px;
+    max-width: 24px;
+    height: 24px;
+}
+.sidebar-space-picker .sidebar-workspace-manage {
+    flex-shrink: 0;
+    margin: 4px 0 0;
+    padding-top: 8px;
+    min-height: 42px;
+}
+.sidebar-space-picker :is(a, button):focus-visible {
+    outline: 2px solid var(--system-interaction);
+    outline-offset: -2px;
+    background: var(--system-interaction-soft);
 }
 
 .sidebar-quick-search {

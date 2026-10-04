@@ -1,0 +1,6 @@
+{% for space in results %}
+<a class="sidebar-workspace-option sidebar-space-picker__result" href="{{ space.url }}" title="{{ space.project.name }} · {{ space.key }}">
+    {% include 'spaces/avatar.html' %}<span>{{ space.project.name }}</span>
+</a>
+{% endfor %}
+{% if has_more %}<p class="sidebar-workspace-search__empty">Więcej wyników znajdziesz w katalogu przestrzeni.</p>{% endif %}

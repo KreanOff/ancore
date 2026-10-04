@@ -62,7 +62,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-sidebar-legacy-links">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261004-page-titles-17">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261003-all-avatars-30">
     {% block extra_head %}{% endblock %}
 </head>
@@ -234,8 +234,9 @@
                     </div>
                 </div>
                 {% sidebar_favorite_toggle 'spaces' 'Przestrzenie' 'layers' sidebar_spaces_url %}
-                <div class="sidebar-subnav" id="sidebar-spaces-subnav" data-sidebar-group-label="Przestrzenie" aria-label="Ulubione i ostatnie przestrzenie">
+                <div class="sidebar-subnav sidebar-subnav--extended" id="sidebar-spaces-subnav" data-sidebar-group-label="Przestrzenie" aria-label="Przestrzenie">
                     {% for nav_space in navigation_spaces %}<a href="{{ sidebar_spaces_url }}{{ nav_space.pk }}/" class="nav-link sidebar-subnav-link{% if space.pk == nav_space.pk %} active{% endif %}">{% include 'spaces/avatar.html' with space=nav_space avatar_class='sidebar-subnav-icon' %}<span>{{ nav_space.project.name }}</span></a>{% endfor %}
+                    <button type="button" class="nav-link sidebar-subnav-link sidebar-spaces-more" popovertarget="sidebar-space-picker" aria-haspopup="dialog" aria-controls="sidebar-space-picker" aria-expanded="false" data-sidebar-space-picker-toggle><i class="sidebar-subnav-icon" data-icon="align-left" aria-hidden="true"></i><span>Więcej przestrzeni</span><i class="sidebar-spaces-more__chevron" data-icon="chevron-right" aria-hidden="true"></i></button>
                 </div>
             </section>
             <a href="{{ sidebar_spaces_url }}items/" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.url_name == 'items' %}active{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><i class="nav-icon" data-icon="list-checks" aria-hidden="true"></i><span class="nav-label">Wszystkie zadania</span></a>
@@ -283,6 +284,7 @@
         </nav>
         <div class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Zmień szerokość menu bocznego" aria-valuemin="220" aria-valuemax="420" aria-valuenow="272" tabindex="0" data-sidebar-resizer></div>
     </aside>
+    {% include 'spaces/sidebar_picker.html' %}
     <div class="sidebar-collapsed-flyout" id="sidebar-collapsed-flyout" role="dialog" aria-labelledby="sidebar-collapsed-flyout-title" data-sidebar-collapsed-flyout hidden>
         <header class="sidebar-collapsed-flyout__header">
             <strong id="sidebar-collapsed-flyout-title" data-sidebar-collapsed-flyout-title></strong>
@@ -360,7 +362,8 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20261004-retired-contacts"></script>
+    <script src="{% static 'js/layout.js' %}?v=20261004-space-picker"></script>
+    <script src="{% static 'js/space-picker.js' %}?v=20261004-space-picker-v2"></script>
     <script src="{% static 'js/global-search.js' %}?v=20261003-search-no-close"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>

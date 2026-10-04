@@ -10,7 +10,7 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
 `spaces/base.html` rozszerza `core/base.html` i wspólny kontener katalogu.
 Katalog przestrzeni używa listy `tasks-directory-sheet`, `tasks-project-sheet`
 i `tasks-spreadsheet-sheet`, tak jak projekty i grupy. Wariant `work-space-sheet`
-określa kolumny: ulubione, nazwa, klucz, rodzaj, szablon, opis i liczba zadań.
+określa kolumny: ulubione, klucz, nazwa, rodzaj, szablon, opis i liczba zadań.
 Zachowuje wspólne wysokości wierszy, separatory, zmianę szerokości kolumn,
 poziome przewijanie oraz pasek filtrów, wyszukiwania i paginacji. Nazwa otwiera
 przestrzeń, a gwiazdka zmienia osobiste ulubione. Pusty wynik ukrywa nagłówki
@@ -34,8 +34,16 @@ Katalogi Kontaktów, Firm, Użytkowników i Gości zostały wycofane także
 z wyszukiwania, ulubionych i częściowej nawigacji; stare adresy zwracają 404.
 
 Nagłówek otwartej przestrzeni pokazuje awatar i nazwę, bez strzałki powrotu
-i klucza obok niej. Ten sam nagłówek obowiązuje we wszystkich jej zakładkach.
+i klucza obok niej. Nazwa ma rozmiar 17px i grubość 700 (`work-space-title`).
+Ten sam nagłówek obowiązuje we wszystkich jej zakładkach.
+Tytuł „Przestrzenie” w katalogu również ma rozmiar 17px i grubość 700.
+Nagłówek otwartej przestrzeni, pasek zakładek i treść przeglądu mają po 22px
+odstępu z lewej i prawej strony, również na telefonie. Wspólna zmienna
+`--work-space-inline-padding` obejmuje też katalog Przestrzeni: jego nagłówek,
+zakładki, filtry i tabelę. Lista zadań i tablica wewnątrz przestrzeni nadal
+korzystają z pełnej szerokości; katalog Zespołów zachowuje własne odstępy.
 Awatar ma 32px w nagłówku, 24px w katalogu i 21px w menu bocznym.
+W katalogu odstęp między awatarem a nazwą przestrzeni wynosi 8px.
 Include `spaces/avatar.html` rozszerza wspólny `profile-avatar`; globalny
 `space-avatars.css` zapewnia jego wygląd również poza modułem Przestrzeni.
 Zapis odświeża awatar w menu przy częściowej nawigacji.
@@ -79,8 +87,26 @@ dodatkowe szare podświetlenie bez ramki przy najechaniu, fokusie klawiatury
 lub otwarciu menu. Obie warstwy używają `--system-interaction-soft`.
 Menu korzysta z `row-actions.js`, natywnego popovera i stylów
 menu Zadań; obsługuje klawiaturę, Escape i przywrócenie fokusu. Link do katalogu
-w menu zachowuje klucz ulubionego `spaces`. Podmenu zawiera same przestrzenie,
-bez pozycji „Wszystkie przestrzenie” i powtórzonego kreatora. Przy zwiniętym
+w menu zachowuje klucz ulubionego `spaces`. Podmenu zawiera ulubione i ostatnie
+przestrzenie, a na końcu przycisk „Więcej przestrzeni” z ikoną `align-left`
+i strzałką w prawo. Otwiera niemodalny panel `sidebar-space-picker` obok menu,
+z tytułem, zamknięciem, wyszukiwaniem i linkiem „Wyświetl wszystkie przestrzenie”.
+Przycisk ma przezroczyste tło w spoczynku; podświetla się przy najechaniu,
+fokusie klawiatury lub otwartym panelu.
+Wariant rozszerza komponenty wyszukiwania Workspace i nagłówka panelu skrótów.
+Tytuł „Przestrzenie” w tym panelu ma grubość 700.
+Wiersz wyniku ma stałą kolumnę awatara 24×24px, odstęp 8px i elastyczną nazwę
+z wielokropkiem. Reguły rozciągania tekstu nie obejmują awatarów.
+Wyszukiwanie po nazwie lub kluczu obejmuje wszystkie dostępne przestrzenie
+bieżącego Workspace, z limitem 20 wyników; link do katalogu zachowuje zapytanie.
+Bez zapytania panel pokazuje samą wyszukiwarkę i link, także przy pustym Workspace.
+`space-picker.js` obsługuje opóźnienie 200ms, anulowanie nieaktualnych żądań,
+stan pusty/błąd, strzałki klawiatury, Enter, Escape oraz powrót fokusu.
+Błąd pokazuje wyłącznie komunikat; zmiana zapytania uruchamia nowe wyszukiwanie.
+Natywny popover zamyka się po kliknięciu poza panelem; wybór linku zamyka menu na
+telefonie. Panel działa po częściowej nawigacji i mieści się w wąskim ekranie.
+Wariant `sidebar-subnav--extended` mieści sześć przestrzeni oraz przycisk
+bez przycinania wysokości. Przy zwiniętym
 całym sidebarze ikona otwiera panel skrótów zawierający także tworzenie
 i zarządzanie przestrzeniami (`data-sidebar-group-action`). Na telefonie
 zwijanie działa wewnątrz otwartego menu, a wybór akcji nawigacyjnej je zamyka.
@@ -281,6 +307,8 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 „Dla ciebie” jest osobną pozycją nad Dashboardem, z ikoną `user-round-check`
 i obsługą ulubionych menu. Widok rozszerza `core/base.html` i komponenty
 Dashboardu: nagłówek katalogu, panele, wiersze i podkreślane zakładki.
+Nagłówek strony i główna treść mają po 22px odstępu z lewej i prawej strony,
+także na telefonie, zgodnie ze wspólnym wariantem `.dashboard-overview`.
 Treść zaczyna się od nagłówka „Rekomendowane przestrzenie” i kart, bez powitania
 oraz dodatkowego opisu. Po prawej pozostaje link do wszystkich przestrzeni.
 Nagłówek sekcji oraz tytuł „Dla ciebie” na górnym pasku mają 17px i wagę 700;
@@ -1164,6 +1192,9 @@ lokalne zmiany do układu pulpitu: cztery liczniki, dwie kolumny paneli,
 natywne paski `progress` i zwarte wiersze linków. Używa tokenów Ancore;
 turkus wyróżnia aktywną listę i postęp. Na węższych ekranach panele tworzą
 jedną kolumnę, liczniki dwie. Treść przewija się w `.dashboard-main`.
+Nagłówek i `.dashboard-main` mają po 22px odstępu z obu stron na wszystkich
+szerokościach (`--dashboard-inline-padding`), tak samo jak „Dla ciebie”.
+Tytuł „Dashboard” na górnym pasku ma rozmiar 17px i grubość 700.
 
 Zakładki są linkami GET z `aria-current`, obsługiwanymi również przez wspólną
 częściową nawigację. Dashboard nie wymaga osobnego JavaScriptu. Puste stany
@@ -1633,6 +1664,7 @@ nawigacji. Zamknięcie usuwa parametr zaproszenia z adresu i przywraca fokus
 polu „Szukaj Workspace” w pasku katalogu. Formularz nadal wymaga POST i CSRF.
 
 Ekran `/workplaces/` rozszerza `core/base.html` i pokazuje katalog Workspace.
+Widoczny tytuł „Workspace” na górnym pasku ma rozmiar 17px i grubość 700.
 Nie ma zakładki, tabeli ani licznika otrzymanych zaproszeń; są dostępne
 przez panel powiadomień. Dawny parametr `view=received` pokazuje katalog.
 Pasek nie ma osobnego przycisku „Workspace” ani separatora po nim.

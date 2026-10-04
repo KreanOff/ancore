@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 17 | 3 | 17 | 37 |
+| [spaces](../spaces) | 17 | 3 | 19 | 40 |
 
 ## 2. Modele i relacje
 
@@ -1183,6 +1183,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
 | `''` | `views.index` | 'index' |
+| `'search/'` | `views.search` | 'search' |
 | `'create/'` | `views.edit` | 'create' |
 | `'items/'` | `views.all_items` | 'items' |
 | `'items/<int:pk>/edit/'` | `views.item_edit` | 'item_edit' |
@@ -1390,7 +1391,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
 - [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `space_avatar`, `status_groups`
 - [spaces/urls.py](../spaces/urls.py)
-- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `index`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `index`, `search`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
 
 ## 6. Szablony
 
@@ -1578,6 +1579,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/items.html](../spaces/templates/spaces/items.html)
 - [spaces/templates/spaces/pagination.html](../spaces/templates/spaces/pagination.html)
 - [spaces/templates/spaces/row.html](../spaces/templates/spaces/row.html)
+- [spaces/templates/spaces/search_results.html](../spaces/templates/spaces/search_results.html)
+- [spaces/templates/spaces/sidebar_picker.html](../spaces/templates/spaces/sidebar_picker.html)
 - [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
 - [spaces/templates/spaces/teams.html](../spaces/templates/spaces/teams.html)
 
@@ -1653,6 +1656,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/resources.js](../static/js/resources.js)
 - [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
+- [static/js/space-picker.js](../static/js/space-picker.js)
 - [static/js/spaces.js](../static/js/spaces.js)
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
 - [static/js/task-work-log.js](../static/js/task-work-log.js)
@@ -2088,7 +2092,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [spaces/tests.py](../spaces/tests.py).
 
-- `SpaceTests`: 25 metod testowych.
+- `SpaceTests`: 28 metod testowych.
 - `ImportTests`: 1 metod testowych.
 
 ## 9. Migracje obecne lokalnie

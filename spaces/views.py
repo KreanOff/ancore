@@ -89,6 +89,25 @@ def index(request):
     return render(request, 'spaces/index.html', {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'create_url': app_url(request, 'create/'), 'templates': TEMPLATES})
 
 
+@login_required
+@require_GET
+def search(request):
+    query = request.GET.get('q', '').strip()[:120]
+    results = list(visible_spaces(request).filter(
+        Q(project__name__icontains=query) | Q(key__icontains=query),
+    ).order_by('project__name', 'pk')[:21]) if query else []
+    has_more = len(results) > 20
+    results = results[:20]
+    for space in results:
+        space.url = app_url(request, f'{space.pk}/')
+    response = JsonResponse({
+        'html': render_to_string('spaces/search_results.html', {'results': results, 'has_more': has_more}),
+        'count': len(results),
+    })
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
 def detail_context(request, space, view):
     allowed_views = {'overview', 'board', 'list', 'timeline', 'reports', 'settings'}
     if space.template in {'kanban', 'scrum'}:

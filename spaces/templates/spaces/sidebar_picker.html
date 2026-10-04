@@ -1,0 +1,12 @@
+<div id="sidebar-space-picker" class="sidebar-workspace-menu sidebar-space-picker" popover="auto" role="dialog" aria-labelledby="sidebar-space-picker-title" data-space-picker data-search-url="{{ sidebar_spaces_url }}search/" data-directory-url="{{ sidebar_spaces_url }}">
+    <header class="sidebar-collapsed-flyout__header">
+        <strong id="sidebar-space-picker-title">Przestrzenie</strong>
+        <button type="button" class="sidebar-collapsed-flyout__close" aria-label="Zamknij panel przestrzeni" title="Zamknij" data-space-picker-close><i data-icon="x" aria-hidden="true"></i></button>
+    </header>
+    <form class="sidebar-workspace-search" action="{{ sidebar_spaces_url }}" method="get" data-space-picker-form>
+        <label><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" placeholder="Wyszukaj wszystkie przestrzenie" aria-label="Wyszukaj wszystkie przestrzenie" maxlength="120" autocomplete="off" aria-controls="sidebar-space-picker-results" data-space-picker-input></label>
+    </form>
+    <p class="sidebar-workspace-search__empty" role="status" aria-live="polite" data-space-picker-status hidden></p>
+    <nav id="sidebar-space-picker-results" class="sidebar-workspace-menu__list" aria-label="Znalezione przestrzenie" data-space-picker-results hidden></nav>
+    <a class="sidebar-workspace-manage" href="{{ sidebar_spaces_url }}" data-space-picker-directory><i data-icon="align-left" aria-hidden="true"></i><span>Wyświetl wszystkie przestrzenie</span></a>
+</div>

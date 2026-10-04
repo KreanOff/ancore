@@ -25,8 +25,8 @@
     <section class="tasks-directory-group" role="table" aria-label="Lista przestrzeni">
         <div class="tasks-directory-header" role="row">
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Ulubione" title="Ulubione"><i data-icon="star" aria-hidden="true"></i></span>
-            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">PRZESTRZEŃ<i data-icon="layers" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="columnheader">KLUCZ<i data-icon="hash" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">PRZESTRZEŃ<i data-icon="layers" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="columnheader">RODZAJ<i data-icon="shapes" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="template" role="columnheader">SZABLON<i data-icon="layout-dashboard" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="columnheader">OPIS<i data-icon="align-left" aria-hidden="true"></i></span>
@@ -38,8 +38,8 @@
                 <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                     <form method="post" action="{{ space.favorite_url }}">{% csrf_token %}<button class="tasks-icon-button tasks-row-favorite" type="submit" aria-label="{% if space.favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}: {{ space.project.name }}" aria-pressed="{{ space.favorite|yesno:'true,false' }}"><i data-icon="star" aria-hidden="true"></i></button></form>
                 </div>
-                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{{ space.url }}" title="{{ space.project.name }}">{{ space.project.name }}</a></span>
                 <span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>
+                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{{ space.url }}" title="{{ space.project.name }}">{{ space.project.name }}</a></span>
                 <span class="tasks-directory-sheet__cell" data-column="kind" role="cell" title="{{ space.get_kind_display }}">{{ space.get_kind_display }}</span>
                 <span class="tasks-directory-sheet__cell" data-column="template" role="cell" title="{{ space.get_template_display }}">{{ space.get_template_display }}</span>
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__description" data-column="description" role="cell" title="{{ space.project.description|striptags }}">{{ space.project.description|striptags|default:'Brak opisu' }}</span>

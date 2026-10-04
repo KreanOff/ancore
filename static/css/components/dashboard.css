@@ -1,5 +1,6 @@
 /* Workspace overview: existing dashboard panels and Ancore controls. */
 .dashboard-overview {
+    --dashboard-inline-padding: 22px;
     --dashboard-ink: var(--text-primary);
     --dashboard-muted: var(--text-primary);
     --dashboard-line: var(--border-color);
@@ -7,9 +8,19 @@
     --dashboard-soft: var(--system-interaction-soft);
 }
 
+.dashboard-overview > .tasks-topbar {
+    padding-inline: var(--dashboard-inline-padding);
+}
+
+.dashboard-overview .tasks-topbar-title {
+    margin-inline: 0;
+    font-size: 17px;
+    font-weight: 700 !important;
+}
+
 .dashboard-overview .dashboard-main {
     gap: 24px;
-    padding: 28px;
+    padding: 28px var(--dashboard-inline-padding);
     scrollbar-gutter: stable;
 }
 
@@ -200,7 +211,7 @@
     .for-you-toolbar .ancore-custom-select { max-width: 100%; }
     .for-you-spaces-empty { flex-wrap: wrap; }
     .for-you-spaces-empty > a { margin-left: 36px; }
-    .dashboard-overview .dashboard-main { padding: 20px 14px; gap: 20px; }
+    .dashboard-overview .dashboard-main { padding: 20px var(--dashboard-inline-padding); gap: 20px; }
     .dashboard-overview-grid { gap: 20px; }
     .dashboard-overview .dashboard-summary-copy h2 { font-size: 20px; }
     .dashboard-overview .dashboard-stat { padding: 14px; gap: 6px; grid-template-columns: minmax(0, 1fr); }

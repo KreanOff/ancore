@@ -124,6 +124,12 @@
     }
 
     function syncSidebarState(nextDocument) {
+        const picker = document.querySelector('[data-space-picker]');
+        const nextPicker = nextDocument.querySelector('[data-space-picker]');
+        if (picker && nextPicker) {
+            picker.dataset.searchUrl = nextPicker.dataset.searchUrl;
+            picker.dataset.directoryUrl = nextPicker.dataset.directoryUrl;
+        }
         const currentLinks = document.querySelectorAll('.sidebar a.nav-link, .app-topbar a.nav-link');
         const nextLinks = Array.from(nextDocument.querySelectorAll('.sidebar a.nav-link, .app-topbar a.nav-link'));
 
@@ -695,7 +701,7 @@
 
         sidebarCollapsedFlyoutTitle.textContent = toggleButton.dataset.sidebarGroupName || '';
         const sourceLinks = [
-            ...sourceSubnav.querySelectorAll('a.sidebar-subnav-link'),
+            ...sourceSubnav.querySelectorAll('a.sidebar-subnav-link, [data-sidebar-space-picker-toggle]'),
             ...group.querySelectorAll('a[data-sidebar-group-action]'),
         ];
         sourceLinks.forEach(function (sourceLink) {
@@ -719,7 +725,7 @@
         window.AncoreIcons?.render(sidebarCollapsedFlyout);
 
         if (focusFirstLink) {
-            sidebarCollapsedFlyoutLinks.querySelector('a')?.focus({ preventScroll: true });
+            sidebarCollapsedFlyoutLinks.querySelector('a, button')?.focus({ preventScroll: true });
         }
     }
 
@@ -1132,6 +1138,11 @@
         closeSidebar();
     });
     window.addEventListener('ancore:workspace-menu-open', closeSidebar);
+    window.addEventListener('ancore:space-picker-open', function () {
+        setWorkspaceMenuOpen(false);
+        closeCollapsedSidebarFlyout();
+    });
+    window.addEventListener('ancore:space-picker-navigate', closeSidebar);
     document.addEventListener('ancore:content-unloading', () => setWorkspaceMenuOpen(false));
 
     sidebarSearchToggle?.addEventListener('click', function () {
@@ -1290,7 +1301,7 @@
     });
 
     sidebarCollapsedFlyout?.addEventListener('keydown', function (event) {
-        const links = Array.from(sidebarCollapsedFlyoutLinks?.querySelectorAll('a[href]') || []);
+        const links = Array.from(sidebarCollapsedFlyoutLinks?.querySelectorAll('a[href], button') || []);
         const currentIndex = links.indexOf(document.activeElement);
 
         if (event.key === 'Escape') {
@@ -2018,7 +2029,7 @@
         backdrop.addEventListener('click', closeSidebar);
     }
 
-    sidebar.querySelectorAll('a.nav-link, a[data-sidebar-group-action], button.nav-link:not([data-sidebar-group-toggle])').forEach(function (link) {
+    sidebar.querySelectorAll('a.nav-link, a[data-sidebar-group-action], button.nav-link:not([data-sidebar-group-toggle]):not([data-sidebar-space-picker-toggle])').forEach(function (link) {
         link.addEventListener('click', function () {
             setSidebarSearchOpen(false);
             if (isOverlayMode()) {

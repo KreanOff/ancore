@@ -2186,9 +2186,11 @@
     border-color: #e8ebee;
 }
 
-.workplaces-settings-page .workplaces-task-topbar .tasks-topbar-title {
+.workplaces-settings-page .workplaces-task-topbar .tasks-topbar-title,
+.workplaces-settings-page .workplaces-task-topbar .tasks-topbar-title > span {
     color: var(--text-main);
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700 !important;
 }
 
 .workplaces-create-actions--filterbar {

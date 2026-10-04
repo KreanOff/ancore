@@ -1,13 +1,20 @@
 /* Spaces reuse Ancore's directory, tab, form, modal and status components. */
 .work-page .tasks-workspace { min-height: 0; display: flex; flex-direction: column; }
 .work-page .tasks-topbar-title { margin: 0; }
+.work-page .work-space-title,
+.work-page:has(.work-content--directory) .tasks-topbar-title { font-size: 17px; font-weight: 700 !important; }
+.work-page:has(.work-space-title, .work-content--directory) { --work-space-inline-padding: 22px; }
+.work-page .tasks-topbar--directory:has(.work-space-title),
+.work-page:has(.work-content--directory) :is(.tasks-topbar--directory, .work-item-toolbar, .work-content--directory) {
+    padding-inline: var(--work-space-inline-padding);
+}
 .work-page .tasks-titlebar-left { gap: 10px; min-width: 0; }
 .work-page .tasks-titlebar-actions a { text-decoration: none; }
-.work-tabs { flex-shrink: 0; padding: 0 24px; overflow-x: auto; white-space: nowrap; }
+.work-tabs { flex-shrink: 0; padding: 0 var(--work-space-inline-padding, 24px); overflow-x: auto; white-space: nowrap; }
 .work-tabs.work-tabs--views > a { gap: 8px; font-size: 13.5px; }
 .work-tabs--views > a:not([aria-current="page"]):hover { border-bottom-color: var(--system-interaction); }
 .work-tabs--views [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
-.work-content { overflow: auto; flex: 1; min-height: 0; padding: 20px 24px 32px; font-size: var(--font-size-sm, 13px); }
+.work-content { overflow: auto; flex: 1; min-height: 0; padding: 20px var(--work-space-inline-padding, 24px) 32px; font-size: var(--font-size-sm, 13px); }
 .work-page a { color: inherit; }
 .work-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; }
 .work-toolbar .form-select { width: auto; max-width: 240px; }
@@ -39,7 +46,7 @@
 .work-content--tasks { padding: 0; }
 .work-content--directory { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 .tasks-directory-board.work-space-sheet {
-    --tasks-directory-grid: 40px 320px 150px 190px 220px 320px 130px;
+    --tasks-directory-grid: 40px 150px 320px 190px 220px 320px 130px;
     flex: 1;
     min-height: 0;
 }
@@ -52,6 +59,7 @@
 }
 .tasks-directory-board.work-space-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
 .work-space-sheet [data-column="action"] form { margin: 0; }
+.work-space-sheet .tasks-directory-name { gap: 8px; }
 .work-space-sheet [data-column="name"] > a {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -103,11 +111,11 @@
 @media (max-width: 767px) {
     .work-page .tasks-topbar--directory { padding-left: 52px; flex-wrap: wrap; gap: 8px; }
     .work-page .tasks-titlebar-left { flex-wrap: wrap; }
-    .work-content { padding: 16px 12px; }
+    .work-content { padding: 16px var(--work-space-inline-padding, 12px); }
     .work-content--tasks, .work-content--directory { padding: 0; }
     .work-item-list { overflow-x: auto; }
     .work-item-list > .tasks-issue-group { min-width: 560px; }
-    .work-tabs { padding: 0 12px; }
+    .work-tabs { padding: 0 var(--work-space-inline-padding, 12px); }
     .work-directory { grid-template-columns: minmax(0,1fr); }
     .work-panel { padding: 14px; }
     .work-panel-heading { flex-wrap: wrap; }

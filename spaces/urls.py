@@ -4,6 +4,7 @@ from . import views
 app_name = 'spaces'
 urlpatterns = [
     path('', views.index, name='index'),
+    path('search/', views.search, name='search'),
     path('create/', views.edit, name='create'),
     path('items/', views.all_items, name='items'),
     path('items/<int:pk>/edit/', views.item_edit, name='item_edit'),

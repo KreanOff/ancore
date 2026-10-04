@@ -66,6 +66,42 @@ class SpaceTests(TestCase):
                 self.assertEqual(response.status_code, 200)
         self.assertEqual(self.client.get(self.url(f'{self.space.pk}/configuration/')).status_code, 200)
 
+    def test_space_search_respects_workspace_and_project_access(self):
+        self.client.force_login(self.member)
+        for url in ['/spaces/search/', self.url('search/')]:
+            for query in ('produkt', self.space.key.lower()):
+                response = self.client.get(url, {'q': query})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()['count'], 1)
+                self.assertIn(self.url(f'{self.space.pk}/'), response.json()['html'])
+                self.assertIn('data-space-avatar=', response.json()['html'])
+                self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
+            for query in ('Poufna', 'Obca'):
+                self.assertEqual(self.client.get(url, {'q': query}).json()['count'], 0)
+        self.client.force_login(self.observer)
+        self.assertEqual(self.client.get(self.url('search/'), {'q': 'Produkt'}).json()['count'], 1)
+        TaskProjectMembership.objects.filter(project=self.project, user=self.observer).delete()
+        self.assertEqual(self.client.get(self.url('search/'), {'q': 'Produkt'}).json()['count'], 0)
+
+    def test_space_search_limits_results_and_escapes_names(self):
+        for number in range(22):
+            TaskProject.objects.create(user=self.owner, workplace=self.workspace, name=f'Wyszukiwanie {number:02}')
+        response = self.client.get(self.url('search/'), {'q': 'Wyszukiwanie'})
+        self.assertEqual(response.json()['count'], 20)
+        self.assertIn('Więcej wyników', response.json()['html'])
+        self.assertNotIn('Wyszukiwanie 20', response.json()['html'])
+        self.project.name = '<script>Przestrzeń</script>'
+        self.project.save()
+        html = self.client.get(self.url('search/'), {'q': '<script>'}).json()['html']
+        self.assertIn('&lt;script&gt;', html)
+        self.assertNotIn('<script>', html)
+
+    def test_space_search_requires_login_and_get(self):
+        self.assertEqual(self.client.get(self.url('search/'), {'q': '   '}).json()['count'], 0)
+        self.assertEqual(self.client.post(self.url('search/')).status_code, 405)
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url('search/')).status_code, 302)
+
     def test_create_space_and_template_are_independent_of_management(self):
         payload = {'name': 'Nowa przestrzeń', 'key': 'NOW', 'kind': 'software', 'template': 'scrum', 'management': 'company', 'visibility': 'private'}
         response = self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true')
