@@ -1,5 +1,42 @@
 # Przestrzenie i zespoły
 
+## Katalog i zarządzanie przestrzeniami
+
+„Przestrzenie” (`/spaces/` i scoped odpowiednik) jest katalogiem do codziennej
+pracy: wszystkie dostępne przestrzenie, ulubione, prywatne, rodzaj, wyszukiwanie
+i liczba widocznych zadań. Nazwa otwiera przegląd przestrzeni.
+
+„Zarządzaj przestrzeniami” (`/spaces/manage/` i scoped odpowiednik) to osobny
+ekran ustawień, dostępny z menu „…” przy Przestrzeniach oraz z Ustawień Ancore.
+Główny pasek boczny zastępuje menu Workspace nawigacją administracyjną
+z powrotem do katalogu i Ustawieniami Ancore. Powrót przywraca zwykłe menu,
+także przy częściowej nawigacji i korzystaniu z historii przeglądarki.
+Ekran zawiera wyszukiwanie po nazwie/kluczu,
+filtry rodzaju i sposobu zarządzania, paginację oraz kolumny nazwy, klucza,
+rodzaju, zarządzania, lidera i ostatniej aktywności dostępnych zadań.
+Lider pochodzi z osoby odpowiedzialnej projektu, z zastępstwem przez prywatnego
+właściciela lub właściciela danych. Nazwa prowadzi do ustawień przestrzeni;
+menu wiersza udostępnia otwarcie, edycję, ustawienia dostępu i konfigurację
+zadań (jeśli osoba może ją zmieniać).
+
+`manageable_spaces` zawęża `visible_spaces` według istniejącego `manage_space`.
+Właściciel/administrator Workspace zarządza widocznymi przestrzeniami
+publicznymi; osoba odpowiedzialna również może zarządzać swoim publicznym
+projektem. Prywatnymi przestrzeniami zarządza ich prywatny właściciel lub
+administrator projektu. Administrator Workspace nie uzyskuje dostępu do
+nieudostępnionych prywatnych przestrzeni. Zwykłe członkostwo, obserwowanie
+i przydział wykonawcy nie dają dostępu do katalogu zarządzania.
+Właściciel/administrator Workspace ma do niego dostęp również przed
+utworzeniem pierwszej przestrzeni; pozostałe osoby muszą mieć co najmniej
+jedną przestrzeń, którą mogą zarządzać. Endpoint i formularze kontrolują
+uprawnienia niezależnie od widoczności linków.
+
+`/spaces/manage/create/` i `/spaces/manage/<pk>/edit/` używają istniejącego
+formularza oraz powłoki modalnej. Bezpośrednie wejście i błąd walidacji
+pozostawiają ekran zarządzania pod modalem; anulowanie i zapis wracają do
+niego. Tworzenie z codziennego katalogu zachowuje dotychczasowy przepływ.
+Nie powstają nowe modele ani kopie przestrzeni.
+
 ## Szybkie wyszukiwanie przestrzeni
 
 „Więcej przestrzeni” w menu bocznym otwiera panel z wyszukiwaniem po nazwie

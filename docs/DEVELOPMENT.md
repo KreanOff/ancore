@@ -23,6 +23,40 @@ ponowne wyszukiwanie po zmianie zapytania, kwadratowe awatary,
 zwinięty sidebar, telefon i ponowne wejście po częściowej nawigacji.
 
 
+Rozdzielenie katalogu i zarządzania przestrzeniami sprawdza
+`spaces.test_management`: zwykłe/scoped adresy, właściciel i administrator
+Workspace, role projektu, osoba odpowiedzialna, cofnięcie dostępu, obcy
+Workspace, ukryte zadania w aktywności, filtry/paginacja, tworzenie i edycja
+nad katalogiem oraz powrót po zapisie. Uruchamiaj także `spaces`,
+`dashboard.tests.DashboardViewTests` i `kanban.test_retirement`.
+Browser QA obejmuje przejście Katalog → menu „…” → Zarządzaj przestrzeniami,
+zastąpienie głównego menu Workspace menu administracyjnym i jego przywrócenie
+po powrocie, historię Wstecz/Dalej, zwinięty pasek oraz menu na telefonie,
+Ustawienia jako ekran referencyjny, edycję/zapis, błędy kreatora, anulowanie,
+wyszukiwanie/pusty wynik, pusty Workspace, ponowne wejście i desktop/telefon.
+
+Centrum `/settings/` sprawdzaj razem z `dashboard.tests.DashboardViewTests`.
+Browser QA: wejście z codziennego katalogu i zarządzania przestrzeniami,
+zastąpienie głównego paska kategoriami ustawień, wybór każdej kategorii,
+bezpośredni fragment URL i historia Wstecz/Dalej, powrót do Workspace,
+ponowne wejście, zwijanie menu z przełącznika w Ogólne i menu na telefonie.
+Pozycja Preferencje jest usunięta; stare fragmenty tej sekcji otwierają Ogólne.
+Sprawdź też skrót Powiadomień oraz widoczność administracyjnych linków według roli.
+
+## Usunięcie systemu Wartości pól projektu
+
+`tasks/0063_remove_project_field_settings` usuwa tabele słowników i reguł
+terminów oraz `TaskProject.use_custom_deadline_rules`; zapisane pola projektu
+pozostają bez zmian. Przed zastosowaniem migracji wykonaj backup bazy.
+Testy `tasks.test_project_field_retirement` sprawdzają brak endpointu GET/POST,
+stałe opcje, edycję i filtrowanie historycznych wartości, granice Workspace
+oraz migrację zachowującą projekty. Uruchamiaj również `tasks`, `spaces`,
+`dashboard.tests.DashboardViewTests` i formularze Dokumentów.
+Browser QA: ustawienia bez pozycji, katalog projektów i edycja/utworzenie
+projektu, źródło i daty, stare adresy, ponowne wejście, desktop/telefon.
+Kontrolka koloru Dysku ma własną klasę `documents-color-input` i style
+w `documents.css`, niezależne od usuniętego systemu.
+
 ## Wycofanie Tablic Kanban
 
 `kanban.test_retirement` sprawdza przekierowania zwykłe/scoped, brak dawnych

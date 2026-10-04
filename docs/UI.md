@@ -20,6 +20,39 @@ Przegląd, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Wszystkie zadania i Zespoły.
 
+Osobny ekran „Zarządzaj przestrzeniami” (`spaces/manage.html`) używa tej samej
+powłoki. Główny pasek boczny przełącza się z menu Workspace na menu administracyjne
+(`core/includes/space_management_sidebar.html`): powrót do przestrzeni,
+zarządzanie przestrzeniami i Ustawienia Ancore. Treść zajmuje całą szerokość
+obok tego paska. Oba warianty menu używają wspólnych klas i zachowują zwijanie,
+zmianę szerokości oraz mobilne otwieranie/zamykanie. `layout.js` przełącza
+widoczną nawigację również przy częściowym przejściu, powrocie i historii
+przeglądarki. Bezpośrednie wejście do kreatora/edycji używa trybu administracyjnego.
+`work-space-sheet--management` dodaje kolumny
+lidera, sposobu zarządzania, aktywności dostępnych zadań oraz menu wiersza.
+Korzysta ze wspólnego formularza, awatarów, `row-actions.js`, filtrów,
+paginacji i zmiany szerokości kolumn. Nazwa przestrzeni otwiera ustawienia.
+Menu „…” w głównej nawigacji zawiera wyłącznie „Zarządzaj przestrzeniami”;
+dostępność zarządzania odświeża się po częściowej nawigacji.
+Skrót Favorites „Przestrzenie” pozostaje aktywny tylko w codziennym module,
+a ekran zarządzania aktywuje ikonę Ustawień. Przy braku odpowiadającego linku
+w menu JS zachowuje stan aktywności skrótu otrzymany z serwera, także po częściowej
+nawigacji. Szczegóły uprawnień: [SPACES.md](SPACES.md).
+
+Centrum „Ustawienia” (`/settings/`) jest osobną stroną z własnym wariantem
+głównego paska bocznego (`core/includes/settings_sidebar.html`). Zastępuje
+menu Workspace kategoriami Ogólne, Konto i dostęp i Workspace
+oraz linkiem „Wróć do przestrzeni”. Treść nie ma dodatkowej wewnętrznej nawigacji;
+wiersze, podsumowanie konta i kontrolki zachowują dotychczasowy wygląd.
+`settings.js` obsługuje kategorie w stałej powłoce, aktywne pozycje, adresy
+z fragmentem (`#account`, `#workspace` i skrót `#security`),
+historię Wstecz/Dalej i ponowne wejście po częściowej nawigacji. Wybór kategorii
+zamyka menu na telefonie; stan zwinięcia i szerokość są wspólne z resztą aplikacji.
+Wyjście ze strony usuwa jej listenery i obserwator przełącznika zwijania.
+Preferencje nie mają osobnej pozycji w menu. Ich opcje pozostają w Ogólne;
+stare fragmenty `#preferences`, `#appearance`, `#notifications` i `#region`
+otwierają widok Ogólne.
+
 Pod Zasobami znajduje się zwijana sekcja „Starsze widoki”: Projekty, Ulubione
 projekty, Grupy, Zadania, Tagi i Szablony projektów. Używa istniejących
 `sidebar-nav-group` i `sidebar-subnav` oraz ikon `AncoreIcons`, bez osobnych listenerów. Wariant `sidebar-subnav--extended`
@@ -84,14 +117,14 @@ nagłówek nie pokazuje strzałki zwijania. Ta sama ikona oznacza Przestrzenie
 w Favorites (także dla starszych zapisanych skrótów), nagłówku kolumny katalogu
 oraz jego pustym stanie. Wspólny wariant `sidebar-group-header` umieszcza
 obok przycisku zwijania „+” otwierający kreator i „…” z opcją „Zarządzaj
-przestrzeniami”. Obie ikony mają 13px w przyciskach 28px
+przestrzeniami” (według uprawnień). Obie ikony mają 13px w przyciskach 28px
 (`--control-height` minus 4px). Nagłówek ma wspólne zaokrąglone szare tło
 po najechaniu, przy fokusie lub otwartym menu. Plus i trzy kropki otrzymują
 dodatkowe szare podświetlenie bez ramki przy najechaniu, fokusie klawiatury
 lub otwarciu menu. Obie warstwy używają `--system-interaction-soft`.
 Menu korzysta z `row-actions.js`, natywnego popovera i stylów
-menu Zadań; obsługuje klawiaturę, Escape i przywrócenie fokusu. Link do katalogu
-w menu zachowuje klucz ulubionego `spaces`. Podmenu zawiera ulubione i ostatnie
+menu Zadań; obsługuje klawiaturę, Escape i przywrócenie fokusu. Skrót katalogu
+w Favorites zachowuje klucz `spaces`. Podmenu zawiera ulubione i ostatnie
 przestrzenie, a na końcu przycisk „Więcej przestrzeni” z ikoną `align-left`
 i strzałką w prawo. Otwiera niemodalny panel `sidebar-space-picker` obok menu,
 z tytułem, zamknięciem, wyszukiwaniem i linkiem „Wyświetl wszystkie przestrzenie”.
@@ -588,7 +621,7 @@ Ważne wyjątki:
 - Globalne reguły w `style.css` wymuszają wagę tekstu 400 w szerokim zakresie,
   także dla wielu nagłówków i `strong`. Nie dodawaj lokalnych boldów jako
   domyślnego sposobu wyróżniania nowego ekranu.
-- Kolory statusów, tagów, avatarów i progów terminu mają osobne znaczenie
+- Kolory statusów, tagów, avatarów i terminów mają osobne znaczenie
   i często pochodzą z danych. Zachowuj te wyjątki.
 - Nie ma jednej uniwersalnej skali spacingu dla całej historycznej bazy.
   Odstępy bierz z właściwego istniejącego komponentu; dla modali z tokenów powłoki.
@@ -885,7 +918,7 @@ Formularz tworzenia i ustawień dysku zawiera nazwę, kolor ikony i opis.
 Tworzenie oraz edycja folderów Dysku zawierają nazwę i kolor.
 Przycisk ołówka ma etykietę „Edytuj folder”. Wspólny include
 `documents/includes/color_field.html` używa natywnego pola `type="color"`
-z istniejącą klasą `tasks-project-option-color`, podglądu SVG 64×64px
+z własną klasą `documents-color-input`, podglądu SVG 64×64px
 i przycisku „Domyślny”. Wybrany kolor widać od razu w podglądzie; zapis
 aktualizuje listę, kafelki oraz panel dysków. Formularz zachowuje kolor
 przy błędzie nazwy. `documents.js` obsługuje pole przez delegację zdarzeń

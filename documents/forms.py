@@ -40,7 +40,7 @@ class UploadForm(forms.Form):
 class IconColorForm(forms.ModelForm):
     color = forms.CharField(label='Kolor ikony', max_length=7, required=False,
         validators=[icon_color_validator], widget=forms.TextInput(attrs={
-            'type': 'color', 'class': 'tasks-project-option-color', 'data-document-color-input': '',
+            'type': 'color', 'class': 'documents-color-input', 'data-document-color-input': '',
         }))
     color_icon_template = 'documents/includes/folder_icon.html'
 

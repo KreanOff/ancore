@@ -15,12 +15,23 @@ def current_workplace(request):
     sidebar_favorite_keys = []
     sidebar_favorites = []
     navigation_spaces = []
+    spaces_management_available = False
+    resolver = getattr(request, 'resolver_match', None)
+    spaces_management_mode = bool(
+        resolver
+        and resolver.app_name in {'spaces', 'workplace_spaces'}
+        and resolver.url_name in {'manage', 'manage_create', 'manage_edit'}
+    )
+    sidebar_mode = 'settings' if resolver and resolver.view_name == 'settings' else (
+        'administration' if spaces_management_mode else 'workspace'
+    )
     if active_workplace:
-        from spaces.services import visible_spaces
+        from spaces.services import can_manage_spaces, visible_spaces
         from django.db.models import Exists, OuterRef
         from tasks.models import TaskProject
         favorite = TaskProject.favorited_by.through.objects.filter(taskproject_id=OuterRef('project_id'), user_id=user.pk)
         navigation_spaces = list(visible_spaces(request).annotate(is_favorite=Exists(favorite)).order_by('-is_favorite', '-created_at')[:6])
+        spaces_management_available = can_manage_spaces(request)
         workplace_app_urls = {
             'spaces': scoped_workplace_app_path(active_workplace, 'spaces'),
             'teams': scoped_workplace_app_path(active_workplace, 'teams'),
@@ -44,6 +55,9 @@ def current_workplace(request):
     return {
         'current_workplace': active_workplace,
         'navigation_spaces': navigation_spaces,
+        'spaces_management_available': spaces_management_available,
+        'spaces_management_mode': spaces_management_mode,
+        'sidebar_mode': sidebar_mode,
         'available_workplaces': user_workplaces,
         'available_workplace_count': len(user_workplaces),
         'workplace_app_urls': workplace_app_urls,

@@ -4,27 +4,19 @@
 {% block title %}Ustawienia | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/settings.css' %}?v=20261003-border-visibility-2pct">
-<script src="{% static 'js/settings.js' %}?v=20260906-settings-no-search" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/settings.css' %}?v=20261004-settings-sidebar">
+<script src="{% static 'js/settings.js' %}?v=20261004-settings-no-preferences-menu" defer></script>
 {% endblock %}
 
 {% block content %}
 <div class="dashboard-page settings-center" data-settings-center>
     <header class="tasks-topbar tasks-topbar--project-directory">
         <div class="tasks-titlebar-left">
-            <span class="tasks-topbar-title" id="settings-title"><span>Ustawienia</span></span>
+            <h1 class="tasks-topbar-title" id="settings-title">Ustawienia</h1>
         </div>
     </header>
     <div class="settings-scroll-area">
         <div class="settings-layout">
-            <aside class="settings-navigation" aria-label="Kategorie ustawień">
-                <nav class="tasks-rail-nav" data-settings-navigation>
-                    <a href="{% url 'settings' %}" class="tasks-rail-link settings-category is-active" data-settings-category="all" aria-current="true"><span class="tasks-rail-icon" aria-hidden="true"><i data-icon="settings"></i></span>Ogólne</a>
-                    <a href="#account" class="tasks-rail-link settings-category" data-settings-category="account"><span class="tasks-rail-icon" aria-hidden="true"><i data-icon="user-round"></i></span>Konto i dostęp</a>
-                    <a href="#workspace" class="tasks-rail-link settings-category" data-settings-category="workspace"><span class="tasks-rail-icon" aria-hidden="true"><i data-icon="folder"></i></span>Workspace</a>
-                    <a href="#preferences" class="tasks-rail-link settings-category" data-settings-category="preferences"><span class="tasks-rail-icon" aria-hidden="true"><i data-icon="sliders-horizontal"></i></span>Preferencje</a>
-                </nav>
-            </aside>
             <div class="settings-content" aria-labelledby="settings-title">
                 <div class="settings-account-summary" data-settings-account-summary>
                     {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='settings-account-avatar' only %}
@@ -48,8 +40,11 @@
                             <span class="settings-row-copy"><strong>Zarządzaj Workspace</strong><span>Wszystkie Workspace, ich ustawienia, członkowie i zaproszenia.</span></span>
                             <i class="settings-row-arrow" data-icon="chevron-right" aria-hidden="true"></i>
                         </a>
-                        {% url 'project_field_settings' as project_fields_url %}
-                        {% include 'dashboard/includes/settings_row.html' with href=project_fields_url icon='list-filter' title='Wartości pól projektu' description='Statusy, etapy, kondycja i kolory terminów.' only %}
+                        {% if spaces_management_available %}
+                        {% url 'spaces:manage' as spaces_manage_fallback_url %}
+                        {% firstof workplace_app_urls.spaces|add:'manage/' spaces_manage_fallback_url as spaces_manage_url %}
+                        {% include 'dashboard/includes/settings_row.html' with href=spaces_manage_url icon='layers' title='Zarządzaj przestrzeniami' description='Ustawienia, konfiguracje i dostęp do przestrzeni w bieżącym Workspace.' only %}
+                        {% endif %}
                         {% if request.user.is_staff %}
                             {% url 'admin:index' as admin_url %}
                             {% include 'dashboard/includes/settings_row.html' with href=admin_url icon='shield-check' title='Panel administracyjny' description='Zarządzaj systemem i dostępem użytkowników.' only %}

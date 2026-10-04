@@ -17,27 +17,7 @@
 }
 
 .settings-layout {
-    display: grid;
-    grid-template-columns: 180px minmax(0, 1fr);
-    gap: clamp(24px, 2.6vw, 40px);
-    align-items: start;
-}
-
-.settings-navigation {
-    position: sticky;
-    top: 0;
-    padding-right: 14px;
-}
-
-.settings-navigation nav {
-    display: grid;
-    gap: 2px;
-    padding: 0;
-    border: 0;
-}
-
-.settings-category {
-    white-space: nowrap;
+    display: block;
 }
 
 .settings-content {
@@ -269,40 +249,12 @@
 }
 
 @media (max-width: 1100px) {
-    .settings-layout {
-        grid-template-columns: 155px minmax(0, 1fr);
-        gap: 22px;
-    }
-    .settings-navigation {
-        padding-right: 10px;
-    }
     .settings-scroll-area {
         padding-inline: 22px;
     }
     .settings-row {
         padding-inline: 8px;
         gap: 12px;
-    }
-}
-
-@media (max-width: 900px) {
-    .settings-layout {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 22px;
-    }
-    .settings-navigation {
-        position: static;
-        padding: 0 0 12px;
-        border-right: 0;
-        border-bottom: 1px solid var(--settings-line);
-    }
-    .settings-navigation nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-    }
-    .settings-category {
-        min-height: 36px;
     }
 }
 
@@ -313,17 +265,6 @@
     }
     .settings-scroll-area {
         padding: 22px 18px 28px;
-    }
-    .settings-navigation nav {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 4px 8px;
-    }
-    .settings-category {
-        min-height: 40px;
-        padding: 9px 10px;
-        gap: 7px;
-        font-size: var(--font-size-sm);
     }
     .settings-account-summary {
         gap: 12px;

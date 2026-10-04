@@ -93,7 +93,7 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 ## 3. Projekty, grupy i zadania — Tasks
 
 Źródła: [modele](../tasks/models.py), [formularze](../tasks/forms.py),
-[główna logika](../tasks/views/tasks.py), [ustawienia pól](../tasks/views/project_settings.py).
+[główna logika](../tasks/views/tasks.py).
 
 ### Ekrany
 
@@ -237,18 +237,16 @@ Dodanie, edycja i usunięcie zapisują rzeczywistego wykonawcę operacji w Histo
 Wycofane pola `time_spent_hours` i `time_spent_minutes` pozostają bez zmian;
 historyczne sumy nie są automatycznie zamieniane na wpisy bez dat i autora.
 
-### Konfigurowalne pola projektu i terminy
+### Pola projektu
 
-`TaskProjectFieldOption` definiuje etykiety i kolory statusu, etapu, kondycji
-i źródła w zakresie właściciela/Workspace. Źródło może też zostać wpisane ręcznie.
-Zmiana nazwy źródła może aktualizować używające go projekty w tym samym zakresie.
-Usunięcie używanej opcji jest blokowane. Dla statusu/etapu/kondycji trzeba
-zachować co najmniej jedną aktywną opcję; źródła mogą być puste.
-
-`TaskProjectDeadlineRule` określa kolor terminu według liczby dni. Są reguły
-wspólne dla Workspace i opcjonalne reguły konkretnego projektu. Włączenie
-własnych progów kopiuje reguły wspólne; reset przywraca dziedziczenie.
-To osobny mechanizm od `Task.due_urgency`, który ocenia termin zadania w godzinach.
+System „Wartości pól projektu” jest usunięty: nie ma słowników własnych opcji,
+reguł kolorów terminów ani ekranu `/settings/project-fields/` (GET/POST: 404).
+Status, etap i kondycja korzystają ze stałych opcji `TaskProject`; historyczne
+wartości zapisane w dostępnych projektach pozostają możliwe do edycji i filtrowania.
+Źródło jest tekstem z możliwością wybrania wcześniej zapisanej wartości.
+Daty, opisy i pozostałe dane projektów pozostają bez zmian. Podświetlenie
+terminu używa istniejącego `due_highlight`, bez własnych progów i kolorów.
+Migracja `tasks/0063` usuwa oba modele konfiguracji oraz flagę własnych progów.
 
 ### Szablony projektów Zadań
 
@@ -597,7 +595,7 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Przełączane listy `focus=deadlines|priority|kanban` pokazują maksymalnie
   6 pozycji. Są też rozkład statusów, 4 niezakończone/nieanulowane projekty
   Zadań z postępem oraz do 4 trwających/nadchodzących wydarzeń.
-- **Ustawienia:** centrum linków do profilu, kont, Workspace, pól projektów
+- **Ustawienia:** centrum linków do profilu, kont, Workspace
   i preferencji dostępnych na ekranie.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
 - **Powiadomienia:** centrum zaproszeń, przypomnień oraz komentarzy Zadań,

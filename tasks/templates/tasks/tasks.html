@@ -92,10 +92,6 @@
                                 <i data-icon="{% if project.can_edit %}pencil{% else %}eye{% endif %}" aria-hidden="true"></i>
                                 Edytuj projekt
                             </button>
-                            <a href="{% url 'project_field_settings' %}?project_id={{ project.pk }}#project-field-group-deadline" class="tasks-project-menu-button" role="menuitem">
-                                <i data-icon="calendar-clock" aria-hidden="true"></i>
-                                Progi i kolory terminu
-                            </a>
                             <button type="button" class="tasks-project-menu-button" role="menuitem" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-project-info data-project-id="{{ project.id }}" data-project-name="{{ project.name|escape }}" data-project-description="{{ project.description|default:''|escape }}" data-project-code="{{ project.code|escape }}" data-project-progress-label="{{ project.progress_percent }}%" data-project-tasks-label="{{ project.tasks_count_label }}" data-project-priority-label="{{ project.get_priority_display }}" data-project-status-label="{{ project.get_status_display }}" data-project-stage-label="{{ project.get_stage_display }}" data-project-health-label="{{ project.get_health_display }}" data-project-company-label="{% if project.company %}{{ project.company.name }}{% else %}Brak firmy{% endif %}" data-project-responsible-label="{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}" data-project-start-label="{% if project.start_at %}{{ project.start_at|date:'d.m.Y' }}{% else %}Brak startu{% endif %}" data-project-due-label="{% if project.due_at %}{{ project.due_at|date:'d.m.Y' }}{% else %}Brak terminu{% endif %}" data-project-budget-label="{% if project.budget_amount %}{{ project.budget_amount }} {{ project.currency }}{% else %}Brak budżetu{% endif %}" data-project-source-label="{% if project.source %}{{ project.source }}{% else %}Brak źródła{% endif %}" data-project-created-label="{{ project.created_at|date:'d.m.Y' }}" data-project-last-activity-label="{% if project.last_activity_at %}{{ project.last_activity_at|date:'d.m.Y H:i' }}{% else %}Brak aktywności{% endif %}">
                                 <i data-icon="info" aria-hidden="true"></i>
                                 Informacje o projekcie
@@ -919,13 +915,13 @@
                         {% if section.project.start_at %}{{ section.project.start_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak startu</span>{% endif %}
                     </span>
                     <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_status">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--status-{{ section.project.status }}" style="--tasks-project-highlight-bg: {{ section.project.status_color }};">{{ section.project.get_status_display }}</span>
+                        <span class="tasks-project-value-badge tasks-project-value-badge--status-{{ section.project.status }}">{{ section.project.get_status_display }}</span>
                     </span>
                     <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="stage">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--stage-{{ section.project.stage }}" style="--tasks-project-highlight-bg: {{ section.project.stage_color }};">{{ section.project.get_stage_display }}</span>
+                        <span class="tasks-project-value-badge tasks-project-value-badge--stage-{{ section.project.stage }}">{{ section.project.get_stage_display }}</span>
                     </span>
                     <span class="tasks-project-sheet__status tasks-project-sheet__status--{{ section.project.health }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="health">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--health-{{ section.project.health }}" style="--tasks-project-highlight-bg: {{ section.project.health_color }};">{{ section.project.get_health_display }}</span>
+                        <span class="tasks-project-value-badge tasks-project-value-badge--health-{{ section.project.health }}">{{ section.project.get_health_display }}</span>
                     </span>
                     <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">{% if section.project.source %}<span class="tasks-project-value-badge tasks-project-value-badge--source">{{ section.project.source }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak źródła</span>{% endif %}</span>
                     <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="default_assignee">
@@ -1127,7 +1123,7 @@
                         {% if project.start_at %}{{ project.start_at|date:"d.m.Y" }}{% else %}<span class="tasks-project-sheet__muted">Brak startu</span>{% endif %}
                     </span>
                     <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="due_at">
-                        {% if project.due_at %}<span class="tasks-project-value-badge tasks-project-value-badge--due-{{ project.due_highlight }}"{% if project.due_color %} style="--tasks-project-highlight-bg: {{ project.due_color }};"{% endif %} title="{{ project.due_description }}">{{ project.due_at|date:"d.m.Y" }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
+                        {% if project.due_at %}<span class="tasks-project-value-badge tasks-project-value-badge--due-{{ project.due_highlight }}" title="{{ project.due_description }}">{{ project.due_at|date:"d.m.Y" }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak terminu</span>{% endif %}
                     </span>
                     <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="company">{% if project.company %}{{ project.company.name }}{% else %}<span class="tasks-project-sheet__muted">Brak firmy</span>{% endif %}</span>
                     <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="responsible_user">
@@ -1135,13 +1131,13 @@
                         <span>{% if project.responsible_user %}{{ project.responsible_user.get_full_name|default:project.responsible_user.username }}{% else %}Brak osoby{% endif %}</span>
                     </span>
                     <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="project_status">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--status-{{ project.status }}" style="--tasks-project-highlight-bg: {{ project.status_color }};">{{ project.get_status_display }}</span>
+                        <span class="tasks-project-value-badge tasks-project-value-badge--status-{{ project.status }}">{{ project.get_status_display }}</span>
                     </span>
                     <span class="tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="stage">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--stage-{{ project.stage }}" style="--tasks-project-highlight-bg: {{ project.stage_color }};">{{ project.get_stage_display }}</span>
+                        <span class="tasks-project-value-badge tasks-project-value-badge--stage-{{ project.stage }}">{{ project.get_stage_display }}</span>
                     </span>
                     <span class="tasks-project-sheet__status tasks-project-sheet__status--{{ project.health }} tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="health">
-                        <span class="tasks-project-value-badge tasks-project-value-badge--health-{{ project.health }}" style="--tasks-project-highlight-bg: {{ project.health_color }};">{{ project.get_health_display }}</span>
+                        <span class="tasks-project-value-badge tasks-project-value-badge--health-{{ project.health }}">{{ project.get_health_display }}</span>
                     </span>
                     <span class="tasks-project-sheet__progress tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="progress" title="Ukończone zadania: {{ project.tasks_completed_count }} z {{ project.tasks_total_count }}">
                         <span class="tasks-project-progress-track" aria-hidden="true">
@@ -1149,7 +1145,7 @@
                         </span>
                         <span>{{ project.progress_percent }}%</span>
                     </span>
-                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">{% if project.source %}<span class="tasks-project-value-badge tasks-project-value-badge--source"{% if project.source_color %} style="--tasks-project-highlight-bg: {{ project.source_color }};"{% endif %}>{{ project.source }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak źródła</span>{% endif %}</span>
+                    <span class="tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="source">{% if project.source %}<span class="tasks-project-value-badge tasks-project-value-badge--source">{{ project.source }}</span>{% else %}<span class="tasks-project-sheet__muted">Brak źródła</span>{% endif %}</span>
                     <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="sections_count">{{ project.groups_count_label }}</span>
                     <span class="tasks-project-sheet__count tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count">{{ project.tasks_total_count_label }}</span>
                     <span class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity">
@@ -1333,7 +1329,7 @@
                 <div class="tasks-form-field">
                     <label for="{{ project_form.template.id_for_label }}">Szablon projektu</label>
                     {{ project_form.template }}
-                    <p class="tasks-project-deadline-help">Szablon odtwarza grupy, zadania i podzadania. Nowe zadania nie mają wykonawców, terminów, przypomnień ani czasu pracy.</p>
+                    <p class="tasks-project-template-help">Szablon odtwarza grupy, zadania i podzadania. Nowe zadania nie mają wykonawców, terminów, przypomnień ani czasu pracy.</p>
                 </div>
 
                 <section class="tasks-project-parameters" aria-labelledby="project-create-parameters-title">
@@ -1531,7 +1527,6 @@
                             {{ project_rename_form.due_at }}
                         </label>
                     </div>
-                    <a href="{% url 'project_field_settings' %}?project_id={{ project_rename_form.instance.pk|default:'' }}#project-field-group-deadline" data-project-deadline-settings-link data-settings-url="{% url 'project_field_settings' %}" class="tasks-project-deadline-settings-link">Progi i kolory terminu tego projektu</a>
                 </section>
                 </section>
                 {% include 'tasks/includes/project_access_panel.html' with kind='project' only %}

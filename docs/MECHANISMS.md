@@ -330,23 +330,21 @@ pobierania co tabela.
 rekordów do JS i ukrywanie części wierszy zmienia koszt oraz zachowanie list.
 Przed zmianą zapytań sprawdź testy liczby zapytań i renderowania tylko bieżącego okna.
 
-## 8. Konfiguracja pól i terminów projektów
+## 8. Pola i terminy projektów
 
-Źródła: [modele Tasks](../tasks/models.py),
-[project_settings.py](../tasks/views/project_settings.py),
-`_project_field_configuration()` w głównych widokach.
+Źródła: [modele Tasks](../tasks/models.py), [formularze](../tasks/forms.py),
+`_project_choices()` i `_decorate_project_dates()` w głównych widokach.
 
-Słowniki statusu/etapu/kondycji mają wartości techniczne, etykiety, kolory,
-kolejność i flagę aktywności. Źródło projektu jest przechowywane tekstowo;
-formularz obsługuje preset oraz ręczną wartość. Nie zastępuj etykiet
-bezrefleksyjnie stałymi choices w nowym widoku.
+Status/etap/kondycja mają stałe opcje. Lista i formularze uwzględniają także
+historyczne wartości zapisane w widocznych projektach właściciela/Workspace.
+Nie można dodać nowej własnej opcji przez dawne formularze konfiguracji;
+`/settings/project-fields/` jest usunięty. Źródło jest tekstem, a formularz
+podpowiada źródła z dostępnych projektów i przyjmuje ręcznie wpisaną wartość.
 
-Reguły terminu wybierają pierwszy próg spełniający `days_left <= rule.days`,
-po sortowaniu rosnąco. Termin przeterminowany również mieści się w najniższym
-progu; brak terminu lub dopasowania daje pusty kolor. Domyślne progi to
-2, 16 i 30 dni. Usunięte reguły wspólne pozostają nieaktywne, aby brak aktywnych
-reguł nie powodował ponownego utworzenia domyślnych.
-
+Opisy terminu i `due_highlight` pozostają wyliczane z daty. Nie ma modeli
+słowników ani reguł progów/kolorów. Migracja `tasks/0063` usuwa konfigurację,
+bez zmiany pól statusu, etapu, kondycji, źródła lub dat istniejących projektów.
+Historyczne migracje tworzące słowniki pozostają częścią łańcucha migracji.
 `Task.due_urgency` jest osobne: czerwony przy ≤24 h (także po terminie),
 żółty przy ≤3 dniach, zielony dalej, `none` bez terminu.
 

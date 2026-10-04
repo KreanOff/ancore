@@ -120,7 +120,7 @@
             pending = true;
             previousFocus = trigger.closest('[data-sidebar-collapsed-flyout]')
                 ? document.querySelector('[data-sidebar-group="spaces"] [data-sidebar-group-toggle]')
-                : trigger;
+                : trigger.closest('[data-row-actions]')?.querySelector('[data-row-actions-toggle]') || trigger;
             trigger.setAttribute('aria-busy', 'true');
             try { const result = await request(trigger.href); if (!signal.aborted) display(result.html); }
             catch (error) { if (!signal.aborted) window.showNotification?.(error.message, 'error'); }

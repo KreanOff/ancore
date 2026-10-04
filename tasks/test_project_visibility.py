@@ -149,7 +149,7 @@ class ProjectVisibilityTests(TestCase):
                     response = self.client.get(base+suffix, follow=True)
                     self.assertEqual(response.status_code, 404)
             self.assertEqual(self.client.post(base+f'follow/project/{self.private.pk}/', {'following': 'true'}).status_code, 404)
-        self.assertEqual(self.client.get(reverse('project_field_settings'), {'project_id': self.private.pk}).status_code, 404)
+        self.assertEqual(self.client.get('/settings/project-fields/', {'project_id': self.private.pk}).status_code, 404)
 
     def test_forged_mutations_and_bulk_actions_do_not_change_private_records(self):
         for action in ['edit_project', 'delete_project', 'add_project_note', 'create_section', 'save_project_template']:

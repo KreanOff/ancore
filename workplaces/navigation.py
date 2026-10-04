@@ -45,7 +45,7 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
     view_name = getattr(resolver_match, 'url_name', '') or ''
 
     if item_key in {'spaces', 'tasks-projects', 'kanban-spaces', 'kanban-boards'}:
-        return app_name in {'spaces', 'workplace_spaces'} and view_name != 'items'
+        return app_name in {'spaces', 'workplace_spaces'} and view_name not in {'items', 'manage', 'manage_create', 'manage_edit'}
     if item_key == 'teams':
         return app_name in {'teams', 'workplace_teams'}
     if item_key == 'tasks-all' and app_name in {'spaces', 'workplace_spaces'}:

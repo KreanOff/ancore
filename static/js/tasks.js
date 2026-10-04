@@ -3670,16 +3670,6 @@ function initTasksPage() {
         syncTemplateFields();
     }
 
-    document.querySelectorAll('[data-project-option-color]').forEach(input => {
-        const syncPreview = () => {
-            const preview = input.closest('[data-project-field-option-form]')
-                ?.querySelector('.tasks-project-field-option-preview');
-            preview?.style.setProperty('--tasks-project-highlight-bg', input.value);
-        };
-        input.addEventListener('input', syncPreview);
-        input.addEventListener('change', syncPreview);
-    });
-
     function setMultiSelectValues(select, value) {
         if (!select) return;
         const selectedValues = new Set(String(value || '').split(',').map(item => item.trim()).filter(Boolean));
@@ -3736,13 +3726,6 @@ function initTasksPage() {
 
     function setProjectRenameFieldsFromDataset(dataset = {}) {
         setFieldValue(projectRenameIdInput, dataset.projectId);
-        const deadlineSettingsLink = projectRenameForm?.querySelector('[data-project-deadline-settings-link]');
-        if (deadlineSettingsLink) {
-            const url = new URL(deadlineSettingsLink.dataset.settingsUrl, window.location.origin);
-            url.searchParams.set('project_id', dataset.projectId || '');
-            url.hash = 'project-field-group-deadline';
-            deadlineSettingsLink.href = url.toString();
-        }
         setFieldValue(projectRenameNameInput, dataset.projectName);
         setFieldValue(projectRenameDescriptionInput, dataset.projectDescription);
         setFieldValue(projectRenameCompanyInput, dataset.projectCompanyId);
@@ -3770,8 +3753,6 @@ function initTasksPage() {
         form?.querySelectorAll('[data-project-access-panel="main"] input:not([type=hidden]), [data-project-access-panel="main"] textarea, [data-project-access-panel="main"] select, [data-project-access-panel="main"] button').forEach(control => { control.disabled = readonly; });
         const title = form?.querySelector('#project-rename-modal-title');
         if (title) title.textContent = taskAppSegment === 'kanban' ? (readonly ? 'Przestrzeń — tylko odczyt' : 'Edytuj przestrzeń') : (readonly ? 'Projekt — tylko odczyt' : 'Edytuj projekt');
-        const settingsLink = form?.querySelector('[data-project-deadline-settings-link]');
-        if (settingsLink) settingsLink.hidden = readonly;
         const visibility = form?.elements.namedItem('visibility');
         if (visibility) { if (access?.visibility) visibility.value = access.visibility; visibility.disabled = !access?.canManage; }
         window.AncoreCustomSelect?.refresh(form);
@@ -7468,6 +7449,10 @@ function initTasksPage() {
         function getDefaultDirectoryTrackWidths(cells) {
             return cells.map(cell => {
                 const column = cell.dataset.column || '';
+                if (cell.closest('.work-space-sheet--management')) {
+                    const widths = { action: 40, name: 270, key: 100, kind: 160, management: 220, leader: 210, last_activity: 190, menu: 40 };
+                    if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
+                }
                 if (column === 'select') {
                     if (isProjectDirectoryCell(cell)) return projectColumnDefaultWidths.select;
                     return getDirectorySelectColumnWidth(cell);

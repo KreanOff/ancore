@@ -40,15 +40,12 @@ from core.upload_validation import (
 )
 from core.comment_images import save_comment, comment_image_response
 from ..models import (
-    PROJECT_FIELD_OPTION_DEFAULTS,
     Task,
     TaskActivity,
     TaskAttachment,
     TaskCommentImage,
     TaskProject,
     TaskProjectTemplate,
-    TaskProjectDeadlineRule,
-    TaskProjectFieldOption,
     TaskProjectNote,
     TaskSection,
     TaskSectionNote,
@@ -752,72 +749,23 @@ def _choice_options(choices):
     return [{'value': value, 'label': label} for value, label in choices]
 
 
-def _project_field_configuration(user, workplace=None, viewer=None):
-    options = list(TaskProjectFieldOption.active_for_scope(user, workplace))
-    choices = {field_type: [] for field_type, _label in TaskProjectFieldOption.FIELD_CHOICES}
-    labels = {field_type: {} for field_type in choices}
-    colors = {field_type: {} for field_type in choices}
-    for option in options:
-        choices[option.field_type].append((option.project_value, option.label))
-        labels[option.field_type][option.project_value] = option.label
-        colors[option.field_type][option.project_value] = option.color
-
-    scoped_projects = visible_to(TaskProject.objects.all(), viewer or user).filter(user=user, workplace=workplace)
-    used_values = {
-        field_type: set(scoped_projects.values_list(field_type, flat=True).distinct())
-        for field_type in choices
+def _project_choices(user, workplace=None, viewer=None):
+    choices = {
+        'status': list(TaskProject.STATUS_CHOICES),
+        'stage': list(TaskProject.STAGE_CHOICES),
+        'health': list(TaskProject.HEALTH_CHOICES),
     }
-    for option in options:
-        option.in_use = option.project_value in used_values[option.field_type]
-
-    group_copy = {
-        'status': ('Status projektu', 'Określa bieżący stan projektu.'),
-        'stage': ('Etap', 'Opisuje fazę realizacji projektu.'),
-        'health': ('Kondycja', 'Sygnalizuje ryzyko i ogólną kondycję projektu.'),
-        'source': ('Źródło', 'Dodaj gotowe źródła projektów i wybierz ich kolory.'),
-    }
-    groups = []
-    for field_type, _field_label in TaskProjectFieldOption.FIELD_CHOICES:
-        label, description = group_copy[field_type]
-        groups.append({
-            'field_type': field_type,
-            'label': label,
-            'description': description,
-            'max_length': 120 if field_type == TaskProjectFieldOption.FIELD_SOURCE else 60,
-            'options': [option for option in options if option.field_type == field_type],
-        })
-
-    return {
-        'options': options,
-        'choices': choices,
-        'labels': labels,
-        'colors': colors,
-        'groups': groups,
-        'deadline_rules': list(TaskProjectDeadlineRule.active_for_scope(user, workplace)),
-    }
+    projects = visible_to(TaskProject.objects.all(), viewer or user).filter(user=user, workplace=workplace)
+    for name, values in choices.items():
+        known = {value for value, _label in values}
+        values.extend((value, value) for value in projects.exclude(**{name: ''})
+                      .order_by(name).values_list(name, flat=True).distinct() if value not in known)
+    return choices
 
 
-def _decorate_project_field_values(projects, field_configuration):
-    if not projects:
-        return
-    labels = field_configuration['labels']
-    colors = field_configuration['colors']
-    deadline_rules = field_configuration.get('deadline_rules', [])
-    custom_rules = {
-        project.pk: [] for project in projects if project.use_custom_deadline_rules
-    }
-    if custom_rules:
-        for rule in TaskProjectDeadlineRule.objects.filter(project_id__in=custom_rules, is_active=True):
-            custom_rules[rule.project_id].append(rule)
+def _decorate_project_dates(projects):
     today = timezone.localdate()
-    default_colors = {
-        field_type: {value: color for value, _label, color in defaults}
-        for field_type, defaults in PROJECT_FIELD_OPTION_DEFAULTS.items()
-    }
     for project in projects:
-        project._project_field_option_labels = labels
-        project.source_color = colors.get('source', {}).get(project.source, '')
-        project.due_color = ''
         project.due_description = ''
         if project.due_at:
             days_left = (project.due_at - today).days
@@ -827,16 +775,6 @@ def _decorate_project_field_values(projects, field_configuration):
                 project.due_description = 'Termin dzisiaj'
             else:
                 project.due_description = f'Dni do terminu: {days_left}'
-            if project.status not in ('completed', 'cancelled'):
-                rules = custom_rules.get(project.pk, deadline_rules)
-                project.due_color = TaskProjectDeadlineRule.color_for_date(project.due_at, rules, today) or '#DFEFFF'
-        for field_type in ('status', 'stage', 'health'):
-            value = getattr(project, field_type, '')
-            setattr(
-                project,
-                f'{field_type}_color',
-                colors.get(field_type, {}).get(value, default_colors.get(field_type, {}).get(value, '#E9ECF0')),
-            )
 
 
 def _choice_values_matching_query(choices, query):
@@ -1861,11 +1799,10 @@ def _project_for_user(user, project_id, workplace=None, viewer=None):
     return projects[0] if projects else None
 
 
-def _project_window_for_request(request, field_configuration=None):
+def _project_window_for_request(request, project_choices=None):
     workplace = _active_workplace(request)
     tab = directory_tab(request)
-    field_configuration = field_configuration or _project_field_configuration(workspace_owner(request), workplace, viewer=request.user)
-    project_choices = field_configuration['choices']
+    project_choices = project_choices or _project_choices(workspace_owner(request), workplace, viewer=request.user)
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
     query = (request.GET.get('q') or '').strip()
@@ -1924,7 +1861,7 @@ def _project_window_for_request(request, field_configuration=None):
 
     _decorate_project_directory_metrics(projects, viewer=request.user)
     decorate_favorites(projects, request, 'project')
-    _decorate_project_field_values(projects, field_configuration)
+    _decorate_project_dates(projects)
     _decorate_directory_members(projects, current_user=workspace_owner(request), viewer=request.user)
 
     filter_options = _project_filter_options(
@@ -2039,7 +1976,7 @@ def _project_window_for_request(request, field_configuration=None):
     }
 
 
-def _group_window_for_request(request, field_configuration=None, project=None):
+def _group_window_for_request(request, project=None):
     workplace = _active_workplace(request)
     tab = directory_tab(request) if project is None else None
     page_size = _project_page_size(request)
@@ -2076,11 +2013,7 @@ def _group_window_for_request(request, field_configuration=None, project=None):
     if project is None:
         decorate_favorites(sections, request, 'section')
     _decorate_group_directory_rows(sections, current_user=workspace_owner(request), viewer=request.user)
-    if field_configuration:
-        _decorate_project_field_values(
-            [section.project for section in sections],
-            field_configuration,
-        )
+    _decorate_project_dates([section.project for section in sections])
 
     base_params = {
         **({'project': project.id} if project is not None else {'view': 'all-groups'}),
@@ -3148,8 +3081,6 @@ def _redirect_to_task_detail(task, user):
 
 @login_required
 def tasks(request):
-    if request.method == 'GET' and request.GET.get('field_settings') == '1':
-        return redirect('project_field_settings')
     return _tasks_page(request)
 
 
@@ -3185,11 +3116,10 @@ def _tasks_page(request, active_section=None):
             messages.success(request, 'Szablon projektu zapisany.')
         return redirect(scoped_workplace_app_path(workplace, 'tasks', 'templates/'))
 
-    project_field_configuration = _project_field_configuration(workspace_owner(request), workplace, viewer=request.user)
+    project_choices = _project_choices(workspace_owner(request), workplace, viewer=request.user)
     project_form = TaskProjectForm(
         user=workspace_owner(request),
         workplace=workplace,
-        field_options=project_field_configuration['options'],
         viewer=request.user,
     )
     section_form = TaskSectionForm(user=workspace_owner(request), workplace=workplace, viewer=request.user)
@@ -3247,7 +3177,6 @@ def _tasks_page(request, active_section=None):
     project_rename_form = TaskProjectRenameForm(
         user=workspace_owner(request),
         workplace=workplace,
-        field_options=project_field_configuration['options'],
         viewer=request.user,
     )
     project_rename_project_id = ''
@@ -3270,7 +3199,6 @@ def _tasks_page(request, active_section=None):
                 request.POST,
                 user=workspace_owner(request),
                 workplace=workplace,
-                field_options=project_field_configuration['options'],
                 viewer=request.user,
             )
             with transaction.atomic():
@@ -3333,7 +3261,6 @@ def _tasks_page(request, active_section=None):
                     instance=project,
                     user=workspace_owner(request),
                     workplace=workplace,
-                    field_options=project_field_configuration['options'],
                     viewer=request.user,
                 )
                 if project_rename_form.is_valid():
@@ -3747,7 +3674,7 @@ def _tasks_page(request, active_section=None):
 
     project_window = _project_window_for_request(
         request,
-        field_configuration=project_field_configuration,
+        project_choices=project_choices,
     ) if active_view == 'projects' else {
         'projects': [],
         'query': '',
@@ -3774,7 +3701,7 @@ def _tasks_page(request, active_section=None):
         'sort_label': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['label'],
         'sort_direction': PROJECT_SORT_OPTION_MAP[PROJECT_DEFAULT_SORT]['direction'],
         'sort_field': 'name',
-        'filters': _empty_project_filter_options(project_field_configuration['choices']),
+        'filters': _empty_project_filter_options(project_choices),
         'active_filters': [],
         'active_filter_count': 0,
         'has_active_filters': False,
@@ -3792,7 +3719,6 @@ def _tasks_page(request, active_section=None):
     }
     group_window = _group_window_for_request(
         request,
-        field_configuration=project_field_configuration,
         project=active_project if active_view == 'project' else None,
     ) if active_view in {'all_groups', 'project'} else {
         'sections': [],
@@ -3909,11 +3835,11 @@ def _tasks_page(request, active_section=None):
     else:
         project_options = navigation_projects
     _decorate_project_directory_metrics(navigation_projects, viewer=request.user)
-    _decorate_project_field_values(navigation_projects, project_field_configuration)
+    _decorate_project_dates(navigation_projects)
     _decorate_directory_members(navigation_projects, current_user=workspace_owner(request), viewer=request.user)
     if project_options is not navigation_projects:
         _decorate_project_directory_metrics(project_options, viewer=request.user)
-        _decorate_project_field_values(project_options, project_field_configuration)
+        _decorate_project_dates(project_options)
         _decorate_directory_members(project_options, current_user=workspace_owner(request), viewer=request.user)
 
     orphan_tasks = []

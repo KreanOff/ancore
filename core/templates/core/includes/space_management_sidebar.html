@@ -1,0 +1,17 @@
+<nav class="sidebar-navigation" aria-label="Menu administracyjne" data-sidebar-navigation="administration"{% if not spaces_management_mode %} hidden{% endif %}>
+    <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-administration-title">
+        <h2 class="sidebar-menu-section-title" id="sidebar-administration-title">Ustawienia administracyjne Ancore</h2>
+        <a href="{{ sidebar_spaces_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni">
+            <i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i>
+            <span class="nav-label">Wróć do przestrzeni</span>
+        </a>
+        <a href="{{ sidebar_spaces_url }}manage/" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if spaces_management_mode %} active{% endif %}"{% if spaces_management_mode %} aria-current="page"{% endif %} aria-label="Zarządzaj przestrzeniami" title="Zarządzaj przestrzeniami">
+            <i class="nav-icon" data-icon="settings" aria-hidden="true"></i>
+            <span class="nav-label">Zarządzaj przestrzeniami</span>
+        </a>
+        <a href="{% url 'settings' %}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" aria-label="Ustawienia Ancore" title="Ustawienia Ancore">
+            <i class="nav-icon" data-icon="sliders-horizontal" aria-hidden="true"></i>
+            <span class="nav-label">Ustawienia Ancore</span>
+        </a>
+    </section>
+</nav>

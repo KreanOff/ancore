@@ -1,0 +1,21 @@
+<nav class="sidebar-navigation" aria-label="Kategorie ustawień" data-sidebar-navigation="settings"{% if sidebar_mode != 'settings' %} hidden{% endif %}>
+    <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-settings-title">
+        <h2 class="sidebar-menu-section-title" id="sidebar-settings-title">Ustawienia Ancore</h2>
+        <a href="{{ sidebar_spaces_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni">
+            <i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i>
+            <span class="nav-label">Wróć do przestrzeni</span>
+        </a>
+        <a href="{% url 'settings' %}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if sidebar_mode == 'settings' %} active{% endif %}" data-settings-category="all"{% if sidebar_mode == 'settings' %} aria-current="page"{% endif %} aria-label="Ogólne" title="Ogólne">
+            <i class="nav-icon" data-icon="settings" aria-hidden="true"></i>
+            <span class="nav-label">Ogólne</span>
+        </a>
+        <a href="{% url 'settings' %}#account" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-settings-category="account" aria-label="Konto i dostęp" title="Konto i dostęp">
+            <i class="nav-icon" data-icon="user-round" aria-hidden="true"></i>
+            <span class="nav-label">Konto i dostęp</span>
+        </a>
+        <a href="{% url 'settings' %}#workspace" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-settings-category="workspace" aria-label="Workspace" title="Workspace">
+            <i class="nav-icon" data-icon="folder" aria-hidden="true"></i>
+            <span class="nav-label">Workspace</span>
+        </a>
+    </section>
+</nav>

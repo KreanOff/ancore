@@ -170,17 +170,11 @@ class ProjectObserverTests(TestCase):
         self.assertEqual(self.client.post(self.url(), {'action': 'delete_section', 'section_id': self.public_section.pk}).status_code, 403)
         self.assertTrue(Task.objects.filter(pk=self.public_task.pk).exists())
 
-    def test_observer_cannot_manage_team_or_deadlines_even_as_workspace_admin(self):
+    def test_observer_cannot_manage_team_even_as_workspace_admin(self):
         for action in ['share', 'role', 'remove']:
             self.assertEqual(self.team(action=action, member_id=self.membership.pk,
                 email=self.candidate.email, role='admin', invitation_id=123).status_code, 403)
         self.assertEqual(self.client.get(self.url(f'projects/{self.project.pk}/team/candidates/'), {'q': 'candidate'}).status_code, 403)
-        for action in ['enable_project_deadline_rules', 'reset_project_deadline_rules',
-                       'create_project_deadline_rule', 'update_project_deadline_rule', 'delete_project_deadline_rule']:
-            self.assertEqual(self.client.post(reverse('project_field_settings'), {
-                'project_id': self.project.pk, 'action': action, 'days': 1, 'color': '#ffffff',
-            }).status_code, 404)
-        self.assertFalse(self.project.use_custom_deadline_rules)
 
     def test_owner_and_admin_share_with_observer_and_owner_can_change_role(self):
         for inviter in [self.owner, self.admin]:

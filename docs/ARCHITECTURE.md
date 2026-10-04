@@ -190,8 +190,15 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty
   `/workplaces/<slug>/<moduł>/...`.
 - Kalendarz ma etykietę aplikacji `planner`, lecz segment URL `calendar`.
-- Ustawienia pól projektów są pod `/settings/project-fields/`, ale logika
-  znajduje się w `tasks/views/project_settings.py`.
+- `/spaces/` jest katalogiem do pracy, a `/spaces/manage/` osobnym ekranem
+  zarządzania widocznymi przestrzeniami zgodnie z rolami. Oba mają scoped
+  odpowiedniki i korzystają z tych samych modeli. Ekran zarządzania przełącza
+  główny pasek boczny na nawigację administracyjną; [szczegóły](SPACES.md).
+- System „Wartości pól projektu” jest usunięty. Dawny `/settings/project-fields/`
+  zwraca 404; projekty zachowują swoje pola i dotychczasowe wartości.
+- `/settings/` jest centrum ustawień konta, Workspace i preferencji.
+  Główny pasek boczny pokazuje jego kategorie zamiast menu Workspace,
+  także przy częściowej nawigacji; [standard UI](UI.md).
 - W `tasks` istnieją zarówno `views.py`, jak i pakiet `views/`. Routing
   używa implementacji w pakiecie. Podobnie nazwa `tasks` w Kanbanie
   jest historycznym nazewnictwem widoków i szablonów kart.

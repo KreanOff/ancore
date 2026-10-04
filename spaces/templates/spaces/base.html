@@ -5,11 +5,11 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct">
 <link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261001-project-list">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261004-unified-tabs-icons">
-<script src="{% static 'js/spaces.js' %}?v=20261004-create-directory" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261004-spaces-admin-sidebar">
+<script src="{% static 'js/spaces.js' %}?v=20261004-spaces-admin-sidebar" defer></script>
 {% endblock %}
 {% block content %}
-<div class="tasks-page tasks-list-page work-page" data-work-page>
+<div class="tasks-page tasks-list-page work-page{% block work_page_class %}{% endblock %}" data-work-page>
     <section class="tasks-workspace">
         <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
             <div class="tasks-titlebar-left">{% block work_heading %}<h1 class="tasks-topbar-title">Przestrzenie</h1>{% endblock %}</div>

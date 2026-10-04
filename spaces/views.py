@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.forms import formset_factory
 from django.http import FileResponse, Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -19,6 +19,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from core.task_numbering import lock_task_numbers
+from accounts.avatar import account_avatar
 from dashboard.recent import remember_view
 from tasks.access import editable_to, visible_to
 from tasks.models import Task, TaskProject, TaskProjectMembership
@@ -28,7 +29,7 @@ from .avatars import delete_avatar_after_commit
 from .defaults import TEMPLATES, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
-from .services import app_url, default_section, ensure_space, ensure_work_item, manage_configuration, manage_space, record, set_status, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
+from .services import app_url, can_manage_spaces, default_section, ensure_space, ensure_work_item, manageable_spaces, manage_configuration, manage_space, record, set_status, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 
 
 def space_object(request, pk):
@@ -36,7 +37,7 @@ def space_object(request, pk):
 
 
 def base_context(request):
-    return {'spaces_url': app_url(request), 'teams_url': app_url(request, app='teams'), 'all_items_url': app_url(request, 'items/')}
+    return {'spaces_url': app_url(request), 'spaces_manage_url': app_url(request, 'manage/'), 'teams_url': app_url(request, app='teams'), 'all_items_url': app_url(request, 'items/')}
 
 
 def decorate_items(request, items):
@@ -60,37 +61,58 @@ def decorate_items(request, items):
     return result
 
 
-def index_context(request):
+def index_context(request, management=False):
     # Covers projects created by old integrations via bulk_create, too.
     for project in visible_to(TaskProject.objects.filter(user=workspace_owner(request), workplace=request.workplace, space__isnull=True), request.user):
         ensure_space(project)
     query = request.GET.get('q', '').strip()[:120]
     tab = request.GET.get('tab', 'all')
-    spaces = visible_spaces(request)
+    spaces = manageable_spaces(request) if management else visible_spaces(request)
     if query:
         spaces = spaces.filter(Q(project__name__icontains=query) | Q(key__icontains=query))
-    if tab == 'favorites':
+    if not management and tab == 'favorites':
         spaces = spaces.filter(project__favorited_by=request.user)
-    elif tab == 'private':
+    elif not management and tab == 'private':
         spaces = spaces.filter(project__visibility='private')
     kind = request.GET.get('kind')
     if kind in {'software', 'business', 'service'}:
         spaces = spaces.filter(kind=kind)
+    management_filter = request.GET.get('management', '')
+    if management and management_filter in {'team', 'company'}:
+        spaces = spaces.filter(management=management_filter)
+    if management:
+        spaces = spaces.select_related('project__responsible_user', 'project__private_owner', 'project__user')
     page = Paginator(spaces.order_by('project__name', 'pk'), 30).get_page(request.GET.get('page'))
     favorites = set(TaskProject.objects.filter(favorited_by=request.user).values_list('pk', flat=True))
     counts = {row['space_id']: row['count'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(count=Count('pk'))}
+    activity = {row['space_id']: row['last_activity'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(last_activity=Max('task__activities__created_at'))} if management else {}
     for space in page:
         space.url = app_url(request, f'{space.pk}/')
         space.favorite_url = app_url(request, f'{space.pk}/favorite/')
         space.favorite = space.project_id in favorites
         space.item_count = counts.get(space.pk, 0)
-    return {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'create_url': app_url(request, 'create/'), 'templates': TEMPLATES}
+        if management:
+            space.settings_url = space.url + '?view=settings'
+            space.edit_url = app_url(request, f'manage/{space.pk}/edit/')
+            space.configuration_url = app_url(request, f'{space.pk}/configuration/') if manage_configuration(request, space) else ''
+            space.leader = space.project.responsible_user or space.project.private_owner or space.project.user
+            space.leader_avatar = account_avatar(space.leader)
+            space.last_activity = activity.get(space.pk)
+    return {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'management_filter': management_filter, 'create_url': app_url(request, 'manage/create/' if management else 'create/'), 'templates': TEMPLATES}
 
 
 @login_required
 @require_GET
 def index(request):
     return render(request, 'spaces/index.html', index_context(request))
+
+
+@login_required
+@require_GET
+def manage(request):
+    if not can_manage_spaces(request):
+        raise PermissionDenied
+    return render(request, 'spaces/manage.html', index_context(request, management=True))
 
 
 @login_required
@@ -214,7 +236,7 @@ def all_items(request):
     return render(request, 'spaces/items.html', {**base_context(request), 'items': decorate_items(request, page.object_list), 'page': page, 'query': query, 'assignee_filter': request.GET.get('assignee', '')})
 
 
-def dialog_response(request, form, title, return_url, saved=False, directory=False):
+def dialog_response(request, form, title, return_url, saved=False, directory=False, management=False):
     if saved:
         if request.headers.get('X-Work-Modal') == 'true':
             return JsonResponse({'saved': True, 'url': return_url})
@@ -225,20 +247,22 @@ def dialog_response(request, form, title, return_url, saved=False, directory=Fal
     if request.headers.get('X-Work-Modal') == 'true':
         return JsonResponse({'html': render_to_string('spaces/form.html', context, request=request)}, status=status)
     if directory:
-        context.update(index_context(request))
+        context.update(index_context(request, management=management))
         modal['directory_url'] = return_url
-        return render(request, 'spaces/index.html', context, status=status)
+        return render(request, 'spaces/manage.html' if management else 'spaces/index.html', context, status=status)
     return render(request, 'spaces/form_page.html', context, status=status)
 
 
 @login_required
 @require_http_methods(['GET', 'POST'])
-def edit(request, pk=None):
+def edit(request, pk=None, management=False):
+    if management and not can_manage_spaces(request):
+        raise PermissionDenied
     space = space_object(request, pk) if pk else None
     if space and not manage_space(request, space):
         raise PermissionDenied
     form = SpaceForm(request.POST if request.method == 'POST' else None, request=request, space=space)
-    url = app_url(request, f'{pk}/?view=settings') if pk else app_url(request)
+    url = app_url(request, 'manage/') if management else app_url(request, f'{pk}/?view=settings') if pk else app_url(request)
     if request.method == 'POST' and form.is_valid():
         data = form.cleaned_data
         try:
@@ -264,12 +288,12 @@ def edit(request, pk=None):
                     project.save()
                     if visibility_changed:
                         project.memberships.all().delete()
-                url = app_url(request, f'{space.pk}/')
+                url = app_url(request, 'manage/' if management else f'{space.pk}/')
         except IntegrityError:
             form.add_error('key', 'Ten klucz został właśnie zajęty. Wybierz inny.')
         else:
             return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=pk is None)
+    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=pk is None or management, management=management)
 
 
 @login_required
@@ -341,7 +365,7 @@ def favorite(request, pk):
         space.project.favorited_by.remove(request.user)
     else:
         space.project.favorited_by.add(request.user)
-    return redirect(app_url(request))
+    return redirect(app_url(request, 'manage/' if request.POST.get('directory') == 'manage' else ''))
 
 
 @login_required

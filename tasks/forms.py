@@ -10,13 +10,10 @@ from workplaces.services import workplace_people
 
 from contacts.models import Company
 from .models import (
-    PROJECT_FIELD_OPTION_DEFAULTS,
     Task,
     TaskAttachment,
     TaskProject,
     TaskProjectTemplate,
-    TaskProjectDeadlineRule,
-    TaskProjectFieldOption,
     TaskSection,
     TaskTag,
     TaskWorkLog,
@@ -429,7 +426,6 @@ class TaskProjectBaseForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         viewer = kwargs.pop('viewer', None) or user
         workplace = kwargs.pop('workplace', None)
-        field_options = kwargs.pop('field_options', None)
         super().__init__(*args, **kwargs)
         self.viewer = viewer
         self.can_manage_access = (not self.instance.pk or self.instance.visibility == 'public'
@@ -446,16 +442,22 @@ class TaskProjectBaseForm(forms.ModelForm):
             _replace_optional_model_choice(self, 'responsible_user', _crm_user_queryset(user, workplace), 'Brak osoby')
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search'] = 'true'
             self.fields['responsible_user'].widget.attrs['data-ancore-custom-select-search-placeholder'] = 'Szukaj osoby'
-        if field_options is None and user:
-            field_options = list(TaskProjectFieldOption.active_for_scope(user, workplace))
         option_choices = {
-            field_type: [(value, label) for value, label, _color in defaults]
-            for field_type, defaults in PROJECT_FIELD_OPTION_DEFAULTS.items()
+            'status': list(TaskProject.STATUS_CHOICES),
+            'stage': list(TaskProject.STAGE_CHOICES),
+            'health': list(TaskProject.HEALTH_CHOICES),
         }
-        if field_options is not None:
-            option_choices = {field_type: [] for field_type in PROJECT_FIELD_OPTION_DEFAULTS}
-            for option in field_options:
-                option_choices.setdefault(option.field_type, []).append((option.project_value, option.label))
+        # Preserve historical values in the shared edit modal without a settings dictionary.
+        if user:
+            projects = visible_to(TaskProject.objects.all(), viewer).filter(user=user, workplace=workplace)
+            for name, choices in option_choices.items():
+                known = {value for value, _label in choices}
+                choices.extend((value, value) for value in projects.exclude(**{name: ''})
+                               .order_by(name).values_list(name, flat=True).distinct() if value not in known)
+        for name, choices in option_choices.items():
+            value = getattr(self.instance, name, '')
+            if self.instance.pk and value and value not in {key for key, _label in choices}:
+                choices.append((value, value))
         if 'source' in self.fields:
             sources = option_choices.get('source', [])
             known_sources = {value for value, _label in sources}
@@ -511,74 +513,6 @@ class TaskProjectBaseForm(forms.ModelForm):
 
     def clean_health(self):
         return self.cleaned_data.get('health') or self._project_field_defaults.get('health') or 'ok'
-
-
-class TaskProjectDeadlineRuleForm(forms.ModelForm):
-    def clean_days(self):
-        days = self.cleaned_data['days']
-        rules = TaskProjectDeadlineRule.for_scope(
-            self.instance.owner, self.instance.workplace, self.instance.project,
-        ).filter(
-            days=days, is_active=True,
-        )
-        if self.instance.pk:
-            rules = rules.exclude(pk=self.instance.pk)
-        if rules.exists():
-            raise forms.ValidationError('Reguła dla tej liczby dni już istnieje.')
-        return days
-
-    def clean_color(self):
-        return self.cleaned_data['color'].upper()
-
-    class Meta:
-        model = TaskProjectDeadlineRule
-        fields = ['days', 'color']
-
-
-class TaskProjectFieldOptionForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        self.owner = kwargs.pop('owner')
-        self.workplace = kwargs.pop('workplace', None)
-        super().__init__(*args, **kwargs)
-        max_length = 120 if self.instance.field_type == TaskProjectFieldOption.FIELD_SOURCE else 60
-        self.fields['label'] = forms.CharField(
-            max_length=max_length,
-            widget=forms.TextInput(attrs={
-                'class': 'tasks-project-option-name', 'maxlength': max_length, 'autocomplete': 'off',
-            }),
-        )
-
-    def clean_label(self):
-        label = (self.cleaned_data.get('label') or '').strip()
-        if not label:
-            raise forms.ValidationError('Podaj nazwę wartości.')
-        if self.instance.pk and self.instance.field_type == TaskProjectFieldOption.FIELD_SOURCE and label == self.instance.label:
-            return label
-        queryset = TaskProjectFieldOption.for_scope(self.owner, self.workplace).filter(
-            field_type=self.instance.field_type,
-            is_active=True,
-            label__iexact=label,
-        )
-        if self.instance.pk:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        if queryset.exists():
-            raise forms.ValidationError('Taka nazwa już istnieje w tym polu.')
-        return label
-
-    class Meta:
-        model = TaskProjectFieldOption
-        fields = ['label', 'color']
-        widgets = {
-            'label': forms.TextInput(attrs={
-                'class': 'tasks-project-option-name',
-                'maxlength': 60,
-                'autocomplete': 'off',
-            }),
-            'color': forms.TextInput(attrs={
-                'type': 'color',
-                'class': 'tasks-project-option-color',
-            }),
-        }
 
 
 class TaskProjectTemplateNameForm(forms.ModelForm):

@@ -16,7 +16,7 @@ from workplaces.services import scoped_workplace_app_path
 
 class DashboardViewTests(TestCase):
     def test_settings_requires_login(self):
-        for route in ('settings', 'project_field_settings'):
+        for route in ('settings',):
             for method in ('get', 'post'):
                 with self.subTest(route=route, method=method):
                     response = getattr(self.client, method)(reverse(route))
@@ -34,9 +34,15 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('settings'))
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['sidebar_mode'], 'settings')
+        self.assertContains(response, 'data-sidebar-mode="settings"')
+        self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
+        self.assertNotContains(response, 'data-sidebar-navigation="settings" hidden')
+        self.assertNotContains(response, 'class="settings-navigation"')
+        self.assertContains(response, f'href="{reverse("settings")}#account"')
         self.assertContains(response, 'Ustawienia Ancore')
-        self.assertContains(response, reverse('project_field_settings'))
-        self.assertContains(response, 'Wartości pól projektu')
+        self.assertNotContains(response, 'settings/project-fields/')
+        self.assertNotContains(response, 'Wartości pól projektu')
         self.assertContains(response, 'data-sticky-note-toggle')
         self.assertNotContains(response, 'sidebar-sticker-toggle')
         self.assertContains(response, 'id="app-sticky-note"')
@@ -97,6 +103,8 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'dashboard/home.html')
+        self.assertEqual(response.context['sidebar_mode'], 'workspace')
+        self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
         self.assertContains(response, 'Brak nadchodzących terminów')
         self.assertEqual(response['Cache-Control'], 'no-store')
 

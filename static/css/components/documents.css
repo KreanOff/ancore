@@ -128,8 +128,10 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-color-control { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .documents-color-preview { display: inline-flex; flex: 0 0 64px; }
 .documents-color-preview svg { width: 64px; height: 64px; }
-.documents-field .tasks-project-option-color { width: 34px; height: 34px; flex: 0 0 34px; }
-.documents-field .tasks-project-option-color:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
+.documents-field .documents-color-input { width: 34px; height: 34px; flex: 0 0 34px; padding: 3px; border: 1px solid #dbdee3; border-radius: 6px; background: #ffffff; cursor: pointer; }
+.documents-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.documents-color-input::-webkit-color-swatch { border: 0; border-radius: 3px; }
+.documents-field .documents-color-input:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
 .documents-field input::file-selector-button { font: inherit; background: var(--nav-selected-bg); border: 0; border-radius: 5px; padding: 9px 12px; margin-right: 10px; color: var(--text-main); cursor: pointer; }
 .documents-upload-hint { display: flex; align-items: center; gap: 12px; margin: 0; padding: 16px; background: var(--secondary-menu-bg); border-radius: var(--radius); font-size: var(--font-size-sm); }
 .documents-upload-hint > svg { width: 24px; height: 24px; flex: 0 0 auto; }

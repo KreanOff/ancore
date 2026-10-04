@@ -13,7 +13,7 @@
         cleanup = () => controller.abort();
         const status = page.querySelector('[data-settings-status]');
         const summary = page.querySelector('[data-settings-account-summary]');
-        const categories = Array.from(page.querySelectorAll('[data-settings-category]'));
+        const categories = Array.from(document.querySelectorAll('[data-sidebar-navigation="settings"] [data-settings-category]'));
         const groups = Array.from(page.querySelectorAll('[data-settings-group]'), (element) => ({
             element,
             category: element.dataset.settingsGroup,
@@ -21,8 +21,6 @@
         }));
         const hashCategories = {
             account: 'account', security: 'account', workspace: 'workspace',
-            preferences: 'preferences', appearance: 'preferences',
-            notifications: 'preferences', region: 'preferences',
         };
         let category = hashCategories[window.location.hash.slice(1)] || 'all';
 
@@ -35,8 +33,8 @@
             });
             categories.forEach((link) => {
                 const active = link.dataset.settingsCategory === category;
-                link.classList.toggle('is-active', active);
-                if (active) link.setAttribute('aria-current', 'true');
+                link.classList.toggle('active', active);
+                if (active) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
             summary.hidden = !['all', 'account'].includes(category);
@@ -48,8 +46,12 @@
             event.preventDefault();
             category = link.dataset.settingsCategory;
             const hash = category === 'all' ? '' : `#${category}`;
-            window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+            const url = `${window.location.pathname}${window.location.search}${hash}`;
+            if (url !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+                window.history.pushState({ ...window.history.state }, '', url);
+            }
             filterSettings();
+            page.querySelector('.settings-scroll-area').scrollTo({ top: 0 });
         }));
         on(window, 'hashchange', () => {
             category = hashCategories[window.location.hash.slice(1)] || 'all';
@@ -88,4 +90,5 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeSettings, { once: true });
     else initializeSettings();
     document.addEventListener('ancore:content-loaded', initializeSettings);
+    document.addEventListener('ancore:content-unloading', () => cleanup());
 })();

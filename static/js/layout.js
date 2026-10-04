@@ -71,7 +71,6 @@
             /^\/for-you\/?$/,
             /^\/$/,
             /^\/settings\/?$/,
-            /^\/settings\/project-fields\/?$/,
             /^\/workplaces\/?$/,
             /^\/accounts\/profile\/?$/,
             /^\/tasks\/?$/,
@@ -124,6 +123,18 @@
     }
 
     function syncSidebarState(nextDocument) {
+        const nextSidebar = nextDocument.querySelector('#app-sidebar');
+        const focusedNavigation = document.activeElement?.closest('[data-sidebar-navigation]');
+        if (nextSidebar) {
+            if (sidebar.dataset.sidebarMode !== nextSidebar.dataset.sidebarMode) {
+                closeCollapsedSidebarFlyout();
+            }
+            sidebar.dataset.sidebarMode = nextSidebar.dataset.sidebarMode;
+            sidebar.querySelectorAll('[data-sidebar-navigation]').forEach(function (navigation) {
+                const nextNavigation = nextSidebar.querySelector(`[data-sidebar-navigation="${navigation.dataset.sidebarNavigation}"]`);
+                if (nextNavigation) navigation.hidden = nextNavigation.hidden;
+            });
+        }
         const picker = document.querySelector('[data-space-picker]');
         const nextPicker = nextDocument.querySelector('[data-space-picker]');
         if (picker && nextPicker) {
@@ -134,10 +145,17 @@
         const nextLinks = Array.from(nextDocument.querySelectorAll('.sidebar a.nav-link, .app-topbar a.nav-link'));
 
         currentLinks.forEach(function (link) {
-            const nextLink = nextLinks.find(candidate => candidate.getAttribute('href') === link.getAttribute('href'));
+            const navigation = link.closest('[data-sidebar-navigation]');
+            const nextLink = nextLinks.find(candidate =>
+                candidate.getAttribute('href') === link.getAttribute('href')
+                && (navigation
+                    ? candidate.closest('[data-sidebar-navigation]')?.dataset.sidebarNavigation === navigation.dataset.sidebarNavigation
+                    : candidate.closest('.app-topbar'))
+            );
             if (!nextLink) return;
 
             link.classList.toggle('active', nextLink.classList.contains('active'));
+            link.hidden = nextLink.hidden;
             const avatar = link.querySelector('[data-space-avatar]');
             const nextAvatar = nextLink.querySelector('[data-space-avatar]');
             if (avatar && nextAvatar) {
@@ -153,6 +171,11 @@
         });
 
         syncFavoriteActiveStates();
+        if (focusedNavigation?.hidden) {
+            const heading = document.querySelector('.main-content h1');
+            heading?.setAttribute('tabindex', '-1');
+            heading?.focus({ preventScroll: true });
+        }
     }
 
     function assetUrl(url) {
@@ -1316,9 +1339,11 @@
         }
     });
 
-    sidebar.querySelector('.sidebar-navigation')?.addEventListener('scroll', function () {
-        closeCollapsedSidebarFlyout();
-    }, { passive: true });
+    sidebar.querySelectorAll('.sidebar-navigation').forEach(function (navigation) {
+        navigation.addEventListener('scroll', function () {
+            closeCollapsedSidebarFlyout();
+        }, { passive: true });
+    });
 
     function syncFavoriteActiveStates() {
         sidebar.querySelectorAll('[data-sidebar-favorite-item]').forEach(function (favoriteRow) {
@@ -1328,7 +1353,7 @@
                 ? sourceRow
                 : sourceRow?.querySelector('a.nav-link');
             const favoriteLink = favoriteRow.querySelector('a.nav-link');
-            if (favoriteLink) {
+            if (favoriteLink && sourceLink) {
                 favoriteLink.classList.toggle('active', Boolean(sourceLink?.classList.contains('active')));
             }
         });

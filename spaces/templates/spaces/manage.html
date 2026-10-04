@@ -1,0 +1,71 @@
+{% extends 'spaces/base.html' %}
+{% block work_title %}Zarządzaj przestrzeniami{% endblock %}
+{% block work_page_class %} work-page--management{% endblock %}
+{% block work_heading %}<h1 class="tasks-topbar-title">Zarządzaj przestrzeniami</h1>{% endblock %}
+{% block work_actions %}<a href="{{ create_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz przestrzeń</a>{% endblock %}
+{% block work_toolbar %}
+<form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get" action="{{ spaces_manage_url }}">
+    <div class="tasks-filterbar-left">
+        <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj przestrzeni" aria-label="Szukaj przestrzeni"></label>
+        <select name="kind" class="tasks-inline-select" aria-label="Rodzaj przestrzeni"><option value="">Wszystkie rodzaje</option><option value="software"{% if kind == 'software' %} selected{% endif %}>Programistyczne</option><option value="business"{% if kind == 'business' %} selected{% endif %}>Biznesowe</option><option value="service"{% if kind == 'service' %} selected{% endif %}>Obsługowe</option></select>
+        <select name="management" class="tasks-inline-select" aria-label="Sposób zarządzania"><option value="">Każdy sposób zarządzania</option><option value="team"{% if management_filter == 'team' %} selected{% endif %}>Przez zespół</option><option value="company"{% if management_filter == 'company' %} selected{% endif %}>Przez organizację</option></select>
+        <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>
+    </div>
+    <div class="tasks-filterbar-right">
+        <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony zarządzania przestrzeniami">
+            {% if page.has_previous %}<a class="tasks-project-pagination__button" href="{% querystring page=page.previous_page_number %}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Poprzednia strona" disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>{% endif %}
+            <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-live="polite">{{ page.start_index }}–{{ page.end_index }} z {{ page.paginator.count }}</span>
+            {% if page.has_next %}<a class="tasks-project-pagination__button" href="{% querystring page=page.next_page_number %}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Następna strona" disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>{% endif %}
+        </nav>
+    </div>
+</form>
+{% endblock %}
+{% block work_content_class %} work-content--directory{% endblock %}
+{% block work_content %}
+<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-spreadsheet-sheet work-space-sheet work-space-sheet--management">
+    {% if page %}
+    <section class="tasks-directory-group" role="table" aria-label="Zarządzanie przestrzeniami">
+        <div class="tasks-directory-header" role="row">
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Ulubione"><i data-icon="star" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">NAZWA<i data-icon="layers" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="columnheader">KLUCZ<i data-icon="hash" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="columnheader">RODZAJ<i data-icon="shapes" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="management" role="columnheader">ZARZĄDZANIE<i data-icon="settings" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="leader" role="columnheader">LIDER<i data-icon="user-round" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity" role="columnheader">AKTYWNOŚĆ ZADAŃ<i data-icon="history" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="columnheader" aria-label="Działania"><i data-icon="ellipsis" aria-hidden="true"></i></span>
+        </div>
+        <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
+            {% for space in page %}
+            <article class="tasks-issue-row tasks-directory-row" role="row">
+                <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell"><form method="post" action="{{ space.favorite_url }}">{% csrf_token %}<input type="hidden" name="directory" value="manage"><button class="tasks-icon-button tasks-row-favorite" type="submit" aria-label="{% if space.favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}: {{ space.project.name }}" aria-pressed="{{ space.favorite|yesno:'true,false' }}"><i data-icon="star" aria-hidden="true"></i></button></form></div>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{{ space.settings_url }}" title="{{ space.project.name }}">{{ space.project.name }}</a></span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="cell">{{ space.key }}</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="cell">{{ space.get_kind_display }}</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="management" role="cell" title="{{ space.get_management_display }}">{{ space.get_management_display }}</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-directory-assignee" data-column="leader" role="cell" title="{{ space.leader.get_full_name|default:space.leader.username }}">{% include 'accounts/includes/user_avatar.html' with avatar=space.leader_avatar avatar_class='tasks-directory-avatar' only %}<span>{{ space.leader.get_full_name|default:space.leader.username }}</span></span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity" role="cell"{% if space.last_activity %} title="{{ space.last_activity|date:'d.m.Y H:i' }}"{% endif %}>{% if space.last_activity %}{{ space.last_activity|timesince }} temu{% else %}Brak aktywności{% endif %}</span>
+                <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="cell">
+                    <div data-row-actions>
+                        <button type="button" class="tasks-icon-button" aria-label="Działania: {{ space.project.name }}" aria-expanded="false" aria-controls="space-management-menu-{{ space.pk }}" popovertarget="space-management-menu-{{ space.pk }}" data-row-actions-toggle><i data-icon="ellipsis" aria-hidden="true"></i></button>
+                        <div id="space-management-menu-{{ space.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {{ space.project.name }}" data-row-actions-panel>
+                            <a href="{{ space.url }}" class="tasks-project-menu-button"><i data-icon="layers" aria-hidden="true"></i><span>Otwórz przestrzeń</span></a>
+                            <a href="{{ space.edit_url }}" class="tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj przestrzeń</span></a>
+                            <a href="{{ space.settings_url }}" class="tasks-project-menu-button"><i data-icon="settings" aria-hidden="true"></i><span>Ustawienia i dostęp</span></a>
+                            {% if space.configuration_url %}<a href="{{ space.configuration_url }}" class="tasks-project-menu-button"><i data-icon="sliders-horizontal" aria-hidden="true"></i><span>Konfiguracja zadań</span></a>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% else %}
+    <div class="tasks-empty-state"><i data-icon="layers" aria-hidden="true"></i><div>
+        <h2>{% if query or kind or management_filter %}Brak pasujących przestrzeni{% else %}Brak przestrzeni do zarządzania{% endif %}</h2>
+        <p>{% if query or kind or management_filter %}Zmień wyszukiwanie lub filtry.{% else %}Utwórz przestrzeń, aby skonfigurować pracę zespołu.{% endif %}</p>
+        {% if query or kind or management_filter %}<a class="tasks-filter-button" href="{{ spaces_manage_url }}">Wyczyść filtry</a>{% else %}<a class="tasks-filter-button" href="{{ create_url }}" data-work-open>Utwórz przestrzeń</a>{% endif %}
+    </div></div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -22,6 +22,22 @@ def visible_spaces(request):
     return Space.objects.filter(project__in=projects).select_related('project', 'configuration', 'workplace')
 
 
+def manageable_spaces(request):
+    """The visible subset governed by the same rules as manage_space."""
+    private = Q(project__visibility='private') & (
+        Q(project__private_owner=request.user)
+        | Q(project__memberships__user=request.user, project__memberships__role='admin')
+    )
+    public = Q(project__visibility='public')
+    if not can_manage_team(request.user, request.workplace):
+        public &= Q(project__responsible_user=request.user)
+    return visible_spaces(request).filter(private | public).distinct()
+
+
+def can_manage_spaces(request):
+    return can_manage_team(request.user, request.workplace) or manageable_spaces(request).exists()
+
+
 def visible_items(request):
     tasks = visible_to(Task.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
     return WorkItem.objects.filter(task__in=tasks).select_related('task', 'task__assignee', 'space__project', 'space__configuration', 'team', 'sprint')

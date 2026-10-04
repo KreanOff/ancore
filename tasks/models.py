@@ -7,10 +7,9 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.apps import apps
 from django.conf import settings
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 from django.utils.formats import date_format
-from django.utils.text import slugify
 import os
 import secrets
 import string
@@ -21,31 +20,6 @@ from workplaces.models import invitation_expiry
 
 
 BASE36_ALPHABET = string.digits + string.ascii_uppercase
-
-
-PROJECT_FIELD_OPTION_DEFAULTS = {
-    'status': [
-        ('planned', 'Planowany', '#EEE8FF'),
-        ('active', 'Aktywny', '#DFEFFF'),
-        ('on_hold', 'Wstrzymany', '#FFEBC9'),
-        ('completed', 'Zakończony', '#DFF1E7'),
-        ('cancelled', 'Anulowany', '#E9ECF0'),
-    ],
-    'stage': [
-        ('lead', 'Lead', '#F5E3F7'),
-        ('offer', 'Oferta', '#FFE5D1'),
-        ('contract', 'Umowa', '#E6E4FF'),
-        ('implementation', 'Realizacja', '#DFF2F4'),
-        ('support', 'Utrzymanie', '#DFF1E7'),
-        ('internal', 'Wewnętrzny', '#E7EBF1'),
-    ],
-    'health': [
-        ('ok', 'OK', '#DFF1E7'),
-        ('at_risk', 'Zagrożony', '#FFEBC9'),
-        ('delayed', 'Opóźniony', '#FFE0DC'),
-    ],
-    'source': [],
-}
 
 
 def format_base36(value, width=5):
@@ -151,7 +125,6 @@ class TaskProject(models.Model):
     health = models.CharField(max_length=20, default='ok')
     start_at = models.DateField(null=True, blank=True)
     due_at = models.DateField(null=True, blank=True)
-    use_custom_deadline_rules = models.BooleanField(default=False)
     budget_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=3, default='PLN', blank=True)
     source = models.CharField(max_length=120, blank=True)
@@ -208,21 +181,14 @@ class TaskProject(models.Model):
     def __str__(self):
         return self.name
 
-    def _field_option_display(self, field_type):
-        labels = getattr(self, '_project_field_option_labels', {})
-        value = getattr(self, field_type, '')
-        if value in labels.get(field_type, {}):
-            return labels[field_type][value]
-        return dict((option_value, label) for option_value, label, _color in PROJECT_FIELD_OPTION_DEFAULTS[field_type]).get(value, value)
-
     def get_status_display(self):
-        return self._field_option_display('status')
+        return dict(self.STATUS_CHOICES).get(self.status, self.status)
 
     def get_stage_display(self):
-        return self._field_option_display('stage')
+        return dict(self.STAGE_CHOICES).get(self.stage, self.stage)
 
     def get_health_display(self):
-        return self._field_option_display('health')
+        return dict(self.HEALTH_CHOICES).get(self.health, self.health)
 
 
 class TaskProjectMembership(models.Model):
@@ -273,204 +239,6 @@ class TaskProjectTemplate(models.Model):
 
     def __str__(self):
         return self.template_name or self.name
-
-
-class TaskProjectDeadlineRule(models.Model):
-    DEFAULTS = ((2, '#FFE0DC'), (16, '#FFEBC9'), (30, '#DFF1E7'))
-
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, null=True, blank=True)
-    project = models.ForeignKey(
-        TaskProject, on_delete=models.CASCADE, related_name='deadline_rules', null=True, blank=True,
-    )
-    days = models.PositiveIntegerField(
-        'Liczba dni', validators=[MinValueValidator(0), MaxValueValidator(36500)],
-    )
-    color = models.CharField(
-        'Kolor', max_length=7, default='#DFF1E7',
-        validators=[RegexValidator(r'^#[0-9A-Fa-f]{6}$', 'Podaj kolor w formacie #RRGGBB.')],
-    )
-    # Retain deleted rows so removing all rules does not restore the defaults.
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ['days', 'id']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['owner', 'workplace', 'days'],
-                condition=Q(workplace__isnull=False, project__isnull=True, is_active=True),
-                name='unique_project_deadline_scope',
-            ),
-            models.UniqueConstraint(
-                fields=['owner', 'days'],
-                condition=Q(workplace__isnull=True, project__isnull=True, is_active=True),
-                name='unique_project_deadline_personal',
-            ),
-            models.UniqueConstraint(
-                fields=['project', 'days'],
-                condition=Q(project__isnull=False, is_active=True),
-                name='unique_project_deadline_override',
-            ),
-        ]
-
-    @classmethod
-    def for_scope(cls, owner, workplace=None, project=None):
-        return cls.objects.filter(owner=owner, workplace=workplace, project=project)
-
-    @classmethod
-    def active_for_scope(cls, owner, workplace=None):
-        scoped = cls.for_scope(owner, workplace)
-        if not scoped.exists():
-            cls.objects.bulk_create([
-                cls(owner=owner, workplace=workplace, days=days, color=color)
-                for days, color in cls.DEFAULTS
-            ], ignore_conflicts=True)
-        return scoped.filter(is_active=True)
-
-    @staticmethod
-    def color_for_date(due_at, rules, today=None):
-        if due_at is None:
-            return ''
-        days_left = (due_at - (today if today is not None else timezone.localdate())).days
-        rule = next((rule for rule in sorted(rules, key=lambda rule: rule.days) if days_left <= rule.days), None)
-        return rule.color if rule else ''
-
-
-class TaskProjectFieldOption(models.Model):
-    FIELD_STATUS = 'status'
-    FIELD_STAGE = 'stage'
-    FIELD_HEALTH = 'health'
-    FIELD_SOURCE = 'source'
-    FIELD_CHOICES = [
-        (FIELD_STATUS, 'Status projektu'),
-        (FIELD_STAGE, 'Etap'),
-        (FIELD_HEALTH, 'Kondycja'),
-        (FIELD_SOURCE, 'Źródło'),
-    ]
-
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='task_project_field_options',
-    )
-    workplace = models.ForeignKey(
-        'workplaces.Workplace',
-        on_delete=models.CASCADE,
-        related_name='task_project_field_options',
-        null=True,
-        blank=True,
-    )
-    field_type = models.CharField(max_length=10, choices=FIELD_CHOICES)
-    value = models.SlugField(max_length=20)
-    label = models.CharField(max_length=120)
-    color = models.CharField(
-        max_length=7,
-        default='#DFEFFF',
-        validators=[RegexValidator(r'^#[0-9A-Fa-f]{6}$', 'Podaj kolor w formacie #RRGGBB.')],
-    )
-    position = models.PositiveSmallIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['field_type', 'position', 'id']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['owner', 'workplace', 'field_type', 'value'],
-                condition=Q(workplace__isnull=False),
-                name='unique_project_field_option_scope',
-            ),
-            models.UniqueConstraint(
-                fields=['owner', 'field_type', 'value'],
-                condition=Q(workplace__isnull=True),
-                name='unique_project_field_option_no_workplace',
-            ),
-        ]
-        indexes = [
-            models.Index(
-                fields=['owner', 'workplace', 'field_type', 'is_active', 'position'],
-                name='taskproj_option_scope_idx',
-            ),
-        ]
-
-    def __str__(self):
-        return f'{self.get_field_type_display()}: {self.label}'
-
-    def save(self, *args, **kwargs):
-        self.label = (self.label or '').strip()
-        self.color = (self.color or '#DFEFFF').upper()
-        with transaction.atomic():
-            old_label = None
-            update_fields = kwargs.get('update_fields')
-            if self.pk and self.field_type == self.FIELD_SOURCE and (update_fields is None or 'label' in update_fields):
-                old_label = type(self).objects.select_for_update().values_list('label', flat=True).get(pk=self.pk)
-            super().save(*args, **kwargs)
-            if old_label is not None and old_label != self.label:
-                TaskProject.objects.filter(
-                    user_id=self.owner_id, workplace_id=self.workplace_id, source=old_label,
-                ).update(source=self.label)
-
-    @property
-    def project_value(self):
-        # Sources retain their text storage so existing searches and imports keep working.
-        return self.label if self.field_type == self.FIELD_SOURCE else self.value
-
-    @classmethod
-    def for_scope(cls, owner, workplace=None):
-        return cls.objects.filter(owner=owner, workplace=workplace)
-
-    @classmethod
-    def ensure_defaults(cls, owner, workplace=None):
-        scoped = cls.for_scope(owner, workplace)
-        existing_fields = set(scoped.values_list('field_type', flat=True).distinct())
-        options = []
-        for field_type, defaults in PROJECT_FIELD_OPTION_DEFAULTS.items():
-            if field_type in existing_fields:
-                continue
-            options.extend(
-                cls(
-                    owner=owner,
-                    workplace=workplace,
-                    field_type=field_type,
-                    value=value,
-                    label=label,
-                    color=color,
-                    position=position,
-                )
-                for position, (value, label, color) in enumerate(defaults)
-            )
-        cls.objects.bulk_create(options, ignore_conflicts=True)
-
-    @classmethod
-    def active_for_scope(cls, owner, workplace=None):
-        cls.ensure_defaults(owner, workplace)
-        return cls.for_scope(owner, workplace).filter(is_active=True).order_by('field_type', 'position', 'id')
-
-    @classmethod
-    def unique_value_for_label(cls, owner, workplace, field_type, label):
-        base = slugify(label).replace('-', '_')[:20] or 'wartosc'
-        existing_values = set(
-            cls.for_scope(owner, workplace)
-            .filter(field_type=field_type)
-            .values_list('value', flat=True)
-        )
-        candidate = base
-        suffix = 2
-        while candidate in existing_values:
-            suffix_text = f'_{suffix}'
-            candidate = f'{base[:20 - len(suffix_text)]}{suffix_text}'
-            suffix += 1
-        return candidate
-
-    @property
-    def is_used(self):
-        if self.field_type not in dict(self.FIELD_CHOICES):
-            return False
-        return TaskProject.objects.filter(
-            user=self.owner,
-            workplace=self.workplace,
-            **{self.field_type: self.project_value},
-        ).exists()
 
 
 class TaskProjectNote(models.Model):
