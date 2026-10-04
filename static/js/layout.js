@@ -12,6 +12,8 @@
     const SIDEBAR_FAVORITES_STORAGE_KEY = 'ancoreSidebarFavoritesCollapsed';
     const SIDEBAR_COLLAPSED_STORAGE_KEY = 'ancoreSidebarCollapsed';
     const SIDEBAR_WIDTH_STORAGE_KEY = 'ancoreSidebarWidth';
+    const MANAGEMENT_MODES = new Set(['workplaces', 'administration']);
+    const RETURN_SCROLL_SELECTORS = ['.main-content', '.settings-scroll-area', '.work-content', '.tasks-table-wrap', '.tasks-board'];
 
     const sidebar = document.querySelector('.sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
@@ -54,6 +56,7 @@
     let navigationIndex = window.history.state?.ancoreNavigationIndex || 0;
     let restoringHistory = false;
     const pendingScripts = new Map();
+    let managementReturn = initialManagementReturn();
 
     function getUrl(href) {
         try {
@@ -121,6 +124,112 @@
 
         return isPartialNavigationPath(url.pathname);
     }
+
+    function managementModeForUrl(href) {
+        if (!href) return '';
+        const url = getUrl(href);
+        if (!url || url.origin !== window.location.origin) return '';
+        if (/^\/workplaces\/?$/.test(url.pathname)) return 'workplaces';
+        const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=spaces\/)/, '/');
+        return /^\/spaces\/manage(\/|$)/.test(path) ? 'administration' : '';
+    }
+
+    function managementStorageKey(mode) {
+        return `ancoreManagementReturn:${document.body.dataset.accountId}:${document.body.dataset.workplaceId}:${mode}`;
+    }
+
+    function validManagementReturn(value, mode) {
+        if (!value || value.mode !== mode
+            || value.accountId !== document.body.dataset.accountId
+            || value.workplaceId !== document.body.dataset.workplaceId
+            || typeof value.url !== 'string' || typeof value.label !== 'string'
+            || !canUsePartialNavigation(value.url) || managementModeForUrl(value.url) === mode) return null;
+        return value;
+    }
+
+    function initialManagementReturn() {
+        const mode = sidebar?.dataset.sidebarMode;
+        if (!MANAGEMENT_MODES.has(mode)) return null;
+        if (Object.prototype.hasOwnProperty.call(window.history.state || {}, 'ancoreManagementReturn')) {
+            return validManagementReturn(window.history.state.ancoreManagementReturn, mode);
+        }
+        // Reuse the entry point after reloads and form submissions within management.
+        // A fresh direct visit keeps the server-rendered default destination.
+        const type = window.performance?.getEntriesByType('navigation')[0]?.type;
+        if (!['reload', 'back_forward'].includes(type) && managementModeForUrl(document.referrer) !== mode) return null;
+        try {
+            return validManagementReturn(JSON.parse(window.sessionStorage.getItem(managementStorageKey(mode))), mode);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function saveManagementReturn(mode, value) {
+        if (!MANAGEMENT_MODES.has(mode)) return;
+        try {
+            if (value) window.sessionStorage.setItem(managementStorageKey(mode), JSON.stringify(value));
+            else window.sessionStorage.removeItem(managementStorageKey(mode));
+        } catch (error) {
+            // History still preserves the entry point when browser storage is disabled.
+        }
+    }
+
+    function captureReturnPosition() {
+        return {
+            window: { top: window.scrollY, left: window.scrollX },
+            elements: RETURN_SCROLL_SELECTORS.map(selector => ({
+                selector,
+                positions: Array.from(document.querySelectorAll(selector), element => ({ top: element.scrollTop, left: element.scrollLeft })),
+            })),
+        };
+    }
+
+    function restoreReturnPosition(position) {
+        if (!position) return;
+        window.scrollTo(position.window || { top: 0, left: 0 });
+        (position.elements || []).forEach(({ selector, positions }) => {
+            if (!RETURN_SCROLL_SELECTORS.includes(selector)) return;
+            document.querySelectorAll(selector).forEach((element, index) => {
+                if (positions[index]) element.scrollTo(positions[index]);
+            });
+        });
+    }
+
+    function nextManagementReturn(mode, options, source) {
+        if (!MANAGEMENT_MODES.has(mode)) return null;
+        if (options?.updateHistory === false) return validManagementReturn(window.history.state?.ancoreManagementReturn, mode);
+        if (options?.managementReturnNavigation) return validManagementReturn(options.previousManagementReturn, mode);
+        if (source.mode === mode) return validManagementReturn(source.managementReturn, mode);
+        const url = getUrl(source.url);
+        const label = source.mode === 'settings' ? 'Wróć do ustawień'
+            : /\/spaces(\/|$)/.test(url.pathname) ? 'Wróć do przestrzeni'
+            : url.pathname === '/' ? 'Wróć do Workspace' : 'Wróć do poprzedniego widoku';
+        return validManagementReturn({
+            mode, url: url.href, label, position: source.position,
+            previousManagementReturn: source.managementReturn,
+            accountId: document.body.dataset.accountId,
+            workplaceId: document.body.dataset.workplaceId,
+        }, mode);
+    }
+
+    function syncManagementReturnLinks() {
+        sidebar?.querySelectorAll('[data-management-return]').forEach(link => {
+            const label = link.querySelector('.nav-label');
+            if (!link.dataset.defaultReturnUrl) {
+                link.dataset.defaultReturnUrl = link.getAttribute('href');
+                link.dataset.defaultReturnLabel = label.textContent;
+            }
+            const value = link.dataset.managementReturn === sidebar.dataset.sidebarMode ? managementReturn : null;
+            link.setAttribute('href', value?.url || link.dataset.defaultReturnUrl);
+            const text = value?.label || link.dataset.defaultReturnLabel;
+            label.textContent = text;
+            link.setAttribute('aria-label', text);
+            link.setAttribute('title', text);
+        });
+    }
+
+    syncManagementReturnLinks();
+    saveManagementReturn(sidebar?.dataset.sidebarMode, managementReturn);
 
     function syncSidebarState(nextDocument) {
         const nextSidebar = nextDocument.querySelector('#app-sidebar');
@@ -289,7 +398,7 @@
         return true;
     }
 
-    async function finishPartialNavigation(nextDocument, url, options, navigationController) {
+    async function finishPartialNavigation(nextDocument, url, options, navigationController, source) {
         const hasRequiredRegions = document.querySelector('.main-content .page-container')
             && document.querySelector('#app-page-modals')
             && document.querySelector('#app-notifications')
@@ -307,6 +416,8 @@
         }
 
         loadMissingStyles(nextDocument);
+        const nextMode = nextDocument.querySelector('#app-sidebar')?.dataset.sidebarMode;
+        const nextReturn = nextManagementReturn(nextMode, options, source);
 
         const nextTitle = nextDocument.querySelector('title');
         if (nextTitle) {
@@ -330,10 +441,13 @@
             const replace = options?.replace || url.href === window.location.href;
             const historyMethod = replace ? 'replaceState' : 'pushState';
             if (!replace) navigationIndex += 1;
-            window.history[historyMethod]({ ancorePartialNavigation: true, ancoreNavigationIndex: navigationIndex }, '', url.href);
+            window.history[historyMethod]({ ancorePartialNavigation: true, ancoreNavigationIndex: navigationIndex, ancoreManagementReturn: nextReturn }, '', url.href);
         }
         renderedUrl = url.href;
+        managementReturn = nextReturn;
+        saveManagementReturn(nextMode, managementReturn);
         syncSidebarState(nextDocument);
+        syncManagementReturnLinks();
 
         // The modal host is inside page-container; execute its scripts only once.
         runInlineScripts(document.querySelector('.main-content .page-container'));
@@ -348,6 +462,8 @@
             document.querySelector('#app-notifications')
         ].forEach(region => window.AncoreIcons?.render(region));
         document.dispatchEvent(new CustomEvent('ancore:content-loaded', { detail: { url: url.href } }));
+        // Settings initializes its category during content-loaded; restore scroll afterwards.
+        restoreReturnPosition(options?.restorePosition);
     }
 
     async function navigatePartially(href, options) {
@@ -358,6 +474,10 @@
 
         const leaving = new CustomEvent('ancore:before-navigate', { cancelable: true, detail: { url: url.href } });
         if (!document.dispatchEvent(leaving)) return false;
+        const source = {
+            mode: sidebar?.dataset.sidebarMode, managementReturn,
+            url: window.location.href, position: captureReturnPosition(),
+        };
 
         if (partialNavigationController) {
             partialNavigationController.abort();
@@ -397,7 +517,7 @@
             const responseUrl = getUrl(response.url) || url;
             if (url.hash && !responseUrl.hash) responseUrl.hash = url.hash;
 
-            await finishPartialNavigation(nextDocument, responseUrl, options, navigationController);
+            await finishPartialNavigation(nextDocument, responseUrl, options, navigationController, source);
         } catch (error) {
             if (error.name !== 'AbortError' && !navigationController.signal.aborted) {
                 window.location.href = url.href;
@@ -539,7 +659,10 @@
         const link = target?.closest('a[href]');
         if (link && canUsePartialNavigation(link.href)) {
             e.preventDefault();
-            navigatePartially(link.href);
+            const managementReturnNavigation = link.dataset.managementReturn === sidebar?.dataset.sidebarMode;
+            const restorePosition = managementReturnNavigation ? managementReturn?.position : null;
+            const previousManagementReturn = managementReturnNavigation ? managementReturn?.previousManagementReturn : null;
+            navigatePartially(link.href, { restorePosition, managementReturnNavigation, previousManagementReturn });
             return;
         }
 
@@ -551,7 +674,7 @@
     });
 
     if (canUsePartialNavigation(window.location.href)) {
-        window.history.replaceState({ ...window.history.state, ancorePartialNavigation: true, ancoreNavigationIndex: navigationIndex }, '', window.location.href);
+        window.history.replaceState({ ...window.history.state, ancorePartialNavigation: true, ancoreNavigationIndex: navigationIndex, ancoreManagementReturn: managementReturn }, '', window.location.href);
     }
 
     window.addEventListener('popstate', async function (event) {

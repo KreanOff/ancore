@@ -21,9 +21,11 @@ Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Wszystkie zadania i Zespoły.
 
 Osobny ekran „Zarządzaj przestrzeniami” (`spaces/manage.html`) używa tej samej
-powłoki. Główny pasek boczny przełącza się z menu Workspace na menu administracyjne
-(`core/includes/space_management_sidebar.html`): powrót do przestrzeni,
-zarządzanie przestrzeniami i Ustawienia Ancore. Treść zajmuje całą szerokość
+powłoki. Główny pasek boczny przełącza się z menu Workspace na menu zarządzania
+przestrzeniami (`core/includes/space_management_sidebar.html`): powrót do
+miejsca wejścia i zarządzanie przestrzeniami. Po wejściu z Ustawień link
+powrotu ma etykietę „Wróć do ustawień”; z katalogu — „Wróć do przestrzeni”.
+Nie zawiera dodatkowych pozycji Workspace ani Ustawienia Ancore. Treść zajmuje całą szerokość
 obok tego paska. Oba warianty menu używają wspólnych klas i zachowują zwijanie,
 zmianę szerokości oraz mobilne otwieranie/zamykanie. `layout.js` przełącza
 widoczną nawigację również przy częściowym przejściu, powrocie i historii
@@ -1641,6 +1643,23 @@ Wynik weryfikacji zapisuj w podsumowaniu zadania. Jeśli nie oglądano ekranu
 w przeglądarce, nazwij weryfikację przeglądem kodu, a nie wizualnym testem.
 
 ## 12. Zarządzanie Workspace i zespołem
+
+Katalog `/workplaces/` jest osobną stroną administracyjną, tak jak
+„Zarządzaj przestrzeniami”. Zastępuje codzienne menu własnym
+`core/includes/workplace_management_sidebar.html` (tryb `workplaces`):
+Link powrotu prowadzi do miejsca wejścia (z Ustawień: „Wróć do ustawień”),
+a „Workspace” jest pozycją aktywną. Bez wcześniejszego wejścia w aplikacji
+domyślnym powrotem jest Dashboard aktywnego Workspace. Menu nie zawiera
+dodatkowych pozycji przestrzeni ani Ustawień Ancore.
+Treść zajmuje całą szerokość obok głównego paska; nie zawiera dodatkowego menu
+ustawień. `render_workplaces` zachowuje ten tryb również dla okien zespołu,
+zaproszeń i błędów formularzy. Istniejący `layout.js` synchronizuje osobne menu
+każdego ekranu przy częściowej nawigacji i przejściach Wstecz/Dalej.
+Powrót zachowuje pełny adres poprzedniego widoku, kategorię ustawień,
+filtry i pozycję przewinięcia. Punkt wejścia jest zapisany w historii i
+`sessionStorage` osobno dla obu ekranów, konta, Workspace i karty przeglądarki;
+pozostaje dostępny po przeładowaniu, otwieraniu okien i błędach/zapisie formularzy.
+Oglądanie lub edycja wybranego Workspace nie przełącza aktywnego kontekstu pracy.
 
 Profil użytkownika korzysta ze wspólnego okna `core/includes/avatar_picker.html`
 i `workplace-avatars.js`, z osobną pulą 30 zwierzęcych maskotek w

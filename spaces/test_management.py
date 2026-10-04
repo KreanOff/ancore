@@ -49,6 +49,10 @@ class SpaceManagementTests(TestCase):
             self.assertContains(response, 'data-sidebar-mode="administration"')
             self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
             self.assertNotContains(response, 'data-sidebar-navigation="administration" hidden')
+            self.assertContains(response, 'data-sidebar-navigation="workplaces" hidden')
+            menu = response.content.decode().split('data-sidebar-navigation="administration"', 1)[1].split('</nav>', 1)[0]
+            self.assertNotIn('Workspace', menu)
+            self.assertNotIn('Ustawienia Ancore', menu)
             self.assertNotContains(response, 'work-management-navigation')
             self.assertNotContains(response, 'Obcy projekt')
             self.assertFalse(sidebar_favorite_is_active('spaces', response.wsgi_request))

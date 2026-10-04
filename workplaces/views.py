@@ -117,6 +117,8 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
             instance=team_workplace, user=team_workplace.owner, auto_id='workplace-edit-%s',
         )
     return render(request, 'workplaces/workplaces.html', {
+        'sidebar_mode': 'workplaces',
+        'workplaces_management_mode': True,
         'pending_invitations': pending_invitations,
         'response_invitation': pending_invitations[invitation_index] if pending_invitations else None,
         'invitation_modal_open': selected_invitation_id is not None,

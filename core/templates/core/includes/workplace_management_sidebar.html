@@ -1,0 +1,13 @@
+<nav class="sidebar-navigation" aria-label="Menu zarządzania Workspace" data-sidebar-navigation="workplaces"{% if sidebar_mode != 'workplaces' %} hidden{% endif %}>
+    <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-workplaces-title">
+        <h2 class="sidebar-menu-section-title" id="sidebar-workplaces-title">Zarządzanie Workspace</h2>
+        <a href="{{ sidebar_dashboard_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" aria-label="Wróć do Workspace" title="Wróć do Workspace" data-management-return="workplaces">
+            <i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i>
+            <span class="nav-label">Wróć do Workspace</span>
+        </a>
+        <a href="{% url 'workplaces:workplaces' %}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if workplaces_management_mode %} active{% endif %}"{% if workplaces_management_mode %} aria-current="page"{% endif %} aria-label="Workspace" title="Workspace">
+            <i class="nav-icon" data-icon="briefcase-business" aria-hidden="true"></i>
+            <span class="nav-label">Workspace</span>
+        </a>
+    </section>
+</nav>

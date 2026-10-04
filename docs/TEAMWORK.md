@@ -239,8 +239,9 @@ formularzy, migracji i integracji: `tasks/test_task_sharing.py`.
 
 ## Zaproszenia i ekran zespołu
 
-Ekran `/workplaces/` pokazuje katalog Workspace, bez zakładki otrzymanych
-zaproszeń. Skład zespołu znajduje się w zakładce
+Ekran `/workplaces/` pokazuje katalog Workspace jako osobną stronę z własnym
+menu „Zarządzanie Workspace”: powrotem do miejsca wejścia i aktywną pozycją
+„Workspace”, bez zakładki otrzymanych zaproszeń. Skład zespołu znajduje się w zakładce
 „Członkowie” okna „Edytuj miejsce pracy”, obok „Główna” z ustawieniami
 i „Wysłane zaproszenia” z oczekującymi zaproszeniami do tego Workspace.
 Nazwa Workspace i ikona ustawień otwierają „Główną”; liczba członków oraz stare
@@ -250,6 +251,9 @@ zmienia aktywnej sesji ani kontekstu modułów. Znacznik „Bieżący” wskazuj
 przestrzeń pracy; strzałka przełączenia nadal otwiera jej Zadania.
 Zwykły członek ma okno „Miejsce pracy” z odczytem danych i składu zespołu,
 bez akcji edycji, zapraszania, zmiany ról i odbierania dostępu.
+Wejście z Ustawień pokazuje „Wróć do ustawień” i zachowuje kategorię oraz
+przewinięcie. Wejście z menu bieżącego Workspace wraca do wcześniej otwartego
+widoku. Bez źródłowego widoku domyślnym powrotem pozostaje Dashboard.
 
 Otrzymane zaproszenia są dostępne przez panel powiadomień; jego link
 otwiera okno decyzji nad katalogiem Workspace. Dawny adres `view=received`

@@ -186,6 +186,9 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   `dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;
   nie tworzy dodatkowych modeli ani kopii danych biznesowych.
 - `/accounts/...` obsługuje konto; `/workplaces/...` Workspace.
+  Katalog `/workplaces/` jest osobną stroną z własnym menu zarządzania Workspace.
+  „Zarządzaj przestrzeniami” ma odrębne menu dotyczące przestrzeni. Okna zarządzania i błędy
+  formularzy pozostają nad tym katalogiem, bez zmiany aktywnego Workspace.
 - Moduły mają adresy bazowe `/tasks/`, `/kanban/`, `/calendar/`,
   `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty
   `/workplaces/<slug>/<moduł>/...`.

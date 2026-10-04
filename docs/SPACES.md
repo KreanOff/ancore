@@ -9,7 +9,12 @@ i liczba widocznych zadań. Nazwa otwiera przegląd przestrzeni.
 „Zarządzaj przestrzeniami” (`/spaces/manage/` i scoped odpowiednik) to osobny
 ekran ustawień, dostępny z menu „…” przy Przestrzeniach oraz z Ustawień Ancore.
 Główny pasek boczny zastępuje menu Workspace nawigacją administracyjną
-z powrotem do katalogu i Ustawieniami Ancore. Powrót przywraca zwykłe menu,
+z powrotem do miejsca wejścia i pozycją „Zarządzaj przestrzeniami”. Po wejściu
+z Ustawień powrót prowadzi do tej samej kategorii ustawień; wejście z katalogu
+zachowuje jego filtry i przewinięcie. Bez punktu wejścia link prowadzi do katalogu.
+Menu dotyczy
+wyłącznie przestrzeni; Workspace ma własne menu zarządzania.
+Powrót przywraca zwykłe menu,
 także przy częściowej nawigacji i korzystaniu z historii przeglądarki.
 Ekran zawiera wyszukiwanie po nazwie/kluczu,
 filtry rodzaju i sposobu zarządzania, paginację oraz kolumny nazwy, klucza,

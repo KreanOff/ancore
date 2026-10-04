@@ -61,6 +61,7 @@ class WorkspaceManagementTests(TestCase):
         self.assertNotContains(response, 'data-workplace-main-action')
         self.assertNotContains(response, 'data-team-remove')
         self.assertNotContains(response, 'id="team-role-modal"')
+        self.assertContains(response, 'data-sidebar-navigation="administration" hidden')
         response = self.client.post(reverse('workplaces:update', args=[self.selected.pk]), {'name': 'Nie wolno'})
         self.assertEqual(response.status_code, 403)
         self.selected.refresh_from_db()
@@ -75,6 +76,8 @@ class WorkspaceManagementTests(TestCase):
         self.assertTrue(response.context['workplace_edit_modal_open'])
         self.assertEqual(response.context['workplace_edit_tab'], 'main')
         self.assertContains(response, 'Opis do zachowania')
+        self.assertEqual(response.context['sidebar_mode'], 'workplaces')
+        self.assertContains(response, 'aria-current="page" aria-label="Workspace"')
         self.selected.refresh_from_db()
         self.assertEqual(self.selected.name, 'Wybrany Workspace')
         self.assert_active_unchanged()
@@ -165,6 +168,15 @@ class WorkspaceManagementTests(TestCase):
 
     def test_directory_stays_visible_with_sent_invitations_and_legacy_received_link(self):
         response = self.client.get(reverse('workplaces:workplaces'))
+        self.assertEqual(response.context['sidebar_mode'], 'workplaces')
+        self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
+        self.assertContains(response, 'data-sidebar-navigation="administration" hidden')
+        self.assertNotContains(response, 'data-sidebar-navigation="workplaces" hidden')
+        menu = response.content.decode().split('data-sidebar-navigation="workplaces"', 1)[1].split('</nav>', 1)[0]
+        self.assertNotIn('przestrzeni', menu)
+        self.assertNotIn('Ustawienia Ancore', menu)
+        self.assertContains(response, 'aria-current="page" aria-label="Workspace"')
+        self.assertNotContains(response, 'aria-label="Nawigacja ustawień"')
         self.assertEqual(response.context['management_view'], 'workspaces')
         self.assertContains(response, 'data-workplace-row ')
         self.assertFalse(response.context['workplace_edit_modal_open'])

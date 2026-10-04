@@ -17,7 +17,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 19 | 0 | 14 | 58 |
+| [core](../core) | 19 | 0 | 15 | 58 |
 | [accounts](../accounts) | 17 | 7 | 8 | 43 |
 | [workplaces](../workplaces) | 20 | 9 | 13 | 99 |
 | [tasks](../tasks) | 36 | 63 | 39 | 319 |
@@ -1383,6 +1383,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/includes/settings_sidebar.html](../core/templates/core/includes/settings_sidebar.html)
 - [core/templates/core/includes/space_management_sidebar.html](../core/templates/core/includes/space_management_sidebar.html)
 - [core/templates/core/includes/trash_icon.html](../core/templates/core/includes/trash_icon.html)
+- [core/templates/core/includes/workplace_management_sidebar.html](../core/templates/core/includes/workplace_management_sidebar.html)
 
 ### accounts
 

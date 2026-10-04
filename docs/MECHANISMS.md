@@ -749,6 +749,16 @@ Przy nowym skrypcie zachowaj inicjalizację na pierwszym wejściu i po podmianie
 sprawdzanie istnienia elementu oraz sprzątanie/ochronę listenerów.
 Nie opieraj całej inicjalizacji wyłącznie na jednorazowym `DOMContentLoaded`.
 
+Linki `data-management-return` w menu zarządzania Workspace i przestrzeniami
+wracają do miejsca wejścia. `layout.js` zapisuje źródłowy URL z query/hash,
+etykietę i przewinięcie w `history.state.ancoreManagementReturn` oraz
+`sessionStorage`, w zakresie konta i aktywnego Workspace. Wewnętrzne przejścia,
+filtry i okna zarządzania nie nadpisują źródła; historia odtwarza kontekst
+właściwego wpisu. Powrót odtwarza przewinięcie po inicjalizacji docelowego UI.
+Adres musi być lokalny i obsługiwany przez częściową nawigację. Świeże
+bezpośrednie wejście używa domyślnego linku z szablonu; reload oraz formularze
+wewnątrz zarządzania zachowują wcześniej zapamiętane źródło.
+
 ## 13. Stan w przeglądarce
 
 „Ostatnio oglądane” w „Dla ciebie” używa serwerowej sesji Django, klucza
