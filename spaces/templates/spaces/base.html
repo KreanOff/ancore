@@ -5,8 +5,8 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct">
 <link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261001-project-list">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261004-page-titles-17">
-<script src="{% static 'js/spaces.js' %}?v=20261003-avatars" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261004-unified-tabs-icons">
+<script src="{% static 'js/spaces.js' %}?v=20261004-create-directory" defer></script>
 {% endblock %}
 {% block content %}
 <div class="tasks-page tasks-list-page work-page" data-work-page>
@@ -21,4 +21,4 @@
     </section>
 </div>
 {% endblock %}
-{% block page_modals %}<div data-work-modal-host>{% if modal %}{% include 'spaces/form.html' %}{% endif %}</div>{% endblock %}
+{% block page_modals %}<div data-work-modal-host{% if modal.directory_url %} data-work-directory-url="{{ modal.directory_url }}"{% endif %}>{% if modal %}{% include 'spaces/form.html' %}{% endif %}</div>{% endblock %}

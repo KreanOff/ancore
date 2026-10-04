@@ -114,10 +114,14 @@
         }
         document.addEventListener('click', async event => {
             const trigger = event.target.closest('[data-work-open]');
-            if (!trigger || !page.contains(trigger) || event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (!trigger || (!page.contains(trigger) && !trigger.closest('.sidebar, [data-sidebar-collapsed-flyout]')) || event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
             event.preventDefault();
             if (pending || modal()) return;
-            pending = true; previousFocus = trigger; trigger.setAttribute('aria-busy', 'true');
+            pending = true;
+            previousFocus = trigger.closest('[data-sidebar-collapsed-flyout]')
+                ? document.querySelector('[data-sidebar-group="spaces"] [data-sidebar-group-toggle]')
+                : trigger;
+            trigger.setAttribute('aria-busy', 'true');
             try { const result = await request(trigger.href); if (!signal.aborted) display(result.html); }
             catch (error) { if (!signal.aborted) window.showNotification?.(error.message, 'error'); }
             finally { pending = false; trigger.removeAttribute('aria-busy'); }
@@ -143,7 +147,12 @@
             event.preventDefault();
             window.showConfirmModal({ title: 'Niezapisane zmiany', message: 'Zamknąć okno bez zapisania zmian?', confirmText: 'Zamknij bez zapisu', cancelText: 'Wróć do edycji', onConfirm: () => { if (!signal.aborted) { discard = true; window.AncoreTaskModals.close(modal()); } } });
         }, { signal });
-        host.addEventListener('ancore:task-modal-closed', () => { clearPreview(); restore(); host.replaceChildren(); discard = false; previousFocus?.focus({ preventScroll: true }); }, { signal });
+        host.addEventListener('ancore:task-modal-closed', () => {
+            clearPreview(); restore(); host.replaceChildren(); discard = false;
+            previousFocus?.focus({ preventScroll: true });
+            const directory = host.dataset.workDirectoryUrl;
+            if (directory) window.history.replaceState(window.history.state, '', directory);
+        }, { signal });
         document.addEventListener('ancore:before-navigate', event => { if (modal() && (pending || dirty())) { event.preventDefault(); window.AncoreTaskModals.close(modal()); } }, { signal });
         window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } }, { signal });
         signal.addEventListener('abort', restore, { once: true });

@@ -63,13 +63,17 @@ Zachowują stabilne identyfikatory wcześniejszych ikon. W pickerze mają 56px
 (40px na telefonie); pozostałe rozmiary awatarów pozostają bez zmian.
 Zestaw jest współdzielony z Workspace, a ikony kontrolek nadal używają
 `AncoreIcons`. Wybór ilustracji czyści niezapisany plik, a zamknięcie zwalnia jego podgląd.
-Zakładki widoków mają wariant `work-tabs--views`: tekst 13,5px
-oraz dekoracyjne ikony 18px z `AncoreIcons`, odsunięte o 8px
-od etykiety. Zachowują wspólne podkreślenie aktywnego widoku i przewijanie
-poziome na wąskim ekranie. Najechanie na nieaktywną zakładkę pokazuje szare
+Zakładki katalogów przestrzeni i zespołów oraz widoków przestrzeni używają
+wspólnego `work-tabs`: tekst 13,5px/400 również na telefonie, tę samą wysokość
+i odstępy z `notifications-tabs`. Dekoracyjne ikony z `AncoreIcons` mają we
+wspólnym pasku 18px i odstęp 8px od etykiety. Katalog przestrzeni używa `layers`
+przy „Wszystkie”, `star` przy „Ulubione” i `lock` przy „Prywatne”; widoki
+przestrzeni (`work-tabs--views`) zachowują ikony odpowiadające widokom. Wszystkie paski zachowują
+wspólne podkreślenie aktywnej zakładki i przewijanie poziome na wąskim ekranie.
+Najechanie na nieaktywną zakładkę pokazuje szare
 podkreślenie (`--system-interaction`), tak jak w katalogu Zadań; po odsunięciu
 kursora podkreślenie znika. Aktywna zakładka zachowuje turkusowe podkreślenie
-także pod kursorem. Katalogi przestrzeni i zespołów zachowują zwykłe zakładki.
+także pod kursorem. Katalog zespołów ma zakładki bez ikon.
 
 Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
 `data-sidebar-group="spaces"` w `layout.js`. Stan zapisuje istniejąca
@@ -114,6 +118,12 @@ zwijanie działa wewnątrz otwartego menu, a wybór akcji nawigacyjnej je zamyka
 `spaces/form.html` korzysta z `AncoreTaskModals`, wspólnych klas formularza,
 ikon i `AncoreCustomSelect`. `spaces.js` obsługuje fokus, Escape, ostrzeżenie
 o szkicu, błędy zapisu, inert tła i ponowne wejście przez `ancore:content-loaded`.
+Kreator przestrzeni otwierany bezpośrednio przez URL pokazuje modal nad pełnym
+katalogiem (`spaces/index.html`), tak jak formularze Zasobów. Po zamknięciu
+`data-work-directory-url` przywraca adres katalogu bez przeładowania i bez
+dodatkowego wpisu w historii. Plus w menu bocznym oraz w panelu zwiniętego
+sidebaru używa `data-work-open`; na ekranach Przestrzeni i Zespołów działa nad
+bieżącą treścią. W innych modułach otwiera kreator nad katalogiem.
 Listy zadań w przestrzeni, „Wszystkie zadania”, przegląd oraz zadania zespołu zachowują
 wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
 wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.

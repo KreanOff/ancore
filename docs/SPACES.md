@@ -77,6 +77,12 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
   ulubione, prywatne i paginacja. Kolumny pokazują klucz, nazwę, rodzaj,
   szablon, opis i liczbę dostępnych zadań.
 - Kreator: nazwa, klucz, opis, rodzaj, szablon, zarządzanie i widoczność.
+  Bezpośrednie wejście pod `/spaces/create/` (również scoped) wyświetla ten sam
+  modal nad pełnym katalogiem przestrzeni. Zamknięcie, anulowanie lub Escape
+  pozostawia katalog i przywraca jego adres; nie ma pustej strony „Utwórz
+  przestrzeń” z przyciskiem „Wróć”. Błąd walidacji zachowuje formularz nad listą.
+  Plus w menu bocznym na ekranach Przestrzeni i Zespołów otwiera modal nad
+  bieżącą treścią; z innych modułów prowadzi do kreatora nad katalogiem.
 - Rodzaje: programistyczny, biznesowy, obsługowy.
 - Szablony: Kanban, Scrum, zarządzanie zadaniami, marketing, rekrutacja,
   obsługa zgłoszeń. Szablon określa początkowe statusy, typy i pola.

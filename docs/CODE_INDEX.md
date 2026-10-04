@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 17 | 3 | 19 | 40 |
+| [spaces](../spaces) | 17 | 3 | 19 | 42 |
 
 ## 2. Modele i relacje
 
@@ -1391,7 +1391,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
 - [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `space_avatar`, `status_groups`
 - [spaces/urls.py](../spaces/urls.py)
-- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `index`, `search`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `index_context`, `index`, `search`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
 
 ## 6. Szablony
 
@@ -2092,7 +2092,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [spaces/tests.py](../spaces/tests.py).
 
-- `SpaceTests`: 28 metod testowych.
+- `SpaceTests`: 30 metod testowych.
 - `ImportTests`: 1 metod testowych.
 
 ## 9. Migracje obecne lokalnie

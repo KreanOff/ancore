@@ -114,6 +114,34 @@ class SpaceTests(TestCase):
         payload.update(key='BAD', kind='business')
         self.assertEqual(self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true').status_code, 400)
 
+    def test_create_page_keeps_visible_directory_behind_modal(self):
+        self.client.force_login(self.member)
+        for url in ['/spaces/create/', self.url('create/')]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertTemplateUsed(response, 'spaces/index.html')
+                self.assertTemplateNotUsed(response, 'spaces/form_page.html')
+                self.assertContains(response, 'Produkt')
+                self.assertNotContains(response, 'Poufna przestrzeń')
+                self.assertNotContains(response, 'Obca przestrzeń')
+                self.assertEqual(response.context['modal']['directory_url'], self.url())
+                self.assertEqual(response.context['modal']['action'], url)
+                self.assertContains(response, 'Nazwa przestrzeni')
+                self.assertNotContains(response, '>Wróć</a>')
+
+    def test_create_page_preserves_invalid_form_over_directory(self):
+        payload = {'name': 'Szkic przestrzeni', 'key': '!', 'kind': 'software', 'template': 'kanban', 'management': 'team', 'visibility': 'private'}
+        for url in ['/spaces/create/', self.url('create/')]:
+            with self.subTest(url=url):
+                response = self.client.post(url, payload)
+                self.assertEqual(response.status_code, 400)
+                self.assertTemplateUsed(response, 'spaces/index.html')
+                self.assertTemplateNotUsed(response, 'spaces/form_page.html')
+                self.assertIn('key', response.context['modal']['form'].errors)
+                self.assertContains(response, 'Szkic przestrzeni', status_code=400)
+                self.assertContains(response, 'Produkt', status_code=400)
+        self.assertFalse(TaskProject.objects.filter(name='Szkic przestrzeni').exists())
+
     def test_member_cannot_create_organization_managed_space(self):
         self.client.force_login(self.member)
         response = self.client.post(self.url('create/'), {'name': 'Nie', 'key': 'NO', 'kind': 'software', 'template': 'kanban', 'management': 'company', 'visibility': 'public'}, HTTP_X_WORK_MODAL='true')

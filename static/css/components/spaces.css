@@ -11,9 +11,9 @@
 .work-page .tasks-titlebar-left { gap: 10px; min-width: 0; }
 .work-page .tasks-titlebar-actions a { text-decoration: none; }
 .work-tabs { flex-shrink: 0; padding: 0 var(--work-space-inline-padding, 24px); overflow-x: auto; white-space: nowrap; }
-.work-tabs.work-tabs--views > a { gap: 8px; font-size: 13.5px; }
-.work-tabs--views > a:not([aria-current="page"]):hover { border-bottom-color: var(--system-interaction); }
-.work-tabs--views [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
+.work-tabs > a { gap: 8px; font-size: 13.5px; }
+.work-tabs > a:not([aria-current="page"]):hover { border-bottom-color: var(--system-interaction); }
+.work-tabs [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
 .work-content { overflow: auto; flex: 1; min-height: 0; padding: 20px var(--work-space-inline-padding, 24px) 32px; font-size: var(--font-size-sm, 13px); }
 .work-page a { color: inherit; }
 .work-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; }

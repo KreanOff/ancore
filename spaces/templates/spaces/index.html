@@ -1,6 +1,12 @@
 {% extends 'spaces/base.html' %}
 {% block work_actions %}<a href="{{ create_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz przestrzeń</a>{% endblock %}
-{% block work_navigation %}<nav class="notifications-tabs work-tabs" aria-label="Katalog przestrzeni"><a href="{{ spaces_url }}"{% if tab == 'all' %} aria-current="page"{% endif %}>Wszystkie</a><a href="{{ spaces_url }}?tab=favorites"{% if tab == 'favorites' %} aria-current="page"{% endif %}>Ulubione</a><a href="{{ spaces_url }}?tab=private"{% if tab == 'private' %} aria-current="page"{% endif %}>Prywatne</a></nav>{% endblock %}
+{% block work_navigation %}
+<nav class="notifications-tabs work-tabs" aria-label="Katalog przestrzeni">
+    <a href="{{ spaces_url }}"{% if tab == 'all' %} aria-current="page"{% endif %}><i data-icon="layers" aria-hidden="true"></i>Wszystkie</a>
+    <a href="{{ spaces_url }}?tab=favorites"{% if tab == 'favorites' %} aria-current="page"{% endif %}><i data-icon="star" aria-hidden="true"></i>Ulubione</a>
+    <a href="{{ spaces_url }}?tab=private"{% if tab == 'private' %} aria-current="page"{% endif %}><i data-icon="lock" aria-hidden="true"></i>Prywatne</a>
+</nav>
+{% endblock %}
 {% block work_toolbar %}
 <form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get">
     <input type="hidden" name="tab" value="{{ tab }}">

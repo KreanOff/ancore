@@ -60,9 +60,7 @@ def decorate_items(request, items):
     return result
 
 
-@login_required
-@require_GET
-def index(request):
+def index_context(request):
     # Covers projects created by old integrations via bulk_create, too.
     for project in visible_to(TaskProject.objects.filter(user=workspace_owner(request), workplace=request.workplace, space__isnull=True), request.user):
         ensure_space(project)
@@ -86,7 +84,13 @@ def index(request):
         space.favorite_url = app_url(request, f'{space.pk}/favorite/')
         space.favorite = space.project_id in favorites
         space.item_count = counts.get(space.pk, 0)
-    return render(request, 'spaces/index.html', {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'create_url': app_url(request, 'create/'), 'templates': TEMPLATES})
+    return {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'create_url': app_url(request, 'create/'), 'templates': TEMPLATES}
+
+
+@login_required
+@require_GET
+def index(request):
+    return render(request, 'spaces/index.html', index_context(request))
 
 
 @login_required
@@ -210,7 +214,7 @@ def all_items(request):
     return render(request, 'spaces/items.html', {**base_context(request), 'items': decorate_items(request, page.object_list), 'page': page, 'query': query, 'assignee_filter': request.GET.get('assignee', '')})
 
 
-def dialog_response(request, form, title, return_url, saved=False):
+def dialog_response(request, form, title, return_url, saved=False, directory=False):
     if saved:
         if request.headers.get('X-Work-Modal') == 'true':
             return JsonResponse({'saved': True, 'url': return_url})
@@ -220,6 +224,10 @@ def dialog_response(request, form, title, return_url, saved=False):
     status = 400 if request.method == 'POST' else 200
     if request.headers.get('X-Work-Modal') == 'true':
         return JsonResponse({'html': render_to_string('spaces/form.html', context, request=request)}, status=status)
+    if directory:
+        context.update(index_context(request))
+        modal['directory_url'] = return_url
+        return render(request, 'spaces/index.html', context, status=status)
     return render(request, 'spaces/form_page.html', context, status=status)
 
 
@@ -261,7 +269,7 @@ def edit(request, pk=None):
             form.add_error('key', 'Ten klucz został właśnie zajęty. Wybierz inny.')
         else:
             return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url)
+    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=pk is None)
 
 
 @login_required
