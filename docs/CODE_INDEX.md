@@ -21,9 +21,9 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [accounts](../accounts) | 17 | 7 | 8 | 43 |
 | [workplaces](../workplaces) | 20 | 9 | 13 | 99 |
 | [tasks](../tasks) | 39 | 62 | 40 | 350 |
-| [kanban](../kanban) | 19 | 39 | 10 | 100 |
-| [contacts](../contacts) | 10 | 8 | 11 | 28 |
-| [dashboard](../dashboard) | 20 | 6 | 8 | 121 |
+| [kanban](../kanban) | 18 | 39 | 10 | 9 |
+| [contacts](../contacts) | 10 | 8 | 11 | 6 |
+| [dashboard](../dashboard) | 20 | 6 | 8 | 120 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -1011,7 +1011,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'accounts/'` | `include('accounts.urls')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/tasks/'` | `include((tasks_urls.urlpatterns, 'workplace_tasks'), namespace='workplace_tasks')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/kanban/'` | `include((kanban_urls.urlpatterns, 'workplace_kanban'), namespace='workplace_kanban')` | — |
-| `'^workplaces/[-a-zA-Z0-9_]+/contacts/'` | `include((contacts_urls.urlpatterns, 'workplace_contacts'), namespace='workplace_contacts')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/calendar/'` | `include((planner_urls.urlpatterns, 'workplace_planner'), namespace='workplace_planner')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/documents/'` | `include((documents_urls.urlpatterns, 'workplace_documents'), namespace='workplace_documents')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/office/'` | `include((office_urls.urlpatterns, 'workplace_office'), namespace='workplace_office')` | — |
@@ -1022,7 +1021,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'office/'` | `include('documents.workspace_urls')` | — |
 | `'tasks/'` | `include('tasks.urls')` | — |
 | `'kanban/'` | `include('kanban.urls')` | — |
-| `'contacts/'` | `include('contacts.urls')` | — |
 | `'calendar/'` | `include('planner.urls')` | — |
 
 ### accounts/urls.py
@@ -1094,24 +1092,12 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
-| `'projects/<int:project_id>/team/'` | `project_team` | 'project_team' |
-| `'projects/<int:project_id>/team/candidates/'` | `project_candidates` | 'project_candidates' |
-| `'groups/<int:section_id>/team/'` | `section_team` | 'section_team' |
-| `'groups/<int:section_id>/team/candidates/'` | `section_candidates` | 'section_candidates' |
-| `'favorites/<str:kind>/<int:object_id>/'` | `directory_favorite` | 'directory_favorite' |
-| `'comment-images/<int:image_id>/'` | `tasks.comment_image` | 'comment_image' |
-| `'follow/<str:kind>/<int:object_id>/'` | `follow_object` | 'follow_object' |
-| `''` | `tasks.tasks` | 'tasks' |
-| `'groups/<int:section_id>/'` | `tasks.task_group` | 'task_group' |
-| `'view-task/<int:task_id>/'` | `tasks.view_task` | 'view-task' |
-| `'view-subtask/<int:task_id>/'` | `tasks.view_subtask` | 'view-subtask' |
-| `'update/<int:task_id>/'` | `tasks.update_task_status` | 'update_task_status' |
-| `'groups/<int:section_id>/reorder-columns/'` | `tasks.reorder_board_columns` | 'reorder_board_columns' |
-| `'attachments/<int:attachment_id>/download/'` | `tasks.download_attachment` | 'download_attachment' |
-| `'delete-attachment/<int:attachment_id>/'` | `tasks.delete_attachment` | 'delete_attachment' |
-| `'delete/<int:task_id>/'` | `tasks.delete_task` | 'delete_task' |
-| `'delete/'` | `tasks.delete_tasks` | 'delete_tasks' |
-| `'bulk-update-status/'` | `tasks.bulk_update_status` | 'bulk_update_status' |
+| `''` | `retired_kanban` | 'tasks' |
+| `'groups/<int:section_id>/'` | `retired_kanban` | 'task_group' |
+| `'view-task/<int:task_id>/'` | `retired_kanban` | 'view-task' |
+| `'view-subtask/<int:task_id>/'` | `retired_kanban` | 'view-subtask' |
+| `'attachments/<int:attachment_id>/download/'` | `retired_kanban` | 'download_attachment' |
+| `'comment-images/<int:image_id>/'` | `retired_kanban` | 'comment_image' |
 
 ### contacts/urls.py
 
@@ -1119,18 +1105,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
-| `''` | `views.contacts` | 'contacts' |
-| `'users/'` | `views.user_directory` | 'user-directory' |
-| `'users/lookup/'` | `views.lookup_ancore_login` | 'lookup-ancore-login' |
-| `'users/<int:user_id>/add/'` | `views.add_user_contact` | 'add-user-contact' |
-| `'companies/'` | `views.companies` | 'companies' |
-| `'companies/<int:company_id>/'` | `views.view_company` | 'view-company' |
-| `'companies/<int:company_id>/edit/'` | `views.edit_company` | 'edit-company' |
-| `'companies/<int:company_id>/delete/'` | `views.delete_company` | 'delete-company' |
-| `'guests/'` | `views.guest_contacts` | 'guests' |
-| `'view-contact/<int:contact_id>/'` | `views.view_contact` | 'view-contact' |
-| `'view-contact/<int:contact_id>/edit/'` | `views.edit_contact` | 'edit-contact' |
-| `'delete/<int:contact_id>/'` | `views.delete_contact` | 'delete' |
 
 ### dashboard/urls.py
 
@@ -1316,14 +1290,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [kanban/__init__.py](../kanban/__init__.py)
 - [kanban/access.py](../kanban/access.py) — `card_tree_ids`, `visible_to`, `editable_to`, `require_editable`, `require_deletable`
-- [kanban/admin.py](../kanban/admin.py) — `KanbanAttachmentInline`, `TaskAdmin`, `KanbanSectionInline`, `KanbanBoardColumnInline`, `KanbanProjectNoteInline`, `KanbanProjectAdmin`, `KanbanProjectNoteAdmin`, `KanbanSectionAdmin`, `KanbanBoardColumnAdmin`, `KanbanAttachmentAdmin`
+- [kanban/admin.py](../kanban/admin.py)
 - [kanban/apps.py](../kanban/apps.py) — `KanbanConfig`
 - [kanban/directory.py](../kanban/directory.py) — `directory_tab`, `directory_queryset`, `decorate_favorites`
 - [kanban/forms.py](../kanban/forms.py) — `LenientModelChoiceField`, `TwoDigitNumberInput`, `board_column_status_choices`, `DynamicStatusFormMixin`, `MultipleFileInput`, `KanbanForm`, `KanbanAccessForm`, `KanbanProjectBaseForm`, `KanbanProjectForm`, `KanbanProjectRenameForm`, `KanbanSectionForm`, `KanbanSectionRenameForm`, `KanbanTagForm`, `KanbanBoardColumnForm`, `QuickKanbanForm`, `KanbanModalForm`, `SubKanbanModalForm`
 - [kanban/models.py](../kanban/models.py) — `KanbanProject`, `KanbanProjectNote`, `KanbanSection`, `KanbanBoardColumn`, `Kanban`, `KanbanAttachment`, `KanbanActivity`, `KanbanCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`, `KanbanProjectMembership`, `KanbanSectionMembership`
 - [kanban/sharing.py](../kanban/sharing.py) — `share_candidates`, `project_role`, `project_access_data`, `section_candidates`, `section_role`, `section_access_data`
 - [kanban/sharing_signals.py](../kanban/sharing_signals.py) — `revoke_workspace_shares`, `workspace_member_deleted`, `workspace_member_disabled`, `project_member_deleted`
-- [kanban/urls.py](../kanban/urls.py)
+- [kanban/urls.py](../kanban/urls.py) — `retired_kanban`
 - [kanban/views/__init__.py](../kanban/views/__init__.py)
 - [kanban/views/directory.py](../kanban/views/directory.py) — `directory_favorite`
 - [kanban/views/project_team.py](../kanban/views/project_team.py) — `ProjectShareForm`, `team_payload`, `project_team`, `project_candidates`
@@ -1333,7 +1307,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### contacts
 
 - [contacts/__init__.py](../contacts/__init__.py)
-- [contacts/admin.py](../contacts/admin.py) — `CompanyMembershipInline`, `CompanyAdmin`, `ContactAdmin`, `UserContactAdmin`, `ContactActivityAdmin`, `SharedItemAdmin`, `SharedItemLinkAdmin`
+- [contacts/admin.py](../contacts/admin.py)
 - [contacts/apps.py](../contacts/apps.py) — `ContactsConfig`
 - [contacts/forms.py](../contacts/forms.py) — `ContactForm`, `ContactModalForm`, `CompanyForm`, `CompanyModalForm`
 - [contacts/models.py](../contacts/models.py) — `Company`, `CompanyMembership`, `Contact`, `UserContact`, `ContactActivity`, `SharedItem`, `SharedItemLink`
@@ -1910,43 +1884,36 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `TaskProjectControlStyleTests`: 19 metod testowych.
 - `TaskProjectCreationTests`: 119 metod testowych.
 
-### kanban/test_deadlines.py
+### kanban/test_retirement.py
 
-Źródło: [kanban/test_deadlines.py](../kanban/test_deadlines.py).
+Źródło: [kanban/test_retirement.py](../kanban/test_retirement.py).
 
-- `KanbanDeadlineTests`: 2 metod testowych.
-
-### kanban/test_directory_tabs.py
-
-Źródło: [kanban/test_directory_tabs.py](../kanban/test_directory_tabs.py).
-
-- `KanbanDirectoryTabsTests`: 6 metod testowych.
+- `RetiredKanbanTests`: 6 metod testowych.
 
 ### kanban/test_sharing.py
 
 Źródło: [kanban/test_sharing.py](../kanban/test_sharing.py).
 
-- `KanbanSharingTests`: 17 metod testowych.
 - `KanbanSharingMigrationTests`: 1 metod testowych.
 
 ### kanban/tests.py
 
 Źródło: [kanban/tests.py](../kanban/tests.py).
 
-- `KanbanProjectCreationTests`: 74 metod testowych.
+- `LegacyKanbanModelTests`: 2 metod testowych.
 
 ### contacts/tests.py
 
 Źródło: [contacts/tests.py](../contacts/tests.py).
 
-- `ContactDirectoryStyleTests`: 1 metod testowych.
-- `ContactCollaborationTests`: 27 metod testowych.
+- `RetiredContactRoutesTests`: 2 metod testowych.
+- `RetiredContactDirectoryTests`: 4 metod testowych.
 
 ### dashboard/test_collaboration.py
 
 Źródło: [dashboard/test_collaboration.py](../dashboard/test_collaboration.py).
 
-- `CollaborationTests`: 21 metod testowych.
+- `CollaborationTests`: 20 metod testowych.
 
 ### dashboard/test_for_you.py
 

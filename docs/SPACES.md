@@ -41,8 +41,12 @@ w starszych testach nawigacji oraz Workspace.
 
 Od 3.10.2026 główna nawigacja prowadzi do katalogu Przestrzeni, Wszystkich
 zadań i Zespołów. Przestrzeń organizuje pracę; zespół grupuje osoby. Workspace
-pozostaje nadrzędną granicą danych i członkostwa. Kontakty i firmy zachowują
-rekordy i historyczne adresy, ale nie występują w głównym menu.
+pozostaje nadrzędną granicą danych i członkostwa. Pod Zasobami zwijana sekcja
+„Starsze widoki” udostępnia dawne katalogi Projektów (także Ulubione), Grup,
+Zadań, Tagów, Szablonów projektów i Kanbana. Katalogi Kontaktów, Firm, Użytkowników
+i Gości są wycofane z menu i routingu. Skróty używają aktywnego Workspace
+i zachowują istniejące przekierowania
+Kanbana; nie przywracają edycji przeniesionych rekordów źródłowych.
 
 `spaces.Space` rozszerza istniejący `tasks.TaskProject` przez OneToOne.
 Nazwa, opis, prywatność i role pozostają w projekcie, dzięki czemu wcześniejsze
@@ -127,14 +131,15 @@ Formularz nie pozwala odebrać ostatniej aktywnej roli administratora zespołu.
 4. Przenosi odwołania powiadomień, wzmianek i obserwowania do nowych rekordów.
 5. Zapisuje mapowania `LegacyKanbanLink`. Oryginalne rekordy nie są kasowane.
 
-Projekty bez Workspace pozostają w historycznym module. Nieprzypisane karty
+Projekty bez Workspace pozostają wyłącznie w historycznych tabelach, bez ekranów. Nieprzypisane karty
 otrzymują zadania bez przestrzeni. Dane nowego widoku weryfikuje się przez
 mapowania i `Task.work_item`, nie przez obecność dawnego rekordu.
 
-`kanban.access` wyklucza przeniesione obiekty, co zapobiega duplikatom w innych
-modułach. `LegacyKanbanMiddleware` przekierowuje stare linki szczegółów i plików
-po kontroli aktualnego zakresu oraz ACL; dawne zapisy w przeniesionym Workspace
-zwracają 409 i adres nowego modułu. Mapowania przetrwają usunięcie przestrzeni,
+`kanban.access` wyklucza wszystkie historyczne obiekty z bieżącej aplikacji.
+Stary moduł nie ma aktywnych ekranów ani operacji, także bez mapowań importu.
+Katalog `/kanban/` (również scoped) przekierowuje zawsze do Przestrzeni. `LegacyKanbanMiddleware` przekierowuje stare linki szczegółów i plików
+po kontroli aktualnego zakresu oraz ACL; zapisy pod zachowane adresy zgodności
+zwracają 409 i adres nowego modułu, a usunięte endpointy operacji — 404. Mapowania przetrwają usunięcie przestrzeni,
 aby archiwalne dane nie pojawiły się ponownie.
 
 Załączniki wskazują istniejące ścieżki; migracja nie kopiuje plików na dysku.

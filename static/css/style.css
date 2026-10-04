@@ -2002,6 +2002,10 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
             visibility 0s linear;
     }
 
+    .sidebar-subnav--extended:not([hidden]) {
+        max-height: none;
+    }
+
     .sidebar-nav-group + .sidebar-nav-group,
     .sidebar .sidebar-source-dashboard,
     .sidebar .sidebar-primary-link--standalone,

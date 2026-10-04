@@ -1,5 +1,10 @@
 # Wspólne mechanizmy i przepływy
 
+Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
+szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
+aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
+[Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
+
 ## Wspólne zadania przestrzeni
 
 Nowe listy, tablice i backlog korzystają z `Task` i metadanych `WorkItem`.
@@ -84,11 +89,12 @@ sprawdź oczekiwany kontekst i zachowanie aktywnego middleware.
 ## 3. Routing zwykły i scoped
 
 `scoped_workplace_app_path()` buduje adresy modułów. Zestaw obsługiwanych
-segmentów to `tasks`, `kanban`, `contacts`, `calendar`, `documents`, `office`,
-`resources` i `for-you`.
+segmentów to `tasks`, `kanban`, `calendar`, `documents`, `office`,
+`resources`, `for-you`, `spaces` i `teams`. Dawne adresy Kontaktów zwracają 404
+i nie są przepisywane przez middleware do aktywnego Workspace.
 Wariant scoped ma namespace `workplace_tasks`, `workplace_kanban`,
-`workplace_contacts`, `workplace_planner`, `workplace_documents`, `workplace_office`
-albo `workplace_resources`. „Dla ciebie” ma nazwy tras `for_you` i
+`workplace_planner`, `workplace_documents`, `workplace_office`,
+`workplace_resources`, `workplace_spaces` albo `workplace_teams`. „Dla ciebie” ma nazwy tras `for_you` i
 `workplace_for_you` bez osobnego namespace.
 
 Po włączeniu zakresu URL middleware przekierowuje bazowe GET/HEAD do
@@ -106,7 +112,7 @@ użyteczności danego ekranu, a nie przypadkowym dodatkiem URL.
 
 ## 4. Dostęp i historyczne udostępnianie
 
-Aktywne zapytania Tasks/Kanban/Contacts/Planner/Documents ograniczają rekordy
+Aktywne zapytania Tasks/Planner/Documents ograniczają rekordy
 do właściciela Workspace i odpowiedniego kontekstu. `workspace_owner(request)`
 weryfikuje rzeczywiste członkostwo przed przekazaniem właściciela danych do
 istniejących helperów Tasks/Kanban. Komentarze i historia zachowują rzeczywistego autora.
@@ -200,17 +206,17 @@ ustawiając `is_completed` i `completion_date`. Aktywności początkowe powstaj�
 przez `post_save`; zmiany pól i komentarze zapisują także helpery widoków.
 Notatki projektów/grup/tagów mają osobne modele i kontrolę autora przy edycji.
 
-Pojedyncza i zbiorcza zmiana statusu w Tasks i Kanban blokuje numerację właściciela
+Pojedyncza i zbiorcza zmiana statusu w Tasks blokuje numerację właściciela
 przed odczytem i blokadą wiersza zadania. Odczyt, zapis modelu i historia należą
 do jednej transakcji. Zapis statusu obejmuje tylko `status`, `is_completed`
 i `completion_date`, zachowując pozostałe pola. Powtórne zamknięcie zachowuje
 datę zakończenia; tylko faktyczna zmiana dodaje historię z autorem `request.user`.
-Błąd zapisu historii wycofuje również status. Pojedynczy endpoint Kanbana
-stosuje tę samą blokadę także przy zmianie kolumny.
+Błąd zapisu historii wycofuje również status. Archiwalny, nieroutowany endpoint Kanbana
+stosował tę samą blokadę także przy zmianie kolumny.
 
-Kolumna Kanban jest oddzielona od statusu. `_set_task_column()` sprawdza,
+W historycznym modelu Kanbana kolumna jest oddzielona od statusu. `_set_task_column()` sprawdza,
 czy kolumna należy do tablicy karty i właściciela, a następnie zapisuje relację.
-Przestawianie kolumn ma osobny endpoint, który waliduje zestaw identyfikatorów.
+Dawny endpoint przestawiania kolumn jest wyłączony.
 
 ### Dziennik pracy zadania
 
@@ -264,23 +270,15 @@ Pole `user` nadal wskazuje właściciela Workspace; relacja ulubionych wskazuje
 faktycznego odbiorcę `request.user`.
 Wariant `task` obsługuje zadania główne; podzadania nie należą do katalogu ulubionych.
 
-Kanban używa tych samych etykiet i konstrukcji linków zakładek, ale własnego
-`kanban/directory.py`: domyślna i nieznana wartość `tab` wybiera `private`.
-Filtr kategorii jest nakładany po `kanban.access.visible_to`; publiczna tablica
-prywatnej przestrzeni dziedziczy jej kategorię. Nie używa historycznego `SharedItem`.
-`tasks.access` przekazuje modele Kanbana do `kanban.access`, dzięki czemu wspólne
-wyszukiwanie, Kalendarz, powiadomienia, obserwowanie i pobieranie plików respektują
-widoczność. Rekurencyjne CTE używa stabilnego PK, obejmuje ograniczenia wszystkich
-rodziców i kończy pracę również dla cyklicznych danych historycznych.
-`editable_to` dodatkowo wyklucza Obserwatorów. Operacje zbiorcze sprawdzają cały
-zestaw przed zapisem, a usuwanie uwzględnia ukryte tablice i potomków.
-Relacje `KanbanProject.favorited_by` i `KanbanSection.favorited_by` oraz adnotacja
-`Exists` filtrują `favorites` przed liczeniem i paginacją. Endpoint POST
-`/kanban/favorites/<project|section>/<pk>/` (również scoped) ogranicza obiekt do
-właściciela, aktywnego Workspace i widoczności, a zapisuje preferencję rzeczywistego odbiorcy.
-Akcje `add|remove` są idempotentne; ulubione nie nadają dostępu.
+Historyczny Kanban jest wycofany: `tasks.access` deleguje jego modele do
+`kanban.access`, które zwraca pusty queryset także dla właściciela.
+Wyszukiwanie, Dashboard, „Dla ciebie” i kalendarz korzystają wyłącznie z Tasks.
+Powiadomienia zachowują pusty typ `kanban`, żeby historyczny identyfikator nie
+mógł zmienić stanu archiwalnej aktywności. Endpointy zespołu, ulubionych,
+obserwowania i operacji Kanbana nie są routowane. `LegacyKanbanMiddleware`
+obsługuje tylko adresy zgodności, z aktualną kontrolą dostępu Tasks.
 
-Tasks i Kanban mają rozbudowane funkcje `*_window_for_request()`, które
+Tasks oraz archiwalny kod Kanbana mają rozbudowane funkcje `*_window_for_request()`, które
 filtrują, sortują i wycinają okno wyników po stronie serwera. Widoki używają
 `select_related`, `prefetch_related`, agregacji i adnotacji do liczników.
 Tasks ma osobne mechanizmy katalogów projektów, grup, tagów i zadań oraz
@@ -306,7 +304,7 @@ Stary URL `my-tasks` zachowuje swój filtr osoby.
 Zakres właściciela, Workspace, wykonawcy i zadań głównych jest ustalany przed
 filtrowaniem, agregacją i paginacją.
 
-Kontakty i firmy mają własne okna wyników. Dysk używa `Paginator`;
+Wycofane widoki Kontaktów i Firm zachowują historyczny kod okien wyników. Dysk używa `Paginator`;
 na jednej stronie najpierw rozlicza foldery, potem pliki, aby nie
 powielać i nie pomijać pozycji przy przechodzeniu między stronami.
 
@@ -516,8 +514,9 @@ nie wolno publicznie mapować całego `MEDIA_ROOT`. Szczegóły wdrożenia:
 
 GET `/global-search/?q=...` wymaga logowania. Minimum wynosi 2 znaki,
 tekst jest ograniczany do 120 znaków. Wyszukiwanie obejmuje zadania i ich
-historię, projekty/grupy, karty/tablice/przestrzenie Kanban, tagi, kontakty,
-firmy, wydarzenia, Workspace, miejsca nawigacji oraz dyski/foldery/pliki.
+historię, projekty/grupy, tagi, wydarzenia,
+Workspace, miejsca nawigacji oraz dyski/foldery/pliki. Wycofane katalogi Kontaktów
+i Firm nie są przeszukiwane; firma pozostaje metadanymi istniejącego projektu.
 Zakres konkretnych querysetów uwzględnia właściciela i tam, gdzie przewidziano,
 aktywny Workspace; lista Workspace obejmuje własne przestrzenie i aktywne
 członkostwa faktycznie zalogowanej osoby (`request.user`), niezależnie od
@@ -543,7 +542,7 @@ w rozwijanym panelu pod polem górnego paska; przyciski typów filtrują pobrane
 wyniki bez zmiany uprawnień ani limitów serwera.
 
 GET `/global-search/?recent=1` przy pustej frazie zwraca do 8 ostatnio oglądanych
-zadań, projektów i grup (także historycznego Kanbana). Korzysta z identyfikatorów
+zadań, projektów i grup Tasks (bez historycznego Kanbana). Korzysta z identyfikatorów
 `dashboard.recent` zapisanych dla konta i Workspace w bieżącej sesji.
 Przy każdym odczycie ponownie stosuje `workspace_owner`, Workspace i `visible_to`;
 usunięte elementy oraz te, do których cofnięto dostęp, nie trafiają do odpowiedzi.
@@ -557,7 +556,7 @@ w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszu
 
 `TaskActivity`, `KanbanActivity` i `ContactActivity` są historią obiektów.
 Centrum powiadomień (`dashboard/notification_service.py`) odczytuje wyłącznie
-komentarze (`kind='comment'`) Zadań i Kanbana, ważne oczekujące zaproszenia
+komentarze (`kind='comment'`) Zadań, ważne oczekujące zaproszenia
 oraz osobiste przypomnienia. Wpisy historii (`kind='system'`), np. utworzenie,
 edycja lub zmiana statusu, pozostają tylko w historii obiektu. Nie trafiają
 do żadnej zakładki powiadomień, liczników ani akcji osobistych i zbiorczych,
@@ -740,8 +739,8 @@ nie pozostały z poprzedniego kontekstu. Tak samo działa odpowiedź bez powłok
 aplikacji (np. logowanie) lub z edytorem `data-app-full-navigation`.
 
 Lista obejmuje Dashboard, „Dla ciebie”, ustawienia i pola projektów, zarządzanie Workspace,
-profil, katalogi Zadań/Kanbana, grupy, szczegóły zadań/podzadań/kart, szablony
-projektów, Kontakty, Kalendarz oraz katalogi Dysku i Dokumentów. Działa dla
+profil, katalogi Zadań, grupy, szczegóły zadań/podzadań, szablony
+projektów, Kalendarz oraz katalogi Dysku i Dokumentów. Działa dla
 bazowych i scoped URL, łącznie z query string filtrów i paginacji. Otwieranie
 zadania z Kalendarza, powiadomień i powrót ze szczegółów używają tego samego API.
 Pobieranie plików, zewnętrzne linki, nowe karty, akcje POST, przełączanie konta

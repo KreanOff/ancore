@@ -158,7 +158,7 @@ def notification_sources(user, workspace='', *, include_deleted=False):
         'workplace': pending_invitations_for_user(user),
         # System activity remains in object history, never in the inbox.
         'tasks': visible_to(TaskActivity.objects.filter(kind='comment'), user).filter(access),
-        'kanban': visible_to(KanbanActivity.objects.filter(kind='comment'), user).filter(access),
+        'kanban': KanbanActivity.objects.none(),  # Historical IDs stay valid but never expose retired records.
         'reminders': reminders_for_user(user),
     }
     for source, queryset in sources.items():

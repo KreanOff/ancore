@@ -313,7 +313,7 @@ class WorkplaceSelectionTests(TestCase):
         SidebarFavorite.objects.create(
             user=self.user,
             workplace=self.first_workplace,
-            item_key='contacts-companies',
+            item_key='calendar',
             position=2,
         )
         self.client.force_login(self.user)
@@ -322,7 +322,7 @@ class WorkplaceSelectionTests(TestCase):
 
         response = self.client.post(
             endpoint,
-            {'item_order': json.dumps(['contacts-companies', 'dashboard', 'tasks-all'])},
+            {'item_order': json.dumps(['calendar', 'dashboard', 'tasks-all'])},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
 
@@ -332,11 +332,11 @@ class WorkplaceSelectionTests(TestCase):
                 SidebarFavorite.objects.filter(user=self.user, workplace=self.first_workplace)
                 .values_list('item_key', flat=True)
             ),
-            ['contacts-companies', 'dashboard', 'tasks-all'],
+            ['calendar', 'dashboard', 'tasks-all'],
         )
         page = self.client.get(reverse('tasks:tasks')).content.decode()
         self.assertLess(
-            page.index('data-sidebar-favorite-item="contacts-companies"'),
+            page.index('data-sidebar-favorite-item="calendar"'),
             page.index('data-sidebar-favorite-item="dashboard"'),
         )
         self.assertLess(

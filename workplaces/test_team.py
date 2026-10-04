@@ -71,12 +71,11 @@ class TeamAccessTests(TestCase):
         self.assertEqual(self.client.get(scoped_workplace_app_path(self.private, 'tasks')).status_code, 302)
 
     def test_every_module_is_visible_to_members(self):
-        for app in ['tasks', 'kanban', 'contacts', 'calendar', 'documents', 'office']:
+        for app in ['tasks', 'calendar', 'documents', 'office']:
             with self.subTest(app=app):
                 self.assertEqual(self.client.get(self.url(app)).status_code, 200)
         self.assertContains(self.client.get(self.url('documents')), self.library.name)
         self.assertContains(self.client.get(self.url('office')), self.office.title)
-        self.assertContains(self.client.get(self.url('contacts', 'companies/')), self.company.name)
 
     def test_search_dashboard_and_notifications_use_team_scope(self):
         for task in (self.task, self.other_task):
@@ -86,7 +85,7 @@ class TeamAccessTests(TestCase):
         self.assertIn(self.task.title, json.dumps(response.json(), ensure_ascii=False))
         self.assertIn(self.document.title, json.dumps(response.json(), ensure_ascii=False))
         self.assertNotIn(self.other_task.title, json.dumps(response.json(), ensure_ascii=False))
-        self.assertEqual(self.client.get(reverse('home')).context['dashboard_totals']['total'], 2)
+        self.assertEqual(self.client.get(reverse('home')).context['dashboard_totals']['total'], 1)
         notifications = self.client.get(reverse('notifications'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(notifications.status_code, 200)
         self.assertIn(self.task.title, notifications.json()['html'])
@@ -144,8 +143,9 @@ class TeamAccessTests(TestCase):
 
     def test_member_calendar_and_kanban_writes(self):
         response = self.post_json(self.url('kanban', f'update/{self.card.task_id}/'), {'task_pk': self.card.pk, 'status': 'closed'})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.card.activities.filter(action='status_changed').latest('pk').actor_id, self.member.pk)
+        self.assertEqual(response.status_code, 404)
+        self.card.refresh_from_db()
+        self.assertEqual(self.card.status, 'new')
         response = self.client.post(self.url('calendar', f'events/{self.event.pk}/update/'), {'title': 'Zmienione spotkanie',
             'start': '2026-09-24T10:00', 'end': '2026-09-24T11:00', 'color': 'blue'})
         self.assertEqual(response.status_code, 200)
@@ -163,7 +163,7 @@ class TeamAccessTests(TestCase):
                 field.storage = FileSystemStorage(directory)
                 item.file.storage = field.storage
                 item.file.save('team.txt', ContentFile(b'Team access'), save=True)
-            urls += [self.url('tasks', f'attachments/{objects[2].pk}/download/'), self.url('kanban', f'attachments/{objects[3].pk}/download/')]
+            urls += [self.url('tasks', f'attachments/{objects[2].pk}/download/')]
             for url in urls:
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 200, url)
@@ -275,8 +275,9 @@ class TeamAccessTests(TestCase):
         self.assertEqual(self.other_task.status, 'new')
         self.assertEqual(self.task.activities.filter(action='status_changed').latest('pk').actor_id, self.member.pk)
         response = self.post_json(self.url('kanban', 'bulk-update-status/'), {'task_pks': [self.card.pk], 'status': 'closed'})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.card.activities.filter(action='status_changed').latest('pk').actor_id, self.member.pk)
+        self.assertEqual(response.status_code, 404)
+        self.card.refresh_from_db()
+        self.assertEqual(self.card.status, 'new')
 
     def test_removal_invalidates_all_existing_office_sessions(self):
         token = office_service.capability(self.office, 'callback', self.owner)

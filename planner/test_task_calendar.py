@@ -31,6 +31,10 @@ class TaskCalendarTests(TestCase):
             payload = self.client.get(self.url, self.params).json()['events']
             by_id = {item['id']: item for item in payload}
             self.assertIn(event.pk, by_id)
+            if source == 'kanban':
+                self.assertNotIn(f'{source}:{parent.pk}', by_id)
+                self.assertNotIn(f'{source}:{child.pk}', by_id)
+                continue
             self.assertIn(f'{source}:{parent.pk}', by_id)
             item = by_id[f'{source}:{child.pk}']
             self.assertEqual(item['source'], source)

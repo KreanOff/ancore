@@ -4,8 +4,6 @@
 {% url 'teams:index' as sidebar_teams_fallback_url %}
 {% firstof workplace_app_urls.spaces sidebar_spaces_fallback_url as sidebar_spaces_url %}
 {% firstof workplace_app_urls.teams sidebar_teams_fallback_url as sidebar_teams_url %}
-{% url 'kanban:tasks' as sidebar_kanban_fallback_url %}
-{% url 'contacts:contacts' as sidebar_contacts_fallback_url %}
 {% url 'planner:index' as sidebar_calendar_fallback_url %}
 {% url 'documents:library' as sidebar_documents_fallback_url %}
 {% url 'office:index' as sidebar_office_fallback_url %}
@@ -15,8 +13,6 @@
 {% firstof workplace_app_urls.for_you sidebar_for_you_fallback_url as sidebar_for_you_url %}
 {% url 'notifications' as sidebar_notifications_url %}
 {% firstof workplace_app_urls.tasks sidebar_tasks_fallback_url as sidebar_tasks_url %}
-{% firstof workplace_app_urls.kanban sidebar_kanban_fallback_url as sidebar_kanban_url %}
-{% firstof workplace_app_urls.contacts sidebar_contacts_fallback_url as sidebar_contacts_url %}
 {% firstof workplace_app_urls.calendar sidebar_calendar_fallback_url as sidebar_calendar_url %}
 {% firstof workplace_app_urls.documents sidebar_documents_fallback_url as sidebar_documents_url %}
 {% firstof workplace_app_urls.office sidebar_office_fallback_url as sidebar_office_url %}
@@ -66,7 +62,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-sidebar-actions-13px">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261003-sidebar-legacy-links">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261003-all-avatars-30">
     {% block extra_head %}{% endblock %}
 </head>
@@ -150,7 +146,7 @@
         <form class="global-search-form app-topbar__search" role="search" data-global-search-form>
             <label for="global-search-input">
                 <i data-icon="search" aria-hidden="true"></i>
-                <input id="global-search-input" type="search" role="combobox" aria-label="Globalne wyszukiwanie" aria-controls="global-search-panel" aria-expanded="false" aria-haspopup="dialog" aria-autocomplete="none" maxlength="120" placeholder="Szukaj zadań, osób, projektów…" autocomplete="off" spellcheck="false" data-global-search-input>
+                <input id="global-search-input" type="search" role="combobox" aria-label="Globalne wyszukiwanie" aria-controls="global-search-panel" aria-expanded="false" aria-haspopup="dialog" aria-autocomplete="none" maxlength="120" placeholder="Szukaj zadań, przestrzeni, dokumentów…" autocomplete="off" spellcheck="false" data-global-search-input>
                 <span class="global-search-form__shortcut" aria-hidden="true">⌘ K</span>
                 <button type="button" class="global-search-form__clear" aria-label="Wyczyść wyszukiwanie" title="Wyczyść wyszukiwanie" data-global-search-clear hidden>
                     <i data-icon="circle-x" aria-hidden="true"></i>
@@ -265,6 +261,23 @@
                 <i class="nav-icon" data-icon="package" aria-hidden="true"></i><span class="nav-label">Zasoby</span>
             </a>
             {% sidebar_favorite_toggle 'resources' 'Zasoby' 'package' sidebar_resources_url %}
+            <section class="sidebar-nav-group" aria-labelledby="sidebar-legacy-title" data-sidebar-group="legacy">
+                <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Starsze widoki" title="Zwiń sekcję Starsze widoki" aria-controls="sidebar-legacy-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Starsze widoki">
+                    <i class="nav-icon" data-icon="archive" aria-hidden="true"></i>
+                    <span id="sidebar-legacy-title" class="nav-label">Starsze widoki</span>
+                    <i class="sidebar-group-chevron" data-icon="chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="sidebar-subnav sidebar-subnav--extended" id="sidebar-legacy-subnav" data-sidebar-group-label="Starsze widoki" aria-label="Starsze widoki">
+                    {% with app_name=request.resolver_match.app_name url_name=request.resolver_match.url_name %}
+                    <a href="{{ sidebar_tasks_url }}" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'project' or active_view == 'projects' and request.GET.tab != 'favorites' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="folders" aria-hidden="true"></i><span>Projekty</span></a>
+                    <a href="{{ sidebar_tasks_url }}?tab=favorites" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'projects' and request.GET.tab == 'favorites' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="star" aria-hidden="true"></i><span>Ulubione projekty</span></a>
+                    <a href="{{ sidebar_tasks_url }}?view=all-groups" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'all_groups' or active_view == 'section' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="folder-open" aria-hidden="true"></i><span>Grupy</span></a>
+                    <a href="{{ sidebar_tasks_url }}?view=all-tasks" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'all_tasks' or active_view == 'unassigned_tasks' or active_view == 'my_tasks' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="list-checks" aria-hidden="true"></i><span>Zadania</span></a>
+                    <a href="{{ sidebar_tasks_url }}?view=tags" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'tags' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="tag" aria-hidden="true"></i><span>Tagi</span></a>
+                    <a href="{{ sidebar_tasks_url }}templates/" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if url_name == 'project_templates' or url_name == 'edit_project_template' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="copy" aria-hidden="true"></i><span>Szablony projektów</span></a>
+                    {% endwith %}
+                </div>
+            </section>
             </section>
 
         </nav>
@@ -347,7 +360,7 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20261003-space-avatars"></script>
+    <script src="{% static 'js/layout.js' %}?v=20261004-retired-contacts"></script>
     <script src="{% static 'js/global-search.js' %}?v=20261003-search-no-close"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>

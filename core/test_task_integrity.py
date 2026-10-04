@@ -34,7 +34,7 @@ class TaskIdentityTests(TestCase):
         return self.client.post(url, json.dumps(data), content_type='application/json')
 
     def test_repeated_deletion_uses_pk_after_renumbering_and_is_idempotent(self):
-        for app, model in MODULES:
+        for app, model in [('tasks', Task)]:
             with self.subTest(app=app):
                 a, b, c = [model.objects.create(user=self.user, workplace=self.first, title=title) for title in 'ABC']
                 url = scoped_workplace_app_path(self.first, app, 'delete/')
@@ -45,7 +45,7 @@ class TaskIdentityTests(TestCase):
                 self.assertEqual(c.task_id, 1)
 
     def test_scoped_actions_stay_in_first_tab_after_opening_second_workspace(self):
-        for app, model in MODULES:
+        for app, model in [('tasks', Task)]:
             with self.subTest(app=app):
                 a = model.objects.create(user=self.user, workplace=self.first, title='A')
                 b = model.objects.create(user=self.user, workplace=self.second, title='B')
@@ -56,7 +56,7 @@ class TaskIdentityTests(TestCase):
                 self.assertTrue(model.objects.filter(pk=b.pk).exists())
 
     def test_mutations_reject_display_numbers_and_malformed_identities(self):
-        for app, model in MODULES:
+        for app, model in [('tasks', Task)]:
             item = model.objects.create(user=self.user, workplace=self.first, title='Protected')
             for suffix in ['delete/', 'bulk-update-status/']:
                 for data in [{'task_ids': [item.task_id]}, {'task_pks': []}, {'task_pks': [True]}, {'task_pks': ['1']}, []]:
@@ -67,7 +67,7 @@ class TaskIdentityTests(TestCase):
             self.assertTrue(model.objects.filter(pk=item.pk, status='new').exists())
 
     def test_single_and_bulk_status_changes_preserve_scope_and_completion(self):
-        for app, model in MODULES:
+        for app, model in [('tasks', Task)]:
             item = model.objects.create(user=self.user, workplace=self.first, title='Target')
             other = model.objects.create(user=self.other, workplace=self.first, title='Foreign owner')
             elsewhere = model.objects.create(user=self.user, workplace=self.second, title='Foreign workspace')
@@ -89,7 +89,7 @@ class TaskIdentityTests(TestCase):
             self.assertEqual(model.objects.get(pk=elsewhere.pk).status, 'new')
 
     def test_stale_detail_link_uses_pk_and_does_not_open_reassigned_number(self):
-        for app, model in MODULES:
+        for app, model in [('tasks', Task)]:
             a, b, c = [model.objects.create(user=self.user, workplace=self.first, title=title) for title in 'ABC']
             old_number = b.task_id
             a.delete()
@@ -102,11 +102,9 @@ class TaskIdentityTests(TestCase):
             self.assertEqual(self.client.get(url, {'task_pk': foreign.pk}).status_code, 404)
 
     def test_legacy_and_scoped_pages_render_workspace_and_pk_contract(self):
-        for app, model, project_model, section_model in [('tasks', Task, TaskProject, TaskSection), ('kanban', Kanban, KanbanProject, KanbanSection)]:
+        for app, model, project_model, section_model in [('tasks', Task, TaskProject, TaskSection)]:
             project = project_model.objects.create(user=self.user, workplace=self.first, name=app)
             section = section_model.objects.create(project=project, title='Group')
-            if app == 'kanban':
-                KanbanBoardColumn.objects.create(section=section, title='Column')
             item = model.objects.create(user=self.user, section=section, title='Item')
             base = scoped_workplace_app_path(self.first, app)
             self.client.get(scoped_workplace_app_path(self.first, 'calendar'))
@@ -135,7 +133,7 @@ class TaskIdentityTests(TestCase):
 
     def test_notifications_open_the_workspace_of_each_task_or_card(self):
         expected = {}
-        for app, model in MODULES:
+        for app, model in [('tasks', Task)]:
             for workspace in [self.first, self.second]:
                 item = model.objects.create(user=self.user, workplace=workspace, title=f'{app}-{workspace.pk}')
                 item.activities.create(actor=self.user, kind='comment', action='commented', message='Komentarz')

@@ -32,9 +32,9 @@ Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 | --- | --- |
 | Nowe pole zadania/projektu | Moduły: Zadania; Mechanizmy: numeracja, zapis, słowniki; `tasks/models.py`, `tasks/forms.py`, `tasks/views/tasks.py` |
 | Przestrzenie, zespoły, sprinty, wspólna tablica | [Przestrzenie](SPACES.md); `spaces/`, `static/js/spaces.js` |
-| Historyczny Kanban, kolumna, przeciąganie | Moduły: Kanban; Mechanizmy: status/kolumna; `kanban/views/tasks.py`, `static/js/tasks.js` |
+| Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `kanban/urls.py`, `spaces/middleware.py` |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
-| Kontakty, firmy, profil | Odpowiedni moduł; Mechanizmy: tożsamość, dostęp, obrazy |
+| Profil lub historyczne dane Kontaktów/Firm | Moduły: Accounts i wycofane katalogi Contacts; Mechanizmy: tożsamość, dostęp, obrazy |
 | Zasoby, ewidencja sprzętu i licencji | Moduły: Zasoby; `resources/`, wspólne filtry/paginacja w `static/js/tasks.js`, modale w `static/js/resources.js` |
 | Nawigacja lub nowy moduł | Architektura; Mechanizmy: Workspace, URL i podmiana treści |
 | Dysk i upload | Moduły: Dysk; Mechanizmy: pliki; `documents/`, `core/upload_validation.py` |

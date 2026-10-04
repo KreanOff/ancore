@@ -65,7 +65,7 @@
 
     function isPartialNavigationPath(pathname) {
         // Scoped module URLs use the same views and shell as their base URLs.
-        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|kanban|contacts|calendar|documents|office|resources|for-you|spaces|teams)(\/|$))/, '/');
+        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|teams)(\/|$))/, '/');
         const appShellPaths = [
             /^\/(spaces|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
@@ -77,18 +77,7 @@
             /^\/tasks\/?$/,
             /^\/tasks\/groups\/\d+\/?$/,
             /^\/tasks\/templates\/?$/,
-            /^\/(tasks|kanban)\/view-(subtask|task)\/\d+\/?$/,
-            /^\/kanban\/?$/,
-            /^\/kanban\/groups\/\d+\/?$/,
-            /^\/contacts\/?$/,
-            /^\/contacts\/users\/?$/,
-            /^\/contacts\/companies\/?$/,
-            /^\/contacts\/companies\/\d+\/?$/,
-            /^\/contacts\/companies\/\d+\/edit\/?$/,
-            /^\/contacts\/guests\/?$/,
-            /^\/contacts\/shared\/?$/,
-            /^\/contacts\/view-contact\/\d+\/?$/,
-            /^\/contacts\/view-contact\/\d+\/edit\/?$/,
+            /^\/tasks\/view-(subtask|task)\/\d+\/?$/,
             /^\/calendar\/?$/,
             /^\/documents\/?$/,
             /^\/office\/?$/,

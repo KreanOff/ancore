@@ -1,5 +1,10 @@
 # Praca zespołowa w Workspace
 
+Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
+szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
+aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
+[Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
+
 ## Zespoły pracy a członkostwo Workspace
 
 Moduł `/teams/` grupuje aktywnych członków Workspace w zespoły z własnymi
@@ -12,8 +17,9 @@ członkom zespołu. [Pełny opis](SPACES.md).
 
 ## Zakres pierwszej wersji
 
-Workspace obejmuje wspólne Projekty i Zadania, Kanban, Kontakty i firmy,
-Kalendarz, Dysk, Dokumenty oraz Zasoby. Dołączenie udostępnia wspólne dane Workspace.
+Workspace obejmuje wspólne Projekty i Zadania, Kanban, Kalendarz, Dysk,
+Dokumenty oraz Zasoby. Dawne katalogi Kontaktów, Firm, Użytkowników i Gości
+są wycofane; nie zmienia to kont ani członkostw Workspace. Dołączenie udostępnia wspólne dane Workspace.
 Projekty Zadań mają widoczność **Publiczny** (cały Workspace) lub **Prywatny**
 (osoba, która ustawiła prywatność, i osoby, którym udostępniono projekt). Rola „Obserwator” zapewnia dostęp tylko do odczytu w konkretnym prywatnym projekcie. Nie ma roli gościa Workspace. Historyczne `SharedItem` i linki udostępniania
 pozostają wyłączone.

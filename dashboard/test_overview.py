@@ -61,9 +61,9 @@ class DashboardOverviewTests(TestCase):
         Task.objects.filter(pk=old.pk).update(completion_date=self.now-timedelta(days=8))
         Kanban.objects.filter(status='closed').update(completion_date=self.now-timedelta(hours=1))
         context = self.overview()
-        self.assertEqual(context['dashboard_totals'], {'total': 6, 'open': 3, 'priority': 3, 'closed_week': 2, 'overdue': 1})
+        self.assertEqual(context['dashboard_totals'], {'total': 4, 'open': 2, 'priority': 2, 'closed_week': 1, 'overdue': 1})
         self.assertEqual(context['dashboard_completed_percent'], 50)
-        self.assertEqual(context['dashboard_closed_count'], 3)
+        self.assertEqual(context['dashboard_closed_count'], 2)
 
     def test_owner_workspace_membership_and_assignee_do_not_expand_access(self):
         visible = self.task(title='Widoczne', due_at=self.now)
@@ -114,8 +114,16 @@ class DashboardOverviewTests(TestCase):
         self.assertEqual([row['object'] for row in context['dashboard_items']], [urgent, high])
         self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'tasks', f'view-task/{urgent.task_id}/?task_pk={urgent.pk}'))
         context = self.overview('kanban')
-        self.assertEqual([row['object'] for row in context['dashboard_items']], [card])
-        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'kanban', f'view-task/{card.task_id}/?task_pk={card.pk}'))
+        self.assertEqual(context['dashboard_items'], [])
+        project = TaskProject.objects.create(user=self.user, workplace=self.workplace, name='Nowa tablica')
+        space = project.space
+        space.template = 'kanban'
+        space.save()
+        section = TaskSection.objects.create(project=project, title='Praca')
+        current = self.task(title='Bieżąca karta', section=section)
+        context = self.overview('kanban')
+        self.assertEqual([row['object'] for row in context['dashboard_items']], [current])
+        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'tasks', f'view-task/{current.task_id}/?task_pk={current.pk}'))
 
     def test_calendar_includes_ongoing_and_all_day_events_but_excludes_finished(self):
         def event(title, start, end, **kwargs):

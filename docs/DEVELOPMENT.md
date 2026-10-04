@@ -15,6 +15,15 @@ kreator/szablony, błędy formularzy, zadanie na liście i tablicy, sprint,
 zespół i powiązania, szeroki/wąski ekran, Escape/fokus i częściową nawigację.
 
 
+## Wycofanie Tablic Kanban
+
+`kanban.test_retirement` sprawdza przekierowania zwykłe/scoped, brak dawnych
+operacji, brak wyników w integracjach, zachowanie danych oraz kontrolę dostępu
+do zaimportowanych szczegółów i plików. Regresje modelu i historycznej migracji
+pozostają w `kanban.tests` i `kanban.test_sharing`; testy dawnych ekranów zastąpiły
+testy wycofania. Sprawdzaj też `spaces`, Dashboard, Planner i wspólne mechanizmy
+Zadań. Wycofanie nie wymaga nowej migracji ani usuwania danych.
+
 ## 1. Wymagania i wersje
 
 Źródła: [requirements.txt](../requirements.txt), [settings.py](../ancore/settings.py).
@@ -164,16 +173,11 @@ obserwatorów, cofnięcie dostępu, obcy Workspace i CSRF. Dawne testy katalogó
 z publicznymi danymi wybierają jawnie `tab=public`, ponieważ domyślną zakładką
 jest teraz „Prywatne”.
 
-Zakładki Kanbana wymagają migracji `0038_directory_favorites`, dodającej osobiste
-relacje ulubionych przestrzeni i tablic bez zmiany istniejącego dostępu.
-`kanban.test_directory_tabs` sprawdza kategorie, oba warianty URL, filtry,
-paginację, osobiste oznaczenia, walidację POST/CSRF, obcy Workspace i cofnięcie
-członkostwa. Migracja `0039_sharing` dodaje prywatność i członkostwa przestrzeni/tablic,
-zachowując istniejące rekordy jako publiczne. Domyślna zakładka to „Prywatne”.
-`kanban.test_sharing` sprawdza role, dziedziczenie, cofanie dostępu, formularze,
-operacje zbiorcze, pliki, historię, integracje i migrację. Uruchamiaj też regresje
-`tasks.test_project_visibility`, `tasks.test_project_observer`, `tasks.test_section_sharing`,
-`tasks.test_directory_tabs`, `workplaces`, `planner`, `dashboard` i `core`.
+Historyczne migracje Kanbana `0038_directory_favorites` i `0039_sharing`
+zachowują dawne ulubione, prywatność i członkostwa. Test migracji pozostaje
+w `kanban.test_sharing`; aktywne endpointy zastąpił kontrakt wycofania sprawdzany
+przez `kanban.test_retirement`. Uruchamiaj też regresje Tasks, Workspace,
+Planner, Dashboard, Spaces oraz współdzielonych plików/statusów w Core.
 Browser QA: dwa konta, „Członkowie” → „Udostępnij”, role i odebranie dostępu,
 prywatna tablica w przestrzeni, tryb tylko do odczytu, błąd pobierania członków,
 ponowne wejście, klawiatura, szerokość telefonu oraz referencyjne okno Zadań.
@@ -202,7 +206,7 @@ Dashboard jako referencję, nawigację modułów, telefon, puste stany oraz bł�
 | Tasks: `test_legacy_time_migration.py` | Migracja dawnej kolumny czasu: świeża i starsza baza, zachowanie danych, tworzenie zadań i podzadań, zwykłe/scoped URL, autor historii i izolacja Workspace |
 | Osobne testy Tasks | Słowniki źródeł, reguły terminów, nadpisanie reguł per projekt i migracje |
 | Kanban | Tablice/kolumny/karty, właściciel, zmiany statusu, katalogi, tagi, pliki |
-| Contacts | Osoby, firmy, powiązania z kontami, zakres dostępu i UI szablonów |
+| Contacts | Wycofanie katalogów: 404 dla GET/POST w obu wariantach URL, brak menu/wyszukiwania/admina, historyczne ulubione i zachowanie kont/członkostw/relacji projektów |
 | Planner | Wydarzenia i izolacja właściciela |
 | Dashboard | Wyszukiwanie, powiadomienia i integracje |
 | Dashboard: `test_search_regressions.py` | Lista Workspace według członkostwa odbiorcy, cofnięcie dostępu, trwałe linki zadań/podzadań i kart/podkart po renumeracji/usunięciu, Unicode, limit SQL i granica 20 wyników |
@@ -461,8 +465,7 @@ Testy `planner.test_task_calendar`, `dashboard.test_reminders` oraz
 `tasks.test_project_templates` obejmują terminy i linki, izolację Workspace,
 wycofanie dostępu, zegar przypomnień, deduplikację, snapshoty odczytu,
 paginację, kopiowanie hierarchii, reset stanu wykonania i rollback.
-`kanban.test_deadlines` sprawdza tworzenie, edycję, wyczyszczenie i walidację
-terminu karty oraz autora i zawartość historii zmian.
+`kanban.test_retirement` sprawdza pomijanie historycznych terminów kart.
 Historyczny test Workspace wycofuje również Tasks do 0047, ponieważ
 szablony 0048 zależą od Workspace 0008.
 
@@ -614,3 +617,13 @@ Browser QA: pusty katalog, tworzenie, edycja, duplikat numeru, błąd sieci/pono
 filtry, usuwanie/anulowanie, fokus, Escape, telefon, ponowne wejście przez menu
 oraz ekran referencyjny Projektów/Firm. Częściowa nawigacja obejmuje listę
 oraz bezpośrednie adresy tworzenia i edycji zasobów.
+
+## Wycofanie katalogów Kontaktów, Firm, Użytkowników i Gości
+
+Zmiana nie wymaga migracji. Modele i dane historyczne pozostają, natomiast
+routing, pozycje menu, globalne wyniki wyszukiwania i Django admin są wyłączone.
+Stare ulubione są pomijane przez katalog dozwolonych skrótów.
+Testy: `manage.py test contacts dashboard.tests dashboard.test_search_regressions
+workplaces.test_team workplaces.test_invitation_candidates accounts.tests`.
+Browser QA: pozostałe Starsze widoki i Przestrzenie, wyszukiwanie bez wycofanych
+modułów, 404 starego adresu, desktop/telefon, zwinięte menu i ponowne wejście.

@@ -7,7 +7,6 @@ from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from django.utils import timezone
 
 from tasks.access import visible_to
-from kanban.models import Kanban
 from planner.models import CalendarEvent
 from tasks.models import Task, TaskProject
 from workplaces.services import scoped_workplace_app_path
@@ -24,25 +23,19 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     week_start = timezone.make_aware(datetime.combine(today - timedelta(days=6), time.min))
     focus = focus if focus in {'deadlines', 'priority', 'kanban'} else 'deadlines'
     tasks = visible_to(Task.objects.all(), viewer or user).filter(user=user, workplace=workplace, parent__isnull=True)
-    cards = visible_to(Kanban.objects.all(), viewer or user).filter(user=user, workplace=workplace, parent__isnull=True)
     tasks_url = scoped_workplace_app_path(workplace, 'tasks')
-    kanban_url = scoped_workplace_app_path(workplace, 'kanban')
     calendar_url = scoped_workplace_app_path(workplace, 'calendar')
 
-    totals = {'total': 0, 'open': 0, 'priority': 0, 'closed_week': 0}
+    totals = tasks.aggregate(
+        total=Count('pk'),
+        open=Count('pk', filter=~Q(status='closed')),
+        priority=Count('pk', filter=~Q(status='closed') & Q(priority__in=['urgent', 'high'])),
+        closed_week=Count('pk', filter=Q(status='closed', completion_date__gte=week_start, completion_date__lte=now)),
+    )
     statuses = {key: 0 for key, _label in Task.STATUS_CHOICES}
-    for queryset in (tasks, cards):
-        counts = queryset.aggregate(
-            total=Count('pk'),
-            open=Count('pk', filter=~Q(status='closed')),
-            priority=Count('pk', filter=~Q(status='closed') & Q(priority__in=['urgent', 'high'])),
-            closed_week=Count('pk', filter=Q(status='closed', completion_date__gte=week_start, completion_date__lte=now)),
-        )
-        for key, value in counts.items():
-            totals[key] += value
-        for row in queryset.values('status').annotate(count=Count('pk')):
-            if row['status'] in statuses:
-                statuses[row['status']] += row['count']
+    for row in tasks.values('status').annotate(count=Count('pk')):
+        if row['status'] in statuses:
+            statuses[row['status']] = row['count']
     totals['overdue'] = tasks.exclude(status='closed').filter(due_at__lt=now).count()
 
     priority_order = Case(
@@ -53,9 +46,8 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
         default=Value(4), output_field=IntegerField(),
     )
     open_tasks = tasks.exclude(status='closed').select_related('section__project')
-    open_cards = cards.exclude(status='closed').select_related('section__project')
     if focus == 'kanban':
-        selected = (open_cards if open_cards.exists() else open_tasks.filter(work_item__space__template__in=['kanban', 'scrum'])).order_by(priority_order, '-created_at', '-pk')
+        selected = open_tasks.filter(work_item__space__template__in=['kanban', 'scrum']).order_by(priority_order, '-created_at', '-pk')
     elif focus == 'priority':
         selected = open_tasks.filter(priority__in=['urgent', 'high']).order_by(
             priority_order, F('due_at').asc(nulls_last=True), 'pk',
@@ -67,8 +59,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     for item in selected[:OVERVIEW_LIMIT]:
         app = item._meta.app_label
         due = getattr(item, 'due_at', None)
-        source = 'Kanban' if app == 'kanban' else 'Zadania'
-        location = f'{source} · Bez grupy'
+        location = 'Zadania · Bez grupy'
         if item.section_id:
             project = item.section.project
             if project.user_id == user.pk and project.workplace_id == workplace.pk:

@@ -26,7 +26,7 @@ workplaces/             Workspace, aktywny kontekst, nawigacja, ulubione
 spaces/                 przestrzenie, konfiguracje, planowanie i zespoły
 tasks/                  kanoniczne zadania, uprawnienia, grupy, historia, pliki
 kanban/                 historyczne źródła kart i zgodność starych adresów
-contacts/               kontakty, firmy, powiązania z kontami Ancore
+contacts/               historyczne kontakty i firmy; bez aktywnego routingu
 planner/                wydarzenia i kalendarz
 resources/              ewidencja sprzętu, licencji i narzędzi Workspace
 documents/              Dysk, Dokumenty i bezpieczna integracja edytorów
@@ -107,7 +107,6 @@ flowchart LR
     T -->|TaskTag| K
     T --> H[dashboard: wyszukiwanie i historia]
     K --> H
-    C --> H
     P --> H
     D --> H
 ```
@@ -130,11 +129,13 @@ flowchart LR
   Projekt, grupa, zadanie i Workspace współdzielą szablony tabel zespołu oraz picker osoby.
 - Zadania i Kanban mają różne hierarchie i osobne tabele. Kanban nie jest
   jedynie innym sposobem wyświetlenia `Task`. `kanban.access` ogranicza przestrzenie,
-  tablice i dziedziczoną zawartość; wspólne `tasks.access` deleguje do niego modele Kanbana.
+  tablice i dziedziczoną zawartość historyczną, obecnie zawsze zwracając pusty
+  wynik; wspólne `tasks.access` deleguje do niego modele Kanbana.
   Członkostwa przestrzeni/tablic mają własne tabele i wspólne komponenty UI zespołu.
 - Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
-  typu komentarz z Zadań i Kanbana, zaproszeń oraz osobistych przypomnień `TaskReminder`.
+  typu komentarz z Zadań, zaproszeń oraz osobistych przypomnień `TaskReminder`.
+  Wycofany Kanban pozostaje tylko źródłem danych historycznych i mapowań importu.
   Wpisy historii zmian pozostają wyłącznie w historii obiektów.
 - `core` dostarcza powłokę interfejsu i upload; `core` nie ma własnych modeli domenowych. `dashboard.NotificationState`
   zapisuje osobisty odczyt, archiwum i usunięcie powiadomień, odwołując się do istniejących
@@ -154,7 +155,7 @@ Użytkownik → Workspace
   │                                         └─ Kanban → podkarta
   │                                              ├─ KanbanActivity → KanbanCommentImage
   │                                              └─ KanbanAttachment
-  ├─ Kontakty: Company ← Contact ← UserContact → konto Ancore
+  ├─ Historyczne dane Kontaktów: Company ← Contact ← UserContact → konto Ancore
   ├─ Kalendarz: CalendarEvent + terminy Task / Kanban (bez kopiowania rekordów)
   ├─ Zasoby: Resource (typ, status, przypisanie, lokalizacja i daty)
   ├─ Dysk: DocumentLibrary → Folder / Document (foldery mogą być zagnieżdżone)
@@ -185,7 +186,7 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   `dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;
   nie tworzy dodatkowych modeli ani kopii danych biznesowych.
 - `/accounts/...` obsługuje konto; `/workplaces/...` Workspace.
-- Moduły mają adresy bazowe `/tasks/`, `/kanban/`, `/contacts/`, `/calendar/`,
+- Moduły mają adresy bazowe `/tasks/`, `/kanban/`, `/calendar/`,
   `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty
   `/workplaces/<slug>/<moduł>/...`.
 - Kalendarz ma etykietę aplikacji `planner`, lecz segment URL `calendar`.
@@ -216,6 +217,11 @@ podglądy i powłokę formularzy/modalów. Dysk i Dokumenty korzystają też ze 
 widoków `suite_views.py`, serwisu ONLYOFFICE i powłoki pełnego edytora dla plików
 DOCX/XLSX/PPTX/PDF. Zapis pozostaje w modelu źródłowego modułu; osobne podpisy, URL
 serwisowe i potwierdzenia zapisu rozdzielają dostęp do obu katalogów.
+
+Katalogi Kontaktów, Firm, Użytkowników i Gości zostały wycofane. `contacts` pozostaje
+w `INSTALLED_APPS` dla modeli, migracji i historycznych relacji firm do projektów.
+Nie ma rejestracji URL ani ekranów Django admin; dane nie są kasowane.
+[Szczegóły](MODULES.md#6-wycofane-katalogi-kontaktów-firm-użytkowników-i-gości).
 
 ## 8. Granice tego opisu
 

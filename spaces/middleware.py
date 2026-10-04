@@ -30,8 +30,6 @@ class LegacyKanbanMiddleware:
             Q(kind='section', source_id__in=KanbanSection.objects.filter(project__in=projects).values('pk')) |
             Q(kind='task', source_id__in=cards.values('pk'))
         )
-        if not scope.exists():
-            return None
         if request.method not in {'GET', 'HEAD'}:
             return JsonResponse({'error': 'Kanban został przeniesiony do Przestrzeni. Otwórz zadanie w nowym widoku.', 'url': app_url(request)}, status=409)
         name = match.url_name

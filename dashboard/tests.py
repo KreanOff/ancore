@@ -139,7 +139,7 @@ class DashboardViewTests(TestCase):
         self.assertIn('Powiadomienie w panelu', payload['html'])
         self.assertEqual(response['Cache-Control'], 'no-store')
 
-    def test_dashboard_notifications_include_task_and_kanban_comments(self):
+    def test_dashboard_notifications_include_tasks_and_omit_legacy_kanban(self):
         user = get_user_model().objects.create_user(
             username='dashboard-user',
             email='dashboard-user@example.com',
@@ -171,7 +171,6 @@ class DashboardViewTests(TestCase):
             for notification in notifications
             if notification['source'] == 'tasks' and notification['object_id'] == task.task_id
         )
-        kanban_notification = next(notification for notification in notifications if notification['source'] == 'kanban' and notification['object_id'] == kanban_card.task_id)
 
         self.assertEqual(task_notification['source'], 'tasks')
         self.assertEqual(task_notification['source_label'], 'Zadania')
@@ -180,11 +179,7 @@ class DashboardViewTests(TestCase):
         self.assertEqual(task_notification['url'], reverse('tasks:view-task', args=[task.task_id]) + f'?task_pk={task.pk}')
         self.assertIn('Zadanie z Tasks', task_notification['location_label'])
 
-        self.assertEqual(kanban_notification['source'], 'kanban')
-        self.assertEqual(kanban_notification['source_label'], 'Kanban')
-        self.assertEqual(kanban_notification['actor_label'], user.get_username())
-        self.assertEqual(kanban_notification['title'], 'Karta z Kanban')
-        self.assertEqual(kanban_notification['url'], reverse('kanban:view-task', args=[kanban_card.task_id]) + f'?task_pk={kanban_card.pk}')
+        self.assertFalse(any(item['source'] == 'kanban' for item in notifications))
         self.assertNotIn('Zadanie innej osoby', [notification['title'] for notification in notifications])
 
 
@@ -291,18 +286,17 @@ class GlobalSearchTests(TestCase):
         self.assertIn('projects', groups)
         self.assertIn('groups', groups)
         self.assertIn('tags', groups)
-        self.assertIn('kanban-projects', groups)
-        self.assertIn('kanban-boards', groups)
-        self.assertIn('kanban-cards', groups)
-        self.assertIn('contacts', groups)
-        self.assertIn('companies', groups)
+        self.assertNotIn('kanban-projects', groups)
+        self.assertNotIn('kanban-boards', groups)
+        self.assertNotIn('kanban-cards', groups)
+        self.assertNotIn('contacts', groups)
+        self.assertNotIn('companies', groups)
         self.assertIn('calendar', groups)
         self.assertIn('workplaces', groups)
-        for key in ('tasks', 'projects', 'groups', 'kanban-projects', 'kanban-boards', 'kanban-cards'):
+        for key in ('tasks', 'projects', 'groups'):
             with self.subTest(group=key):
                 self.assertTrue(all(result['icon'] == '' for result in groups[key]))
         self.assertEqual(groups['tasks'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "tasks")}view-task/{task.task_id}/?task_pk={task.pk}')
-        self.assertEqual(groups['kanban-cards'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "kanban")}view-task/{card.task_id}/?task_pk={card.pk}')
         self.assertIn(f'event={event.id}', groups['calendar'][0]['url'])
         calendar_response = self.client.get(groups['calendar'][0]['url'])
         self.assertEqual(calendar_response.context['calendar_config']['initialEventId'], event.id)

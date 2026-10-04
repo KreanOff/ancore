@@ -16,9 +16,7 @@ from workplaces.services import workspace_owner
 
 from accounts.avatar import account_avatar
 from accounts.views import _switch_account_context
-from contacts.models import Company, Contact
 from documents.models import Document, DocumentLibrary, Folder, WorkspaceDocument
-from kanban.models import Kanban, KanbanProject, KanbanSection
 from planner.models import CalendarEvent
 from resources.models import Resource
 from tasks.models import Task, TaskProject, TaskSection, TaskTag
@@ -51,8 +49,6 @@ def _workspace_app_url(workplace, app_label, suffix=''):
 
     fallback_urls = {
         'tasks': reverse('tasks:tasks'),
-        'kanban': reverse('kanban:tasks'),
-        'contacts': reverse('contacts:contacts'),
         'calendar': reverse('planner:index'),
         'documents': reverse('documents:library'),
         'office': reverse('office:index'),
@@ -99,8 +95,6 @@ def _ranked_search_queryset(queryset, field_name, query):
 
 def _navigation_search_results(query, workplace):
     tasks_url = _workspace_app_url(workplace, 'tasks')
-    kanban_url = _workspace_app_url(workplace, 'kanban')
-    contacts_url = _workspace_app_url(workplace, 'contacts')
     calendar_url = _workspace_app_url(workplace, 'calendar')
     entries = (
         ('Dla ciebie', 'Twoje zadania, ulubione i ostatnia praca', scoped_workplace_app_path(workplace, 'for-you') if workplace else reverse('for_you'), 'user-round-check', 'dla ciebie for you przypisane ostatnie'),
@@ -109,7 +103,6 @@ def _navigation_search_results(query, workplace):
         ('Wszystkie zadania', 'Pełna lista zadań', _search_url(tasks_url, view='all-tasks'), 'list-checks', 'tasks lista'),
         ('Przestrzenie', 'Przestrzenie w bieżącym Workspace', _workspace_app_url(workplace, 'spaces'), 'folders', 'przestrzenie projekty kanban scrum'),
         ('Zespoły', 'Osoby i ich zespoły', _workspace_app_url(workplace, 'teams'), 'users', 'zespoly osoby teams'),
-        ('Firmy', 'Baza firm i organizacji', f'{contacts_url}companies/', 'building-2', 'organizacje companies'),
         ('Kalendarz', 'Wydarzenia i terminy', calendar_url, 'calendar-days', 'wydarzenia terminy'),
         ('Tagi', 'Wspólne oznaczenia', _search_url(tasks_url, view='tags'), 'tag', 'etykiety labels'),
         ('Dysk', 'Dyski, foldery i pliki', _workspace_app_url(workplace, 'documents'), 'hard-drive', 'dysk dyski pliki foldery dokumenty biblioteka'),
@@ -140,17 +133,14 @@ def _recent_search_results(request):
         (Task, 'Zadanie', 'list-checks'),
         (TaskProject, 'Przestrzeń', 'folders'),
         (TaskSection, 'Grupa', 'layers-3'),
-        (Kanban, 'Karta Kanban', 'kanban'),
-        (KanbanProject, 'Przestrzeń Kanban', 'folders'),
-        (KanbanSection, 'Tablica', 'kanban'),
     )
     for model, label, icon in kinds:
         ids = [entry['identity'][3] for entry in entries if entry['identity'][2] == model._meta.label_lower]
         if not ids:
             continue
         query = visible_to(model.objects.filter(pk__in=ids), request.user)
-        is_task = model in (Task, Kanban)
-        is_project = model in (TaskProject, KanbanProject)
+        is_task = model is Task
+        is_project = model is TaskProject
         if is_task or is_project:
             query = query.filter(user=owner, workplace=workplace)
             if is_task:
@@ -209,8 +199,6 @@ def global_search(request):
     user = workspace_owner(request)
     workplace = getattr(request, 'workplace', None)
     tasks_url = _workspace_app_url(workplace, 'tasks')
-    kanban_url = _workspace_app_url(workplace, 'kanban')
-    contacts_url = _workspace_app_url(workplace, 'contacts')
     calendar_url = _workspace_app_url(workplace, 'calendar')
     numeric_query = int(query) if query.isdecimal() else None
 
@@ -224,17 +212,8 @@ def global_search(request):
         | Q(tags__name__icontains=query)
         | Q(activities__message__icontains=query)
     )
-    kanban_card_filter = (
-        Q(title__icontains=query)
-        | Q(description__icontains=query)
-        | Q(section__title__icontains=query)
-        | Q(section__project__name__icontains=query)
-        | Q(tags__name__icontains=query)
-        | Q(activities__message__icontains=query)
-    )
     if numeric_query is not None:
         task_filter |= Q(task_id=numeric_query)
-        kanban_card_filter |= Q(task_id=numeric_query)
 
     task_queryset = visible_to(Task.objects.all(), request.user).filter(user=user).filter(task_filter)
     project_queryset = visible_to(TaskProject.objects.all(), request.user).filter(user=user).filter(
@@ -266,41 +245,6 @@ def global_search(request):
         | Q(automation_rules__icontains=query)
         | Q(tag_notes__message__icontains=query)
     )
-    kanban_project_queryset = visible_to(KanbanProject.objects.all(), request.user).filter(user=user).filter(
-        Q(name__icontains=query)
-        | Q(description__icontains=query)
-        | Q(code__icontains=query)
-        | Q(source__icontains=query)
-        | Q(company__name__icontains=query)
-        | Q(project_notes__message__icontains=query)
-    )
-    kanban_section_queryset = visible_to(KanbanSection.objects.all(), request.user).filter(project__user=user).filter(
-        Q(title__icontains=query)
-        | Q(description__icontains=query)
-        | Q(project__name__icontains=query)
-    )
-    kanban_card_queryset = visible_to(Kanban.objects.all(), request.user).filter(user=user).filter(kanban_card_filter)
-    contact_queryset = Contact.objects.filter(user=user).filter(
-        Q(first_name__icontains=query)
-        | Q(middle_name__icontains=query)
-        | Q(last_name__icontains=query)
-        | Q(company__icontains=query)
-        | Q(company_record__name__icontains=query)
-        | Q(role__icontains=query)
-        | Q(email__icontains=query)
-        | Q(phone__icontains=query)
-        | Q(source__icontains=query)
-        | Q(notes__icontains=query)
-        | Q(activities__message__icontains=query)
-    )
-    company_queryset = Company.objects.filter(owner=user).filter(
-        Q(name__icontains=query)
-        | Q(website__icontains=query)
-        | Q(email__icontains=query)
-        | Q(phone__icontains=query)
-        | Q(address__icontains=query)
-        | Q(notes__icontains=query)
-    )
     event_queryset = CalendarEvent.objects.filter(user=user).filter(
         Q(title__icontains=query) | Q(description__icontains=query)
     )
@@ -310,11 +254,6 @@ def global_search(request):
         project_queryset = project_queryset.filter(workplace=workplace)
         section_queryset = section_queryset.filter(project__workplace=workplace)
         tag_queryset = tag_queryset.filter(workplace=workplace)
-        kanban_project_queryset = kanban_project_queryset.filter(workplace=workplace)
-        kanban_section_queryset = kanban_section_queryset.filter(project__workplace=workplace)
-        kanban_card_queryset = kanban_card_queryset.filter(workplace=workplace)
-        contact_queryset = contact_queryset.filter(workplace=workplace)
-        company_queryset = company_queryset.filter(workplace=workplace)
         event_queryset = event_queryset.filter(workplace=workplace)
 
     navigation_results = _navigation_search_results(query, workplace)
@@ -395,95 +334,6 @@ def global_search(request):
                 _search_url(tasks_url, view='tags', q=tag.name),
                 tag.icon or 'tag',
                 ' · '.join(part for part in (tag.code, tag.get_category_display()) if part),
-            ),
-        ),
-        _global_search_group(
-            'kanban-projects',
-            'Przestrzenie Kanban',
-            'kanban',
-            _ranked_search_queryset(
-                kanban_project_queryset.select_related('company').distinct(),
-                'name',
-                query,
-            ).order_by('_global_search_rank', 'name', 'id'),
-            lambda project: _global_search_result(
-                project.name,
-                'Przestrzeń Kanban',
-                _search_url(kanban_url, project=project.id),
-                '',
-                ' · '.join(part for part in (project.code, project.company.name if project.company_id else '') if part),
-            ),
-        ),
-        _global_search_group(
-            'kanban-boards',
-            'Tablice Kanban',
-            'columns-3',
-            _ranked_search_queryset(
-                kanban_section_queryset.select_related('project').distinct(),
-                'title',
-                query,
-            ).order_by('_global_search_rank', 'project__name', 'order', 'id'),
-            lambda section: _global_search_result(
-                section.title,
-                'Tablica Kanban',
-                f'{kanban_url}groups/{section.id}/',
-                '',
-                section.project.name,
-            ),
-        ),
-        _global_search_group(
-            'kanban-cards',
-            'Karty Kanban',
-            'square-kanban',
-            _ranked_search_queryset(
-                kanban_card_queryset.select_related('section', 'section__project', 'parent').distinct(),
-                'title',
-                query,
-            ).order_by('_global_search_rank', '-created_at', '-id'),
-            lambda card: _global_search_result(
-                card.title,
-                'Podkarta' if card.parent_id else 'Karta Kanban',
-                _search_url(f'{kanban_url}{"view-subtask" if card.parent_id else "view-task"}/{card.task_id}/', task_pk=card.pk),
-                '',
-                ' · '.join(part for part in (
-                    f'#{card.task_id}',
-                    card.section.project.name if card.section_id else '',
-                    card.section.title if card.section_id else '',
-                ) if part),
-            ),
-        ),
-        _global_search_group(
-            'contacts',
-            'Kontakty',
-            'contact',
-            _ranked_search_queryset(
-                contact_queryset.select_related('company_record').distinct(),
-                'first_name',
-                query,
-            ).order_by('_global_search_rank', 'first_name', 'middle_name', 'last_name', 'id'),
-            lambda contact: _global_search_result(
-                contact.display_name,
-                'Kontakt',
-                f'{contacts_url}view-contact/{contact.id}/',
-                'contact-round',
-                ' · '.join(part for part in (
-                    contact.role,
-                    contact.company_record.name if contact.company_record_id else contact.company,
-                    contact.email,
-                ) if part),
-            ),
-        ),
-        _global_search_group(
-            'companies',
-            'Firmy',
-            'building-2',
-            _ranked_search_queryset(company_queryset.distinct(), 'name', query).order_by('_global_search_rank', 'name', 'id'),
-            lambda company: _global_search_result(
-                company.name,
-                'Firma',
-                f'{contacts_url}companies/{company.id}/',
-                'building-2',
-                ' · '.join(part for part in (company.email, company.phone, company.website) if part),
             ),
         ),
         _global_search_group(

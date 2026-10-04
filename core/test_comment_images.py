@@ -43,7 +43,7 @@ class CommentImageTests(TestCase):
         self.membership = WorkplaceMembership.objects.create(workplace=self.workspace, user=self.member, role='member')
         self.task = Task.objects.create(user=self.owner, workplace=self.workspace, title='Zadanie')
         self.card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Karta')
-        self.cases = [('tasks', self.task, TaskCommentImage), ('kanban', self.card, KanbanCommentImage)]
+        self.cases = [('tasks', self.task, TaskCommentImage)]
         self.login(self.member)
 
     def login(self, user, workspace=None):

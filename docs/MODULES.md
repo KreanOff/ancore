@@ -3,7 +3,9 @@
 ## Przestrzenie i zespoły — aktualna nawigacja
 
 Główne menu używa teraz Przestrzeni, Wszystkich zadań i Zespołów zamiast
-osobnych sekcji Zadania/Kanban/Kontakty. Opisy Tasks i Kanbana poniżej
+osobnych sekcji Zadania/Kanban/Kontakty. Dawne katalogi Zadań są dostępne
+pod Zasobami w zwijanej sekcji „Starsze widoki”, z adresami aktywnego Workspace.
+Opisy Tasks i Kanbana poniżej
 pozostają referencją mechanizmów oraz historycznych adresów; nowy przepływ
 pracy, katalog, kreator, sprinty i profile zespołów opisuje [SPACES.md](SPACES.md).
 
@@ -291,63 +293,27 @@ formularz; wejście z katalogu szablonów podpowiada nazwę i opis.
 Zmiana lub usunięcie oryginału nie zmienia szablonu, a usunięcie szablonu nie
 usuwa projektów. Dane są ograniczone do właściciela i aktywnego Workspace.
 
-## 4. Przestrzenie, tablice i karty — Kanban
+## 4. Wycofany moduł Tablice Kanban
 
-Źródła: [modele](../kanban/models.py), [formularze](../kanban/forms.py),
-[widoki](../kanban/views/tasks.py), [szablony](../kanban/templates/kanban).
+Stary system `kanban` nie udostępnia już katalogów, tablic, kart, formularzy,
+operacji zespołu ani ekranów Django admin. Menu „Starsze widoki” nie zawiera
+Kanbana. Wyszukiwarka, Dashboard, „Dla ciebie”, powiadomienia i kalendarz
+pomijają wszystkie historyczne rekordy, również niezaimportowane.
 
-**Hierarchia:** `KanbanProject` (przestrzeń robocza) → `KanbanSection` (tablica)
-→ `KanbanBoardColumn` → `Kanban` (karta), z opcjonalnymi podkartami.
+Modele i migracje pozostają dla historycznych danych, mapowań importu,
+wspólnych tagów i referencji plików. Wycofanie nie kasuje rekordów ani plików
+i nie wymaga nowej migracji. Archiwalne widoki i szablony nie są routowane.
 
-Menu modułu: „Przestrzenie Kanban” i „Tablice”. Domyślne wejście bez
-parametrów pokazuje tablice; `view=projects` otwiera przestrzenie,
-a dotychczasowy adres `view=all-tasks` nadal otwiera karty z tablic aktywnego
-Workspace z wyszukiwaniem oraz filtrami stanu i priorytetu. Nie ma osobnej
-pozycji „Karty” w menu ani w Ulubionych. Zmiana menu zachowuje hierarchię danych.
+Zwykły i scoped katalog `/kanban/` przekierowują do Przestrzeni, także bez
+mapowań importu. Stare szczegóły, grupy i pliki przekierowują wyłącznie do
+zaimportowanych odpowiedników, po sprawdzeniu bieżącego Workspace i uprawnień
+Zadań; brak mapowania/dostępu daje 404. POST pod zachowany adres zgodności
+zwraca 409, a usunięte endpointy operacji 404. Zapisane skróty `kanban-spaces`
+i `kanban-boards` wskazują Przestrzenie. Obecna tablica Kanban w Przestrzeniach
+nadal działa na `tasks.Task`. [Migracja i zgodność](SPACES.md#przeniesienie-danych).
 
-Oba katalogi mają zakładki „Prywatne”, „Udostępnione”, „Publiczne” i „Ulubione”.
-Domyślne „Prywatne” pokazują własne prywatne elementy. „Udostępnione” obejmują
-prywatne elementy innych osób, do których odbiorca ma dostęp. Publiczna tablica
-prywatnej przestrzeni dziedziczy kategorię przestrzeni; „Publiczne” obejmują
-wspólny dostęp aktywnego Workspace. Nowe formularze domyślnie tworzą prywatny
-element, a pierwsza tablica nowej przestrzeni dziedziczy jej dostęp.
-`KanbanProjectMembership` i `KanbanSectionMembership` zapewniają bezpośrednie
-udostępnianie z rolami administrator/członek/obserwator, bez zaproszeń.
-Szczegóły dziedziczenia, cofania dostępu i usuwania opisuje [TEAMWORK](TEAMWORK.md).
-Osobiste relacje `favorited_by` przestrzeni i tablic są niezależne: oznaczenie
-przestrzeni nie oznacza automatycznie jej tablic. Nie zmieniają dostępu.
-Ulubione przestrzeni dodaje menu wiersza, a tablic — gwiazdka na kafelku.
-
-Katalog tablic grupuje kafelki według przestrzeni Kanban w zwijanych sekcjach,
-tak jak sekcje statusów w Zadaniach. Pokazuje wyłącznie przestrzenie mające
-tablice w bieżącym wyniku. Przestrzenie sortuje alfabetycznie, tablice wewnątrz
-każdej grupy według wybranego A–Z/Z–A. Filtry i wyszukiwanie poprzedzają
-globalną paginację tablic; licznik nagłówka dotyczy bieżącej strony.
-Kafelki mają ten sam wygląd i okładki co w widoku pojedynczej przestrzeni;
-ustawienia katalogu pozwalają ukryć okładki we wszystkich grupach.
-
-**Funkcje:** katalog przestrzeni, katalog tablic, tablica z kolumnami,
-tworzenie/edycja kart, komentarze z plikami i zdjęciami (`KanbanCommentImage`) i wzmiankami, obserwowanie kart i przestrzeni, historia, załączniki, czas pracy,
-priorytety, tagi, dodawanie/nazywanie/usuwanie i przestawianie kolumn,
-przenoszenie kart między kolumnami. Ustawienia widoku obejmują m.in.
-okładki i lokalnie przechowywane tapety.
-
-Karty i podkarty mają opcjonalny `due_at`. Termin jest dostępny w oknie nowej
-karty i szczegółach, a jego zmiana trafia do historii. Otwarte karty z terminem
-są widoczne w kalendarzu. Przypomnienia dotyczą obecnie modelu `Task`.
-
-Karty mają osobne statusy i relację `column`. Zmiana kolumny w obecnym kodzie
-ustawia relację; nie należy utożsamiać jej ze zmianą statusu na `closed`.
-Pole `is_done` na kolumnie samo nie stanowi automatyzacji zakończenia karty.
-`ensure_defaults_for_section()` jest obecnie funkcją pustą.
-
-Usunięcie kolumny przez aktywną akcję usuwa również przypisane do niej karty.
-Nie można tą akcją usunąć ostatniej kolumny. To ważny kontrakt do sprawdzenia
-przy każdej zmianie zarządzania tablicą.
-
-Modele projektów Kanbana mają m.in. status, etap, kondycję i firmę, ale nie
-korzystają automatycznie ze wszystkich ustawień `TaskProjectFieldOption`
-i reguł terminu modułu Tasks. UI i JavaScript są częściowo wspólne, dane osobne.
+Źródła: [adresy zgodności](../kanban/urls.py), [przekierowania](../spaces/middleware.py),
+[modele historyczne](../kanban/models.py).
 
 ## 5. Wspólne tagi
 
@@ -364,30 +330,25 @@ ich dawne relacje pozostają wyłącznie jako dane historyczne.
 Przy zmianie/usunięciu tagu sprawdź Zadania, Kanban, wyszukiwanie i historyczne
 powiązania w Dysku oraz Dokumentach.
 
-## 6. Kontakty, firmy i goście — Contacts
+## 6. Wycofane katalogi Kontaktów, Firm, Użytkowników i Gości
 
-Źródła: [modele](../contacts/models.py), [widoki](../contacts/views.py),
-[formularze](../contacts/forms.py).
+Od 4.10.2026 cztery katalogi są usunięte z dostępnych funkcji aplikacji.
+Nie występują w menu, ulubionych ani globalnym wyszukiwaniu. Dawne adresy
+`/contacts/...` i `/workplaces/<slug>/contacts/...`, w tym tworzenie, edycja,
+usuwanie i wyszukiwanie kont Ancore, zwracają 404. Modele nie są udostępniane
+w panelu administracyjnym Django.
 
-- `Company`: firma właściciela w Workspace; dane kontaktowe, adres, notatki,
-  zdjęcie, kontakty i model członkostwa.
-- `Contact`: osoba lub wpis kontaktowy z danymi, firmą tekstową/opcjonalnym
-  rekordem `Company`, rolą, statusem, źródłem i datą ostatniego kontaktu.
-- `UserContact`: połączenie wpisu właściciela z kontem Ancore.
-- `ContactActivity`: historia zmian i komentarze.
+[Modele](../contacts/models.py) i migracje pozostają dla zgodności danych:
+`Company` zachowuje powiązania z projektami Tasks/Kanban, a `Contact`,
+`UserContact` i `ContactActivity` historyczne wpisy i powiązania.
+Pole firmy w istniejących mechanizmach projektów nadal korzysta z tych rekordów.
+Nie wykonano migracji kasującej dane ani usuwania kont użytkowników.
+Logowanie, profil, członkostwa i zaproszenia Workspace oraz zespoły działają
+przez Accounts/Workplaces/Spaces niezależnie od dawnych katalogów.
 
-Moduł rozróżnia wpisy powiązane z kontem Ancore oraz gości bez tego powiązania.
-Są formularze tworzenia kontaktu/firmy, szczegóły i edycja, wyszukiwanie,
-sortowanie, paginacja i wyszukiwanie publicznego identyfikatora Ancore.
-Widok katalogu użytkowników odnosi się do dodanych kontaktów, a nie pełnego
-publicznego katalogu wszystkich kont.
-
-**Scenariusz:** utwórz firmę → utwórz kontakt, opcjonalnie wskaż ID Ancore →
-obejrzyj szczegóły → edytuj dane lub dopisz komentarz. Relacja kontaktu z użytkownikiem
-nie nadaje mu dostępu; dostęp zespołowy wynika z członkostwa Workspace.
-
-Modele `SharedItem` i `SharedItemLink` nadal istnieją, lecz nie opisują
-obecnie aktywnej funkcji udostępniania w interfejsie. Patrz Mechanizmy.
+Historyczne widoki, formularze i szablony w `contacts/` nie mają aktywnego
+routingu; `contacts/urls.py` jest pusty. Nie traktuj ich jako dostępnej funkcji.
+`SharedItem` i `SharedItemLink` nadal pozostają wyłączone.
 
 ## 7. Kalendarz — Planner
 
@@ -403,10 +364,10 @@ Formularz sprawdza kolejność dat. Dla wydarzenia całodniowego normalizuje
 godziny do początku i końca dnia. Parametry `date`/`event` pozwalają wejść
 na wybraną datę lub wydarzenie, np. z wyszukiwarki.
 
-Kalendarz dołącza terminy otwartych zadań/podzadań oraz kart/podkart Kanban
-z aktywnego Workspace. Pozycje pobiera z modeli źródłowych, bez tworzenia
+Kalendarz dołącza terminy otwartych zadań/podzadań `Task` z aktywnego
+Workspace. Pomija dawne karty Kanbana. Pozycje pobiera bez tworzenia
 `CalendarEvent`; zamknięte rekordy i rekordy bez terminu są pomijane.
-Filtr rodzaju rozdziela wydarzenia, zadania i karty; wyszukiwanie i kolory
+Filtr rodzaju rozdziela wydarzenia i zadania; wyszukiwanie i kolory
 działają łącznie. Kliknięcie terminu otwiera szczegóły z trwałym `task_pk`.
 Własne wydarzenia nadal otwierają modal edycji. Termin jest punktem w czasie,
 nie blokiem zaplanowanej pracy. API ogranicza zakres do 370 dni. Brak
@@ -628,11 +589,10 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   liczników zadań. Filtry listy nie zmieniają kart ani licznika
   wszystkich przypisanych zadań. Każda lista i licznik ponownie sprawdza dostęp
   w aktywnym Workspace; przypisanie, historia, odwiedziny i ulubione nie nadają uprawnień.
-  Pozostałe, niezaimportowane elementy historycznego Kanbana zachowują obsługę
-  ulubionych/historii; filtr konkretnej przestrzeni obejmuje kanoniczne Tasks.
-  Zaimportowane źródła Kanbana wyklucza wspólny filtr dostępu. Funkcja nie wymaga migracji.
+  Historyczne elementy Kanbana są pomijane także w ulubionych i historii,
+  niezależnie od importu. Filtr konkretnej przestrzeni obejmuje kanoniczne Tasks.
 - **Dashboard:** `/` pokazuje dane właściciela w aktywnym Workspace:
-  liczbę otwartych zadań i kart Kanban, ich wysokich/pilnych priorytetów,
+  liczbę otwartych zadań, ich wysokich/pilnych priorytetów,
   zaległych zadań oraz pozycji zamkniętych w ostatnich 7 dniach.
   Przełączane listy `focus=deadlines|priority|kanban` pokazują maksymalnie
   6 pozycji. Są też rozkład statusów, 4 niezakończone/nieanulowane projekty
@@ -640,12 +600,12 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
 - **Ustawienia:** centrum linków do profilu, kont, Workspace, pól projektów
   i preferencji dostępnych na ekranie.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
-- **Powiadomienia:** centrum zaproszeń, przypomnień oraz komentarzy Zadań i Kanbana,
+- **Powiadomienia:** centrum zaproszeń, przypomnień oraz komentarzy Zadań,
   z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
   Historia utworzenia i zmian obiektów nie trafia do powiadomień, także obserwujących.
 
 Podsumowanie z [overview.py](../dashboard/overview.py) liczy główne zadania
-i karty, bez podzadań/podkart. Zamknięcie oznacza status `closed`; `resolved`
+bez podzadań. Filtr Kanban obejmuje zadania z Przestrzeni Kanban/Scrum. Zamknięcie oznacza status `closed`; `resolved`
 pozostaje otwarte. Terminy obejmują zaległości i czas do północy za 7 dni
 w aktywnej strefie czasu. Licznik ostatnich zamknięć obejmuje dziś i 6 poprzednich
 dni według `completion_date`. Projekty są sortowane po terminie, potem od

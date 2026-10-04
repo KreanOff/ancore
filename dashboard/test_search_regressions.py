@@ -7,7 +7,6 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from contacts.models import Company
 from dashboard.recent import RECENT_SESSION_KEY
 from dashboard.views import GLOBAL_SEARCH_GROUP_LIMIT, GLOBAL_SEARCH_RECENT_LIMIT
 from kanban.models import Kanban
@@ -58,7 +57,7 @@ class GlobalSearchRegressionTests(TestCase):
         self.assertNotIn('Search shared task', titles)
 
     def test_task_and_subtask_links_survive_renumbering_and_never_retarget_deleted_records(self):
-        for model, group_key in [(Task, 'tasks'), (Kanban, 'kanban-cards')]:
+        for model, group_key in [(Task, 'tasks')]:
             for is_child in (False, True):
                 with self.subTest(model=model.__name__, child=is_child):
                     first = model.objects.create(user=self.owner, workplace=self.team, title='Earlier item')
@@ -87,13 +86,13 @@ class GlobalSearchRegressionTests(TestCase):
     def test_each_group_is_limited_in_sql_and_exact_matches_stay_first(self):
         for index in range(GLOBAL_SEARCH_GROUP_LIMIT + 3):
             Task.objects.create(user=self.owner, workplace=self.team, title=f'Limit probe {index}')
-            Company.objects.create(owner=self.owner, workplace=self.team, name=f'Limit probe {index}')
+            TaskProject.objects.create(user=self.owner, workplace=self.team, name=f'Limit probe {index}')
         Task.objects.create(user=self.owner, workplace=self.team, title='Limit probe')
         with CaptureQueriesContext(connection) as queries:
             payload = self.search('Limit probe').json()
         self.assertTrue(payload['truncated'])
         self.assertEqual(payload['total'], 2 * GLOBAL_SEARCH_GROUP_LIMIT)
-        for key in ['tasks', 'companies']:
+        for key in ['tasks', 'projects']:
             group = next(group for group in payload['groups'] if group['key'] == key)
             self.assertEqual(len(group['results']), GLOBAL_SEARCH_GROUP_LIMIT)
             self.assertTrue(group['has_more'])
@@ -156,10 +155,10 @@ class GlobalSearchRegressionTests(TestCase):
         child = Task.objects.create(user=self.owner, workplace=self.team, parent=parent, title='Hidden child')
         card = Kanban.objects.create(user=self.owner, workplace=self.team, title='Recent card')
         self.remember(project, section, task, child, card)
-        self.assertEqual(self.recent()['total'], 4)
+        self.assertEqual(self.recent()['total'], 3)
         project.visibility, project.private_owner = 'private', self.owner
         project.save()
-        self.assertEqual([row['title'] for row in self.recent()['groups'][0]['results']], [card.title])
+        self.assertEqual(self.recent()['groups'], [])
         card.delete()
         self.assertEqual(self.recent()['total'], 0)
         self.membership.delete()

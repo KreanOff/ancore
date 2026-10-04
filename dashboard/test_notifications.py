@@ -57,7 +57,7 @@ class NotificationCenterTests(TestCase):
             for view in ['all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived']:
                 with self.subTest(workspace=workspace, view=view):
                     payload = self.feed(view=view, workspace=workspace).json()
-                    self.assertEqual(payload['total'], 2 if view in {'all', 'unread'} else 0)
+                    self.assertEqual(payload['total'], 1 if view in {'all', 'unread'} else 0)
                     for key in keys:
                         self.assertNotIn(f'data-notification-key="{key}"', payload['html'])
         self.assertEqual(self.summary(), before)
@@ -97,7 +97,7 @@ class NotificationCenterTests(TestCase):
             self.assertIn('Zaproszenia, komentarze, wzmianki i przypomnienia', payload['html'])
 
     def test_opening_is_read_only_and_own_actions_do_not_count_as_unread(self):
-        self.assertEqual(self.summary()['unread_count'], 2)
+        self.assertEqual(self.summary()['unread_count'], 1)
         self.feed()
         self.assertFalse(NotificationState.objects.exists())
         self.client.force_login(self.owner)
@@ -114,7 +114,7 @@ class NotificationCenterTests(TestCase):
         for _ in range(2):
             self.assertEqual(self.act('read').status_code, 200)
         self.assertEqual(NotificationState.objects.count(), 1)
-        self.assertEqual(self.summary()['unread_count'], 1)
+        self.assertEqual(self.summary()['unread_count'], 0)
         self.client.force_login(self.member)
         self.assertNotIn('Gotowe do sprawdzenia', self.feed(view='unread').json()['html'])
         self.act('unread')
@@ -125,11 +125,11 @@ class NotificationCenterTests(TestCase):
         self.assertEqual(self.act('archive').status_code, 200)
         self.assertNotIn('Gotowe do sprawdzenia', self.feed().json()['html'])
         self.assertIn('Gotowe do sprawdzenia', self.feed(view='archived').json()['html'])
-        self.assertEqual(self.summary()['unread_count'], 1)
+        self.assertEqual(self.summary()['unread_count'], 0)
         self.assertTrue(TaskActivity.objects.filter(pk=self.activity.pk).exists())
         self.assertEqual(self.act('restore').status_code, 200)
         self.assertIn('Gotowe do sprawdzenia', self.feed().json()['html'])
-        self.assertEqual(self.summary()['unread_count'], 1)
+        self.assertEqual(self.summary()['unread_count'], 0)
 
     def test_foreign_records_revoked_access_and_owner_mismatch_are_rejected(self):
         foreign = Task.objects.create(user=self.owner, workplace=self.other_workspace, title='Tajne')
@@ -173,13 +173,13 @@ class NotificationCenterTests(TestCase):
 
     def test_delete_is_personal_persistent_idempotent_and_preserves_sources(self):
         original_total = self.feed().json()['total']
-        for key in (f'tasks:{self.activity.pk}', f'kanban:{self.kanban_activity.pk}'):
+        for key in (f'tasks:{self.activity.pk}',):
             for _ in range(2):
                 self.assertEqual(self.act('delete', key).status_code, 200)
             for action in ('read', 'unread', 'archive', 'restore'):
                 self.assertEqual(self.act(action, key).status_code, 404)
         self.client.force_login(self.member)
-        self.assertEqual(self.feed().json()['total'], original_total - 2)
+        self.assertEqual(self.feed().json()['total'], original_total - 1)
         self.assertEqual(self.feed(view='archived').json()['total'], 0)
         self.assertEqual(self.summary()['unread_count'], 0)
         self.assertTrue(TaskActivity.objects.filter(pk=self.activity.pk).exists())
@@ -273,7 +273,7 @@ class NotificationCenterTests(TestCase):
         TaskActivity.objects.bulk_create([TaskActivity(task=self.task, actor=self.owner, kind='comment', action='commented', message=f'Komentarz {i}') for i in range(30)])
         payload = self.feed(view='unread').json()
         self.assertEqual(payload['count'], DASHBOARD_NOTIFICATION_LIMIT)
-        self.assertEqual(payload['total'], 32)
+        self.assertEqual(payload['total'], 31)
         self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 200)
         self.assertEqual(self.summary()['unread_count'], 0)
 
@@ -302,7 +302,7 @@ class NotificationCenterTests(TestCase):
             page = notification_page(self.member, filters, cursor)
             seen.extend(item['key'] for item in page['dashboard_notifications'])
             cursor = page['next_cursor']
-        self.assertEqual(len(seen), 27)
+        self.assertEqual(len(seen), 26)
         self.assertEqual(len(seen), len(set(seen)))
         self.assertNotIn(f'tasks:{new.pk}', seen)
         self.assertEqual(self.feed(cursor='bad').status_code, 400)
@@ -317,7 +317,7 @@ class NotificationCenterTests(TestCase):
         self.assertTrue(all(item['source'] == 'workplace' for item in first['dashboard_notifications']))
         second = notification_page(self.member, filters, first['next_cursor'])
         self.assertEqual([item['source'] for item in second['dashboard_notifications'][:2]], ['workplace', 'workplace'])
-        self.assertEqual(len(second['dashboard_notifications']), 4)
+        self.assertEqual(len(second['dashboard_notifications']), 3)
 
     def test_deleted_source_cleans_receipt(self):
         self.act('read')

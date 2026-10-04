@@ -13,7 +13,6 @@ from .forms import CalendarEventForm
 from .models import CalendarEvent
 from workplaces.services import scoped_workplace_app_path
 from tasks.models import Task
-from kanban.models import Kanban
 
 
 def _active_workplace(request):
@@ -39,18 +38,18 @@ def _event_payload(event):
     }
 
 
-def _task_payload(task, source):
+def _task_payload(task):
     due = timezone.localtime(task.due_at)
-    label = ('Podzadanie' if task.parent_id else 'Zadanie') if source == 'tasks' else ('Podkarta' if task.parent_id else 'Karta')
+    label = 'Podzadanie' if task.parent_id else 'Zadanie'
     route = 'view-subtask' if task.parent_id else 'view-task'
     return {
-        'id': f'{source}:{task.pk}', 'source': source,
+        'id': f'tasks:{task.pk}', 'source': 'tasks',
         'title': f'{label} #{task.task_id} · {task.title}',
         'description': task.description,
         'start': due.isoformat(), 'end': due.isoformat(),
-        'all_day': False, 'color': 'blue' if source == 'tasks' else 'green',
+        'all_day': False, 'color': 'blue',
         'status': task.status,
-        'url': scoped_workplace_app_path(task.workplace, source, f'{route}/{task.task_id}/?task_pk={task.pk}'),
+        'url': scoped_workplace_app_path(task.workplace, 'tasks', f'{route}/{task.task_id}/?task_pk={task.pk}'),
     }
 
 
@@ -123,12 +122,11 @@ def events_list(request):
         end__gte=start,
     ), _active_workplace(request))
     payload = [_event_payload(event) for event in events]
-    for source, model in (('tasks', Task), ('kanban', Kanban)):
-        tasks = visible_to(model.objects.all(), request.user).filter(
-            user=workspace_owner(request), workplace=_active_workplace(request),
-            due_at__gte=start, due_at__lte=end,
-        ).exclude(status='closed').select_related('workplace')
-        payload.extend(_task_payload(task, source) for task in tasks)
+    tasks = visible_to(Task.objects.all(), request.user).filter(
+        user=workspace_owner(request), workplace=_active_workplace(request),
+        due_at__gte=start, due_at__lte=end,
+    ).exclude(status='closed').select_related('workplace')
+    payload.extend(_task_payload(task) for task in tasks)
     response = JsonResponse({
         'status': 'success',
         'events': sorted(payload, key=lambda item: (item['start'], str(item['id']))),

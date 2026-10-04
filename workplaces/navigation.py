@@ -39,7 +39,7 @@ def sidebar_favorite_catalog(workplace):
     return catalog
 
 
-def sidebar_favorite_is_active(item_key, request, active_view='', active_contact_status=''):
+def sidebar_favorite_is_active(item_key, request, active_view=''):
     resolver_match = getattr(request, 'resolver_match', None)
     app_name = getattr(resolver_match, 'app_name', '') or ''
     view_name = getattr(resolver_match, 'url_name', '') or ''
@@ -89,16 +89,6 @@ def sidebar_favorite_is_active(item_key, request, active_view='', active_contact
         }[item_key]
         return active_view in expected_view
 
-    if item_key.startswith('contacts-'):
-        if app_name not in {'contacts', 'workplace_contacts'}:
-            return False
-        expected_status = {
-            'contacts-all': 'all',
-            'contacts-companies': 'companies',
-            'contacts-guests': 'guests',
-        }[item_key]
-        return active_contact_status == expected_status
-
     return item_key == 'calendar' and app_name in {'planner', 'workplace_planner'}
 
 
@@ -111,20 +101,6 @@ def sidebar_favorites_for_request(request, workplace, favorite_keys):
     if not active_view and app_name in {'tasks', 'workplace_tasks', 'kanban', 'workplace_kanban'}:
         active_view = 'section' if view_name == 'task_group' else 'projects'
     active_view = getattr(request, 'sidebar_active_view', active_view)
-    contact_status_by_view = {
-        'user-directory': 'users',
-        'contacts': 'all',
-        'view-contact': 'all',
-        'companies': 'companies',
-        'view-company': 'companies',
-        'guests': 'guests',
-    }
-    active_contact_status = getattr(
-        request,
-        'sidebar_active_contact_status',
-        contact_status_by_view.get(view_name, ''),
-    )
-
     items = []
     for key in favorite_keys:
         item = catalog.get(key)
@@ -134,7 +110,6 @@ def sidebar_favorites_for_request(request, workplace, favorite_keys):
             key,
             request,
             active_view=active_view,
-            active_contact_status=active_contact_status,
         )
         items.append(item)
     return items

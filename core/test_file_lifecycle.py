@@ -91,6 +91,9 @@ class FileLifecycleTests(TestCase):
         for app, item in zip(('tasks', 'kanban'), items):
             suffix = f'attachments/{item.pk}/download/'
             response = self.client.get(scoped_workplace_app_path(self.workspace, app, suffix))
+            if app == 'kanban':
+                self.assertEqual(response.status_code, 404)
+                continue
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response['Cache-Control'], 'private, no-store')
             self.assertEqual(b''.join(response.streaming_content), b'Private attachment')

@@ -14,7 +14,7 @@ from tasks.models import Task
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 
 
-MODULES = [('tasks', Task), ('kanban', Kanban)]
+MODULES = [('tasks', Task)]
 
 
 class StatusUpdateTests(TestCase):

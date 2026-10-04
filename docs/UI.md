@@ -1,5 +1,10 @@
 # Standard UI Ancore
 
+Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
+szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
+aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
+[Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
+
 ## Przestrzenie i zespoły
 
 `spaces/base.html` rozszerza `core/base.html` i wspólny kontener katalogu.
@@ -14,6 +19,19 @@ Przestrzeń ma kontekstowe zakładki
 Przegląd, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Wszystkie zadania i Zespoły.
+
+Pod Zasobami znajduje się zwijana sekcja „Starsze widoki”: Projekty, Ulubione
+projekty, Grupy, Zadania, Tagi i Szablony projektów. Używa istniejących
+`sidebar-nav-group` i `sidebar-subnav` oraz ikon `AncoreIcons`, bez osobnych listenerów. Wariant `sidebar-subnav--extended`
+usuwa desktopowy limit wysokości 160px dla dłuższego podmenu; przewijanie pozostaje
+we wspólnej nawigacji, a zwinięcie sidebaru nadal ukrywa podmenu. `layout.js` zachowuje
+stan zwinięcia, obsługuje klawiaturę, panel skrótów przy zwiniętym sidebarze
+i zamknięcie menu po wyborze linku na telefonie. Adresy korzystają z aktywnego
+Workspace, a aktywna pozycja odświeża się także po częściowej nawigacji.
+Stary Kanban nie ma pozycji menu; jego dawne adresy służą wyłącznie
+przekierowaniom do Przestrzeni i zaimportowanych zadań.
+Katalogi Kontaktów, Firm, Użytkowników i Gości zostały wycofane także
+z wyszukiwania, ulubionych i częściowej nawigacji; stare adresy zwracają 404.
 
 Nagłówek otwartej przestrzeni pokazuje awatar i nazwę, bez strzałki powrotu
 i klucza obok niej. Ten sam nagłówek obowiązuje we wszystkich jej zakładkach.
@@ -293,56 +311,10 @@ obok wspólnej ikony kategorii. Historia i oglądane mają nagłówki grup dat
 a filtr i wyszukiwanie zawijają się w obrębie panelu. Style są ograniczone do
 `for-you-*` w `components/dashboard.css`.
 
-Menu Kanbana ma dwie pozycje: „Przestrzenie Kanban” i „Tablice”, w tej kolejności.
-Wejście do modułu bez parametrów otwiera katalog tablic. Katalog przestrzeni
-używa jawnego `view=projects`, także w wyszukiwaniu, paginacji i powrocie
-z przestrzeni. Dawne adresy z filtrami przestrzeni nadal działają.
-Skróty tablic i przestrzeni w Ulubionych zachowują dotychczasowe klucze;
-pozycja „Karty” jest pomijana również w zapisanych ulubionych. Przekrojowy widok
-kart nadal działa pod dotychczasowym adresem `view=all-tasks`.
-Zwykłe i scoped adresy używają tego samego menu.
-
-Nagłówki katalogów „Przestrzenie Kanban” i „Tablice” mają cztery zakładki:
-„Prywatne”, „Udostępnione”, „Publiczne” i „Ulubione”. Korzystają z tego samego
-`tasks-topbar--with-tabs` i `notifications-tabs tasks-directory-tabs` co Zadania.
-Domyślna jest „Prywatne”. Zakładki odpowiadają rzeczywistej widoczności i osobistym
-ulubionym; starsze przestrzenie i tablice pozostają w „Publiczne”.
-Dodawanie i edycja przestrzeni oraz tablic korzystają z tych samych powłok
-`tasks-project-create-modal` i `tasks-project-edit-modal` co projekty i grupy Zadań.
-Nazwa i widoczność tworzą `tasks-project-heading-fields`, opis zajmuje osobny
-wiersz, a parametry korzystają ze wspólnej siatki pól. Zakładki edycji „Główna”
-i „Członkowie” znajdują się wewnątrz białego panelu formularza, nad jego treścią.
-Kod przestrzeni pozostaje nadawany automatycznie; formularze zachowują pola Kanbana.
-Dodawanie tablicy z katalogu zawiera wybór przestrzeni spośród tych z prawem
-edycji. Formularz otwierany w kontekście przestrzeni zachowuje jej identyfikator.
-Obsługa członków używa wspólnego `project-team.js` i pickera osób.
-`data-team-app="kanban"` dobiera nazewnictwo przestrzeni i tablic. Hosty okien
-udostępniania są umieszczone po oknach edycji, aby zachować kolejność nakładania.
-Obserwator może otworzyć podgląd ustawień i członków; kontrolki edycji,
-komentarzy, kolumn i przeciągania kart są zablokowane. Ustawienia tablicy
-są dostępne także w menu nagłówka otwartej tablicy.
-Ulubione przestrzenie oznacza się w menu wiersza, a tablice gwiazdką na kafelku.
-Minimalny wariant `tasks-section-card__body--with-favorite` rezerwuje miejsce
-na wspólny przycisk `tasks-row-favorite` po prawej stronie nazwy.
-Kliknięcie gwiazdki nie otwiera tablicy. Usunięcie ulubionego odświeża katalog
-i przywraca fokus zakładce. Filtry, sortowanie i paginacja zachowują `tab`;
-przełączenie zakładki zeruje stronę. Wnętrze przestrzeni i tablicy nie ma tych zakładek.
-
-Katalog „Tablice” używa wariantu `tasks-space-board`: osobne zwijane grupy
-według przestrzeni Kanban, oparte na `tasks-status-block` z katalogu Zadań.
-Nagłówek ma ikonę folderów, nazwę przestrzeni i liczbę jej tablic na bieżącej
-stronie. Neutralne tło pochodzi z `--panel-bg`; nazwa przestrzeni zastępuje
-status. Każda grupa zawiera siatkę `tasks-section-card-grid` z kafelkami
-tablic `tasks-section-card`, takimi jak w widoku pojedynczej przestrzeni:
-okładką, nazwą i checkboxem. Kafelki zachowują otwieranie myszą/klawiaturą
-oraz menu działań zaznaczonej tablicy. Przełącznik „Pokaż okładki” w ustawieniach
-widoku steruje okładkami wszystkich grup i zapamiętuje wybór lokalnie.
-Przestrzenie są uporządkowane alfabetycznie, a wybrane sortowanie A–Z/Z–A
-dotyczy tablic wewnątrz przestrzeni. Wyszukiwanie i filtr przestrzeni działają
-przed globalną paginacją; grupa może być kontynuowana na następnej stronie.
-Puste przestrzenie nie tworzą pustych nagłówków. Zwijanie używa wspólnego JS,
-`aria-expanded` i `aria-controls`; opcjonalne `data-group-label` zachowuje
-nazwę przestrzeni w etykiecie przycisku także po zwinięciu.
+Dawne katalogi „Przestrzenie Kanban” i „Tablice” są wycofane. Ich pozostałe
+szablony, klasy CSS i współdzielony JavaScript stanowią kod historyczny, nie
+aktywny interfejs. Nie usuwamy wspólnych komponentów używanych przez Zadania
+ani obecne tablice w Przestrzeniach. Kalendarz ma tylko filtry wydarzeń i zadań.
 
 Menu Zadań używa nazw „Projekty”, „Grupy” i „Zadania”, w tej kolejności.
 „Nieprzydzielone” jest ostatnią zakładką katalogu „Zadania”, po „Ulubione”,
@@ -588,7 +560,7 @@ Ważne wyjątki:
 | Element | Wzorzec do ponownego użycia | Styl / zachowanie |
 | --- | --- | --- |
 | Katalog projektów/grup/tagów | [tasks/tasks.html](../tasks/templates/tasks/tasks.html) | `components/tasks.css`, `tasks.js` |
-| Lista kontaktów i firm | [contacts.html](../contacts/templates/contacts/contacts.html), [companies.html](../contacts/templates/contacts/companies.html) | `contacts.css` + wspólne style katalogu |
+| Historyczna lista kontaktów i firm (wycofana) | [contacts.html](../contacts/templates/contacts/contacts.html), [companies.html](../contacts/templates/contacts/companies.html) | `contacts.css` + wspólne style katalogu |
 | Tytuł i toolbar katalogu | [toolbar Dysku](../documents/templates/documents/toolbar.html) jako przykład użycia wspólnych klas | `tasks-topbar`, `tasks-filterbar`, `tasks-filter-button`, `tasks-search-field` |
 | Paginacja | [directory_pagination_toolbar.html](../tasks/templates/tasks/includes/directory_pagination_toolbar.html) | Kontekst `window`, atrybuty `data-project-*`, serwerowe URL |
 | Zarządzanie kolumnami | [directory_column_manager.html](../tasks/templates/tasks/includes/directory_column_manager.html) | `tasks.js`, zapis ustawień lokalnych |
@@ -630,9 +602,9 @@ może włączyć te kolumny i zapisać wybór w zarządzaniu tabelą. Zapisany w
 ma pierwszeństwo przed ustawieniami domyślnymi; menu wiersza działa także
 przy ukrytych kolumnach skrótów.
 Ten sam układ obowiązuje w „Wszystkich grupach”, „Przestrzeniach roboczych”
-Kanbana, „Tagach” Zadań i Kanbana oraz w Kontaktach, Firmach i Gościach.
-Kontakty, Firmy i Goście zachowują dwa istniejące skróty (edycja i informacja),
-bez osobnej kolumny notatek. Pozostałe wymienione katalogi mają także notatki.
+Kanbana oraz „Tagach” Zadań i Kanbana. Historyczne szablony wycofanych
+Kontaktów, Firm i Gości mają dwa skróty (edycja i informacja), bez osobnej
+kolumny notatek. Pozostałe wymienione katalogi mają także notatki.
 Wspólny `directory_row_menu.html` korzysta z przycisków i linków danego wiersza;
 menu grup, tagów i przestrzeni wywołuje istniejące potwierdzenie usunięcia.
 Zapis szablonu jest dostępny wyłącznie dla projektów Zadań. `tasks-directory-menu-sheet`
@@ -660,7 +632,7 @@ Wspólne reguły są ograniczone przez `data-task-app="tasks"` do modułu Zadani
 Na tablecie i telefonie siatka tych katalogów powstaje z widocznych kolumn w ich
 bieżącej kolejności, używając szerokości z tokenów CSS. Ukrycie skrótów
 nie przesuwa szerokości kolumn danych; tabela nadal przewija się poziomo.
-Kontakty, Firmy i Goście zachowują istniejące karty na telefonie: menu działań
+Historyczne szablony wycofanych Kontaktów, Firm i Gości zawierają karty na telefonie: menu działań
 mieści się pod checkboxem, a edycja i informacje są dostępne przez to menu.
 Osobne kolumny skrótów są dostępne w ich widoku tabeli.
 

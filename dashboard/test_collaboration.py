@@ -80,7 +80,7 @@ class CollaborationTests(TestCase):
         self.member.last_name = 'Kowalska'
         self.member.save(update_fields=['username', 'first_name', 'last_name'])
         self.login(self.owner)
-        for app, task in [('tasks', self.task), ('kanban', self.card)]:
+        for app, task in [('tasks', self.task)]:
             url = f'/workplaces/{self.workspace.slug}/{app}/view-task/{task.task_id}/'
             page = self.client.get(url, {'task_pk': task.pk})
             person = next(person for person in page.context['mention_people'] if person['username'] == self.member.username)
@@ -90,9 +90,9 @@ class CollaborationTests(TestCase):
                                               'activity_mentions': json.dumps([{'user_id': self.member.pk, 'start': 7, 'end': 7 + len(person['mention'])}]),
                                               'activity_comment': f"Proszę {person['mention']}, sprawdź."})
             self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.page('mentions')['dashboard_notification_count'], 2)
+        self.assertEqual(self.page('mentions')['dashboard_notification_count'], 1)
         self.comment(message='@@anna.kowalska @anna.kowalska.extra mail@anna.kowalska')
-        self.assertEqual(self.page('mentions')['dashboard_notification_count'], 2)
+        self.assertEqual(self.page('mentions')['dashboard_notification_count'], 1)
 
     def test_legacy_username_suggestions_keep_a_single_prefix(self):
         self.member.first_name = ''
@@ -121,12 +121,12 @@ class CollaborationTests(TestCase):
         self.assertEqual(self.page('mentions', twin)['dashboard_notification_count'], 0)
 
     def test_selected_name_offsets_handle_unicode_newlines_and_trimmed_text(self):
-        response = self.post_named_comment('  🙂\r\n@Żaneta  ', [{'user_id': self.member.pk, 'start': 4, 'end': 11}], self.card, 'kanban')
+        response = self.post_named_comment('  🙂\r\n@Żaneta  ', [{'user_id': self.member.pk, 'start': 4, 'end': 11}], self.task, 'tasks')
         self.assertEqual(response.status_code, 302)
-        event = self.card.activities.filter(kind='comment').latest('pk')
+        event = self.task.activities.filter(kind='comment').latest('pk')
         self.assertEqual(event.message, '🙂\n@Żaneta')
         self.assertEqual(event.metadata['mentions'][0]['start'], 2)
-        self.assertTrue(ActivityInterest.objects.filter(kanban_activity=event, user=self.member, mentioned=True).exists())
+        self.assertTrue(ActivityInterest.objects.filter(task_activity=event, user=self.member, mentioned=True).exists())
 
     def test_selected_names_reject_foreign_inactive_or_removed_text(self):
         self.outsider.first_name = 'Żaneta'
@@ -172,10 +172,10 @@ class CollaborationTests(TestCase):
         self.assertEqual(list(ActivityInterest.objects.filter(task_activity=second).values_list('user_id', flat=True)), [email_user.pk])
 
     def test_status_and_bulk_status_changes_stay_in_history_without_notifying_followers(self):
-        for app, obj in [('tasks', self.task), ('kanban', self.card)]:
+        for app, obj in [('tasks', self.task)]:
             self.follow(obj, app=app)
         self.login(self.owner)
-        for app, obj in [('tasks', self.task), ('kanban', self.card)]:
+        for app, obj in [('tasks', self.task)]:
             history_count = obj.activities.filter(kind='system').count()
             response = self.client.post(f'/workplaces/{self.workspace.slug}/{app}/update/{obj.task_id}/',
                                        json.dumps({'task_pk': obj.pk, 'status': 'closed'}), content_type='application/json')
@@ -226,21 +226,6 @@ class CollaborationTests(TestCase):
         self.comment(message='Trzeci')
         self.assertEqual(self.page('following')['dashboard_notification_count'], 2)
 
-    def test_kanban_cards_and_projects_use_the_same_delivery_and_state(self):
-        self.follow(self.card, app='kanban', scoped=False)
-        self.follow(self.kproject, app='kanban', kind='project')
-        event = self.comment(self.card)
-        delivery = ActivityInterest.objects.get(kanban_activity=event)
-        self.assertTrue(delivery.mentioned and delivery.followed)
-        key = self.page('mentions')['dashboard_notifications'][0]['key']
-        self.assertEqual(key, f'kanban:{event.pk}')
-        change_notification_state(self.member, {'action': 'archive', 'key': key})
-        self.assertEqual(self.page('mentions')['dashboard_notification_count'], 0)
-        self.assertEqual(self.page('archived')['dashboard_notification_count'], 1)
-        change_notification_state(self.member, {'action': 'restore', 'key': key})
-        self.assertTrue(self.page('mentions')['dashboard_notifications'][0]['is_read'])
-        change_notification_state(self.member, {'action': 'delete', 'key': key})
-        self.assertEqual(self.page('following')['dashboard_notification_count'], 0)
 
     def test_revocation_removes_access_to_deliveries_and_endpoints(self):
         self.follow()
@@ -270,7 +255,7 @@ class CollaborationTests(TestCase):
 
     def test_comment_http_paths_and_suggestions_are_scoped(self):
         self.login(self.owner)
-        for app, task in [('tasks', self.task), ('kanban', self.card)]:
+        for app, task in [('tasks', self.task)]:
             for scoped in [False, True]:
                 url = reverse(f'{app}:view-task', args=[task.task_id])
                 if scoped:
@@ -281,7 +266,7 @@ class CollaborationTests(TestCase):
                 self.assertNotContains(page, '"username": "outside"')
                 response = self.client.post(url, {'task_pk': task.pk, 'action': 'add_activity_comment', 'activity_comment': f'@{self.member.username} — sprawdź'})
                 self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.page('mentions')['dashboard_notification_count'], 4)
+        self.assertEqual(self.page('mentions')['dashboard_notification_count'], 2)
 
     def test_comment_and_delivery_rollback_together(self):
         from tasks.views.tasks import _record_task_activity

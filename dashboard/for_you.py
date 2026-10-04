@@ -8,7 +8,6 @@ from django.db.models import Case, DateTimeField, Exists, F, Max, OuterRef, Q, V
 from django.db.models.functions import Greatest
 from django.utils import timezone
 
-from kanban.models import Kanban, KanbanProject, KanbanSection
 from tasks.access import visible_to
 from tasks.models import Task, TaskProject, TaskSection
 from workplaces.services import scoped_workplace_app_path, workspace_owner
@@ -42,11 +41,10 @@ CAPTIONS = {
 def _row(obj, workplace, now):
     app = obj._meta.app_label
     base = scoped_workplace_app_path(workplace, app)
-    is_task = isinstance(obj, (Task, Kanban))
-    is_project = isinstance(obj, (TaskProject, KanbanProject))
-    labels = {Task: ('Zadanie', 'list-checks'), Kanban: ('Karta Kanban', 'kanban'),
-              TaskProject: ('Przestrzeń', 'folders'), TaskSection: ('Grupa', 'layers-3'),
-              KanbanProject: ('Przestrzeń Kanban', 'folders'), KanbanSection: ('Tablica', 'kanban')}
+    is_task = isinstance(obj, Task)
+    is_project = isinstance(obj, TaskProject)
+    labels = {Task: ('Zadanie', 'list-checks'),
+              TaskProject: ('Przestrzeń', 'folders'), TaskSection: ('Grupa', 'layers-3')}
     label, icon = labels[type(obj)]
     location = label
     key, status_label, space = '', '', None
@@ -105,7 +103,7 @@ def _project_shortcuts(scopes, viewer, workplace, now, recent):
 
 def _filter_scope(query, model, search, space, projects):
     if search:
-        field = 'name' if model in (TaskProject, KanbanProject) else 'title'
+        field = 'name' if model is TaskProject else 'title'
         condition = Q(**{f'{field}__icontains': search})
         if model is Task:
             condition |= Q(work_item__key__icontains=search)
@@ -140,13 +138,13 @@ def for_you_context(request):
         return f'{base_url}?{urlencode({k: v for k, v in params.items() if v})}'
 
     scopes = {}
-    for model in (Task, Kanban, TaskProject, KanbanProject, TaskSection, KanbanSection):
+    for model in (Task, TaskProject, TaskSection):
         query = visible_to(model.objects.all(), viewer)
-        if model in (TaskSection, KanbanSection):
+        if model is TaskSection:
             query = query.filter(project__user=owner, project__workplace=workplace).select_related('project')
         else:
             query = query.filter(user=owner, workplace=workplace)
-            if model in (Task, Kanban):
+            if model is Task:
                 query = query.select_related('section__project')
             if model is Task:
                 query = query.select_related('work_item__space__configuration')
@@ -174,12 +172,10 @@ def for_you_context(request):
         recent_by_id = recent
         for model, query in scopes.items():
             if tab == 'starred':
-                if model is Kanban:
-                    continue  # Cards do not have personal favorites.
-                field = 'name' if model in (TaskProject, KanbanProject) else 'title'
+                field = 'name' if model is TaskProject else 'title'
                 query = query.filter(favorited_by=viewer).order_by(field, 'pk')
             elif tab == 'worked':
-                if model not in (Task, Kanban):
+                if model is not Task:
                     continue
                 query = query.annotate(personal_activity_at=Max(
                     'activities__created_at', filter=Q(activities__actor=viewer),

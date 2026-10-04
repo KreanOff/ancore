@@ -26,8 +26,6 @@ def current_workplace(request):
             'teams': scoped_workplace_app_path(active_workplace, 'teams'),
             'for_you': scoped_workplace_app_path(active_workplace, 'for-you'),
             'tasks': scoped_workplace_app_path(active_workplace, 'tasks'),
-            'kanban': scoped_workplace_app_path(active_workplace, 'kanban'),
-            'contacts': scoped_workplace_app_path(active_workplace, 'contacts'),
             'calendar': scoped_workplace_app_path(active_workplace, 'calendar'),
             'documents': scoped_workplace_app_path(active_workplace, 'documents'),
             'office': scoped_workplace_app_path(active_workplace, 'office'),

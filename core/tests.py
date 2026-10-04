@@ -170,27 +170,18 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertEqual(favorite_icons['tasks-projects'], 'briefcase-business')
         self.assertEqual(favorite_icons['tasks-groups'], 'layers-3')
 
-    def test_contacts_sidebar_does_not_include_people_search(self):
+    def test_retired_contact_directories_are_absent_from_sidebar(self):
         request = SimpleNamespace(
-            resolver_match=SimpleNamespace(app_name='contacts', view_name=''),
+            resolver_match=SimpleNamespace(app_name='tasks', url_name='tasks'),
             user=AnonymousUser(),
+            GET={},
         )
-        html = render_to_string('core/base.html', {
-            'request': request,
-            'workplace_app_urls': {},
-            'active_view': '',
-            'active_contact_status': 'users',
-        })
-
-        contacts_subnav_start = html.index('id="sidebar-contacts-subnav"')
-        contacts_subnav_end = html.index('</div>', contacts_subnav_start)
-        contacts_subnav_html = html[contacts_subnav_start:contacts_subnav_end]
-
-        self.assertNotIn('Szukaj osób', contacts_subnav_html)
-        self.assertNotIn('contacts-people', contacts_subnav_html)
-        self.assertIn('>Kontakty</span>', contacts_subnav_html)
-        self.assertIn('>Firmy</span>', contacts_subnav_html)
-        self.assertIn('>Goście</span>', contacts_subnav_html)
+        html = render_to_string('core/base.html', {'request': request})
+        for label in ('Kontakty', 'Firmy', 'Użytkownicy', 'Goście'):
+            self.assertNotIn(f'>{label}</span>', html)
+        self.assertNotIn('/contacts/', html)
+        for label in ('Projekty', 'Grupy', 'Zadania', 'Tagi', 'Szablony projektów'):
+            self.assertIn(f'>{label}</span>', html)
 
     def test_sidebar_has_favorites_and_workspace_sections(self):
         request = SimpleNamespace(
@@ -357,7 +348,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('data-search-url="/global-search/"', html)
         self.assertIn('role="combobox" aria-label="Globalne wyszukiwanie"', html)
         self.assertIn('aria-haspopup="dialog"', html)
-        self.assertIn('Szukaj zadań, osób, projektów…', html)
+        self.assertIn('Szukaj zadań, przestrzeni, dokumentów…', html)
         self.assertNotIn('id="sidebar-quick-search"', html)
         self.assertIn('data-sidebar-collapse-toggle', html)
         self.assertIn('data-icon="panel-left"', html)
