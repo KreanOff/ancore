@@ -1,0 +1,189 @@
+from copy import deepcopy
+from importlib import import_module
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from django.apps import apps
+from django.contrib.auth import get_user_model
+from django.db import connection
+from django.test import TestCase
+
+from tasks.models import Task, TaskProject, TaskProjectMembership, TaskSection
+from workplaces.models import WorkplaceMembership, create_workplace_for_user
+from workplaces.services import scoped_workplace_app_path
+from .defaults import TEMPLATES, template_settings
+from .models import SpaceConfiguration, WorkItem
+
+
+class IssueTypeTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.owner = User.objects.create_user(username='issue-owner', email='issue-owner@example.test')
+        cls.member = User.objects.create_user(username='issue-member', email='issue-member@example.test')
+        cls.observer = User.objects.create_user(username='issue-observer', email='issue-observer@example.test')
+        cls.other = User.objects.create_user(username='issue-other', email='issue-other@example.test')
+        cls.workspace = create_workplace_for_user(cls.owner, 'Typy zgłoszeń')
+        cls.foreign = create_workplace_for_user(cls.other, 'Obcy Workspace')
+        for user in (cls.member, cls.observer):
+            WorkplaceMembership.objects.create(workplace=cls.workspace, user=user, role='member')
+        cls.project = TaskProject.objects.create(name='Marketing', user=cls.owner, workplace=cls.workspace, visibility='private', private_owner=cls.owner)
+        for user, role in ((cls.member, 'member'), (cls.observer, 'observer')):
+            TaskProjectMembership.objects.create(project=cls.project, user=user, role=role)
+        cls.space = cls.project.space
+        cls.space.template = 'marketing'
+        cls.space.save()
+        cls.space.configuration.settings = template_settings('marketing')
+        cls.space.configuration.save()
+        cls.section = TaskSection.objects.create(project=cls.project, title='Zadania')
+        cls.task = Task.objects.create(user=cls.owner, workplace=cls.workspace, section=cls.section, title='Kampania zespołu')
+        cls.item = cls.task.work_item
+
+    def setUp(self):
+        self.client.force_login(self.member)
+        session = self.client.session
+        session['active_workplace_id'] = self.workspace.pk
+        session.save()
+
+    def url(self, suffix='', app='spaces', scoped=True):
+        return scoped_workplace_app_path(self.workspace, app, suffix) if scoped else f'/{app}/{suffix}'
+
+    def detail_url(self, scoped=True):
+        return self.url(f'view-task/{self.task.task_id}/?task_pk={self.task.pk}', app='tasks', scoped=scoped)
+
+    def detail_data(self, work_type='bug'):
+        return {'title': self.task.title, 'visibility': 'public', 'section': self.section.pk,
+                'project': self.project.pk, 'priority': 'medium', 'status': 'new',
+                'task_type': 'general', 'work_type': work_type}
+
+    def test_all_templates_offer_standard_types_and_keep_domain_defaults(self):
+        for template in TEMPLATES:
+            types = template_settings(template)['types']
+            self.assertTrue({'task', 'bug', 'story', 'epic'}.issubset({row['key'] for row in types}))
+        self.assertEqual(template_settings('service')['types'][0]['key'], 'request')
+        self.assertEqual(template_settings('recruitment')['types'][0]['key'], 'candidate')
+        self.assertTrue({'campaign', 'content'}.issubset({row['key'] for row in template_settings('marketing')['types']}))
+
+    def test_creation_and_edit_in_marketing_use_same_task_and_actor(self):
+        for scoped in (False, True):
+            response = self.client.post(self.url(f'{self.space.pk}/items/create/', scoped=scoped),
+                                        {'title': f'Błąd {scoped}', 'priority': 'medium', 'work_type': 'bug'}, HTTP_X_WORK_MODAL='true')
+            self.assertEqual(response.status_code, 200)
+            task = Task.objects.get(title=f'Błąd {scoped}')
+            self.assertEqual(task.work_item.work_type, 'bug')
+            self.assertEqual(task.user, self.owner)
+            self.assertEqual(task.activities.get(action='created').actor, self.member)
+            self.assertEqual(task.work_item.space, self.space)
+            response = self.client.post(self.url(f'items/{task.work_item.pk}/edit/', scoped=scoped),
+                                        {'title': task.title, 'priority': 'medium', 'work_type': 'story'}, HTTP_X_WORK_MODAL='true')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(WorkItem.objects.get(task=task).work_type, 'story')
+            activity = task.activities.get(action='updated')
+            self.assertEqual(activity.actor, self.member)
+            self.assertEqual(activity.metadata['changes'], [{'field': 'typ zgłoszenia', 'from_label': 'Błąd', 'to_label': 'Historyjka'}])
+
+    def test_detail_edit_and_reopen_keep_type_and_history(self):
+        for scoped, work_type in ((False, 'bug'), (True, 'campaign')):
+            response = self.client.post(self.detail_url(scoped), self.detail_data(work_type), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['status'], 'success')
+            self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, work_type)
+            activity = self.task.activities.filter(action='updated').latest('id')
+            self.assertEqual(activity.actor, self.member)
+            self.assertIn('typ zgłoszenia', activity.metadata['fields'])
+            response = self.client.get(self.detail_url(scoped))
+            self.assertContains(response, 'Typ zgłoszenia')
+            field = response.context['form']['work_type']
+            self.assertEqual(field.value(), work_type)
+            self.assertIn(work_type, {value for value, label in field.field.widget.choices})
+        self.assertEqual(self.task.activities.filter(action='updated').count(), 2)
+
+    def test_other_detail_edits_do_not_reset_type(self):
+        self.item.work_type = 'campaign'
+        self.item.save()
+        data = self.detail_data()
+        data.pop('work_type')
+        response = self.client.post(self.detail_url(), data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'campaign')
+        self.assertFalse(self.task.activities.filter(action='updated').exists())
+
+    def test_unknown_or_unconfigured_type_leaves_task_unchanged(self):
+        config = self.space.configuration
+        config.settings['types'] = [{'key': 'task', 'label': 'Zadanie'}]
+        config.save()
+        for work_type in ('unknown', 'bug'):
+            for url, data, headers in (
+                (self.detail_url(), self.detail_data(work_type), {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}),
+                (self.url(f'items/{self.item.pk}/edit/'), {'title': 'Zmiana', 'priority': 'medium', 'work_type': work_type}, {'HTTP_X_WORK_MODAL': 'true'}),
+            ):
+                response = self.client.post(url, data, **headers)
+                self.assertEqual(response.status_code, 400)
+                self.task.refresh_from_db()
+                self.assertEqual(self.task.title, 'Kampania zespołu')
+                self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'task')
+
+    def test_observer_and_foreign_workspace_cannot_change_type(self):
+        for user in (self.observer, self.other):
+            self.client.force_login(user)
+            for scoped in (False, True):
+                response = self.client.post(self.detail_url(scoped), self.detail_data(), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+                self.assertIn(response.status_code, (302, 403, 404))
+                response = self.client.post(self.url(f'items/{self.item.pk}/edit/', scoped=scoped),
+                                            {'title': self.task.title, 'priority': 'medium', 'work_type': 'bug'}, HTTP_X_WORK_MODAL='true')
+                self.assertIn(response.status_code, (302, 403, 404))
+                self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'task')
+        self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'task')
+
+    def test_type_filters_combine_with_search_and_preserve_privacy(self):
+        self.item.work_type = 'bug'
+        self.item.save()
+        Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, title='Zwykłe zadanie')
+        hidden = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section,
+                                    title='Poufny błąd', visibility='private', private_owner=self.owner)
+        WorkItem.objects.filter(task=hidden).update(work_type='bug')
+        for scoped in (False, True):
+            for suffix in (f'{self.space.pk}/?view=list', f'{self.space.pk}/?view=board', 'items/?'):
+                response = self.client.get(self.url(suffix, scoped=scoped) + '&work_type=bug&q=zespołu')
+                self.assertContains(response, self.task.title)
+                self.assertNotContains(response, 'Zwykłe zadanie')
+                self.assertNotContains(response, 'Poufny błąd')
+                self.assertContains(response, 'Typ zgłoszenia: Błąd')
+            response = self.client.get(self.url(f'{self.space.pk}/?view=list&work_type=unknown', scoped=scoped))
+            self.assertEqual(response.context['page'].paginator.count, 0)
+
+    def test_epic_relations_are_validated_in_detail_form(self):
+        self.item.work_type = 'epic'
+        self.item.save()
+        child = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, title='Część epika')
+        WorkItem.objects.filter(task=child).update(epic=self.item)
+        response = self.client.post(self.detail_url(), self.detail_data('bug'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'epic')
+        self.item.work_type, self.item.epic = 'task', child.work_item
+        self.item.save()
+        response = self.client.post(self.detail_url(), self.detail_data('epic'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 400)
+
+    def test_history_failure_rolls_back_type(self):
+        with patch('tasks.views.tasks._record_task_activity', side_effect=RuntimeError('History failure')):
+            with self.assertRaises(RuntimeError):
+                self.client.post(self.detail_url(), self.detail_data(), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'task')
+
+    def test_migration_adds_only_missing_keys_and_is_idempotent(self):
+        original = {'types': [{'key': 'bug', 'label': 'Defekt'}, {'key': 'campaign', 'label': 'Kampania'}],
+                    'statuses': [{'key': 'custom', 'label': 'Weryfikacja'}], 'fields': [{'key': 'channel'}]}
+        config = SpaceConfiguration.objects.create(workplace=self.workspace, name='Własna wspólna konfiguracja', shared=True, settings=deepcopy(original))
+        migrate = import_module('spaces.migrations.0004_issue_types').add_issue_types
+        schema_editor = SimpleNamespace(connection=connection)
+        migrate(apps, schema_editor)
+        config.refresh_from_db()
+        self.assertEqual(config.settings['types'][:2], original['types'])
+        self.assertEqual(config.settings['statuses'], original['statuses'])
+        self.assertEqual(config.settings['fields'], original['fields'])
+        self.assertTrue(config.shared)
+        first = deepcopy(config.settings)
+        migrate(apps, schema_editor)
+        config.refresh_from_db()
+        self.assertEqual(config.settings, first)

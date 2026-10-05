@@ -137,6 +137,7 @@ class TaskAccessForm(forms.ModelForm):
 
 
 class TaskForm(TaskAccessForm):
+    work_type = forms.ChoiceField(label='Typ zgłoszenia', required=False)
     project = forms.ModelChoiceField(
         queryset=TaskProject.objects.none(),
         required=False,
@@ -203,8 +204,26 @@ class TaskForm(TaskAccessForm):
         self.fields['reminder_at'].widget.attrs['title'] = 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela prywatnego zadania, projektu lub Workspace.'
         self.fields['reminder_at'].input_formats = DATETIME_LOCAL_INPUT_FORMATS
         self.fields['assignee'].label = 'Przypisane do'
-        self.fields['task_type'].label = 'Typ zadania'
+        self.fields['task_type'].label = 'Kategoria zadania'
         self.fields['task_type'].required = False
+        from spaces.defaults import template_settings
+        from spaces.models import WorkItem
+        from spaces.widgets import IssueTypeSelect
+        self.issue_item = WorkItem.objects.filter(task=self.instance).select_related('space__configuration').first() if self.instance.pk else None
+        type_section = current_section
+        if self.is_bound:
+            section_value = self.data.get(self.add_prefix('section'), '')
+            type_section = sections.filter(pk=int(section_value)).first() if section_value.isdecimal() and len(section_value) < 19 and user else None
+            parent_value = self.data.get(self.add_prefix('parent'), '')
+            if parent_value.isdecimal() and len(parent_value) < 19:
+                type_parent = self.fields['parent'].queryset.filter(pk=int(parent_value)).first()
+                if type_parent:
+                    type_section = type_parent.section
+        type_space = getattr(type_section.project, 'space', None) if type_section else None
+        config = type_space.configuration.settings if type_space else template_settings()
+        self.fields['work_type'].widget = IssueTypeSelect(attrs={'class': 'form-input'})
+        self.fields['work_type'].choices = [(row['key'], row['label']) for row in config['types']]
+        self.initial['work_type'] = self.issue_item.work_type if self.issue_item else config['types'][0]['key']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -228,7 +247,22 @@ class TaskForm(TaskAccessForm):
             self.add_error('section', 'Wybierz grupę z wybranego projektu.')
         if project and not section and 'section' not in self.errors:
             self.add_error('section', 'Wybierz grupę z wybranego projektu lub usuń wybór projektu.')
+        work_type = cleaned_data.get('work_type')
+        if self.issue_item and work_type:
+            if self.issue_item.epic_items.exists() and work_type != 'epic':
+                self.add_error('work_type', 'Najpierw odłącz zadania należące do tego epika.')
+            if work_type == 'epic' and self.issue_item.epic_id:
+                self.add_error('work_type', 'Najpierw odłącz zadanie od epika w „Planowanie i zespół”.')
         return cleaned_data
+
+    def _save_m2m(self):
+        super()._save_m2m()
+        if self.cleaned_data.get('work_type'):
+            from spaces.models import WorkItem
+            item = WorkItem.objects.select_for_update().get(task=self.instance)
+            item.work_type = self.cleaned_data['work_type']
+            item.save(update_fields=['work_type'])
+            self.instance._state.fields_cache.pop('work_item', None)
 
     def clean_task_type(self):
         return self.cleaned_data.get('task_type') or 'general'

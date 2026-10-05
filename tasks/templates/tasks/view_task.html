@@ -25,7 +25,6 @@
     <div class="tasks-issue-shell">
         <header class="tasks-issue-header">
             <div class="tasks-issue-breadcrumb">
-                {% if task.work_item.space %}<a class="tasks-issue-crumb" href="{{ workplace_app_urls.spaces }}{{ task.work_item.space_id }}/">{{ task.work_item.space.project.name }}</a><span class="tasks-issue-divider" aria-hidden="true"></span><span class="tasks-issue-crumb">{{ task.work_item.key }}</span>{% endif %}
                 <a href="{% if task.parent %}{% url 'tasks:view-task' task.parent.task_id %}{% else %}{% url 'tasks:tasks' %}{% endif %}"
                    class="tasks-issue-close"
                    aria-label="{% if task.parent %}Wróć do zadania{% else %}Wróć do poprzedniej strony{% endif %}"
@@ -65,13 +64,13 @@
                 <div class="tasks-issue-primary">
                     <div class="tasks-issue-tabbar">
                         <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Widok zadania">
-                            <button type="button" id="task-tab-main" role="tab" aria-controls="task-main-content" aria-selected="{% if active_task_tab == 'main' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'main' %}0{% else %}-1{% endif %}" data-task-tab="main">Główna</button>
+                            <button type="button" id="task-tab-main" role="tab" aria-controls="task-main-content" aria-selected="{% if active_task_tab == 'main' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'main' %}0{% else %}-1{% endif %}" data-task-tab="main"><i data-icon="file-text" aria-hidden="true"></i>Główna</button>
                             {% if not task.parent %}
-                            <button type="button" id="task-tab-subtasks" role="tab" aria-controls="task-subtasks" aria-selected="{% if active_task_tab == 'subtasks' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'subtasks' %}0{% else %}-1{% endif %}" data-task-tab="subtasks">Podzadania</button>
+                            <button type="button" id="task-tab-subtasks" role="tab" aria-controls="task-subtasks" aria-selected="{% if active_task_tab == 'subtasks' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'subtasks' %}0{% else %}-1{% endif %}" data-task-tab="subtasks"><i data-icon="list-checks" aria-hidden="true"></i>Podzadania</button>
                             {% endif %}
-                            <button type="button" id="task-tab-work-log" role="tab" aria-controls="task-work-log" aria-selected="{% if active_task_tab == 'work-log' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'work-log' %}0{% else %}-1{% endif %}" data-task-tab="work-log">Dziennik pracy</button>
-                            <button type="button" id="task-tab-members" role="tab" aria-controls="task-members" aria-selected="{% if active_task_tab == 'members' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'members' %}0{% else %}-1{% endif %}" data-task-tab="members">Członkowie</button>
-                            <button type="button" id="task-tab-history" role="tab" aria-controls="task-history" aria-selected="{% if active_task_tab == 'history' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'history' %}0{% else %}-1{% endif %}" data-task-tab="history">Historia</button>
+                            <button type="button" id="task-tab-work-log" role="tab" aria-controls="task-work-log" aria-selected="{% if active_task_tab == 'work-log' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'work-log' %}0{% else %}-1{% endif %}" data-task-tab="work-log"><i data-icon="clock" aria-hidden="true"></i>Dziennik pracy</button>
+                            <button type="button" id="task-tab-members" role="tab" aria-controls="task-members" aria-selected="{% if active_task_tab == 'members' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'members' %}0{% else %}-1{% endif %}" data-task-tab="members"><i data-icon="users" aria-hidden="true"></i>Członkowie</button>
+                            <button type="button" id="task-tab-history" role="tab" aria-controls="task-history" aria-selected="{% if active_task_tab == 'history' %}true{% else %}false{% endif %}" tabindex="{% if active_task_tab == 'history' %}0{% else %}-1{% endif %}" data-task-tab="history"><i data-icon="rotate-ccw" aria-hidden="true"></i>Historia</button>
                         </div>
                         {% if can_edit_task %}<button type="button" class="tasks-filter-button tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-open-work-log data-task-log-action aria-haspopup="dialog" aria-controls="task-work-log-modal"{% if active_task_tab != 'work-log' %} hidden{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj czas</span></button>{% endif %}
                     </div>
@@ -307,8 +306,12 @@
                             </div>
                         </div>
                         <div class="tasks-issue-field">
+                            <span class="tasks-issue-field-label"><label for="{{ form.work_type.id_for_label }}">Typ zgłoszenia</label></span>
+                            {{ form.work_type }}
+                        </div>
+                        <div class="tasks-issue-field">
                             <span class="tasks-issue-field-label">
-                                <label for="{{ form.task_type.id_for_label }}">Typ zadania</label>
+                                <label for="{{ form.task_type.id_for_label }}">Kategoria zadania</label>
                             </span>
                             {{ form.task_type }}
                         </div>

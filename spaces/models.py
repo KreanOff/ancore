@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import Q
 from core.comment_images import comment_image_storage
 
-from .defaults import KINDS, MANAGEMENT, TEMPLATES, template_settings
+from .defaults import KINDS, MANAGEMENT, TEMPLATES, issue_type_icon, template_settings
 from .avatars import avatar_upload_path
 
 
@@ -107,6 +107,14 @@ class WorkItem(models.Model):
     points = models.PositiveIntegerField(null=True, blank=True)
     start_on = models.DateField(null=True, blank=True)
     custom_values = models.JSONField(default=dict, blank=True)
+
+    def get_work_type_display(self):
+        settings = self.space.configuration.settings if self.space_id else template_settings()
+        return next((row['label'] for row in settings['types'] if row['key'] == self.work_type), self.work_type)
+
+    @property
+    def type_icon(self):
+        return issue_type_icon(self.work_type)
 
     class Meta:
         ordering = ['rank', 'pk']

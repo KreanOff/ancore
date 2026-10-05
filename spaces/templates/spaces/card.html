@@ -5,6 +5,7 @@
     </div>
     <div class="work-kanban-context"><span title="{{ item.type_label }}">{{ item.key }}</span>{% if item.team %}<span title="Zespół: {{ item.team.name }}">{{ item.team.name }}</span>{% elif item.task.assignee %}<span title="Wykonawca">{{ item.task.assignee.get_full_name|default:item.task.assignee.username }}</span>{% endif %}{% if item.points != None %}<span>{{ item.points }} pkt</span>{% endif %}</div>
     <div class="tasks-kanban-card__meta" aria-label="Metadane karty">
+        <span class="tasks-kanban-card__pill">{% include 'spaces/issue_type.html' %}</span>
         <span class="tasks-kanban-card__pill tasks-kanban-card__pill--status"><span class="status-indicator status-{{ item.task.status }}">{{ item.status_label }}</span></span>
         <span class="tasks-kanban-card__pill tasks-row-priority priority-{{ item.task.priority }}" title="Priorytet: {{ item.task.get_priority_display }}" aria-label="Priorytet: {{ item.task.get_priority_display }}">{% include 'core/includes/priority_icon.html' with priority=item.task.priority only %}<span>{{ item.task.get_priority_display }}</span></span>
         <span class="tasks-kanban-card__pill tasks-kanban-card__pill--tags" title="Tagi: {{ item.tags_count }}" aria-label="Tagi: {{ item.tags_count }}"><span class="tasks-kanban-card__tag-icon" aria-hidden="true"><i data-icon="tag" aria-hidden="true"></i></span><span class="tasks-kanban-card__count">{{ item.tags_count }}</span></span>

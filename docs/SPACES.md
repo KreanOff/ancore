@@ -110,6 +110,30 @@ oraz 390×844. Szerszy zestaw Core/Workplaces ma wcześniejsze błędy; porówna
 z ostatnim commitem potwierdziło te same 13 nieudanych asercji i 14 błędów
 w starszych testach nawigacji oraz Workspace.
 
+## Typy zgłoszeń
+
+Typ zgłoszenia jest zapisywany w istniejącym `WorkItem.work_type`, osobno od
+biznesowej kategorii `Task.task_type`. Formularz tworzenia/edycji w przestrzeni
+oraz szczegóły zadania pozwalają wybrać typ z konfiguracji tej przestrzeni.
+Nowe szablony zawierają Zadanie, Błąd, Historyjkę i Epik. Marketing zachowuje
+Kampanię i Materiał; Rekrutacja Kandydaturę i Rozmowę, a Obsługa zgłoszeń
+Zgłoszenie i Incydent, również jako dotychczasowe wartości domyślne.
+Podzadania nadal korzystają z relacji `Task.parent`; sam typ nie zmienia hierarchii.
+
+Migracja `spaces.0004_issue_types` dopisuje brakujące cztery standardowe typy do
+istniejących konfiguracji, także współdzielonych. Zachowuje własne nazwy, typy,
+kolejność, statusy, pola oraz wszystkie zadania. Cofnięcie migracji pozostawia
+te opcje, ponieważ zadania mogą już ich używać. Administrator nadal może
+zmieniać dostępne typy przez „Statusy, typy i pola”; używanego typu nie można usunąć.
+
+Listy, backlog i karty tablicy pokazują ikonę i nazwę typu. Filtr „Typ zgłoszenia”
+na liście, tablicy, backlogu, osi czasu i we Wszystkich zadaniach działa na
+serwerze przed paginacją, razem z wyszukiwaniem, wykonawcą i zespołem.
+Zakres danych i dostęp do edycji pozostają wyznaczane przez Tasks oraz aktywny
+Workspace. Zmiana typu zapisuje w `TaskActivity` poprzednią i nową nazwę oraz
+faktycznego autora; edycja innych pól nie zeruje typu. Formularze obu modułów
+blokują zmianę epika z przypisanymi zadaniami oraz zagnieżdżenie epika w epiku.
+
 ## Model pracy
 
 Od 3.10.2026 główna nawigacja prowadzi do katalogu Przestrzeni, Wszystkich

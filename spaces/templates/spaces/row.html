@@ -3,7 +3,7 @@
     <span class="tasks-row-priority priority-{{ item.task.priority }}" title="Priorytet: {{ item.task.get_priority_display }}" aria-label="Priorytet: {{ item.task.get_priority_display }}">{% include 'core/includes/priority_icon.html' with priority=item.task.priority only %}</span>
     <span class="status-indicator status-{{ item.task.status }}" title="{{ item.status_label }}" aria-label="{{ item.status_label }}"></span>
     <a href="{{ item.url }}" class="tasks-row-title" title="{{ item.key }} · {{ item.task.title }}{% if item.space %} · {{ item.space.project.name }}{% endif %} · {{ item.type_label }}{% if item.task.assignee %} · {{ item.task.assignee.get_full_name|default:item.task.assignee.username }}{% endif %}{% if item.team %} · {{ item.team.name }}{% endif %}">
-        <span class="tasks-row-title-content"><span class="tasks-row-title-main"><span class="work-item-key">{{ item.key }}</span><span class="tasks-row-title-text">{{ item.task.title }}</span></span></span>
+        <span class="tasks-row-title-content"><span class="tasks-row-title-main">{% include 'spaces/issue_type.html' %}<span class="work-item-key">{{ item.key }}</span><span class="tasks-row-title-text">{{ item.task.title }}</span></span></span>
     </a>
     <span class="tasks-row-tags" title="Tagi: {{ item.tags_count }}" aria-label="Tagi: {{ item.tags_count }}"><i data-icon="tag" aria-hidden="true"></i>{{ item.tags_count }}</span>
     <span class="tasks-row-attachments" title="Załączniki: {{ item.attachments_count }}" aria-label="Załączniki: {{ item.attachments_count }}"><i data-icon="paperclip" aria-hidden="true"></i>{{ item.attachments_count }}</span>

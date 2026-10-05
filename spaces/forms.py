@@ -13,6 +13,7 @@ from .defaults import KINDS, MANAGEMENT, TEMPLATES
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
 from .services import teams_for, visible_items, visible_spaces
+from .widgets import IssueTypeSelect
 
 
 class StyledForm(forms.Form):
@@ -104,7 +105,7 @@ class SpaceForm(StyledForm):
 class ItemForm(StyledForm):
     title = forms.CharField(label='Tytuł', max_length=255)
     description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
-    work_type = forms.ChoiceField(label='Typ zadania')
+    work_type = forms.ChoiceField(label='Typ zgłoszenia', widget=IssueTypeSelect)
     priority = forms.ChoiceField(label='Priorytet', choices=Task.PRIORITY_CHOICES, initial='medium')
     assignee = forms.ModelChoiceField(label='Wykonawca', queryset=None, required=False)
     team = forms.ModelChoiceField(label='Zespół', queryset=Team.objects.none(), required=False)

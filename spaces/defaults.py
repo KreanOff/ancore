@@ -12,6 +12,22 @@ TEMPLATES = {
     'service': {'label': 'Obsługa zgłoszeń', 'kind': 'service', 'description': 'Kolejka zgłoszeń i śledzenie ich rozwiązania.'},
 }
 
+ISSUE_TYPES = [
+    {'key': 'task', 'label': 'Zadanie'},
+    {'key': 'bug', 'label': 'Błąd'},
+    {'key': 'story', 'label': 'Historyjka'},
+    {'key': 'epic', 'label': 'Epik'},
+]
+ISSUE_TYPE_ICONS = {
+    'task': 'square-check', 'bug': 'circle-alert', 'story': 'book-open', 'epic': 'zap',
+    'campaign': 'megaphone', 'content': 'file-text', 'candidate': 'user-round',
+    'interview': 'messages-square', 'request': 'ticket', 'incident': 'siren',
+}
+
+
+def issue_type_icon(key):
+    return ISSUE_TYPE_ICONS.get(key, 'shapes')
+
 
 def template_settings(template='tasks'):
     labels = {
@@ -20,15 +36,13 @@ def template_settings(template='tasks'):
         'service': ['Nowe zgłoszenia', 'W obsłudze', 'Rozwiązane', 'Zamknięte', 'Ponownie otwarte'],
     }.get(template, ['Do zrobienia', 'W toku', 'Do sprawdzenia', 'Gotowe', 'Ponownie otwarte'])
     keys = ['new', 'in_progress', 'resolved', 'closed', 'reopened']
-    types = [{'key': 'task', 'label': 'Zadanie'}]
-    if template in {'kanban', 'scrum'}:
-        types += [{'key': 'bug', 'label': 'Błąd'}, {'key': 'story', 'label': 'Historyjka'}, {'key': 'epic', 'label': 'Epik'}]
-    elif template == 'marketing':
+    types = deepcopy(ISSUE_TYPES)
+    if template == 'marketing':
         types += [{'key': 'campaign', 'label': 'Kampania'}, {'key': 'content', 'label': 'Materiał'}]
     elif template == 'recruitment':
-        types = [{'key': 'candidate', 'label': 'Kandydatura'}, {'key': 'interview', 'label': 'Rozmowa'}]
+        types = [{'key': 'candidate', 'label': 'Kandydatura'}, {'key': 'interview', 'label': 'Rozmowa'}] + types
     elif template == 'service':
-        types = [{'key': 'request', 'label': 'Zgłoszenie'}, {'key': 'incident', 'label': 'Incydent'}]
+        types = [{'key': 'request', 'label': 'Zgłoszenie'}, {'key': 'incident', 'label': 'Incydent'}] + types
     fields = []
     if template == 'recruitment':
         fields = [{'key': 'position', 'label': 'Stanowisko', 'type': 'text', 'required': False}]

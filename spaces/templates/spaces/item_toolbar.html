@@ -2,6 +2,7 @@
     {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
     {% if group_filter %}<input type="hidden" name="group" value="{{ group_filter }}">{% endif %}
     <div class="tasks-filterbar-left">
+        <select class="tasks-inline-select" name="work_type" aria-label="Typ zgłoszenia"><option value="">Wszystkie typy</option>{% for type in type_options %}<option value="{{ type.key }}" data-ancore-option-icon="{{ type.icon }}"{% if type_filter == type.key %} selected{% endif %}>{{ type.label }}</option>{% endfor %}</select>
         <select class="tasks-inline-select" name="assignee" aria-label="Wykonawca"><option value="">Wszyscy wykonawcy</option><option value="me"{% if assignee_filter == 'me' %} selected{% endif %}>Przypisane do mnie</option></select>
         {% if space %}<select name="team" class="tasks-inline-select" aria-label="Zespół"><option value="">Wszystkie zespoły</option>{% for team in space_teams %}<option value="{{ team.pk }}"{% if team_filter == team.pk|stringformat:'s' %} selected{% endif %}>{{ team.name }}</option>{% endfor %}</select>{% endif %}
         <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>

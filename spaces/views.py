@@ -26,7 +26,7 @@ from tasks.models import Task, TaskProject, TaskProjectMembership
 from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
 from .avatars import delete_avatar_after_commit
-from .defaults import TEMPLATES, template_settings
+from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, default_section, ensure_space, ensure_work_item, manageable_spaces, manage_configuration, manage_space, record, set_status, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
@@ -53,12 +53,24 @@ def decorate_items(request, items):
         item.editable = item.task_id in editable_ids and item.space_id is not None
         settings = item.space.configuration.settings if item.space_id else template_settings()
         item.status_label = next((s['label'] for s in settings['statuses'] if s['key'] == item.status), item.task.get_status_display())
-        item.type_label = next((t['label'] for t in settings['types'] if t['key'] == item.work_type), item.work_type)
+        item.type_label = item.get_work_type_display()
         item.transitions = [s for s in settings['statuses'] if s['key'] != item.status and item.space_id and transition_allowed(item, s['key'])]
         item.status_order = next((n for n, s in enumerate(settings['statuses']) if s['key'] == item.status), 0)
         item.tags_count = counts[item.task_id]['tags_total']
         item.attachments_count = counts[item.task_id]['attachments_total']
     return result
+
+
+def issue_type_filters(request, space=None):
+    configurations = [space.configuration.settings] if space else [
+        template_settings(),
+        *visible_spaces(request).values_list('configuration__settings', flat=True),
+    ]
+    options = {}
+    for config in configurations:
+        for row in config['types']:
+            options.setdefault(row['key'], {**row, 'icon': issue_type_icon(row['key'])})
+    return list(options.values()), request.GET.get('work_type', '').strip()[:40]
 
 
 def index_context(request, management=False):
@@ -157,6 +169,9 @@ def detail_context(request, space, view):
     ]
     query = request.GET.get('q', '').strip()[:120]
     items = visible_items(request).filter(space=space)
+    type_options, type_filter = issue_type_filters(request, space)
+    if type_filter:
+        items = items.filter(work_type=type_filter)
     group = request.GET.get('group', '')
     if group.isdecimal() and len(group) < 19:
         items = items.filter(task__section_id=int(group))
@@ -208,7 +223,7 @@ def detail_context(request, space, view):
         sprint.finished_count = all_items.filter(sprint=sprint, task__status='closed').count()
     now = timezone.now()
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
-    return {**base_context(request), 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.project.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'group_filter': group if group.isdecimal() and len(group) < 19 else '', 'assignee_filter': request.GET.get('assignee', '')}
+    return {**base_context(request), 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.project.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'group_filter': group if group.isdecimal() and len(group) < 19 else '', 'assignee_filter': request.GET.get('assignee', ''), 'type_options': type_options, 'type_filter': type_filter}
 
 
 @login_required
@@ -227,13 +242,16 @@ def all_items(request):
     for task in tasks_without_metadata:
         ensure_work_item(task)
     items = visible_items(request)
+    type_options, type_filter = issue_type_filters(request)
+    if type_filter:
+        items = items.filter(work_type=type_filter)
     query = request.GET.get('q', '').strip()[:120]
     if query:
         items = items.filter(Q(key__icontains=query) | Q(task__title__icontains=query))
     if request.GET.get('assignee') == 'me':
         items = items.filter(task__assignee=request.user)
     page = Paginator(items.order_by('-task__created_at', '-pk'), 50).get_page(request.GET.get('page'))
-    return render(request, 'spaces/items.html', {**base_context(request), 'items': decorate_items(request, page.object_list), 'page': page, 'query': query, 'assignee_filter': request.GET.get('assignee', '')})
+    return render(request, 'spaces/items.html', {**base_context(request), 'items': decorate_items(request, page.object_list), 'page': page, 'query': query, 'assignee_filter': request.GET.get('assignee', ''), 'type_options': type_options, 'type_filter': type_filter})
 
 
 def dialog_response(request, form, title, return_url, saved=False, directory=False, management=False):
@@ -390,13 +408,18 @@ def item_edit(request, pk=None, space_pk=None):
             task._activity_actor = request.user
             task.save()
             item = WorkItem.objects.select_for_update().get(task=task)
+            old_type, old_type_label = item.work_type, item.get_work_type_display()
             for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_on', 'in_backlog'):
                 if name in data:
                     setattr(item, name, data[name])
             item.custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else '' for f in space.configuration.settings.get('fields', [])}
             item.save()
             if pk:
-                record(item, request.user, 'updated', 'zaktualizował zadanie w przestrzeni')
+                metadata = {'fields': ['typ zgłoszenia'], 'changes': [{
+                    'field': 'typ zgłoszenia', 'from_label': old_type_label,
+                    'to_label': item.get_work_type_display(),
+                }]} if old_type != item.work_type else {}
+                record(item, request.user, 'updated', 'zaktualizował zadanie w przestrzeni', metadata)
         return dialog_response(request, form, '', url, saved=True)
     return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url)
 
@@ -541,7 +564,7 @@ def configuration(request, pk):
         if {row['category'] for row in settings['statuses']} != set(dict(Task.STATUS_CHOICES)):
             errors.append('Zachowaj co najmniej jeden status dla każdego stanu zadania.')
         if not settings['types']:
-            errors.append('Przestrzeń musi mieć co najmniej jeden typ zadania.')
+            errors.append('Przestrzeń musi mieć co najmniej jeden typ zgłoszenia.')
         for row in settings['statuses']:
             if any(key not in keys for key in row['transitions']):
                 errors.append('Usuń przejścia prowadzące do usuniętego statusu.')
@@ -564,4 +587,4 @@ def configuration(request, pk):
                 config.save(update_fields=['settings'])
                 messages.success(request, 'Konfiguracja została zapisana.')
                 return redirect(app_url(request, f'{pk}/?view=settings'))
-    return render(request, 'spaces/configuration.html', {**base_context(request), 'space': space, 'space_url': app_url(request, f'{pk}/'), 'config': config, 'revision': revision, 'sets': [{'title': title, 'formset': formset} for title, formset in zip(('Statusy i przejścia', 'Typy zadań', 'Pola dodatkowe'), sets)], 'errors': errors}, status=400 if data else 200)
+    return render(request, 'spaces/configuration.html', {**base_context(request), 'space': space, 'space_url': app_url(request, f'{pk}/'), 'config': config, 'revision': revision, 'sets': [{'title': title, 'formset': formset} for title, formset in zip(('Statusy i przejścia', 'Typy zgłoszeń', 'Pola dodatkowe'), sets)], 'errors': errors}, status=400 if data else 200)

@@ -2954,6 +2954,7 @@ def _record_task_activity(task, actor, action, message='', kind='system', metada
 def _task_activity_snapshot(task):
     section = task.section
     project = section.project if section else None
+    item = getattr(task, 'work_item', None)
     return {
         'title': task.title,
         'visibility': task.visibility,
@@ -2961,6 +2962,8 @@ def _task_activity_snapshot(task):
         'status': task.status,
         'priority': task.priority,
         'task_type': task.task_type,
+        'work_type': item.work_type if item else '',
+        'work_type_label': item.get_work_type_display() if item else '',
         'section_id': task.section_id,
         'section_label': section.title if section else '',
         'project_id': project.id if project else None,
@@ -3006,6 +3009,9 @@ def _task_change_activities(task, before):
         add_change('priorytet', priority_labels.get(before['priority'], before['priority']), task.get_priority_display())
     if before['task_type'] != task.task_type:
         add_change('typ zadania', task_type_labels.get(before['task_type'], before['task_type']), task.get_task_type_display())
+    item = getattr(task, 'work_item', None)
+    if before['work_type'] != (item.work_type if item else ''):
+        add_change('typ zgłoszenia', before['work_type_label'], item.get_work_type_display() if item else '')
     if before['title'] != task.title:
         add_change('tytuł', before['title'], task.title)
     if before['description'] != task.description:

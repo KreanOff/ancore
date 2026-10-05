@@ -82,6 +82,21 @@ pozostają w `kanban.tests` i `kanban.test_sharing`; testy dawnych ekranów zast
 testy wycofania. Sprawdzaj też `spaces`, Dashboard, Planner i wspólne mechanizmy
 Zadań. Wycofanie nie wymaga nowej migracji ani usuwania danych.
 
+## Typy zgłoszeń
+
+Przed zastosowaniem `spaces.0004_issue_types` wykonaj backup danych.
+Migracja dopisuje brakujące standardowe typy do konfiguracji bez zmiany zadań
+i schematu tabel; cofnięcie zachowuje dopisane opcje. Nowe przestrzenie
+otrzymują typy z aktualnego `template_settings`.
+`spaces.test_issue_types` sprawdza tworzenie/edycję w Marketingu, oba warianty
+adresów, szczegóły zadania, autora i rollback historii, zachowanie typu przy
+innych edycjach, nieznane/niedostępne typy, role, obcy Workspace, relacje epików,
+filtry z wyszukiwaniem i prywatnością oraz idempotencję migracji.
+Uruchamiaj też `spaces`, testy udostępniania/nieprzydzielonych zadań i szablonów
+projektów oraz `core.test_status_updates`. Browser QA obejmuje wybór i zapis
+typu, ikonę/nazwę na liście i tablicy, filtr/pusty wynik, szczegóły i historię,
+walidację, Escape/fokus, ponowne wejście oraz desktop i telefon.
+
 ## 1. Wymagania i wersje
 
 Źródła: [requirements.txt](../requirements.txt), [settings.py](../ancore/settings.py).

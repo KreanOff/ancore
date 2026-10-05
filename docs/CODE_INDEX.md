@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 18 | 3 | 21 | 54 |
+| [spaces](../spaces) | 20 | 4 | 22 | 64 |
 
 ## 2. Modele i relacje
 
@@ -835,6 +835,8 @@ Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (C
 | `sprint` | `Sprint` | on_delete=models.SET_NULL; related_name='items'; null=True |
 | `epic` | `'self'` | on_delete=models.SET_NULL; related_name='epic_items'; null=True |
 
+Metody/properties: `get_work_type_display`, `type_icon`.
+
 ### `LegacyKanbanLink`
 
 Źródło: [spaces/models.py](../spaces/models.py).
@@ -1352,7 +1354,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/__init__.py](../spaces/__init__.py)
 - [spaces/apps.py](../spaces/apps.py) — `SpacesConfig`
 - [spaces/avatars.py](../spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`
-- [spaces/defaults.py](../spaces/defaults.py) — `template_settings`
+- [spaces/defaults.py](../spaces/defaults.py) — `issue_type_icon`, `template_settings`
 - [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
 - [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
@@ -1363,7 +1365,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
 - [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `space_avatar`, `status_groups`
 - [spaces/urls.py](../spaces/urls.py)
-- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `index_context`, `index`, `manage`, `search`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [spaces/widgets.py](../spaces/widgets.py) — `IssueTypeSelect`
 
 ## 6. Szablony
 
@@ -1546,6 +1549,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/form.html](../spaces/templates/spaces/form.html)
 - [spaces/templates/spaces/form_page.html](../spaces/templates/spaces/form_page.html)
 - [spaces/templates/spaces/index.html](../spaces/templates/spaces/index.html)
+- [spaces/templates/spaces/issue_type.html](../spaces/templates/spaces/issue_type.html)
 - [spaces/templates/spaces/item_actions.html](../spaces/templates/spaces/item_actions.html)
 - [spaces/templates/spaces/item_list.html](../spaces/templates/spaces/item_list.html)
 - [spaces/templates/spaces/item_toolbar.html](../spaces/templates/spaces/item_toolbar.html)
@@ -2057,6 +2061,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceAvatarTests`: 11 metod testowych.
 
+### spaces/test_issue_types.py
+
+Źródło: [spaces/test_issue_types.py](../spaces/test_issue_types.py).
+
+- `IssueTypeTests`: 10 metod testowych.
+
 ### spaces/test_management.py
 
 Źródło: [spaces/test_management.py](../spaces/test_management.py).
@@ -2252,3 +2262,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [spaces/migrations/0001_initial.py](../spaces/migrations/0001_initial.py)
 - [spaces/migrations/0002_unify_work.py](../spaces/migrations/0002_unify_work.py)
 - [spaces/migrations/0003_space_avatar_space_avatar_photo.py](../spaces/migrations/0003_space_avatar_space_avatar_photo.py)
+- [spaces/migrations/0004_issue_types.py](../spaces/migrations/0004_issue_types.py)

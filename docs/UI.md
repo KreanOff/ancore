@@ -184,6 +184,13 @@ bieżącą treścią. W innych modułach otwiera kreator nad katalogiem.
 Listy zadań w przestrzeni, „Wszystkie zadania”, przegląd oraz zadania zespołu zachowują
 wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
 wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.
+Include `spaces/issue_type.html` dodaje wspólne oznaczenie `tasks-issue-type`:
+ikonę z lokalnego `AncoreIcons` i nazwę typu zgłoszenia w neutralnym tle.
+Oznaczenie jest widoczne przy kluczu wiersza i w metadanych karty; długą nazwę
+skraca wielokropek, a pełną udostępnia `title` i etykieta dostępności.
+`IssueTypeSelect` używa istniejących ikon opcji `AncoreCustomSelect` w formularzu
+przestrzeni i szczegółach zadania. Toolbar zawiera filtr „Typ zgłoszenia”;
+dotychczasowe pole biznesowe w szczegółach ma etykietę „Kategoria zadania”.
 Pierwsza kolumna wiersza zawiera stale widoczny, standardowy `tasks-row-checkbox`
 z etykietą zawierającą kod i tytuł zadania. Zaznaczenie myszą lub Spacją podświetla
 wiersz przez wspólne style; nie zmienia statusu zadania. Wiersze list, backlogu
@@ -756,6 +763,10 @@ powrót fokusu i dotychczasowa nawigacja pozostają odpowiedzialnością
 istniejących szablonów oraz JS.
 Na telefonie nagłówek szczegółów pozostawia 3.5rem miejsca po lewej na
 przycisk nawigacji aplikacji, aby nie zasłaniał strzałki powrotu.
+Lewa część nagłówka zadania i podzadania zawiera wyłącznie przycisk powrotu
+i bieżący tytuł, także dla zadań w Przestrzeniach; bez nazwy przestrzeni
+i klucza zgłoszenia. Powrót zachowuje dotychczasowy kontekst nawigacji,
+a tytuł odświeża się podczas edycji.
 
 ### Paski listy grup
 
@@ -1286,7 +1297,7 @@ pokazuje pola szacowanego czasu ani kolumny „Czas (min)”. Zmiany statusu są
 widoczne w zakładce „Historia”.
 Wspólne style czasu pracy i historii są nadal używane przez Kanban.
 
-Zakładki „Główna”, „Podzadania”, „Dziennik pracy” i „Historia” (`tasks-issue-tabbar`) znajdują się
+Zakładki „Główna”, „Podzadania”, „Dziennik pracy”, „Członkowie” i „Historia” (`tasks-issue-tabbar`) znajdują się
 w lewej kolumnie szczegółów (`tasks-issue-primary`), bezpośrednio nad tematem
 zadania i są wyrównane do jego lewej krawędzi, także na telefonie.
 Pasek zakładek i ich treść mają po 50px odstępu od obu krawędzi lewej kolumny
@@ -1294,7 +1305,12 @@ Pasek zakładek i ich treść mają po 50px odstępu od obu krawędzi lewej kolu
 pozostałą szerokość bez limitu 980px; wariant dotyczy zadań i podzadań.
 Korzystają z `notifications-tabs`, z turkusowym podkreśleniem. Tekst zakładek
 ma rozmiar `--font-size-lg` (15px); wariant jest ograniczony do szczegółów
-zadania i podzadania. Edytowalny tytuł w treści tych widoków ma 20px,
+zadania i podzadania. Dekoracyjne ikony z `AncoreIcons` oznaczają dokument
+przy „Główna”, listę przy „Podzadania”, zegar przy „Dziennik pracy”, osoby
+przy „Członkowie” i strzałkę historii przy „Historia”. Mają 18px i odstęp 8px
+od etykiety, tak jak zakładki Przestrzeni; dziedziczą kolor tekstu. Pasek
+zachowuje przewijanie poziome na telefonie i obsługę klawiatury.
+Edytowalny tytuł w treści tych widoków ma 20px,
 także na telefonie, zgodnie z rozmiarem nagłówków standardowych modali.
 Pod paskiem zakładek nie ma poziomej linii oddzielającej go od treści.
 Temat i opis (`tasks-issue-overview`) są widoczne tylko w „Głównej”,

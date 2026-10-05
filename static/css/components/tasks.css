@@ -14483,7 +14483,8 @@ body.is-resizing-directory-columns {
     padding: 0 var(--tasks-issue-content-padding-x);
 }
 .tasks-issue-tabbar .tasks-issue-tabs { border: 0; min-width: 0; }
-.tasks-issue-tabbar .tasks-issue-tabs button { font-size: var(--font-size-lg); }
+.tasks-issue-tabbar .tasks-issue-tabs button { gap: 8px; font-size: var(--font-size-lg); }
+.tasks-issue-tabs [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
 .tasks-topbar.tasks-topbar--with-tabs { padding-block: 0; }
 .tasks-topbar--with-tabs .tasks-titlebar-left {
     flex-wrap: wrap;
@@ -14502,6 +14503,23 @@ body.is-resizing-directory-columns {
 .tasks-directory-tabs.notifications-tabs a:not([aria-current="page"]):hover {
     border-bottom-color: var(--system-interaction);
 }
+
+.tasks-issue-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    max-width: 120px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    background: var(--panel-bg);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.tasks-issue-type > :last-child { overflow: hidden; text-overflow: ellipsis; }
+.tasks-issue-type [data-icon] { width: 14px; height: 14px; flex-shrink: 0; }
 
 .tasks-issue-row.tasks-issue-row--with-favorite {
     grid-template-columns: 18px 22px 24px minmax(190px, 1fr) max-content max-content max-content 30px;
