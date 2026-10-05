@@ -85,17 +85,15 @@ body {
 
 .sidebar .nav-link:hover,
 .sidebar .nav-link:focus-visible,
-.sidebar .nav-link.active,
 .sidebar .sidebar-sticker-toggle[aria-expanded="true"],
 .sidebar .sidebar-sticker-toggle.is-open {
-    background: #e9ebef;
+    background: var(--sidebar-interaction-bg);
     border-color: transparent;
     color: var(--text-main);
 }
 
 .sidebar .nav-link:hover .nav-icon,
 .sidebar .nav-link:focus-visible .nav-icon,
-.sidebar .nav-link.active .nav-icon,
 .sidebar .nav-link:active .nav-icon,
 .sidebar .sidebar-sticker-toggle[aria-expanded="true"] .nav-icon,
 .sidebar .sidebar-sticker-toggle.is-open .nav-icon {

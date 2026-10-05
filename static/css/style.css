@@ -488,10 +488,10 @@ body :where(input, textarea)::placeholder {
 .sidebar,
 .sidebar-collapsed-flyout {
     --sidebar-icon-size: 18px;
-    --sidebar-space-selection: #1868dc;
-    --sidebar-space-selection-bg: #e9f2fe;
-    --sidebar-space-focus: #4588ec;
-    --sidebar-space-marker: #2584ff;
+    --sidebar-space-selection: #5b5fc7;
+    --sidebar-space-selection-bg: #e8ebfa;
+    --sidebar-space-focus: var(--sidebar-space-selection);
+    --sidebar-space-marker: var(--sidebar-space-selection);
 }
 
 .sidebar:has([data-sidebar-navigation="workspace"]:not([hidden])) {
@@ -856,7 +856,7 @@ body :where(input, textarea)::placeholder {
     cursor: pointer;
 }
 .sidebar .sidebar-spaces-more[aria-expanded="true"] {
-    background: var(--system-interaction-soft);
+    background: var(--sidebar-interaction-bg);
 }
 .sidebar-spaces-more__chevron {
     width: 14px;
@@ -1376,9 +1376,9 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
 }
 
 .sidebar-group-header:hover,
-.sidebar-group-header:focus-within,
+.sidebar-group-header:has(:focus-visible),
 .sidebar-group-header:has(.sidebar-header-action[aria-expanded="true"]) {
-    background: var(--system-interaction-soft);
+    background: var(--sidebar-interaction-bg);
 }
 
 [data-sidebar-group="spaces"] .sidebar-group-header:has(.sidebar-group-toggle:focus-visible) {
@@ -1388,7 +1388,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
 }
 
 [data-sidebar-group="spaces"] .sidebar-group-header {
-    min-height: var(--sidebar-compact-item-height);
+    min-height: var(--dropdown-menu-item-height);
 }
 
 [data-sidebar-group="spaces"] .sidebar-group-toggle:focus-visible {
@@ -1399,11 +1399,11 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     display: none;
 }
 
-[data-sidebar-group="spaces"] .sidebar-group-header:is(:hover, :focus-within) .sidebar-spaces-icon {
+[data-sidebar-group="spaces"] .sidebar-group-header:is(:hover, :has(:focus-visible)) .sidebar-spaces-icon {
     display: none;
 }
 
-[data-sidebar-group="spaces"] .sidebar-group-header:is(:hover, :focus-within) .sidebar-spaces-chevron {
+[data-sidebar-group="spaces"] .sidebar-group-header:is(:hover, :has(:focus-visible)) .sidebar-spaces-chevron {
     display: inline-grid;
 }
 
@@ -1627,25 +1627,39 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
 }
 
 .sidebar-space-row:hover,
-.sidebar-space-row:focus-within,
+.sidebar-space-row:has(:focus-visible),
 .sidebar-space-row:has([aria-expanded="true"]) {
-    background: var(--system-interaction-soft);
+    background: var(--sidebar-interaction-bg);
 }
 
-.sidebar .sidebar-space-row .sidebar-subnav-link:is(:hover, :focus-visible) {
+.sidebar .sidebar-space-row .sidebar-subnav-link:is(:hover, :focus-visible),
+.sidebar-collapsed-flyout .sidebar-space-row .sidebar-collapsed-flyout__link:is(:hover, :focus-visible) {
     background: transparent;
 }
 
-.sidebar .sidebar-space-row .sidebar-subnav-link.active {
+.sidebar a.nav-link.active,
+.sidebar .sidebar-space-row .sidebar-subnav-link.active,
+.sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link.active,
+.sidebar-collapsed-flyout .sidebar-space-row .sidebar-collapsed-flyout__link.active {
     --app-text-color: var(--sidebar-space-selection);
+    position: relative;
+    border-color: transparent;
+    color: var(--sidebar-space-selection);
     background: var(--sidebar-space-selection-bg);
 }
 
-.sidebar .sidebar-space-row .sidebar-subnav-link.active > span:not(.sidebar-subnav-icon) {
+.sidebar a.nav-link.active > span:not(.sidebar-subnav-icon),
+.sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link.active > span:not(.sidebar-subnav-icon) {
     --app-text-color: var(--sidebar-space-selection);
 }
 
-.sidebar .sidebar-space-row .sidebar-subnav-link.active::after {
+.sidebar a.nav-link.active :is(.nav-icon, .sidebar-favorite-icon, .sidebar-subnav-icon):not([data-space-avatar]),
+.sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link.active .sidebar-subnav-icon:not([data-space-avatar]) {
+    color: var(--sidebar-space-selection);
+}
+
+.sidebar a.nav-link.active::after,
+.sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link.active::after {
     content: "";
     position: absolute;
     top: 10px;
@@ -1889,22 +1903,8 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
 
 .sidebar-collapsed-flyout__link:hover {
     border-color: #dde2e8;
-    background: #f5f7f9;
+    background: var(--sidebar-interaction-bg);
     color: var(--sidebar-active);
-}
-
-.sidebar-collapsed-flyout__link.active {
-    background: rgba(var(--system-accent-rgb), 0.14);
-    color: var(--text-primary);
-}
-
-.sidebar-collapsed-flyout .sidebar-space-row .sidebar-collapsed-flyout__link.active {
-    --app-text-color: var(--sidebar-space-selection);
-    background: var(--sidebar-space-selection-bg);
-}
-
-.sidebar-collapsed-flyout .sidebar-space-row .sidebar-collapsed-flyout__link.active > span:not(.sidebar-subnav-icon) {
-    --app-text-color: var(--sidebar-space-selection);
 }
 
 @media (min-width: 768px) {
@@ -2123,22 +2123,31 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
         margin-top: 0.125rem;
     }
 
-    html.sidebar-collapsed .sidebar-nav-group.is-flyout-open .sidebar-group-toggle,
-    html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) .sidebar-group-toggle {
+    html.sidebar-collapsed .sidebar-nav-group.is-flyout-open .sidebar-group-toggle {
         border-color: transparent;
-        background: #eceef1;
+        background: var(--sidebar-interaction-bg);
         color: var(--text-primary);
     }
 
     html.sidebar-collapsed .sidebar :is(
-        .nav-link.active,
         .sidebar-workspace-toggle[aria-expanded="true"],
         .sidebar-sticker-toggle[aria-expanded="true"]
     ) {
         border-color: transparent;
         border-radius: 8px;
-        background: #eceef1;
+        background: var(--sidebar-interaction-bg);
         color: var(--text-primary);
+    }
+
+    html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) .sidebar-group-toggle {
+        --app-text-color: var(--sidebar-space-selection);
+        border-color: transparent;
+        background: var(--sidebar-space-selection-bg);
+        color: var(--sidebar-space-selection);
+    }
+
+    html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) .sidebar-group-toggle .nav-icon {
+        color: var(--sidebar-space-selection);
     }
 
     html.sidebar-collapsed .sidebar .nav-label {

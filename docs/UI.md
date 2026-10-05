@@ -121,18 +121,28 @@ Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
 preferencja `ancoreSidebarCollapsedGroups`; pozostaje zachowany po odświeżeniu
 i częściowej nawigacji. Przycisk ma `aria-controls` i `aria-expanded`
 oraz obsługuje Enter/Spację. Przed nazwą jest ikona warstw (`layers`), która
-przy najechaniu lub fokusie zmienia się w strzałkę zwijania (`chevron-down`),
+przy najechaniu lub fokusie klawiatury zmienia się w strzałkę zwijania (`chevron-down`),
 obróconą w prawo dla zwiniętej sekcji. Fokus klawiatury zaznacza całą powłokę
-nagłówka niebieską ramką. W trybie zwiniętego całego paska ikona nadal otwiera
+nagłówka fioletową ramką. W trybie zwiniętego całego paska ikona nadal otwiera
 panel skrótów. Ikona warstw oznacza również Przestrzenie
 w Favorites (także dla starszych zapisanych skrótów), nagłówku kolumny katalogu
 oraz jego pustym stanie. Wspólny wariant `sidebar-group-header` umieszcza
 obok przycisku zwijania „+” otwierający kreator i „…” z opcją „Zarządzaj
 przestrzeniami” (według uprawnień). Obie ikony mają 13px w przyciskach 28px
 (`--control-height` minus 4px). Nagłówek ma wspólne zaokrąglone szare tło
-po najechaniu, przy fokusie lub otwartym menu. Plus i trzy kropki otrzymują
+oraz wysokość 32px, tak jak pozostałe pozycje codziennego menu. Minimalna
+wysokość jego powłoki korzysta z `--dropdown-menu-item-height`, jak sam
+przycisk; nie powiększa tła do 36px z wariantu zwiniętego paska.
+Szare tło pojawia się
+po najechaniu, przy fokusie klawiatury lub otwartym menu. Token
+`--sidebar-interaction-bg` (`#e9ebef`) zapewnia ten sam kolor hover dla Dashboardu
+i pozostałych pozycji menu; obejmuje też szare podświetlenia wierszy przestrzeni,
+otwarty przycisk „Więcej przestrzeni” oraz zwinięty pasek i jego panel skrótów.
+Fioletowe zaznaczenie wybranej pozycji pozostaje odrębne. Fokus pozostający
+po kliknięciu myszą nie utrzymuje tła ani strzałki po odsunięciu kursora.
+Plus i trzy kropki otrzymują
 dodatkowe szare podświetlenie bez ramki przy najechaniu, fokusie klawiatury
-lub otwarciu menu. Obie warstwy używają `--system-interaction-soft`.
+lub otwarciu menu. Dodatkowa warstwa ikon używa `--system-interaction-soft`.
 Menu korzysta z `row-actions.js`, natywnego popovera i stylów
 menu Zadań; obsługuje klawiaturę, Escape i przywrócenie fokusu. Skrót katalogu
 w Favorites zachowuje klucz `spaces`. Podmenu używa wariantu
@@ -146,15 +156,30 @@ podpisy i awatary stoją w tej samej kolumnie, 6px od jej krawędzi. Awatar ma
 nawigacji mają wagę 600 również na wewnętrznych `span`, pomimo globalnej
 reguły wagi 400. Pozycje codziennej nawigacji również mają wysokość 32px;
 zwinięty pasek zachowuje dotychczasowe wymiary. Jego codzienny wariant ma białe
-tło. Zgodnie z zamówionym wzorcem Jiry, aktywna przestrzeń ma jasne niebieskie
-tło, niebieski tekst i krótki znacznik przy lewej krawędzi. Lokalne zmienne
+tło. Wybrana pozycja (`a.nav-link.active`) ma jasne fioletowe
+tło, fioletowy tekst/ikonę i krótki znacznik przy lewej krawędzi. Ta sama reguła
+obejmuje Dashboard, pozostałe moduły, Favorites, Starsze widoki oraz kategorie
+Ustawień i menu zarządzania. Wybrana pozycja zachowuje fioletowy stan pod
+kursorem; szary hover i fokus nieaktywnej pozycji nie oznaczają wyboru.
+Otwarcie menu lub rozwinięcie sekcji także nie wybiera punktu nawigacji.
+Dotychczasowa klasa `active` pochodzi z serwera i jest synchronizowana przy
+częściowej nawigacji; Ustawienia przełączają ją przy wyborze kategorii.
+Lokalne zmienne
 `--sidebar-space-selection`, `--sidebar-space-selection-bg`, `--sidebar-space-focus`
-i `--sidebar-space-marker` obejmują tylko
-ten wariant oraz jego panel skrótów. Długie nazwy zachowują wielokropek
+i `--sidebar-space-marker` są współdzielone przez cały główny pasek boczny
+i jego panel skrótów. Kolor zaznaczenia, ramki fokusu i znacznika wynosi
+`#5b5fc7`, a jasne tło `#e8ebfa`. Ten wariant menu używa palety `brandTeams`
+jasnego motywu [Microsoft Fluent UI](https://github.com/microsoft/fluentui/blob/master/packages/tokens/src/global/brandColors.ts).
+Główny token akcentu aplikacji pozostaje turkusowy.
+Przy zwiniętym pasku nagłówek grupy z aktywnym podpunktem
+także ma fioletowy stan. Długie nazwy zachowują wielokropek
 oraz pełną nazwę w `title`. Pozostałe podmenu zachowują dotychczasowe drzewka.
 
 Wariant `sidebar-space-row` dodaje „…” widoczne przy najechaniu/fokusie
 i otwartym menu; na urządzeniach dotykowych i telefonie przycisk jest stały.
+Szare tło wiersza pojawia się przy najechaniu, fokusie klawiatury lub otwartym
+menu; sam fokus po kliknięciu myszą go nie utrzymuje. Aktywna przestrzeń
+zachowuje własne fioletowe zaznaczenie niezależnie od fokusu.
 `sidebar-space-menu` rozszerza wspólne `tasks-section-menu` i `row-actions.js`:
 osobista gwiazdka, dodawanie osób według praw zarządzania prywatną przestrzenią,
 ustawienia oraz neutralna stopka z rodzajem i sposobem zarządzania.
@@ -705,6 +730,8 @@ zmiennej zamiast powielania wartości liczbowej.
 | Tekst na akcencie | `--text-inverse: #FFFFFF` |
 | Główny akcent | `--system-accent: rgb(30, 191, 191)` |
 | Interakcje | `--system-interaction: #6f7580`, miękkie tło z alfa 0.1 |
+| Szare podświetlenie menu bocznego | `--sidebar-interaction-bg: #e9ebef` |
+| Wybrana pozycja menu bocznego | `--sidebar-space-selection: #5b5fc7`, tło `--sidebar-space-selection-bg: #e8ebfa`, znacznik i ramka fokusu korzystają z koloru zaznaczenia |
 | Główna powierzchnia | `--bg-main: #ffffff`, `--card-bg: #ffffff` |
 | Nawigacja pomocnicza | `--secondary-menu-bg: #FBFBFC` |
 | Tło panelu | `--panel-bg: #f7f6f4` |

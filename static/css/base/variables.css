@@ -23,6 +23,7 @@
     --system-accent-soft: var(--system-interaction-soft);
     --sidebar-text: var(--text-primary);
     --sidebar-active: var(--system-interaction);
+    --sidebar-interaction-bg: #e9ebef;
     --accent-peach: var(--system-accent);
     --accent-peach-hover: var(--system-accent-hover);
     --accent-peach-border: var(--system-accent);
