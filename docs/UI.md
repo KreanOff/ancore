@@ -77,14 +77,15 @@ odstępu z lewej i prawej strony, również na telefonie. Wspólna zmienna
 `--work-space-inline-padding` obejmuje też katalog Przestrzeni: jego nagłówek,
 zakładki, filtry i tabelę. Lista zadań i tablica wewnątrz przestrzeni nadal
 korzystają z pełnej szerokości; katalog Zespołów zachowuje własne odstępy.
-Awatar ma 32px w nagłówku, 24px w katalogu i 21px w menu bocznym.
+Awatar ma 32px w nagłówku, 24px w katalogu, 20px w codziennym menu bocznym
+i 21px w panelu zwiniętego paska.
 W katalogu odstęp między awatarem a nazwą przestrzeni wynosi 8px.
 Include `spaces/avatar.html` rozszerza wspólny `profile-avatar`; globalny
 `space-avatars.css` zapewnia jego wygląd również poza modułem Przestrzeni.
 Zapis odświeża awatar w menu przy częściowej nawigacji.
 Przy każdej częściowej nawigacji `layout.js` synchronizuje całe podmenu
 przestrzeni z HTML serwera: dodaje nowe pozycje, usuwa nieobecne, aktualizuje
-nazwy, awatary i kolejność. Nowo utworzona przestrzeń pojawia się od razu po
+nazwy, awatary, grupy, dozwolone akcje i kolejność. Nowo utworzona przestrzeń pojawia się od razu po
 zapisie, bez ręcznego odświeżenia. Grupa, stan zwinięcia i „Więcej przestrzeni”
 pozostają zachowane; nowy link także zamyka menu na telefonie po wyborze.
 
@@ -119,8 +120,11 @@ Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
 `data-sidebar-group="spaces"` w `layout.js`. Stan zapisuje istniejąca
 preferencja `ancoreSidebarCollapsedGroups`; pozostaje zachowany po odświeżeniu
 i częściowej nawigacji. Przycisk ma `aria-controls` i `aria-expanded`
-oraz obsługuje Enter/Spację. Ikona warstw (`layers`) jest stale widoczna przed nazwą;
-nagłówek nie pokazuje strzałki zwijania. Ta sama ikona oznacza Przestrzenie
+oraz obsługuje Enter/Spację. Przed nazwą jest ikona warstw (`layers`), która
+przy najechaniu lub fokusie zmienia się w strzałkę zwijania (`chevron-down`),
+obróconą w prawo dla zwiniętej sekcji. Fokus klawiatury zaznacza całą powłokę
+nagłówka niebieską ramką. W trybie zwiniętego całego paska ikona nadal otwiera
+panel skrótów. Ikona warstw oznacza również Przestrzenie
 w Favorites (także dla starszych zapisanych skrótów), nagłówku kolumny katalogu
 oraz jego pustym stanie. Wspólny wariant `sidebar-group-header` umieszcza
 obok przycisku zwijania „+” otwierający kreator i „…” z opcją „Zarządzaj
@@ -131,8 +135,36 @@ dodatkowe szare podświetlenie bez ramki przy najechaniu, fokusie klawiatury
 lub otwarciu menu. Obie warstwy używają `--system-interaction-soft`.
 Menu korzysta z `row-actions.js`, natywnego popovera i stylów
 menu Zadań; obsługuje klawiaturę, Escape i przywrócenie fokusu. Skrót katalogu
-w Favorites zachowuje klucz `spaces`. Podmenu zawiera ulubione i ostatnie
-przestrzenie, a na końcu przycisk „Więcej przestrzeni” z ikoną `align-left`
+w Favorites zachowuje klucz `spaces`. Podmenu używa wariantu
+`sidebar-subnav--spaces`: płaskie wiersze o wysokości 32px, bez
+linii drzewa, z podpisami „Oznaczone gwiazdką” i „Ostatnie”. Gwiazdki są
+osobiste; ostatnie przestrzenie uwzględniają kolejność odwiedzin z sesji,
+z uzupełnieniem przez najnowsze. Łączny limit pozostaje równy sześć.
+Puste bloki ukrywają podpisy. Podlista ma wcięcie 14px względem nagłówka;
+podpisy i awatary stoją w tej samej kolumnie, 6px od jej krawędzi. Awatar ma
+20px, a odstęp do nazwy wynosi 6px. Nazwy przestrzeni i pozycji codziennej
+nawigacji mają wagę 600 również na wewnętrznych `span`, pomimo globalnej
+reguły wagi 400. Pozycje codziennej nawigacji również mają wysokość 32px;
+zwinięty pasek zachowuje dotychczasowe wymiary. Jego codzienny wariant ma białe
+tło. Zgodnie z zamówionym wzorcem Jiry, aktywna przestrzeń ma jasne niebieskie
+tło, niebieski tekst i krótki znacznik przy lewej krawędzi. Lokalne zmienne
+`--sidebar-space-selection`, `--sidebar-space-selection-bg`, `--sidebar-space-focus`
+i `--sidebar-space-marker` obejmują tylko
+ten wariant oraz jego panel skrótów. Długie nazwy zachowują wielokropek
+oraz pełną nazwę w `title`. Pozostałe podmenu zachowują dotychczasowe drzewka.
+
+Wariant `sidebar-space-row` dodaje „…” widoczne przy najechaniu/fokusie
+i otwartym menu; na urządzeniach dotykowych i telefonie przycisk jest stały.
+`sidebar-space-menu` rozszerza wspólne `tasks-section-menu` i `row-actions.js`:
+osobista gwiazdka, dodawanie osób według praw zarządzania prywatną przestrzenią,
+ustawienia oraz neutralna stopka z rodzajem i sposobem zarządzania.
+Zachowuje Escape, strzałki, powrót fokusu i pozycjonowanie wewnątrz viewportu.
+`space-navigation.js` obsługuje formularz gwiazdki także poza modułem Przestrzeni,
+odświeża bieżący ekran bez zmiany adresu i przywraca fokus do menu wiersza.
+Podział, wiersze i ich akcje działają także w panelu zwiniętego sidebaru;
+klony otrzymują osobne identyfikatory powiązane z etykietami i popoverami.
+
+Na końcu znajduje się przycisk „Więcej przestrzeni” z ikoną `align-left`
 i strzałką w prawo. Otwiera niemodalny panel `sidebar-space-picker` obok menu,
 z tytułem, zamknięciem, wyszukiwaniem i linkiem „Wyświetl wszystkie przestrzenie”.
 Przycisk ma przezroczyste tło w spoczynku; podświetla się przy najechaniu,

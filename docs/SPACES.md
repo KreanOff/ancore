@@ -5,11 +5,29 @@
 „Przestrzenie” (`/spaces/` i scoped odpowiednik) jest katalogiem do codziennej
 pracy: wszystkie dostępne przestrzenie, ulubione, prywatne, rodzaj, wyszukiwanie
 i liczba widocznych zadań. Nazwa otwiera podsumowanie przestrzeni.
-Podmenu głównej nawigacji pokazuje do sześciu dostępnych przestrzeni,
-najpierw ulubione, potem najnowsze. Częściowa nawigacja odświeża linki z
+Podmenu głównej nawigacji pokazuje do sześciu dostępnych przestrzeni w blokach
+„Oznaczone gwiazdką” i „Ostatnie”, bez linii drzewa. Osobiste ulubione są
+uporządkowane po nazwie; pozostałe miejsca zajmują ostatnio odwiedzone
+przestrzenie, a następnie najnowsze. Historia korzysta z istniejącej sesji
+`dashboard.recent` i zapamiętuje oglądany projekt przed renderowaniem menu.
+Puste bloki nie pokazują nagłówków. `spaces/navigation.py` za każdym razem
+sprawdza aktywny Workspace i bieżący dostęp; gwiazdka nie nadaje uprawnień.
+Częściowa nawigacja odświeża linki z
 odpowiedzi serwera, więc utworzenie przestrzeni nie wymaga ręcznego przeładowania
 strony. Ten sam mechanizm aktualizuje nazwy, awatary i pozycje po zmianie
 ulubionych lub utracie dostępu, zachowując stan zwinięcia sekcji.
+
+Wiersz pokazuje menu „…” przy najechaniu, fokusie lub otwarciu, a na telefonie
+stale. Menu pozwala zmienić osobistą gwiazdkę i otworzyć ustawienia przestrzeni.
+„Dodaj osoby” otwiera istniejący formularz członków wyłącznie dla osób
+zarządzających prywatną przestrzenią. Publiczne przestrzenie zachowują dostęp
+poprzez Workspace; obserwatorzy nie zarządzają członkami. Stopka menu pokazuje
+rodzaj i sposób zarządzania. Korzysta ze wspólnego `row-actions.js` oraz
+niemodalnego popovera. Akcja gwiazdki używa dotychczasowej relacji
+`TaskProject.favorited_by` i endpointu POST; `space-navigation.js` odświeża
+bieżący ekran przez `AncoreApp`, pozostawiając jego adres. Bez JavaScriptu
+formularz wraca do bezpiecznego adresu `next` z tego samego hosta. Błąd zapisu
+pokazuje powiadomienie i pozwala ponowić akcję. Nie powstają nowe modele.
 
 „Zarządzaj przestrzeniami” (`/spaces/manage/` i scoped odpowiednik) to osobny
 ekran ustawień, dostępny z menu „…” przy Przestrzeniach oraz z Ustawień Ancore.

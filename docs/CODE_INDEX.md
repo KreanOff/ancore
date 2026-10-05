@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 22 | 4 | 23 | 74 |
+| [spaces](../spaces) | 24 | 4 | 25 | 80 |
 
 ## 2. Modele i relacje
 
@@ -1358,6 +1358,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
 - [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
+- [spaces/navigation.py](../spaces/navigation.py) — `sidebar_spaces`
 - [spaces/services.py](../spaces/services.py) — `app_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
 - [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`, `deleted_space_avatar`
 - [spaces/summary.py](../spaces/summary.py) — `summary_scope`, `filter_summary_items`, `space_summary`
@@ -1559,7 +1560,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/pagination.html](../spaces/templates/spaces/pagination.html)
 - [spaces/templates/spaces/row.html](../spaces/templates/spaces/row.html)
 - [spaces/templates/spaces/search_results.html](../spaces/templates/spaces/search_results.html)
+- [spaces/templates/spaces/sidebar_navigation.html](../spaces/templates/spaces/sidebar_navigation.html)
 - [spaces/templates/spaces/sidebar_picker.html](../spaces/templates/spaces/sidebar_picker.html)
+- [spaces/templates/spaces/sidebar_row.html](../spaces/templates/spaces/sidebar_row.html)
 - [spaces/templates/spaces/summary.html](../spaces/templates/spaces/summary.html)
 - [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
 - [spaces/templates/spaces/teams.html](../spaces/templates/spaces/teams.html)
@@ -1637,6 +1640,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/resources.js](../static/js/resources.js)
 - [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
+- [static/js/space-navigation.js](../static/js/space-navigation.js)
 - [static/js/space-picker.js](../static/js/space-picker.js)
 - [static/js/spaces.js](../static/js/spaces.js)
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
@@ -2074,6 +2078,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [spaces/test_management.py](../spaces/test_management.py).
 
 - `SpaceManagementTests`: 9 metod testowych.
+
+### spaces/test_navigation.py
+
+Źródło: [spaces/test_navigation.py](../spaces/test_navigation.py).
+
+- `SpaceNavigationTests`: 6 metod testowych.
 
 ### spaces/test_summary.py
 

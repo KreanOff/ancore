@@ -1,0 +1,18 @@
+<div class="sidebar-space-row" data-sidebar-space-row="{{ nav_space.pk }}" data-row-actions>
+    <a href="{{ nav_space.url }}" class="nav-link sidebar-subnav-link{% if space.pk == nav_space.pk %} active{% endif %}"{% if space.pk == nav_space.pk %} aria-current="page"{% endif %} title="{{ nav_space.project.name }}" data-sidebar-space-link>{% include 'spaces/avatar.html' with space=nav_space avatar_class='sidebar-subnav-icon' %}<span>{{ nav_space.project.name }}</span></a>
+    <button type="button" class="sidebar-header-action sidebar-space-row__toggle" aria-label="Opcje przestrzeni: {{ nav_space.project.name }}" title="Opcje przestrzeni" aria-expanded="false" aria-controls="sidebar-space-actions-{{ nav_space.pk }}" popovertarget="sidebar-space-actions-{{ nav_space.pk }}" data-row-actions-toggle><i data-icon="ellipsis" aria-hidden="true"></i></button>
+    <div id="sidebar-space-actions-{{ nav_space.pk }}" class="tasks-section-menu sidebar-group-menu sidebar-space-menu" popover="auto" role="group" aria-label="Opcje przestrzeni: {{ nav_space.project.name }}" data-row-actions-panel>
+        <form method="post" action="{{ nav_space.favorite_url }}" data-sidebar-space-favorite>
+            {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="tasks-project-menu-button"><i data-icon="star" aria-hidden="true"></i><span>{% if nav_space.is_favorite %}Usuń z oznaczonych gwiazdką{% else %}Dodaj do oznaczonych gwiazdką{% endif %}</span></button>
+        </form>
+        {% if nav_space.can_manage and nav_space.project.visibility == 'private' %}
+        <a href="{{ nav_space.url }}members/" class="tasks-project-menu-button" data-sidebar-space-action data-work-open aria-haspopup="dialog"><i data-icon="user-round-plus" aria-hidden="true"></i><span>Dodaj osoby</span></a>
+        {% endif %}
+        <a href="{{ nav_space.settings_url }}" class="tasks-project-menu-button" data-sidebar-space-action><i data-icon="settings" aria-hidden="true"></i><span>Ustawienia przestrzeni</span></a>
+        <div class="sidebar-space-menu__summary">
+            {% include 'spaces/avatar.html' with space=nav_space %}
+            <div><strong>Przestrzeń {{ nav_space.get_kind_display|lower }}</strong><span>{{ nav_space.get_management_display }}</span></div>
+        </div>
+    </div>
+</div>

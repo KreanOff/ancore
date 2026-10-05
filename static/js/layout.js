@@ -238,21 +238,19 @@
 
         const focused = document.activeElement;
         const hadFocus = current.contains(focused);
-        const links = new Map(Array.from(current.querySelectorAll('a[href]'), link => [link.getAttribute('href'), link]));
+        const focusedSpace = focused?.closest('[data-sidebar-space-row]')?.dataset.sidebarSpaceRow;
+        const focusedSelector = focused?.matches('[data-sidebar-space-link]') ? '[data-sidebar-space-link]' : '[data-row-actions-toggle]';
         const more = current.querySelector('[data-sidebar-space-picker-toggle]');
 
         // Keep the group and its collapsed state; reconcile the server's current list.
         current.replaceChildren(...Array.from(next.children, child => {
             if (child.matches('[data-sidebar-space-picker-toggle]') && more) return more;
-            const existing = child.matches('a[href]') && links.get(child.getAttribute('href'));
-            if (!existing) return child.cloneNode(true);
-            copyAttributes(child, existing);
-            existing.replaceChildren(...Array.from(child.childNodes, node => node.cloneNode(true)));
-            return existing;
+            return child.cloneNode(true);
         }));
         window.AncoreIcons?.render(current);
         if (hadFocus) {
-            (current.contains(focused) ? focused : current.closest('[data-sidebar-group]').querySelector('[data-sidebar-group-toggle]'))?.focus({ preventScroll: true });
+            const replacement = focusedSpace && current.querySelector(`[data-sidebar-space-row="${focusedSpace}"] ${focusedSelector}`);
+            (current.contains(focused) ? focused : replacement || current.closest('[data-sidebar-group]').querySelector('[data-sidebar-group-toggle]'))?.focus({ preventScroll: true });
         }
         if (sidebarCollapsedFlyoutTrigger?.closest('[data-sidebar-group="spaces"]')) {
             closeCollapsedSidebarFlyout({ restoreFocus: sidebarCollapsedFlyout.contains(document.activeElement) });
@@ -877,19 +875,34 @@
 
         sidebarCollapsedFlyoutTitle.textContent = toggleButton.dataset.sidebarGroupName || '';
         const sourceLinks = [
-            ...sourceSubnav.querySelectorAll('a.sidebar-subnav-link, [data-sidebar-space-picker-toggle]'),
+            ...(group.dataset.sidebarGroup === 'spaces' ? sourceSubnav.children : sourceSubnav.querySelectorAll('a.sidebar-subnav-link, [data-sidebar-space-picker-toggle]')),
             ...group.querySelectorAll('a[data-sidebar-group-action]'),
         ];
         sourceLinks.forEach(function (sourceLink) {
             const flyoutLink = sourceLink.cloneNode(true);
-            flyoutLink.classList.remove('nav-link', 'sidebar-subnav-link', 'sidebar-header-action', 'tasks-project-menu-button');
-            flyoutLink.classList.add('sidebar-collapsed-flyout__link');
+            const links = flyoutLink.matches('a, [data-sidebar-space-picker-toggle]') ? [flyoutLink] : flyoutLink.querySelectorAll('[data-sidebar-space-link]');
+            links.forEach(link => {
+                link.classList.remove('nav-link', 'sidebar-subnav-link', 'sidebar-header-action', 'tasks-project-menu-button');
+                link.classList.add('sidebar-collapsed-flyout__link');
+                link.setAttribute('title', link.textContent.trim());
+            });
+            const ids = new Map();
+            [flyoutLink, ...flyoutLink.querySelectorAll('[id]')].forEach(element => {
+                if (!element.id) return;
+                ids.set(element.id, `sidebar-flyout-${element.id}`);
+                element.id = ids.get(element.id);
+            });
+            [flyoutLink, ...flyoutLink.querySelectorAll('[aria-controls], [aria-labelledby], [popovertarget]')].forEach(element => {
+                ['aria-controls', 'aria-labelledby', 'popovertarget'].forEach(attribute => {
+                    const value = element.getAttribute(attribute);
+                    if (ids.has(value)) element.setAttribute(attribute, ids.get(value));
+                });
+            });
             flyoutLink.querySelector('.u-sr-only')?.classList.remove('u-sr-only');
             flyoutLink.removeAttribute('data-sidebar-source-item');
             flyoutLink.removeAttribute('data-sidebar-group-action');
             flyoutLink.removeAttribute('draggable');
             flyoutLink.removeAttribute('hidden');
-            flyoutLink.setAttribute('title', sourceLink.textContent.trim());
             sidebarCollapsedFlyoutLinks.appendChild(flyoutLink);
         });
 
@@ -899,6 +912,7 @@
         updateSidebarGroupToggleA11y(group);
         positionCollapsedSidebarFlyout(toggleButton);
         window.AncoreIcons?.render(sidebarCollapsedFlyout);
+        document.dispatchEvent(new CustomEvent('ancore:modals-loaded'));
 
         if (focusFirstLink) {
             sidebarCollapsedFlyoutLinks.querySelector('a, button')?.focus({ preventScroll: true });
@@ -1477,7 +1491,8 @@
     });
 
     sidebarCollapsedFlyout?.addEventListener('keydown', function (event) {
-        const links = Array.from(sidebarCollapsedFlyoutLinks?.querySelectorAll('a[href], button') || []);
+        if (event.defaultPrevented || event.target.closest('[data-row-actions-panel]')) return;
+        const links = Array.from(sidebarCollapsedFlyoutLinks?.querySelectorAll('a[href], button:not(:disabled)') || []).filter(link => link.getClientRects().length);
         const currentIndex = links.indexOf(document.activeElement);
 
         if (event.key === 'Escape') {
@@ -2208,7 +2223,7 @@
     }
 
     sidebar.addEventListener('click', function (event) {
-        const link = event.target.closest('a.nav-link, a[data-sidebar-group-action], button.nav-link:not([data-sidebar-group-toggle]):not([data-sidebar-space-picker-toggle])');
+        const link = event.target.closest('a.nav-link, a[data-sidebar-group-action], a[data-sidebar-space-action], button.nav-link:not([data-sidebar-group-toggle]):not([data-sidebar-space-picker-toggle])');
         if (!link || !sidebar.contains(link)) return;
         setSidebarSearchOpen(false);
         if (isOverlayMode()) {

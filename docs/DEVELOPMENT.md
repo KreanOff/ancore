@@ -59,10 +59,18 @@ zwykłe/scoped adresy, tworzenie z zarządzania i plusa w menu,
 pusty katalog, częściowa nawigacja oraz desktop/tablet/telefon.
 Po zapisie sprawdź także natychmiastowe pojawienie się nowego linku w menu
 bocznym bez przeładowania dokumentu, jego nazwę/awatar i aktywność. Przy więcej
-niż sześciu przestrzeniach sprawdź limit i kolejność ulubionych/najnowszych,
+niż sześciu przestrzeniach sprawdź limit oraz kolejność gwiazdek/odwiedzin/najnowszych,
 usunięcie nieobecnych linków po aktualizacji danych, zachowanie zwinięcia,
 panel skrótów i „Więcej przestrzeni” oraz zamknięcie menu na telefonie po
 wybraniu nowej pozycji.
+
+`spaces.test_navigation` sprawdza osobiste gwiazdki, kolejność odwiedzin,
+limit i brak duplikatów, zwykłe/scoped adresy, cofnięcie dostępu, granice
+Workspace, role menu oraz CSRF i bezpieczny powrót formularza. W przeglądarce:
+menu wiersza → dodanie/usunięcie gwiazdki → przeniesienie między podpisanymi
+blokami bez opuszczania ekranu, Enter/strzałki/Escape i fokus, błąd/ponowienie,
+ustawienia i formularz osób, długie nazwy, puste bloki, częściowa nawigacja,
+historia, przeładowanie, panel zwiniętego sidebaru, wyszukiwarka oraz telefon.
 
 Centrum `/settings/` sprawdzaj razem z `dashboard.tests.DashboardViewTests`.
 Browser QA: wejście z codziennego katalogu i zarządzania przestrzeniami,

@@ -17,6 +17,7 @@ from django.http import FileResponse, Http404, HttpResponseBadRequest, JsonRespo
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from core.task_numbering import lock_task_numbers
@@ -240,9 +241,8 @@ def detail_context(request, space, view):
 @require_GET
 def detail(request, pk):
     space = space_object(request, pk)
-    response = render(request, 'spaces/detail.html', detail_context(request, space, request.GET.get('view', 'overview')))
     remember_view(request, space.project)
-    return response
+    return render(request, 'spaces/detail.html', detail_context(request, space, request.GET.get('view', 'overview')))
 
 
 @login_required
@@ -393,6 +393,11 @@ def favorite(request, pk):
         space.project.favorited_by.remove(request.user)
     else:
         space.project.favorited_by.add(request.user)
+    if request.headers.get('X-Space-Navigation') == 'true':
+        return JsonResponse({'saved': True})
+    return_url = request.POST.get('next', '')
+    if return_url and url_has_allowed_host_and_scheme(return_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return redirect(return_url)
     return redirect(app_url(request, 'manage/' if request.POST.get('directory') == 'manage' else ''))
 
 
