@@ -341,35 +341,40 @@ body {
 
 .tasks-status-block-header--new,
 .tasks-status-subgroup-header--new {
-    background: #dbeafe;
+    --tasks-status-background: #dbeafe;
+    background: var(--tasks-status-background);
     border-color: #bfdbfe;
     color: #1d4ed8;
 }
 
 .tasks-status-block-header--in_progress,
 .tasks-status-subgroup-header--in_progress {
-    background: #f8ead9;
+    --tasks-status-background: #f8ead9;
+    background: var(--tasks-status-background);
     border-color: #e8d0b1;
     color: #875b2a;
 }
 
 .tasks-status-block-header--resolved,
 .tasks-status-subgroup-header--resolved {
-    background: #e8eee4;
+    --tasks-status-background: #e8eee4;
+    background: var(--tasks-status-background);
     border-color: #d2ddcc;
     color: #596f4c;
 }
 
 .tasks-status-block-header--closed,
 .tasks-status-subgroup-header--closed {
-    background: var(--surface-selected);
+    --tasks-status-background: var(--surface-selected);
+    background: var(--tasks-status-background);
     border-color: var(--chrome-border);
     color: #66615c;
 }
 
 .tasks-status-block-header--reopened,
 .tasks-status-subgroup-header--reopened {
-    background: #f2e4e1;
+    --tasks-status-background: #f2e4e1;
+    background: var(--tasks-status-background);
     border-color: #dfc9c2;
     color: #7f5750;
 }
@@ -731,31 +736,31 @@ body.auth-page,
 }
 
 .tasks-issue-group-header.tasks-status-block-header--new {
-    background: #dbeafe;
+    background: var(--tasks-status-background);
     border-color: #bfdbfe;
     color: #1d4ed8;
 }
 
 .tasks-issue-group-header.tasks-status-block-header--in_progress {
-    background: #f8ead9;
+    background: var(--tasks-status-background);
     border-color: #e8d0b1;
     color: #875b2a;
 }
 
 .tasks-issue-group-header.tasks-status-block-header--resolved {
-    background: #e8eee4;
+    background: var(--tasks-status-background);
     border-color: #d2ddcc;
     color: #596f4c;
 }
 
 .tasks-issue-group-header.tasks-status-block-header--closed {
-    background: var(--surface-selected);
+    background: var(--tasks-status-background);
     border-color: var(--chrome-border);
     color: #66615c;
 }
 
 .tasks-issue-group-header.tasks-status-block-header--reopened {
-    background: #f2e4e1;
+    background: var(--tasks-status-background);
     border-color: #dfc9c2;
     color: #7f5750;
 }

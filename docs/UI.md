@@ -16,7 +16,7 @@ poziome przewijanie oraz pasek filtrów, wyszukiwania i paginacji. Nazwa otwiera
 przestrzeń, a gwiazdka zmienia osobiste ulubione. Pusty wynik ukrywa nagłówki
 i pokazuje komunikat zależny od filtrów/zakładki. Katalog zespołów używa kart.
 Przestrzeń ma kontekstowe zakładki
-Przegląd, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
+Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Wszystkie zadania i Zespoły.
 
@@ -72,7 +72,7 @@ Nagłówek otwartej przestrzeni pokazuje awatar i nazwę, bez strzałki powrotu
 i klucza obok niej. Nazwa ma rozmiar 17px i grubość 700 (`work-space-title`).
 Ten sam nagłówek obowiązuje we wszystkich jej zakładkach.
 Tytuł „Przestrzenie” w katalogu również ma rozmiar 17px i grubość 700.
-Nagłówek otwartej przestrzeni, pasek zakładek i treść przeglądu mają po 22px
+Nagłówek otwartej przestrzeni, pasek zakładek i treść podsumowania mają po 22px
 odstępu z lewej i prawej strony, również na telefonie. Wspólna zmienna
 `--work-space-inline-padding` obejmuje też katalog Przestrzeni: jego nagłówek,
 zakładki, filtry i tabelę. Lista zadań i tablica wewnątrz przestrzeni nadal
@@ -181,7 +181,7 @@ katalogiem (`spaces/index.html`), tak jak formularze Zasobów. Po zamknięciu
 dodatkowego wpisu w historii. Plus w menu bocznym oraz w panelu zwiniętego
 sidebaru używa `data-work-open`; na ekranach Przestrzeni i Zespołów działa nad
 bieżącą treścią. W innych modułach otwiera kreator nad katalogiem.
-Listy zadań w przestrzeni, „Wszystkie zadania”, przegląd oraz zadania zespołu zachowują
+Listy zadań w przestrzeni, „Wszystkie zadania” oraz zadania zespołu zachowują
 wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
 wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.
 Include `spaces/issue_type.html` dodaje wspólne oznaczenie `tasks-issue-type`:
@@ -211,8 +211,55 @@ Przeciąganie tablicy nadal obsługuje `spaces.js`. Elementy nie mają klasy
 grup na `data-work-page`, aby nie ukrywać wyników filtrowanych przez serwer.
 
 `spaces.css` zawiera tylko adaptery kontekstu przestrzeni oraz style katalogów,
-osi czasu, raportów i konfiguracji. Geometria wierszy, kolumn, kart i menu
+podsumowania, osi czasu, raportów i konfiguracji. Geometria wierszy, kolumn, kart i menu
 pochodzi ze wspólnych komponentów. [Funkcje](SPACES.md).
+
+Zakładka „Podsumowanie” używa `spaces/summary.html` i lokalnego wariantu
+`work-summary` wspólnych `work-panel` i `work-metrics`. Układ nawiązuje do
+[podsumowania Jiry](https://support.atlassian.com/jira-software-cloud/docs/what-is-the-summary-view/):
+cztery liczniki u góry, przegląd statusów i ostatnia aktywność w pierwszym rzędzie,
+priorytety i typy zgłoszeń w drugim, a obciążenie zespołu i opcjonalny postęp
+epików poniżej. Panel statusów centruje mniejszy, cienki pierścień SVG obok
+zwartej legendy z separatorami wierszy i licznikami na neutralnym tle.
+Na telefonie pierścień zmniejsza się do 120px, a nagłówek zawija odnośnik,
+gdy brakuje miejsca; do 360px legenda przechodzi pod wykres. Panel nie
+rozciąga się do wysokości sąsiedniej aktywności.
+Wykres i legenda zachowują paletę kategorii statusów
+z listy zadań, ze wzmocnioną czytelnością na białym tle. Używają pełnych kolorów
+ikon statusów (`--tasks-status-color`) z `theme/elestio.css` przez klasy
+`status-*`; własne statusy przyjmują kolor swojej kategorii. Nagłówki listy
+zachowują jasne tła. „Podział priorytetów” używa szarych słupków opartych na
+`--system-interaction`, wspólnych osi oraz poziomej siatki. Skala zaczyna się
+od zera i ma trzy oznaczenia, dopasowane do największej liczby otwartych zadań.
+Wysokości są liniowe; zero nie tworzy słupka. Kolorowe ikony priorytetów stoją
+obok polskich etykiet, a na telefonie nad nimi. „Typy zgłoszeń” mają kolumny
+„Typ” i „Rozkład” oraz szare, prostokątne paski `progress` o wysokości 24px.
+Procenty są wewnątrz pasków; przy małym udziale stoją w jasnej części, a zero
+pozostawia pusty pasek. Liczby zadań są w etykiecie dostępności i podpowiedzi.
+Na telefonie rozkład przechodzi pod nazwę typu. Panel dopasowuje wysokość do
+wierszy i zawiera podkreślony odnośnik do wszystkich zadań. Pozostałe natywne
+`progress` w postępie epików zachowują turkusowy akcent.
+„Obciążenie zespołu” korzysta z tego samego wariantu
+`work-summary-bars--distribution`: kolumny „Osoba przypisana” i „Rozkład prac”,
+szare paski 24px i procenty wewnątrz. Nazwy zachowują awatary; nieprzypisane
+zadania mają neutralną ikonę osoby. Liczby otwartych zadań pozostają w podpowiedzi
+i etykiecie dostępności. Podkreślony link „Zmień przypisanie zadań” otwiera listę;
+wiersz osoby otwiera jej otwarte zadania. Panel dopasowuje wysokość do wierszy,
+na telefonie paski przechodzą pod osoby, a pusty stan nie pokazuje nagłówków kolumn.
+Ikony priorytetów i awatary pochodzą ze standardowych include'ów. Panele
+zachowują font, ramki, tło, zaokrąglenie i odstępy Ancore. Przy szerokości
+do 1099px tworzą jedną kolumnę, a liczniki dwie. Na telefonie poziome paski
+przenoszą się pod etykiety. Długie nazwy zadań, epików i wykonawców zachowują
+pełny tekst w `title`; aktywność i dłuższe listy przewijają się w panelu.
+Całe podsumowanie przewija się we wspólnym `work-content`.
+
+Liczniki i elementy wykresów są natywnymi linkami GET obsługiwanymi przez
+`AncoreApp`; nie wymagają nowego JavaScriptu. Lista przestrzeni oferuje
+standardowe selecty statusu, priorytetu i wykonawcy, także „Nieprzypisane”.
+Opcje wykonawców pochodzą wyłącznie z dostępnych zadań tej przestrzeni.
+Zakres czasu lub otwartych zadań w drill-downie ma widoczną etykietę oraz
+„Usuń filtr”, które zachowuje pozostałe filtry. Toolbar zawija kontrolki.
+Puste podsumowanie pokazuje zera i opisy bez pustej tabeli ani paginacji.
 
 
 ## 1. Cel i punkt odniesienia

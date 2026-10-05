@@ -4,7 +4,7 @@
 
 „Przestrzenie” (`/spaces/` i scoped odpowiednik) jest katalogiem do codziennej
 pracy: wszystkie dostępne przestrzenie, ulubione, prywatne, rodzaj, wyszukiwanie
-i liczba widocznych zadań. Nazwa otwiera przegląd przestrzeni.
+i liczba widocznych zadań. Nazwa otwiera podsumowanie przestrzeni.
 Podmenu głównej nawigacji pokazuje do sześciu dostępnych przestrzeni,
 najpierw ulubione, potem najnowsze. Częściowa nawigacja odświeża linki z
 odpowiedzi serwera, więc utworzenie przestrzeni nie wymaga ręcznego przeładowania
@@ -172,10 +172,27 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
 - Rodzaje: programistyczny, biznesowy, obsługowy.
 - Szablony: Kanban, Scrum, zarządzanie zadaniami, marketing, rekrutacja,
   obsługa zgłoszeń. Szablon określa początkowe statusy, typy i pola.
-- Widoki przestrzeni: przegląd, lista, tablica, oś czasu, raporty i ustawienia.
+- Widoki przestrzeni: podsumowanie, lista, tablica, oś czasu, raporty i ustawienia.
   Lista zachowuje zwarte wiersze i grupy statusów Zadań, a tablica dotychczasowy
   wygląd kart Kanbana. Status zmienia się przez przeciąganie lub menu działań,
   dostępne również klawiaturą. Filtry i paginacja są w standardowym pasku Zadań.
+- Podsumowanie: cztery liczniki zakończonych, zaktualizowanych i utworzonych
+  zadań w ostatnich 7 dniach oraz otwartych z terminem w najbliższych 7 dniach.
+  Aktualizacja wynika z historii `TaskActivity` (dowolna akcja poza utworzeniem);
+  wiele wpisów jednego zadania liczy się raz. Zakończenie opiera się na
+  aktualnym statusie `closed` i `completion_date`. Przedziały są liczone od
+  chwili wyświetlenia, z obiema granicami włącznie; przyszła historia i daty
+  utworzenia/zakończenia są pomijane. Wykres statusów obejmuje otwarte zadania
+  i zakończone w ostatnich 14 dniach, zachowując własne nazwy statusów.
+  Priorytety i obciążenie wykonawców obejmują otwarte zadania, w tym
+  nieprzypisane; typy zgłoszeń obejmują wszystkie zadania. Historia pokazuje
+  8 ostatnich wpisów z autorem i linkiem do zadania. Przestrzenie programistyczne
+  pokazują też postęp epików liczony z ich dostępnych powiązanych zadań.
+  Agregacje uwzględniają podzadania i pełny zbiór dostępny użytkownikowi,
+  niezależnie od paginacji listy. Liczniki, statusy, priorytety, typy i wykonawcy
+  otwierają listę z odpowiednimi filtrami; epiki i aktywność prowadzą do
+  szczegółów przez trwały PK. Lista zachowuje filtry przy szukaniu i paginacji,
+  a zakres czasu/otwartych zadań można usunąć osobnym linkiem.
 - Scrum: backlog, epiki, punkty, planowanie i rozpoczęcie sprintu, jeden aktywny
   sprint, zakończenie z powrotem niezakończonych zadań do backlogu.
 - Kanban: kolejka backlogu oddzielona od zadań na tablicy i zmiana kolejności.

@@ -6,6 +6,7 @@ import logging
 import mimetypes
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
@@ -30,6 +31,7 @@ from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, default_section, ensure_space, ensure_work_item, manageable_spaces, manage_configuration, manage_space, record, set_status, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
+from .summary import filter_summary_items, space_summary
 
 
 def space_object(request, pk):
@@ -154,7 +156,7 @@ def detail_context(request, space, view):
         view = 'overview'
     base = app_url(request, f'{space.pk}/')
     navigation = [
-        ('overview', 'Przegląd', 'layout-dashboard'),
+        ('overview', 'Podsumowanie', 'layout-dashboard'),
         ('list', 'Lista zadań', 'list-checks'),
         ('board', 'Aktywny sprint' if space.template == 'scrum' else 'Tablica', 'kanban'),
     ]
@@ -169,6 +171,7 @@ def detail_context(request, space, view):
     ]
     query = request.GET.get('q', '').strip()[:120]
     items = visible_items(request).filter(space=space)
+    assignee_options = get_user_model().objects.filter(pk__in=items.order_by().values('task__assignee_id')).order_by('first_name', 'last_name', 'pk')
     type_options, type_filter = issue_type_filters(request, space)
     if type_filter:
         items = items.filter(work_type=type_filter)
@@ -180,8 +183,16 @@ def detail_context(request, space, view):
     team = request.GET.get('team', '')
     if team.isdecimal() and len(team) < 19:
         items = items.filter(team_id=int(team))
-    if request.GET.get('assignee') == 'me':
-        items = items.filter(task__assignee=request.user)
+    now = timezone.now()
+    items, summary_filters = filter_summary_items(request, space, items, now)
+    if view == 'overview':
+        return {
+            **base_context(request), 'space': space, 'space_url': base, 'view': view,
+            'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation],
+            'can_manage': manage_space(request, space),
+            'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(),
+            'create_item_url': base + 'items/create/', 'summary': space_summary(request, space, items, now),
+        }
     active_sprint = space.sprints.filter(state='active').first()
     all_items = items
     if view == 'board':
@@ -221,9 +232,8 @@ def detail_context(request, space, view):
         sprint.visible_items = [i for i in rows if i.sprint_id == sprint.pk]
         sprint.visible_count = all_items.filter(sprint=sprint).count()
         sprint.finished_count = all_items.filter(sprint=sprint, task__status='closed').count()
-    now = timezone.now()
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
-    return {**base_context(request), 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.project.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'group_filter': group if group.isdecimal() and len(group) < 19 else '', 'assignee_filter': request.GET.get('assignee', ''), 'type_options': type_options, 'type_filter': type_filter}
+    return {**base_context(request), **summary_filters, 'assignee_options': assignee_options, 'priority_options': Task.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.project.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'group_filter': group if group.isdecimal() and len(group) < 19 else '', 'type_options': type_options, 'type_filter': type_filter}
 
 
 @login_required

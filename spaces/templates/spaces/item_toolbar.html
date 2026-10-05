@@ -1,9 +1,14 @@
 <form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get">
     {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
     {% if group_filter %}<input type="hidden" name="group" value="{{ group_filter }}">{% endif %}
+    {% if summary_filter %}<input type="hidden" name="summary" value="{{ summary_filter }}">{% endif %}
     <div class="tasks-filterbar-left">
         <select class="tasks-inline-select" name="work_type" aria-label="Typ zgłoszenia"><option value="">Wszystkie typy</option>{% for type in type_options %}<option value="{{ type.key }}" data-ancore-option-icon="{{ type.icon }}"{% if type_filter == type.key %} selected{% endif %}>{{ type.label }}</option>{% endfor %}</select>
-        <select class="tasks-inline-select" name="assignee" aria-label="Wykonawca"><option value="">Wszyscy wykonawcy</option><option value="me"{% if assignee_filter == 'me' %} selected{% endif %}>Przypisane do mnie</option></select>
+        <select class="tasks-inline-select" name="assignee" aria-label="Wykonawca"><option value="">Wszyscy wykonawcy</option><option value="me"{% if assignee_filter == 'me' %} selected{% endif %}>Przypisane do mnie</option>{% if space %}<option value="unassigned"{% if assignee_filter == 'unassigned' %} selected{% endif %}>Nieprzypisane</option>{% for person in assignee_options %}<option value="{{ person.pk }}"{% if assignee_filter == person.pk|stringformat:'s' %} selected{% endif %}>{{ person.get_full_name|default:person.email }}</option>{% endfor %}{% endif %}</select>
+        {% if space %}
+        <select class="tasks-inline-select" name="status" aria-label="Status"><option value="">Wszystkie statusy</option>{% for status in space.statuses %}<option value="{{ status.key }}"{% if status_filter == status.key %} selected{% endif %}>{{ status.label }}</option>{% endfor %}</select>
+        <select class="tasks-inline-select" name="priority" aria-label="Priorytet"><option value="">Wszystkie priorytety</option>{% for key, label in priority_options %}<option value="{{ key }}"{% if priority_filter == key %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        {% endif %}
         {% if space %}<select name="team" class="tasks-inline-select" aria-label="Zespół"><option value="">Wszystkie zespoły</option>{% for team in space_teams %}<option value="{{ team.pk }}"{% if team_filter == team.pk|stringformat:'s' %} selected{% endif %}>{{ team.name }}</option>{% endfor %}</select>{% endif %}
         <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>
     </div>
@@ -16,3 +21,4 @@
         </nav>
     </div>
 </form>
+{% if summary_filter %}<div class="work-summary-filter" role="status"><span>{{ summary_filter_label }}</span><a class="tasks-filter-button" href="{% querystring summary=None page=None %}" aria-label="Usuń filtr: {{ summary_filter_label }}"><i data-icon="x" aria-hidden="true"></i>Usuń filtr</a></div>{% endif %}

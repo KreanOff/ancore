@@ -14,6 +14,19 @@ zastosowanych migracji. Browser QA obejmuje katalog pusty i z danymi,
 kreator/szablony, błędy formularzy, zadanie na liście i tablicy, sprint,
 zespół i powiązania, szeroki/wąski ekran, Escape/fokus i częściową nawigację.
 
+Podsumowanie przestrzeni obejmuje `spaces.test_summary`: przedziały 7/14 dni,
+ponownie otwarte zadania, wiele aktualizacji jednego zadania, własne statusy,
+pełne agregacje ponad pierwszą stronę i podzadania, priorytety, typy,
+skalę wykresu priorytetów od zera oraz proporcje słupków i puste wartości,
+nieprzypisani wykonawcy, postęp epików, historia i stabilne odnośniki,
+granice Workspace oraz prywatność projektu/grupy/zadania/rodzica i cofnięcie
+dostępu. Sprawdzaj także `spaces`, `tasks.test_task_sharing`,
+`tasks.test_section_sharing`, `core.test_status_updates` i Dashboard.
+Browser QA obejmuje porównanie z Dashboardem, puste podsumowanie i puste
+wyniki filtrów, kliknięcie liczników i wykresów, usunięcie zakresu bez utraty
+innych filtrów, desktop/tablet/telefon, przewijanie oraz częściową nawigację,
+powrót i przeładowanie. Nie potrzeba nowej migracji ani bibliotek wykresów.
+
 Wyszukiwanie z panelu „Więcej przestrzeni” obejmują testy `SpaceTests.test_space_search_*`:
 zwykłe/scoped adresy, członek/obserwator, cofnięcie dostępu, obcy Workspace,
 nazwa/klucz, limit wyników, escapowanie tekstu i wymóg logowania/GET.
