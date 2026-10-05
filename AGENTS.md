@@ -71,7 +71,8 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   Nie dodawaj nowej palety, biblioteki ikon ani osobnego systemu kontrolek
   w ramach zwykłego dodawania funkcji.
 - Obecny interfejs używa lokalnego Atlassian Sans (`--font-family-ui`),
-  niewielkich rozmiarów tekstu, turkusowego akcentu i szarych interakcji.
+  niewielkich rozmiarów tekstu, fioletowego akcentu MS Teams (`#5b5fc7`)
+  i szarych interakcji.
   `style.css` wymusza w wielu miejscach wagę 400.
   Nazwy historyczne takie jak `--accent-red` nie określają faktycznego koloru.
 - Modale projektów i zadań są wzorcem standardowego okna aplikacji.

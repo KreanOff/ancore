@@ -93,7 +93,7 @@ Osoby zarządzające przestrzenią klikają jej awatar lub „Zmień awatar”
 w ustawieniach. Okno korzysta z `app-modal-panel--compact`, standardowej
 stopki i `AncoreTaskModals`. Zawiera 30 kolorowych ilustracji, wybór automatyczny
 oraz upload z podglądem i przeciąganiem. Natywna grupa radio zapewnia wybór
-klawiaturą; zaznaczenie ma turkusową ramkę. Na telefonie siatka dopasowuje
+klawiaturą; zaznaczenie ma fioletową ramkę. Na telefonie siatka dopasowuje
 liczbę kolumn. Zapis, błędy, szkic, Escape i fokus obsługuje `spaces.js`.
 Ilustracje mają pełnokolorowe tła i wypełnione kształty. Korzystają z dwóch
 lokalnych atlasów PNG w `static/img/space-avatars/` i klas `space-avatar-art--*`.
@@ -113,7 +113,7 @@ przestrzeni (`work-tabs--views`) zachowują ikony odpowiadające widokom. Wszyst
 wspólne podkreślenie aktywnej zakładki i przewijanie poziome na wąskim ekranie.
 Najechanie na nieaktywną zakładkę pokazuje szare
 podkreślenie (`--system-interaction`), tak jak w katalogu Zadań; po odsunięciu
-kursora podkreślenie znika. Aktywna zakładka zachowuje turkusowe podkreślenie
+kursora podkreślenie znika. Aktywna zakładka zachowuje fioletowe podkreślenie
 także pod kursorem. Katalog zespołów ma zakładki bez ikon.
 
 Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
@@ -170,7 +170,7 @@ i `--sidebar-space-marker` są współdzielone przez cały główny pasek boczny
 i jego panel skrótów. Kolor zaznaczenia, ramki fokusu i znacznika wynosi
 `#5b5fc7`, a jasne tło `#e8ebfa`. Ten wariant menu używa palety `brandTeams`
 jasnego motywu [Microsoft Fluent UI](https://github.com/microsoft/fluentui/blob/master/packages/tokens/src/global/brandColors.ts).
-Główny token akcentu aplikacji pozostaje turkusowy.
+Menu boczne współdzieli główny token akcentu aplikacji `--system-accent`.
 Przy zwiniętym pasku nagłówek grupy z aktywnym podpunktem
 także ma fioletowy stan. Długie nazwy zachowują wielokropek
 oraz pełną nazwę w `title`. Pozostałe podmenu zachowują dotychczasowe drzewka.
@@ -295,7 +295,7 @@ Procenty są wewnątrz pasków; przy małym udziale stoją w jasnej części, a 
 pozostawia pusty pasek. Liczby zadań są w etykiecie dostępności i podpowiedzi.
 Na telefonie rozkład przechodzi pod nazwę typu. Panel dopasowuje wysokość do
 wierszy i zawiera podkreślony odnośnik do wszystkich zadań. Pozostałe natywne
-`progress` w postępie epików zachowują turkusowy akcent.
+`progress` w postępie epików zachowują fioletowy akcent.
 „Obciążenie zespołu” korzysta z tego samego wariantu
 `work-summary-bars--distribution`: kolumny „Osoba przypisana” i „Rozkład prac”,
 szare paski 24px i procenty wewnątrz. Nazwy zachowują awatary; nieprzypisane
@@ -372,7 +372,7 @@ po wymianie formularzy; ikony i selecty odświeżają istniejące API.
 Inicjalizacja po `ancore:content-loaded` anuluje wcześniejsze listenery i żądania.
 
 Edytor ma zakładki „Grupy” i „Zadania” bez liczników,
-korzystające z `notifications-tabs`: aktywną pozycję oznacza turkusowe podkreślenie.
+korzystające z `notifications-tabs`: aktywną pozycję oznacza fioletowe podkreślenie.
 Widoczna jest jedna tabela i odpowiadający jej przycisk dodawania po prawej stronie.
 Domyślnie otwierają się „Grupy”; zapis lub błąd zachowuje wybraną zakładkę.
 Przełączenie nie usuwa niezapisanych danych głównego formularza.
@@ -535,9 +535,9 @@ Katalogi „Projekty”, „Grupy” i „Zadania” mają zakładki „Prywatne
 „Udostępnione”, „Publiczne” i „Ulubione” w nagłówku, po prawej stronie tytułu.
 Wariant `tasks-topbar--with-tabs` umieszcza je w `tasks-titlebar-left` z odstępem
 1.5rem od tytułu. `notifications-tabs tasks-directory-tabs` korzysta ze wspólnego
-turkusowego podkreślenia i tekstu 15px/400, bez osobnej dolnej ramki całego paska.
+fioletowego podkreślenia i tekstu 15px/400, bez osobnej dolnej ramki całego paska.
 Najechanie na nieaktywną zakładkę pokazuje identyczne podkreślenie w szarym
-kolorze `--system-interaction`; aktywna zakładka zachowuje turkusowy pasek.
+kolorze `--system-interaction`; aktywna zakładka zachowuje fioletowy pasek.
 Na wąskim ekranie zakładki przechodzą do kolejnego wiersza wewnątrz nagłówka;
 tytuł pozostawia miejsce na mobilny przycisk menu. Poniżej pozostaje pasek filtrów,
 wyszukiwania i paginacji. Zakładki są linkami z `aria-current="page"`,
@@ -549,7 +549,7 @@ Nieznana lub pominięta wartość wybiera „Prywatne”; adres
 Menu wiersza zawiera „Dodaj do ulubionych” / „Usuń z ulubionych”. Zapis przez POST
 jest wspólny ze stale widoczną gwiazdką po prawej stronie wiersza zadania.
 Wariant `tasks-issue-row--with-favorite` dodaje kolumnę 30px, a przycisk
-`tasks-icon-button tasks-row-favorite` korzysta z turkusowego akcentu dla
+`tasks-icon-button tasks-row-favorite` korzysta z fioletowego akcentu dla
 `aria-pressed="true"`. Jego kliknięcie i użycie klawiatury nie otwierają szczegółów.
 Gwiazdkę pokazuje wyłącznie katalog „Zadania”. Zapis ulubionych
 blokuje przycisk do zakończenia żądania, pokazuje potwierdzenie albo błąd bez
@@ -728,10 +728,10 @@ zmiennej zamiast powielania wartości liczbowej.
 | Mały/podstawowy/większy tekst | `--font-size-sm: 13px`, `--font-size-base: 14px`, `--font-size-lg: 15px` |
 | Zwykły tekst | `--text-primary: #40444C` |
 | Tekst na akcencie | `--text-inverse: #FFFFFF` |
-| Główny akcent | `--system-accent: rgb(30, 191, 191)` |
+| Główny akcent | `--system-accent: #5b5fc7`, `--system-accent-rgb: 91, 95, 199` |
 | Interakcje | `--system-interaction: #6f7580`, miękkie tło z alfa 0.1 |
 | Szare podświetlenie menu bocznego | `--sidebar-interaction-bg: #e9ebef` |
-| Wybrana pozycja menu bocznego | `--sidebar-space-selection: #5b5fc7`, tło `--sidebar-space-selection-bg: #e8ebfa`, znacznik i ramka fokusu korzystają z koloru zaznaczenia |
+| Wybrana pozycja menu bocznego | `--sidebar-space-selection: var(--system-accent)`, tło `--sidebar-space-selection-bg: #e8ebfa`, znacznik i ramka fokusu korzystają z koloru zaznaczenia |
 | Główna powierzchnia | `--bg-main: #ffffff`, `--card-bg: #ffffff` |
 | Nawigacja pomocnicza | `--secondary-menu-bg: #FBFBFC` |
 | Tło panelu | `--panel-bg: #f7f6f4` |
@@ -744,6 +744,12 @@ zmiennej zamiast powielania wartości liczbowej.
 | Sidebar | bazowo 272px; zwinięty 64px; JS pozwala regulować 220–420px |
 | Skala UI | `--app-ui-scale: 0.98`, stosowana przez `zoom` w resecie |
 
+Główny akcent `#5b5fc7` pochodzi z palety `brandTeams` Microsoft Fluent UI.
+Wspólne kontrolki, aktywne zakładki, zaznaczenia, postęp i jasne tła
+przycisków korzystają z `--system-accent` oraz jego wariantu RGB.
+Interakcje neutralne zachowują szarości; kolory danych i ilustracji
+pozostają niezależne od akcentu aplikacji.
+
 Neutralne obramowania i separatory są przyciemnione o 2% względem wcześniejszej
 palety (kanały sRGB × 0,98, zaokrąglone do liczb całkowitych). Dotyczy to wspólnych
 tokenów oraz lokalnych odcieni ramek i tabel w komponentach. Grubości linii,
@@ -754,7 +760,7 @@ Ważne wyjątki:
 - `--text-muted`, `--text-main`, `--text-strong` są aliasami tej samej podstawowej
   barwy. Nazwa „muted” nie upoważnia do wprowadzania nowego jasnoszarego tekstu.
 - `--accent-red`, `--accent-blue`, `--accent-peach` są historycznymi aliasami;
-  ich rzeczywisty kolor może być turkusowy.
+  wskazują wspólny fioletowy akcent MS Teams.
 - Globalne reguły w `style.css` wymuszają wagę tekstu 400 w szerokim zakresie,
   także dla wielu nagłówków i `strong`. Nie dodawaj lokalnych boldów jako
   domyślnego sposobu wyróżniania nowego ekranu.
@@ -832,7 +838,7 @@ na wąskich ekranach. Zapisana własna kolejność, widoczność i szerokości k
 są odczytywane także z wcześniejszego układu; „Resetuj” przywraca nową kolejność.
 
 Zaznaczone wiersze zadań i podzadań w module Zadania używają tego samego
-jasnoturkusowego tła (8% `--system-accent` na bieli) oraz paska 3px po lewej
+jasnofioletowego tła (8% `--system-accent` na bieli) oraz paska 3px po lewej
 co katalogi projektów i grup. Styl działa dla `.checked` i zaznaczonego checkboxa,
 również po najechaniu kursorem; odznaczenie przywraca zwykły wiersz bez paska.
 Wspólne reguły są ograniczone przez `data-task-app="tasks"` do modułu Zadania.
@@ -908,7 +914,7 @@ Wspólny stos ma szerokość 280–420px; do 767px wypełnia szerokość z margi
 
 Wszystkie typy mają białą powierzchnię `--card-bg`, ramkę `--border-color`,
 zaokrąglenie `--radius`, cień `--shadow-md` i tekst 13px/400 z `--text-primary`.
-Typ rozróżnia wyłącznie lewa ramka 3px: turkus `--system-accent` dla sukcesu
+Typ rozróżnia wyłącznie lewa ramka 3px: fiolet `--system-accent` dla sukcesu
 i informacji, dotychczasowy czerwony `#c94f45` dla błędu, bursztynowy `#c18a34`
 dla ostrzeżenia, szary `--system-interaction` dla komunikatu bez typu.
 Animacje wejścia/wyjścia respektują `prefers-reduced-motion`.
@@ -921,7 +927,7 @@ Przyciski używają wariantu `tasks-tag-topbar-button--row-highlight`:
 tła `color-mix(in srgb, var(--system-accent) 17%, #ffffff)` oraz tekstu i ikony
 w kolorze `--text-primary`. Tło jest o 9 punktów procentowych intensywniejsze
 niż podświetlenie wiersza tabeli; przycisk nie ma paska po lewej ani cienia.
-Po najechaniu na aktywny przycisk udział turkusu rośnie do 24%, z przejściem
+Po najechaniu na aktywny przycisk udział fioletu rośnie do 24%, z przejściem
 koloru wspólnego komponentu; fokus klawiatury używa tego samego tła, bez obrysu.
 Rozmiar, zaokrąglenie i obsługa modala pochodzą ze wspólnego
 przycisku. Wariant jest stosowany do akcji „Dodaj projekt”, „Dodaj grupę”
@@ -939,7 +945,7 @@ i `--primary-button-hover-bg` (24%) są używane także przez „Dodaj projekt�
 Reguła w `style.css` ustala ciemny tekst i ikony, usuwa cień, oznacza
 fokus zmianą tła i osłabia przyciski nieaktywne przez opacity 0.55.
 Przyciski usuwania w `showConfirmModal` korzystają z tej samej reguły:
-jasny turkus przechodzi po najechaniu w mocniejszy turkus, z ciemnym tekstem.
+jasny fiolet przechodzi po najechaniu w mocniejszy fiolet, z ciemnym tekstem.
 Historyczne style potwierdzeń w `tasks.css` określają ich geometrię,
 bez osobnego szarego tła, białego tekstu ani cienia w stanie hover/focus.
 „Zastosuj” w filtrach tekstowych projektów, Dysku i Dokumentów korzysta
@@ -1086,7 +1092,7 @@ Pasek narzędzi i siatka dysków mają wspólny
 odstęp boczny `--documents-index-padding-x: 0.95rem`, zgodny z paskiem narzędzi
 katalogów. Lista używa `tasks-directory-sheet tasks-project-sheet` z „Wszystkich
 projektów” oraz wariantu `documents-library-sheet` w `documents.css`.
-Tekst 13px/400, wiersze 35px, nagłówki z ikonami, separatory oraz turkusowe
+Tekst 13px/400, wiersze 35px, nagłówki z ikonami, separatory oraz fioletowe
 podświetlenie z paskiem po lewej pochodzą ze wspólnego komponentu.
 
 Lista dysków ma trzy kolumny danych: „Nazwa”, „Zmodyfikowano”, „Rozmiar”,
@@ -1153,7 +1159,7 @@ Przeciąganie w Dysku i Dokumentach inicjalizuje `initDocumentDragDrop` w
 wspólny `AbortController`. Kafelki i wiersze aktywnych plików/folderów Dysku
 mają `data-document-drag`, a miejsca docelowe `data-document-drop` (`folder:<pk>`
 lub `library:<pk>`). W Dokumentach pozostaje wyłącznie upload do katalogu
-(`root`), bez przeciągania wierszy i kafelków między lokalizacjami. Prawidłowy cel podświetla się istniejącym turkusem
+(`root`), bez przeciągania wierszy i kafelków między lokalizacjami. Prawidłowy cel podświetla się istniejącym fioletem
 z przerywanym obrysem; komunikat `role=status` podaje nazwę miejsca docelowego.
 Podczas przenoszenia elementu przy kursorze podąża nieprzezroczysta karta
 `documents-drag-preview` (320px): własna ikona pliku/folderu, nazwa do trzech
@@ -1241,7 +1247,7 @@ i przy inicjalizacji po `ancore:content-loaded`, bez powielania listenerów.
 
 Lista Dokumentów używa komponentu `tasks-directory-sheet tasks-project-sheet`
 z katalogu „Projekty”, z wariantem `office-document-sheet` w `office.css`.
-Wiersze mają 35px wysokości; nagłówki z ikonami, tekst, separatory, turkusowe
+Wiersze mają 35px wysokości; nagłówki z ikonami, tekst, separatory, fioletowe
 podświetlenie oraz pasek przy lewej krawędzi po najechaniu pochodzą ze wspólnego CSS.
 Pierwsza kolumna 40px zawiera stale widoczne checkboxy w wariancie
 `tasks-project-sheet--selectable`, tak jak lista Dysków. Wspólna obsługa
@@ -1374,7 +1380,7 @@ istniejących `dashboard-stat`, `dashboard-panel`, ikon statusów oraz include'a
 priorytetu. Wariant `.dashboard-overview` w `components/dashboard.css` ogranicza
 lokalne zmiany do układu pulpitu: cztery liczniki, dwie kolumny paneli,
 natywne paski `progress` i zwarte wiersze linków. Używa tokenów Ancore;
-turkus wyróżnia aktywną listę i postęp. Na węższych ekranach panele tworzą
+fiolet wyróżnia aktywną listę i postęp. Na węższych ekranach panele tworzą
 jedną kolumnę, liczniki dwie. Treść przewija się w `.dashboard-main`.
 Nagłówek i `.dashboard-main` mają po 22px odstępu z obu stron na wszystkich
 szerokościach (`--dashboard-inline-padding`), tak samo jak „Dla ciebie”.
@@ -1409,7 +1415,7 @@ zadania i są wyrównane do jego lewej krawędzi, także na telefonie.
 Pasek zakładek i ich treść mają po 50px odstępu od obu krawędzi lewej kolumny
 (`--tasks-issue-content-padding-x`), także na telefonie. Treść wykorzystuje całą
 pozostałą szerokość bez limitu 980px; wariant dotyczy zadań i podzadań.
-Korzystają z `notifications-tabs`, z turkusowym podkreśleniem. Tekst zakładek
+Korzystają z `notifications-tabs`, z fioletowym podkreśleniem. Tekst zakładek
 ma rozmiar `--font-size-lg` (15px); wariant jest ograniczony do szczegółów
 zadania i podzadania. Dekoracyjne ikony z `AncoreIcons` oznaczają dokument
 przy „Główna”, listę przy „Podzadania”, zegar przy „Dziennik pracy”, osoby
@@ -1458,7 +1464,7 @@ oraz podzadań, pod zwykłymi i scoped adresami. Kanban zachowuje własną Aktyw
 
 `tasks-work-log` wykorzystuje wariant `tasks-work-log-sheet` wspólnej tabeli
 katalogu projektów: wiersze 35px,
-nagłówki z ikonami, separatory oraz turkusowe podświetlenie z paskiem po lewej.
+nagłówki z ikonami, separatory oraz fioletowe podświetlenie z paskiem po lewej.
 Cały dziennik korzysta z `tasks-issue-content`: tabela, podsumowanie, pusty stan
 i paginacja mają tę samą pełną szerokość i boczne odstępy 50px
 co temat i opis, również na telefonie. Podsumowanie i paginacja nie dodają
@@ -1473,7 +1479,7 @@ Delegacja w `task-work-log.js` obsługuje także nowe wiersze po zapisie i
 ponowną inicjalizację, bez wpływu na checkboxy pozostałych modułów.
 Menu działań ma osobną kolumnę 40px, ukrytą przy braku prawa edycji;
 przycisk `tasks-project-sheet__edit-button` wypełnia całą komórkę, ma proste
-rogi i ten sam turkusowy hover/fokus co akcje projektów. Wrapper menu rozciąga
+rogi i ten sam fioletowy hover/fokus co akcje projektów. Wrapper menu rozciąga
 się do rozmiaru komórki; obsługę menu nadal zapewnia `row-actions.js`.
 Autor korzysta ze wspólnego avatara katalogów. Wąskie ekrany zachowują wszystkie
 kolumny w przewijanym poziomo obszarze, a opis wypełnia wolną szerokość.
@@ -1513,7 +1519,7 @@ Po lewej pozostaje `clamp(64px, 13.5vw, 280px)` kontekstu aplikacji, po prawej
 tego samego tokenu co boczny pasek nawigacji; wewnątrz jest biała,
 przewijana treść `--card-bg` z odstępami 24px.
 Nagłówek ma 72px i tytuł 20px/400, stopka minimum 68px i akcje po lewej.
-Oba paski pozostają poza przewijaną treścią. Przycisk zamknięcia, turkusowe
+Oba paski pozostają poza przewijaną treścią. Przycisk zamknięcia, fioletowe
 akcje, kontrolki, obsługa fokusu, Escape, list wyboru i zapisu korzystają
 z dotychczasowych mechanizmów. Panel wysuwa się od dołu i chowa w dół
 w 320ms, z łagodnym wyhamowaniem i zmianą przyciemnienia tła. CSS używa
@@ -1850,7 +1856,7 @@ Spóźniony odczyt anulowanego obrazu nie otwiera ponownie kadrowania.
 
 Oczekujące zaproszenia odbiorcy są widoczne w istniejącym panelu powiadomień,
 przed aktywnością zadań. Karta podaje autora, Workspace, rolę, termin i przycisk
-„Przyjmij lub odrzuć zaproszenie”. Dzwonek pokazuje jasnoturkusowy licznik oczekujących
+„Przyjmij lub odrzuć zaproszenie”. Dzwonek pokazuje jasnofioletowy licznik oczekujących
 zaproszeń `notifications-toggle__invitation-count` (do 9, potem „9+”). Pełna liczba
 jest dostępna w opisie i podpowiedzi. Tło licznika używa `--primary-button-bg`,
 tak jak liczniki zakładek powiadomień, a tekst `--text-primary`.
@@ -1899,7 +1905,7 @@ akcje; zaznaczanie tekstu nie otwiera okna. Obsługa w `workplace-team.js`
 działa także po częściowej nawigacji, bez powielania listenerów.
 Ikony przełączania i menu w tabeli używają podświetlenia
 całej komórki, tak jak ikony projektów: `rgba(var(--system-accent-rgb), 0.24)`
-na delikatnym turkusowym tle wiersza. Hover i fokus klawiatury zachowują
+na delikatnym fioletowym tle wiersza. Hover i fokus klawiatury zachowują
 siatkę tabeli, bez dodatkowego obrysu i cienia. Komórki ikon mają jedną
 kolumnę `minmax(0, 1fr)`, aby przycisk wypełniał ich szerokość. Wyłączone
 przełączanie bieżącego Workspace nie otrzymuje tego podświetlenia.
@@ -1916,7 +1922,7 @@ przestrzeni pracy. Ustawienia wracają po zapisie do katalogu.
 Okno w `edit_modal.html` ma zakładki „Główna”, „Członkowie” i — tylko dla
 zarządzających — „Wysłane zaproszenia”, korzystające
 z `notifications-tabs tasks-issue-tabs`, jak szczegóły zadania: tekst 15px/400
-i turkusowe podkreślenie. Zmiana zakładki zachowuje wpisane ustawienia;
+i fioletowe podkreślenie. Zmiana zakładki zachowuje wpisane ustawienia;
 strzałki, Home i End przełączają treść oraz fokus. Zakładki mają role i relacje
 `tablist`/`tab`/`tabpanel`. Przycisk „Zapisz zmiany” jest widoczny na „Głównej”,
 a „Zaproś osobę” nad tabelami członków i wysłanych zaproszeń. Formularz ustawień jest oddzielony od
@@ -1943,7 +1949,7 @@ tasks-project-sheet`, wspólnych nagłówków, komórek i wierszy. Wariant
 (40px), działania (40px), nazwa z avatarem, e-mail, rola i data dołączenia
 lub ważności zaproszenia. Nagłówki danych mają ikony; nagłówek kolumny
 działań jest pusty wizualnie i zachowuje etykietę dostępną „Działania”.
-Wiersze zachowują wysokość 35px, tekst 13px/400, cienką siatkę i jasnoturkusowe
+Wiersze zachowują wysokość 35px, tekst 13px/400, cienką siatkę i jasnofioletowe
 podświetlenie z paskiem po lewej. Avatary członków i odbiorców zaproszeń mają
 30×30px, jak na liście Kontaktów, również na wąskich ekranach. Stały rozmiar
 obejmuje zdjęcia oraz ikonę zastępczą i nie kurczy się przy długiej nazwie.

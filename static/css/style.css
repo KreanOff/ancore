@@ -1,6 +1,6 @@
 /* Main Style Entry Point */
 @import 'base/fonts.css?v=20261003-atlassian-sans';
-@import 'base/variables.css?v=20261003-border-visibility-2pct';
+@import 'base/variables.css?v=20261005-teams-accent';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261003-border-visibility-2pct';
 @import 'layout/main.css?v=20261003-topbar-sticker';
@@ -488,7 +488,7 @@ body :where(input, textarea)::placeholder {
 .sidebar,
 .sidebar-collapsed-flyout {
     --sidebar-icon-size: 18px;
-    --sidebar-space-selection: #5b5fc7;
+    --sidebar-space-selection: var(--system-accent);
     --sidebar-space-selection-bg: #e8ebfa;
     --sidebar-space-focus: var(--sidebar-space-selection);
     --sidebar-space-marker: var(--sidebar-space-selection);

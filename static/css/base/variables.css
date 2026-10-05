@@ -12,8 +12,8 @@
     --text-primary: #40444C;
     --text-secondary: var(--text-primary);
     --text-inverse: #FFFFFF;
-    --system-accent: rgb(30, 191, 191);
-    --system-accent-rgb: 30, 191, 191;
+    --system-accent: #5b5fc7;
+    --system-accent-rgb: 91, 95, 199;
     --primary-button-bg: color-mix(in srgb, var(--system-accent) 17%, #ffffff);
     --primary-button-hover-bg: color-mix(in srgb, var(--system-accent) 24%, #ffffff);
     --system-interaction: #6f7580;
