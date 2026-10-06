@@ -633,8 +633,11 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
   Gadżety można dodawać, konfigurować, usuwać i przenosić przez przeciąganie
   lub przyciski menu. Konfiguracja i kolejność są zapisywane w PostgreSQL.
-  Katalog oferuje Przypisane do mnie, Wyniki filtra, Podsumowanie zadań,
-  Statystyki zadań i Ostatnią aktywność. Filtry obejmują przestrzeń,
+  Katalog oferuje wyłącznie Przypisane do mnie i Statystyki zadań.
+  Formularz dodawania i edycji odrzuca pozostałe rodzaje również w POST.
+  Wcześniej zapisane Wyniki filtra, Podsumowanie zadań i Ostatnia aktywność
+  nadal się wyświetlają i kopiują; ich edycja wymaga wyboru dostępnego rodzaju.
+  Filtry obejmują przestrzeń,
   kategorię statusu i wykonawcę (wszyscy, oglądający, bez wykonawcy).
   Statystyki grupują po kategorii statusu, priorytecie lub wykonawcy
   (do 20 grup); listy pokazują 5, 10 lub 20 wyników, maksymalnie 24 gadżety.

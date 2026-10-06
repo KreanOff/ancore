@@ -4,7 +4,7 @@ from spaces.services import visible_spaces
 from tasks.models import Task
 from workplaces.services import workplace_people
 from .models import Dashboard, DashboardGadget, DashboardGroup
-from .pulpits import personal_groups, visible_dashboards
+from .pulpits import AVAILABLE_GADGET_KINDS, personal_groups, visible_dashboards
 
 
 def style_fields(form):
@@ -48,13 +48,16 @@ class GadgetForm(forms.ModelForm):
 
     def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['kind'].choices = [('', '---------'), *[(kind, kind.label) for kind in AVAILABLE_GADGET_KINDS]]
         self.fields['space'].queryset = visible_spaces(request)
         self.fields['space'].empty_label = 'Wszystkie dostępne przestrzenie'
         self.fields['space'].label_from_instance = lambda space: space.project.name
         self.fields['title'].help_text = 'Puste pole używa nazwy gadżetu.'
         self.fields['kind'].help_text = 'Przypisane do mnie pokazuje otwarte zadania osoby oglądającej pulpit.'
+        if self.instance.pk and self.instance.kind not in AVAILABLE_GADGET_KINDS:
+            self.fields['kind'].help_text = 'Ten rodzaj nie jest już dostępny. Wybierz „Przypisane do mnie” albo „Statystyki zadań”.'
         self.fields['group_by'].help_text = 'Dotyczy gadżetu „Statystyki zadań”.'
-        self.fields['limit'].help_text = 'Dotyczy listy zadań i aktywności.'
+        self.fields['limit'].help_text = 'Dotyczy gadżetu „Przypisane do mnie”.'
         if self.instance.space_id and not self.fields['space'].queryset.filter(pk=self.instance.space_id).exists():
             self.fields['space'].help_text = 'Ta przestrzeń jest już niedostępna. Wybierz dostępne źródło danych.'
         style_fields(self)

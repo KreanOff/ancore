@@ -73,13 +73,13 @@ class PulpitTests(TestCase):
                         self.assertNotContains(response, 'data-pulpit-gadget=')
                         self.assertFalse(dashboard.gadgets.exists())
                     response = self.client.post(detail_url + 'gadgets/add/', {
-                        'kind': 'summary', 'title': '', 'status': '',
+                        'kind': 'statistics', 'title': '', 'status': '',
                         'assignee': 'all', 'group_by': 'status', 'limit': 10,
                     }, **headers)
                     self.assertEqual(response.status_code, 200 if modal else 302)
-                    self.assertEqual(dashboard.gadgets.get().kind, 'summary')
+                    self.assertEqual(dashboard.gadgets.get().kind, 'statistics')
                     response = self.client.get(detail_url)
-                    self.assertContains(response, 'Podsumowanie zadań')
+                    self.assertContains(response, 'Statystyki zadań')
                     self.assertNotContains(response, 'Ten pulpit jest pusty.')
 
     def test_private_selected_workspace_and_revoked_membership(self):
@@ -200,7 +200,7 @@ class PulpitTests(TestCase):
     def test_gadget_config_rejects_foreign_source_limit_and_arbitrary_status(self):
         dashboard = self.dashboard()
         foreign = TaskProject.objects.create(user=self.owner, workplace=self.other, name='Obca przestrzeń')
-        values = {'kind': 'results', 'title': '', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}
+        values = {'kind': 'statistics', 'title': '', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}
         for extra in [{'space': foreign.space.pk}, {'limit': 1000}, {'status': 'unknown'}, {'kind': 'unknown'}]:
             response = self.client.post(self.url(dashboard, 'gadgets/add/'), {**values, **extra}, HTTP_X_PULPIT_MODAL='true')
             self.assertEqual(response.status_code, 400)
@@ -265,11 +265,60 @@ class PulpitTests(TestCase):
         dashboard = self.dashboard()
         DashboardGadget.objects.bulk_create([DashboardGadget(dashboard=dashboard, kind='summary', position=i) for i in range(24)])
         response = self.client.post(self.url(dashboard, 'gadgets/add/'),
-                                    {'kind': 'results', 'title': 'Zachowany szkic', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}, HTTP_X_PULPIT_MODAL='true')
+                                    {'kind': 'assigned', 'title': 'Zachowany szkic', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}, HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.status_code, 400)
         self.assertIn('Zachowany szkic', response.json()['html'])
         self.assertIn('maksymalnie 24', response.json()['html'])
         self.assertEqual(dashboard.gadgets.count(), 24)
+
+    def test_only_assigned_and_statistics_are_available_for_add_and_edit(self):
+        dashboard = self.dashboard()
+        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            for suffix in ['gadgets/add/', f'gadgets/{gadget.pk}/edit/']:
+                for modal in [False, True]:
+                    with self.subTest(prefix=prefix, suffix=suffix, modal=modal):
+                        headers = {'HTTP_X_PULPIT_MODAL': 'true'} if modal else {}
+                        response = self.client.get(f'{prefix}{dashboard.pk}/{suffix}', **headers)
+                        self.assertEqual(response.status_code, 200)
+                        html = response.json()['html'] if modal else response.content.decode()
+                        for kind in ['assigned', 'statistics']:
+                            self.assertIn(f'<option value="{kind}"', html)
+                        for kind in ['results', 'summary', 'activity']:
+                            self.assertNotIn(f'<option value="{kind}"', html)
+                        if 'edit/' in suffix:
+                            self.assertIn('Ten rodzaj nie jest już dostępny.', html)
+
+    def test_disabled_gadget_kinds_cannot_be_saved_and_preserve_existing_data(self):
+        dashboard = self.dashboard()
+        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary', title='Zapisany gadżet')
+        values = {'title': 'Nowy tytuł', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            for suffix in ['gadgets/add/', f'gadgets/{gadget.pk}/edit/']:
+                for kind in ['results', 'summary', 'activity']:
+                    with self.subTest(prefix=prefix, suffix=suffix, kind=kind):
+                        response = self.client.post(f'{prefix}{dashboard.pk}/{suffix}', {**values, 'kind': kind}, HTTP_X_PULPIT_MODAL='true')
+                        self.assertEqual(response.status_code, 400)
+                        self.assertIn('Nowy tytuł', response.json()['html'])
+                        self.assertEqual(dashboard.gadgets.count(), 1)
+                        gadget.refresh_from_db()
+                        dashboard.refresh_from_db()
+                        self.assertEqual((gadget.kind, gadget.title, dashboard.revision), ('summary', 'Zapisany gadżet', 0))
+
+    def test_both_available_kinds_can_be_added_and_replace_a_legacy_kind(self):
+        dashboard = self.dashboard()
+        values = {'title': '', 'status': '', 'assignee': 'all', 'group_by': 'priority', 'limit': 5}
+        for kind in ['assigned', 'statistics']:
+            with self.subTest(kind=kind):
+                response = self.client.post(self.url(dashboard, 'gadgets/add/'), {**values, 'kind': kind})
+                self.assertEqual(response.status_code, 302)
+                gadget = dashboard.gadgets.get(kind=kind)
+                self.assertEqual((gadget.group_by, gadget.limit), ('priority', 5))
+                legacy = DashboardGadget.objects.create(dashboard=dashboard, kind='results')
+                response = self.client.post(self.url(dashboard, f'gadgets/{legacy.pk}/edit/'), {**values, 'kind': kind})
+                self.assertEqual(response.status_code, 302)
+                legacy.refresh_from_db()
+                self.assertEqual(legacy.kind, kind)
 
     def test_favorite_keeps_catalog_tab_and_search(self):
         dashboard = self.dashboard()

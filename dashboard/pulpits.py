@@ -9,6 +9,7 @@ from workplaces.services import scoped_workplace_app_path, workspace_owner
 from .models import Dashboard, DashboardGadget, DashboardGroup
 
 MAX_GADGETS = 24
+AVAILABLE_GADGET_KINDS = (DashboardGadget.Kind.ASSIGNED, DashboardGadget.Kind.STATISTICS)
 
 
 def app_url(request, suffix=''):

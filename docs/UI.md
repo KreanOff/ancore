@@ -2206,6 +2206,10 @@ Formularze używają standardowego `app-modal-panel--compact` i
 `AncoreTaskModals`: fokus, Escape, inert tła, błędy zapisu, zachowanie szkicu
 oraz potwierdzenie zamknięcia niezapisanych zmian. „Osoby z dostępem” jest
 widoczne dla „Wybrane osoby”, a pola grupowania/limitu zależą od gadżetu.
+Wybór rodzaju gadżetu zawiera wyłącznie „Przypisane do mnie” i „Statystyki zadań”.
+Grupowanie dotyczy statystyk, a liczba wyników listy „Przypisane do mnie”.
+Przy edycji wcześniej zapisanego, wycofanego rodzaju opis pola prosi o wybór
+jednego z dwóch dostępnych rodzajów; istniejący gadżet pozostaje bez zmian do zapisu.
 Porównywanie szkicu pomija token CSRF, który może się zmienić po błędzie walidacji.
 Bezpośredni URL otwiera to samo okno nad katalogiem albo pulpitami;
 zamknięcie przywraca adres ekranu tła. `pulpits.js` inicjalizuje się po pierwszym

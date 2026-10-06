@@ -750,6 +750,11 @@ cofnięcie dostępu, tylko odczyt, formularze źródeł/udostępniania, gwiazdki
 kopiowanie, usuwanie, CSRF i walidację układu/rewizji. Tworzenie przez katalog
 i zarządzanie zaczyna od zera gadżetów; ponowne wejście zachowuje pusty stan,
 a ręczne dodanie pierwszego gadżetu usuwa komunikat pustego pulpitu.
+Katalog rodzajów ogranicza `AVAILABLE_GADGET_KINDS` w `dashboard/pulpits.py`;
+model zachowuje wcześniejsze rodzaje dla odczytu i kopiowania zapisanych danych.
+Testy sprawdzają dwa dostępne rodzaje w dodawaniu/edycji, odrzucenie pozostałych
+w POST, zachowanie starego rekordu po błędzie oraz zmianę na dostępny rodzaj,
+również przez scoped URL i odpowiedzi modala.
 
 Browser QA: pusty katalog, utworzenie, pięć układów w oknie edycji i przeładowanie,
 przeciąganie oraz przenoszenie klawiaturą, konfiguracja gadżetu, wybrana osoba,
