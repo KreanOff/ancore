@@ -7449,6 +7449,10 @@ function initTasksPage() {
         function getDefaultDirectoryTrackWidths(cells) {
             return cells.map(cell => {
                 const column = cell.dataset.column || '';
+                if (cell.closest('.pulpit-management-sheet')) {
+                    const widths = { action: 40, name: 270, leader: 210, visibility: 160, gadgets: 100, last_activity: 190, menu: 40 };
+                    if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
+                }
                 if (cell.closest('.work-space-sheet--management')) {
                     const widths = { action: 40, name: 270, key: 100, kind: 160, management: 220, leader: 210, last_activity: 190, menu: 40 };
                     if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
@@ -7528,6 +7532,7 @@ function initTasksPage() {
         }
 
         function getDirectoryStorageSegment() {
+            if (document.querySelector('.pulpit-management-sheet')) return 'pulpits-management';
             if (document.querySelector('[data-resources-page]')) return 'resources';
             const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
 

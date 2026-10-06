@@ -315,6 +315,16 @@ Dashboard jako referencję, nawigację modułów, telefon, puste stany oraz bł�
 Lista klas i liczba zdefiniowanych metod testowych jest generowana w
 [CODE_INDEX.md](CODE_INDEX.md). Nie jest to raport wykonania testów ani procent pokrycia.
 
+`workplaces.test_defaults` sprawdza losową nazwę pierwszego Workspace po
+rzeczywistym logowaniu, zapis roli właściciela/ulubionego Dashboardu oraz kodu
+i slugu, zachowanie nazwy po edycji i ponownym logowaniu, zwykłe/scoped adresy,
+istniejącą dawną nazwę, dostęp przez członkostwo i brak tworzenia dla anonimowego
+użytkownika. Test transakcyjny na PostgreSQL wymusza równoczesne pierwsze
+wejścia i sprawdza pojedynczy Workspace. Uruchamiaj razem z `workplaces`
+i `accounts.tests`. W przeglądarce sprawdź nowe konto → pierwsze logowanie →
+losową nazwę w przełączniku i katalogu Workspace → przeładowanie/powrót,
+desktop/telefon oraz edycję nazwy przez istniejący formularz.
+
 `tasks.test_unassigned_creation` sprawdza puste powiązania nowego zadania,
 tworzenie bez projektu/grupy (także w pustym Workspace), oba warianty URL,
 autora historii, prywatność, wykonawcę, zakończenie, edycję i późniejsze przypisanie
@@ -721,3 +731,36 @@ Testy: `manage.py test contacts dashboard.tests dashboard.test_search_regression
 workplaces.test_team workplaces.test_invitation_candidates accounts.tests`.
 Browser QA: pozostałe Starsze widoki i Przestrzenie, wyszukiwanie bez wycofanych
 modułów, 404 starego adresu, desktop/telefon, zwinięte menu i ponowne wejście.
+
+## Pulpity i gadżety
+
+Migracja `dashboard.0007_dashboard_dashboardgadget_and_more` dodaje wyłącznie
+konfigurację pulpitów, gadżety i osobiste relacje gwiazdek/udostępnienia.
+Nie konwertuje starego Dashboardu ani danych zadań. Wymaga istniejącej migracji
+`spaces.0004_issue_types`. Sprawdź plan, zastosuj migrację i odśwież zasoby.
+Migracja `dashboard.0008_dashboardgroup` dodaje osobiste grupy oraz relacje
+do pulpitów, bez przenoszenia istniejących danych. Obie migracje są źródłami
+aplikacji i muszą być wersjonowane.
+
+Testy: `dashboard.test_pulpits`, `dashboard.test_pulpit_navigation`, `dashboard.test_pulpit_management`, `spaces.test_management`, `spaces.test_navigation`, `dashboard.test_overview`,
+`dashboard.test_for_you`, `dashboard.test_search_regressions`,
+`core.test_task_integrity`, `planner.test_task_calendar` oraz `workplaces`.
+Nowe testy obejmują właściciela/twórcę, dwa Workspace, prywatność rodziców,
+cofnięcie dostępu, tylko odczyt, formularze źródeł/udostępniania, gwiazdki,
+kopiowanie, usuwanie, CSRF i walidację układu/rewizji.
+
+Browser QA: pusty katalog, utworzenie, pięć układów i przeładowanie,
+przeciąganie oraz przenoszenie klawiaturą, konfiguracja gadżetu, wybrana osoba,
+kopiowanie i gwiazdki, błędy formularza/sieci/konfliktu, Escape/fokus,
+ponowne wejście z Dashboardu, zwykły/scoped URL oraz desktop/telefon.
+Nawigacja: gwiazdki z katalogu i menu wiersza, osobiste ostatnie, CRUD grup,
+przypisanie współdzielonego pulpitu, cofnięcie dostępu, pusty stan/limit grup,
+zachowanie filtra grupy, plus w nagłówku, zwinięta sekcja i flyout całego menu.
+Zarządzanie: własne pulpity dwóch osób/dwóch Workspace, osobne menu, zwykły
+i scoped URL, pusty stan, filtry/paginacja, tworzenie/edycja/kopia/usunięcie,
+modal i walidacja nad katalogiem, powrót z filtrami oraz Wstecz/Dalej/reload.
+Porównaj w przeglądarce geometrię tabeli i toolbaru z „Zarządzaj przestrzeniami”.
+Grupy w zarządzaniu: wybór „Grupy pulpitów” z bocznego menu, aktywna pozycja,
+tworzenie/edycja/usunięcie, pusty stan/błąd formularza, bezpośredni URL,
+przełączanie pulpitów i grup bez utraty źródła powrotu, historia/reload i telefon.
+Testuj na oddzielnej bazie; nie dodawaj danych QA do Workspace użytkowników.

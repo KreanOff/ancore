@@ -65,8 +65,8 @@ class SpaceNavigationTests(TestCase):
         self.foreign.favorited_by.add(self.member)
         response = self.client.get(self.url())
         self.assertEqual(response.context['navigation_spaces'], [])
-        self.assertNotContains(response, 'Ostatnie</h3>')
-        self.assertNotContains(response, 'Oznaczone gwiazdką</h3>')
+        self.assertNotContains(response, 'id="sidebar-spaces-recent-title"')
+        self.assertNotContains(response, 'id="sidebar-spaces-starred-title"')
         self.assertContains(response, 'Więcej przestrzeni')
         self.assertEqual(self.client.post(self.url(self.first, 'favorite/'), HTTP_X_SPACE_NAVIGATION='true').status_code, 404)
 

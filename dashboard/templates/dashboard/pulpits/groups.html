@@ -1,0 +1,27 @@
+{% extends 'dashboard/pulpits/base.html' %}
+{% block title %}Grupy pulpitów | ancore{% endblock %}
+{% block content %}
+<div class="tasks-page tasks-list-page work-page work-page--management pulpits-page" data-pulpits-page data-pulpit-list-url="{{ groups_url }}">
+    <section class="tasks-workspace">
+    <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
+        <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Grupy pulpitów</h1></div>
+        <div class="tasks-titlebar-actions"><a href="{{ create_group_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-pulpit-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span>Utwórz grupę</span></a></div>
+    </header>
+    <div class="work-content work-content--directory">
+    {% if groups %}
+        <div class="table-container pulpit-table-wrap"><table class="data-table pulpit-table pulpit-table--groups"><thead><tr><th>Nazwa grupy</th><th>Pulpity</th><th><span class="u-sr-only">Działania</span></th></tr></thead><tbody>
+        {% for item in groups %}<tr><td><a href="{{ item.url }}" class="pulpit-name">{{ item.name }}</a></td><td>{{ item.dashboard_count }}</td><td>
+            <div class="documents-item-actions" data-row-actions><button type="button" class="tasks-icon-button documents-icon-button" data-row-actions-toggle popovertarget="pulpit-group-actions-{{ item.pk }}" aria-controls="pulpit-group-actions-{{ item.pk }}" aria-expanded="false" aria-label="Działania: {{ item.name }}"><i data-icon="ellipsis" aria-hidden="true"></i></button>
+            <div id="pulpit-group-actions-{{ item.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {{ item.name }}" data-row-actions-panel><div class="documents-menu-actions">
+                <a href="{{ item.edit_url }}" class="tasks-project-menu-button" data-pulpit-open aria-haspopup="dialog"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj grupę</span></a>
+                <form method="post" action="{{ item.delete_url }}" data-pulpit-action data-confirm-title="Usuń grupę pulpitów" data-confirm-name="{{ item.name }}">{% csrf_token %}<button class="tasks-project-menu-button" type="submit">{% include 'core/includes/trash_icon.html' %}<span>Usuń grupę</span></button></form>
+            </div></div></div>
+        </td></tr>{% endfor %}
+        </tbody></table></div>
+    {% else %}
+        <section class="tasks-empty-state tasks-empty-state--centered" role="status"><div class="tasks-empty-state__icon"><i data-icon="folders" aria-hidden="true"></i></div><div class="tasks-empty-state__copy"><h2>Nie masz jeszcze grup pulpitów.</h2><p>Utwórz własną grupę i wybierz pulpity, które chcesz w niej uporządkować. Usunięcie grupy zachowuje pulpity.</p></div><a href="{{ create_group_url }}" class="btn btn-primary" data-pulpit-open>Utwórz grupę</a></section>
+    {% endif %}
+    </div>
+    </section>
+</div>
+{% endblock %}

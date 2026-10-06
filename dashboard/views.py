@@ -53,6 +53,7 @@ def _workspace_app_url(workplace, app_label, suffix=''):
         'documents': reverse('documents:library'),
         'office': reverse('office:index'),
         'resources': reverse('resources:index'),
+        'dashboards': reverse('pulpits:index'),
     }
     base_url = fallback_urls[app_label]
     return f'{base_url}{suffix.lstrip("/")}' if suffix else base_url
@@ -99,6 +100,7 @@ def _navigation_search_results(query, workplace):
     entries = (
         ('Dla ciebie', 'Twoje zadania, ulubione i ostatnia praca', scoped_workplace_app_path(workplace, 'for-you') if workplace else reverse('for_you'), 'user-round-check', 'dla ciebie for you przypisane ostatnie'),
         ('Dashboard', 'Strona główna i podsumowanie', reverse('home'), 'layout-dashboard', 'dashboard start podsumowanie'),
+        ('Pulpity', 'Własne pulpity i gadżety zespołu', _workspace_app_url(workplace, 'dashboards'), 'layout-dashboard', 'pulpity dashboard gadzety'),
         ('Moje zadania', 'Zadania przypisane do Ciebie', _search_url(tasks_url, view='my-tasks'), 'user-round-check', 'tasks moje zadania'),
         ('Wszystkie zadania', 'Pełna lista zadań', _search_url(tasks_url, view='all-tasks'), 'list-checks', 'tasks lista'),
         ('Przestrzenie', 'Przestrzenie w bieżącym Workspace', _workspace_app_url(workplace, 'spaces'), 'folders', 'przestrzenie projekty kanban scrum'),

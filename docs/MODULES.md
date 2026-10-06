@@ -69,8 +69,11 @@ Właściciel i administrator otwierają wybór kliknięciem awatara lub „Dodaj
 w formularzu tworzenia lub edycji. Wybór zatwierdzają w osobnym oknie,
 a następnie zapisują Workspace. Anulowanie okna przywraca poprzedni awatar.
 Zwykły członek ma podgląd. Zapis jest widoczny w katalogu i przełączniku Workspace.
-Po zalogowaniu, jeśli nie ma Workspace, usługa może utworzyć domyślne
-„Moje miejsce pracy”.
+Po zalogowaniu, jeśli użytkownik nie ma żadnego dostępnego Workspace, usługa
+tworzy domyślny z losową, zabawną polską nazwą z puli `DEFAULT_WORKPLACE_NAMES`,
+np. „Biuro Latających Pierogów” lub „Baza Turboślimaków”. Nazwa jest zapisywana
+raz i można ją później zmienić w zwykłym formularzu edycji. Kolejne logowania
+zachowują zapisany Workspace; istniejące nazwy nie są zmieniane.
 
 `WorkplaceMembership` udostępnia wspólny Workspace rolom owner/admin/member.
 Zakładkę członków Workspace, zaproszenia w aplikacji do istniejących kont, zmiany ról oraz
@@ -595,6 +598,53 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Przełączane listy `focus=deadlines|priority|kanban` pokazują maksymalnie
   6 pozycji. Są też rozkład statusów, 4 niezakończone/nieanulowane projekty
   Zadań z postępem oraz do 4 trwających/nadchodzących wydarzeń.
+- **Pulpity:** osobny katalog `/dashboards/` oraz scoped odpowiednik, dostępny
+  w menu, ulubionych menu i globalnym wyszukiwaniu jako skrót modułu.
+  Zakładki Ulubione, Moje i Wszystkie oraz wyszukiwanie po nazwie/opisie
+  mają paginację po 25 pozycji. Każdy członek Workspace może utworzyć pulpit,
+  edytować własny, kopiować dostępny i oznaczać go osobistą gwiazdką.
+  Menu „Pulpity” ma przycisk tworzenia, sekcje Oznaczone gwiazdką/Ostatnie,
+  własne nazwane grupy oraz „Pokaż wszystkie pulpity”. Dotychczasowy Dashboard
+  jest dostępny jako „Pulpit domyślny”. Ostatnie pochodzą z osobistej historii
+  sesji; gwiazdki i grupy są zapisane w bazie. Menu pokazuje do 6 ulubionych,
+  6 ostatnich bez gwiazdki i 6 pulpitów w każdej grupie; większa grupa ma link
+  do pełnego katalogu. Nazwa grupy również otwiera jej katalog z wyszukiwaniem.
+  Każdy użytkownik może tworzyć, edytować i usuwać swoje grupy oraz przypisać
+  dostępny pulpit do kilku grup. Usunięcie grupy zachowuje pulpity i gadżety.
+  Grupy pozostają osobiste, także gdy pulpit jest udostępniony zespołowi.
+  Lista grup jest pozycją „Grupy pulpitów” w bocznym menu zarządzania pulpitami.
+  Jej dotychczasowe zwykłe i scoped adresy pozostają dostępne; tworzenie,
+  edycja, walidacja i zapis zachowują to menu i wracają do listy grup.
+  „Zarządzaj pulpitami” w menu „…” otwiera osobny katalog zarządzania pod
+  `/dashboards/manage/` i scoped adresem. Pokazuje tylko pulpity twórcy
+  w aktywnym Workspace, zgodnie z dotychczasowymi prawami edycji.
+  Używa układu „Zarządzaj przestrzeniami”: osobne menu z powrotem do miejsca
+  wejścia, wyszukiwanie po nazwie/opisie, filtry widoczności i gwiazdki,
+  paginacja 30 pozycji oraz tabela nazwy, twórcy, widoczności, liczby gadżetów
+  i ostatniej zmiany konfiguracji. Nazwa otwiera edycję; menu wiersza także
+  otwarcie, przypisanie do grup, kopiowanie i usunięcie. Tworzenie, edycja,
+  kopiowanie i przypisanie przez ten katalog wracają do niego z filtrami.
+  Dostępne pulpity innych twórców pozostają w zwykłym katalogu do oglądania.
+  Widoczność: prywatny, wybrane aktywne osoby albo cały Workspace.
+  Udostępnienie pozwala oglądać konfigurację; modyfikacje należą do twórcy.
+  Nowy pulpit otrzymuje cztery gadżety i gwiazdkę twórcy; kopia domyślnie jest
+  prywatna, zachowuje filtry i ma niezależne rekordy gadżetów.
+  Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
+  Gadżety można dodawać, konfigurować, usuwać i przenosić przez przeciąganie
+  lub przyciski menu. Konfiguracja i kolejność są zapisywane w PostgreSQL.
+  Katalog oferuje Przypisane do mnie, Wyniki filtra, Podsumowanie zadań,
+  Statystyki zadań i Ostatnią aktywność. Filtry obejmują przestrzeń,
+  kategorię statusu i wykonawcę (wszyscy, oglądający, bez wykonawcy).
+  Statystyki grupują po kategorii statusu, priorytecie lub wykonawcy
+  (do 20 grup); listy pokazują 5, 10 lub 20 wyników, maksymalnie 24 gadżety.
+  Gadżety uwzględniają dostępne podzadania. „Przypisane do mnie” pokazuje
+  otwarte zadania oglądającego, a status `closed` oznacza zakończenie.
+  Aktywność pokazuje autora, rodzaj operacji, zadanie i datę, bez treści
+  komentarzy. Nie ma automatycznego odświeżania ani zewnętrznych gadżetów;
+  „Odśwież” pobiera aktualne dane. Szczegóły implementacji:
+  [pulpits.py](../dashboard/pulpits.py), [widoki](../dashboard/pulpit_views.py)
+  i [routing](../dashboard/pulpit_urls.py). Inspiracja funkcjonalna:
+  [pulpity Jira](https://support.atlassian.com/jira-software-cloud/docs/create-and-edit-dashboards/).
 - **Ustawienia:** centrum linków do profilu, kont, Workspace
   i preferencji dostępnych na ekranie.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.

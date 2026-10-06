@@ -1,0 +1,87 @@
+/* Saved dashboards extend the existing Workspace overview and modal shell. */
+.pulpits-page { min-width: 0; }
+.pulpits-page .dashboard-main { gap: 18px; }
+.pulpit-tabs { padding-inline: var(--dashboard-inline-padding); flex-shrink: 0; overflow-x: auto; white-space: nowrap; }
+.pulpit-tabs > a { font-size: 13.5px; }
+.pulpit-tabs > a:not([aria-current="page"]):hover { border-bottom-color: var(--system-interaction); }
+.pulpit-search { padding: 0; min-height: var(--control-height); flex-wrap: wrap; gap: 8px; }
+.pulpit-search .tasks-search-field { width: min(320px, 100%); }
+.pulpit-result-count { margin-left: auto; font-size: var(--font-size-sm); }
+.pulpit-table-wrap { overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius); flex-shrink: 0; flex-grow: 0; }
+.pulpit-table { width: 100%; border-collapse: collapse; min-width: 680px; font-size: var(--font-size-sm); }
+.pulpit-table th, .pulpit-table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
+.pulpit-table th { background: var(--secondary-menu-bg); white-space: nowrap; text-transform: none; letter-spacing: normal; }
+.pulpit-table tr:last-child td { border-bottom: 0; }
+.pulpit-table tr:hover td { background: var(--system-interaction-soft); }
+.pulpit-table th:first-child, .pulpit-table td:first-child { width: 44px; padding: 12px; line-height: normal; height: auto; }
+.pulpit-table td:nth-child(2) { width: 42%; }
+.pulpit-table--groups { min-width: 320px; }
+.pulpit-table--groups :is(th, td):first-child { width: 65%; text-align: left; }
+.pulpit-table--groups :is(th, td):nth-child(2) { width: auto; }
+.pulpit-table--groups :is(th, td):last-child { width: 48px; }
+.pulpit-name { color: var(--system-accent); text-decoration: none; overflow-wrap: anywhere; }
+.pulpit-name:hover { text-decoration: underline; }
+.pulpit-description { display: block; margin-top: 5px; line-height: 1.5; overflow-wrap: anywhere; }
+.pulpit-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: var(--font-size-sm); }
+.pulpit-star.is-active { color: var(--system-accent); background: rgba(var(--system-accent-rgb), .1); }
+.pulpit-topbar .tasks-titlebar-left { min-width: 0; gap: 8px; }
+.pulpit-topbar .tasks-topbar-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pulpit-topbar .tasks-titlebar-actions { flex-shrink: 0; }
+.pulpit-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: var(--font-size-sm); }
+.pulpit-meta > span { display: flex; align-items: center; gap: 8px; }
+.pulpit-meta svg { width: 16px; height: 16px; }
+.pulpit-layout-label { display: flex; align-items: center; gap: 8px; }
+.pulpit-layout-label .form-select { width: 210px; }
+.pulpit-intro { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
+.pulpit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; flex-shrink: 0; }
+.pulpit-grid--single { grid-template-columns: minmax(0, 1fr); }
+.pulpit-grid--left { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.pulpit-grid--right { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.pulpit-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pulpit-column { display: flex; flex-direction: column; gap: 20px; min-width: 0; min-height: 100px; border-radius: var(--radius); }
+.pulpit-column.is-drop-target { outline: 2px dashed var(--system-accent); outline-offset: 4px; }
+.pulpit-gadget { background: var(--card-bg); border: 1px solid var(--border-color); }
+.pulpits-page .pulpit-gadget-header { display: flex; gap: 8px; }
+.pulpit-gadget-header h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; margin: 0; }
+.pulpit-drag-handle { cursor: grab; flex-shrink: 0; }
+.pulpit-gadget.is-dragging { opacity: .55; }
+.pulpit-gadget-body { padding: 0 18px; }
+.pulpit-gadget-empty { padding: 24px 0; margin: 0; line-height: 1.6; text-align: center; }
+.pulpit-gadget-footer { padding: 10px 18px; border-top: 1px solid var(--border-color); font-size: var(--font-size-sm); background: var(--secondary-menu-bg); border-radius: 0 0 var(--radius) var(--radius); }
+.pulpit-task { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-color); text-decoration: none; font-size: var(--font-size-sm); }
+.pulpit-task:last-child { border-bottom: 0; }
+.pulpit-task:hover { color: var(--system-accent); }
+.pulpit-task-copy, .pulpit-task-meta { display: grid; gap: 5px; min-width: 0; }
+.pulpit-task-copy { flex: 1; overflow-wrap: anywhere; }
+.pulpit-task-copy small { color: var(--system-accent); }
+.pulpit-task-meta { max-width: 40%; text-align: right; }
+.pulpit-overdue { text-decoration: underline; }
+.pulpit-totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 20px 0; }
+.pulpit-totals dt { font-size: var(--font-size-sm); }
+.pulpit-totals dd { margin: 8px 0 0; font-size: 28px; line-height: 1; }
+.pulpit-stat-row { padding: 12px 0; font-size: var(--font-size-sm); }
+.pulpit-stat-row > div { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pulpit-stat-row > div > span:last-child { flex-shrink: 0; }
+.pulpit-activity { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--border-color); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+.pulpit-activity:last-child { border-bottom: 0; }
+.pulpit-activity a { text-decoration: none; color: var(--system-accent); }
+.pulpit-form { display: flex; flex-direction: column; gap: 16px; }
+.pulpit-form select[multiple] { min-height: 100px; }
+.pulpit-form [hidden], .pulpits-page [hidden] { display: none !important; }
+/* Management uses the same directory geometry as Spaces. */
+.tasks-directory-board.work-space-sheet.pulpit-management-sheet {
+    --tasks-directory-grid: 40px 270px 210px 160px 100px 190px 40px;
+}
+@media (max-width: 1100px) {
+    .pulpit-grid--three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+    .pulpit-tabs > a { font-size: 13.5px; }
+    .pulpit-grid, .pulpit-grid--left, .pulpit-grid--right, .pulpit-grid--three { grid-template-columns: minmax(0, 1fr); }
+    .pulpit-column:empty { min-height: 30px; }
+    .pulpit-topbar { flex-wrap: wrap; }
+    .pulpit-topbar .tasks-titlebar-left { max-width: 100%; }
+    .pulpit-topbar .tasks-titlebar-actions { width: 100%; justify-content: flex-end; }
+    .pulpit-layout-label { width: 100%; justify-content: space-between; }
+    .pulpit-meta > span { overflow-wrap: anywhere; }
+}

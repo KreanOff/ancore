@@ -2,6 +2,90 @@ from django.conf import settings
 from django.db import models
 
 
+class Dashboard(models.Model):
+    class Visibility(models.TextChoices):
+        PRIVATE = 'private', 'Prywatny'
+        SELECTED = 'selected', 'Wybrane osoby'
+        WORKSPACE = 'workspace', 'Cały Workspace'
+
+    class Layout(models.TextChoices):
+        SINGLE = 'single', 'Jedna kolumna'
+        EQUAL = 'equal', 'Dwie równe kolumny'
+        LEFT = 'left', 'Szersza lewa kolumna'
+        RIGHT = 'right', 'Szersza prawa kolumna'
+        THREE = 'three', 'Trzy kolumny'
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workspace_dashboards')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='dashboards')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_dashboards')
+    name = models.CharField('Nazwa', max_length=150)
+    description = models.TextField('Opis', blank=True, max_length=2000)
+    visibility = models.CharField('Widoczność', max_length=10, choices=Visibility.choices, default=Visibility.PRIVATE)
+    shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='shared_dashboards')
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='favorite_dashboards')
+    layout = models.CharField('Układ', max_length=6, choices=Layout.choices, default=Layout.EQUAL)
+    revision = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+        indexes = [models.Index(fields=['owner', 'workplace'], name='dashboard_workspace_idx')]
+
+    @property
+    def column_count(self):
+        return 1 if self.layout == self.Layout.SINGLE else 3 if self.layout == self.Layout.THREE else 2
+
+    def __str__(self):
+        return self.name
+
+
+class DashboardGadget(models.Model):
+    class Kind(models.TextChoices):
+        ASSIGNED = 'assigned', 'Przypisane do mnie'
+        RESULTS = 'results', 'Wyniki filtra'
+        SUMMARY = 'summary', 'Podsumowanie zadań'
+        STATISTICS = 'statistics', 'Statystyki zadań'
+        ACTIVITY = 'activity', 'Ostatnia aktywność'
+
+    dashboard = models.ForeignKey(Dashboard, on_delete=models.CASCADE, related_name='gadgets')
+    kind = models.CharField('Gadżet', max_length=12, choices=Kind.choices)
+    title = models.CharField('Tytuł', max_length=150, blank=True)
+    space = models.ForeignKey('spaces.Space', on_delete=models.CASCADE, null=True, blank=True, verbose_name='Przestrzeń')
+    status = models.CharField('Status', max_length=20, blank=True)
+    assignee = models.CharField('Przypisanie', max_length=10, default='all')
+    group_by = models.CharField('Grupowanie statystyk', max_length=10, default='status')
+    limit = models.PositiveSmallIntegerField('Liczba wyników', default=10)
+    column = models.PositiveSmallIntegerField(default=0)
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['column', 'position', 'pk']
+        constraints = [models.CheckConstraint(condition=models.Q(column__lte=2), name='dashboard_gadget_column')]
+
+    @property
+    def label(self):
+        return self.title or self.get_kind_display()
+
+
+class DashboardGroup(models.Model):
+    """Personal navigation groups; membership never grants dashboard access."""
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workspace_dashboard_groups')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='dashboard_groups')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboard_groups')
+    name = models.CharField('Nazwa grupy', max_length=100)
+    dashboards = models.ManyToManyField(Dashboard, blank=True, related_name='personal_groups', verbose_name='Pulpity')
+
+    class Meta:
+        ordering = ['name', 'pk']
+        constraints = [models.UniqueConstraint(fields=['user', 'workplace', 'name'], name='dashboard_group_personal_name')]
+        indexes = [models.Index(fields=['owner', 'workplace', 'user'], name='dashboard_group_scope_idx')]
+
+    def __str__(self):
+        return self.name
+
+
 class ObjectFollow(models.Model):
     """Personal subscription; access still comes exclusively from Workspace."""
 

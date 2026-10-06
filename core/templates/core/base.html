@@ -9,6 +9,8 @@
 {% url 'office:index' as sidebar_office_fallback_url %}
 {% url 'resources:index' as sidebar_resources_fallback_url %}
 {% url 'home' as sidebar_dashboard_url %}
+{% url 'pulpits:index' as sidebar_pulpits_fallback_url %}
+{% firstof workplace_app_urls.dashboards sidebar_pulpits_fallback_url as sidebar_pulpits_url %}
 {% url 'for_you' as sidebar_for_you_fallback_url %}
 {% firstof workplace_app_urls.for_you sidebar_for_you_fallback_url as sidebar_for_you_url %}
 {% url 'notifications' as sidebar_notifications_url %}
@@ -62,7 +64,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261005-teams-accent">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261006-pulpit-groups">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261003-all-avatars-30">
     {% block extra_head %}{% endblock %}
 </head>
@@ -210,11 +212,25 @@
                 <span class="nav-label">Dla ciebie</span>
             </a>
             {% sidebar_favorite_toggle 'for-you' 'Dla ciebie' 'user-round-check' sidebar_for_you_url %}
-            <a href="{{ sidebar_dashboard_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone sidebar-source-dashboard {% if request.resolver_match.url_name == 'home' %}active{% endif %}" aria-label="Dashboard" title="Dashboard" data-sidebar-source-item="dashboard" draggable="true">
-                <i class="nav-icon nav-icon--dashboard" data-icon="layout-dashboard" aria-hidden="true"></i>
-                <span class="nav-label">Dashboard</span>
-            </a>
+            <section class="sidebar-nav-group" aria-labelledby="sidebar-pulpits-title" data-sidebar-group="pulpits">
+                <div class="sidebar-group-header">
+                    <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Pulpity" title="Zwiń sekcję Pulpity" aria-controls="sidebar-pulpits-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Pulpity">
+                        <i class="nav-icon sidebar-spaces-icon" data-icon="layout-dashboard" aria-hidden="true"></i><i class="nav-icon sidebar-spaces-chevron" data-icon="chevron-down" aria-hidden="true"></i><span id="sidebar-pulpits-title" class="nav-label">Pulpity</span>
+                    </button>
+                    <div class="sidebar-header-actions sidebar-group-actions">
+                        <a href="{{ sidebar_pulpits_url }}create/" class="sidebar-header-action" aria-label="Utwórz pulpit" title="Utwórz pulpit" data-sidebar-group-action data-pulpit-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span class="u-sr-only">Utwórz pulpit</span></a>
+                        <div data-row-actions><button type="button" class="sidebar-header-action" aria-label="Opcje pulpitów" title="Opcje pulpitów" aria-expanded="false" aria-controls="sidebar-pulpits-actions" popovertarget="sidebar-pulpits-actions" data-row-actions-toggle><i data-icon="ellipsis" aria-hidden="true"></i></button>
+                            <div id="sidebar-pulpits-actions" class="tasks-section-menu sidebar-group-menu" popover="auto" role="group" aria-label="Opcje pulpitów" data-row-actions-panel>
+                                <a href="{{ sidebar_pulpits_url }}groups/create/" class="tasks-project-menu-button" data-sidebar-group-action data-pulpit-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span>Utwórz grupę pulpitów</span></a>
+                                <a href="{{ sidebar_pulpits_url }}manage/" class="tasks-project-menu-button" data-sidebar-group-action><i data-icon="settings" aria-hidden="true"></i><span>Zarządzaj pulpitami</span></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-subnav sidebar-subnav--extended sidebar-subnav--spaces sidebar-subnav--pulpits" id="sidebar-pulpits-subnav" data-sidebar-group-label="Pulpity" aria-label="Pulpity">{% include 'dashboard/pulpits/sidebar_navigation.html' %}</div>
+            </section>
             {% sidebar_favorite_toggle 'dashboard' 'Dashboard' 'layout-dashboard' sidebar_dashboard_url %}
+            {% sidebar_favorite_toggle 'pulpits' 'Pulpity' 'layout-dashboard' sidebar_pulpits_url %}
             <section class="sidebar-nav-group" aria-labelledby="sidebar-spaces-title" data-sidebar-group="spaces">
                 <div class="sidebar-group-header">
                     <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Przestrzenie" title="Zwiń sekcję Przestrzenie" aria-controls="sidebar-spaces-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Przestrzenie">
@@ -283,6 +299,7 @@
 
         </nav>
         {% include 'core/includes/space_management_sidebar.html' %}
+        {% include 'core/includes/pulpit_management_sidebar.html' %}
         {% include 'core/includes/workplace_management_sidebar.html' %}
         {% include 'core/includes/settings_sidebar.html' %}
         <div class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Zmień szerokość menu bocznego" aria-valuemin="220" aria-valuemax="420" aria-valuenow="272" tabindex="0" data-sidebar-resizer></div>
@@ -365,8 +382,9 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20261005-space-navigation-groups"></script>
+    <script src="{% static 'js/layout.js' %}?v=20261006-pulpit-groups-management"></script>
     <script src="{% static 'js/space-navigation.js' %}?v=20261005-space-navigation-groups"></script>
+    <script src="{% static 'js/pulpit-navigation.js' %}?v=20261006-pulpit-groups"></script>
     <script src="{% static 'js/space-picker.js' %}?v=20261004-space-picker-v2"></script>
     <script src="{% static 'js/global-search.js' %}?v=20261003-search-no-close"></script>
     <script src="{% static 'js/collaboration.js' %}?v=20260925-comment-files"></script>
@@ -377,7 +395,7 @@
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20260926-unified-small-dialogs"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20260921-dropdown-search"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20261004-remove-project-field-settings"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20261006-pulpit-management"></script>
     <script src="{% static 'js/profile.js' %}?v=20261003-user-avatars"></script>
     <script src="{% static 'js/workplace-avatars.js' %}?v=20261003-user-avatars"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20260927-option-icons"></script>

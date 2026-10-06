@@ -1,0 +1,19 @@
+{% if navigation_starred_dashboards %}
+<section class="sidebar-space-list" aria-labelledby="sidebar-pulpits-starred-title">
+    <h3 id="sidebar-pulpits-starred-title" class="sidebar-space-list-title">Oznaczone gwiazdką</h3>
+    {% for nav_dashboard in navigation_starred_dashboards %}{% include 'dashboard/pulpits/sidebar_row.html' with section_key='starred' %}{% endfor %}
+</section>
+{% endif %}
+<section class="sidebar-space-list" aria-labelledby="sidebar-pulpits-recent-title">
+    <h3 id="sidebar-pulpits-recent-title" class="sidebar-space-list-title">Ostatnie</h3>
+    {% for nav_dashboard in navigation_recent_dashboards %}{% include 'dashboard/pulpits/sidebar_row.html' with section_key='recent' %}{% endfor %}
+    <a href="{{ sidebar_dashboard_url }}" class="nav-link sidebar-subnav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}"{% if request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %} title="Pulpit domyślny" data-sidebar-pulpit-link data-sidebar-source-item="dashboard" draggable="true"><i class="sidebar-subnav-icon" data-icon="layout-dashboard" aria-hidden="true"></i><span>Pulpit domyślny</span></a>
+</section>
+{% for nav_group in navigation_dashboard_groups %}
+<section class="sidebar-space-list" aria-labelledby="sidebar-pulpit-group-{{ nav_group.pk }}" data-sidebar-pulpit-group="{{ nav_group.pk }}">
+    <h3 id="sidebar-pulpit-group-{{ nav_group.pk }}" class="sidebar-space-list-title"><a class="sidebar-pulpit-group-link" href="{{ nav_group.url }}" title="{{ nav_group.name }}">{{ nav_group.name }}</a></h3>
+    {% with section_key=nav_group.pk %}{% for nav_dashboard in nav_group.navigation_dashboards %}{% include 'dashboard/pulpits/sidebar_row.html' %}{% empty %}<span class="sidebar-pulpit-empty">Brak pulpitów</span>{% endfor %}{% endwith %}
+    {% if nav_group.has_more %}<a href="{{ nav_group.url }}" class="nav-link sidebar-subnav-link" data-sidebar-pulpit-link><i class="sidebar-subnav-icon" data-icon="align-left" aria-hidden="true"></i><span>Pokaż całą grupę</span></a>{% endif %}
+</section>
+{% endfor %}
+<a href="{{ sidebar_pulpits_url }}?tab=all" class="nav-link sidebar-subnav-link sidebar-spaces-more{% if request.resolver_match.url_name == 'index' and request.resolver_match.app_name == 'pulpits' or request.resolver_match.url_name == 'index' and request.resolver_match.app_name == 'workplace_pulpits' %}{% if not request.GET.group %} active{% endif %}{% endif %}"{% if request.resolver_match.url_name == 'index' and request.resolver_match.app_name == 'pulpits' or request.resolver_match.url_name == 'index' and request.resolver_match.app_name == 'workplace_pulpits' %}{% if not request.GET.group %} aria-current="page"{% endif %}{% endif %} data-sidebar-pulpit-link data-sidebar-source-item="pulpits" draggable="true"><i class="sidebar-subnav-icon" data-icon="align-left" aria-hidden="true"></i><span>Pokaż wszystkie pulpity</span></a>

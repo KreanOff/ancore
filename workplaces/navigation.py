@@ -6,6 +6,7 @@ from .services import scoped_workplace_app_path
 SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'for-you', 'label': 'Dla ciebie', 'icon': 'user-round-check', 'app': 'for-you'},
     {'key': 'dashboard', 'label': 'Dashboard', 'icon': 'layout-dashboard', 'route_name': 'home'},
+    {'key': 'pulpits', 'label': 'Pulpity', 'icon': 'layout-dashboard', 'app': 'dashboards'},
     {'key': 'spaces', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'teams', 'label': 'Zespoły', 'icon': 'users', 'app': 'teams'},
     {'key': 'tasks-all', 'label': 'Wszystkie zadania', 'icon': 'list-checks', 'app': 'spaces', 'suffix': 'items/'},
@@ -56,6 +57,9 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
 
     if item_key == 'dashboard':
         return view_name == 'home'
+
+    if item_key == 'pulpits':
+        return app_name in {'pulpits', 'workplace_pulpits'}
 
     if item_key == 'documents':
         return app_name in {'documents', 'workplace_documents'}

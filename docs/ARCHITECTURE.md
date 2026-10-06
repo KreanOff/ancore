@@ -32,7 +32,7 @@ resources/              ewidencja sprzętu, licencji i narzędzi Workspace
 documents/              Dysk, Dokumenty i bezpieczna integracja edytorów
 frontend/board/         izolowany bundle Excalidraw/React i lockfile
 deploy/                 lokalny serwer ONLYOFFICE (Compose)
-dashboard/              start, ustawienia, globalne szukanie, powiadomienia
+dashboard/              start, pulpity i gadżety, ustawienia, szukanie, powiadomienia
 core/                   wspólny szablon aplikacji i walidacja uploadu
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
 static/js/              wspólne i modułowe skrypty przeglądarki
@@ -181,6 +181,19 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 ## 7. Adresy i punkt wejścia
 
 - `/` pokazuje Dashboard z podsumowaniem aktywnego Workspace.
+- `/dashboards/` i `/workplaces/<slug>/dashboards/` udostępniają system
+  „Pulpity”. `Dashboard` przechowuje konfigurację i udostępnienie,
+  `DashboardGadget` układ oraz filtry; `pulpit_views.py`, `pulpit_forms.py`
+  i `pulpits.py` obsługują katalog, zapis i odczyt danych. Właściciel danych
+  Workspace (`owner`) jest oddzielony od twórcy (`created_by`).
+  `DashboardGroup` przechowuje osobiste grupy użytkownika w Workspace;
+  `pulpit_navigation.py` buduje menu gwiazdek, ostatnich i grup z aktualnie
+  dostępnych pulpitów. Dotychczasowy Dashboard jest „Pulpitem domyślnym”.
+  `/dashboards/manage/` i scoped odpowiednik są osobnym ekranem zarządzania
+  własnymi pulpitami, ze wspólną tabelą Przestrzeni i trybem bocznego menu
+  `pulpits-management`. Tworzenie/edycja nad tym katalogiem zachowują jego kontekst.
+  Katalog `/dashboards/groups/` oraz tworzenie/edycja grup należą do tego samego
+  menu zarządzania, jako osobna pozycja „Grupy pulpitów”.
 - `/for-you/` oraz `/workplaces/<slug>/for-you/` pokazują osobisty widok
   „Dla ciebie”, składany przez `dashboard/for_you.py` z dostępnych danych.
   `dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;

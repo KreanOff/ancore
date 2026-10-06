@@ -2164,3 +2164,77 @@ pozostają wspólne (`tasks-modal app-modal-panel`, `documents-field`, `form-inp
 wejściu i `ancore:content-loaded`, anulując poprzednie listenery i żądania.
 Modal blokuje tło przez `inert`, zachowuje fokus, Escape i potwierdzenie
 porzucenia zmian. Pobranie/zapis/usunięcie pokazują błędy umożliwiające ponowienie.
+
+## 15. Pulpity
+
+System „Pulpity” rozszerza Dashboard przez `dashboard/pulpits/base.html`,
+`dashboard-overview`, wspólne paski, zakładki, tabelę `data-table`, przyciski,
+`row-actions.js` i `AncoreCustomSelect`. Minimalny wariant `pulpit-*` jest
+w `components/pulpits.css`; zachowuje tokeny, 22px odstępu treści i tytuł 17px.
+Katalog pokazuje nazwę/opis, twórcę, widoczność, licznik gadżetów, osobistą
+gwiazdkę i menu akcji. Tabela przewija się we własnym kontenerze na telefonie.
+
+Gadżety rozszerzają `dashboard-panel`; podsumowanie używa liczników, statystyki
+wspólnego `progress`, listy pokazują klucz, status i termin. Nagłówek pulpitu
+ma powrót, gwiazdkę, dodawanie gadżetu, odświeżenie i menu kopiowania/edycji.
+Wybór układu ma pięć wariantów; na telefonie wszystkie kolumny wyświetlają się
+pionowo. Menu gadżetu zapewnia konfigurację, przeniesienie wyżej/niżej/do
+następnej kolumny i usunięcie. Przeciąganie zaczyna się wyłącznie od uchwytu,
+więc nie zakłóca linków i zaznaczania tekstu. Zapis aktualizuje żywy komunikat;
+błąd przywraca poprzednie pozycje i układ oraz pokazuje alert.
+
+Formularze używają standardowego `app-modal-panel--compact` i
+`AncoreTaskModals`: fokus, Escape, inert tła, błędy zapisu, zachowanie szkicu
+oraz potwierdzenie zamknięcia niezapisanych zmian. „Osoby z dostępem” jest
+widoczne dla „Wybrane osoby”, a pola grupowania/limitu zależą od gadżetu.
+Porównywanie szkicu pomija token CSRF, który może się zmienić po błędzie walidacji.
+Bezpośredni URL otwiera to samo okno nad katalogiem albo pulpitami;
+zamknięcie przywraca adres ekranu tła. `pulpits.js` inicjalizuje się po pierwszym
+ładowaniu i `ancore:content-loaded`, odłączając poprzednie listenery.
+Utworzenie/kopia przechodzi do zapisanego pulpitu z aktualizacją adresu;
+odświeżenie, konfiguracja i akcje zachowują częściową nawigację.
+
+Menu „Pulpity” wykorzystuje istniejący wariant nagłówka Przestrzeni, listy
+`sidebar-space-list` i wiersze z `row-actions.js`. Ikona nagłówka zmienia się
+na chevron przy hover/fokus; plus otwiera tworzenie pulpitu, menu oferuje
+tworzenie grupy i „Zarządzaj pulpitami”. Sekcje pokazują gwiazdki, ostatnie, własne
+grupy oraz link „Pokaż wszystkie pulpity”. „Pulpit domyślny” prowadzi do starego
+Dashboardu. Grupy mają link w tytule, pusty stan i link do pełnej listy przy
+więcej niż 6 pozycjach. Minimalne warianty `sidebar-pulpit-group-link` i
+`sidebar-pulpit-empty` używają wspólnych tokenów, truncation i fokusów.
+
+`layout.js` synchronizuje zawartość grup po częściowej nawigacji, zachowując
+stan zwinięcia i fokus. Zwinięte menu otwiera flyout z tymi samymi sekcjami,
+unikalnymi ID i działającymi menu wierszy. Globalny `pulpit-navigation.js`
+obsługuje osobistą gwiazdkę także poza modułem i po `ancore:content-loaded`,
+odłączając listenery. Zarządzanie grupami/przypisaniem używa tych samych
+formularzy i modali co konfiguracja pulpitów; zapis aktualizuje menu.
+Tabela grup używa wariantu `pulpit-table--groups` z szerszą kolumną nazwy,
+bez kolumny gwiazdki. Katalog „Grupy pulpitów” korzysta z powłoki
+`work-page--management` i nagłówka katalogu; przycisk „Utwórz grupę” oraz
+dotychczasowa tabela i modale pozostają wspólne. Link do zarządzania grupami
+przeniesiono z nagłówka zwykłego katalogu do menu zarządzania.
+Wspólny flyout ma nagłówek poza przewijanym obszarem,
+aby linki i akcje pozostały dostępne również przy wielu grupach.
+
+„Zarządzaj pulpitami” używa powłoki `work-page--management`, pasków
+`tasks-topbar--directory`, `work-item-toolbar`, paginacji w toolbarze i wierszy
+`tasks-directory-sheet tasks-project-sheet`, tak jak „Zarządzaj przestrzeniami”.
+Wariant `pulpit-management-sheet` zmienia wyłącznie siatkę kolumn odpowiadającą
+danym pulpitu. Wspólny menedżer w `tasks.js` zna szerokości tych kolumn;
+osobny klucz `pulpits-management` zachowuje preferencje między zwykłym i scoped
+adresem, bez zmieniania tabel Przestrzeni. Twórca korzysta ze wspólnego awatara; gwiazdka, menu wiersza,
+fokus, błędy i puste stany pozostają wspólne. Nazwa otwiera modal edycji,
+„Utwórz pulpit” modal nad katalogiem. Edycja, walidacja, anulowanie, zapis,
+kopiowanie i usunięcie zachowują ten ekran i jego filtry. Filtry widoczności
+i gwiazdki wysyłają formularz także po wyborze wartości.
+
+`core/includes/pulpit_management_sidebar.html` pokazuje nawigację administracyjną
+„Zarządzanie pulpitami”, powrót oraz „Zarządzaj pulpitami”. Tryb jest odrębny
+od zarządzania Przestrzeniami i Workspace. Pozycja „Grupy pulpitów” pod
+„Zarządzaj pulpitami” prowadzi do katalogu grup; aktywna jest wyłącznie jedna
+z tych pozycji, także w bezpośrednich formularzach tworzenia/edycji grup.
+Wspólny `layout.js` zachowuje miejsce
+wejścia, filtry i przewinięcie przez częściową nawigację, reload i Wstecz/Dalej.
+Przejścia między pulpitami i grupami w tym menu zachowują wspólne źródło powrotu.
+Świeży bezpośredni URL używa powrotu do wszystkich pulpitów.

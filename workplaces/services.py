@@ -1,3 +1,5 @@
+from random import choice
+
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
@@ -12,8 +14,33 @@ from .models import SidebarFavorite, Workplace, WorkplaceInvitation, WorkplaceMe
 
 ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
 WORKPLACE_URL_SCOPE_SESSION_KEY = 'workspace_url_scope_enabled'
-DEFAULT_WORKPLACE_NAME = 'Moje miejsce pracy'
-SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'calendar', 'documents', 'office', 'resources', 'for-you', 'spaces', 'teams'}
+DEFAULT_WORKPLACE_NAMES = (
+    'Biuro Latających Pierogów',
+    'Sztab Kofeinowych Pingwinów',
+    'Baza Turboślimaków',
+    'Królestwo Zaginionych Długopisów',
+    'Departament Dzielnych Kapibar',
+    'Fabryka Genialnych Wymówek',
+    'Centrum Dowodzenia Chomików',
+    'Agencja Kosmicznych Ogórków',
+    'Pracownia Tańczących Ziemniaków',
+    'Klub Bardzo Zajętych Kotów',
+    'Bunkier Ostatniego Ciastka',
+    'Akademia Drzemek Strategicznych',
+    'Liga Nieustraszonych Naleśników',
+    'Biuro Spraw Prawie Pilnych',
+    'Sztab Gumowych Kaczek',
+    'Baza Tajnych Skarpetek',
+    'Królestwo Wiecznej Przerwy',
+    'Departament Kawy i Chaosu',
+    'Fabryka Pomysłów z Kosmosu',
+    'Centrum Dowodzenia Kanapek',
+    'Agencja Sprytnych Leniwców',
+    'Pracownia Mruczących Silników',
+    'Klub Wędrujących Kubków',
+    'Bunkier Zapomnianych Haseł',
+)
+SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'calendar', 'documents', 'office', 'resources', 'for-you', 'spaces', 'teams', 'dashboards'}
 
 
 def workplace_management_url(workplace, view='members'):
@@ -100,9 +127,15 @@ def ensure_default_workplace(user):
         return existing
 
     with transaction.atomic():
-        workplace, _created = Workplace.objects.get_or_create(
+        # Serialize first visits: random names no longer provide a shared lookup key.
+        get_user_model().objects.select_for_update().get(pk=user.pk)
+        existing = workplaces_for_user(user).first()
+        if existing:
+            return existing
+
+        workplace = Workplace.objects.create(
             owner=user,
-            name=DEFAULT_WORKPLACE_NAME,
+            name=choice(DEFAULT_WORKPLACE_NAMES),
         )
         WorkplaceMembership.objects.get_or_create(
             workplace=workplace,

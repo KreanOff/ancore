@@ -12,7 +12,7 @@
     const SIDEBAR_FAVORITES_STORAGE_KEY = 'ancoreSidebarFavoritesCollapsed';
     const SIDEBAR_COLLAPSED_STORAGE_KEY = 'ancoreSidebarCollapsed';
     const SIDEBAR_WIDTH_STORAGE_KEY = 'ancoreSidebarWidth';
-    const MANAGEMENT_MODES = new Set(['workplaces', 'administration']);
+    const MANAGEMENT_MODES = new Set(['workplaces', 'administration', 'pulpits-management']);
     const RETURN_SCROLL_SELECTORS = ['.main-content', '.settings-scroll-area', '.work-content', '.tasks-table-wrap', '.tasks-board'];
 
     const sidebar = document.querySelector('.sidebar');
@@ -68,10 +68,12 @@
 
     function isPartialNavigationPath(pathname) {
         // Scoped module URLs use the same views and shell as their base URLs.
-        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|teams)(\/|$))/, '/');
+        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|teams|dashboards)(\/|$))/, '/');
         const appShellPaths = [
             /^\/(spaces|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
+            /^\/dashboards\/(?:\d+\/)?(?:create\/|edit\/|copy\/|groups\/(?:create\/|\d+\/edit\/)?|gadgets\/(?:add\/|\d+\/edit\/))?$/,
+            /^\/dashboards\/manage\/(?:create\/|\d+\/(?:edit|copy|groups)\/)?$/,
             /^\/$/,
             /^\/settings\/?$/,
             /^\/workplaces\/?$/,
@@ -130,7 +132,8 @@
         const url = getUrl(href);
         if (!url || url.origin !== window.location.origin) return '';
         if (/^\/workplaces\/?$/.test(url.pathname)) return 'workplaces';
-        const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=spaces\/)/, '/');
+        const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=(spaces|dashboards)\/)/, '/');
+        if (/^\/dashboards\/(manage|groups)(\/|$)/.test(path)) return 'pulpits-management';
         return /^\/spaces\/manage(\/|$)/.test(path) ? 'administration' : '';
     }
 
@@ -202,6 +205,7 @@
         if (source.mode === mode) return validManagementReturn(source.managementReturn, mode);
         const url = getUrl(source.url);
         const label = source.mode === 'settings' ? 'Wróć do ustawień'
+            : /\/dashboards(\/|$)/.test(url.pathname) ? 'Wróć do pulpitów'
             : /\/spaces(\/|$)/.test(url.pathname) ? 'Wróć do przestrzeni'
             : url.pathname === '/' ? 'Wróć do Workspace' : 'Wróć do poprzedniego widoku';
         return validManagementReturn({
@@ -270,6 +274,7 @@
                 if (nextNavigation) navigation.hidden = nextNavigation.hidden;
             });
             syncSidebarSpaces(nextSidebar);
+            syncSidebarDashboards(nextSidebar);
         }
         const picker = document.querySelector('[data-space-picker]');
         const nextPicker = nextDocument.querySelector('[data-space-picker]');
@@ -312,6 +317,25 @@
             const heading = document.querySelector('.main-content h1');
             heading?.setAttribute('tabindex', '-1');
             heading?.focus({ preventScroll: true });
+        }
+    }
+
+    function syncSidebarDashboards(nextSidebar) {
+        const current = sidebar.querySelector('#sidebar-pulpits-subnav');
+        const next = nextSidebar.querySelector('#sidebar-pulpits-subnav');
+        if (!current || !next) return;
+        const focused = document.activeElement;
+        const hadFocus = current.contains(focused);
+        const dashboardId = focused?.closest('[data-sidebar-pulpit-row]')?.dataset.sidebarPulpitRow;
+        const selector = focused?.matches('[data-sidebar-pulpit-link]') ? '[data-sidebar-pulpit-link]' : '[data-row-actions-toggle]';
+        current.replaceChildren(...Array.from(next.children, child => child.cloneNode(true)));
+        window.AncoreIcons?.render(current);
+        if (hadFocus) {
+            const replacement = dashboardId && current.querySelector(`[data-sidebar-pulpit-row="${dashboardId}"] ${selector}`);
+            (replacement || current.closest('[data-sidebar-group]').querySelector('[data-sidebar-group-toggle]'))?.focus({ preventScroll: true });
+        }
+        if (sidebarCollapsedFlyoutTrigger?.closest('[data-sidebar-group="pulpits"]')) {
+            closeCollapsedSidebarFlyout({ restoreFocus: sidebarCollapsedFlyout.contains(document.activeElement) });
         }
     }
 
@@ -875,12 +899,12 @@
 
         sidebarCollapsedFlyoutTitle.textContent = toggleButton.dataset.sidebarGroupName || '';
         const sourceLinks = [
-            ...(group.dataset.sidebarGroup === 'spaces' ? sourceSubnav.children : sourceSubnav.querySelectorAll('a.sidebar-subnav-link, [data-sidebar-space-picker-toggle]')),
+            ...(['spaces', 'pulpits'].includes(group.dataset.sidebarGroup) ? sourceSubnav.children : sourceSubnav.querySelectorAll('a.sidebar-subnav-link, [data-sidebar-space-picker-toggle]')),
             ...group.querySelectorAll('a[data-sidebar-group-action]'),
         ];
         sourceLinks.forEach(function (sourceLink) {
             const flyoutLink = sourceLink.cloneNode(true);
-            const links = flyoutLink.matches('a, [data-sidebar-space-picker-toggle]') ? [flyoutLink] : flyoutLink.querySelectorAll('[data-sidebar-space-link]');
+            const links = flyoutLink.matches('a, [data-sidebar-space-picker-toggle]') ? [flyoutLink] : flyoutLink.querySelectorAll('[data-sidebar-space-link], [data-sidebar-pulpit-link]');
             links.forEach(link => {
                 link.classList.remove('nav-link', 'sidebar-subnav-link', 'sidebar-header-action', 'tasks-project-menu-button');
                 link.classList.add('sidebar-collapsed-flyout__link');
@@ -1521,6 +1545,11 @@
                 ? sourceRow
                 : sourceRow?.querySelector('a.nav-link');
             const favoriteLink = favoriteRow.querySelector('a.nav-link');
+            if (favoriteLink && favoriteRow.dataset.sidebarFavoriteItem === 'pulpits') {
+                const modulePath = window.location.pathname.replace(/^\/workplaces\/[^/]+\//, '/');
+                favoriteLink.classList.toggle('active', modulePath.startsWith('/dashboards/'));
+                return;
+            }
             if (favoriteLink && sourceLink) {
                 favoriteLink.classList.toggle('active', Boolean(sourceLink?.classList.contains('active')));
             }

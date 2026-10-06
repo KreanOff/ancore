@@ -72,6 +72,15 @@ scoped URL modułu i przyjęcie zaproszenia zachowują dotychczasowe działanie.
 5. Wybrane modele ze starym `workplace=NULL` mogą zostać przypisane do aktywnego
    Workspace przez `backfill_legacy_records_for_workplace()`.
 
+`ensure_default_workplace()` tworzy Workspace tylko wtedy, gdy użytkownik nie
+ma żadnego dostępnego miejsca (własnego ani przez aktywne członkostwo).
+Losuje polską nazwę z `DEFAULT_WORKPLACE_NAMES` i zapisuje ją razem ze zwykłym
+kodem i slugiem generowanymi przez model, rolą właściciela oraz ulubionym
+Dashboardem. W transakcji blokuje wiersz użytkownika i ponownie sprawdza
+dostępne Workspace, aby równoczesne pierwsze wejścia nie tworzyły duplikatów.
+Kolejne wejścia, utrata sesji oraz edycja nazwy nie powodują ponownego losowania.
+Istniejące Workspace, również z dawną nazwą domyślną, pozostają bez zmian.
+
 Backfill obejmuje stare projekty, zadania, tagi, karty, firmy, kontakty,
 powiązania kontaktów i wydarzenia. Nie jest ogólną migracją wszystkich modeli.
 
@@ -90,11 +99,11 @@ sprawdź oczekiwany kontekst i zachowanie aktywnego middleware.
 
 `scoped_workplace_app_path()` buduje adresy modułów. Zestaw obsługiwanych
 segmentów to `tasks`, `kanban`, `calendar`, `documents`, `office`,
-`resources`, `for-you`, `spaces` i `teams`. Dawne adresy Kontaktów zwracają 404
+`resources`, `for-you`, `spaces`, `teams` i `dashboards`. Dawne adresy Kontaktów zwracają 404
 i nie są przepisywane przez middleware do aktywnego Workspace.
 Wariant scoped ma namespace `workplace_tasks`, `workplace_kanban`,
 `workplace_planner`, `workplace_documents`, `workplace_office`,
-`workplace_resources`, `workplace_spaces` albo `workplace_teams`. „Dla ciebie” ma nazwy tras `for_you` i
+`workplace_resources`, `workplace_spaces`, `workplace_teams` albo `workplace_pulpits`. „Dla ciebie” ma nazwy tras `for_you` i
 `workplace_for_you` bez osobnego namespace.
 
 Po włączeniu zakresu URL middleware przekierowuje bazowe GET/HEAD do
@@ -754,7 +763,7 @@ Przy nowym skrypcie zachowaj inicjalizację na pierwszym wejściu i po podmianie
 sprawdzanie istnienia elementu oraz sprzątanie/ochronę listenerów.
 Nie opieraj całej inicjalizacji wyłącznie na jednorazowym `DOMContentLoaded`.
 
-Linki `data-management-return` w menu zarządzania Workspace i przestrzeniami
+Linki `data-management-return` w menu zarządzania Workspace, przestrzeniami i pulpitami
 wracają do miejsca wejścia. `layout.js` zapisuje źródłowy URL z query/hash,
 etykietę i przewinięcie w `history.state.ancoreManagementReturn` oraz
 `sessionStorage`, w zakresie konta i aktywnego Workspace. Wewnętrzne przejścia,
@@ -838,3 +847,60 @@ więc zmiana Workspace w drugiej karcie nie zmienia celu zapisu. Nagłówek
 lub potwierdzenie zapisu; zwykłe wejście renderuje katalog z otwartym oknem.
 Usuwanie wymaga POST i CSRF. Query string przekazuje wyłącznie znane parametry
 katalogu; klient nie może wskazać dowolnego adresu przekierowania.
+
+## 16. Pulpity i gadżety
+
+`Dashboard.owner` jest właścicielem Workspace z `workspace_owner(request)`,
+a `created_by` faktycznym twórcą. Katalog i każdy bezpośredni endpoint najpierw
+ograniczają właściciela i aktywny Workspace, następnie widoczność pulpitu.
+Osobista gwiazdka i kopia nie nadają dostępu. Tylko twórca może edytować
+konfigurację, usuwać pulpit oraz zarządzać gadżetami. Formularz udostępniania
+wybiera aktywne osoby obecnego Workspace; udostępnienie jest natychmiastowe,
+bez zaproszeń, a pozostali użytkownicy mają tylko odczyt.
+
+`DashboardGroup` ogranicza `owner`, Workspace i `user`. Relacja z pulpitami
+organizuje wyłącznie osobiste menu, nie nadaje dostępu ani nie zmienia rewizji
+konfiguracji. Formularze grup i przypisania wybierają tylko aktualnie dostępne
+pulpity/grupy. Listy, liczniki, historia i gwiazdki ponownie sprawdzają dostęp;
+cofnięcie udostępnienia ukrywa pulpit również w zachowanej relacji grupy.
+`pulpit_navigation.py` pobiera relacje grup przez filtrowany `Prefetch`, a gwiazdki
+przez `Exists`. Ostatnie odwiedziny korzystają z `dashboard/recent.py`, który
+zapisuje tylko identyfikatory, osobno dla użytkownika i Workspace. Samo otwarcie
+katalogu nie dopisuje historii. Pulpit domyślny jest stałym skrótem do `/`.
+`groups/` udostępnia zarządzanie osobistymi grupami; `<pk>/groups/` przypisanie
+pulpitu. Usunięcie grupy kasuje wyłącznie grupę i relacje organizacji.
+Gwiazdka z menu korzysta z tego samego endpointu co katalog; nagłówek
+`X-Pulpit-Navigation` zwraca JSON do odświeżenia aktualnego ekranu.
+Fallback formularza sprawdza lokalny adres `next` przed przekierowaniem.
+
+`management_context` zawęża `visible_dashboards` do `created_by=request.user`.
+Nowy katalog nie rozszerza prawa edycji; bezpośrednie endpointy nadal wymagają
+widoczności i twórcy. Trasy `manage/create/` i `manage/<pk>/edit|copy|groups|delete/`
+korzystają z tych samych operacji, z jawnym parametrem `management=True`.
+`management_url` zachowuje wyłącznie parametry q, visibility, favorite i page,
+budując docelowy adres w aktywnym Workspace. Bezpośrednie wejście oraz błędy
+formularza renderują `manage.html` pod modalem. Zapis/usunięcie wraca do katalogu.
+Ostatnia zmiana pochodzi z `Dashboard.updated_at`, nie z aktywności zadań.
+Tryb `pulpits-management` korzysta ze wspólnego mechanizmu źródła powrotu;
+nie nadpisuje źródła podczas filtrowania, paginacji i pracy w modalu.
+Obejmuje również `groups/`, `groups/create/` i `groups/<pk>/edit/`.
+Context processor odróżnia aktywny katalog grup flagą
+`pulpit_groups_management_mode`; częściowa nawigacja zachowuje wspólne źródło
+powrotu przy przejściu między grupami i pulpitami. Formularz `<pk>/groups/` służący
+przypisaniu pulpitu pozostaje formularzem nad jego dotychczasowym ekranem.
+
+Każdy gadżet ponownie stosuje `visible_to` do Tasks oraz historii oglądającego,
+w zakresie właściciela i aktywnego Workspace. Filtr przestrzeni sprawdza
+`visible_spaces`; utrata dostępu daje komunikat bez jej nazwy, liczników ani
+poszerzania zakresu. Usunięcie źródłowej przestrzeni usuwa jej filtrowane gadżety
+przez CASCADE, zamiast zmieniać filtr na wszystkie zadania. Usunięcie pulpitu
+usuwa wyłącznie jego konfigurację i gadżety. Linki zadań zawierają numer `task_id`
+i stabilne `task_pk`; klucz wyświetlany pochodzi z `WorkItem`.
+
+Zapisy konfiguracji i układu blokują wiersz pulpitu w transakcji. Endpoint
+`arrange/` wymaga pełnej, nieduplikowanej listy gadżetów tego pulpitu w 1–3
+kolumnach i aktualnej `revision`. Stara rewizja daje HTTP 409, bez nadpisania
+układu; klient przywraca poprzedni układ i pokazuje instrukcję odświeżenia.
+Dodanie/usunięcie/edycja gadżetu oraz edycja pulpitu zwiększają rewizję.
+Mutacje wymagają POST i CSRF. Backend i źródłowe modele zadań pozostają
+niezmienione; pulpit nie kopiuje danych biznesowych ani historii.

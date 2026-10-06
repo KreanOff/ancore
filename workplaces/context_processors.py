@@ -15,6 +15,7 @@ def current_workplace(request):
     sidebar_favorite_keys = []
     sidebar_favorites = []
     space_navigation = {'navigation_spaces': [], 'navigation_starred_spaces': [], 'navigation_recent_spaces': []}
+    dashboard_navigation = {'navigation_starred_dashboards': [], 'navigation_recent_dashboards': [], 'navigation_dashboard_groups': []}
     spaces_management_available = False
     resolver = getattr(request, 'resolver_match', None)
     spaces_management_mode = bool(
@@ -22,15 +23,26 @@ def current_workplace(request):
         and resolver.app_name in {'spaces', 'workplace_spaces'}
         and resolver.url_name in {'manage', 'manage_create', 'manage_edit'}
     )
+    pulpit_groups_management_mode = bool(
+        resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'}
+        and resolver.url_name in {'groups', 'group_create', 'group_edit', 'group_delete'}
+    )
+    pulpits_management_mode = pulpit_groups_management_mode or bool(
+        resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'}
+        and (resolver.url_name == 'manage' or (resolver.url_name or '').startswith('manage_'))
+    )
     sidebar_mode = 'settings' if resolver and resolver.view_name == 'settings' else (
-        'administration' if spaces_management_mode else 'workspace'
+        'administration' if spaces_management_mode else 'pulpits-management' if pulpits_management_mode else 'workspace'
     )
     if active_workplace:
         from spaces.services import can_manage_spaces
         from spaces.navigation import sidebar_spaces
+        from dashboard.pulpit_navigation import sidebar_dashboards
         space_navigation = sidebar_spaces(request)
+        dashboard_navigation = sidebar_dashboards(request)
         spaces_management_available = can_manage_spaces(request)
         workplace_app_urls = {
+            'dashboards': scoped_workplace_app_path(active_workplace, 'dashboards'),
             'spaces': scoped_workplace_app_path(active_workplace, 'spaces'),
             'teams': scoped_workplace_app_path(active_workplace, 'teams'),
             'for_you': scoped_workplace_app_path(active_workplace, 'for-you'),
@@ -53,8 +65,11 @@ def current_workplace(request):
     return {
         'current_workplace': active_workplace,
         **space_navigation,
+        **dashboard_navigation,
         'spaces_management_available': spaces_management_available,
         'spaces_management_mode': spaces_management_mode,
+        'pulpits_management_mode': pulpits_management_mode,
+        'pulpit_groups_management_mode': pulpit_groups_management_mode,
         'sidebar_mode': sidebar_mode,
         'available_workplaces': user_workplaces,
         'available_workplace_count': len(user_workplaces),
