@@ -201,7 +201,6 @@
     function initArrangement(page, signal) {
         const grid = page.querySelector('[data-pulpit-grid][data-editable]');
         if (!grid) return;
-        const layoutSelect = page.querySelector('[data-pulpit-layout]');
         const errorBox = page.querySelector('[data-pulpit-page-error]');
         let saving = false;
         let dragged;
@@ -224,13 +223,9 @@
             });
             grid.className = 'pulpit-grid pulpit-grid--' + layout;
             grid.dataset.layout = layout;
-            layoutSelect.value = layout;
-            window.AncoreCustomSelect?.refresh(layoutSelect.closest('.ancore-custom-select') || layoutSelect.parentElement);
         }
         async function save(before, focus) {
             saving = true;
-            layoutSelect.disabled = true;
-            window.AncoreCustomSelect?.refresh(layoutSelect.closest('.ancore-custom-select') || layoutSelect.parentElement);
             grid.setAttribute('aria-busy', 'true');
             errorBox.hidden = true;
             try {
@@ -254,18 +249,10 @@
                 }
             } finally {
                 saving = false;
-                layoutSelect.disabled = false;
-                window.AncoreCustomSelect?.refresh(layoutSelect.closest('.ancore-custom-select') || layoutSelect.parentElement);
                 grid.removeAttribute('aria-busy');
                 focus?.focus({ preventScroll: true });
             }
         }
-        layoutSelect.addEventListener('change', () => {
-            if (saving) { layoutSelect.value = grid.dataset.layout; return; }
-            const before = capture();
-            setColumns(layoutSelect.value);
-            save(before, layoutSelect);
-        }, { signal });
         grid.addEventListener('click', event => {
             const button = event.target.closest('[data-pulpit-move]');
             if (!button || saving) return;

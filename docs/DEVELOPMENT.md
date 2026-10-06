@@ -751,7 +751,7 @@ kopiowanie, usuwanie, CSRF i walidację układu/rewizji. Tworzenie przez katalog
 i zarządzanie zaczyna od zera gadżetów; ponowne wejście zachowuje pusty stan,
 a ręczne dodanie pierwszego gadżetu usuwa komunikat pustego pulpitu.
 
-Browser QA: pusty katalog, utworzenie, pięć układów i przeładowanie,
+Browser QA: pusty katalog, utworzenie, pięć układów w oknie edycji i przeładowanie,
 przeciąganie oraz przenoszenie klawiaturą, konfiguracja gadżetu, wybrana osoba,
 kopiowanie i gwiazdki, błędy formularza/sieci/konfliktu, Escape/fokus,
 ponowne wejście z Dashboardu, zwykły/scoped URL oraz desktop/telefon.

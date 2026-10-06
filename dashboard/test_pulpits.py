@@ -113,7 +113,7 @@ class PulpitTests(TestCase):
         for path in paths:
             self.assertEqual(self.client.post(self.url(dashboard, path), self.form_data()).status_code, 403, path)
         response = self.client.get(self.url(dashboard))
-        self.assertContains(response, 'Tylko do odczytu')
+        self.assertNotContains(response, 'data-editable="true"')
         self.assertNotContains(response, 'data-pulpit-drag')
 
     def test_workspace_and_owner_scope_on_direct_urls(self):

@@ -2180,12 +2180,27 @@ Gadżety rozszerzają `dashboard-panel`; podsumowanie używa liczników, statyst
 wspólnego `progress`, listy pokazują klucz, status i termin. Nagłówek pulpitu
 pokazuje samą nazwę po lewej, a dodawanie gadżetu, odświeżenie i menu
 kopiowania/edycji po prawej. Nawigacja i gwiazdki są dostępne w bocznym menu
-oraz katalogu pulpitów.
-Wybór układu ma pięć wariantów; na telefonie wszystkie kolumny wyświetlają się
+oraz katalogu pulpitów. Pod nagłówkiem nie ma osobnego wiersza widoczności,
+autora ani wyboru układu. Widoczność i układ zmienia się w oknie
+„Edytuj i udostępnij”. Układ ma pięć wariantów; na telefonie wszystkie kolumny wyświetlają się
 pionowo. Menu gadżetu zapewnia konfigurację, przeniesienie wyżej/niżej/do
 następnej kolumny i usunięcie. Przeciąganie zaczyna się wyłącznie od uchwytu,
 więc nie zakłóca linków i zaznaczania tekstu. Zapis aktualizuje żywy komunikat;
 błąd przywraca poprzednie pozycje i układ oraz pokazuje alert.
+
+Pusty pulpit używa wariantu `pulpit-empty-state` wspólnego `tasks-empty-state`:
+kolorowa ilustracja `static/img/empty-states/dashboard-empty.webp` i opis
+są wyśrodkowane w wolnej przestrzeni pod nagłówkiem. Przycisk „Dodaj gadżet”
+jest dostępny w nagłówku pulpitu; nie ma dodatkowego przycisku pod ilustracją.
+Ilustracja ma przezroczyste tło, maksymalną szerokość 440px i skaluje się
+do dostępnej szerokości. Jest dekoracyjna (`alt=""`); stan opisuje polski tekst.
+Typografia pustego pulpitu nawiązuje do wskazanego wzorca Jiry: nagłówek
+28px/700 (24px na telefonie), opis 16px z interlinią 1,6 i odstępem 16px
+od nagłówka. Używa wspólnego Atlassian Sans i koloru `--text-primary`.
+Lokalna waga nagłówka nadpisuje globalne 400 wyłącznie w tym pustym stanie.
+Siatka pustych kolumn pozostaje ukryta także po zmianie układu w oknie edycji.
+Po dodaniu pierwszego gadżetu wyświetla się zwykła siatka.
+W trybie tylko do odczytu ilustracja pozostaje, a opis dotyczy twórcy pulpitu.
 
 Formularze używają standardowego `app-modal-panel--compact` i
 `AncoreTaskModals`: fokus, Escape, inert tła, błędy zapisu, zachowanie szkicu

@@ -1716,6 +1716,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### img
 
+- [static/img/empty-states/README.md](../static/img/empty-states/README.md)
+- [static/img/empty-states/dashboard-empty.webp](../static/img/empty-states/dashboard-empty.webp)
 - [static/img/favicon-ancore-large.png](../static/img/favicon-ancore-large.png)
 - [static/img/logo-ancore.png](../static/img/logo-ancore.png)
 - [static/img/space-avatars/PROMPT-extra.txt](../static/img/space-avatars/PROMPT-extra.txt)

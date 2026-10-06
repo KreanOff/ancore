@@ -27,12 +27,12 @@
 .pulpit-topbar .tasks-titlebar-left { min-width: 0; gap: 8px; }
 .pulpit-topbar .tasks-topbar-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .pulpit-topbar .tasks-titlebar-actions { flex-shrink: 0; }
-.pulpit-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: var(--font-size-sm); }
-.pulpit-meta > span { display: flex; align-items: center; gap: 8px; }
-.pulpit-meta svg { width: 16px; height: 16px; }
-.pulpit-layout-label { display: flex; align-items: center; gap: 8px; }
-.pulpit-layout-label .form-select { width: 210px; }
 .pulpit-intro { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
+.pulpits-page .pulpit-empty-state { width: 100%; flex: 1 0 auto; gap: 20px; padding: 24px 0 !important; }
+.pulpit-empty-state__illustration { display: block; width: min(440px, 100%); height: auto; flex-shrink: 0; }
+.pulpit-empty-state .tasks-empty-state__copy { max-width: 640px; gap: 16px; }
+.pulpit-empty-state h2 { font-size: 28px; font-weight: 700 !important; line-height: 1.25; }
+.pulpit-empty-state p { font-size: 16px; line-height: 1.6; }
 .pulpit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; flex-shrink: 0; }
 .pulpit-grid--single { grid-template-columns: minmax(0, 1fr); }
 .pulpit-grid--left { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
@@ -76,12 +76,11 @@
     .pulpit-grid--three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 767px) {
+    .pulpit-empty-state h2 { font-size: 24px; }
     .pulpit-tabs > a { font-size: 13.5px; }
     .pulpit-grid, .pulpit-grid--left, .pulpit-grid--right, .pulpit-grid--three { grid-template-columns: minmax(0, 1fr); }
     .pulpit-column:empty { min-height: 30px; }
     .pulpit-topbar { flex-wrap: wrap; }
     .pulpit-topbar .tasks-titlebar-left { max-width: 100%; }
     .pulpit-topbar .tasks-titlebar-actions { width: 100%; justify-content: flex-end; }
-    .pulpit-layout-label { width: 100%; justify-content: space-between; }
-    .pulpit-meta > span { overflow-wrap: anywhere; }
 }
