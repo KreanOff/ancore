@@ -494,11 +494,6 @@ body :where(input, textarea)::placeholder {
     --sidebar-space-marker: var(--sidebar-space-selection);
 }
 
-.sidebar:has([data-sidebar-navigation="workspace"]:not([hidden])) {
-    --sidebar-bg: var(--bg-main);
-    background: var(--sidebar-bg);
-}
-
 .sidebar [data-sidebar-navigation="workspace"] .sidebar-primary-link {
     height: var(--dropdown-menu-item-height);
     min-height: var(--dropdown-menu-item-height);

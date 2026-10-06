@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from tasks.models import Task, TaskActivity, TaskProject, TaskSection
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
-from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY
+from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
 from .models import Dashboard, DashboardGadget
 
 
@@ -50,11 +50,37 @@ class PulpitTests(TestCase):
         self.assertEqual(response.status_code, 200)
         dashboard = Dashboard.objects.get()
         self.assertEqual((dashboard.owner, dashboard.created_by, dashboard.workplace), (self.owner, self.member, self.workplace))
-        self.assertEqual(dashboard.gadgets.count(), 4)
+        self.assertEqual(dashboard.gadgets.count(), 0)
         self.assertTrue(dashboard.favorited_by.filter(pk=self.member.pk).exists())
         self.assertTrue(response.json()['saved'])
         self.login(self.owner)
         self.assertEqual(self.client.get(self.url(dashboard)).status_code, 404)
+
+    def test_new_dashboard_stays_empty_until_first_gadget_is_added(self):
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            for modal in [False, True]:
+                with self.subTest(prefix=prefix, modal=modal):
+                    headers = {'HTTP_X_PULPIT_MODAL': 'true'} if modal else {}
+                    response = self.client.post(prefix + 'create/', self.form_data(), **headers)
+                    self.assertEqual(response.status_code, 200 if modal else 302)
+                    detail_url = response.json()['url'] if modal else response['Location']
+                    dashboard = Dashboard.objects.get(pk=int(detail_url.rstrip('/').rsplit('/', 1)[-1]))
+                    self.assertFalse(dashboard.gadgets.exists())
+                    for _ in range(2):
+                        response = self.client.get(detail_url)
+                        self.assertContains(response, 'Ten pulpit jest pusty.')
+                        self.assertContains(response, 'Dodaj gadżet')
+                        self.assertNotContains(response, 'data-pulpit-gadget=')
+                        self.assertFalse(dashboard.gadgets.exists())
+                    response = self.client.post(detail_url + 'gadgets/add/', {
+                        'kind': 'summary', 'title': '', 'status': '',
+                        'assignee': 'all', 'group_by': 'status', 'limit': 10,
+                    }, **headers)
+                    self.assertEqual(response.status_code, 200 if modal else 302)
+                    self.assertEqual(dashboard.gadgets.get().kind, 'summary')
+                    response = self.client.get(detail_url)
+                    self.assertContains(response, 'Podsumowanie zadań')
+                    self.assertNotContains(response, 'Ten pulpit jest pusty.')
 
     def test_private_selected_workspace_and_revoked_membership(self):
         private = self.dashboard()

@@ -155,8 +155,10 @@ podpisy i awatary stoją w tej samej kolumnie, 6px od jej krawędzi. Awatar ma
 20px, a odstęp do nazwy wynosi 6px. Nazwy przestrzeni i pozycji codziennej
 nawigacji mają wagę 600 również na wewnętrznych `span`, pomimo globalnej
 reguły wagi 400. Pozycje codziennej nawigacji również mają wysokość 32px;
-zwinięty pasek zachowuje dotychczasowe wymiary. Jego codzienny wariant ma białe
-tło. Wybrana pozycja (`a.nav-link.active`) ma jasne fioletowe
+zwinięty pasek zachowuje dotychczasowe wymiary. Tło głównego paska bocznego
+jest takie samo jak górnego paska aplikacji: `--sidebar-bg` (`#FBFBFC`), także
+w codziennym menu Workspace, po zwinięciu i na telefonie.
+Wybrana pozycja (`a.nav-link.active`) ma jasne fioletowe
 tło, fioletowy tekst/ikonę i krótki znacznik przy lewej krawędzi. Ta sama reguła
 obejmuje Dashboard, pozostałe moduły, Favorites, Starsze widoki oraz kategorie
 Ustawień i menu zarządzania. Wybrana pozycja zachowuje fioletowy stan pod
@@ -2176,7 +2178,9 @@ gwiazdkę i menu akcji. Tabela przewija się we własnym kontenerze na telefonie
 
 Gadżety rozszerzają `dashboard-panel`; podsumowanie używa liczników, statystyki
 wspólnego `progress`, listy pokazują klucz, status i termin. Nagłówek pulpitu
-ma powrót, gwiazdkę, dodawanie gadżetu, odświeżenie i menu kopiowania/edycji.
+pokazuje samą nazwę po lewej, a dodawanie gadżetu, odświeżenie i menu
+kopiowania/edycji po prawej. Nawigacja i gwiazdki są dostępne w bocznym menu
+oraz katalogu pulpitów.
 Wybór układu ma pięć wariantów; na telefonie wszystkie kolumny wyświetlają się
 pionowo. Menu gadżetu zapewnia konfigurację, przeniesienie wyżej/niżej/do
 następnej kolumny i usunięcie. Przeciąganie zaczyna się wyłącznie od uchwytu,

@@ -156,9 +156,6 @@ def edit(request, pk=None, copy=False, management=False):
                     gadget.dashboard = dashboard
                     gadget.column = min(gadget.column, dashboard.column_count - 1)
                     gadget.save()
-            else:
-                for position, (kind, column) in enumerate([('assigned', 0), ('summary', 1), ('activity', 0), ('statistics', 1)]):
-                    DashboardGadget.objects.create(dashboard=dashboard, kind=kind, column=min(column, dashboard.column_count - 1), position=position)
         return saved_response(request, management_url(request) if management else app_url(request, f'{dashboard.pk}/'))
     return form_response(request, form, 'Kopiuj pulpit' if copy else 'Edytuj pulpit' if pk else 'Utwórz pulpit',
                          management_url(request) if management else app_url(request, f'{source.pk}/') if source else app_url(request), source,

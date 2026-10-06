@@ -747,7 +747,9 @@ Testy: `dashboard.test_pulpits`, `dashboard.test_pulpit_navigation`, `dashboard.
 `core.test_task_integrity`, `planner.test_task_calendar` oraz `workplaces`.
 Nowe testy obejmują właściciela/twórcę, dwa Workspace, prywatność rodziców,
 cofnięcie dostępu, tylko odczyt, formularze źródeł/udostępniania, gwiazdki,
-kopiowanie, usuwanie, CSRF i walidację układu/rewizji.
+kopiowanie, usuwanie, CSRF i walidację układu/rewizji. Tworzenie przez katalog
+i zarządzanie zaczyna od zera gadżetów; ponowne wejście zachowuje pusty stan,
+a ręczne dodanie pierwszego gadżetu usuwa komunikat pustego pulpitu.
 
 Browser QA: pusty katalog, utworzenie, pięć układów i przeładowanie,
 przeciąganie oraz przenoszenie klawiaturą, konfiguracja gadżetu, wybrana osoba,

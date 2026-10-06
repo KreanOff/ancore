@@ -627,8 +627,9 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Dostępne pulpity innych twórców pozostają w zwykłym katalogu do oglądania.
   Widoczność: prywatny, wybrane aktywne osoby albo cały Workspace.
   Udostępnienie pozwala oglądać konfigurację; modyfikacje należą do twórcy.
-  Nowy pulpit otrzymuje cztery gadżety i gwiazdkę twórcy; kopia domyślnie jest
-  prywatna, zachowuje filtry i ma niezależne rekordy gadżetów.
+  Nowy pulpit jest pusty i otrzymuje gwiazdkę twórcy; gadżety dodaje się ręcznie
+  przyciskiem „Dodaj gadżet”. Kopia domyślnie jest prywatna, zachowuje filtry
+  i ma niezależne rekordy gadżetów.
   Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
   Gadżety można dodawać, konfigurować, usuwać i przenosić przez przeciąganie
   lub przyciski menu. Konfiguracja i kolejność są zapisywane w PostgreSQL.

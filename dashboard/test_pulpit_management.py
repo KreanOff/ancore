@@ -90,7 +90,7 @@ class PulpitManagementTests(TestCase):
         self.assertEqual(response.json(), {'saved': True, 'url': self.url()})
         dashboard = Dashboard.objects.get(name='Nowy plan')
         self.assertEqual((dashboard.owner, dashboard.created_by, dashboard.workplace), (self.owner, self.member, self.workspace))
-        self.assertEqual(dashboard.gadgets.count(), 4)
+        self.assertEqual(dashboard.gadgets.count(), 0)
 
     def test_edit_copy_groups_and_delete_return_with_filters(self):
         filters = '?q=Plan&visibility=private&favorite=starred&page=2'
