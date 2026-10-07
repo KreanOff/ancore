@@ -94,12 +94,13 @@ window.showConfirmModal = function (options) {
         document.removeEventListener('keydown', handleKeyDown);
         overlay.classList.remove('is-visible');
         modal.classList.remove('is-visible');
-        setTimeout(() => {
+        const animations = overlay.getAnimations({ subtree: true });
+        Promise.all(animations.map(animation => animation.finished.catch(() => {}))).then(() => {
             overlay.remove();
             if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
                 previouslyFocused.focus({ preventScroll: true });
             }
-        }, 150);
+        });
         return true;
     };
 

@@ -2984,10 +2984,12 @@ function initTasksPage() {
     }
 
     const modalReturnFocus = new WeakMap();
+    const modalCloseTokens = new WeakMap();
 
     function openModal(modal, focusTarget, onOpen) {
         if (!modal) return;
-        if (!modal.classList.contains('is-open')) {
+        modalCloseTokens.delete(modal);
+        if (!modal.classList.contains('is-open') && !modalReturnFocus.has(modal)) {
             const activeElement = document.activeElement;
             const rowActionToggle = activeElement?.closest('[data-row-actions]')?.querySelector('[data-row-actions-toggle]');
             modalReturnFocus.set(modal, rowActionToggle || activeElement);
@@ -3010,12 +3012,22 @@ function initTasksPage() {
         if (!document.querySelector('.tasks-modal.is-open')) {
             document.body.classList.remove('modal-open');
         }
-        modal.dispatchEvent(new CustomEvent('ancore:task-modal-closed', { bubbles: true }));
-        const returnFocus = modalReturnFocus.get(modal);
-        if (returnFocus instanceof HTMLElement && returnFocus.isConnected) {
-            returnFocus.focus({ preventScroll: true });
-        }
-        modalReturnFocus.delete(modal);
+        const token = {};
+        modalCloseTokens.set(modal, token);
+        const finish = () => {
+            if (modalCloseTokens.get(modal) !== token) return;
+            modalCloseTokens.delete(modal);
+            modal.dispatchEvent(new CustomEvent('ancore:task-modal-closed', { bubbles: true }));
+            const returnFocus = modalReturnFocus.get(modal);
+            if (returnFocus instanceof HTMLElement && returnFocus.isConnected) {
+                returnFocus.focus({ preventScroll: true });
+            }
+            modalReturnFocus.delete(modal);
+        };
+        const dialog = modal.querySelector(':scope > .tasks-modal__dialog');
+        const animations = modal.classList.contains('app-modal-panel--compact') ? dialog?.getAnimations() || [] : [];
+        if (animations.length) Promise.all(animations.map(animation => animation.finished.catch(() => {}))).then(finish);
+        else finish();
     }
 
     window.AncoreTaskModals = { open: openModal, close: closeModal };

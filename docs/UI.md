@@ -1543,9 +1543,13 @@ projektów, kontaktów/firm, wydarzeń, Workspace, profilu oraz formularzy Dysku
 i Dokumentów. Wariant jest jawnie oznaczony w szablonach; nie wymaga nowej
 inicjalizacji JS i działa również po częściowej nawigacji oraz błędach formularza.
 
-Panel zajmuje prawą część ekranu od 24px pod górną krawędzią do dołu.
-Po lewej pozostaje `clamp(64px, 13.5vw, 280px)` kontekstu aplikacji, po prawej
-16px. Jasnoszara powierzchnia używa `--secondary-menu-bg` (`#FBFBFC`),
+Panel jest wyśrodkowany poziomo względem całego ekranu, niezależnie od
+szerokości i stanu menu bocznego. Zachowuje dotychczasową szerokość na desktopie:
+`calc(100vw - clamp(64px, 13.5vw, 280px) - 16px)`, ograniczoną dostępnym
+obszarem. Od góry pozostaje 24px, a panel dochodzi do dolnej krawędzi ekranu.
+Odstępy po lewej i prawej są równe. Zachowuje dotychczasowe zaokrąglenie
+tylko górnych rogów oraz brak dolnego obramowania.
+Jasnoszara powierzchnia używa `--secondary-menu-bg` (`#FBFBFC`),
 tego samego tokenu co boczny pasek nawigacji; wewnątrz jest biała,
 przewijana treść `--card-bg` z odstępami 24px.
 Nagłówek ma 72px i tytuł 20px/400, stopka minimum 68px i akcje po lewej.
@@ -1571,7 +1575,7 @@ i siatki `tasks-project-create-fields`: dwie równe kolumny, identyczne odstępy
 i etykiety obok kontrolek. Wspólny wariant wiersza obejmuje także kontrolki
 projektu i grupy w elementach `.tasks-issue-field`. Do 720px parametry projektu
 i zadania przechodzą do jednej kolumny. Węższe okna zachowują pionowy układ pól. Do 900px panel
-ma 40px odstępu po lewej, a do 600px wypełnia ekran, z odstępami treści 12px,
+ma 16px odstępu od góry i po 20px z boków, a do 600px wypełnia ekran, z odstępami treści 12px,
 większą stopką przy zawijaniu akcji i uwzględnieniem bezpiecznego obszaru ekranu.
 Dane kontaktowe mają dwie kolumny, a do 600px jedną; ID Ancore zajmuje pełny wiersz.
 
@@ -1583,15 +1587,27 @@ bez osobnego przewijania listy. Okna mają stałą stopkę „Zamknij” oraz
 dotychczasowe zamykanie krzyżykiem i Escape, fokus i obsługę zapisu.
 
 Małe okna formularzy używają `app-modal-panel app-modal-panel--compact`,
-jak „Zaproś osobę”, „Zmień rolę” oraz „Zaproszenie do Workspace”. Okno zaproszenia
-zachowuje wyśrodkowaną szerokość do 760px i wysokość dopasowaną do formularza,
-a powierzchnie, nagłówek i stopkę dziedziczy po panelu „Edytuj miejsce pracy”.
+jak „Utwórz pulpit”, „Zaproś osobę”, „Zmień rolę”, „Zaproszenie do Workspace”
+oraz wybór awatara. Są wyśrodkowane poziomo i przylegają do górnej krawędzi
+ekranu, z wysokością dopasowaną do treści oraz szerokością do 760px.
+Wysuwają się od góry i chowają w górę w 320ms, z tą samą krzywą ruchu
+co duże panele. `--app-panel-enter-offset` określa kierunek: `100%` dla
+dużego panelu i `-100%` dla małego. Mały panel ma zaokrąglone tylko dolne
+rogi i brak górnego obramowania; powierzchnie, nagłówek i stopkę dziedziczy
+po panelu „Edytuj miejsce pracy”.
+`AncoreTaskModals` kończy zamykanie małego formularza po zakończeniu ruchu,
+zanim moduł usunie jego HTML. Ponowne otwarcie anuluje poprzednie sprzątanie
+i zachowuje pierwotny punkt powrotu fokusu.
 Ma jasnoszare tło, białą przewijaną treść i akcje po lewej. Etykiety pozostają
 nad kontrolkami; w zaproszeniu osoba i rola są obok siebie. Długi tytuł zawija się.
 Na telefonie zachowuje margines od krawędzi, a stopka może zawijać akcje.
 Potwierdzenia `showConfirmModal` i edytory zdjęć konta, firmy oraz logo Workspace
-korzystają z tych samych reguł powierzchni, nagłówka, białej treści i stopki
-w `modal-system.css`, zachowując własne szerokości i mechanizmy otwierania.
+korzystają z tego samego małego panelu przy górnej krawędzi oraz reguł
+powierzchni, nagłówka, białej treści i stopki w `modal-system.css`, zachowując
+własne szerokości i mechanizmy otwierania. Potwierdzenie jest usuwane z DOM
+po zakończeniu ruchu, a powrót fokusu następuje po zamknięciu. Kadrowanie
+używa istniejącego atrybutu `hidden` i dyskretnego przejścia `display`.
+`prefers-reduced-motion` wyłącza ruch również w małych oknach.
 Nagłówki mają minimum 72px i tekst 20px/400; stopki minimum 68px oraz akcje
 po lewej. Do 600px jest to odpowiednio 60px, 18px i 60px, z odstępami 12px.
 Długie komunikaty przewijają się w treści, a przyciski potwierdzeń mogą się
