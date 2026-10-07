@@ -452,6 +452,10 @@ polu, jak i na liście. `ProjectVisibilitySelect` nadaje opcjom
 `data-ancore-option-icon`; wspólny `AncoreCustomSelect` renderuje ten opcjonalny
 atrybut przez `AncoreIcons`, zachowując tekst i wskaźnik zaznaczenia. Ikony są
 dekoracyjne (`aria-hidden`), mają 16px i dziedziczą kolor kontrolki.
+Wspólny select obsługuje także `data-ancore-option-preview` wskazujący ID
+lokalnego `<template>`. Klonuje jego pierwszy element jako dekoracyjną
+miniaturę w opcji i przy jednej wybranej wartości. Brak szablonu zachowuje
+zwykłą ikonę lub tekst; ponowne odświeżenie zastępuje poprzednią miniaturę.
 Nowy projekt ma formularz główny. Po utworzeniu okno „Edytuj projekt” ma
 zakładki „Główna” i „Członkowie”. `notifications-tabs` obsługuje strzałki,
 Home i End. Członkowie korzystają ze wspólnego `members_table.html` Workspace:
@@ -2281,6 +2285,13 @@ i wykres dla statystyk. `GadgetKindSelect` przekazuje te same ikony do
 wspólnego dropdownu przez `data-ancore-option-icon`.
 `pulpit-layout-preview` pokazuje miniaturę aktualnego układu kolumn i zmienia
 ją razem z selectem, również przy przywracaniu układu po błędzie zapisu.
+Include `dashboard/pulpits/layout_preview.html` jest wspólny dla menu
+„Zmień układ” i pola „Układ” w tworzeniu pulpitu. `DashboardLayoutSelect`
+przekazuje pięć miniatur przez `data-ancore-option-preview`; pole pokazuje
+podgląd 32×23px przy wybranej wartości i 44×32px w wierszach listy o wysokości
+48px. Lokalny limit wysokości menu 320px mieści pięć wariantów i wyszukiwarkę;
+wspólna warstwa dropdownów ogranicza go do dostępnego miejsca na ekranie.
+Pole zachowuje wyszukiwarkę, checkbox zaznaczenia i zapis natywnego selecta.
 Formularz rodzaju gadżetu zawiera `pulpit-gadget-preview`: miniaturę z ikoną
 oraz krótki opis, aktualizowane po wyborze rodzaju. Dwa autorskie SVG
 `static/img/pulpits/assigned.svg` i `statistics.svg` rozszerzają styl ilustracji
@@ -2388,6 +2399,11 @@ odstęp 22px od krawędzi oraz wspólne przyciski „Anuluj” i „Zapisz”.
 Include `dashboard/pulpits/fields.html` współdzieli pola i błędy z modalami.
 Zapis przez POST wraca do pulpitu albo katalogu zarządzania z jego filtrami;
 błąd pozostaje na stronie ze szkicem i fokusem nieprawidłowego pola.
+Pole „Widoczność” w tworzeniu pulpitu i na stronie „Dostępy” używa
+`DashboardVisibilitySelect` oraz istniejącego `data-ancore-option-icon`:
+`lock` dla „Prywatny”, `users` dla „Wybrane osoby” i `building-2` dla
+„Cały Workspace”. Wspólny select pokazuje dekoracyjną ikonę w liście
+oraz przy wybranej wartości, zachowując checkbox zaznaczenia i wyszukiwarkę.
 „Osoby z dostępem” pojawiają się po wyborze „Wybrane osoby”. `pulpits.js`
 chroni niezapisane zmiany przy nawigacji i zamykaniu/przeładowaniu karty,
 a po `ancore:content-loaded` odłącza poprzednie listenery.

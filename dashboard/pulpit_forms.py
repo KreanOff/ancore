@@ -12,11 +12,34 @@ def style_fields(form):
         field.widget.attrs['class'] = 'form-select' if isinstance(field.widget, forms.Select) else 'form-input'
 
 
+class DashboardVisibilitySelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        icon = {
+            Dashboard.Visibility.PRIVATE: 'lock',
+            Dashboard.Visibility.SELECTED: 'users',
+            Dashboard.Visibility.WORKSPACE: 'building-2',
+        }.get(value)
+        if icon:
+            option['attrs']['data-ancore-option-icon'] = icon
+        return option
+
+
+class DashboardLayoutSelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        if value in Dashboard.Layout.values:
+            field_id = (attrs or {}).get('id', name)
+            option['attrs']['data-ancore-option-preview'] = f'{field_id}_preview_{value}'
+        return option
+
+
 class DashboardAccessForm(forms.ModelForm):
     class Meta:
         model = Dashboard
         fields = ['visibility', 'shared_with']
         labels = {'shared_with': 'Osoby z dostępem'}
+        widgets = {'visibility': DashboardVisibilitySelect}
 
     def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,7 +61,11 @@ class DashboardAccessForm(forms.ModelForm):
 class DashboardForm(DashboardAccessForm):
     class Meta(DashboardAccessForm.Meta):
         fields = ['name', 'description', 'visibility', 'shared_with', 'layout']
-        widgets = {'description': forms.Textarea(attrs={'rows': 3})}
+        widgets = {
+            **DashboardAccessForm.Meta.widgets,
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'layout': DashboardLayoutSelect,
+        }
 
 
 class DashboardSettingsForm(forms.ModelForm):

@@ -78,6 +78,9 @@
 .pulpit-layout-preview--right { grid-template-columns: 1fr 2fr; }
 .pulpit-layout-preview--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .pulpit-layout-preview--three > span:nth-child(3) { display: block; }
+.pulpit-form [data-pulpit-field="layout"] { --dropdown-menu-max-height: 320px; }
+.pulpit-form [data-pulpit-field="layout"] .ancore-custom-select__button .pulpit-layout-preview { width: 32px; height: 23px; padding: 3px; }
+.pulpit-form [data-pulpit-field="layout"] .ancore-custom-select__option { min-height: 48px; }
 .pulpit-layout-control > label { white-space: nowrap; }
 .pulpit-layout-control > .ancore-custom-select { width: 230px; }
 .pulpit-editor-body { display: flex; flex: 1; min-height: 0; min-width: 0; }

@@ -153,7 +153,15 @@
         filterOptions(wrapper);
     }
 
-    function optionIcon(option) {
+    function optionVisual(option) {
+        const templateId = option?.dataset.ancoreOptionPreview;
+        const template = templateId ? document.getElementById(templateId) : null;
+        if (template instanceof HTMLTemplateElement && template.content.firstElementChild) {
+            const preview = template.content.firstElementChild.cloneNode(true);
+            preview.classList.add('ancore-custom-select__preview');
+            preview.setAttribute('aria-hidden', 'true');
+            return preview;
+        }
         const name = option?.dataset.ancoreOptionIcon;
         return name ? window.AncoreIcons?.create(name, { className: 'ancore-custom-select__icon' }) : null;
     }
@@ -176,8 +184,8 @@
         label.textContent = option.textContent.trim() || option.value || 'Opcja';
 
         button.append(check);
-        const icon = optionIcon(option);
-        if (icon) button.append(icon);
+        const visual = optionVisual(option);
+        if (visual) button.append(visual);
         button.append(label);
         button.setAttribute('aria-selected', option.selected ? 'true' : 'false');
         button.classList.toggle('is-selected', option.selected);
@@ -227,10 +235,10 @@
         if (!select || !button || !label || !menu) return;
 
         label.textContent = selectedLabel(select);
-        button.querySelector('.ancore-custom-select__icon')?.remove();
-        const icon = select.selectedOptions.length === 1 ? optionIcon(select.selectedOptions[0]) : null;
-        if (icon) {
-            button.prepend(icon);
+        button.querySelector('.ancore-custom-select__icon, .ancore-custom-select__preview')?.remove();
+        const visual = select.selectedOptions.length === 1 ? optionVisual(select.selectedOptions[0]) : null;
+        if (visual) {
+            button.prepend(visual);
             renderIcon(button);
         }
         button.disabled = select.disabled;
