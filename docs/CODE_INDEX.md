@@ -17,17 +17,17 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 19 | 0 | 17 | 58 |
+| [core](../core) | 19 | 0 | 18 | 58 |
 | [accounts](../accounts) | 17 | 7 | 8 | 43 |
 | [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
 | [tasks](../tasks) | 36 | 63 | 39 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 31 | 9 | 24 | 176 |
+| [dashboard](../dashboard) | 31 | 9 | 27 | 181 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 24 | 4 | 25 | 80 |
+| [spaces](../spaces) | 24 | 4 | 26 | 80 |
 
 ## 2. Modele i relacje
 
@@ -1335,7 +1335,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/pulpit_forms.py](../dashboard/pulpit_forms.py) — `style_fields`, `DashboardAccessForm`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
 - [dashboard/pulpit_navigation.py](../dashboard/pulpit_navigation.py) — `sidebar_dashboards`
 - [dashboard/pulpit_urls.py](../dashboard/pulpit_urls.py)
-- [dashboard/pulpit_views.py](../dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `management_url`, `management_context`, `manage`, `detail`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
+- [dashboard/pulpit_views.py](../dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `management_context`, `manage`, `detail`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
 - [dashboard/pulpits.py](../dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `decorate_dashboard`, `task_url`, `decorate_gadget`, `gadget_data`, `detail_context`
 - [dashboard/recent.py](../dashboard/recent.py) — `remember_view`, `recent_views`
 - [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`
@@ -1424,6 +1424,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/includes/pulpit_management_sidebar.html](../core/templates/core/includes/pulpit_management_sidebar.html)
 - [core/templates/core/includes/settings_secondary_menu.html](../core/templates/core/includes/settings_secondary_menu.html)
 - [core/templates/core/includes/settings_sidebar.html](../core/templates/core/includes/settings_sidebar.html)
+- [core/templates/core/includes/sidebar_picker.html](../core/templates/core/includes/sidebar_picker.html)
 - [core/templates/core/includes/space_management_sidebar.html](../core/templates/core/includes/space_management_sidebar.html)
 - [core/templates/core/includes/trash_icon.html](../core/templates/core/includes/trash_icon.html)
 - [core/templates/core/includes/workplace_management_sidebar.html](../core/templates/core/includes/workplace_management_sidebar.html)
@@ -1547,7 +1548,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/templates/dashboard/pulpits/gadgets.html](../dashboard/templates/dashboard/pulpits/gadgets.html)
 - [dashboard/templates/dashboard/pulpits/index.html](../dashboard/templates/dashboard/pulpits/index.html)
 - [dashboard/templates/dashboard/pulpits/manage.html](../dashboard/templates/dashboard/pulpits/manage.html)
+- [dashboard/templates/dashboard/pulpits/row_actions.html](../dashboard/templates/dashboard/pulpits/row_actions.html)
+- [dashboard/templates/dashboard/pulpits/search_results.html](../dashboard/templates/dashboard/pulpits/search_results.html)
 - [dashboard/templates/dashboard/pulpits/sidebar_navigation.html](../dashboard/templates/dashboard/pulpits/sidebar_navigation.html)
+- [dashboard/templates/dashboard/pulpits/sidebar_picker.html](../dashboard/templates/dashboard/pulpits/sidebar_picker.html)
 - [dashboard/templates/dashboard/pulpits/sidebar_row.html](../dashboard/templates/dashboard/pulpits/sidebar_row.html)
 - [dashboard/templates/dashboard/settings.html](../dashboard/templates/dashboard/settings.html)
 
@@ -1603,6 +1607,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/card.html](../spaces/templates/spaces/card.html)
 - [spaces/templates/spaces/configuration.html](../spaces/templates/spaces/configuration.html)
 - [spaces/templates/spaces/detail.html](../spaces/templates/spaces/detail.html)
+- [spaces/templates/spaces/directory_row_actions.html](../spaces/templates/spaces/directory_row_actions.html)
 - [spaces/templates/spaces/form.html](../spaces/templates/spaces/form.html)
 - [spaces/templates/spaces/form_page.html](../spaces/templates/spaces/form_page.html)
 - [spaces/templates/spaces/index.html](../spaces/templates/spaces/index.html)
@@ -2015,13 +2020,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_pulpit_navigation.py](../dashboard/test_pulpit_navigation.py).
 
-- `PulpitNavigationTests`: 5 metod testowych.
+- `PulpitNavigationTests`: 8 metod testowych.
 
 ### dashboard/test_pulpits.py
 
 Źródło: [dashboard/test_pulpits.py](../dashboard/test_pulpits.py).
 
-- `PulpitTests`: 26 metod testowych.
+- `PulpitTests`: 28 metod testowych.
 
 ### dashboard/test_reminders.py
 

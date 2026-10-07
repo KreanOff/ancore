@@ -861,6 +861,11 @@ bez zaproszeń, a pozostali użytkownicy mają tylko odczyt.
 Listy, liczniki, historia i gwiazdki ponownie sprawdzają dostęp;
 cofnięcie udostępnienia ukrywa pulpit również w menu.
 `pulpit_navigation.py` pobiera gwiazdki przez `Exists`.
+Panel „Więcej pulpitów” korzysta ze wspólnego komponentu panelu Przestrzeni.
+GET `dashboards/search/` (także scoped) filtruje przez `visible_dashboards`,
+wyszukuje po nazwie/opisie, ogranicza frazę do 120 znaków i wynik do 20 pulpitów.
+Odpowiedź zawiera escapowany HTML i `Cache-Control: private, no-store`;
+puste zapytanie zwraca pustą listę. Link katalogu zachowuje frazę i `tab=all`.
 Ostatnie odwiedziny korzystają z `dashboard/recent.py`, który
 zapisuje tylko identyfikatory, osobno dla użytkownika i Workspace. Samo otwarcie
 katalogu nie dopisuje historii. Pulpit domyślny jest stałym skrótem do `/`.

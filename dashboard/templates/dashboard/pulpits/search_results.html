@@ -1,0 +1,6 @@
+{% for dashboard in results %}
+<a class="sidebar-workspace-option sidebar-space-picker__result" href="{{ dashboard.url }}" title="{{ dashboard.name }}">
+    <i data-icon="layout-dashboard" aria-hidden="true"></i><span>{{ dashboard.name }}</span>
+</a>
+{% endfor %}
+{% if has_more %}<p class="sidebar-workspace-search__empty">Więcej wyników znajdziesz w katalogu pulpitów.</p>{% endif %}

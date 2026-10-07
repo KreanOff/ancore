@@ -600,11 +600,14 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Zadań z postępem oraz do 4 trwających/nadchodzących wydarzeń.
 - **Pulpity:** osobny katalog `/dashboards/` oraz scoped odpowiednik, dostępny
   w menu, ulubionych menu i globalnym wyszukiwaniu jako skrót modułu.
-  Zakładki Ulubione, Moje i Wszystkie oraz wyszukiwanie po nazwie/opisie
-  mają paginację po 25 pozycji. Każdy członek Workspace może utworzyć pulpit,
+  Zakładki Wszystkie, Ulubione i Moje oraz wyszukiwanie po nazwie/opisie
+  i filtr widoczności mają paginację po 30 pozycji. Katalog używa tej samej
+  tabeli co Przestrzenie, z lokalnym zaznaczeniem i menu akcji po lewej.
+  Każdy członek Workspace może utworzyć pulpit,
   edytować własny, kopiować dostępny i oznaczać go osobistą gwiazdką.
   Menu „Pulpity” ma przycisk tworzenia, sekcje Oznaczone gwiazdką/Ostatnie,
-  oraz „Pokaż wszystkie pulpity”. Dotychczasowy Dashboard
+  oraz „Więcej pulpitów” z panelem wyszukiwania po nazwie/opisie i linkiem
+  „Wyświetl wszystkie pulpity” do zakładki Wszystkie. Dotychczasowy Dashboard
   jest dostępny jako „Pulpit domyślny”. Ostatnie pochodzą z osobistej historii
   sesji; gwiazdki są zapisane w bazie. Menu pokazuje do 6 ulubionych
   i 6 ostatnich bez gwiazdki. Mechanizm grup pulpitów jest usunięty wraz

@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -395,3 +396,52 @@ class PulpitTests(TestCase):
         response = self.client.post(self.url(dashboard, 'favorite/'), {'tab': 'all', 'q': 'Przegląd'}, HTTP_X_PULPIT_MODAL='true')
         self.assertIn('tab=all', response.json()['url'])
         self.assertIn('q=Przegl%C4%85d', response.json()['url'])
+
+    def test_catalog_visibility_filter_respects_access_and_workspace(self):
+        own = self.dashboard(visibility='private')
+        shared = self.dashboard(visibility='selected')
+        shared.shared_with.add(self.member)
+        public = self.dashboard(visibility='workspace')
+        member_private = Dashboard.objects.create(
+            owner=self.owner, workplace=self.workplace, created_by=self.member,
+            name='Prywatny członka', visibility='private',
+        )
+        Dashboard.objects.create(owner=self.owner, workplace=self.other, created_by=self.member,
+                                 name='Obcy Workspace', visibility='workspace')
+        self.login(self.member)
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            for visibility, expected in [('private', member_private), ('selected', shared), ('workspace', public)]:
+                with self.subTest(prefix=prefix, visibility=visibility):
+                    response = self.client.get(prefix, {'tab': 'all', 'visibility': visibility})
+                    self.assertEqual([row.pk for row in response.context['dashboards']], [expected.pk])
+                    self.assertEqual(response.context['visibility_filter'], visibility)
+            response = self.client.get(prefix, {'tab': 'all', 'visibility': 'unknown'})
+            self.assertEqual(response.context['visibility_filter'], '')
+            self.assertEqual({row.pk for row in response.context['dashboards']}, {member_private.pk, shared.pk, public.pk})
+            self.assertNotIn(own.pk, [row.pk for row in response.context['dashboards']])
+        shared.shared_with.remove(self.member)
+        response = self.client.get(scoped_workplace_app_path(self.workplace, 'dashboards'),
+                                   {'tab': 'all', 'visibility': 'selected'})
+        self.assertEqual(response.context['page'].paginator.count, 0)
+
+    def test_catalog_filters_survive_pagination_tabs_and_favorite(self):
+        for number in range(31):
+            Dashboard.objects.create(owner=self.owner, workplace=self.workplace, created_by=self.owner,
+                                     name=f'Lista {number:02}', visibility='workspace')
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            filters = {'tab': 'all', 'q': 'Lista', 'visibility': 'workspace', 'page': 2}
+            response = self.client.get(prefix, filters)
+            self.assertEqual(len(response.context['dashboards']), 1)
+            self.assertEqual(response.context['page'].paginator.per_page, 30)
+            self.assertEqual(response.context['page'].paginator.count, 31)
+            for entry in response.context['tabs']:
+                self.assertEqual(parse_qs(urlparse(entry['url']).query), {
+                    'tab': [entry['key']], 'q': ['Lista'], 'visibility': ['workspace'],
+                })
+            self.assertEqual(parse_qs(urlparse(response.context['previous_url']).query), {
+                'tab': ['all'], 'q': ['Lista'], 'visibility': ['workspace'], 'page': ['1'],
+            })
+            dashboard = response.context['dashboards'][0]
+            next_url = response.wsgi_request.get_full_path()
+            saved = self.client.post(dashboard.favorite_url, {'next': next_url}, HTTP_X_PULPIT_MODAL='true')
+            self.assertEqual(saved.json()['url'], next_url)

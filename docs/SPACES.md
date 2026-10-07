@@ -5,6 +5,12 @@
 „Przestrzenie” (`/spaces/` i scoped odpowiednik) jest katalogiem do codziennej
 pracy: wszystkie dostępne przestrzenie, ulubione, prywatne, rodzaj, wyszukiwanie
 i liczba widocznych zadań. Nazwa otwiera podsumowanie przestrzeni.
+Tabela ma checkboxy i menu trzech pasków w dwóch pierwszych kolumnach,
+jak katalog Projektów. Checkbox nagłówka zaznacza bieżącą stronę;
+zaznaczenie jest lokalne i resetuje się po zmianie widoku. Menu wiersza
+zawiera otwarcie, ulubione i ustawienia; edycja oraz dodawanie osób do
+prywatnej przestrzeni wymagają istniejącego prawa `manage_space`.
+Zmiana ulubionych zachowuje adres i filtry katalogu, także bez JavaScriptu.
 Podmenu głównej nawigacji pokazuje do sześciu dostępnych przestrzeni w blokach
 „Oznaczone gwiazdką” i „Ostatnie”, bez linii drzewa. Osobiste ulubione są
 uporządkowane po nazwie; pozostałe miejsca zajmują ostatnio odwiedzone

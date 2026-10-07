@@ -1,26 +1,11 @@
 /* Saved dashboards extend the existing Workspace overview and modal shell. */
 .pulpits-page { min-width: 0; }
 .pulpits-page .dashboard-main { gap: 18px; }
-.pulpit-tabs { padding-inline: var(--dashboard-inline-padding, var(--work-space-inline-padding, 22px)); flex-shrink: 0; overflow-x: auto; white-space: nowrap; }
-.pulpit-tabs > a { font-size: 13.5px; }
-.pulpit-tabs [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
-.pulpit-tabs > a:not([aria-current="page"]):hover { border-bottom-color: var(--system-interaction); }
-.pulpit-search { padding: 0; min-height: var(--control-height); flex-wrap: wrap; gap: 8px; }
-.pulpit-search .tasks-search-field { width: min(320px, 100%); }
-.pulpit-result-count { margin-left: auto; font-size: var(--font-size-sm); }
-.pulpit-table-wrap { overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius); flex-shrink: 0; flex-grow: 0; }
-.pulpit-table { width: 100%; border-collapse: collapse; min-width: 680px; font-size: var(--font-size-sm); }
-.pulpit-table th, .pulpit-table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
-.pulpit-table th { background: var(--secondary-menu-bg); white-space: nowrap; text-transform: none; letter-spacing: normal; }
-.pulpit-table tr:last-child td { border-bottom: 0; }
-.pulpit-table tr:hover td { background: var(--system-interaction-soft); }
-.pulpit-table th:first-child, .pulpit-table td:first-child { width: 44px; padding: 12px; line-height: normal; height: auto; }
-.pulpit-table td:nth-child(2) { width: 42%; }
-.pulpit-name { color: var(--system-accent); text-decoration: none; overflow-wrap: anywhere; }
-.pulpit-name:hover { text-decoration: underline; }
-.pulpit-description { display: block; margin-top: 5px; line-height: 1.5; overflow-wrap: anywhere; }
-.pulpit-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: var(--font-size-sm); }
-.pulpit-star.is-active { color: var(--system-accent); background: rgba(var(--system-accent-rgb), .1); }
+/* The catalog shares Spaces' sheet, toolbar, tabs and selection styles. */
+.tasks-directory-board.work-space-sheet.pulpit-directory-sheet {
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 320px 220px 190px 130px 320px;
+}
+.pulpit-directory-sheet .pulpit-directory-icon { width: 24px; height: 24px; flex-shrink: 0; }
 .pulpit-topbar .tasks-titlebar-left { min-width: 0; gap: 8px; }
 .pulpit-topbar .tasks-topbar-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .pulpit-topbar .tasks-titlebar-actions { flex-shrink: 0; }
@@ -164,7 +149,6 @@
     .pulpit-layout-control { width: auto; flex-wrap: wrap; }
     .pulpit-layout-control > .ancore-custom-select { flex: 1; min-width: 180px; }
     .pulpit-empty-state h2 { font-size: 24px; }
-    .pulpit-tabs > a { font-size: 13.5px; }
     .pulpit-grid, .pulpit-grid--left, .pulpit-grid--right, .pulpit-grid--three { grid-template-columns: minmax(0, 1fr); }
     .pulpit-column:empty { min-height: 30px; }
     .pulpit-topbar { flex-wrap: wrap; }

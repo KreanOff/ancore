@@ -121,6 +121,7 @@
 
 .tasks-project-sheet--selectable .tasks-directory-select-all,
 .tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"],
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > .tasks-directory-sheet__cell[data-column="select"] > .tasks-row-checkbox,
 .tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-select-all,
 .tasks-spreadsheet-sheet.tasks-tag-sheet .tasks-directory-list .tasks-directory-row > .tasks-row-checkbox[data-column="select"],
 .contacts-spreadsheet-sheet .tasks-directory-select-all,

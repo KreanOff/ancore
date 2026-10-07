@@ -1,0 +1,10 @@
+<a href="{{ space.url }}" class="tasks-project-menu-button"><i data-icon="layers" aria-hidden="true"></i><span>Otwórz przestrzeń</span></a>
+<form method="post" action="{{ space.favorite_url }}" data-space-directory-favorite>
+    {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit" class="tasks-project-menu-button" aria-pressed="{{ space.favorite|yesno:'true,false' }}"><i data-icon="star" aria-hidden="true"></i><span>{% if space.favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}</span></button>
+</form>
+{% if space.can_manage %}
+<a href="{{ space.edit_url }}" class="tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj przestrzeń</span></a>
+{% if space.project.visibility == 'private' %}<a href="{{ space.url }}members/" class="tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="user-round-plus" aria-hidden="true"></i><span>Dodaj osoby</span></a>{% endif %}
+{% endif %}
+<a href="{{ space.settings_url }}" class="tasks-project-menu-button"><i data-icon="settings" aria-hidden="true"></i><span>Ustawienia przestrzeni</span></a>

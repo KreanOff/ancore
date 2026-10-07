@@ -40,6 +40,7 @@ def index_context(request):
     if tab not in {'favorites', 'mine', 'all'}:
         tab = 'favorites'
     query = request.GET.get('q', '').strip()[:120]
+    visibility = request.GET.get('visibility', '')
     queryset = visible_dashboards(request).select_related('created_by').annotate(gadget_count=Count('gadgets', distinct=True))
     if tab == 'favorites':
         queryset = queryset.filter(favorited_by=request.user)
@@ -47,13 +48,19 @@ def index_context(request):
         queryset = queryset.filter(created_by=request.user)
     if query:
         queryset = queryset.filter(Q(name__icontains=query) | Q(description__icontains=query))
-    page = Paginator(queryset.order_by('name', 'pk'), 25).get_page(request.GET.get('page'))
+    if visibility in Dashboard.Visibility.values:
+        queryset = queryset.filter(visibility=visibility)
+    else:
+        visibility = ''
+    page = Paginator(queryset.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
     rows = [decorate_dashboard(request, row) for row in page]
     base = app_url(request)
-    filters = {'q': query}
+    filters = {'q': query, 'visibility': visibility}
     return {'dashboards': rows, 'page': page, 'tab': tab, 'query': query, 'dashboards_url': base,
+            'visibility_filter': visibility, 'visibility_choices': Dashboard.Visibility.choices,
             'create_url': app_url(request, 'create/'),
-            'tabs': [{'key': key, 'label': label, 'url': base + '?' + urlencode({'tab': key, **filters})} for key, label in [('favorites', 'Ulubione'), ('mine', 'Moje'), ('all', 'Wszystkie')]],
+            'tabs': [{'key': key, 'label': label, 'icon': icon, 'url': base + '?' + urlencode({'tab': key, **filters})}
+                     for key, label, icon in [('all', 'Wszystkie', 'layout-dashboard'), ('favorites', 'Ulubione', 'star'), ('mine', 'Moje', 'user-round')]],
             'previous_url': base + '?' + urlencode({'tab': tab, **filters, 'page': page.number - 1}),
             'next_url': base + '?' + urlencode({'tab': tab, **filters, 'page': page.number + 1})}
 
@@ -62,6 +69,25 @@ def index_context(request):
 @require_GET
 def index(request):
     return render(request, 'dashboard/pulpits/index.html', index_context(request))
+
+
+@login_required
+@require_GET
+def search(request):
+    query = request.GET.get('q', '').strip()[:120]
+    results = list(visible_dashboards(request).filter(
+        Q(name__icontains=query) | Q(description__icontains=query),
+    ).order_by('name', 'pk')[:21]) if query else []
+    has_more = len(results) > 20
+    results = results[:20]
+    for dashboard in results:
+        dashboard.url = app_url(request, f'{dashboard.pk}/')
+    response = JsonResponse({
+        'html': render_to_string('dashboard/pulpits/search_results.html', {'results': results, 'has_more': has_more}),
+        'count': len(results),
+    })
+    response['Cache-Control'] = 'private, no-store'
+    return response
 
 
 def management_url(request, suffix=''):

@@ -26,11 +26,14 @@
 {% endblock %}
 {% block work_content_class %} work-content--directory{% endblock %}
 {% block work_content %}
-<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-spreadsheet-sheet work-space-sheet">
+<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet">
     {% if page %}
     <section class="tasks-directory-group" role="table" aria-label="Lista przestrzeni">
         <div class="tasks-directory-header" role="row">
-            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Ulubione" title="Ulubione"><i data-icon="star" aria-hidden="true"></i></span>
+            <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader">
+                <input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie przestrzenie na tej stronie" title="Zaznacz wszystkie przestrzenie na tej stronie" data-select-all-checkbox data-select-all-target="spaces">
+            </span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="columnheader" aria-label="Działania przestrzeni" title="Działania przestrzeni" data-column-label="Działania"><span class="u-sr-only">Działania</span></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="columnheader">KLUCZ<i data-icon="hash" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">PRZESTRZEŃ<i data-icon="layers" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="columnheader">RODZAJ<i data-icon="shapes" aria-hidden="true"></i></span>
@@ -40,10 +43,9 @@
         </div>
         <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
             {% for space in page %}
-            <article class="tasks-issue-row tasks-directory-row" role="row">
-                <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
-                    <form method="post" action="{{ space.favorite_url }}">{% csrf_token %}<button class="tasks-icon-button tasks-row-favorite" type="submit" aria-label="{% if space.favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}: {{ space.project.name }}" aria-pressed="{{ space.favorite|yesno:'true,false' }}"><i data-icon="star" aria-hidden="true"></i></button></form>
-                </div>
+            <article class="tasks-issue-row tasks-directory-row work-space-row" role="row" data-space-directory-row="{{ space.pk }}">
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ space.pk }}" data-space-id="{{ space.pk }}" aria-label="Zaznacz przestrzeń {{ space.project.name }}"></span>
+                {% include 'tasks/includes/directory_row_menu.html' with kind='space' item_id=space.pk item_name=space.project.name actions_template='spaces/directory_row_actions.html' cell_role='cell' %}
                 <span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>
                 <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{{ space.url }}" title="{{ space.project.name }}">{{ space.project.name }}</a></span>
                 <span class="tasks-directory-sheet__cell" data-column="kind" role="cell" title="{{ space.get_kind_display }}">{{ space.get_kind_display }}</span>

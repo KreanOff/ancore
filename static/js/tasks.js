@@ -174,6 +174,8 @@ function initTasksPage() {
     const checkboxes = document.querySelectorAll('.task-checkbox');
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
     const projectCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-project-id]');
+    const spaceCheckboxes = document.querySelectorAll('.work-space-row .tasks-row-checkbox[data-space-id]');
+    const pulpitCheckboxes = document.querySelectorAll('.pulpit-directory-row .tasks-row-checkbox[data-pulpit-id]');
     const tagCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-tag-id]');
     const contactCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-contact-id]');
     const companyCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-company-id]');
@@ -5010,7 +5012,7 @@ function initTasksPage() {
     }
 
     function checkboxRow(checkbox) {
-        return checkbox.closest('.task-row, .tasks-project-row, .tasks-section-row, .tasks-all-groups-row, .contacts-directory-row');
+        return checkbox.closest('.task-row, .tasks-project-row, .tasks-section-row, .tasks-all-groups-row, .contacts-directory-row, .work-space-row, .pulpit-directory-row');
     }
 
     function taskCheckboxCanEdit(checkbox) {
@@ -5034,6 +5036,10 @@ function initTasksPage() {
 
         if (target === 'projects') {
             targetCheckboxes = Array.from(projectCheckboxes);
+        } else if (target === 'spaces') {
+            targetCheckboxes = Array.from(spaceCheckboxes);
+        } else if (target === 'pulpits') {
+            targetCheckboxes = Array.from(pulpitCheckboxes);
         } else if (target === 'sections') {
             targetCheckboxes = Array.from(sectionCheckboxes);
         } else if (target === 'tags') {
@@ -5246,6 +5252,14 @@ function initTasksPage() {
             projectContainer?.classList.toggle('checked', cb.checked);
         });
 
+        spaceCheckboxes.forEach(cb => {
+            cb.closest('.work-space-row')?.classList.toggle('checked', cb.checked);
+        });
+
+        pulpitCheckboxes.forEach(cb => {
+            cb.closest('.pulpit-directory-row')?.classList.toggle('checked', cb.checked);
+        });
+
         tagCheckboxes.forEach(cb => {
             cb.closest('.tasks-all-groups-row, .tasks-tag-sheet__row')?.classList.toggle('checked', cb.checked);
         });
@@ -5296,6 +5310,20 @@ function initTasksPage() {
             e.stopPropagation();
             updateSelection();
         });
+    });
+
+    spaceCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            updateSelection();
+        });
+    });
+
+    pulpitCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            updateSelection();
+        }, pageListenerOptions);
     });
 
     tagCheckboxes.forEach(cb => {
@@ -7449,12 +7477,20 @@ function initTasksPage() {
         function getDefaultDirectoryTrackWidths(cells) {
             return cells.map(cell => {
                 const column = cell.dataset.column || '';
+                if (cell.closest('.pulpit-directory-sheet')) {
+                    const widths = { select: 40, menu: 40, name: 320, leader: 220, visibility: 190, gadgets: 130, description: 320 };
+                    if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
+                }
                 if (cell.closest('.pulpit-management-sheet')) {
                     const widths = { action: 40, name: 270, leader: 210, visibility: 160, gadgets: 100, last_activity: 190, menu: 40 };
                     if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
                 }
                 if (cell.closest('.work-space-sheet--management')) {
                     const widths = { action: 40, name: 270, key: 100, kind: 160, management: 220, leader: 210, last_activity: 190, menu: 40 };
+                    if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
+                }
+                if (cell.closest('.work-space-sheet')) {
+                    const widths = { select: 40, menu: 40, key: 150, name: 320, kind: 190, template: 220, description: 320, tasks_count: 130 };
                     if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
                 }
                 if (column === 'select') {
@@ -7532,6 +7568,7 @@ function initTasksPage() {
         }
 
         function getDirectoryStorageSegment() {
+            if (document.querySelector('.pulpit-directory-sheet')) return 'pulpits-directory';
             if (document.querySelector('.pulpit-management-sheet')) return 'pulpits-management';
             if (document.querySelector('[data-resources-page]')) return 'resources';
             const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';

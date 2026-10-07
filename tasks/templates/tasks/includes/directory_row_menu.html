@@ -1,9 +1,12 @@
-<div class="tasks-directory-sheet__cell tasks-project-sheet__cell contacts-directory-sheet__cell tasks-tag-sheet__cell" data-column="menu" data-row-actions data-directory-row-kind="{{ kind }}">
+<div class="tasks-directory-sheet__cell tasks-project-sheet__cell contacts-directory-sheet__cell tasks-tag-sheet__cell" data-column="menu"{% if cell_role %} role="{{ cell_role }}"{% endif %} data-row-actions data-directory-row-kind="{{ kind }}">
     <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="directory-{{ kind }}-{{ item_id }}-actions" aria-controls="directory-{{ kind }}-{{ item_id }}-actions" aria-expanded="false" aria-label="Działania: {{ item_name }}" title="Działania">
         <i data-icon="menu" aria-hidden="true"></i>
     </button>
     <div id="directory-{{ kind }}-{{ item_id }}-actions" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {{ item_name }}" data-row-actions-panel>
         <div class="documents-menu-actions">
+            {% if actions_template %}
+            {% include actions_template %}
+            {% else %}
             {% if favorite_url %}
             <button type="button" class="tasks-project-menu-button" data-directory-favorite="{{ favorite_url }}" data-favorite-action="{% if is_favorite %}remove{% else %}add{% endif %}" aria-pressed="{% if is_favorite %}true{% else %}false{% endif %}"><i data-icon="star" aria-hidden="true"></i><span>{% if is_favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}</span></button>
             {% endif %}
@@ -25,6 +28,7 @@
                 {% if delete_label %}
                 <button type="button" class="tasks-project-delete-button tasks-project-delete-button--separated" data-directory-row-action="delete">{% include 'core/includes/trash_icon.html' %}<span>{{ delete_label }}</span></button>
                 {% endif %}
+            {% endif %}
             {% endif %}
         </div>
     </div>

@@ -9,6 +9,7 @@ urlpatterns = [
     path('manage/<int:pk>/gadgets/<int:gadget_pk>/edit/', views.gadget_edit, {'management': True}, name='manage_gadget_edit'),
     path('manage/<int:pk>/gadgets/<int:gadget_pk>/delete/', views.gadget_delete, {'management': True}, name='manage_gadget_delete'),
     path('', views.index, name='index'),
+    path('search/', views.search, name='search'),
     path('create/', views.edit, name='create'),
     path('manage/', views.manage, name='manage'),
     path('manage/create/', views.edit, {'management': True}, name='manage_create'),

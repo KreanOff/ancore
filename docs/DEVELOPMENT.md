@@ -64,6 +64,17 @@ usunięcie nieobecnych linków po aktualizacji danych, zachowanie zwinięcia,
 panel skrótów i „Więcej przestrzeni” oraz zamknięcie menu na telefonie po
 wybraniu nowej pozycji.
 
+Checkboxy i menu katalogu Przestrzeni: browser QA obejmuje zaznaczenie
+jednego/wszystkich wierszy bieżącej strony, stan częściowego wyboru,
+podświetlenie jak w Projektach, menu bez zmiany zaznaczenia, Escape/fokus,
+ulubione z zachowaniem filtrów, edycję/dodanie osób według ról, pusty wynik,
+zmianę szerokości kolumn, telefon i ponowne wejście po częściowej nawigacji.
+Katalog i zarządzanie Przestrzeniami sprawdzaj także pod kątem braku bocznych
+odstępów tabeli, porównując je z Workspace i Projektami na desktopie, tablecie
+i telefonie, również po paginacji i przeładowaniu.
+Uruchamiaj `spaces.tests.SpaceTests`, `spaces.test_navigation`,
+`spaces.test_management` i regresje katalogu Projektów `tasks.test_directory_tabs`.
+
 `spaces.test_navigation` sprawdza osobiste gwiazdki, kolejność odwiedzin,
 limit i brak duplikatów, zwykłe/scoped adresy, cofnięcie dostępu, granice
 Workspace, role menu oraz CSRF i bezpieczny powrót formularza. W przeglądarce:
@@ -771,6 +782,14 @@ osobne menu trzech sekcji, formularze ustawień/dostępu zapisujące tylko włas
 pola, walidację, twórcę, Workspace, CSRF, zachowanie filtrów oraz tło modali.
 Zmiana menu i rozdzielenie formularzy nie wymagają migracji.
 
+Katalog Pulpitów: `dashboard.test_pulpits` sprawdza filtr widoczności
+w zwykłym/scoped URL, dostęp członka, cofnięcie udostępnienia, obcy Workspace
+oraz zachowanie wyszukiwania/widoczności przy paginacji po 30 pozycji,
+zmianie zakładki i zapisie osobistej gwiazdki. W browser QA porównaj katalog
+z Przestrzeniami: wiersze i odstępy, checkboxy pojedyncze/wszystkie/częściowe,
+menu z trzema paskami, Escape/fokus, gwiazdkę, wyszukiwanie i filtr, paginację,
+pusty wynik, szerokości kolumn, desktop/telefon oraz ponowne wejście.
+
 Browser QA: pusty katalog, utworzenie, przegląd → edytor → przegląd,
 osobne menu edycji, pięć układów w edytorze gadżetów i przeładowanie,
 przeciąganie oraz przenoszenie klawiaturą, konfiguracja gadżetu, wybrana osoba,
@@ -785,6 +804,13 @@ Ikony i ilustracje: dropdown rodzaju z ikonami, zmiana podglądu listy/statystyk
 ilustrowane puste gadżety, miniatura wszystkich pięciu układów i jej przywrócenie
 po błędzie. Sprawdź formularz po walidacji, częściowej nawigacji i ponownym
 otwarciu, a także modal z dostępną stopką na telefonie.
+Panel „Więcej pulpitów”: `dashboard.test_pulpit_navigation` sprawdza
+wyszukiwanie po nazwie/opisie, limit, escapowanie, logowanie/GET, zwykłe/scoped
+adresy, Workspace, cofnięcie udostępnienia i członkostwa. W browser QA porównaj
+panel z „Więcej przestrzeni”: otwarcie, wyszukiwanie, brak wyników/błąd,
+link do wszystkich pulpitów zachowujący frazę, wybór wyniku, Escape/fokus,
+kliknięcie poza panelem, zwinięte menu, telefon i częściową nawigację.
+
 Nawigacja: gwiazdki z katalogu i menu wiersza, osobiste ostatnie,
 cofnięcie dostępu, limit skrótów, plus w nagłówku, zwinięta sekcja
 i flyout całego menu. `dashboard.test_pulpit_group_retirement` sprawdza

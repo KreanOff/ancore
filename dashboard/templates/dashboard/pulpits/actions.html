@@ -2,14 +2,7 @@
     <button type="button" class="tasks-icon-button{% if not management %} documents-icon-button{% endif %}" data-row-actions-toggle popovertarget="pulpit-actions-{{ item.pk }}" aria-controls="pulpit-actions-{{ item.pk }}" aria-expanded="false" aria-label="Działania: {{ item.name }}"><i data-icon="ellipsis" aria-hidden="true"></i></button>
     <div id="pulpit-actions-{{ item.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {{ item.name }}" data-row-actions-panel>
         <div class="documents-menu-actions">
-            {% if management %}<a href="{{ item.url }}" class="tasks-project-menu-button"><i data-icon="layout-dashboard" aria-hidden="true"></i><span>Otwórz pulpit</span></a>{% endif %}
-            <a href="{{ item.copy_url }}" class="tasks-project-menu-button" data-pulpit-open aria-haspopup="dialog"><i data-icon="copy" aria-hidden="true"></i><span>Kopiuj pulpit</span></a>
-            {% if item.can_edit %}
-            <a href="{{ item.gadgets_url }}" class="tasks-project-menu-button"><i data-icon="layout-dashboard" aria-hidden="true"></i><span>Gadżety i układ</span></a>
-            <a href="{{ item.access_url }}" class="tasks-project-menu-button"><i data-icon="users" aria-hidden="true"></i><span>Dostępy</span></a>
-            <a href="{{ item.edit_url }}" class="tasks-project-menu-button"><i data-icon="settings" aria-hidden="true"></i><span>Ustawienia</span></a>
-            <form method="post" action="{{ item.delete_url }}" data-pulpit-action data-confirm-title="Usuń pulpit" data-confirm-name="{{ item.name }}">{% csrf_token %}<button class="tasks-project-menu-button" type="submit">{% include 'core/includes/trash_icon.html' %}<span>Usuń pulpit</span></button></form>
-            {% endif %}
+            {% include 'dashboard/pulpits/row_actions.html' %}
         </div>
     </div>
 </div>

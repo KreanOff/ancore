@@ -101,13 +101,16 @@ def index_context(request, management=False):
     favorites = set(TaskProject.objects.filter(favorited_by=request.user).values_list('pk', flat=True))
     counts = {row['space_id']: row['count'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(count=Count('pk'))}
     activity = {row['space_id']: row['last_activity'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(last_activity=Max('task__activities__created_at'))} if management else {}
+    managed_ids = set(manageable_spaces(request).filter(pk__in=page.object_list).values_list('pk', flat=True)) if not management else set()
     for space in page:
         space.url = app_url(request, f'{space.pk}/')
         space.favorite_url = app_url(request, f'{space.pk}/favorite/')
         space.favorite = space.project_id in favorites
         space.item_count = counts.get(space.pk, 0)
+        space.settings_url = space.url + '?view=settings'
+        space.can_manage = management or space.pk in managed_ids
+        space.edit_url = app_url(request, f'{space.pk}/edit/')
         if management:
-            space.settings_url = space.url + '?view=settings'
             space.edit_url = app_url(request, f'manage/{space.pk}/edit/')
             space.configuration_url = app_url(request, f'{space.pk}/configuration/') if manage_configuration(request, space) else ''
             space.leader = space.project.responsible_user or space.project.private_owner or space.project.user

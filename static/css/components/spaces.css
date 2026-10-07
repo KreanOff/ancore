@@ -5,7 +5,7 @@
 .work-page:has(.work-content--directory) .tasks-topbar-title { font-size: 17px; font-weight: 700 !important; }
 .work-page:has(.work-space-title, .work-content--directory) { --work-space-inline-padding: 22px; }
 .work-page .tasks-topbar--directory:has(.work-space-title),
-.work-page:has(.work-content--directory) :is(.tasks-topbar--directory, .work-item-toolbar, .work-content--directory) {
+.work-page:has(.work-content--directory) :is(.tasks-topbar--directory, .work-item-toolbar) {
     padding-inline: var(--work-space-inline-padding);
 }
 .work-page .tasks-titlebar-left { gap: 10px; min-width: 0; }
@@ -156,11 +156,14 @@
 .work-panel .btn + .btn { margin-left: 8px; }
 /* Task rows, status headers, columns and cards use the existing Tasks/Kanban CSS. */
 .work-content--tasks { padding: 0; }
-.work-content--directory { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.work-page .work-content--directory { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 .tasks-directory-board.work-space-sheet {
     --tasks-directory-grid: 40px 150px 320px 190px 220px 320px 130px;
     flex: 1;
     min-height: 0;
+}
+.tasks-directory-board.work-space-sheet.tasks-project-sheet--selectable {
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 150px 320px 190px 220px 320px 130px;
 }
 .tasks-directory-board.work-space-sheet .tasks-directory-header,
 .tasks-directory-board.work-space-sheet .tasks-directory-list .tasks-directory-row {

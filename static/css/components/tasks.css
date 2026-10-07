@@ -11973,6 +11973,17 @@ body.is-resizing-directory-columns {
     opacity: 1;
 }
 
+.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > .tasks-directory-sheet__cell[data-column="select"]:not(.tasks-row-checkbox) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0;
+    position: relative;
+    z-index: 1;
+    background: transparent;
+}
+
 .tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-header > [data-column="section"],
 .tasks-section-sheet.tasks-project-sheet--selectable .tasks-directory-list .tasks-directory-row > [data-column="section"] {
     border-left: 1px solid var(--tasks-directory-column-separator);

@@ -8,12 +8,16 @@
         controller = new AbortController();
         const { signal } = controller;
         document.addEventListener('submit', async event => {
-            const form = event.target.closest('[data-sidebar-space-favorite]');
+            const form = event.target.closest('[data-sidebar-space-favorite], [data-space-directory-favorite]');
             if (!form) return;
             event.preventDefault();
             const button = form.querySelector('button');
             if (button.disabled) return;
-            const spaceId = form.closest('[data-sidebar-space-row]').dataset.sidebarSpaceRow;
+            const directoryRow = form.closest('[data-space-directory-row]');
+            const spaceId = directoryRow?.dataset.spaceDirectoryRow || form.closest('[data-sidebar-space-row]').dataset.sidebarSpaceRow;
+            const focusSelector = directoryRow
+                ? `[data-space-directory-row="${spaceId}"] [data-row-actions-toggle]`
+                : `#sidebar-spaces-subnav [data-sidebar-space-row="${spaceId}"] [data-row-actions-toggle]`;
             const url = window.location.href;
             button.disabled = true;
             button.setAttribute('aria-busy', 'true');
@@ -26,7 +30,9 @@
                 if (!response.ok || response.redirected || !(await response.json()).saved) throw new Error('Nie udało się zmienić oznaczenia gwiazdką. Spróbuj ponownie.');
                 if (signal.aborted || window.location.href !== url) return;
                 if (!await window.AncoreApp?.navigate(url, { replace: true })) window.location.reload();
-                document.querySelector(`#sidebar-spaces-subnav [data-sidebar-space-row="${spaceId}"] [data-row-actions-toggle]`)?.focus({ preventScroll: true });
+                const focusTarget = document.querySelector(focusSelector) || document.querySelector('.main-content h1');
+                if (focusTarget?.matches('h1')) focusTarget.setAttribute('tabindex', '-1');
+                focusTarget?.focus({ preventScroll: true });
             } catch (error) {
                 if (!signal.aborted) window.showNotification?.(error.message, 'error');
             } finally {

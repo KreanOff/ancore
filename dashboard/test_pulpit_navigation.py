@@ -37,10 +37,55 @@ class PulpitNavigationTests(TestCase):
 
     def test_navigation_matches_reference_and_default_dashboard_is_preserved(self):
         response = self.client.get(self.url())
-        for text in ['Pulpit domyślny', 'Pokaż wszystkie pulpity', 'Utwórz pulpit', 'Zarządzaj pulpitami']:
+        for text in ['Pulpit domyślny', 'Więcej pulpitów', 'Wyszukaj wszystkie pulpity', 'Wyświetl wszystkie pulpity', 'Utwórz pulpit', 'Zarządzaj pulpitami']:
             self.assertContains(response, text)
         self.assertEqual(self.ids(response, 'recent'), [])
         self.assertEqual(self.client.get('/').status_code, 200)
+
+    def test_search_rechecks_access_and_workspace_in_plain_and_scoped_urls(self):
+        self.login(self.member)
+        self.private.visibility = 'selected'
+        self.private.save()
+        self.private.shared_with.add(self.member)
+        for url in ['/dashboards/search/', self.url('search/')]:
+            with self.subTest(url=url):
+                response = self.client.get(url, {'q': 'pulpit'})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()['count'], 3)
+                self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
+                self.assertIn(self.url(f'{self.first.pk}/'), response.json()['html'])
+                self.assertNotIn('Obcy pulpit', response.json()['html'])
+        self.private.shared_with.remove(self.member)
+        self.assertEqual(self.client.get(self.url('search/'), {'q': 'Prywatny'}).json()['count'], 0)
+        self.first.visibility = 'private'
+        self.first.save()
+        self.assertEqual(self.client.get(self.url('search/'), {'q': 'Pierwszy'}).json()['count'], 0)
+        WorkplaceMembership.objects.filter(workplace=self.workspace, user=self.member).delete()
+        self.assertRedirects(self.client.get(self.url('search/'), {'q': 'Drugi'}), '/workplaces/', fetch_redirect_response=False)
+
+    def test_search_matches_name_and_description_limits_results_and_escapes_text(self):
+        self.first.description = 'Wyniki sprzedaży'
+        self.first.save()
+        self.assertEqual(self.client.get(self.url('search/'), {'q': 'WYNIKI'}).json()['count'], 1)
+        for number in range(22):
+            Dashboard.objects.create(owner=self.owner, workplace=self.workspace, created_by=self.owner, name=f'Wyszukiwanie {number:02}')
+        data = self.client.get(self.url('search/'), {'q': 'Wyszukiwanie'}).json()
+        self.assertEqual(data['count'], 20)
+        self.assertIn('Więcej wyników', data['html'])
+        self.assertNotIn('Wyszukiwanie 20', data['html'])
+        self.first.name = '<script>Pulpit</script>'
+        self.first.save()
+        html = self.client.get(self.url('search/'), {'q': '<script>'}).json()['html']
+        self.assertIn('&lt;script&gt;', html)
+        self.assertNotIn('<script>', html)
+
+    def test_search_empty_query_login_and_get(self):
+        for url in ['/dashboards/search/', self.url('search/')]:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url, {'q': '   '}).json()['count'], 0)
+                self.assertEqual(self.client.post(url).status_code, 405)
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url('search/')).status_code, 302)
 
     def test_recent_visits_are_immediate_personal_and_workplace_scoped(self):
         for url, dashboard in [(f'/dashboards/{self.first.pk}/', self.first), (self.url(f'{self.second.pk}/'), self.second), (self.url(f'{self.first.pk}/'), self.first)]:

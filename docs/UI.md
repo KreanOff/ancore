@@ -10,10 +10,23 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
 `spaces/base.html` rozszerza `core/base.html` i wspólny kontener katalogu.
 Katalog przestrzeni używa listy `tasks-directory-sheet`, `tasks-project-sheet`
 i `tasks-spreadsheet-sheet`, tak jak projekty i grupy. Wariant `work-space-sheet`
-określa kolumny: ulubione, klucz, nazwa, rodzaj, szablon, opis i liczba zadań.
+określa kolumny: zaznaczenie, działania, klucz, nazwa, rodzaj, szablon, opis
+i liczba zadań. Pierwsze dwie kolumny mają po 40px, jak w Projektach.
+Checkboxy `tasks-row-checkbox` są stale widoczne dzięki
+`tasks-project-sheet--selectable`; zaznaczenie podświetla wiersz wspólnym stylem.
+Wspólny wariant obsługuje też checkbox wewnątrz komórki `data-column="select"`
+z rolą `cell`, zachowując centrowanie i widoczność kontrolki.
+Checkbox nagłówka zaznacza bieżącą stronę i pokazuje stan częściowego wyboru.
+Zaznaczenie jest lokalne, bez operacji zbiorczych. Przycisk trzech pasków korzysta
+z `directory_row_menu.html`, `row-actions.js` i `tasks-directory-menu-sheet`.
+Include obsługuje opcjonalny `actions_template` dla działań danego modułu.
+Menu Przestrzeni otwiera przestrzeń, zmienia osobiste ulubione, otwiera ustawienia
+i według uprawnień edycję lub dodawanie osób do prywatnej przestrzeni.
 Zachowuje wspólne wysokości wierszy, separatory, zmianę szerokości kolumn,
 poziome przewijanie oraz pasek filtrów, wyszukiwania i paginacji. Nazwa otwiera
-przestrzeń, a gwiazdka zmienia osobiste ulubione. Pusty wynik ukrywa nagłówki
+przestrzeń, a akcja w menu wiersza zmienia osobiste ulubione, zachowując filtry.
+`tasks.js` obsługuje zaznaczenie i szerokości, a `space-navigation.js` zapis
+gwiazdki oraz przywrócenie fokusu po częściowej nawigacji. Pusty wynik ukrywa nagłówki
 i pokazuje komunikat zależny od filtrów/zakładki. Katalog zespołów używa kart.
 Przestrzeń ma kontekstowe zakładki
 Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
@@ -77,8 +90,10 @@ Tytuł „Przestrzenie” w katalogu również ma rozmiar 17px i grubość 700.
 Nagłówek otwartej przestrzeni, pasek zakładek i treść podsumowania mają po 22px
 odstępu z lewej i prawej strony, również na telefonie. Wspólna zmienna
 `--work-space-inline-padding` obejmuje też katalog Przestrzeni: jego nagłówek,
-zakładki, filtry i tabelę. Lista zadań i tablica wewnątrz przestrzeni nadal
-korzystają z pełnej szerokości; katalog Zespołów zachowuje własne odstępy.
+zakładki i filtry. Tabele katalogu oraz zarządzania w `work-content--directory`
+dochodzą do obu krawędzi kontenera, jak tabele Workspace i Projektów, również
+na telefonie. Lista zadań i tablica wewnątrz przestrzeni nadal korzystają
+z pełnej szerokości; katalog Zespołów zachowuje własne odstępy.
 Awatar ma 32px w nagłówku, 24px w katalogu, 20px w codziennym menu bocznym
 i 21px w panelu zwiniętego paska.
 W katalogu odstęp między awatarem a nazwą przestrzeni wynosi 8px.
@@ -205,7 +220,9 @@ z wielokropkiem. Reguły rozciągania tekstu nie obejmują awatarów.
 Wyszukiwanie po nazwie lub kluczu obejmuje wszystkie dostępne przestrzenie
 bieżącego Workspace, z limitem 20 wyników; link do katalogu zachowuje zapytanie.
 Bez zapytania panel pokazuje samą wyszukiwarkę i link, także przy pustym Workspace.
-`space-picker.js` obsługuje opóźnienie 200ms, anulowanie nieaktualnych żądań,
+`core/includes/sidebar_picker.html` i `space-picker.js` są wspólnym komponentem
+paneli Przestrzeni i Pulpitów (`data-sidebar-picker` i `data-sidebar-picker-toggle`).
+Skrypt obsługuje opóźnienie 200ms, anulowanie nieaktualnych żądań,
 stan pusty/błąd, strzałki klawiatury, Enter, Escape oraz powrót fokusu.
 Błąd pokazuje wyłącznie komunikat; zmiana zapytania uruchamia nowe wyszukiwanie.
 Natywny popover zamyka się po kliknięciu poza panelem; wybór linku zamyka menu na
@@ -2171,11 +2188,27 @@ porzucenia zmian. Pobranie/zapis/usunięcie pokazują błędy umożliwiające po
 ## 15. Pulpity
 
 System „Pulpity” rozszerza Dashboard przez `dashboard/pulpits/base.html`,
-`dashboard-overview`, wspólne paski, zakładki, tabelę `data-table`, przyciski,
-`row-actions.js` i `AncoreCustomSelect`. Minimalny wariant `pulpit-*` jest
-w `components/pulpits.css`; zachowuje tokeny, 22px odstępu treści i tytuł 17px.
-Katalog pokazuje nazwę/opis, twórcę, widoczność, licznik gadżetów, osobistą
-gwiazdkę i menu akcji. Tabela przewija się we własnym kontenerze na telefonie.
+wspólne paski, przyciski, `row-actions.js` i `AncoreCustomSelect`.
+Katalog korzysta z powłoki `work-page` i tabeli Przestrzeni:
+`tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable
+tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet`.
+Minimalny wariant `pulpit-directory-sheet` w `components/pulpits.css` określa
+kolumny zaznaczenia, menu, nazwy, twórcy, widoczności, liczby gadżetów i opisu
+oraz ikonę pulpitu 24px. Tabela dochodzi do krawędzi kontenera i zachowuje
+wspólne wysokości wierszy, separatory, podświetlenia oraz przewijanie.
+Nagłówek, zakładki `work-tabs` z ikonami oraz toolbar mają 22px odstępu.
+Zakładki są w kolejności Wszystkie, Ulubione, Moje; dotychczasowa domyślna
+kategoria Ulubione pozostaje zachowana. Filtr widoczności i przycisk „Filtruj”
+są po lewej, wyszukiwarka i paginacja po 30 pozycji po prawej.
+Checkboxy zaznaczają wyłącznie bieżącą stronę, bez operacji zbiorczych.
+`tasks.js` obsługuje zaznaczenie, stan częściowego wyboru i szerokości kolumn
+z osobnym kluczem `pulpits-directory`, wspólnym dla zwykłego i scoped URL.
+Menu z trzema paskami używa `directory_row_menu.html` oraz
+`dashboard/pulpits/row_actions.html`; zawiera osobistą gwiazdkę i dotychczasowe
+akcje według uprawnień. Nazwa otwiera pulpit. Opis jest osobną kolumną,
+a pełne teksty są dostępne w `title`. Puste wyniki ukrywają nagłówki i pokazują
+komunikat odpowiedni do kategorii lub filtrów. Przegląd pulpitu nadal używa
+`dashboard-overview` i gadżetów. Pozostałe warianty `pulpit-*` zachowują tokeny.
 
 Gadżety rozszerzają `dashboard-panel`; podsumowanie używa liczników, statystyki
 wspólnego `progress`, listy pokazują klucz, status i termin. Nagłówek pulpitu
@@ -2254,8 +2287,14 @@ konfiguracja i usuwanie gadżetu pozostają w edytorze, także z filtrami zarzą
 Menu „Pulpity” wykorzystuje istniejący wariant nagłówka Przestrzeni, listy
 `sidebar-space-list` i wiersze z `row-actions.js`. Ikona nagłówka zmienia się
 na chevron przy hover/fokus; plus otwiera tworzenie pulpitu, menu oferuje
-„Zarządzaj pulpitami”. Sekcje pokazują gwiazdki, ostatnie oraz link
-„Pokaż wszystkie pulpity”. „Pulpit domyślny” prowadzi do starego Dashboardu.
+„Zarządzaj pulpitami”. Sekcje pokazują gwiazdki, ostatnie oraz przycisk
+„Więcej pulpitów” z ikoną `align-left` i strzałką w prawo, jak „Więcej przestrzeni”.
+Otwiera ten sam niemodalny panel z tytułem „Pulpity”, zamknięciem, polem
+„Wyszukaj wszystkie pulpity” i linkiem „Wyświetl wszystkie pulpity”.
+Wyszukiwanie po nazwie/opisie obejmuje dostępne pulpity aktywnego Workspace
+i pokazuje do 20 wyników. Link zachowuje zapytanie i otwiera zakładkę Wszystkie.
+Przycisk podświetla się na szaro po otwarciu, bez zaznaczenia aktywnej strony.
+„Pulpit domyślny” prowadzi do starego Dashboardu.
 Grupy pulpitów i akcje przypisania są usunięte z katalogu, przeglądu, menu
 bocznego oraz zarządzania.
 
