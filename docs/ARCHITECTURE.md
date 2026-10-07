@@ -197,6 +197,8 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   kontekst wejścia oraz filtry katalogu. Tworzenie pozostaje modalem.
   Mechanizm grup pulpitów jest usunięty; dawne adresy `groups/` i przypisania
   `<pk>/groups/` zwracają 404 w zwykłym i scoped routingu.
+  Kopiowanie pulpitów jest usunięte; dawne `<pk>/copy/` i
+  `manage/<pk>/copy/` zwracają 404 również w scoped routingu.
   Przegląd `/<pk>/` wyświetla gadżety bez kontrolek ich zmiany, także twórcy.
   Osobny edytor `/<pk>/gadgets/` i `/manage/<pk>/gadgets/` używa menu wybranego pulpitu;
   tylko twórca dodaje, konfiguruje, usuwa i układa gadżety. Bezpośrednie formularze

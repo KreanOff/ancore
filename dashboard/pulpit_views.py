@@ -120,7 +120,6 @@ def management_context(request):
         dashboard.edit_url = management_url(request, f'{dashboard.pk}/edit/')
         dashboard.access_url = management_url(request, f'{dashboard.pk}/access/')
         dashboard.gadgets_url = management_url(request, f'{dashboard.pk}/gadgets/')
-        dashboard.copy_url = management_url(request, f'{dashboard.pk}/copy/')
         dashboard.delete_url = management_url(request, f'{dashboard.pk}/delete/')
     return {'page': page, 'query': query, 'visibility_filter': visibility, 'favorite_filter': favorite_filter,
             'visibility_choices': Dashboard.Visibility.choices, 'management_url': app_url(request, 'manage/'),
@@ -216,15 +215,12 @@ def saved_response(request, url):
 @login_required
 @require_http_methods(['GET', 'POST'])
 @transaction.atomic
-def edit(request, pk=None, copy=False, management=False):
-    source = get_dashboard(request, pk, edit=not copy, lock=request.method == 'POST') if pk else None
-    item = Dashboard(owner=workspace_owner(request), workplace=request.workplace, created_by=request.user) if not source or copy else source
-    initial = {field: getattr(source, field) for field in ['name', 'description', 'layout']} if copy else None
-    if copy:
-        initial['name'] = f'Kopia: {source.name}'[:150]
-    editing_settings = source is not None and not copy
+def edit(request, pk=None, management=False):
+    source = get_dashboard(request, pk, edit=True, lock=request.method == 'POST') if pk else None
+    item = source if source else Dashboard(owner=workspace_owner(request), workplace=request.workplace, created_by=request.user)
+    editing_settings = source is not None
     form_type = DashboardSettingsForm if editing_settings else DashboardForm
-    form = form_type(request.POST if request.method == 'POST' else None, instance=item, initial=initial,
+    form = form_type(request.POST if request.method == 'POST' else None, instance=item,
                      **({} if editing_settings else {'request': request}))
     if request.method == 'POST' and form.is_valid():
         dashboard = form.save(commit=False)
@@ -233,20 +229,14 @@ def edit(request, pk=None, copy=False, management=False):
         form.save_m2m()
         if not editing_settings:
             dashboard.favorited_by.add(request.user)
-            if copy:
-                for gadget in source.gadgets.all():
-                    gadget.pk = None
-                    gadget.dashboard = dashboard
-                    gadget.column = min(gadget.column, dashboard.column_count - 1)
-                    gadget.save()
         return saved_response(request, management_url(request) if management else app_url(request, f'{dashboard.pk}/'))
-    if source and not copy:
+    if source:
         return render(request, 'dashboard/pulpits/edit.html', {
             **editor_navigation_context(request, source, 'settings', management),
             'form': form, 'action': request.get_full_path(),
         }, status=400 if request.method == 'POST' else 200)
-    return form_response(request, form, 'Kopiuj pulpit' if copy else 'Edytuj pulpit' if pk else 'Utwórz pulpit',
-                         management_url(request) if management else app_url(request, f'{source.pk}/') if source else app_url(request), source,
+    return form_response(request, form, 'Utwórz pulpit',
+                         management_url(request) if management else app_url(request),
                          status=400 if request.method == 'POST' else 200, management=management)
 
 

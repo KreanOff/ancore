@@ -117,7 +117,7 @@ class PulpitManagementTests(TestCase):
         self.assertEqual((dashboard.owner, dashboard.created_by, dashboard.workplace), (self.owner, self.member, self.workspace))
         self.assertEqual(dashboard.gadgets.count(), 0)
 
-    def test_edit_copy_and_delete_return_with_filters(self):
+    def test_edit_and_delete_return_with_filters(self):
         filters = '?q=Plan&visibility=private&favorite=starred&page=2'
         self.own.favorited_by.add(self.owner)
         gadget = DashboardGadget.objects.create(dashboard=self.own, kind='summary')
@@ -126,9 +126,6 @@ class PulpitManagementTests(TestCase):
         self.assertEqual(response.context['return_url'], self.url() + filters)
         response = self.client.post(self.url(f'{self.own.pk}/edit/') + filters, self.payload(name='Plan po edycji'), HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.json()['url'], self.url() + filters)
-        response = self.client.post(self.url(f'{self.own.pk}/copy/') + filters, self.payload(name='Kopia planu'), HTTP_X_PULPIT_MODAL='true')
-        self.assertEqual(response.json()['url'], self.url() + filters)
-        self.assertEqual(Dashboard.objects.get(name='Kopia planu').gadgets.count(), 1)
         response = self.client.post(self.url(f'{self.own.pk}/delete/') + filters, HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.json()['url'], self.url() + filters)
         self.assertFalse(DashboardGadget.objects.filter(pk=gadget.pk).exists())

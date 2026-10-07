@@ -604,7 +604,9 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   i filtr widoczności mają paginację po 30 pozycji. Katalog używa tej samej
   tabeli co Przestrzenie, z lokalnym zaznaczeniem i menu akcji po lewej.
   Każdy członek Workspace może utworzyć pulpit,
-  edytować własny, kopiować dostępny i oznaczać go osobistą gwiazdką.
+  edytować własny i oznaczać dostępny osobistą gwiazdką.
+  Kopiowanie pulpitów jest usunięte z menu i backendu; dawne adresy
+  `<pk>/copy/` i `manage/<pk>/copy/` zwracają 404 w zwykłym i scoped routingu.
   Menu „Pulpity” ma przycisk tworzenia, sekcje Oznaczone gwiazdką/Ostatnie,
   oraz „Więcej pulpitów” z panelem wyszukiwania po nazwie/opisie i linkiem
   „Wyświetl wszystkie pulpity” do zakładki Wszystkie. Dotychczasowy Dashboard
@@ -626,15 +628,13 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Każdy formularz zapisuje tylko własne pola; ustawienia nie zmieniają układu
   ani udostępnienia. Menu katalogu, pulpitu i nawigacji otwiera te same ekrany.
   Błędy walidacji zachowują szkic; wyjście z niezapisanymi zmianami wymaga
-  potwierdzenia. Menu wiersza udostępnia także otwarcie,
-  kopiowanie i usunięcie. Tworzenie, edycja,
-  kopiowanie i usunięcie przez ten katalog wracają do niego z filtrami.
+  potwierdzenia. Menu wiersza udostępnia także otwarcie i usunięcie.
+  Tworzenie, edycja i usunięcie przez ten katalog wracają do niego z filtrami.
   Dostępne pulpity innych twórców pozostają w zwykłym katalogu do oglądania.
   Widoczność: prywatny, wybrane aktywne osoby albo cały Workspace.
   Udostępnienie pozwala oglądać konfigurację; modyfikacje należą do twórcy.
   Nowy pulpit jest pusty i otrzymuje gwiazdkę twórcy; gadżety dodaje się ręcznie
-  przyciskiem „Dodaj gadżet”. Kopia domyślnie jest prywatna, zachowuje filtry
-  i ma niezależne rekordy gadżetów.
+  przyciskiem „Dodaj gadżet”.
   Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
   Gadżety można dodawać, konfigurować, usuwać i przenosić przez przeciąganie
   lub przyciski menu w osobnym edytorze „Gadżety i układ” (`/<pk>/gadgets/`).

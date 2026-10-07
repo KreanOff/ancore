@@ -762,9 +762,13 @@ Testy: `dashboard.test_pulpits`, `dashboard.test_pulpit_editor`, `dashboard.test
 `core.test_task_integrity`, `planner.test_task_calendar` oraz `workplaces`.
 Nowe testy obejmują właściciela/twórcę, dwa Workspace, prywatność rodziców,
 cofnięcie dostępu, tylko odczyt, formularze źródeł/udostępniania, gwiazdki,
-kopiowanie, usuwanie, CSRF i walidację układu/rewizji. Tworzenie przez katalog
+wycofanie kopiowania, usuwanie, CSRF i walidację układu/rewizji. Tworzenie przez katalog
 i zarządzanie zaczyna od zera gadżetów; ponowne wejście zachowuje pusty stan,
 a ręczne dodanie pierwszego gadżetu usuwa komunikat pustego pulpitu.
+Wycofanie kopiowania nie wymaga migracji. Testy w `dashboard.test_pulpits`
+sprawdzają 404 dawnych adresów GET/POST (zwykłe/scoped, katalog/zarządzanie)
+dla twórcy i członka, zachowanie konfiguracji, gadżetów, dostępu i gwiazdek,
+brak akcji kopiowania w menu oraz brak pustego menu w przeglądzie odbiorcy.
 Katalog `GADGET_CATALOG` i `AVAILABLE_GADGET_KINDS` w `dashboard/pulpits.py`
 obejmują pięć istniejących rodzajów; zmiana nie wymaga migracji. Testy sprawdzają
 dodawanie i konfigurację wszystkich rodzajów, odrzucenie nieznanego rodzaju
@@ -793,7 +797,7 @@ pusty wynik, szerokości kolumn, desktop/telefon oraz ponowne wejście.
 Browser QA: pusty katalog, utworzenie, przegląd → edytor → przegląd,
 osobne menu edycji, pięć układów w edytorze gadżetów i przeładowanie,
 przeciąganie oraz przenoszenie klawiaturą, konfiguracja gadżetu, wybrana osoba,
-kopiowanie i gwiazdki, błędy formularza/sieci/konfliktu, Escape/fokus,
+gwiazdki i brak akcji kopiowania, błędy formularza/sieci/konfliktu, Escape/fokus,
 ponowne wejście z Dashboardu, zwykły/scoped URL oraz desktop/telefon.
 Sprawdź zachowanie dokumentu podczas częściowej nawigacji do `/<pk>/gadgets/`
 i `/manage/<pk>/gadgets/`, aktywne pozycje menu, błędy zapisu i region live, wyłączone
@@ -818,8 +822,8 @@ i flyout całego menu. `dashboard.test_pulpit_group_retirement` sprawdza
 ignorowanie parametru `group` bez poszerzania dostępu oraz migrację
 z istniejącymi grupami, zachowującą konfigurację pulpitów i gadżetów.
 Zarządzanie: własne pulpity dwóch osób/dwóch Workspace, osobne menu, zwykły
-i scoped URL, pusty stan, filtry/paginacja, tworzenie/edycja/kopia/usunięcie,
-modal tworzenia/kopii, osobna strona edycji, walidacja ze szkicem, powrót
+i scoped URL, pusty stan, filtry/paginacja, tworzenie/edycja/usunięcie,
+modal tworzenia, osobna strona edycji, walidacja ze szkicem, powrót
 z filtrami oraz Wstecz/Dalej/reload. Edycja: wejście z nazwy/menu katalogu,
 menu otwartego pulpitu i menu bocznego, zapis/anulowanie, „Wybrane osoby”,
 zmiana liczby kolumn, ochrona szkicu przy wyjściu oraz ponowne wejście.

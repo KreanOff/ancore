@@ -6,6 +6,15 @@
     <div class="pulpit-grid pulpit-grid--{{ dashboard.layout }}" data-pulpit-grid data-layout="{{ dashboard.layout }}"{% if editing_gadgets %} data-editable="true"{% endif %}{% if not has_gadgets and not editing_gadgets %} hidden{% endif %}>
         {% for column in columns %}<section class="pulpit-column" data-pulpit-column="{{ forloop.counter0 }}" aria-label="Kolumna {{ forloop.counter }}">{% for data in column %}{% include 'dashboard/pulpits/gadget.html' %}{% endfor %}</section>{% endfor %}
     </div>
+    {% if editing_gadgets %}
+    <template data-pulpit-placeholder-template>
+        <div class="pulpit-column-placeholder" data-pulpit-placeholder>
+            <img class="pulpit-column-placeholder__illustration" src="{% static 'img/empty-states/gadget-column-empty.webp' %}" alt="" width="720" height="540" draggable="false">
+            <span>Przeciągnij gadżet do tej kolumny</span>
+            <button type="button" class="tasks-filter-button" data-pulpit-catalog-toggle aria-controls="pulpit-catalog" aria-expanded="false">Dodaj nowy gadżet</button>
+        </div>
+    </template>
+    {% endif %}
     {% if not has_gadgets and not editing_gadgets %}
     <section class="tasks-empty-state tasks-empty-state--centered pulpit-empty-state" role="status">
         <img class="pulpit-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086">

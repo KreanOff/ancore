@@ -27,7 +27,16 @@ poziome przewijanie oraz pasek filtrów, wyszukiwania i paginacji. Nazwa otwiera
 przestrzeń, a akcja w menu wiersza zmienia osobiste ulubione, zachowując filtry.
 `tasks.js` obsługuje zaznaczenie i szerokości, a `space-navigation.js` zapis
 gwiazdki oraz przywrócenie fokusu po częściowej nawigacji. Pusty wynik ukrywa nagłówki
-i pokazuje komunikat zależny od filtrów/zakładki. Katalog zespołów używa kart.
+i pokazuje komunikat zależny od filtrów/zakładki.
+Puste katalogi przestrzeni i zarządzania używają wariantu `work-space-empty-state`
+wspólnego `tasks-empty-state`: kolorowej ilustracji 3D
+`static/img/empty-states/spaces-empty.webp`, tekstu `tasks-empty-state__copy`
+oraz dotychczasowych przycisków tworzenia, przeglądania lub czyszczenia filtrów.
+Ilustracja przedstawia warstwy projektów i kolorowe karty zadań, ma przezroczyste
+tło, maksymalną szerokość 320px i skaluje się do kontenera na telefonie.
+Jest dekoracyjna (`alt=""`, `draggable="false"`), a pusty stan ma `role="status"`.
+Przyciski zachowują wspólny styl bez podkreślenia tekstu.
+Katalog zespołów używa kart.
 Przestrzeń ma kontekstowe zakładki
 Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
@@ -2209,11 +2218,22 @@ akcje według uprawnień. Nazwa otwiera pulpit. Opis jest osobną kolumną,
 a pełne teksty są dostępne w `title`. Puste wyniki ukrywają nagłówki i pokazują
 komunikat odpowiedni do kategorii lub filtrów. Przegląd pulpitu nadal używa
 `dashboard-overview` i gadżetów. Pozostałe warianty `pulpit-*` zachowują tokeny.
+Puste stany katalogu i zarządzania używają `pulpit-directory-empty-state`:
+kolorowej ilustracji 3D `static/img/empty-states/dashboard-empty.webp`
+o maksymalnej szerokości 320px, wspólnego `tasks-empty-state__copy` oraz
+dotychczasowych opisów i akcji dla zakładki lub filtrów. Ilustracja jest
+dekoracyjna (`alt=""`), ma przezroczyste tło i skaluje się do szerokości
+kontenera na telefonie. Przyciski zachowują `tasks-filter-button` bez
+podkreślenia tekstu. Wiersze niepustej tabeli używają dotychczasowych ikon.
 
 Gadżety rozszerzają `dashboard-panel`; podsumowanie używa liczników, statystyki
 wspólnego `progress`, listy pokazują klucz, status i termin. Nagłówek pulpitu
 pokazuje samą nazwę po lewej, a „Edytuj pulpit” (dla twórcy), odświeżenie i menu
-kopiowania/edycji po prawej. Nawigacja i gwiazdki są dostępne w bocznym menu
+edycji (dla twórcy) po prawej. „Kopiuj pulpit” jest usunięte ze wszystkich menu;
+przegląd odbiorcy udostępnionego pulpitu nie pokazuje pustego menu działań.
+„Edytuj pulpit” i „Odśwież” używają wspólnego
+białego wariantu `tasks-tag-topbar-button--secondary` z delikatną ramką,
+tak samo jak przyciski nagłówka edytora. Nawigacja i gwiazdki są dostępne w bocznym menu
 oraz katalogu pulpitów. Pod nagłówkiem nie ma osobnego wiersza widoczności,
 autora ani wyboru układu. Przegląd nie pokazuje uchwytów ani menu gadżetów,
 także twórcy. „Edytuj pulpit” otwiera osobny edytor `gadgets.html` z menu
@@ -2228,7 +2248,8 @@ tokenów. „Zmień układ” otwiera wspólny popover
 `row-actions.js` z pięcioma miniaturami i zaznaczeniem aktualnego układu.
 Na telefonie przyciski nagłówka zawijają się,
 a wszystkie kolumny wyświetlają się pionowo. Puste kolumny edytora mają
-przerywaną ramkę i podpowiedź przeciągania. Widoczność zmienia się na stronie
+przerywaną ramkę, kolorową ilustrację 3D i podpowiedź przeciągania.
+Widoczność zmienia się na stronie
 „Dostępy”, otwieranej też przez menu akcji. Menu gadżetu
 w edytorze zapewnia konfigurację, przeniesienie wyżej/niżej/do
 następnej kolumny i usunięcie. Przeciąganie zaczyna się wyłącznie od uchwytu,
@@ -2257,7 +2278,14 @@ kolorowa ilustracja `static/img/empty-states/dashboard-empty.webp` i opis
 są wyśrodkowane w wolnej przestrzeni pod nagłówkiem. Przegląd kieruje do edycji.
 Edytor pokazuje pustą siatkę z miejscem na
 przeciągany gadżet i przyciskiem otwarcia katalogu w każdej kolumnie.
-Ilustracja ma przezroczyste tło, maksymalną szerokość 440px i skaluje się
+Każda pusta kolumna używa dekoracyjnej, przezroczystej ilustracji
+`static/img/empty-states/gadget-column-empty.webp` o maksymalnej szerokości 240px.
+Obraz przedstawia kolorowe kafelki gadżetów i wolne miejsce do ich dodania,
+w tym samym stylu 3D co pusty pulpit. `canvas.html` udostępnia wzorzec `<template>`
+z adresem wygenerowanym przez `{% static %}`; `pulpits.js` klonuje go po zmianie
+układu i opróżnieniu kolumny oraz usuwa po dodaniu gadżetu. Obraz ma `alt=""`
+i `draggable="false"`, więc przeciąganie nadal dotyczy uchwytów gadżetów.
+Ilustracja przeglądu pulpitu ma przezroczyste tło, maksymalną szerokość 440px i skaluje się
 do dostępnej szerokości. Jest dekoracyjna (`alt=""`); stan opisuje polski tekst.
 Typografia pustego pulpitu nawiązuje do wskazanego wzorca Jiry: nagłówek
 28px/700 (24px na telefonie), opis 16px z interlinią 1,6 i odstępem 16px
@@ -2267,7 +2295,7 @@ Siatka pustych kolumn pozostaje widoczna w edytorze po zmianie układu.
 Przegląd pustego pulpitu zachowuje wyśrodkowaną ilustrację.
 W trybie tylko do odczytu ilustracja pozostaje, a opis dotyczy twórcy pulpitu.
 
-Tworzenie, kopiowanie i gadżety używają standardowego `app-modal-panel--compact` i
+Tworzenie i gadżety używają standardowego `app-modal-panel--compact` i
 `AncoreTaskModals`: fokus, Escape, inert tła, błędy zapisu, zachowanie szkicu
 oraz potwierdzenie zamknięcia niezapisanych zmian. „Osoby z dostępem” jest
 widoczne dla „Wybrane osoby”, a pola grupowania/limitu zależą od gadżetu.
@@ -2280,7 +2308,7 @@ Bezpośredni URL gadżetu otwiera to samo okno nad edytorem, pozostałe nad
 katalogiem albo pulpitem;
 zamknięcie przywraca adres ekranu tła. `pulpits.js` inicjalizuje się po pierwszym
 ładowaniu i `ancore:content-loaded`, odłączając poprzednie listenery.
-Utworzenie/kopia przechodzi do zapisanego pulpitu z aktualizacją adresu;
+Utworzenie przechodzi do zapisanego pulpitu z aktualizacją adresu;
 odświeżenie, konfiguracja i akcje zachowują częściową nawigację. Dodawanie,
 konfiguracja i usuwanie gadżetu pozostają w edytorze, także z filtrami zarządzania.
 
@@ -2316,7 +2344,7 @@ adresem, bez zmieniania tabel Przestrzeni. Twórca korzysta ze wspólnego awatar
 fokus, błędy i puste stany pozostają wspólne. Nazwa otwiera edytor gadżetów,
 „Utwórz pulpit” modal nad katalogiem. Anulowanie i zapis edycji wracają
 do tego katalogu z jego filtrami; błąd pozostaje na stronie edycji.
-Tworzenie, kopiowanie i usunięcie zachowują katalog oraz filtry. Filtry widoczności
+Tworzenie i usunięcie zachowują katalog oraz filtry. Filtry widoczności
 i gwiazdki wysyłają formularz także po wyborze wartości.
 
 `core/includes/pulpit_management_sidebar.html` pokazuje nawigację administracyjną

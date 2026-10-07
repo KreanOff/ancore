@@ -853,7 +853,7 @@ katalogu; klient nie może wskazać dowolnego adresu przekierowania.
 `Dashboard.owner` jest właścicielem Workspace z `workspace_owner(request)`,
 a `created_by` faktycznym twórcą. Katalog i każdy bezpośredni endpoint najpierw
 ograniczają właściciela i aktywny Workspace, następnie widoczność pulpitu.
-Osobista gwiazdka i kopia nie nadają dostępu. Tylko twórca może edytować
+Osobista gwiazdka nie nadaje dostępu. Tylko twórca może edytować
 konfigurację, usuwać pulpit oraz zarządzać gadżetami. Formularz udostępniania
 wybiera aktywne osoby obecnego Workspace; udostępnienie jest natychmiastowe,
 bez zaproszeń, a pozostali użytkownicy mają tylko odczyt.
@@ -881,11 +881,11 @@ Fallback formularza sprawdza lokalny adres `next` przed przekierowaniem.
 
 `management_context` zawęża `visible_dashboards` do `created_by=request.user`.
 Nowy katalog nie rozszerza prawa edycji; bezpośrednie endpointy nadal wymagają
-widoczności i twórcy. Trasy `manage/create/` i `manage/<pk>/edit|access|copy|delete/`
+widoczności i twórcy. Trasy `manage/create/` i `manage/<pk>/edit|access|delete/`
 korzystają z tych samych operacji, z jawnym parametrem `management=True`.
 `management_url` zachowuje wyłącznie parametry q, visibility, favorite i page,
 budując docelowy adres w aktywnym Workspace. Bezpośrednie wejście oraz błędy
-tworzenia/kopii renderują `manage.html` pod modalem. Zapis/usunięcie wraca do katalogu.
+tworzenia renderują `manage.html` pod modalem. Zapis/usunięcie wraca do katalogu.
 Ostatnia zmiana pochodzi z `Dashboard.updated_at`, nie z aktywności zadań.
 Tryb `pulpits-management` korzysta ze wspólnego mechanizmu źródła powrotu;
 nie nadpisuje źródła podczas filtrowania, paginacji i pracy w modalu.
@@ -894,7 +894,9 @@ Edytor konkretnego pulpitu ma osobny tryb `pulpit-editor`; wejście z nazwy
 w zarządzaniu otwiera gadżety. `editor_navigation_context` buduje jego trzy
 pozycje i powrót z zachowaniem filtrów. `DashboardSettingsForm` zapisuje tylko
 nazwę/opis, a `DashboardAccessForm` widoczność/udostępnienie w `access/`.
-Tworzenie/kopia używa pełnego `DashboardForm`. Wszystkie konfiguracje wymagają
+Tworzenie używa pełnego `DashboardForm`. Kopiowanie pulpitów jest usunięte;
+dawne endpointy kopiowania zwracają 404 w obu zakresach URL, także w zarządzaniu.
+Wszystkie konfiguracje wymagają
 twórcy i zwiększają rewizję pod blokadą wiersza. Układ zmienia wyłącznie edytor
 gadżetów przez `arrange/`. `layout.js` wymienia menu konkretnego pulpitu przy
 częściowej nawigacji, odświeżając nazwę, adresy, aktywną pozycję i fokus.

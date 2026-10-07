@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 36 | 63 | 39 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 31 | 9 | 27 | 181 |
+| [dashboard](../dashboard) | 31 | 9 | 27 | 182 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -1716,6 +1716,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [static/img/empty-states/README.md](../static/img/empty-states/README.md)
 - [static/img/empty-states/dashboard-empty.webp](../static/img/empty-states/dashboard-empty.webp)
+- [static/img/empty-states/gadget-column-empty.webp](../static/img/empty-states/gadget-column-empty.webp)
+- [static/img/empty-states/spaces-empty.webp](../static/img/empty-states/spaces-empty.webp)
 - [static/img/favicon-ancore-large.png](../static/img/favicon-ancore-large.png)
 - [static/img/logo-ancore.png](../static/img/logo-ancore.png)
 - [static/img/pulpits/README.md](../static/img/pulpits/README.md)
@@ -2026,7 +2028,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_pulpits.py](../dashboard/test_pulpits.py).
 
-- `PulpitTests`: 28 metod testowych.
+- `PulpitTests`: 29 metod testowych.
 
 ### dashboard/test_reminders.py
 

@@ -373,6 +373,7 @@
     function initArrangement(page, signal) {
         const grid = page.querySelector('[data-pulpit-grid][data-editable]');
         if (!grid) return;
+        const placeholderTemplate = page.querySelector('[data-pulpit-placeholder-template]');
         const errorBox = page.querySelector('[data-pulpit-page-error]');
         const layoutSelect = page.querySelector('[data-pulpit-layout]');
         const status = page.querySelector('[data-pulpit-status]');
@@ -390,13 +391,9 @@
                 const placeholder = column.querySelector('[data-pulpit-placeholder]');
                 if (!empty) placeholder?.remove();
                 else if (!placeholder) {
-                    const content = document.createElement('div');
-                    content.className = 'pulpit-column-placeholder';
-                    content.dataset.pulpitPlaceholder = '';
-                    content.innerHTML = '<i data-icon="layout-dashboard" aria-hidden="true"></i><span>Przeciągnij gadżet do tej kolumny</span><button type="button" class="tasks-filter-button" data-pulpit-catalog-toggle aria-controls="pulpit-catalog" aria-expanded="false">Dodaj nowy gadżet</button>';
+                    const content = placeholderTemplate.content.firstElementChild.cloneNode(true);
                     content.querySelector('button').setAttribute('aria-expanded', String(page.classList.contains('has-catalog')));
                     column.append(content);
-                    window.AncoreIcons?.render(content);
                 }
             });
             grid.querySelectorAll('[data-pulpit-move]').forEach(button => {

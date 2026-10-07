@@ -48,7 +48,6 @@ def decorate_dashboard(request, dashboard):
     dashboard.edit_url = app_url(request, f'{dashboard.pk}/edit/')
     dashboard.access_url = app_url(request, f'{dashboard.pk}/access/')
     dashboard.gadgets_url = app_url(request, f'{dashboard.pk}/gadgets/')
-    dashboard.copy_url = app_url(request, f'{dashboard.pk}/copy/')
     dashboard.delete_url = app_url(request, f'{dashboard.pk}/delete/')
     dashboard.favorite_url = app_url(request, f'{dashboard.pk}/favorite/')
     dashboard.can_edit = dashboard.created_by_id == request.user.pk

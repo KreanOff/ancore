@@ -8,9 +8,9 @@
             <h1 class="tasks-topbar-title" title="{{ dashboard.name }}">{{ dashboard.name }}</h1>
         </div>
         <div class="tasks-titlebar-actions">
-            {% if dashboard.can_edit %}<a href="{{ dashboard.gadgets_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj pulpit</span></a>{% endif %}
-            <button type="button" class="tasks-tag-topbar-button" data-pulpit-refresh><i data-icon="refresh-cw" aria-hidden="true"></i><span>Odśwież</span></button>
-            {% include 'dashboard/pulpits/actions.html' with item=dashboard %}
+            {% if dashboard.can_edit %}<a href="{{ dashboard.gadgets_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj pulpit</span></a>{% endif %}
+            <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--secondary" data-pulpit-refresh><i data-icon="refresh-cw" aria-hidden="true"></i><span>Odśwież</span></button>
+            {% if dashboard.can_edit %}{% include 'dashboard/pulpits/actions.html' with item=dashboard %}{% endif %}
         </div>
     </header>
     {% include 'dashboard/pulpits/canvas.html' %}

@@ -6,6 +6,9 @@
     --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 320px 220px 190px 130px 320px;
 }
 .pulpit-directory-sheet .pulpit-directory-icon { width: 24px; height: 24px; flex-shrink: 0; }
+.pulpit-directory-empty-state { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.pulpit-directory-empty-state__illustration { display: block; width: min(320px, 100%); height: auto; flex-shrink: 0; }
+.pulpit-directory-empty-state .tasks-filter-button { text-decoration: none; }
 .pulpit-topbar .tasks-titlebar-left { min-width: 0; gap: 8px; }
 .pulpit-topbar .tasks-topbar-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .pulpit-topbar .tasks-titlebar-actions { flex-shrink: 0; }
@@ -82,7 +85,7 @@
 .pulpit-editor-page .pulpit-grid { min-height: 100%; }
 .pulpit-editor-page .pulpit-column.is-empty { min-height: 240px; height: 100%; border: 1px dashed var(--system-interaction); justify-content: center; padding: 20px; }
 .pulpit-column-placeholder { display: flex; align-items: center; flex-direction: column; gap: 12px; text-align: center; font-size: var(--font-size-sm); }
-.pulpit-column-placeholder > [data-icon] { width: 40px; height: 40px; color: var(--system-accent); margin-bottom: 8px; }
+.pulpit-column-placeholder__illustration { display: block; width: min(240px, 100%); height: auto; flex-shrink: 0; margin-bottom: 8px; }
 .pulpit-layout-control .pulpit-layout-preview { width: 32px; height: 23px; padding: 3px; }
 .pulpit-layout-control .tasks-tag-topbar-button > .pulpit-layout-preview { display: grid; align-items: stretch; justify-content: normal; }
 .pulpit-layout-menu .pulpit-layout-preview { width: 44px; height: 32px; }

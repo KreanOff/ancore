@@ -190,7 +190,7 @@ class PulpitTests(TestCase):
         wrong = Dashboard.objects.create(owner=self.member, workplace=self.workplace, created_by=self.owner, name='Błędny właściciel', visibility='workspace')
         for dashboard in [other, wrong]:
             self.assertEqual(self.client.get(self.url(dashboard)).status_code, 404)
-            self.assertEqual(self.client.post(self.url(dashboard, 'copy/'), self.form_data()).status_code, 404)
+            self.assertEqual(self.client.post(self.url(dashboard, 'edit/'), self.form_data()).status_code, 404)
 
     def test_gadgets_respect_private_ancestors_owner_and_workspace(self):
         dashboard = self.dashboard(visibility='workspace')
@@ -228,18 +228,44 @@ class PulpitTests(TestCase):
         self.assertNotContains(response, project.name)
         self.assertTrue(response.context['columns'][0][0]['unavailable'])
 
-    def test_copy_is_private_independent_and_preserves_filters(self):
+    def test_retired_copy_routes_return_404_without_changing_configuration(self):
         dashboard = self.dashboard(visibility='workspace', layout='three')
-        original = DashboardGadget.objects.create(dashboard=dashboard, kind='results', title='Pilne', status='new', column=2, position=3)
-        self.login(self.member)
-        response = self.client.post(self.url(dashboard, 'copy/'), self.form_data(layout='three'))
-        self.assertEqual(response.status_code, 302)
-        copied = Dashboard.objects.exclude(pk=dashboard.pk).get()
-        self.assertEqual((copied.created_by, copied.visibility), (self.member, 'private'))
-        gadget = copied.gadgets.get()
-        self.assertNotEqual(gadget.pk, original.pk)
-        self.assertEqual((gadget.title, gadget.status, gadget.column), ('Pilne', 'new', 2))
-        self.assertFalse(copied.shared_with.exists())
+        DashboardGadget.objects.create(dashboard=dashboard, kind='results', title='Pilne', status='new', column=2, position=3)
+        dashboard.shared_with.add(self.member)
+        dashboard.favorited_by.add(self.owner)
+        dashboards_before = list(Dashboard.objects.values())
+        gadgets_before = list(DashboardGadget.objects.values())
+        for viewer in [self.owner, self.member]:
+            self.login(viewer)
+            for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+                for suffix in [f'{dashboard.pk}/copy/', f'manage/{dashboard.pk}/copy/']:
+                    for method in ['get', 'post']:
+                        with self.subTest(viewer=viewer.pk, prefix=prefix, suffix=suffix, method=method):
+                            response = getattr(self.client, method)(prefix + suffix, self.form_data(), HTTP_X_PULPIT_MODAL='true')
+                            self.assertEqual(response.status_code, 404)
+        self.assertEqual(list(Dashboard.objects.values()), dashboards_before)
+        self.assertEqual(list(DashboardGadget.objects.values()), gadgets_before)
+        self.assertEqual(list(dashboard.shared_with.all()), [self.member])
+        self.assertEqual(list(dashboard.favorited_by.all()), [self.owner])
+
+    def test_copy_action_is_absent_from_catalog_detail_and_management(self):
+        dashboard = self.dashboard(visibility='workspace')
+        for viewer in [self.owner, self.member]:
+            self.login(viewer)
+            for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+                for suffix in ['?tab=all', f'{dashboard.pk}/', 'manage/']:
+                    with self.subTest(viewer=viewer.pk, prefix=prefix, suffix=suffix):
+                        response = self.client.get(prefix + suffix)
+                        self.assertEqual(response.status_code, 200)
+                        self.assertNotContains(response, 'Kopiuj pulpit')
+                        self.assertNotContains(response, '/copy/')
+                        if suffix == f'{dashboard.pk}/':
+                            self.assertContains(response, 'data-pulpit-refresh')
+                            if viewer == self.owner:
+                                for action in ['Gadżety i układ', 'Dostępy', 'Ustawienia', 'Usuń pulpit']:
+                                    self.assertContains(response, action)
+                            else:
+                                self.assertNotContains(response, f'id="pulpit-actions-{dashboard.pk}"')
 
     def test_arrangement_validates_complete_set_and_revision(self):
         dashboard = self.dashboard()
