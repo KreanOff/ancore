@@ -58,32 +58,6 @@
             filterSettings();
         });
 
-        const sidebarSwitch = page.querySelector('[data-settings-sidebar-switch]');
-        const sidebarToggle = document.querySelector('[data-sidebar-collapse-toggle]');
-        const mobile = window.matchMedia('(max-width: 767px)');
-        function syncSidebarSwitch() {
-            sidebarSwitch.checked = document.documentElement.classList.contains('sidebar-collapsed');
-            sidebarSwitch.disabled = mobile.matches || !sidebarToggle;
-        }
-        on(sidebarSwitch, 'change', () => {
-            if (sidebarToggle && !mobile.matches) sidebarToggle.click();
-            syncSidebarSwitch();
-            status.textContent = sidebarSwitch.checked ? 'Menu boczne zostało zwinięte.' : 'Menu boczne zostało rozwinięte.';
-        });
-        // Delegate persistence to the shell and keep both controls synchronized.
-        const sidebarObserver = new MutationObserver(syncSidebarSwitch);
-        sidebarObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-        on(mobile, 'change', syncSidebarSwitch);
-        cleanup = () => { controller.abort(); sidebarObserver.disconnect(); };
-        syncSidebarSwitch();
-
-        on(page.querySelector('[data-settings-notifications]'), 'click', (event) => {
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            const toggle = document.querySelector('[data-notifications-toggle]');
-            if (!toggle) return;
-            event.preventDefault();
-            toggle.click();
-        });
         filterSettings(false);
     }
 

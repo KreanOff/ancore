@@ -15,7 +15,7 @@ def current_workplace(request):
     sidebar_favorite_keys = []
     sidebar_favorites = []
     space_navigation = {'navigation_spaces': [], 'navigation_starred_spaces': [], 'navigation_recent_spaces': []}
-    dashboard_navigation = {'navigation_starred_dashboards': [], 'navigation_recent_dashboards': [], 'navigation_dashboard_groups': []}
+    dashboard_navigation = {'navigation_starred_dashboards': [], 'navigation_recent_dashboards': []}
     spaces_management_available = False
     resolver = getattr(request, 'resolver_match', None)
     spaces_management_mode = bool(
@@ -23,16 +23,17 @@ def current_workplace(request):
         and resolver.app_name in {'spaces', 'workplace_spaces'}
         and resolver.url_name in {'manage', 'manage_create', 'manage_edit'}
     )
-    pulpit_groups_management_mode = bool(
+    pulpits_management_mode = bool(
         resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'}
-        and resolver.url_name in {'groups', 'group_create', 'group_edit', 'group_delete'}
+        and (resolver.url_name in {'manage', 'edit', 'access', 'gadgets', 'gadget_add', 'gadget_edit'} or (resolver.url_name or '').startswith('manage_'))
     )
-    pulpits_management_mode = pulpit_groups_management_mode or bool(
+    pulpit_editor_mode = bool(
         resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'}
-        and (resolver.url_name == 'manage' or (resolver.url_name or '').startswith('manage_'))
+        and resolver.url_name in {'edit', 'access', 'gadgets', 'gadget_add', 'gadget_edit',
+                                  'manage_edit', 'manage_access', 'manage_gadgets', 'manage_gadget_add', 'manage_gadget_edit'}
     )
     sidebar_mode = 'settings' if resolver and resolver.view_name == 'settings' else (
-        'administration' if spaces_management_mode else 'pulpits-management' if pulpits_management_mode else 'workspace'
+        'administration' if spaces_management_mode else 'pulpit-editor' if pulpit_editor_mode else 'pulpits-management' if pulpits_management_mode else 'workspace'
     )
     if active_workplace:
         from spaces.services import can_manage_spaces
@@ -69,7 +70,7 @@ def current_workplace(request):
         'spaces_management_available': spaces_management_available,
         'spaces_management_mode': spaces_management_mode,
         'pulpits_management_mode': pulpits_management_mode,
-        'pulpit_groups_management_mode': pulpit_groups_management_mode,
+        'pulpit_editor_mode': pulpit_editor_mode,
         'sidebar_mode': sidebar_mode,
         'available_workplaces': user_workplaces,
         'available_workplace_count': len(user_workplaces),

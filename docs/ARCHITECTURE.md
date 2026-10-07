@@ -186,14 +186,25 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   `DashboardGadget` układ oraz filtry; `pulpit_views.py`, `pulpit_forms.py`
   i `pulpits.py` obsługują katalog, zapis i odczyt danych. Właściciel danych
   Workspace (`owner`) jest oddzielony od twórcy (`created_by`).
-  `DashboardGroup` przechowuje osobiste grupy użytkownika w Workspace;
-  `pulpit_navigation.py` buduje menu gwiazdek, ostatnich i grup z aktualnie
+  `pulpit_navigation.py` buduje menu gwiazdek i ostatnich z aktualnie
   dostępnych pulpitów. Dotychczasowy Dashboard jest „Pulpitem domyślnym”.
   `/dashboards/manage/` i scoped odpowiednik są osobnym ekranem zarządzania
   własnymi pulpitami, ze wspólną tabelą Przestrzeni i trybem bocznego menu
-  `pulpits-management`. Tworzenie/edycja nad tym katalogiem zachowują jego kontekst.
-  Katalog `/dashboards/groups/` oraz tworzenie/edycja grup należą do tego samego
-  menu zarządzania, jako osobna pozycja „Grupy pulpitów”.
+  `pulpits-management`. Nazwa pulpitu otwiera jego edytor z odrębnym menu
+  `pulpit-editor`: „Gadżety i układ”, „Dostępy” i „Ustawienia”.
+  `/<pk>/access/` zmienia widoczność/osoby, `/<pk>/edit/` nazwę/opis;
+  oba mają warianty `/manage/<pk>/` i scoped. Zapis i anulowanie zachowują
+  kontekst wejścia oraz filtry katalogu. Tworzenie pozostaje modalem.
+  Mechanizm grup pulpitów jest usunięty; dawne adresy `groups/` i przypisania
+  `<pk>/groups/` zwracają 404 w zwykłym i scoped routingu.
+  Przegląd `/<pk>/` wyświetla gadżety bez kontrolek ich zmiany, także twórcy.
+  Osobny edytor `/<pk>/gadgets/` i `/manage/<pk>/gadgets/` używa menu wybranego pulpitu;
+  tylko twórca dodaje, konfiguruje, usuwa i układa gadżety. Bezpośrednie formularze
+  gadżetów otwierają modal nad edytorem, a zapis wraca do edytora.
+  Panel katalogu w edytorze dodaje pięć rodzajów przez POST `gadgets/quick-add/`
+  (również zarządzanie/scoped), zwracający HTML rzeczywistego gadżetu i rewizję.
+  Blokada rekordu pulpitu chroni limit oraz układ przed równoczesnymi zmianami. Warianty
+  zarządzania zachowują filtry katalogu; wszystkie adresy mają scoped odpowiedniki.
 - `/for-you/` oraz `/workplaces/<slug>/for-you/` pokazują osobisty widok
   „Dla ciebie”, składany przez `dashboard/for_you.py` z dostępnych danych.
   `dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;
@@ -212,7 +223,7 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   główny pasek boczny na nawigację administracyjną; [szczegóły](SPACES.md).
 - System „Wartości pól projektu” jest usunięty. Dawny `/settings/project-fields/`
   zwraca 404; projekty zachowują swoje pola i dotychczasowe wartości.
-- `/settings/` jest centrum ustawień konta, Workspace i preferencji.
+- `/settings/` jest centrum ustawień konta i Workspace oraz zarządzania sesją.
   Główny pasek boczny pokazuje jego kategorie zamiast menu Workspace,
   także przy częściowej nawigacji; [standard UI](UI.md).
 - W `tasks` istnieją zarówno `views.py`, jak i pakiet `views/`. Routing

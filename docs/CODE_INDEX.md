@@ -17,13 +17,13 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 19 | 0 | 16 | 58 |
+| [core](../core) | 19 | 0 | 17 | 58 |
 | [accounts](../accounts) | 17 | 7 | 8 | 43 |
 | [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
 | [tasks](../tasks) | 36 | 63 | 39 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 28 | 8 | 17 | 160 |
+| [dashboard](../dashboard) | 31 | 9 | 24 | 176 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -590,21 +590,6 @@ Pola zadeklarowane tutaj: `dashboard` (ForeignKey), `kind` (CharField), `title` 
 | `space` | `'spaces.Space'` | on_delete=models.CASCADE; null=True |
 
 Metody/properties: `label`.
-
-### `DashboardGroup`
-
-Źródło: [dashboard/models.py](../dashboard/models.py).
-
-Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `user` (ForeignKey), `name` (CharField), `dashboards` (ManyToManyField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='workspace_dashboard_groups' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='dashboard_groups' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='dashboard_groups' |
-| `dashboards` | `Dashboard` | related_name='personal_groups' |
-
-Metody/properties: `__str__`.
 
 ### `ObjectFollow`
 
@@ -1344,14 +1329,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/apps.py](../dashboard/apps.py) — `DashboardConfig`
 - [dashboard/collaboration.py](../dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`, `follow_context`, `follow_object`, `deliver_activity_interest`
 - [dashboard/for_you.py](../dashboard/for_you.py) — `for_you_context`
-- [dashboard/models.py](../dashboard/models.py) — `Dashboard`, `DashboardGadget`, `DashboardGroup`, `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
+- [dashboard/models.py](../dashboard/models.py) — `Dashboard`, `DashboardGadget`, `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
 - [dashboard/notification_service.py](../dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [dashboard/overview.py](../dashboard/overview.py) — `dashboard_overview`
-- [dashboard/pulpit_forms.py](../dashboard/pulpit_forms.py) — `style_fields`, `DashboardForm`, `GadgetForm`, `DashboardGroupForm`, `DashboardGroupsForm`
+- [dashboard/pulpit_forms.py](../dashboard/pulpit_forms.py) — `style_fields`, `DashboardAccessForm`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
 - [dashboard/pulpit_navigation.py](../dashboard/pulpit_navigation.py) — `sidebar_dashboards`
 - [dashboard/pulpit_urls.py](../dashboard/pulpit_urls.py)
-- [dashboard/pulpit_views.py](../dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `management_url`, `management_context`, `manage`, `detail`, `form_response`, `saved_response`, `edit`, `delete`, `favorite`, `group_context`, `groups`, `group_edit`, `group_delete`, `dashboard_groups`, `gadget_edit`, `gadget_delete`, `arrange`
-- [dashboard/pulpits.py](../dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `personal_groups`, `decorate_dashboard`, `task_url`, `gadget_data`, `detail_context`
+- [dashboard/pulpit_views.py](../dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `management_url`, `management_context`, `manage`, `detail`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
+- [dashboard/pulpits.py](../dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `decorate_dashboard`, `task_url`, `decorate_gadget`, `gadget_data`, `detail_context`
 - [dashboard/recent.py](../dashboard/recent.py) — `remember_view`, `recent_views`
 - [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`
 - [dashboard/urls.py](../dashboard/urls.py)
@@ -1435,6 +1420,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/includes/icon_credit.html](../core/templates/core/includes/icon_credit.html)
 - [core/templates/core/includes/photo_crop_dialog.html](../core/templates/core/includes/photo_crop_dialog.html)
 - [core/templates/core/includes/priority_icon.html](../core/templates/core/includes/priority_icon.html)
+- [core/templates/core/includes/pulpit_editor_sidebar.html](../core/templates/core/includes/pulpit_editor_sidebar.html)
 - [core/templates/core/includes/pulpit_management_sidebar.html](../core/templates/core/includes/pulpit_management_sidebar.html)
 - [core/templates/core/includes/settings_secondary_menu.html](../core/templates/core/includes/settings_secondary_menu.html)
 - [core/templates/core/includes/settings_sidebar.html](../core/templates/core/includes/settings_sidebar.html)
@@ -1548,10 +1534,17 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/templates/dashboard/includes/settings_row.html](../dashboard/templates/dashboard/includes/settings_row.html)
 - [dashboard/templates/dashboard/pulpits/actions.html](../dashboard/templates/dashboard/pulpits/actions.html)
 - [dashboard/templates/dashboard/pulpits/base.html](../dashboard/templates/dashboard/pulpits/base.html)
+- [dashboard/templates/dashboard/pulpits/canvas.html](../dashboard/templates/dashboard/pulpits/canvas.html)
+- [dashboard/templates/dashboard/pulpits/catalog.html](../dashboard/templates/dashboard/pulpits/catalog.html)
+- [dashboard/templates/dashboard/pulpits/catalog_preview.html](../dashboard/templates/dashboard/pulpits/catalog_preview.html)
 - [dashboard/templates/dashboard/pulpits/detail.html](../dashboard/templates/dashboard/pulpits/detail.html)
+- [dashboard/templates/dashboard/pulpits/edit.html](../dashboard/templates/dashboard/pulpits/edit.html)
+- [dashboard/templates/dashboard/pulpits/fields.html](../dashboard/templates/dashboard/pulpits/fields.html)
 - [dashboard/templates/dashboard/pulpits/form.html](../dashboard/templates/dashboard/pulpits/form.html)
 - [dashboard/templates/dashboard/pulpits/gadget.html](../dashboard/templates/dashboard/pulpits/gadget.html)
-- [dashboard/templates/dashboard/pulpits/groups.html](../dashboard/templates/dashboard/pulpits/groups.html)
+- [dashboard/templates/dashboard/pulpits/gadget_empty.html](../dashboard/templates/dashboard/pulpits/gadget_empty.html)
+- [dashboard/templates/dashboard/pulpits/gadget_preview.html](../dashboard/templates/dashboard/pulpits/gadget_preview.html)
+- [dashboard/templates/dashboard/pulpits/gadgets.html](../dashboard/templates/dashboard/pulpits/gadgets.html)
 - [dashboard/templates/dashboard/pulpits/index.html](../dashboard/templates/dashboard/pulpits/index.html)
 - [dashboard/templates/dashboard/pulpits/manage.html](../dashboard/templates/dashboard/pulpits/manage.html)
 - [dashboard/templates/dashboard/pulpits/sidebar_navigation.html](../dashboard/templates/dashboard/pulpits/sidebar_navigation.html)
@@ -1720,6 +1713,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/img/empty-states/dashboard-empty.webp](../static/img/empty-states/dashboard-empty.webp)
 - [static/img/favicon-ancore-large.png](../static/img/favicon-ancore-large.png)
 - [static/img/logo-ancore.png](../static/img/logo-ancore.png)
+- [static/img/pulpits/README.md](../static/img/pulpits/README.md)
+- [static/img/pulpits/assigned.svg](../static/img/pulpits/assigned.svg)
+- [static/img/pulpits/statistics.svg](../static/img/pulpits/statistics.svg)
 - [static/img/space-avatars/PROMPT-extra.txt](../static/img/space-avatars/PROMPT-extra.txt)
 - [static/img/space-avatars/PROMPT.txt](../static/img/space-avatars/PROMPT.txt)
 - [static/img/space-avatars/illustrations-extra-v1.png](../static/img/space-avatars/illustrations-extra-v1.png)
@@ -1990,23 +1986,42 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DashboardOverviewTests`: 10 metod testowych.
 
+### dashboard/test_pulpit_catalog.py
+
+Źródło: [dashboard/test_pulpit_catalog.py](../dashboard/test_pulpit_catalog.py).
+
+- `GadgetCatalogTests`: 5 metod testowych.
+
+### dashboard/test_pulpit_editor.py
+
+Źródło: [dashboard/test_pulpit_editor.py](../dashboard/test_pulpit_editor.py).
+
+- `PulpitEditorTests`: 7 metod testowych.
+
+### dashboard/test_pulpit_group_retirement.py
+
+Źródło: [dashboard/test_pulpit_group_retirement.py](../dashboard/test_pulpit_group_retirement.py).
+
+- `PulpitGroupRetirementTests`: 3 metod testowych.
+- `PulpitGroupRemovalMigrationTests`: 1 metod testowych.
+
 ### dashboard/test_pulpit_management.py
 
 Źródło: [dashboard/test_pulpit_management.py](../dashboard/test_pulpit_management.py).
 
-- `PulpitManagementTests`: 7 metod testowych.
+- `PulpitManagementTests`: 10 metod testowych.
 
 ### dashboard/test_pulpit_navigation.py
 
 Źródło: [dashboard/test_pulpit_navigation.py](../dashboard/test_pulpit_navigation.py).
 
-- `PulpitNavigationTests`: 11 metod testowych.
+- `PulpitNavigationTests`: 5 metod testowych.
 
 ### dashboard/test_pulpits.py
 
 Źródło: [dashboard/test_pulpits.py](../dashboard/test_pulpits.py).
 
-- `PulpitTests`: 22 metod testowych.
+- `PulpitTests`: 26 metod testowych.
 
 ### dashboard/test_reminders.py
 
@@ -2030,7 +2045,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/tests.py](../dashboard/tests.py).
 
-- `DashboardViewTests`: 8 metod testowych.
+- `DashboardViewTests`: 7 metod testowych.
 - `GlobalSearchTests`: 5 metod testowych.
 
 ### planner/test_task_calendar.py
@@ -2345,6 +2360,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [dashboard/migrations/0006_section_sharing.py](../dashboard/migrations/0006_section_sharing.py)
 - [dashboard/migrations/0007_dashboard_dashboardgadget_and_more.py](../dashboard/migrations/0007_dashboard_dashboardgadget_and_more.py)
 - [dashboard/migrations/0008_dashboardgroup.py](../dashboard/migrations/0008_dashboardgroup.py)
+- [dashboard/migrations/0009_remove_dashboard_groups.py](../dashboard/migrations/0009_remove_dashboard_groups.py)
 
 ### planner
 

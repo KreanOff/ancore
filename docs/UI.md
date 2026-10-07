@@ -50,8 +50,10 @@ wiersze, podsumowanie konta i kontrolki zachowują dotychczasowy wygląd.
 z fragmentem (`#account`, `#workspace` i skrót `#security`),
 historię Wstecz/Dalej i ponowne wejście po częściowej nawigacji. Wybór kategorii
 zamyka menu na telefonie; stan zwinięcia i szerokość są wspólne z resztą aplikacji.
-Wyjście ze strony usuwa jej listenery i obserwator przełącznika zwijania.
-Preferencje nie mają osobnej pozycji w menu. Ich opcje pozostają w Ogólne;
+Wyjście ze strony usuwa jej listenery.
+Sekcja Preferencje i jej opcje są usunięte z Ustawień; zwijanie menu i panel
+powiadomień pozostają dostępne przez kontrolki wspólnej powłoki aplikacji.
+Profil nie odsyła już do usuniętych opcji. Dla zgodności
 stare fragmenty `#preferences`, `#appearance`, `#notifications` i `#region`
 otwierają widok Ogólne.
 
@@ -2068,8 +2070,7 @@ Zapis blokuje ponowne wysłanie; błąd zachowuje wpis i umożliwia ponowienie.
 Po potwierdzonym odczycie/usunięciu wyświetla się wspólny komunikat sukcesu.
 „Pokaż starsze” doczytuje listę.
 Stopka nie zawiera dodatkowego opisu zakresu aktywności.
-Dzwonek jest przyciskiem,
-a skrót w Ustawieniach otwiera ten sam panel. Osobna strona powiadomień
+Dzwonek w górnym pasku jest przyciskiem otwierającym panel. Osobna strona powiadomień
 i jej link w wyszukiwarce zostały usunięte; dawny adres przekierowuje do Dashboardu.
 
 Stan odczytu zmienia się po potwierdzonym zapisie; samo otwarcie panelu niczego
@@ -2178,67 +2179,93 @@ gwiazdkę i menu akcji. Tabela przewija się we własnym kontenerze na telefonie
 
 Gadżety rozszerzają `dashboard-panel`; podsumowanie używa liczników, statystyki
 wspólnego `progress`, listy pokazują klucz, status i termin. Nagłówek pulpitu
-pokazuje samą nazwę po lewej, a dodawanie gadżetu, odświeżenie i menu
+pokazuje samą nazwę po lewej, a „Edytuj pulpit” (dla twórcy), odświeżenie i menu
 kopiowania/edycji po prawej. Nawigacja i gwiazdki są dostępne w bocznym menu
 oraz katalogu pulpitów. Pod nagłówkiem nie ma osobnego wiersza widoczności,
-autora ani wyboru układu. Widoczność i układ zmienia się w oknie
-„Edytuj i udostępnij”. Układ ma pięć wariantów; na telefonie wszystkie kolumny wyświetlają się
-pionowo. Menu gadżetu zapewnia konfigurację, przeniesienie wyżej/niżej/do
+autora ani wyboru układu. Przegląd nie pokazuje uchwytów ani menu gadżetów,
+także twórcy. „Edytuj pulpit” otwiera osobny edytor `gadgets.html` z menu
+wybranego pulpitu po lewej: „Gadżety i układ”, „Dostępy” i „Ustawienia”.
+Edytor ma w głównym nagłówku „Dodaj gadżet”, „Zmień układ” oraz „Gotowe”
+(powrót do przeglądu). Wszystkie trzy używają wspólnego białego wariantu
+`tasks-tag-topbar-button--secondary` z delikatną ramką. Pod nagłówkiem zaczyna się siatka gadżetów;
+nie ma dodatkowego paska trybu edycji ani licznika. Komunikaty automatycznego
+zapisu pozostają w regionie live dostępnym dla czytnika ekranu, a błędy są
+widoczne nad siatką. Wariant `pulpit-layout-control` korzysta ze wspólnych
+tokenów. „Zmień układ” otwiera wspólny popover
+`row-actions.js` z pięcioma miniaturami i zaznaczeniem aktualnego układu.
+Na telefonie przyciski nagłówka zawijają się,
+a wszystkie kolumny wyświetlają się pionowo. Puste kolumny edytora mają
+przerywaną ramkę i podpowiedź przeciągania. Widoczność zmienia się na stronie
+„Dostępy”, otwieranej też przez menu akcji. Menu gadżetu
+w edytorze zapewnia konfigurację, przeniesienie wyżej/niżej/do
 następnej kolumny i usunięcie. Przeciąganie zaczyna się wyłącznie od uchwytu,
-więc nie zakłóca linków i zaznaczania tekstu. Zapis aktualizuje żywy komunikat;
-błąd przywraca poprzednie pozycje i układ oraz pokazuje alert.
+więc nie zakłóca linków i zaznaczania tekstu. Niedostępne kierunki przeniesienia
+są wyłączone. Zapis aktualizuje żywy komunikat i blokuje kolejne zmiany oraz
+wyjście do zakończenia żądania; błąd przywraca poprzednie pozycje i układ,
+wartość selecta oraz pokazuje alert. Wspólny `canvas.html` zachowuje ten sam
+odczyt danych w przeglądzie i edytorze.
+
+Pozycje menu edytora i nagłówki gadżetów mają dekoracyjne ikony z `AncoreIcons`:
+aplikacje dla układu, osoby dla dostępu, ustawienia dla konfiguracji, osobę dla „Przypisane do mnie”
+i wykres dla statystyk. `GadgetKindSelect` przekazuje te same ikony do
+wspólnego dropdownu przez `data-ancore-option-icon`.
+`pulpit-layout-preview` pokazuje miniaturę aktualnego układu kolumn i zmienia
+ją razem z selectem, również przy przywracaniu układu po błędzie zapisu.
+Formularz rodzaju gadżetu zawiera `pulpit-gadget-preview`: miniaturę z ikoną
+oraz krótki opis, aktualizowane po wyborze rodzaju. Dwa autorskie SVG
+`static/img/pulpits/assigned.svg` i `statistics.svg` rozszerzają styl ilustracji
+szablonów Przestrzeni obecną paletą fioletu i ilustrują puste gadżety
+(`pulpit-gadget-empty-state`); niedostępne źródło ma ikonę kłódki.
+Ilustracje są dekoracyjne i skalują się na telefonie. Opisy oraz standardowa
+walidacja formularza pozostają tekstowe.
 
 Pusty pulpit używa wariantu `pulpit-empty-state` wspólnego `tasks-empty-state`:
 kolorowa ilustracja `static/img/empty-states/dashboard-empty.webp` i opis
-są wyśrodkowane w wolnej przestrzeni pod nagłówkiem. Przycisk „Dodaj gadżet”
-jest dostępny w nagłówku pulpitu; nie ma dodatkowego przycisku pod ilustracją.
+są wyśrodkowane w wolnej przestrzeni pod nagłówkiem. Przegląd kieruje do edycji.
+Edytor pokazuje pustą siatkę z miejscem na
+przeciągany gadżet i przyciskiem otwarcia katalogu w każdej kolumnie.
 Ilustracja ma przezroczyste tło, maksymalną szerokość 440px i skaluje się
 do dostępnej szerokości. Jest dekoracyjna (`alt=""`); stan opisuje polski tekst.
 Typografia pustego pulpitu nawiązuje do wskazanego wzorca Jiry: nagłówek
 28px/700 (24px na telefonie), opis 16px z interlinią 1,6 i odstępem 16px
 od nagłówka. Używa wspólnego Atlassian Sans i koloru `--text-primary`.
 Lokalna waga nagłówka nadpisuje globalne 400 wyłącznie w tym pustym stanie.
-Siatka pustych kolumn pozostaje ukryta także po zmianie układu w oknie edycji.
-Po dodaniu pierwszego gadżetu wyświetla się zwykła siatka.
+Siatka pustych kolumn pozostaje widoczna w edytorze po zmianie układu.
+Przegląd pustego pulpitu zachowuje wyśrodkowaną ilustrację.
 W trybie tylko do odczytu ilustracja pozostaje, a opis dotyczy twórcy pulpitu.
 
-Formularze używają standardowego `app-modal-panel--compact` i
+Tworzenie, kopiowanie i gadżety używają standardowego `app-modal-panel--compact` i
 `AncoreTaskModals`: fokus, Escape, inert tła, błędy zapisu, zachowanie szkicu
 oraz potwierdzenie zamknięcia niezapisanych zmian. „Osoby z dostępem” jest
 widoczne dla „Wybrane osoby”, a pola grupowania/limitu zależą od gadżetu.
-Wybór rodzaju gadżetu zawiera wyłącznie „Przypisane do mnie” i „Statystyki zadań”.
-Grupowanie dotyczy statystyk, a liczba wyników listy „Przypisane do mnie”.
-Przy edycji wcześniej zapisanego, wycofanego rodzaju opis pola prosi o wybór
-jednego z dwóch dostępnych rodzajów; istniejący gadżet pozostaje bez zmian do zapisu.
+Formularz obsługuje pięć rodzajów: Przypisane do mnie, Wyniki filtra,
+Podsumowanie zadań, Statystyki zadań oraz Ostatnia aktywność. Grupowanie dotyczy
+statystyk, a liczba wyników list zadań i aktywności. Podgląd rodzaju korzysta
+z tego samego katalogu i miniatur co panel dodawania.
 Porównywanie szkicu pomija token CSRF, który może się zmienić po błędzie walidacji.
-Bezpośredni URL otwiera to samo okno nad katalogiem albo pulpitami;
+Bezpośredni URL gadżetu otwiera to samo okno nad edytorem, pozostałe nad
+katalogiem albo pulpitem;
 zamknięcie przywraca adres ekranu tła. `pulpits.js` inicjalizuje się po pierwszym
 ładowaniu i `ancore:content-loaded`, odłączając poprzednie listenery.
 Utworzenie/kopia przechodzi do zapisanego pulpitu z aktualizacją adresu;
-odświeżenie, konfiguracja i akcje zachowują częściową nawigację.
+odświeżenie, konfiguracja i akcje zachowują częściową nawigację. Dodawanie,
+konfiguracja i usuwanie gadżetu pozostają w edytorze, także z filtrami zarządzania.
 
 Menu „Pulpity” wykorzystuje istniejący wariant nagłówka Przestrzeni, listy
 `sidebar-space-list` i wiersze z `row-actions.js`. Ikona nagłówka zmienia się
 na chevron przy hover/fokus; plus otwiera tworzenie pulpitu, menu oferuje
-tworzenie grupy i „Zarządzaj pulpitami”. Sekcje pokazują gwiazdki, ostatnie, własne
-grupy oraz link „Pokaż wszystkie pulpity”. „Pulpit domyślny” prowadzi do starego
-Dashboardu. Grupy mają link w tytule, pusty stan i link do pełnej listy przy
-więcej niż 6 pozycjach. Minimalne warianty `sidebar-pulpit-group-link` i
-`sidebar-pulpit-empty` używają wspólnych tokenów, truncation i fokusów.
+„Zarządzaj pulpitami”. Sekcje pokazują gwiazdki, ostatnie oraz link
+„Pokaż wszystkie pulpity”. „Pulpit domyślny” prowadzi do starego Dashboardu.
+Grupy pulpitów i akcje przypisania są usunięte z katalogu, przeglądu, menu
+bocznego oraz zarządzania.
 
-`layout.js` synchronizuje zawartość grup po częściowej nawigacji, zachowując
+`layout.js` synchronizuje zawartość sekcji po częściowej nawigacji, zachowując
 stan zwinięcia i fokus. Zwinięte menu otwiera flyout z tymi samymi sekcjami,
 unikalnymi ID i działającymi menu wierszy. Globalny `pulpit-navigation.js`
 obsługuje osobistą gwiazdkę także poza modułem i po `ancore:content-loaded`,
-odłączając listenery. Zarządzanie grupami/przypisaniem używa tych samych
-formularzy i modali co konfiguracja pulpitów; zapis aktualizuje menu.
-Tabela grup używa wariantu `pulpit-table--groups` z szerszą kolumną nazwy,
-bez kolumny gwiazdki. Katalog „Grupy pulpitów” korzysta z powłoki
-`work-page--management` i nagłówka katalogu; przycisk „Utwórz grupę” oraz
-dotychczasowa tabela i modale pozostają wspólne. Link do zarządzania grupami
-przeniesiono z nagłówka zwykłego katalogu do menu zarządzania.
+odłączając listenery. Zapis tworzenia pulpitu i konfiguracji gadżetu aktualizuje menu.
 Wspólny flyout ma nagłówek poza przewijanym obszarem,
-aby linki i akcje pozostały dostępne również przy wielu grupach.
+aby linki i akcje pozostały dostępne również przy wielu pozycjach.
 
 „Zarządzaj pulpitami” używa powłoki `work-page--management`, pasków
 `tasks-topbar--directory`, `work-item-toolbar`, paginacji w toolbarze i wierszy
@@ -2247,17 +2274,59 @@ Wariant `pulpit-management-sheet` zmienia wyłącznie siatkę kolumn odpowiadaj�
 danym pulpitu. Wspólny menedżer w `tasks.js` zna szerokości tych kolumn;
 osobny klucz `pulpits-management` zachowuje preferencje między zwykłym i scoped
 adresem, bez zmieniania tabel Przestrzeni. Twórca korzysta ze wspólnego awatara; gwiazdka, menu wiersza,
-fokus, błędy i puste stany pozostają wspólne. Nazwa otwiera modal edycji,
-„Utwórz pulpit” modal nad katalogiem. Edycja, walidacja, anulowanie, zapis,
-kopiowanie i usunięcie zachowują ten ekran i jego filtry. Filtry widoczności
+fokus, błędy i puste stany pozostają wspólne. Nazwa otwiera edytor gadżetów,
+„Utwórz pulpit” modal nad katalogiem. Anulowanie i zapis edycji wracają
+do tego katalogu z jego filtrami; błąd pozostaje na stronie edycji.
+Tworzenie, kopiowanie i usunięcie zachowują katalog oraz filtry. Filtry widoczności
 i gwiazdki wysyłają formularz także po wyborze wartości.
 
 `core/includes/pulpit_management_sidebar.html` pokazuje nawigację administracyjną
 „Zarządzanie pulpitami”, powrót oraz „Zarządzaj pulpitami”. Tryb jest odrębny
-od zarządzania Przestrzeniami i Workspace. Pozycja „Grupy pulpitów” pod
-„Zarządzaj pulpitami” prowadzi do katalogu grup; aktywna jest wyłącznie jedna
-z tych pozycji, także w bezpośrednich formularzach tworzenia/edycji grup.
+od zarządzania Przestrzeniami i Workspace.
 Wspólny `layout.js` zachowuje miejsce
 wejścia, filtry i przewinięcie przez częściową nawigację, reload i Wstecz/Dalej.
-Przejścia między pulpitami i grupami w tym menu zachowują wspólne źródło powrotu.
 Świeży bezpośredni URL używa powrotu do wszystkich pulpitów.
+
+Edytor konkretnego pulpitu ma osobny tryb `pulpit-editor` i menu
+`core/includes/pulpit_editor_sidebar.html`. Pokazuje nazwę pulpitu, powrót oraz
+„Gadżety i układ”, „Dostępy” i „Ustawienia”; wyłącznie bieżąca sekcja jest aktywna.
+Nie ma poziomych zakładek. Po wejściu z katalogu menu ogólnego zarządzania jest
+ukryte. `layout.js` podmienia zawartość menu również przy zmianie pulpitu,
+zachowując fokus i kontekst powrotu. Menu używa istniejących klas sidebaru,
+ikon i obsługi na telefonie oraz po zwinięciu.
+
+Ustawienia i dostępy (`dashboard/pulpits/edit.html`) są osobnymi stronami,
+także przy bezpośrednim wejściu przez zwykły/scoped URL oraz wariant zarządzania.
+Używają powłoki `work-page--management` i menu wybranego pulpitu. Linki w katalogu,
+menu akcji i bocznej nawigacji korzystają ze wspólnej częściowej nawigacji.
+Nagłówek zawiera nazwę sekcji i pulpitu oraz „Wyświetl pulpit”. Ustawienia
+zawierają nazwę/opis, dostępy widoczność/osoby. Pola mają maksymalną szerokość 640px,
+odstęp 22px od krawędzi oraz wspólne przyciski „Anuluj” i „Zapisz”.
+Include `dashboard/pulpits/fields.html` współdzieli pola i błędy z modalami.
+Zapis przez POST wraca do pulpitu albo katalogu zarządzania z jego filtrami;
+błąd pozostaje na stronie ze szkicem i fokusem nieprawidłowego pola.
+„Osoby z dostępem” pojawiają się po wyborze „Wybrane osoby”. `pulpits.js`
+chroni niezapisane zmiany przy nawigacji i zamykaniu/przeładowaniu karty,
+a po `ancore:content-loaded` odłącza poprzednie listenery.
+
+
+Panel katalogu gadżetów (`catalog.html`) jest dokowany po prawej stronie
+edytora, ma niezależne przewijanie, wyszukiwarkę ignorującą wielkość liter
+oraz polskie znaki, kategorie Zadania/Statystyki/Aktywność i stan bez wyników.
+Miniatury `catalog_preview.html` korzystają z istniejących ikon i tokenów,
+a przyciski z klas wspólnych kontrolek. `pulpit-editor-body` rozszerza powłokę
+Dashboardu bez zmian na innych ekranach. Na telefonie katalog pojawia się
+nad siatką i ma ograniczoną wysokość z przewijaną listą. Przy średniej szerokości
+otwarty katalog układa gadżety pionowo, zachowując zapisane kolumny.
+Escape i zamknięcie katalogu przywracają fokus do przycisku otwarcia;
+otwarcie skupia wyszukiwarkę. Stan otwarcia i filtrów jest zapamiętywany
+w `sessionStorage` osobno dla adresu edytora, również po konfiguracji i reload.
+
+„Dodaj” zapisuje gadżet z domyślnymi filtrami i dołącza go do najmniej
+zapełnionej zapisanej kolumny bez nawigacji i zamykania katalogu. Formularz
+„Konfiguruj” służy do dopasowania źródła i filtrów. Bez JS link nagłówka nadal
+otwiera standardowy formularz dodawania. W trakcie żądania dodawanie, zmiana
+układu i wyjście są blokowane. Osiągnięcie limitu 24 wyłącza przyciski katalogu
+oraz pokazuje opis. Błąd sieci i konflikt rewizji wyświetlają alert bez dokładania
+pozornego gadżetu; przy niepewnym wyniku żądania należy odświeżyć pulpit.
+Nowe menu gadżetów inicjalizują się przez `ancore:modals-loaded`.

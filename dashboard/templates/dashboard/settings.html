@@ -4,8 +4,8 @@
 {% block title %}Ustawienia | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/settings.css' %}?v=20261004-settings-sidebar">
-<script src="{% static 'js/settings.js' %}?v=20261004-settings-no-preferences-menu" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/settings.css' %}?v=20261007-settings-no-preferences">
+<script src="{% static 'js/settings.js' %}?v=20261007-settings-no-preferences" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -49,30 +49,6 @@
                             {% url 'admin:index' as admin_url %}
                             {% include 'dashboard/includes/settings_row.html' with href=admin_url icon='shield-check' title='Panel administracyjny' description='Zarządzaj systemem i dostępem użytkowników.' only %}
                         {% endif %}
-                    </div>
-                </section>
-                <section class="settings-group" id="preferences" data-settings-group="preferences" aria-labelledby="settings-preferences-title">
-                    <header class="settings-group-heading"><h2 id="settings-preferences-title">Preferencje</h2><p>Dopasuj Ancore do swojego sposobu pracy.</p></header>
-                    <div class="settings-rows">
-                        <div class="settings-row" id="appearance" data-settings-row>
-                            <span class="settings-row-icon" aria-hidden="true"><i data-icon="panel-left"></i></span>
-                            <div class="settings-row-copy">
-                                <label for="settings-sidebar-collapsed">Zwinięte menu boczne</label>
-                                <span id="settings-sidebar-description">Więcej miejsca na Twoją pracę. Ustawienie dla tej przeglądarki.</span>
-                                <span class="settings-mobile-hint">Na telefonie menu otworzysz przyciskiem w lewym górnym rogu.</span>
-                                <noscript><span>Do zmiany tego ustawienia włącz JavaScript.</span></noscript>
-                            </div>
-                            <input id="settings-sidebar-collapsed" class="settings-switch" type="checkbox" role="switch" aria-describedby="settings-sidebar-description" data-settings-sidebar-switch disabled>
-                        </div>
-                        <a href="#notifications-panel" class="settings-row settings-row--link" id="notifications" data-settings-row data-settings-notifications>
-                            <span class="settings-row-icon" aria-hidden="true"><i data-icon="bell"></i></span>
-                            <span class="settings-row-copy"><strong>Powiadomienia</strong><span>Sprawdź ostatnią aktywność w swojej przestrzeni.</span></span>
-                            <i class="settings-row-arrow" data-icon="chevron-right" aria-hidden="true"></i>
-                        </a>
-                        <div class="settings-row" id="region" data-settings-row>
-                            <span class="settings-row-icon" aria-hidden="true"><i data-icon="globe"></i></span>
-                            <span class="settings-row-copy"><strong>Język i region</strong><span>Polski · {{ settings_timezone }}</span></span>
-                        </div>
                     </div>
                 </section>
                 <section class="settings-session" id="security" data-settings-group="account" aria-label="Sesja i bezpieczeństwo">

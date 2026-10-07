@@ -1,8 +1,8 @@
 <article class="dashboard-panel pulpit-gadget" data-pulpit-gadget="{{ data.gadget.pk }}">
     <header class="dashboard-panel-header pulpit-gadget-header">
-        {% if dashboard.can_edit %}<button type="button" class="tasks-icon-button pulpit-drag-handle" draggable="true" data-pulpit-drag aria-label="Przeciągnij gadżet: {{ data.gadget.label }}" title="Przeciągnij gadżet"><i data-icon="grip-vertical" aria-hidden="true"></i></button>{% endif %}
-        <h2>{{ data.gadget.label }}</h2>
-        {% if dashboard.can_edit %}<div class="documents-item-actions" data-row-actions>
+        {% if editing_gadgets %}<button type="button" class="tasks-icon-button pulpit-drag-handle" draggable="true" data-pulpit-drag aria-label="Przeciągnij gadżet: {{ data.gadget.label }}" title="Przeciągnij gadżet"><i data-icon="grip-vertical" aria-hidden="true"></i></button>{% endif %}
+        <h2><i data-icon="{{ data.gadget.icon }}" aria-hidden="true"></i>{{ data.gadget.label }}</h2>
+        {% if editing_gadgets %}<div class="documents-item-actions" data-row-actions>
             <button type="button" class="tasks-icon-button documents-icon-button" data-row-actions-toggle popovertarget="gadget-actions-{{ data.gadget.pk }}" aria-controls="gadget-actions-{{ data.gadget.pk }}" aria-expanded="false" aria-label="Działania gadżetu: {{ data.gadget.label }}"><i data-icon="ellipsis" aria-hidden="true"></i></button>
             <div id="gadget-actions-{{ data.gadget.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania gadżetu" data-row-actions-panel><div class="documents-menu-actions">
                 <a href="{{ data.gadget.edit_url }}" class="tasks-project-menu-button" data-pulpit-open><i data-icon="settings-2" aria-hidden="true"></i><span>Konfiguruj</span></a>
@@ -14,15 +14,15 @@
         </div>{% endif %}
     </header>
     <div class="pulpit-gadget-body">
-        {% if data.unavailable %}<p class="pulpit-gadget-empty">Nie masz dostępu do źródłowej przestrzeni tego gadżetu.</p>
+        {% if data.unavailable %}<div class="pulpit-gadget-empty-state"><i data-icon="lock" class="pulpit-gadget-empty-icon" aria-hidden="true"></i><p class="pulpit-gadget-empty">Nie masz dostępu do źródłowej przestrzeni tego gadżetu.</p></div>
         {% elif data.gadget.kind == 'summary' %}
         <dl class="pulpit-totals"><div><dt>Wszystkie</dt><dd>{{ data.totals.total }}</dd></div><div><dt>Otwarte</dt><dd>{{ data.totals.open }}</dd></div><div><dt>Zamknięte</dt><dd>{{ data.totals.closed }}</dd></div><div><dt>Po terminie</dt><dd>{{ data.totals.overdue }}</dd></div></dl>
         {% elif data.gadget.kind == 'statistics' %}
-        {% for row in data.rows %}<div class="pulpit-stat-row"><div><span>{{ row.label }}</span><span>{{ row.count }} · {{ row.percent }}%</span></div><progress max="100" value="{{ row.percent }}" aria-label="{{ row.label }}: {{ row.count }} z {{ data.count }}"></progress></div>{% empty %}<p class="pulpit-gadget-empty">Brak zadań do wyświetlenia.</p>{% endfor %}
+        {% for row in data.rows %}<div class="pulpit-stat-row"><div><span>{{ row.label }}</span><span>{{ row.count }} · {{ row.percent }}%</span></div><progress max="100" value="{{ row.percent }}" aria-label="{{ row.label }}: {{ row.count }} z {{ data.count }}"></progress></div>{% empty %}{% include 'dashboard/pulpits/gadget_empty.html' with illustration='statistics' message='Brak zadań do wyświetlenia.' only %}{% endfor %}
         {% elif data.gadget.kind == 'activity' %}
-        {% for row in data.rows %}<div class="pulpit-activity"><span>{{ row.actor }} · {{ row.action }}</span><a href="{{ row.url }}">{{ row.title }}</a><time datetime="{{ row.date|date:'c' }}">{{ row.date|date:'d.m.Y H:i' }}</time></div>{% empty %}<p class="pulpit-gadget-empty">Brak aktywności dla wybranego filtra.</p>{% endfor %}
+        {% for row in data.rows %}<div class="pulpit-activity"><span>{{ row.actor }} · {{ row.action }}</span><a href="{{ row.url }}">{{ row.title }}</a><time datetime="{{ row.date|date:'c' }}">{{ row.date|date:'d.m.Y H:i' }}</time></div>{% empty %}{% include 'dashboard/pulpits/gadget_empty.html' with illustration='assigned' message='Brak aktywności dla wybranego filtra.' only %}{% endfor %}
         {% else %}
-        {% for row in data.rows %}<a href="{{ row.url }}" class="pulpit-task"><span class="pulpit-task-copy"><small>{{ row.key }}</small><span>{{ row.task.title }}</span></span><span class="pulpit-task-meta"><span>{{ row.task.get_status_display }}</span>{% if row.task.due_at %}<time class="{% if row.overdue %}pulpit-overdue{% endif %}" datetime="{{ row.task.due_at|date:'c' }}">{{ row.task.due_at|date:'d.m.Y' }}</time>{% endif %}</span></a>{% empty %}<p class="pulpit-gadget-empty">{% if data.gadget.kind == 'assigned' %}Nie masz otwartych zadań przypisanych do siebie.{% else %}Brak zadań dla wybranego filtra.{% endif %}</p>{% endfor %}
+        {% for row in data.rows %}<a href="{{ row.url }}" class="pulpit-task"><span class="pulpit-task-copy"><small>{{ row.key }}</small><span>{{ row.task.title }}</span></span><span class="pulpit-task-meta"><span>{{ row.task.get_status_display }}</span>{% if row.task.due_at %}<time class="{% if row.overdue %}pulpit-overdue{% endif %}" datetime="{{ row.task.due_at|date:'c' }}">{{ row.task.due_at|date:'d.m.Y' }}</time>{% endif %}</span></a>{% empty %}{% if data.gadget.kind == 'assigned' %}{% include 'dashboard/pulpits/gadget_empty.html' with illustration='assigned' message='Nie masz otwartych zadań przypisanych do siebie.' only %}{% else %}{% include 'dashboard/pulpits/gadget_empty.html' with illustration='assigned' message='Brak zadań dla wybranego filtra.' only %}{% endif %}{% endfor %}
         {% endif %}
     </div>
     {% if not data.unavailable %}<footer class="pulpit-gadget-footer">{% if data.gadget.kind == 'activity' %}Aktywności{% else %}Zadania{% endif %}: {{ data.count }}{% if data.rows and data.gadget.kind != 'statistics' %} · Wyświetlono {{ data.rows|length }}{% endif %}</footer>{% endif %}

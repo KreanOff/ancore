@@ -76,9 +76,10 @@ Centrum `/settings/` sprawdzaj razem z `dashboard.tests.DashboardViewTests`.
 Browser QA: wejście z codziennego katalogu i zarządzania przestrzeniami,
 zastąpienie głównego paska kategoriami ustawień, wybór każdej kategorii,
 bezpośredni fragment URL i historia Wstecz/Dalej, powrót do Workspace,
-ponowne wejście, zwijanie menu z przełącznika w Ogólne i menu na telefonie.
-Pozycja Preferencje jest usunięta; stare fragmenty tej sekcji otwierają Ogólne.
-Sprawdź też skrót Powiadomień oraz widoczność administracyjnych linków według roli.
+ponowne wejście, zwijanie menu z przycisku wspólnej powłoki i menu na telefonie.
+Sekcja Preferencje wraz z opcjami jest usunięta; stare fragmenty tej sekcji
+otwierają Ogólne. Sprawdź brak odsyłaczy do usuniętych opcji w profilu,
+dzwonek w górnym pasku oraz widoczność administracyjnych linków według roli.
 
 ## Usunięcie systemu Wartości pól projektu
 
@@ -738,11 +739,14 @@ Migracja `dashboard.0007_dashboard_dashboardgadget_and_more` dodaje wyłącznie
 konfigurację pulpitów, gadżety i osobiste relacje gwiazdek/udostępnienia.
 Nie konwertuje starego Dashboardu ani danych zadań. Wymaga istniejącej migracji
 `spaces.0004_issue_types`. Sprawdź plan, zastosuj migrację i odśwież zasoby.
-Migracja `dashboard.0008_dashboardgroup` dodaje osobiste grupy oraz relacje
-do pulpitów, bez przenoszenia istniejących danych. Obie migracje są źródłami
-aplikacji i muszą być wersjonowane.
+Historyczna migracja `dashboard.0008_dashboardgroup` dodawała osobiste grupy
+oraz relacje do pulpitów. `dashboard.0009_remove_dashboard_groups` usuwa ten
+mechanizm i jego dwie tabele, zachowując pulpity, gadżety, gwiazdki i dostęp.
+Przed zastosowaniem wykonaj backup bazy; migracja odwrotna odtwarza puste tabele,
+nie odzyskuje usuniętych grup. Wszystkie migracje są źródłami aplikacji
+i muszą być wersjonowane.
 
-Testy: `dashboard.test_pulpits`, `dashboard.test_pulpit_navigation`, `dashboard.test_pulpit_management`, `spaces.test_management`, `spaces.test_navigation`, `dashboard.test_overview`,
+Testy: `dashboard.test_pulpits`, `dashboard.test_pulpit_editor`, `dashboard.test_pulpit_catalog`, `dashboard.test_pulpit_navigation`, `dashboard.test_pulpit_group_retirement`, `dashboard.test_pulpit_management`, `spaces.test_management`, `spaces.test_navigation`, `dashboard.test_overview`,
 `dashboard.test_for_you`, `dashboard.test_search_regressions`,
 `core.test_task_integrity`, `planner.test_task_calendar` oraz `workplaces`.
 Nowe testy obejmują właściciela/twórcę, dwa Workspace, prywatność rodziców,
@@ -750,24 +754,68 @@ cofnięcie dostępu, tylko odczyt, formularze źródeł/udostępniania, gwiazdki
 kopiowanie, usuwanie, CSRF i walidację układu/rewizji. Tworzenie przez katalog
 i zarządzanie zaczyna od zera gadżetów; ponowne wejście zachowuje pusty stan,
 a ręczne dodanie pierwszego gadżetu usuwa komunikat pustego pulpitu.
-Katalog rodzajów ogranicza `AVAILABLE_GADGET_KINDS` w `dashboard/pulpits.py`;
-model zachowuje wcześniejsze rodzaje dla odczytu i kopiowania zapisanych danych.
-Testy sprawdzają dwa dostępne rodzaje w dodawaniu/edycji, odrzucenie pozostałych
-w POST, zachowanie starego rekordu po błędzie oraz zmianę na dostępny rodzaj,
-również przez scoped URL i odpowiedzi modala.
+Katalog `GADGET_CATALOG` i `AVAILABLE_GADGET_KINDS` w `dashboard/pulpits.py`
+obejmują pięć istniejących rodzajów; zmiana nie wymaga migracji. Testy sprawdzają
+dodawanie i konfigurację wszystkich rodzajów, odrzucenie nieznanego rodzaju
+oraz zachowanie zapisanego rekordu po błędzie, także przez scoped URL i modal.
+`dashboard.test_pulpit_catalog` obejmuje szybkie dodawanie, rozmieszczenie
+w kolumnach, rzeczywisty HTML, rewizję i duplikaty, limit, błędny JSON, CSRF,
+twórcę i granice Workspace oraz zachowanie filtrów zarządzania.
 
-Browser QA: pusty katalog, utworzenie, pięć układów w oknie edycji i przeładowanie,
+Testy pulpitów sprawdzają również brak kontrolek edycji w przeglądzie twórcy,
+osobny edytor z kontrolą dostępu GET, zwykłe/scoped adresy, tło bezpośrednich
+formularzy gadżetów, powrót do edytora i zachowanie filtrów zarządzania.
+Pięć układów pustego pulpitu nie tworzy gadżetów.
+`dashboard.test_pulpit_editor` sprawdza wejście z nazwy katalogu do gadżetów,
+osobne menu trzech sekcji, formularze ustawień/dostępu zapisujące tylko własne
+pola, walidację, twórcę, Workspace, CSRF, zachowanie filtrów oraz tło modali.
+Zmiana menu i rozdzielenie formularzy nie wymagają migracji.
+
+Browser QA: pusty katalog, utworzenie, przegląd → edytor → przegląd,
+osobne menu edycji, pięć układów w edytorze gadżetów i przeładowanie,
 przeciąganie oraz przenoszenie klawiaturą, konfiguracja gadżetu, wybrana osoba,
 kopiowanie i gwiazdki, błędy formularza/sieci/konfliktu, Escape/fokus,
 ponowne wejście z Dashboardu, zwykły/scoped URL oraz desktop/telefon.
-Nawigacja: gwiazdki z katalogu i menu wiersza, osobiste ostatnie, CRUD grup,
-przypisanie współdzielonego pulpitu, cofnięcie dostępu, pusty stan/limit grup,
-zachowanie filtra grupy, plus w nagłówku, zwinięta sekcja i flyout całego menu.
+Sprawdź zachowanie dokumentu podczas częściowej nawigacji do `/<pk>/gadgets/`
+i `/manage/<pk>/gadgets/`, aktywne pozycje menu, błędy zapisu i region live, wyłączone
+kierunki przenoszenia, powrót do edytora po dodaniu/edycji/usunięciu i przywrócenie
+układu/selecta po konflikcie rewizji. Przegląd nie może pokazywać kontrolek
+gadżetów również twórcy; odbiorca nie ma dostępu do URL edytora.
+Ikony i ilustracje: dropdown rodzaju z ikonami, zmiana podglądu listy/statystyk,
+ilustrowane puste gadżety, miniatura wszystkich pięciu układów i jej przywrócenie
+po błędzie. Sprawdź formularz po walidacji, częściowej nawigacji i ponownym
+otwarciu, a także modal z dostępną stopką na telefonie.
+Nawigacja: gwiazdki z katalogu i menu wiersza, osobiste ostatnie,
+cofnięcie dostępu, limit skrótów, plus w nagłówku, zwinięta sekcja
+i flyout całego menu. `dashboard.test_pulpit_group_retirement` sprawdza
+404 dawnych endpointów GET/POST w obu zakresach URL, brak dawnych akcji,
+ignorowanie parametru `group` bez poszerzania dostępu oraz migrację
+z istniejącymi grupami, zachowującą konfigurację pulpitów i gadżetów.
 Zarządzanie: własne pulpity dwóch osób/dwóch Workspace, osobne menu, zwykły
 i scoped URL, pusty stan, filtry/paginacja, tworzenie/edycja/kopia/usunięcie,
-modal i walidacja nad katalogiem, powrót z filtrami oraz Wstecz/Dalej/reload.
+modal tworzenia/kopii, osobna strona edycji, walidacja ze szkicem, powrót
+z filtrami oraz Wstecz/Dalej/reload. Edycja: wejście z nazwy/menu katalogu,
+menu otwartego pulpitu i menu bocznego, zapis/anulowanie, „Wybrane osoby”,
+zmiana liczby kolumn, ochrona szkicu przy wyjściu oraz ponowne wejście.
+Menu wybranego pulpitu: lista → nazwa → Gadżety i układ → Dostępy → Ustawienia,
+brak poziomych zakładek i ogólnego menu zarządzania w edytorze, nazwa/aktywna
+pozycja po zmianie pulpitu, przeładowanie i Wstecz/Dalej. Sprawdź zapis obu
+formularzy, ich izolację, walidację ze szkicem, ochronę zmian przy przełączaniu
+sekcji, powrót z filtrami po częściowej nawigacji i zwykłym POST, menu zwinięte
+oraz telefon. Zapis ustawień nie może zmieniać uprawnień ani układu.
 Porównaj w przeglądarce geometrię tabeli i toolbaru z „Zarządzaj przestrzeniami”.
-Grupy w zarządzaniu: wybór „Grupy pulpitów” z bocznego menu, aktywna pozycja,
-tworzenie/edycja/usunięcie, pusty stan/błąd formularza, bezpośredni URL,
-przełączanie pulpitów i grup bez utraty źródła powrotu, historia/reload i telefon.
+Wycofanie grup: menu katalogu, wiersza, pulpitu i zarządzania bez akcji grup,
+404 starego adresu, zachowanie powrotu, historii/reload, gwiazdek i gadżetów
+na desktopie oraz telefonie.
 Testuj na oddzielnej bazie; nie dodawaj danych QA do Workspace użytkowników.
+
+
+Katalog gadżetów: w browser QA sprawdź tworzenie pustego pulpitu, otwarcie
+panelu, kategorie i wyszukiwanie (także bez polskich znaków), brak wyników/reset,
+pięć kolejnych dodań bez nawigacji, konfigurację i powrót z otwartym katalogiem,
+reload, zamknięcie/Escape/fokus, wszystkie miniatury układu, przeciąganie oraz
+menu przenoszenia nowych gadżetów. Sprawdź błąd sieci/ponowienie, konflikt dwóch
+okien, limit 24 oraz brak pozornie dodanych kart. Przegląd zachowuje ilustrację
+pustego pulpitu i brak kontrolek gadżetów. Desktop, tablet z dokowanym katalogiem
+oraz telefon z katalogiem nad siatką muszą zachować własne przewijanie i dostęp
+do przycisków. Referencją powłoki i kontrolek jest „Zarządzaj przestrzeniami”.

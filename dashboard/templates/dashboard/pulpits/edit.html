@@ -1,0 +1,22 @@
+{% extends 'dashboard/pulpits/base.html' %}
+{% block title %}{{ section_title }} — {{ dashboard.name }} | ancore{% endblock %}
+{% block content %}
+<div class="tasks-container work-page work-page--management pulpits-page pulpit-edit-page" data-pulpits-page data-pulpit-list-url="{{ action }}">
+    <section class="tasks-workspace">
+        <header class="tasks-topbar tasks-topbar--directory pulpit-topbar">
+            <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title" title="{{ section_title }} — {{ dashboard.name }}">{{ section_title }} — {{ dashboard.name }}</h1></div>
+            <div class="tasks-titlebar-actions"><a href="{{ dashboard.url }}" class="tasks-tag-topbar-button"><i data-icon="eye" aria-hidden="true"></i><span>Wyświetl pulpit</span></a></div>
+        </header>
+        <div class="work-content pulpit-edit-content">
+            <form method="post" action="{{ action }}" class="documents-form pulpit-form pulpit-edit-form" data-pulpit-edit-form data-pulpit-unsaved="{{ form.is_bound|yesno:'true,false' }}">
+                {% csrf_token %}
+                {% include 'dashboard/pulpits/fields.html' with form=form only %}
+                <div class="pulpit-edit-actions">
+                    <a href="{{ return_url }}" class="btn btn-secondary">Anuluj</a>
+                    <button type="submit" class="btn btn-primary">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}

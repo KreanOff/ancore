@@ -1,10 +1,8 @@
 """Personal dashboard navigation, rebuilt against current access on every page."""
-from urllib.parse import urlencode
-
-from django.db.models import Case, Exists, OuterRef, Prefetch, When
+from django.db.models import Case, Exists, OuterRef, When
 
 from .models import Dashboard
-from .pulpits import app_url, decorate_dashboard, personal_groups, visible_dashboards
+from .pulpits import decorate_dashboard, visible_dashboards
 from .recent import recent_views
 
 
@@ -17,15 +15,9 @@ def sidebar_dashboards(request, limit=6):
     recent = list(dashboards.filter(pk__in=recent_ids, is_favorite=False).order_by(Case(
         *(When(pk=pk, then=position) for position, pk in enumerate(recent_ids)), default=len(recent_ids),
     ))[:limit]) if recent_ids else []
-    groups = list(personal_groups(request).prefetch_related(Prefetch('dashboards', queryset=dashboards, to_attr='visible_dashboards')))
     resolver = getattr(request, 'resolver_match', None)
     current_pk = resolver.kwargs.get('pk') if resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'} and resolver.url_name == 'detail' else None
-    for group in groups:
-        group.url = app_url(request) + '?' + urlencode({'tab': 'all', 'group': group.pk})
-        group.navigation_dashboards = group.visible_dashboards[:limit]
-        group.has_more = len(group.visible_dashboards) > limit
-    for dashboard in [*starred, *recent, *(item for group in groups for item in group.navigation_dashboards)]:
+    for dashboard in [*starred, *recent]:
         decorate_dashboard(request, dashboard)
         dashboard.is_current = dashboard.pk == current_pk
-    return {'navigation_starred_dashboards': starred, 'navigation_recent_dashboards': recent,
-            'navigation_dashboard_groups': groups}
+    return {'navigation_starred_dashboards': starred, 'navigation_recent_dashboards': recent}

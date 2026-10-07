@@ -6,10 +6,31 @@ from spaces.services import visible_spaces
 from tasks.access import visible_to
 from tasks.models import Task, TaskActivity
 from workplaces.services import scoped_workplace_app_path, workspace_owner
-from .models import Dashboard, DashboardGadget, DashboardGroup
+from .models import Dashboard, DashboardGadget
 
 MAX_GADGETS = 24
-AVAILABLE_GADGET_KINDS = (DashboardGadget.Kind.ASSIGNED, DashboardGadget.Kind.STATISTICS)
+AVAILABLE_GADGET_KINDS = tuple(DashboardGadget.Kind)
+GADGET_ICONS = {
+    DashboardGadget.Kind.ASSIGNED: 'user-round',
+    DashboardGadget.Kind.STATISTICS: 'chart-column',
+    DashboardGadget.Kind.SUMMARY: 'layout-dashboard',
+    DashboardGadget.Kind.RESULTS: 'list-checks',
+    DashboardGadget.Kind.ACTIVITY: 'activity',
+}
+GADGET_CATALOG = [
+    {'kind': 'assigned', 'name': 'Przypisane do mnie', 'category': 'tasks', 'category_label': 'Zadania',
+     'description': 'Twoje otwarte zadania, statusy i terminy. Każda osoba widzi własne przypisania.'},
+    {'kind': 'results', 'name': 'Wyniki filtra', 'category': 'tasks', 'category_label': 'Zadania',
+     'description': 'Lista zadań z wybranej przestrzeni. Zawęź wyniki według statusu i przypisania.'},
+    {'kind': 'summary', 'name': 'Podsumowanie zadań', 'category': 'charts', 'category_label': 'Statystyki',
+     'description': 'Cztery liczniki: wszystkie, otwarte, zamknięte i po terminie. Szybki przegląd pracy zespołu.'},
+    {'kind': 'statistics', 'name': 'Statystyki zadań', 'category': 'charts', 'category_label': 'Statystyki',
+     'description': 'Rozkład zadań według statusu, priorytetu lub wykonawcy, z liczbami i udziałem procentowym.'},
+    {'kind': 'activity', 'name': 'Ostatnia aktywność', 'category': 'activity', 'category_label': 'Aktywność',
+     'description': 'Ostatnie zmiany w dostępnych zadaniach. Zobacz, kto i kiedy pracował nad zadaniem.'},
+]
+for entry in GADGET_CATALOG:
+    entry['icon'] = GADGET_ICONS[entry['kind']]
 
 
 def app_url(request, suffix=''):
@@ -22,17 +43,14 @@ def visible_dashboards(request):
     ).distinct()
 
 
-def personal_groups(request):
-    return DashboardGroup.objects.filter(owner=workspace_owner(request), workplace=request.workplace, user=request.user)
-
-
 def decorate_dashboard(request, dashboard):
     dashboard.url = app_url(request, f'{dashboard.pk}/')
     dashboard.edit_url = app_url(request, f'{dashboard.pk}/edit/')
+    dashboard.access_url = app_url(request, f'{dashboard.pk}/access/')
+    dashboard.gadgets_url = app_url(request, f'{dashboard.pk}/gadgets/')
     dashboard.copy_url = app_url(request, f'{dashboard.pk}/copy/')
     dashboard.delete_url = app_url(request, f'{dashboard.pk}/delete/')
     dashboard.favorite_url = app_url(request, f'{dashboard.pk}/favorite/')
-    dashboard.groups_url = app_url(request, f'{dashboard.pk}/groups/')
     dashboard.can_edit = dashboard.created_by_id == request.user.pk
     if not hasattr(dashboard, 'is_favorite'):
         dashboard.is_favorite = dashboard.favorited_by.filter(pk=request.user.pk).exists()
@@ -42,6 +60,13 @@ def decorate_dashboard(request, dashboard):
 def task_url(request, task):
     base = scoped_workplace_app_path(request.workplace, 'tasks')
     return f'{base}view-task/{task.task_id}/?task_pk={task.pk}'
+
+
+def decorate_gadget(request, gadget):
+    gadget.icon = GADGET_ICONS.get(gadget.kind, 'layout-dashboard')
+    gadget.edit_url = app_url(request, f'{gadget.dashboard_id}/gadgets/{gadget.pk}/edit/')
+    gadget.delete_url = app_url(request, f'{gadget.dashboard_id}/gadgets/{gadget.pk}/delete/')
+    return gadget
 
 
 def gadget_data(request, gadget, tasks, spaces):
@@ -92,8 +117,7 @@ def detail_context(request, dashboard):
     spaces = set(visible_spaces(request).values_list('pk', flat=True))
     columns = [[] for _ in range(dashboard.column_count)]
     for gadget in dashboard.gadgets.all():
-        gadget.edit_url = app_url(request, f'{dashboard.pk}/gadgets/{gadget.pk}/edit/')
-        gadget.delete_url = app_url(request, f'{dashboard.pk}/gadgets/{gadget.pk}/delete/')
+        decorate_gadget(request, gadget)
         columns[min(gadget.column, dashboard.column_count - 1)].append(gadget_data(request, gadget, tasks, spaces))
     return {'dashboard': dashboard, 'columns': columns, 'dashboards_url': app_url(request),
             'layout_choices': Dashboard.Layout.choices,

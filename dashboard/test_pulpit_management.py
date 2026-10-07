@@ -3,7 +3,7 @@ from django.test import Client, TestCase
 
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
-from .models import Dashboard, DashboardGadget, DashboardGroup
+from .models import Dashboard, DashboardGadget
 
 
 class PulpitManagementTests(TestCase):
@@ -78,6 +78,31 @@ class PulpitManagementTests(TestCase):
         self.assertEqual(len(response.context['page']), 1)
         self.assertContains(response, 'q=Wydanie&amp;visibility=private&amp;page=1')
 
+    def test_gadget_editor_and_mutations_keep_management_filters(self):
+        filters = '?q=Plan&visibility=private&favorite=starred&page=2'
+        values = {'kind': 'statistics', 'title': '', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workspace, 'dashboards')]:
+            with self.subTest(prefix=prefix):
+                base = f'{prefix}manage/{self.own.pk}/gadgets/'
+                scoped = scoped_workplace_app_path(self.workspace, 'dashboards')
+                target = f'{scoped}manage/{self.own.pk}/gadgets/' + filters
+                response = self.client.get(base + filters)
+                self.assertTrue(response.context['pulpits_management_mode'])
+                self.assertEqual(response.context['return_url'], scoped + 'manage/' + filters)
+                self.assertEqual(response.context['editor_url'], target)
+                self.assertEqual(response.context['settings_url'], f'{scoped}manage/{self.own.pk}/edit/' + filters)
+                form = self.client.get(base + 'add/' + filters)
+                self.assertTemplateUsed(form, 'dashboard/pulpits/gadgets.html')
+                added = self.client.post(base + 'add/' + filters, values, HTTP_X_PULPIT_MODAL='true')
+                self.assertEqual(added.json(), {'saved': True, 'url': target})
+                gadget = self.own.gadgets.get()
+                editor = self.client.get(base + filters)
+                data = editor.context['columns'][0][0]['gadget']
+                self.assertEqual(data.edit_url, f'{scoped}manage/{self.own.pk}/gadgets/{gadget.pk}/edit/' + filters)
+                self.assertEqual(data.delete_url, f'{scoped}manage/{self.own.pk}/gadgets/{gadget.pk}/delete/' + filters)
+                deleted = self.client.post(data.delete_url, HTTP_X_PULPIT_MODAL='true')
+                self.assertEqual(deleted.json(), {'saved': True, 'url': target})
+
     def test_create_and_validation_keep_management_and_actual_creator(self):
         self.login(self.member)
         response = self.client.get(self.url('create/'))
@@ -92,26 +117,62 @@ class PulpitManagementTests(TestCase):
         self.assertEqual((dashboard.owner, dashboard.created_by, dashboard.workplace), (self.owner, self.member, self.workspace))
         self.assertEqual(dashboard.gadgets.count(), 0)
 
-    def test_edit_copy_groups_and_delete_return_with_filters(self):
+    def test_edit_copy_and_delete_return_with_filters(self):
         filters = '?q=Plan&visibility=private&favorite=starred&page=2'
         self.own.favorited_by.add(self.owner)
         gadget = DashboardGadget.objects.create(dashboard=self.own, kind='summary')
         response = self.client.get(self.url(f'{self.own.pk}/edit/') + filters)
-        self.assertTemplateUsed(response, 'dashboard/pulpits/manage.html')
-        self.assertEqual(response.context['modal']['return_url'], self.url() + filters)
+        self.assertTemplateUsed(response, 'dashboard/pulpits/edit.html')
+        self.assertEqual(response.context['return_url'], self.url() + filters)
         response = self.client.post(self.url(f'{self.own.pk}/edit/') + filters, self.payload(name='Plan po edycji'), HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.json()['url'], self.url() + filters)
         response = self.client.post(self.url(f'{self.own.pk}/copy/') + filters, self.payload(name='Kopia planu'), HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.json()['url'], self.url() + filters)
         self.assertEqual(Dashboard.objects.get(name='Kopia planu').gadgets.count(), 1)
-        group = DashboardGroup.objects.create(owner=self.owner, workplace=self.workspace, user=self.owner, name='Grupa')
-        response = self.client.post(self.url(f'{self.own.pk}/groups/') + filters, {'groups': [group.pk]}, HTTP_X_PULPIT_MODAL='true')
-        self.assertEqual(response.json()['url'], self.url() + filters)
-        self.assertTrue(group.dashboards.filter(pk=self.own.pk).exists())
         response = self.client.post(self.url(f'{self.own.pk}/delete/') + filters, HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.json()['url'], self.url() + filters)
         self.assertFalse(DashboardGadget.objects.filter(pk=gadget.pk).exists())
-        self.assertFalse(group.dashboards.exists())
+
+    def test_settings_are_a_page_with_editor_sidebar_and_validation_in_both_url_scopes(self):
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workspace, 'dashboards')]:
+            for management in [False, True]:
+                suffix = f'manage/{self.own.pk}/edit/' if management else f'{self.own.pk}/edit/'
+                url = prefix + suffix + '?q=Plan&visibility=private'
+                response = self.client.get(url)
+                self.assertTemplateUsed(response, 'dashboard/pulpits/edit.html')
+                self.assertTrue(response.context['pulpits_management_mode'])
+                self.assertContains(response, 'data-sidebar-mode="pulpit-editor"')
+                self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
+                self.assertContains(response, 'data-pulpit-edit-form')
+                self.assertNotContains(response, 'data-pulpit-modal>')
+                self.assertContains(response, 'value="Plan wydania"')
+                invalid = self.client.post(url, self.payload(name='', description='Zachowany szkic'))
+                self.assertEqual(invalid.status_code, 400)
+                self.assertTemplateUsed(invalid, 'dashboard/pulpits/edit.html')
+                self.assertIn('name', invalid.context['form'].errors)
+                self.assertContains(invalid, 'data-pulpit-unsaved="true"', status_code=400)
+                self.assertEqual(invalid.context['form']['description'].value(), 'Zachowany szkic')
+                self.assertTrue(invalid.context['pulpits_management_mode'])
+                self.own.refresh_from_db()
+                self.assertEqual(self.own.visibility, 'private')
+
+    def test_settings_save_and_cancel_preserve_destination_layout_and_access(self):
+        gadget = DashboardGadget.objects.create(dashboard=self.own, kind='statistics', column=1)
+        filters = '?q=Plan&visibility=private'
+        for management in [False, True]:
+            prefix = scoped_workplace_app_path(self.workspace, 'dashboards')
+            url = prefix + (f'manage/{self.own.pk}/edit/' if management else f'{self.own.pk}/edit/') + filters
+            target = self.url() + filters if management else prefix + f'{self.own.pk}/'
+            response = self.client.get(url)
+            self.assertEqual(response.context['return_url'], target)
+            revision = self.own.revision
+            response = self.client.post(url, self.payload(name='Plan po zapisie', visibility='selected', shared_with=[self.member.pk], layout='single'))
+            self.assertRedirects(response, target)
+            self.own.refresh_from_db()
+            gadget.refresh_from_db()
+            self.assertEqual((self.own.name, self.own.layout, self.own.revision, gadget.column), ('Plan po zapisie', 'equal', revision + 1, 1))
+            self.assertFalse(self.own.shared_with.exists())
+            self.assertEqual(self.own.visibility, 'private')
 
     def test_favorite_preserves_management_filters_and_personal_relation(self):
         target = self.url() + '?visibility=private&q=Plan'

@@ -147,7 +147,7 @@
     gap: 4px;
 }
 
-.settings-row-copy strong, .settings-row-copy label {
+.settings-row-copy strong {
     font-size: 13px;
     line-height: 1.5;
 }
@@ -166,67 +166,6 @@
     color: var(--system-interaction);
 }
 
-.settings-row-copy label {
-    cursor: pointer;
-}
-
-/* Override the shared square checkbox style only for this switch. */
-.settings-center input.settings-switch {
-    appearance: none;
-    -webkit-appearance: none;
-    position: relative;
-    display: inline-block;
-    width: 36px;
-    height: 21px;
-    flex: 0 0 36px;
-    margin: 0 3px;
-    padding: 0;
-    border: 1px solid #b9bec6;
-    border-radius: 999px;
-    background: #c9cdd4;
-    background-image: none;
-    box-shadow: none;
-    cursor: pointer;
-    transition: background-color 150ms ease, border-color 150ms ease;
-}
-
-.settings-center input.settings-switch::before {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 15px;
-    height: 15px;
-    border: 0;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 1px 2px #40444c33;
-    transform: none;
-    transition: transform 150ms ease;
-}
-
-.settings-center input.settings-switch::after {
-    content: none;
-}
-
-.settings-center input.settings-switch:checked {
-    background: var(--system-accent);
-    border-color: var(--system-accent);
-}
-
-.settings-center input.settings-switch:checked::before {
-    transform: translateX(15px);
-}
-
-.settings-center input.settings-switch:disabled {
-    opacity: 0.45;
-    cursor: default;
-}
-
-.settings-row-copy .settings-mobile-hint {
-    display: none;
-}
-
 .settings-session {
     border-top: 1px solid var(--settings-line);
     margin-top: -6px;
@@ -243,7 +182,7 @@
     margin: 0;
 }
 
-.settings-center :is(a, button, input.settings-switch):focus-visible {
+.settings-center :is(a, button):focus-visible {
     outline: 2px solid var(--system-interaction);
     outline-offset: 3px;
 }
@@ -294,10 +233,6 @@
     }
     .settings-button {
         min-height: 40px;
-    }
-    .settings-row-copy .settings-mobile-hint {
-        display: block;
-        margin-top: 3px;
     }
     .settings-session .settings-row {
         flex-wrap: wrap;

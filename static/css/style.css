@@ -1589,27 +1589,6 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     padding-top: 12px;
 }
 
-.sidebar-pulpit-group-link {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: inherit;
-    text-decoration: none;
-    font: inherit;
-    font-weight: 600 !important;
-}
-
-.sidebar-pulpit-group-link:is(:hover, :focus-visible) {
-    text-decoration: underline;
-}
-
-.sidebar-pulpit-empty {
-    padding: 0 6px 8px;
-    color: var(--system-interaction);
-    font-size: 12px;
-}
-
 .sidebar-space-row {
     position: relative;
     min-width: 0;

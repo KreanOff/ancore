@@ -2,36 +2,17 @@
 {% load static %}
 {% block title %}{{ dashboard.name }} — Pulpity | ancore{% endblock %}
 {% block content %}
-<div class="dashboard-page dashboard-overview pulpits-page" data-pulpits-page data-pulpit-list-url="{{ return_url|default:dashboard.url }}" data-pulpit-arrange-url="{{ arrange_url }}" data-pulpit-revision="{{ dashboard.revision }}">
+<div class="dashboard-page dashboard-overview pulpits-page" data-pulpits-page data-pulpit-list-url="{{ return_url|default:dashboard.url }}">
     <header class="tasks-topbar tasks-topbar--project-directory pulpit-topbar">
         <div class="tasks-titlebar-left">
             <h1 class="tasks-topbar-title" title="{{ dashboard.name }}">{{ dashboard.name }}</h1>
         </div>
         <div class="tasks-titlebar-actions">
-            {% if dashboard.can_edit %}<a href="{{ add_gadget_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-pulpit-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj gadżet</span></a>{% endif %}
+            {% if dashboard.can_edit %}<a href="{{ dashboard.gadgets_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj pulpit</span></a>{% endif %}
             <button type="button" class="tasks-tag-topbar-button" data-pulpit-refresh><i data-icon="refresh-cw" aria-hidden="true"></i><span>Odśwież</span></button>
             {% include 'dashboard/pulpits/actions.html' with item=dashboard %}
         </div>
     </header>
-    {% with has_gadgets=dashboard.gadgets.exists %}
-    <div class="dashboard-main">
-        {% if dashboard.description %}<p class="pulpit-intro">{{ dashboard.description|linebreaksbr }}</p>{% endif %}
-        <div class="tasks-modal__errors" role="alert" data-pulpit-page-error hidden></div>
-        <div class="pulpit-grid pulpit-grid--{{ dashboard.layout }}" data-pulpit-grid data-layout="{{ dashboard.layout }}"{% if dashboard.can_edit %} data-editable="true"{% endif %}{% if not has_gadgets %} hidden{% endif %}>
-            {% for column in columns %}<section class="pulpit-column" data-pulpit-column="{{ forloop.counter0 }}" aria-label="Kolumna {{ forloop.counter }}">{% for data in column %}{% include 'dashboard/pulpits/gadget.html' %}{% endfor %}</section>{% endfor %}
-        </div>
-        {% if not has_gadgets %}
-        <section class="tasks-empty-state tasks-empty-state--centered pulpit-empty-state" role="status">
-            <img class="pulpit-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086">
-            <div class="tasks-empty-state__copy">
-                <h2>Ten pulpit jest pusty.</h2>
-                <p>{% if dashboard.can_edit %}Dodaj pierwszy gadżet, aby zobaczyć dane zespołu.{% else %}Twórca pulpitu nie dodał jeszcze gadżetów.{% endif %}</p>
-            </div>
-        </section>
-        {% endif %}
-        <span class="u-sr-only" role="status" aria-live="polite" data-pulpit-status></span>
-    </div>
-    {% endwith %}
-    <div hidden>{% csrf_token %}</div>
+    {% include 'dashboard/pulpits/canvas.html' %}
 </div>
 {% endblock %}

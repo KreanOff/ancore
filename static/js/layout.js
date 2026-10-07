@@ -12,7 +12,7 @@
     const SIDEBAR_FAVORITES_STORAGE_KEY = 'ancoreSidebarFavoritesCollapsed';
     const SIDEBAR_COLLAPSED_STORAGE_KEY = 'ancoreSidebarCollapsed';
     const SIDEBAR_WIDTH_STORAGE_KEY = 'ancoreSidebarWidth';
-    const MANAGEMENT_MODES = new Set(['workplaces', 'administration', 'pulpits-management']);
+    const MANAGEMENT_MODES = new Set(['workplaces', 'administration', 'pulpits-management', 'pulpit-editor']);
     const RETURN_SCROLL_SELECTORS = ['.main-content', '.settings-scroll-area', '.work-content', '.tasks-table-wrap', '.tasks-board'];
 
     const sidebar = document.querySelector('.sidebar');
@@ -72,8 +72,8 @@
         const appShellPaths = [
             /^\/(spaces|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
-            /^\/dashboards\/(?:\d+\/)?(?:create\/|edit\/|copy\/|groups\/(?:create\/|\d+\/edit\/)?|gadgets\/(?:add\/|\d+\/edit\/))?$/,
-            /^\/dashboards\/manage\/(?:create\/|\d+\/(?:edit|copy|groups)\/)?$/,
+            /^\/dashboards\/(?:\d+\/)?(?:create\/|edit\/|access\/|copy\/|gadgets\/(?:add\/|\d+\/edit\/)?)?$/,
+            /^\/dashboards\/manage\/(?:create\/|\d+\/(?:(?:edit|access|copy)\/|gadgets\/(?:add\/|\d+\/edit\/)?))?$/,
             /^\/$/,
             /^\/settings\/?$/,
             /^\/workplaces\/?$/,
@@ -133,7 +133,8 @@
         if (!url || url.origin !== window.location.origin) return '';
         if (/^\/workplaces\/?$/.test(url.pathname)) return 'workplaces';
         const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=(spaces|dashboards)\/)/, '/');
-        if (/^\/dashboards\/(manage|groups)(\/|$)/.test(path)) return 'pulpits-management';
+        if (/^\/dashboards\/(manage\/)?\d+\/(edit|access|gadgets)(\/|$)/.test(path)) return 'pulpit-editor';
+        if (/^\/dashboards\/manage(\/|$)/.test(path)) return 'pulpits-management';
         return /^\/spaces\/manage(\/|$)/.test(path) ? 'administration' : '';
     }
 
@@ -159,8 +160,16 @@
         // Reuse the entry point after reloads and form submissions within management.
         // A fresh direct visit keeps the server-rendered default destination.
         const type = window.performance?.getEntriesByType('navigation')[0]?.type;
-        if (!['reload', 'back_forward'].includes(type) && managementModeForUrl(document.referrer) !== mode) return null;
+        const referrerMode = managementModeForUrl(document.referrer);
         try {
+            if (!['reload', 'back_forward'].includes(type) && referrerMode !== mode) {
+                if (!MANAGEMENT_MODES.has(referrerMode)) return null;
+                // A native form submission can return from an editor to its parent catalog.
+                const childReturn = validManagementReturn(JSON.parse(window.sessionStorage.getItem(managementStorageKey(referrerMode))), referrerMode);
+                const parentUrl = childReturn && getUrl(childReturn.url);
+                return parentUrl?.pathname === window.location.pathname
+                    ? validManagementReturn(childReturn.previousManagementReturn, mode) : null;
+            }
             return validManagementReturn(JSON.parse(window.sessionStorage.getItem(managementStorageKey(mode))), mode);
         } catch (error) {
             return null;
@@ -275,6 +284,7 @@
             });
             syncSidebarSpaces(nextSidebar);
             syncSidebarDashboards(nextSidebar);
+            syncPulpitEditorNavigation(nextSidebar);
         }
         const picker = document.querySelector('[data-space-picker]');
         const nextPicker = nextDocument.querySelector('[data-space-picker]');
@@ -336,6 +346,21 @@
         }
         if (sidebarCollapsedFlyoutTrigger?.closest('[data-sidebar-group="pulpits"]')) {
             closeCollapsedSidebarFlyout({ restoreFocus: sidebarCollapsedFlyout.contains(document.activeElement) });
+        }
+    }
+
+    function syncPulpitEditorNavigation(nextSidebar) {
+        const current = sidebar.querySelector('[data-sidebar-navigation="pulpit-editor"]');
+        const next = nextSidebar.querySelector('[data-sidebar-navigation="pulpit-editor"]');
+        if (!current || !next) return;
+        const focused = document.activeElement;
+        const hadFocus = current.contains(focused);
+        const section = focused?.closest('[data-pulpit-editor-section]')?.dataset.pulpitEditorSection;
+        current.replaceChildren(...Array.from(next.children, child => child.cloneNode(true)));
+        window.AncoreIcons?.render(current);
+        if (hadFocus && !next.hidden) {
+            const replacement = section && current.querySelector(`[data-pulpit-editor-section="${section}"]`);
+            (replacement || current.querySelector('[data-management-return]'))?.focus({ preventScroll: true });
         }
     }
 

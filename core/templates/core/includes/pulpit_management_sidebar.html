@@ -1,8 +1,7 @@
-<nav class="sidebar-navigation" aria-label="Zarządzanie pulpitami" data-sidebar-navigation="pulpits-management"{% if not pulpits_management_mode %} hidden{% endif %}>
+<nav class="sidebar-navigation" aria-label="Zarządzanie pulpitami" data-sidebar-navigation="pulpits-management"{% if sidebar_mode != 'pulpits-management' %} hidden{% endif %}>
     <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-pulpit-management-title">
         <h2 class="sidebar-menu-section-title" id="sidebar-pulpit-management-title">Zarządzanie pulpitami</h2>
         <a href="{{ sidebar_pulpits_url }}?tab=all" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-management-return="pulpits-management" title="Wróć do poprzedniego widoku"><i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i><span class="nav-label">Wróć do poprzedniego widoku</span></a>
-        <a href="{{ sidebar_pulpits_url }}manage/" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if not pulpit_groups_management_mode %} active{% endif %}"{% if not pulpit_groups_management_mode %} aria-current="page"{% endif %} title="Zarządzaj pulpitami"><i class="nav-icon" data-icon="settings" aria-hidden="true"></i><span class="nav-label">Zarządzaj pulpitami</span></a>
-        <a href="{{ sidebar_pulpits_url }}groups/" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if pulpit_groups_management_mode %} active{% endif %}"{% if pulpit_groups_management_mode %} aria-current="page"{% endif %} title="Grupy pulpitów"><i class="nav-icon" data-icon="folders" aria-hidden="true"></i><span class="nav-label">Grupy pulpitów</span></a>
+        <a href="{{ sidebar_pulpits_url }}manage/" class="nav-link sidebar-primary-link sidebar-primary-link--standalone active" aria-current="page" title="Zarządzaj pulpitami"><i class="nav-icon" data-icon="settings" aria-hidden="true"></i><span class="nav-label">Zarządzaj pulpitami</span></a>
     </section>
 </nav>

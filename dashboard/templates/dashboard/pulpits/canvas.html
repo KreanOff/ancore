@@ -1,0 +1,21 @@
+{% load static %}
+{% with has_gadgets=dashboard.gadgets.exists %}
+<div class="dashboard-main">
+    {% if dashboard.description %}<p class="pulpit-intro">{{ dashboard.description|linebreaksbr }}</p>{% endif %}
+    <div class="tasks-modal__errors" role="alert" data-pulpit-page-error hidden></div>
+    <div class="pulpit-grid pulpit-grid--{{ dashboard.layout }}" data-pulpit-grid data-layout="{{ dashboard.layout }}"{% if editing_gadgets %} data-editable="true"{% endif %}{% if not has_gadgets and not editing_gadgets %} hidden{% endif %}>
+        {% for column in columns %}<section class="pulpit-column" data-pulpit-column="{{ forloop.counter0 }}" aria-label="Kolumna {{ forloop.counter }}">{% for data in column %}{% include 'dashboard/pulpits/gadget.html' %}{% endfor %}</section>{% endfor %}
+    </div>
+    {% if not has_gadgets and not editing_gadgets %}
+    <section class="tasks-empty-state tasks-empty-state--centered pulpit-empty-state" role="status">
+        <img class="pulpit-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086">
+        <div class="tasks-empty-state__copy">
+            <h2>Ten pulpit jest pusty.</h2>
+            <p>{% if editing_gadgets %}Dodaj pierwszy gadżet, aby zobaczyć dane zespołu.{% elif dashboard.can_edit %}Otwórz edycję pulpitu, aby dodać pierwszy gadżet.{% else %}Twórca pulpitu nie dodał jeszcze gadżetów.{% endif %}</p>
+        </div>
+    </section>
+    {% endif %}
+    {% if not editing_gadgets %}<span class="u-sr-only" role="status" aria-live="polite" data-pulpit-status></span>{% endif %}
+</div>
+{% endwith %}
+<div hidden>{% csrf_token %}</div>

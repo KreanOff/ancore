@@ -68,24 +68,6 @@ class DashboardGadget(models.Model):
         return self.title or self.get_kind_display()
 
 
-class DashboardGroup(models.Model):
-    """Personal navigation groups; membership never grants dashboard access."""
-
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workspace_dashboard_groups')
-    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='dashboard_groups')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboard_groups')
-    name = models.CharField('Nazwa grupy', max_length=100)
-    dashboards = models.ManyToManyField(Dashboard, blank=True, related_name='personal_groups', verbose_name='Pulpity')
-
-    class Meta:
-        ordering = ['name', 'pk']
-        constraints = [models.UniqueConstraint(fields=['user', 'workplace', 'name'], name='dashboard_group_personal_name')]
-        indexes = [models.Index(fields=['owner', 'workplace', 'user'], name='dashboard_group_scope_idx')]
-
-    def __str__(self):
-        return self.name
-
-
 class ObjectFollow(models.Model):
     """Personal subscription; access still comes exclusively from Workspace."""
 

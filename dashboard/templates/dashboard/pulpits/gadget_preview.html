@@ -1,0 +1,13 @@
+{% load static %}
+<div class="pulpit-gadget-preview">
+    <div data-pulpit-preview-kind=""{% if selected_kind %} hidden{% endif %}>
+        <img src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086">
+        <div><span>Wybierz gadżet</span><p>Listy, statystyki i aktywność Twojego zespołu.</p></div>
+    </div>
+    {% for entry in catalog %}
+    <div data-pulpit-preview-kind="{{ entry.kind }}"{% if selected_kind != entry.kind %} hidden{% endif %}>
+        {% include 'dashboard/pulpits/catalog_preview.html' with entry=entry only %}
+        <div><span>{{ entry.name }}</span><p>{{ entry.description }}</p></div>
+    </div>
+    {% endfor %}
+</div>

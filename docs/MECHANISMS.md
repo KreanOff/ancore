@@ -858,36 +858,43 @@ konfigurację, usuwać pulpit oraz zarządzać gadżetami. Formularz udostępnia
 wybiera aktywne osoby obecnego Workspace; udostępnienie jest natychmiastowe,
 bez zaproszeń, a pozostali użytkownicy mają tylko odczyt.
 
-`DashboardGroup` ogranicza `owner`, Workspace i `user`. Relacja z pulpitami
-organizuje wyłącznie osobiste menu, nie nadaje dostępu ani nie zmienia rewizji
-konfiguracji. Formularze grup i przypisania wybierają tylko aktualnie dostępne
-pulpity/grupy. Listy, liczniki, historia i gwiazdki ponownie sprawdzają dostęp;
-cofnięcie udostępnienia ukrywa pulpit również w zachowanej relacji grupy.
-`pulpit_navigation.py` pobiera relacje grup przez filtrowany `Prefetch`, a gwiazdki
-przez `Exists`. Ostatnie odwiedziny korzystają z `dashboard/recent.py`, który
+Listy, liczniki, historia i gwiazdki ponownie sprawdzają dostęp;
+cofnięcie udostępnienia ukrywa pulpit również w menu.
+`pulpit_navigation.py` pobiera gwiazdki przez `Exists`.
+Ostatnie odwiedziny korzystają z `dashboard/recent.py`, który
 zapisuje tylko identyfikatory, osobno dla użytkownika i Workspace. Samo otwarcie
 katalogu nie dopisuje historii. Pulpit domyślny jest stałym skrótem do `/`.
-`groups/` udostępnia zarządzanie osobistymi grupami; `<pk>/groups/` przypisanie
-pulpitu. Usunięcie grupy kasuje wyłącznie grupę i relacje organizacji.
+Grupy pulpitów, ich formularze, przypisania i routing są usunięte.
+Migracja `dashboard.0009_remove_dashboard_groups` usuwa tabelę grup oraz
+relacje z pulpitami; konfiguracja, gadżety, gwiazdki i udostępnienia pozostają.
+Stare adresy `groups/`, `<pk>/groups/` i `manage/<pk>/groups/` zwracają 404;
+historyczny parametr katalogu `group` jest ignorowany i nie trafia do nowych
+linków zakładek, wyszukiwania ani paginacji.
 Gwiazdka z menu korzysta z tego samego endpointu co katalog; nagłówek
 `X-Pulpit-Navigation` zwraca JSON do odświeżenia aktualnego ekranu.
 Fallback formularza sprawdza lokalny adres `next` przed przekierowaniem.
 
 `management_context` zawęża `visible_dashboards` do `created_by=request.user`.
 Nowy katalog nie rozszerza prawa edycji; bezpośrednie endpointy nadal wymagają
-widoczności i twórcy. Trasy `manage/create/` i `manage/<pk>/edit|copy|groups|delete/`
+widoczności i twórcy. Trasy `manage/create/` i `manage/<pk>/edit|access|copy|delete/`
 korzystają z tych samych operacji, z jawnym parametrem `management=True`.
 `management_url` zachowuje wyłącznie parametry q, visibility, favorite i page,
 budując docelowy adres w aktywnym Workspace. Bezpośrednie wejście oraz błędy
-formularza renderują `manage.html` pod modalem. Zapis/usunięcie wraca do katalogu.
+tworzenia/kopii renderują `manage.html` pod modalem. Zapis/usunięcie wraca do katalogu.
 Ostatnia zmiana pochodzi z `Dashboard.updated_at`, nie z aktywności zadań.
 Tryb `pulpits-management` korzysta ze wspólnego mechanizmu źródła powrotu;
 nie nadpisuje źródła podczas filtrowania, paginacji i pracy w modalu.
-Obejmuje również `groups/`, `groups/create/` i `groups/<pk>/edit/`.
-Context processor odróżnia aktywny katalog grup flagą
-`pulpit_groups_management_mode`; częściowa nawigacja zachowuje wspólne źródło
-powrotu przy przejściu między grupami i pulpitami. Formularz `<pk>/groups/` służący
-przypisaniu pulpitu pozostaje formularzem nad jego dotychczasowym ekranem.
+
+Edytor konkretnego pulpitu ma osobny tryb `pulpit-editor`; wejście z nazwy
+w zarządzaniu otwiera gadżety. `editor_navigation_context` buduje jego trzy
+pozycje i powrót z zachowaniem filtrów. `DashboardSettingsForm` zapisuje tylko
+nazwę/opis, a `DashboardAccessForm` widoczność/udostępnienie w `access/`.
+Tworzenie/kopia używa pełnego `DashboardForm`. Wszystkie konfiguracje wymagają
+twórcy i zwiększają rewizję pod blokadą wiersza. Układ zmienia wyłącznie edytor
+gadżetów przez `arrange/`. `layout.js` wymienia menu konkretnego pulpitu przy
+częściowej nawigacji, odświeżając nazwę, adresy, aktywną pozycję i fokus.
+Źródło powrotu edytora przechowuje również wcześniejsze źródło katalogu;
+powrót oraz zwykły POST przywracają odpowiedni poziom zarządzania.
 
 Każdy gadżet ponownie stosuje `visible_to` do Tasks oraz historii oglądającego,
 w zakresie właściciela i aktywnego Workspace. Filtr przestrzeni sprawdza

@@ -604,26 +604,28 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   mają paginację po 25 pozycji. Każdy członek Workspace może utworzyć pulpit,
   edytować własny, kopiować dostępny i oznaczać go osobistą gwiazdką.
   Menu „Pulpity” ma przycisk tworzenia, sekcje Oznaczone gwiazdką/Ostatnie,
-  własne nazwane grupy oraz „Pokaż wszystkie pulpity”. Dotychczasowy Dashboard
+  oraz „Pokaż wszystkie pulpity”. Dotychczasowy Dashboard
   jest dostępny jako „Pulpit domyślny”. Ostatnie pochodzą z osobistej historii
-  sesji; gwiazdki i grupy są zapisane w bazie. Menu pokazuje do 6 ulubionych,
-  6 ostatnich bez gwiazdki i 6 pulpitów w każdej grupie; większa grupa ma link
-  do pełnego katalogu. Nazwa grupy również otwiera jej katalog z wyszukiwaniem.
-  Każdy użytkownik może tworzyć, edytować i usuwać swoje grupy oraz przypisać
-  dostępny pulpit do kilku grup. Usunięcie grupy zachowuje pulpity i gadżety.
-  Grupy pozostają osobiste, także gdy pulpit jest udostępniony zespołowi.
-  Lista grup jest pozycją „Grupy pulpitów” w bocznym menu zarządzania pulpitami.
-  Jej dotychczasowe zwykłe i scoped adresy pozostają dostępne; tworzenie,
-  edycja, walidacja i zapis zachowują to menu i wracają do listy grup.
+  sesji; gwiazdki są zapisane w bazie. Menu pokazuje do 6 ulubionych
+  i 6 ostatnich bez gwiazdki. Mechanizm grup pulpitów jest usunięty wraz
+  z konfiguracją grup i przypisaniami; dawne zwykłe/scoped adresy zwracają 404.
+  Stary parametr katalogu `group` jest ignorowany.
   „Zarządzaj pulpitami” w menu „…” otwiera osobny katalog zarządzania pod
   `/dashboards/manage/` i scoped adresem. Pokazuje tylko pulpity twórcy
   w aktywnym Workspace, zgodnie z dotychczasowymi prawami edycji.
   Używa układu „Zarządzaj przestrzeniami”: osobne menu z powrotem do miejsca
   wejścia, wyszukiwanie po nazwie/opisie, filtry widoczności i gwiazdki,
   paginacja 30 pozycji oraz tabela nazwy, twórcy, widoczności, liczby gadżetów
-  i ostatniej zmiany konfiguracji. Nazwa otwiera edycję; menu wiersza także
-  otwarcie, przypisanie do grup, kopiowanie i usunięcie. Tworzenie, edycja,
-  kopiowanie i przypisanie przez ten katalog wracają do niego z filtrami.
+  i ostatniej zmiany konfiguracji. Nazwa otwiera osobny edytor wybranego pulpitu,
+  domyślnie „Gadżety i układ”. Jego menu po lewej ma nazwę pulpitu, powrót oraz
+  „Gadżety i układ”, „Dostępy” i „Ustawienia”. Dawne poziome zakładki są usunięte.
+  „Dostępy” zmienia widoczność i osoby z dostępem, „Ustawienia” nazwę i opis.
+  Każdy formularz zapisuje tylko własne pola; ustawienia nie zmieniają układu
+  ani udostępnienia. Menu katalogu, pulpitu i nawigacji otwiera te same ekrany.
+  Błędy walidacji zachowują szkic; wyjście z niezapisanymi zmianami wymaga
+  potwierdzenia. Menu wiersza udostępnia także otwarcie,
+  kopiowanie i usunięcie. Tworzenie, edycja,
+  kopiowanie i usunięcie przez ten katalog wracają do niego z filtrami.
   Dostępne pulpity innych twórców pozostają w zwykłym katalogu do oglądania.
   Widoczność: prywatny, wybrane aktywne osoby albo cały Workspace.
   Udostępnienie pozwala oglądać konfigurację; modyfikacje należą do twórcy.
@@ -632,11 +634,20 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   i ma niezależne rekordy gadżetów.
   Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
   Gadżety można dodawać, konfigurować, usuwać i przenosić przez przeciąganie
-  lub przyciski menu. Konfiguracja i kolejność są zapisywane w PostgreSQL.
-  Katalog oferuje wyłącznie Przypisane do mnie i Statystyki zadań.
-  Formularz dodawania i edycji odrzuca pozostałe rodzaje również w POST.
-  Wcześniej zapisane Wyniki filtra, Podsumowanie zadań i Ostatnia aktywność
-  nadal się wyświetlają i kopiują; ich edycja wymaga wyboru dostępnego rodzaju.
+  lub przyciski menu w osobnym edytorze „Gadżety i układ” (`/<pk>/gadgets/`).
+  Przegląd pulpitu pozostaje widokiem do oglądania także dla twórcy; „Edytuj pulpit”
+  przełącza do edytora z menu wybranego pulpitu i wyborem pięciu układów w nagłówku.
+  Dodawanie, konfiguracja i usuwanie wracają
+  do edytora. Wariant `/manage/<pk>/gadgets/` zachowuje filtry zarządzania.
+  Konfiguracja i kolejność są zapisywane w PostgreSQL. Zmiana układu i kolejności
+  zapisuje się automatycznie, także dla pustego pulpitu; błąd lub konflikt rewizji
+  przywraca poprzedni układ i pokazuje komunikat. Dostęp do edytora ma wyłącznie twórca.
+  Katalog boczny oferuje pięć gadżetów: Przypisane do mnie, Wyniki filtra,
+  Podsumowanie zadań, Statystyki zadań i Ostatnia aktywność. Wyszukiwanie oraz
+  kategorie pomagają je znaleźć. „Dodaj” zapisuje domyślne filtry i dołącza gadżet
+  do najmniej zapełnionej kolumny, pozostawiając katalog otwarty. Menu „Konfiguruj”
+  pozwala następnie dopasować źródło, tytuł i filtry. Dodawanie sprawdza rewizję
+  konfiguracji, limit i aktualne uprawnienia; konflikt wymaga odświeżenia.
   Filtry obejmują przestrzeń,
   kategorię statusu i wykonawcę (wszyscy, oglądający, bez wykonawcy).
   Statystyki grupują po kategorii statusu, priorytecie lub wykonawcy
@@ -645,12 +656,13 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   otwarte zadania oglądającego, a status `closed` oznacza zakończenie.
   Aktywność pokazuje autora, rodzaj operacji, zadanie i datę, bez treści
   komentarzy. Nie ma automatycznego odświeżania ani zewnętrznych gadżetów;
-  „Odśwież” pobiera aktualne dane. Szczegóły implementacji:
+  „Odśwież” w przeglądzie pulpitu pobiera aktualne dane. Szczegóły implementacji:
   [pulpits.py](../dashboard/pulpits.py), [widoki](../dashboard/pulpit_views.py)
   i [routing](../dashboard/pulpit_urls.py). Inspiracja funkcjonalna:
   [pulpity Jira](https://support.atlassian.com/jira-software-cloud/docs/create-and-edit-dashboards/).
-- **Ustawienia:** centrum linków do profilu, kont, Workspace
-  i preferencji dostępnych na ekranie.
+- **Ustawienia:** centrum linków do profilu, kont i Workspace oraz zarządzania sesją.
+  Sekcja Preferencje jest usunięta; zwijanie menu i powiadomienia są dostępne
+  przez kontrolki wspólnej powłoki aplikacji.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
 - **Powiadomienia:** centrum zaproszeń, przypomnień oraz komentarzy Zadań,
   z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
@@ -666,7 +678,7 @@ Linki do modułów mają scoped URL, szczegóły zadań/kart używają `task_id`
 a projekty i wydarzenia PK. `/` nadal używa aktywnego kontekstu z sesji.
 
 Centrum jest dostępne wyłącznie jako panel w powłoce aplikacji, otwierany
-dzwonkiem lub skrótem w Ustawieniach. Pełna strona została wycofana;
+dzwonkiem w górnym pasku aplikacji. Pełna strona została wycofana;
 zwykłe wejście na `/notifications/` przekierowuje do Dashboardu, a żądania
 danych panelu i licznika nadal obsługuje ten sam endpoint. `NotificationState` zapisuje
 odczyt, archiwum i usunięcie osobno dla konta. Własna aktywność jest domyślnie przeczytana.

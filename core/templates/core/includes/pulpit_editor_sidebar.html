@@ -1,0 +1,9 @@
+<nav class="sidebar-navigation" aria-label="Edycja pulpitu" data-sidebar-navigation="pulpit-editor"{% if not pulpit_editor_mode %} hidden{% endif %}>
+    <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-pulpit-editor-title">
+        <h2 class="sidebar-menu-section-title" id="sidebar-pulpit-editor-title" title="{{ dashboard.name }}">{{ dashboard.name|default:'Edycja pulpitu' }}</h2>
+        <a href="{{ return_url|default:sidebar_pulpits_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-management-return="pulpit-editor" title="Wróć do pulpitów"><i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i><span class="nav-label">Wróć do pulpitów</span></a>
+        {% for entry in pulpit_editor_navigation %}
+        <a href="{{ entry.url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if entry.active %} active{% endif %}"{% if entry.active %} aria-current="page"{% endif %} data-pulpit-editor-section="{{ entry.key }}" title="{{ entry.label }}"><i class="nav-icon" data-icon="{{ entry.icon }}" aria-hidden="true"></i><span class="nav-label">{{ entry.label }}</span></a>
+        {% endfor %}
+    </section>
+</nav>

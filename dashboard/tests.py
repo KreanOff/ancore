@@ -62,8 +62,12 @@ class DashboardViewTests(TestCase):
         self.assertNotContains(response, 'Zespół i zaproszenia')
         self.assertContains(response, 'Konto i dostęp')
         self.assertContains(response, 'Powiadomienia')
-        self.assertContains(response, 'Zwinięte menu boczne')
-        self.assertContains(response, 'Język i region')
+        self.assertNotContains(response, 'Preferencje')
+        self.assertNotContains(response, 'data-settings-group="preferences"')
+        self.assertNotContains(response, 'data-settings-sidebar-switch')
+        self.assertNotContains(response, 'data-settings-notifications')
+        self.assertNotContains(response, 'Zwinięte menu boczne')
+        self.assertNotContains(response, 'Język i region')
         self.assertNotContains(response, 'Szukaj ustawień')
         self.assertNotContains(response, 'Wkrótce')
 
@@ -78,17 +82,6 @@ class DashboardViewTests(TestCase):
 
         self.assertContains(response, f'href="{reverse("admin:index")}"')
         self.assertContains(response, 'Panel administracyjny')
-
-    def test_settings_displays_active_timezone(self):
-        user = get_user_model().objects.create_user(
-            username='settings-region', email='settings-region@example.com',
-            password='test-pass-123',
-        )
-        self.client.force_login(user)
-        with timezone.override('Europe/London'):
-            response = self.client.get(reverse('settings'))
-
-        self.assertContains(response, 'Polski · Europe/London')
 
     def test_home_renders_workspace_dashboard(self):
         user = get_user_model().objects.create_user(

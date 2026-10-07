@@ -69,7 +69,8 @@ class PulpitTests(TestCase):
                     for _ in range(2):
                         response = self.client.get(detail_url)
                         self.assertContains(response, 'Ten pulpit jest pusty.')
-                        self.assertContains(response, 'Dodaj gadżet')
+                        self.assertContains(response, 'Edytuj pulpit')
+                        self.assertNotContains(response, 'data-editable="true"')
                         self.assertNotContains(response, 'data-pulpit-gadget=')
                         self.assertFalse(dashboard.gadgets.exists())
                     response = self.client.post(detail_url + 'gadgets/add/', {
@@ -97,6 +98,73 @@ class PulpitTests(TestCase):
         self.membership.save()
         self.assertNotEqual(self.client.get(self.url(shared)).status_code, 200)
 
+    def test_viewing_and_editing_gadgets_are_separate_for_the_creator(self):
+        dashboard = self.dashboard()
+        DashboardGadget.objects.create(dashboard=dashboard, kind='statistics')
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            response = self.client.get(f'{prefix}{dashboard.pk}/')
+            self.assertFalse(response.context['pulpits_management_mode'])
+            self.assertContains(response, f'href="{scoped_workplace_app_path(self.workplace, "dashboards", f"{dashboard.pk}/gadgets/")}"')
+            for control in ['data-editable="true"', 'data-pulpit-drag', 'data-pulpit-move', 'data-pulpit-layout', 'Dodaj gadżet']:
+                self.assertNotContains(response, control)
+            editor = self.client.get(f'{prefix}{dashboard.pk}/gadgets/')
+            self.assertTemplateUsed(editor, 'dashboard/pulpits/gadgets.html')
+            self.assertTrue(editor.context['pulpits_management_mode'])
+            for control in ['data-editable="true"', 'data-pulpit-drag', 'data-pulpit-move', 'data-pulpit-layout', 'Dodaj gadżet', 'Wróć do pulpitu']:
+                self.assertContains(editor, control)
+            self.assertContains(editor, 'Zmiany układu zapisują się automatycznie.')
+
+    def test_editor_get_requires_creator_and_current_workspace(self):
+        dashboard = self.dashboard(visibility='workspace')
+        self.login(self.member)
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            for suffix in [f'{dashboard.pk}/gadgets/', f'manage/{dashboard.pk}/gadgets/']:
+                self.assertEqual(self.client.get(prefix + suffix).status_code, 403)
+        self.login(self.owner)
+        foreign = Dashboard.objects.create(owner=self.owner, workplace=self.other, created_by=self.owner, name='Obcy pulpit')
+        self.assertEqual(self.client.get(self.url(foreign, 'gadgets/')).status_code, 404)
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url(dashboard, 'gadgets/')).status_code, 302)
+
+    def test_direct_gadget_forms_use_editor_background_and_return_to_editor(self):
+        dashboard = self.dashboard()
+        values = {'kind': 'statistics', 'title': 'Statystyki', 'status': '', 'assignee': 'all', 'group_by': 'priority', 'limit': 10}
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            with self.subTest(prefix=prefix):
+                editor_url = f'{prefix}{dashboard.pk}/gadgets/'
+                target = scoped_workplace_app_path(self.workplace, 'dashboards', f'{dashboard.pk}/gadgets/')
+                response = self.client.get(editor_url + 'add/')
+                self.assertTemplateUsed(response, 'dashboard/pulpits/gadgets.html')
+                self.assertTrue(response.context['pulpits_management_mode'])
+                self.assertEqual(response.context['return_url'], target)
+                invalid = self.client.post(editor_url + 'add/', {**values, 'kind': ''})
+                self.assertEqual(invalid.status_code, 400)
+                self.assertTemplateUsed(invalid, 'dashboard/pulpits/gadgets.html')
+                self.assertContains(invalid, 'value="Statystyki"', status_code=400)
+                added = self.client.post(editor_url + 'add/', values, HTTP_X_PULPIT_MODAL='true')
+                self.assertEqual(added.json(), {'saved': True, 'url': target})
+                gadget = dashboard.gadgets.latest('pk')
+                updated = self.client.post(editor_url + f'{gadget.pk}/edit/', {**values, 'title': 'Po edycji'})
+                self.assertRedirects(updated, target)
+                deleted = self.client.post(editor_url + f'{gadget.pk}/delete/', HTTP_X_PULPIT_MODAL='true')
+                self.assertEqual(deleted.json(), {'saved': True, 'url': target})
+                self.assertFalse(dashboard.gadgets.exists())
+
+    def test_empty_editor_can_save_each_layout_without_adding_gadgets(self):
+        dashboard = self.dashboard()
+        for revision, layout in enumerate(Dashboard.Layout.values):
+            count = 1 if layout == 'single' else 3 if layout == 'three' else 2
+            response = self.client.post(self.url(dashboard, 'arrange/'), json.dumps({
+                'layout': layout, 'columns': [[] for _ in range(count)], 'revision': revision,
+            }), content_type='application/json')
+            self.assertEqual(response.status_code, 200)
+            editor = self.client.get(self.url(dashboard, 'gadgets/'))
+            self.assertContains(editor, f'value="{layout}" selected')
+            self.assertContains(editor, 'data-pulpit-catalog')
+            self.assertContains(editor, 'data-editable="true"')
+            self.assertNotContains(editor, 'data-editable="true" hidden')
+            self.assertFalse(dashboard.gadgets.exists())
+
     def test_selected_people_must_belong_to_active_workspace(self):
         response = self.client.post('/dashboards/create/', self.form_data(visibility='selected', shared_with=[self.outsider.pk]), HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.status_code, 400)
@@ -109,7 +177,7 @@ class PulpitTests(TestCase):
         dashboard = self.dashboard(visibility='workspace')
         gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
         self.login(self.member)
-        paths = ['edit/', 'delete/', 'arrange/', 'gadgets/add/', f'gadgets/{gadget.pk}/edit/', f'gadgets/{gadget.pk}/delete/']
+        paths = ['edit/', 'access/', 'delete/', 'arrange/', 'gadgets/add/', f'gadgets/{gadget.pk}/edit/', f'gadgets/{gadget.pk}/delete/']
         for path in paths:
             self.assertEqual(self.client.post(self.url(dashboard, path), self.form_data()).status_code, 403, path)
         response = self.client.get(self.url(dashboard))
@@ -188,14 +256,18 @@ class PulpitTests(TestCase):
         dashboard.refresh_from_db()
         self.assertEqual((dashboard.layout, dashboard.revision), ('single', 2))
 
-    def test_layout_edit_keeps_all_gadgets_and_stales_old_arrangement(self):
+    def test_settings_edit_keeps_layout_and_gadgets_and_stales_old_arrangement(self):
         dashboard = self.dashboard(layout='three')
         gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary', column=2)
         response = self.client.post(self.url(dashboard, 'edit/'), self.form_data(layout='single'))
         self.assertEqual(response.status_code, 302)
         gadget.refresh_from_db();dashboard.refresh_from_db()
-        self.assertEqual(gadget.column, 0)
+        self.assertEqual((dashboard.layout, gadget.column), ('three', 2))
         self.assertEqual(dashboard.revision, 1)
+        stale = self.client.post(self.url(dashboard, 'arrange/'), json.dumps({
+            'layout': 'three', 'columns': [[], [], [gadget.pk]], 'revision': 0,
+        }), content_type='application/json')
+        self.assertEqual(stale.status_code, 409)
 
     def test_gadget_config_rejects_foreign_source_limit_and_arbitrary_status(self):
         dashboard = self.dashboard()
@@ -204,6 +276,8 @@ class PulpitTests(TestCase):
         for extra in [{'space': foreign.space.pk}, {'limit': 1000}, {'status': 'unknown'}, {'kind': 'unknown'}]:
             response = self.client.post(self.url(dashboard, 'gadgets/add/'), {**values, **extra}, HTTP_X_PULPIT_MODAL='true')
             self.assertEqual(response.status_code, 400)
+            if 'status' in extra:
+                self.assertEqual(response.json()['html'].count('id="id_status_error"'), 1)
         self.assertFalse(dashboard.gadgets.exists())
         response = self.client.post(self.url(dashboard, 'gadgets/add/'), values)
         self.assertEqual(response.status_code, 302)
@@ -271,7 +345,7 @@ class PulpitTests(TestCase):
         self.assertIn('maksymalnie 24', response.json()['html'])
         self.assertEqual(dashboard.gadgets.count(), 24)
 
-    def test_only_assigned_and_statistics_are_available_for_add_and_edit(self):
+    def test_all_five_gadgets_are_available_for_add_and_edit(self):
         dashboard = self.dashboard()
         gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
@@ -282,20 +356,16 @@ class PulpitTests(TestCase):
                         response = self.client.get(f'{prefix}{dashboard.pk}/{suffix}', **headers)
                         self.assertEqual(response.status_code, 200)
                         html = response.json()['html'] if modal else response.content.decode()
-                        for kind in ['assigned', 'statistics']:
+                        for kind in DashboardGadget.Kind.values:
                             self.assertIn(f'<option value="{kind}"', html)
-                        for kind in ['results', 'summary', 'activity']:
-                            self.assertNotIn(f'<option value="{kind}"', html)
-                        if 'edit/' in suffix:
-                            self.assertIn('Ten rodzaj nie jest już dostępny.', html)
 
-    def test_disabled_gadget_kinds_cannot_be_saved_and_preserve_existing_data(self):
+    def test_unknown_gadget_kinds_cannot_be_saved_and_preserve_existing_data(self):
         dashboard = self.dashboard()
         gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary', title='Zapisany gadżet')
         values = {'title': 'Nowy tytuł', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
             for suffix in ['gadgets/add/', f'gadgets/{gadget.pk}/edit/']:
-                for kind in ['results', 'summary', 'activity']:
+                for kind in ['unknown', '<script>']:
                     with self.subTest(prefix=prefix, suffix=suffix, kind=kind):
                         response = self.client.post(f'{prefix}{dashboard.pk}/{suffix}', {**values, 'kind': kind}, HTTP_X_PULPIT_MODAL='true')
                         self.assertEqual(response.status_code, 400)
@@ -305,14 +375,14 @@ class PulpitTests(TestCase):
                         dashboard.refresh_from_db()
                         self.assertEqual((gadget.kind, gadget.title, dashboard.revision), ('summary', 'Zapisany gadżet', 0))
 
-    def test_both_available_kinds_can_be_added_and_replace_a_legacy_kind(self):
+    def test_all_available_kinds_can_be_added_and_reconfigured(self):
         dashboard = self.dashboard()
         values = {'title': '', 'status': '', 'assignee': 'all', 'group_by': 'priority', 'limit': 5}
-        for kind in ['assigned', 'statistics']:
+        for kind in DashboardGadget.Kind.values:
             with self.subTest(kind=kind):
                 response = self.client.post(self.url(dashboard, 'gadgets/add/'), {**values, 'kind': kind})
                 self.assertEqual(response.status_code, 302)
-                gadget = dashboard.gadgets.get(kind=kind)
+                gadget = dashboard.gadgets.filter(kind=kind).latest('pk')
                 self.assertEqual((gadget.group_by, gadget.limit), ('priority', 5))
                 legacy = DashboardGadget.objects.create(dashboard=dashboard, kind='results')
                 response = self.client.post(self.url(dashboard, f'gadgets/{legacy.pk}/edit/'), {**values, 'kind': kind})

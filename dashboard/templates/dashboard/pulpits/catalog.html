@@ -1,0 +1,25 @@
+<aside id="pulpit-catalog" class="pulpit-catalog" aria-labelledby="pulpit-catalog-title" data-pulpit-catalog hidden>
+    <header class="pulpit-catalog-header"><h2 id="pulpit-catalog-title">Dodawanie gadżetu</h2><button type="button" class="tasks-icon-button" data-pulpit-catalog-close aria-label="Zamknij katalog gadżetów"><i data-icon="x" aria-hidden="true"></i></button></header>
+    <div class="pulpit-catalog-controls">
+        <label class="tasks-search-field"><i data-icon="search" aria-hidden="true"></i><input type="search" placeholder="Szukaj gadżetów" aria-label="Szukaj gadżetów" data-pulpit-catalog-search></label>
+        <div class="pulpit-catalog-categories" role="group" aria-label="Kategorie gadżetów">
+            <button type="button" class="tasks-filter-button" data-pulpit-category="all" aria-pressed="true">Wszystkie <span>5</span></button>
+            <button type="button" class="tasks-filter-button" data-pulpit-category="tasks" aria-pressed="false">Zadania <span>2</span></button>
+            <button type="button" class="tasks-filter-button" data-pulpit-category="charts" aria-pressed="false">Statystyki <span>2</span></button>
+            <button type="button" class="tasks-filter-button" data-pulpit-category="activity" aria-pressed="false">Aktywność <span>1</span></button>
+        </div>
+        <p class="pulpit-catalog-hint">Dodaj gadżet, a potem dopasuj jego filtry w menu „Konfiguruj”.</p>
+        <div class="tasks-modal__errors" role="alert" data-pulpit-catalog-error hidden></div>
+        <p class="pulpit-catalog-limit" data-pulpit-catalog-limit hidden>Osiągnięto limit {{ max_gadgets }} gadżetów. Usuń jeden, aby dodać kolejny.</p>
+        <span class="u-sr-only" role="status" aria-live="polite" data-pulpit-catalog-status></span>
+    </div>
+    <div class="pulpit-catalog-list">
+        {% for entry in gadget_catalog %}
+        <article class="pulpit-catalog-item" data-pulpit-catalog-item data-category="{{ entry.category }}">
+            <div class="pulpit-catalog-item-art">{% include 'dashboard/pulpits/catalog_preview.html' with entry=entry only %}<button type="button" class="btn btn-primary btn-sm" data-pulpit-quick-add="{{ entry.kind }}" aria-label="Dodaj: {{ entry.name }}">Dodaj</button></div>
+            <div class="pulpit-catalog-item-copy"><h3>{{ entry.name }}</h3><span class="pulpit-catalog-author">Ancore</span><p>{{ entry.description }}</p><span class="pulpit-catalog-tag">{{ entry.category_label }}</span></div>
+        </article>
+        {% endfor %}
+        <div class="pulpit-catalog-empty" data-pulpit-catalog-empty hidden><i data-icon="search" aria-hidden="true"></i><p>Brak pasujących gadżetów.</p><button type="button" class="tasks-filter-button" data-pulpit-catalog-reset>Wyczyść wyszukiwanie i filtry</button></div>
+    </div>
+</aside>
