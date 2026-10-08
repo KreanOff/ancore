@@ -547,12 +547,28 @@ dolnych skrótów do przypisanych zadań i tablicy/aktywnego sprintu ani licznik
 Ulubione nadal decydują o kolejności. Siatka ma 4, 2 lub 1 kolumnę zależnie od
 szerokości. Brak skrótów pokazuje instrukcję i link do katalogu Przestrzeni
 w pustym stanie bez obramowania (`for-you-spaces-empty`).
-Pięć zakładek jest linkami z `aria-current`, a paginacja zachowuje kategorię,
-Workspace, wyszukiwanie i filtr przestrzeni. Pasek `for-you-toolbar` używa
-`tasks-filterbar`, `tasks-search-field`, `tasks-inline-select`, `AncoreCustomSelect`
-i przycisków Zadań. Formularz GET działa też bez JavaScriptu. Brak wyników
-filtrów ma osobny pusty stan z akcją „Wyczyść filtry”. Formularz i linki korzystają
-ze wspólnej nawigacji `AncoreApp`, także przy Wstecz/Dalej i ponownym wejściu.
+Pięć zakładek jest linkami z `aria-current`; adresy zachowują kategorię,
+Workspace oraz parametry wyszukiwania i przestrzeni z istniejących adresów.
+„Polecane”, „Przypisane do mnie”, „Ulubione” i „Ostatnia praca” pokazują
+tylko 20 najnowszych pozycji łącznie we wszystkich grupach, bez dolnego licznika
+wyników i strzałek paginacji. Wybór opiera się na dacie utworzenia, a w ostatniej
+pracy — na czasie aktywności zalogowanej osoby. „Ostatnio oglądane” zachowuje
+paginację po 25 pozycji w zakresie ostatnich 7 dni. Dolny licznik zakresu i liczby
+elementów jest usunięty również z oglądanych. Ich stopka pokazuje tylko strzałki
+po prawej, gdy istnieje poprzednia lub następna strona; przy jednej stronie nie
+ma stopki ani dolnego separatora.
+Pasek używa wspólnych `notifications-tabs work-tabs`, tak jak widoki Przestrzeni:
+tekstu 13,5px/400, ikon 18px, odstępu ikona–tekst 8px, wysokości i podkreślenia.
+Ikony zakładek to `sparkles`, `user-round-check`, `star`, `clock` i `eye`.
+Licznik przypisanych zachowuje szare tło; nieaktywne zakładki pokazują szare
+podkreślenie przy najechaniu, a aktywna — fioletowe. Wewnętrzny odstęp paska
+wynosi 22px również na telefonie, zgodnie z Przestrzeniami.
+Lista zaczyna się bezpośrednio pod zakładkami, bez paska filtrów/wyszukiwarki
+i paska opisu aktywnej zakładki. Brak wyników dla parametrów w adresie ma osobny
+pusty stan z akcją „Wyczyść filtry”. Linki korzystają ze wspólnej nawigacji
+`AncoreApp`, także przy Wstecz/Dalej i ponownym wejściu.
+Panel „Twoja praca” używa wariantu `for-you-work-panel` bez zewnętrznego
+obramowania; grupy zadań/przestrzeni i poziome separatory zachowują swoje ramki.
 `for-you.js` utrzymuje aktywną zakładkę w widocznej części paska po wejściu,
 częściowej nawigacji i zmianie szerokości. Przewija wyłącznie zakładki, bez
 przesuwania strony lub fokusu; odłącza obserwator rozmiaru przy opuszczeniu widoku.
@@ -574,26 +590,34 @@ gdy brakuje miejsca, także na telefonie. Etykiety i licznik nie zawijają się.
 Zadania we wszystkich pięciu zakładkach używają wspólnego `spaces/row.html`,
 tak jak „Wszystkie zadania”: wiersza `tasks-issue-row` z priorytetem,
 ikoną statusu, oznaczeniem typu zgłoszenia, kluczem, tytułem, licznikami tagów
-i załączników oraz ikoną terminu. Wariant `hide_selection=True` nie renderuje
+i załączników oraz ikoną terminu. Link obejmujący typ, klucz i tytuł w „Dla ciebie”
+nie ma podkreślenia tekstu, również po najechaniu kursorem.
+Wariant `hide_selection=True` nie renderuje
 checkboxa ani jego toru siatki w „Dla ciebie”. Lokalizacja i czas ostatniej aktywności są dostępne w `title` linku,
 a własna nazwa statusu i termin w etykietach ikon. Liczniki są pobierane zbiorczo
 dla zadań bieżącej strony. Przestrzenie w zakładkach „Ulubione” i „Ostatnio oglądane”
 używają wspólnego `spaces/directory.html` w wariancie `directory_compact=True`:
-trzy kolumny danych w kolejności Przestrzeń z awatarem, Klucz i Opis,
-poprzedzone menu działań. `hide_selection=True` usuwa checkboxy wierszy,
-checkbox nagłówka i kolumnę wyboru z siatki. Katalog i „Zarządzaj przestrzeniami”
-korzystają z pełnego wariantu. `spaces.services.decorate_directory_spaces` wspólnie przygotowuje
+trzy kolumny danych w kolejności Przestrzeń z awatarem, Klucz i Opis.
+`hide_actions=True` pomija komórki i menu działań; wariant kompaktowy
+`work-space-sheet--no-actions` usuwa ich tor z siatki, także bez JavaScriptu.
+`hide_selection=True` usuwa checkboxy wierszy,
+checkbox nagłówka i kolumnę wyboru z siatki. Nagłówek kolumn „PRZESTRZEŃ”,
+„KLUCZ” i „OPIS” jest ukryty w `for-you-space-sheet`; jego metadane nadal
+służą wspólnemu mechanizmowi szerokości kolumn. Katalog i „Zarządzaj przestrzeniami”
+korzystają z pełnego wariantu z widocznym nagłówkiem. `spaces.services.decorate_directory_spaces` wspólnie przygotowuje
 dane tabel w katalogu, zarządzaniu i „Dla ciebie”; licznik obejmuje tylko widoczne
-zadania przestrzeni. Nazwa otwiera przestrzeń, a menu zachowuje osobistą gwiazdkę,
-ustawienia i edycję/dodawanie osób według roli. Akcja gwiazdki zachowuje zakładkę
-i filtry; działa również po częściowej nawigacji. W każdej grupie dat tabela znajduje się w sekcji
+zadania przestrzeni. Nazwa otwiera przestrzeń. Menu z osobistą gwiazdką,
+ustawieniami i edycją/dodawaniem osób według roli pozostaje w katalogu
+i zarządzaniu Przestrzeniami. W każdej grupie dat tabela znajduje się w sekcji
 `for-you-space-group`, z taką samą ramką, zaokrągleniem, odstępami i wysokością
 nagłówka jak grupy zadań. Wspólny `tasks/includes/issue_group_header.html`
 pokazuje neutralny nagłówek „Przestrzenie”, ikonę, liczbę przestrzeni na stronie
 w tej grupie dat i przycisk zwijania (mysz/Enter/Spacja). Nagłówki statusów
 korzystają z tego samego include przez `status_group_header.html`.
 Wiersze mają 40px wysokości jak zadania, poziome podziały i brak pionowych linii
-między kolumnami. Wariant `for-you-space-sheet` zachowuje wysokość tabeli według liczby
+między kolumnami. Wszystkie komórki, również pierwsza po usunięciu menu, mają
+0,75rem odstępu wewnętrznego z obu boków i zawartość wyśrodkowaną pionowo.
+Awatar i nazwa zachowują odstęp 8px. Wariant `for-you-space-sheet` zachowuje wysokość tabeli według liczby
 wierszy i osobny klucz preferencji kolumn `for-you-spaces` z osobnym schematem
 trzech kolumn danych,
 wspólny dla zwykłego i scoped URL. Tabela przewija się poziomo na telefonie.
@@ -606,10 +630,22 @@ kolorowego tła, ikony, nazwy, liczby zadań w grupie oraz przycisku zwijania.
 `tasks.js` obsługuje zwijanie po pierwszym wejściu i częściowej nawigacji;
 lokalne filtrowanie nie ukrywa grup obliczonych przez serwer w „Dla ciebie”.
 Historia i oglądane zachowują nagłówki grup dat (`for-you-date-heading`),
-a statusy są grupowane osobno wewnątrz każdej daty. Przestrzenie mają osobną
+a statusy są grupowane osobno wewnątrz każdej daty. „Ostatnio oglądane” obejmuje
+ostatnie 7 dni od bieżącej chwili, z grupami Dzisiaj, Wczoraj i Ostatnie 7 dni;
+pusty stan wyjaśnia ten zakres oraz zapis w sesji przeglądarki. „Ostatnia praca”
+zachowuje również grupę Wcześniej. Nagłówki dat rozszerzają
+`tasks-space-group-title`: mają ikonę `calendar-days` 18px, tekst 13px/400
+i cienki separator po etykiecie, bez tła i ramki. Margines 1rem u góry
+i 0,95rem po bokach wyrównuje je do grup i oddziela kolejne przedziały dat.
+Przestrzenie mają osobną
 sekcję bez statusu, a grupy pozostają poza sekcjami statusów. Na telefonie lista zadań przewija się
-poziomo we własnym obszarze, a filtr i wyszukiwanie zawijają się w obrębie panelu.
+poziomo we własnym obszarze.
 Adaptery `for-you-*` w `components/dashboard.css` zachowują geometrię wspólnego wiersza.
+Wiersze zadań oraz pozostałe linki do grup w liście mają takie samo podświetlenie
+jak wiersze tabeli przestrzeni: tło z `--system-accent` zmieszanym w 8% z bielą
+i pasek 3px po lewej. Efekt pojawia się po najechaniu na cały wiersz lub przy
+fokusie klawiatury (także na linku wewnątrz zadania), z przejściem 0,12s.
+Pasek jest pozycjonowany absolutnie i nie przechwytuje kliknięć ani nie przesuwa treści.
 
 Dawne katalogi „Przestrzenie Kanban” i „Tablice” są wycofane. Ich pozostałe
 szablony, klasy CSS i współdzielony JavaScript stanowią kod historyczny, nie

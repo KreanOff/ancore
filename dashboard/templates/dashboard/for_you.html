@@ -5,8 +5,8 @@
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261008-for-you-no-checkboxes">
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261008-for-you-no-checkboxes">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261008-for-you-no-row-menus">
+<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261008-for-you-no-bottom-count">
 <script src="{% static 'js/for-you.js' %}?v=20261003-scroll-tabs" defer></script>
 {% endblock %}
 
@@ -43,31 +43,15 @@
             {% endif %}
         </section>
 
-        <section class="dashboard-panel" aria-label="Twoja praca">
-            <nav class="dashboard-overview-tabs for-you-tabs" aria-label="Widok dla ciebie">
+        <section class="dashboard-panel for-you-work-panel" aria-label="Twoja praca">
+            <nav class="notifications-tabs work-tabs for-you-tabs" aria-label="Widok dla ciebie">
                 {% for tab in for_you_tabs %}
-                <a href="{{ tab.url }}"{% if for_you_tab == tab.key %} aria-current="page"{% endif %}>{{ tab.label }}{% if tab.key == 'assigned' %}<span class="for-you-count">{{ for_you_assigned_count }}</span>{% endif %}</a>
+                <a href="{{ tab.url }}"{% if for_you_tab == tab.key %} aria-current="page"{% endif %}><i data-icon="{{ tab.icon }}" aria-hidden="true"></i>{{ tab.label }}{% if tab.key == 'assigned' %}<span class="for-you-count">{{ for_you_assigned_count }}</span>{% endif %}</a>
                 {% endfor %}
             </nav>
-            <form class="tasks-filterbar tasks-filterbar--directory for-you-toolbar" method="get" action="{{ for_you_url }}" aria-label="Filtry twojej pracy">
-                <input type="hidden" name="tab" value="{{ for_you_tab }}">
-                <div class="tasks-filterbar-left">
-                    <select class="tasks-inline-select" name="space" aria-label="Przestrzeń">
-                        <option value="">Wszystkie przestrzenie</option>
-                        {% if for_you_space_unavailable %}<option value="{{ for_you_space }}" selected>Niedostępna przestrzeń</option>{% endif %}
-                        {% for project in for_you_spaces %}<option value="{{ project.space.pk }}"{% if for_you_space == project.space.pk|stringformat:'s' %} selected{% endif %}>{{ project.name }}</option>{% endfor %}
-                    </select>
-                    <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>
-                    {% if for_you_filtered %}<a class="tasks-filter-button" href="{{ for_you_clear_url }}">Wyczyść</a>{% endif %}
-                </div>
-                <div class="tasks-filterbar-right">
-                    <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ for_you_search }}" maxlength="120" placeholder="Szukaj w tej zakładce" aria-label="Szukaj po nazwie lub kluczu zadania"></label>
-                </div>
-            </form>
-            <p class="dashboard-overview-caption">{{ for_you_caption }}</p>
             <div class="for-you-task-list">
                 {% for block in for_you_groups %}
-                {% if block.date_group %}<h3 class="for-you-date-heading">{{ block.date_group }}</h3>{% endif %}
+                {% if block.date_group %}<h3 class="tasks-space-group-title for-you-date-heading"><i data-icon="calendar-days" aria-hidden="true"></i><span>{{ block.date_group }}</span></h3>{% endif %}
                 {% if block.task_groups %}
                 <div class="tasks-table-wrap tasks-board for-you-status-groups">
                     {% for group in block.task_groups %}
@@ -87,7 +71,7 @@
                     <section class="tasks-issue-group tasks-status-block for-you-space-group">
                         {% include 'tasks/includes/issue_group_header.html' with label='Przestrzenie' icon='layers' count=block.spaces|length only %}
                         <div class="tasks-issue-list">
-                            {% include 'spaces/directory.html' with page=block.spaces management=False directory_compact=True hide_selection=True directory_class='for-you-space-sheet' %}
+                            {% include 'spaces/directory.html' with page=block.spaces management=False directory_compact=True hide_selection=True hide_actions=True directory_class='for-you-space-sheet' %}
                         </div>
                     </section>
                 </div>
@@ -107,16 +91,15 @@
                 <div class="dashboard-overview-empty for-you-empty-state" role="status">
                     <img class="for-you-empty-state__illustration" src="{% static for_you_empty_illustration %}" alt="" width="720" height="540" draggable="false">
                     <div class="tasks-empty-state__copy">
-                        {% if for_you_filtered %}<h3>Brak pasujących wyników</h3><p>Zmień nazwę, klucz zadania lub wybraną przestrzeń.</p><a class="dashboard-panel-link" href="{{ for_you_clear_url }}">Wyczyść filtry<i data-icon="arrow-right" aria-hidden="true"></i></a>
+                        {% if for_you_filtered %}<h3>Brak pasujących wyników</h3><p>Wyczyść filtry, aby wrócić do pełnej listy tej zakładki.</p><a class="dashboard-panel-link" href="{{ for_you_clear_url }}">Wyczyść filtry<i data-icon="arrow-right" aria-hidden="true"></i></a>
                         {% else %}<h3>{{ for_you_empty.0 }}</h3><p>{{ for_you_empty.1 }}</p>
                         <a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Otwórz przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a>{% endif %}
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            {% if for_you_rows %}
+            {% if for_you_previous or for_you_next %}
             <nav class="dashboard-overview-list-footer for-you-pagination" aria-label="Paginacja twojej pracy">
-                <span>{{ for_you_page.start_index }}–{{ for_you_page.end_index }} z {{ for_you_page.paginator.count }}</span>
                 <div>{% if for_you_previous %}<a class="tasks-filter-button" href="{{ for_you_previous }}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% endif %}{% if for_you_next %}<a class="tasks-filter-button" href="{{ for_you_next }}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% endif %}</div>
             </nav>
             {% endif %}

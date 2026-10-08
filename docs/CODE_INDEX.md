@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 36 | 63 | 41 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 31 | 9 | 29 | 190 |
+| [dashboard](../dashboard) | 31 | 9 | 29 | 193 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -1989,7 +1989,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_for_you.py](../dashboard/test_for_you.py).
 
-- `ForYouTests`: 26 metod testowych.
+- `ForYouTests`: 29 metod testowych.
 
 ### dashboard/test_notifications.py
 

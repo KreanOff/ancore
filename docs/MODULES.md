@@ -571,17 +571,29 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
 
 - **Dla ciebie:** osobisty przegląd pod `/for-you/` i
   `/workplaces/<slug>/for-you/`, dostępny w menu nad Dashboardem, globalnym
-  wyszukiwaniu i ulubionych menu. Zakładki mają paginację po 25 pozycji:
+  wyszukiwaniu i ulubionych menu. Cztery zakładki pokazują tylko 20 najnowszych
+  pozycji, bez paginacji:
   „Polecane” (otwarte zadania wykonawcy, zaległe, do 7 dni lub wysoki/pilny
   priorytet), „Przypisane do mnie” (również podzadania), „Ulubione”
   (osobiste gwiazdki przestrzeni, grup i zadań), „Ostatnia praca”
   (ostatnia aktywność zalogowanej osoby), „Ostatnio oglądane” (elementy otwarte
-  w sesji). Każda zakładka ma wyszukiwanie po nazwie, zadania także po kluczu
-  `WorkItem`, oraz filtr dostępnej przestrzeni. Filtry działają przed paginacją,
-  pozostają w adresach zakładek i kolejnych stron; „Wyczyść” zachowuje zakładkę.
+  w sesji w ciągu ostatnich 7 dni, liczonych od bieżącej chwili). Limit czasu
+  obejmuje zadania, przestrzenie i grupy przed liczeniem wyników i paginacją
+  (po 25 pozycji wyłącznie w „Ostatnio oglądane”);
+  ponowne otwarcie odświeża czas wpisu. Lista zaczyna się bezpośrednio pod zakładkami; pasek filtrów,
+  wyszukiwarka i pasek opisu zakładki są usunięte. Istniejące adresy nadal
+  obsługują wyszukiwanie `q` po nazwie/kluczu `WorkItem` i filtr `space`.
+  „Polecane”, „Przypisane do mnie” i „Ulubione” wybierają po dacie utworzenia;
+  „Ostatnia praca” — po ostatniej aktywności zalogowanej osoby. Limit 20 jest
+  wspólny dla wszystkich statusów i rodzajów pozycji w zakładce. Dawny parametr
+  `page` jest ignorowany w tych czterech zakładkach. Filtry działają przed limitem
+  i paginacją oglądanych; pozostają w adresach zakładek i kolejnych stron oglądanych.
+  Pusty wynik udostępnia „Wyczyść filtry”, zachowujące zakładkę.
   Niedostępna lub błędna przestrzeń daje pusty wynik, bez rozszerzania zakresu.
   Historia ma grupy Dzisiaj, Wczoraj, Ostatnie 7 dni i Wcześniej według lokalnej
-  strefy czasu. Wiersze pokazują stabilny klucz oraz własną nazwę statusu przestrzeni;
+  strefy czasu. „Ostatnio oglądane” ma tylko pierwsze trzy grupy, a „Ostatnia praca”
+  zachowuje również starszą historię. Wspólna historia odwiedzin w sesji i jej
+  pozostali odbiorcy nie mają tego limitu czasu. Wiersze pokazują stabilny klucz oraz własną nazwę statusu przestrzeni;
   URL zadania nadal zawiera `task_pk`.
   Cztery karty „Rekomendowane przestrzenie” pochodzą z osobistych ulubionych, odwiedzin
   przestrzeni w sesji lub własnej aktywności w dostępnych zadaniach. Ulubione

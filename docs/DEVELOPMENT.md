@@ -297,8 +297,13 @@ ponowne wejście, klawiatura, szerokość telefonu oraz referencyjne okno Zadań
 
 `dashboard.test_for_you` sprawdza osobisty widok „Dla ciebie”: wykonawcę,
 podzadania, terminy, ulubione, historię autora, zapis oglądanych, paginację,
+limit oglądanych do ostatnich 7 dni (granica czasu, wszystkie rodzaje, filtr
+przed paginacją, pusty stan i odświeżenie po ponownym otwarciu),
+limit 20 najnowszych pozycji w czterech pozostałych zakładkach (wspólny dla
+rodzajów i statusów), wybór według utworzenia/aktywności, brak paginacji oraz
+ignorowanie dawnych numerów stron,
 zwykły/scoped URL, stabilne linki, zmianę Workspace i cofnięcie dostępu.
-Obejmuje też filtry przed paginacją i zachowanie ich w adresach, wyszukiwanie
+Obejmuje też filtry przed limitem/paginacją i zachowanie ich w adresach, wyszukiwanie
 kluczy, niedostępną przestrzeń, własne nazwy statusów, lokalne grupy dat oraz
 skróty przestrzeni z odwiedzin/ulubionych oraz licznik zakładki przypisanych,
 ograniczone dostępem. Wiersze zadań sprawdzają własne typy zgłoszeń, dokładne
@@ -312,14 +317,16 @@ zwykłe/scoped odnośniki oraz osobistą gwiazdkę. Wspólny dekorator tabel wym
 regresji `spaces.tests.SpaceTests`, `spaces.test_management` i `spaces.test_navigation`.
 Przy zmianach uruchom też Dashboard, testy prywatności Zadań i Kanbana,
 `core.test_task_integrity.TaskIdentityTests`, Workplaces i testy menu Core.
-W przeglądarce sprawdź wszystkie zakładki, paginację, wejście w element i powrót,
+W przeglądarce sprawdź wszystkie zakładki, limit 20 bez paginacji w czterech
+zakładkach, paginację oglądanych, wejście w element i powrót,
 Dashboard i listę „Wszystkie zadania” jako referencje, nawigację modułów,
 kolory/liczniki statusów i zwijanie myszą/klawiaturą (również po ponownym wejściu),
 telefon, puste stany oraz błąd sieci.
 Przestrzenie w zakładkach „Ulubione” i „Ostatnio oglądane” porównaj z tabelą
-„Zarządzaj przestrzeniami”: awatary,
-menu (Escape/fokus), otwarcie przestrzeni, gwiazdkę z odświeżeniem zakładki,
-filtry, ponowne wejście i poziome przewijanie na telefonie.
+„Zarządzaj przestrzeniami”: awatary, otwarcie przestrzeni, ponowne wejście
+i poziome przewijanie na telefonie. W „Dla ciebie” nie ma menu działań ani
+pustej kolumny po nim; pełne menu (Escape/fokus), gwiazdkę i filtry sprawdzaj
+w katalogu i zarządzaniu Przestrzeniami.
 Ramkę sekcji „Przestrzenie”, wysokość nagłówka/wierszy i poziome podziały porównaj
 z grupami zadań. Sprawdź licznik osobno dla każdej daty, zwijanie nagłówkiem,
 Enter/Spacją oraz brak checkboxów i pustej kolumny wyboru w każdej zakładce.

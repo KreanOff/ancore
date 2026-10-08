@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -58,7 +59,7 @@ class ForYouTests(TestCase):
         response = self.client.get(reverse('for_you'))
         self.assertContains(response, 'Dla ciebie | ancore')
         self.assertEqual(response['Cache-Control'], 'no-store')
-        self.assertContains(self.page('unknown'), 'aria-current="page">Polecane')
+        self.assertEqual(self.page('unknown').context['for_you_tab'], 'recommended')
         result = self.client.get(reverse('global_search'), {'q': 'dla ciebie'}).json()
         self.assertTrue(any(item['url'] == self.url for group in result['groups'] for item in group['results']))
         self.client.logout()
@@ -99,7 +100,7 @@ class ForYouTests(TestCase):
         self.task('Za tydzień', due_at=now + timedelta(days=8))
         self.task('Zamknięte pilne', status='closed', priority='urgent')
         self.task('Czyjeś pilne', assignee=self.owner, priority='urgent')
-        self.assertEqual(self.objects(self.page('recommended')), [overdue, soon, urgent])
+        self.assertEqual(self.objects(self.page('recommended')), [urgent, soon, overdue])
         self.assertContains(self.page('recommended'), 'Po terminie')
 
     def test_worked_uses_personal_activity_and_omits_legacy_cards(self):
@@ -151,6 +152,71 @@ class ForYouTests(TestCase):
         session.save()
         self.assertEqual(self.objects(self.page('viewed')), [])
 
+    def test_viewed_only_includes_last_seven_days_for_all_kinds_and_urls(self):
+        now = timezone.localtime().replace(hour=12, minute=0, second=0, microsecond=0)
+        current = self.task('Oglądane dzisiaj')
+        boundary = self.task('Dokładnie tydzień temu')
+        expired = self.task('Starsze niż tydzień')
+        future = self.task('Przyszły wpis')
+        old_project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Dawna przestrzeń')
+        old_section = TaskSection.objects.create(project=self.project, title='Dawna grupa')
+        entries = [(current, now), (self.section, now - timedelta(days=1)),
+                   (self.project, now - timedelta(days=3)), (boundary, now - timedelta(days=7)),
+                   (expired, now - timedelta(days=7, microseconds=1)),
+                   (old_project, now - timedelta(days=8)), (old_section, now - timedelta(days=10)),
+                   (future, now + timedelta(seconds=1))]
+        session = self.client.session
+        session[RECENT_SESSION_KEY] = [
+            {'identity': [self.member.pk, self.workspace.pk, obj._meta.label_lower, obj.pk], 'at': at.isoformat()}
+            for obj, at in entries
+        ]
+        session.save()
+        for url in (self.url, reverse('for_you')):
+            with self.subTest(url=url), patch('dashboard.for_you.timezone.now', return_value=now):
+                response = self.client.get(url, {'tab': 'viewed'}, follow=True)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(self.objects(response), [current, self.section, self.project, boundary])
+                self.assertEqual(response.context['for_you_page'].paginator.count, 4)
+                self.assertEqual([row['date_group'] for row in response.context['for_you_rows']],
+                                 ['Dzisiaj', 'Wczoraj', 'Ostatnie 7 dni', 'Ostatnie 7 dni'])
+        self.assertEqual(len(self.client.session[RECENT_SESSION_KEY]), len(entries))
+
+    def test_viewed_week_limit_applies_before_pagination(self):
+        now = timezone.now()
+        tasks = [self.task(f'Oglądane {index:02d}') for index in range(30)]
+        session = self.client.session
+        session[RECENT_SESSION_KEY] = [
+            {'identity': [self.member.pk, self.workspace.pk, task._meta.label_lower, task.pk],
+             'at': (now - timedelta(minutes=index) if index < 27 else now - timedelta(days=8)).isoformat()}
+            for index, task in enumerate(tasks)
+        ]
+        session.save()
+        with patch('dashboard.for_you.timezone.now', return_value=now):
+            first, second = self.page('viewed'), self.page('viewed', page=2)
+            self.assertEqual(first.context['for_you_page'].paginator.count, 27)
+            self.assertEqual(self.objects(first), tasks[:25])
+            self.assertEqual(self.objects(second), tasks[25:27])
+            self.assertEqual(self.objects(self.page('viewed', page=99999)), tasks[25:27])
+
+    def test_viewed_expired_entry_returns_after_opening_again(self):
+        task = self.task()
+        activity = TaskActivity.objects.create(task=task, actor=self.member)
+        old = timezone.now() - timedelta(days=8)
+        TaskActivity.objects.filter(pk=activity.pk).update(created_at=old)
+        session = self.client.session
+        session[RECENT_SESSION_KEY] = [
+            {'identity': [self.member.pk, self.workspace.pk, task._meta.label_lower, task.pk], 'at': old.isoformat()}
+        ]
+        session.save()
+        response = self.page('viewed')
+        self.assertEqual(self.objects(response), [])
+        self.assertContains(response, 'w ostatnich 7 dniach')
+        self.assertEqual(self.objects(self.page('worked')), [task])
+        self.assertEqual(self.page('worked').context['for_you_groups'][0]['date_group'], 'Wcześniej')
+        self.visit(task)
+        self.assertEqual(self.objects(self.page('viewed')), [task])
+        self.assertEqual(len(self.client.session[RECENT_SESSION_KEY]), 1)
+
     def test_links_keep_primary_key_after_number_changes(self):
         before = self.task('Do usunięcia')
         wanted = self.task('Otwórz to')
@@ -168,19 +234,33 @@ class ForYouTests(TestCase):
         WorkplaceMembership.objects.filter(workplace=self.workspace, user=self.member).delete()
         self.assertEqual(self.client.get(self.url).status_code, 302)
 
-    def test_assignment_and_merged_favorites_pagination_and_invalid_page(self):
-        tasks = [self.task(f'Zadanie {i:02d}') for i in range(29)]
-        for task in tasks:
+    def test_four_tabs_show_twenty_latest_items_without_pagination(self):
+        now = timezone.now()
+        tasks = [self.task(f'Zadanie {i:02d}', priority='high', due_at=now + timedelta(days=29 - i))
+                 for i in range(29)]
+        for i, task in enumerate(tasks):
+            task.created_at = now - timedelta(minutes=i)
+            Task.objects.filter(pk=task.pk).update(created_at=task.created_at)
             task.favorited_by.add(self.member)
+            TaskActivity.objects.create(task=task, actor=self.member)
+            TaskActivity.objects.filter(task=task, actor=self.member).update(created_at=now - timedelta(minutes=29 - i))
+        TaskProject.objects.filter(pk=self.project.pk).update(created_at=now - timedelta(seconds=90))
+        TaskSection.objects.filter(pk=self.section.pk).update(created_at=now - timedelta(seconds=150))
         self.project.favorited_by.add(self.member)
-        for tab, expected in [('assigned', set(tasks)), ('starred', {*tasks, self.project})]:
-            page1 = self.page(tab)
-            page2 = self.page(tab, page=2)
-            self.assertEqual(len(self.objects(page1)), 25)
-            self.assertEqual(set(self.objects(page1)) | set(self.objects(page2)), expected)
-            self.assertFalse(set(self.objects(page1)) & set(self.objects(page2)))
-            self.assertEqual(self.objects(self.page(tab, page='bad')), self.objects(page1))
-            self.assertEqual(self.objects(self.page(tab, page=99999)), self.objects(page2))
+        self.section.favorited_by.add(self.member)
+        favorites = [tasks[0], tasks[1], self.project, tasks[2], self.section, *tasks[3:18]]
+        for tab, expected in [('recommended', tasks[:20]), ('assigned', tasks[:20]),
+                              ('starred', favorites), ('worked', list(reversed(tasks[-20:])))]:
+            with self.subTest(tab=tab):
+                response = self.page(tab)
+                self.assertEqual(self.objects(response), expected)
+                self.assertIsNone(response.context['for_you_page'])
+                self.assertEqual(response.context['for_you_assigned_count'], 29)
+                self.assertEqual(response.context['for_you_next'], '')
+                self.assertEqual(response.context['for_you_previous'], '')
+                self.assertNotContains(response, 'for-you-pagination')
+                for page in (2, 'bad', 99999):
+                    self.assertEqual(self.objects(self.page(tab, page=page)), expected)
 
     def test_personal_project_shortcuts_ignore_hidden_task_activity(self):
         hidden = self.task(visibility='private', private_owner=self.owner)
@@ -219,7 +299,7 @@ class ForYouTests(TestCase):
         self.assertIn(self.url, response.json()['html'])
         self.assertContains(self.page(), 'data-sidebar-favorite-item="for-you"')
 
-    def test_search_and_space_filter_apply_before_pagination_and_survive_navigation(self):
+    def test_search_and_space_filter_apply_before_limit_and_survive_navigation(self):
         other_project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Druga przestrzeń')
         other_section = TaskSection.objects.create(project=other_project, title='Inna grupa')
         wanted = [self.task(f'Wdrożenie {i:02d}') for i in range(27)]
@@ -228,15 +308,14 @@ class ForYouTests(TestCase):
         self.task('Wdrożenie prywatne', section=self.hidden_section)
         params = {'q': 'Wdrożenie', 'space': str(self.project.space.pk)}
         first = self.page('assigned', **params)
-        second = self.page('assigned', page=2, **params)
-        self.assertEqual(first.context['for_you_page'].paginator.count, 27)
-        self.assertEqual(set(self.objects(first) + self.objects(second)), set(wanted))
-        for url in [first.context['for_you_next'], second.context['for_you_previous'],
-                    *[tab['url'] for tab in first.context['for_you_tabs']]]:
+        self.assertEqual(self.objects(first), list(reversed(wanted[-20:])))
+        self.assertEqual(self.objects(self.page('assigned', page=2, **params)), self.objects(first))
+        for url in [tab['url'] for tab in first.context['for_you_tabs']]:
             query = parse_qs(urlsplit(url).query)
             self.assertEqual(query['q'], [params['q']])
             self.assertEqual(query['space'], [params['space']])
         self.assertNotContains(first, self.hidden_project.name)
+        self.assertEqual(self.objects(self.page(q=wanted[0].title)), [wanted[0]])
         self.assertEqual(self.objects(self.page(q=wanted[-1].work_item.key)), [wanted[-1]])
         response = self.client.get(reverse('for_you'), {'tab': 'assigned', **params}, follow=True)
         self.assertEqual(self.objects(response), self.objects(first))
@@ -254,7 +333,7 @@ class ForYouTests(TestCase):
                 for space in (str(self.hidden_project.space.pk), '999999', '9' * 40, 'bad', '²'):
                     response = self.page(tab, space=space)
                     self.assertEqual(self.objects(response), [])
-                    self.assertContains(response, 'Niedostępna przestrzeń')
+                    self.assertContains(response, 'Wyczyść filtry')
                     self.assertContains(response, 'Brak pasujących wyników')
         self.assertEqual(self.objects(self.page('starred', q='<script>"&')), [])
         self.assertNotContains(self.page('starred', q='<script>"&'), '<script>"&')
@@ -272,7 +351,7 @@ class ForYouTests(TestCase):
         self.assertEqual(shortcuts[0]['url'], space_url)
         assignments = self.page(space=self.project.space.pk)
         self.assertEqual(assignments.context['for_you_assigned_count'], 1)
-        self.assertEqual(assignments.context['for_you_page'].paginator.count, 1)
+        self.assertEqual(len(assignments.context['for_you_rows']), 1)
         self.project.visibility, self.project.private_owner = 'private', self.owner
         self.project.save()
         self.assertEqual(self.page().context['for_you_projects'], [])
@@ -440,7 +519,7 @@ class ForYouTests(TestCase):
                 self.assertTrue(space.favorite)
                 self.assertEqual(space.url, space_url)
                 self.assertContains(response, 'Opis przestrzeni')
-                self.assertContains(response, f'href="{space.settings_url}"')
+                self.assertNotContains(response, f'id="directory-space-{space.pk}-actions"')
                 self.assertNotContains(response, f'href="{space.edit_url}"')
                 self.assertNotContains(response, self.hidden_project.name)
         self.project.responsible_user = self.member
@@ -448,7 +527,7 @@ class ForYouTests(TestCase):
         response = self.page('starred')
         space = response.context['for_you_groups'][0]['spaces'][0]
         self.assertTrue(space.can_manage)
-        self.assertContains(response, f'href="{space.edit_url}"')
+        self.assertNotContains(response, f'id="directory-space-{space.pk}-actions"')
         result = self.client.post(space.favorite_url, {'next': self.url + '?tab=starred'}, HTTP_X_SPACE_NAVIGATION='true')
         self.assertEqual(result.json(), {'saved': True})
         self.assertFalse(self.project.favorited_by.filter(pk=self.member.pk).exists())

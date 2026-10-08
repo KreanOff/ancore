@@ -16,20 +16,21 @@ from workplaces.services import scoped_workplace_app_path, workspace_owner
 
 from .recent import recent_views
 
-PAGE_SIZE = 25
+RESULT_LIMIT = 20
+VIEWED_PAGE_SIZE = 25
 TABS = (
-    ('recommended', 'Polecane'),
-    ('assigned', 'Przypisane do mnie'),
-    ('starred', 'Ulubione'),
-    ('worked', 'Ostatnia praca'),
-    ('viewed', 'Ostatnio oglądane'),
+    ('recommended', 'Polecane', 'sparkles'),
+    ('assigned', 'Przypisane do mnie', 'user-round-check'),
+    ('starred', 'Ulubione', 'star'),
+    ('worked', 'Ostatnia praca', 'clock'),
+    ('viewed', 'Ostatnio oglądane', 'eye'),
 )
 EMPTY_STATES = {
     'recommended': ('Jesteś na bieżąco', 'Nie masz otwartych zadań z terminem na najbliższe 7 dni ani z wysokim lub pilnym priorytetem.'),
     'assigned': ('Brak przypisanych zadań', 'Tutaj pojawią się otwarte zadania i podzadania, których jesteś wykonawcą.'),
     'starred': ('Twoje ulubione w jednym miejscu', 'Oznacz gwiazdką przestrzeń, grupę lub zadanie, aby łatwo do nich wrócić.'),
     'worked': ('Tutaj znajdziesz swoją ostatnią pracę', 'Zadania pojawią się po dodaniu komentarza, utworzeniu lub zmianie przez Ciebie.'),
-    'viewed': ('Wróć do oglądanych elementów', 'Otwieraj przestrzenie, grupy i zadania. Ostatnio oglądane zapisujemy w bieżącej sesji przeglądarki.'),
+    'viewed': ('Wróć do oglądanych elementów', 'Tutaj pojawią się przestrzenie, grupy i zadania otwarte przez Ciebie w ostatnich 7 dniach w bieżącej sesji przeglądarki.'),
 }
 EMPTY_ILLUSTRATIONS = {
     'recommended': 'img/empty-states/for-you-tasks-empty.webp',
@@ -37,13 +38,6 @@ EMPTY_ILLUSTRATIONS = {
     'starred': 'img/empty-states/for-you-starred-empty.webp',
     'worked': 'img/empty-states/for-you-worked-empty.webp',
     'viewed': 'img/empty-states/for-you-viewed-empty.webp',
-}
-CAPTIONS = {
-    'recommended': 'Twoje otwarte zadania: zaległe, z terminem w najbliższych 7 dniach oraz z wysokim lub pilnym priorytetem.',
-    'assigned': 'Otwarte zadania i podzadania, których jesteś wykonawcą.',
-    'starred': 'Przestrzenie, grupy i zadania oznaczone przez Ciebie gwiazdką.',
-    'worked': 'Twoje ostatnio utworzone, zmienione lub skomentowane zadania.',
-    'viewed': 'Ostatnio otwierane elementy w bieżącej sesji przeglądarki.',
 }
 
 
@@ -124,7 +118,7 @@ def _decorate_task_rows(rows):
 
 
 def _group_rows(rows):
-    """Group only the visible page, retaining date buckets and custom status names."""
+    """Group only the displayed rows, retaining date buckets and custom status names."""
     blocks = {}
     for row in rows:
         date_group = row.get('date_group', '')
@@ -190,7 +184,7 @@ def for_you_context(request):
     viewer, workplace = request.user, request.workplace
     now = timezone.now()
     tab = request.GET.get('tab', 'recommended')
-    if tab not in dict(TABS):
+    if tab not in {key for key, _, _ in TABS}:
         tab = 'recommended'
     base_url = scoped_workplace_app_path(workplace, 'for-you')
     search = request.GET.get('q', '').strip()[:120]
@@ -218,26 +212,27 @@ def for_you_context(request):
 
     assigned_count = scopes[Task].filter(assignee=viewer).exclude(status='closed').count()
     projects = _project_shortcuts(scopes, viewer, workplace, now, recent)
-    spaces = list(scopes[TaskProject].filter(space__isnull=False).order_by('name', 'pk'))
     scopes = {model: _filter_scope(query, model, search, space_filter, scopes[TaskProject])
               for model, query in scopes.items()}
     assigned = scopes[Task].filter(assignee=viewer).exclude(status='closed')
-    # Keep pagination in SQL for assignments. Other tabs merge several models;
-    # only each source's first N rows can contribute to the first N merged rows.
+    page = None
+    # Limit each source in SQL before merging its newest rows.
     if tab in {'assigned', 'recommended'}:
         query = assigned
         if tab == 'recommended':
             query = query.filter(Q(due_at__lte=now + timedelta(days=7)) | Q(priority__in=['urgent', 'high']))
-        query = query.order_by(F('due_at').asc(nulls_last=True), '-created_at', '-pk')
-        page = Paginator(query, PAGE_SIZE).get_page(request.GET.get('page'))
-        rows = [_row(obj, workplace, now) for obj in page]
+        query = query.order_by('-created_at', '-pk')[:RESULT_LIMIT]
+        rows = [_row(obj, workplace, now) for obj in query]
     else:
         sources = []
         recent_by_id = recent
+        if tab == 'viewed':
+            cutoff = now - timedelta(days=7)
+            recent_by_id = {identity: at for identity, at in recent.items()
+                            if cutoff <= datetime.fromisoformat(at) <= now}
         for model, query in scopes.items():
             if tab == 'starred':
-                field = 'name' if model is TaskProject else 'title'
-                query = query.filter(favorited_by=viewer).order_by(field, 'pk')
+                query = query.filter(favorited_by=viewer).order_by('-created_at', '-pk')
             elif tab == 'worked':
                 if model is not Task:
                     continue
@@ -249,12 +244,12 @@ def for_you_context(request):
                 query = query.filter(pk__in=ids)
             sources.append(query)
 
-        total = sum(query.count() for query in sources)
-        # A numeric range lets Paginator validate even a huge/invalid page before queries.
-        page = Paginator(range(total), PAGE_SIZE).get_page(request.GET.get('page'))
+        if tab == 'viewed':
+            total = sum(query.count() for query in sources)
+            page = Paginator(range(total), VIEWED_PAGE_SIZE).get_page(request.GET.get('page'))
         candidates = []
         for query in sources:
-            batch = query if tab == 'viewed' else query[:page.end_index()]
+            batch = query if tab == 'viewed' else query[:RESULT_LIMIT]
             for obj in batch:
                 row = _row(obj, workplace, now)
                 if tab == 'viewed':
@@ -263,30 +258,28 @@ def for_you_context(request):
                     row['recent_at'] = obj.personal_activity_at
                 candidates.append(row)
         if tab == 'starred':
-            # Group by kind, preserving each source's database title ordering.
-            candidates.sort(key=lambda row: (row['object']._meta.label_lower,))
+            candidates.sort(key=lambda row: (row['object'].created_at, row['identity']), reverse=True)
         else:
             candidates.sort(key=lambda row: (row['recent_at'], row['identity']), reverse=True)
-        rows = candidates[(page.number - 1) * PAGE_SIZE:page.end_index()]
+        rows = (candidates[(page.number - 1) * VIEWED_PAGE_SIZE:page.end_index()]
+                if tab == 'viewed' else candidates[:RESULT_LIMIT])
 
     _decorate_task_rows(rows)
     decorate_directory_spaces(request, [row['space'] for row in rows if row['space']])
     for row in rows:
         if row.get('recent_at'):
             age = (timezone.localdate(now) - timezone.localdate(row['recent_at'])).days
-            row['date_group'] = 'Dzisiaj' if age <= 0 else 'Wczoraj' if age == 1 else 'Ostatnie 7 dni' if age < 7 else 'Wcześniej'
+            row['date_group'] = 'Dzisiaj' if age <= 0 else 'Wczoraj' if age == 1 else 'Ostatnie 7 dni' if tab == 'viewed' or age < 7 else 'Wcześniej'
     return {
-        'for_you_tab': tab, 'for_you_caption': CAPTIONS[tab],
-        'for_you_tabs': [{'key': key, 'label': label, 'url': page_url(tab=key)} for key, label in TABS],
+        'for_you_tab': tab,
+        'for_you_tabs': [{'key': key, 'label': label, 'icon': icon, 'url': page_url(tab=key)} for key, label, icon in TABS],
         'for_you_rows': rows, 'for_you_groups': _group_rows(rows), 'for_you_page': page,
-        'for_you_previous': page_url(page=page.number - 1) if page.has_previous() else '',
-        'for_you_next': page_url(page=page.number + 1) if page.has_next() else '',
+        'for_you_previous': page_url(page=page.number - 1) if page and page.has_previous() else '',
+        'for_you_next': page_url(page=page.number + 1) if page and page.has_next() else '',
         'for_you_empty': EMPTY_STATES[tab], 'for_you_assigned_count': assigned_count,
         'for_you_empty_illustration': EMPTY_ILLUSTRATIONS[tab],
-        'for_you_projects': projects, 'for_you_spaces': spaces,
-        'for_you_search': search, 'for_you_space': space_filter,
-        'for_you_space_unavailable': bool(space_filter and all(str(project.space.pk) != space_filter for project in spaces)),
-        'for_you_filtered': bool(search or space_filter), 'for_you_url': base_url,
+        'for_you_projects': projects,
+        'for_you_filtered': bool(search or space_filter),
         'for_you_clear_url': f'{base_url}?{urlencode({"tab": tab})}',
         'for_you_projects_url': scoped_workplace_app_path(workplace, 'spaces'),
         'for_you_tasks_url': scoped_workplace_app_path(workplace, 'spaces', 'items/', 'assignee=me'),
