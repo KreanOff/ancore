@@ -66,3 +66,107 @@ Color palette: lavender and violet, sky blue, mint green, coral pink and warm ye
 Background: genuinely transparent alpha background, including the surrounding margins.
 Constraints: the illustration alone; no text, letters, numbers, logos, people, screenshots, entire website layouts, visible checkerboards or opaque background.
 ```
+
+## Puste zakładki „Dla ciebie”
+
+`for-you-tasks-empty.webp` jest dekoracyjną ilustracją pustej zakładki
+„Polecane”, także przy braku wyników filtrowania. Ma rozmiar 720 × 540 px,
+przezroczystość RGBA i wyświetla się maksymalnie w szerokości 240px.
+Powstała 8 października 2026 przez wbudowane narzędzie imagegen z
+`spaces-empty.webp` jako referencją stylu. PNG zmniejszono i zapisano jako
+WebP (quality=90, method=6), zachowując kanał alfa. Puste rekomendowane
+przestrzenie korzystają z istniejącego `spaces-empty.webp`, również do 240px.
+
+Prompt użyty do wygenerowania:
+
+```text
+Use case: stylized-concept.
+Asset type: decorative empty-state illustration for the personal task overview of a Polish teamwork app, displayed at about 240px wide.
+Input image: spaces-empty.webp is a STYLE REFERENCE only. Create a companion task illustration with the same premium soft 3D matte clay finish, gently rounded forms, cheerful pastel colors and studio lighting.
+Primary request: a beautiful multicolored illustration for an empty task list and the reassuring state that the user is up to date.
+Subject: a floating warm ivory task clipboard with lavender rounded edges and a sky-blue clip at the top, three simple blank list rows with small mint, coral pink and yellow checkbox tiles; a prominent mint green circular badge with a white checkmark in front of the lower right of the clipboard, and two restrained floating colored spheres or a small yellow sparkle. No words or letters; only abstract blank task rows and the checkmark.
+Composition: one compact centered balanced composition, slight three-quarter perspective, landscape 4:3 proportions, clean bold silhouettes readable at small size, all objects fully visible with generous transparent margins.
+Materials and lighting: tactile matte clay and soft paper surfaces, gently beveled edges, delicate ambient shadows, polished and calm.
+Color palette: lavender, violet, sky blue, mint green, coral pink and warm yellow, matching the reference.
+Background: truly transparent alpha background, including surrounding margins.
+Constraints: illustration alone; no text, letters, numbers, logos, people, screenshots, website layout, checkerboard or opaque backdrop.
+```
+
+
+## Osobne ilustracje zakładek „Dla ciebie”
+
+Każda zakładka wybiera własny obrazek przez `EMPTY_ILLUSTRATIONS` w
+`dashboard/for_you.py`, także przy braku wyników filtrowania.
+„Polecane” korzysta z opisanego powyżej `for-you-tasks-empty.webp`.
+Pozostałe cztery ilustracje powstały 8 października 2026 przez wbudowane
+narzędzie imagegen, z `for-you-tasks-empty.webp` jako referencją stylu.
+Każdą wygenerowano osobno; PNG zmniejszono do 720 × 540 px i zapisano
+jako WebP (quality=90, method=6) z zachowaniem kanału alfa RGBA.
+Wspólny wariant UI wyświetla je maksymalnie w szerokości 240px.
+
+| Zakładka | Plik | Motyw |
+| --- | --- | --- |
+| Przypisane do mnie | `for-you-assigned-empty.webp` | Karty zadań i niebieski symbol osoby |
+| Ulubione | `for-you-starred-empty.webp` | Fioletowy folder i żółta gwiazdka |
+| Ostatnia praca | `for-you-worked-empty.webp` | Zegar, notatka i ołówek |
+| Ostatnio oglądane | `for-you-viewed-empty.webp` | Dokumenty i zielony symbol oka |
+
+### Prompt: Przypisane do mnie
+
+```text
+Use case: stylized-concept.
+Asset type: a decorative empty-state illustration for one tab in the personal overview of a Polish task-management app, displayed at 240px wide.
+Input image: for-you-tasks-empty.webp is a STYLE REFERENCE only. Create a new companion with a DISTINCT subject; match the exact premium soft 3D matte clay finish, rounded forms and cheerful pastel palette.
+Primary request: a colorful illustration meaning tasks assigned personally to the viewer.
+Subject: two floating warm ivory and lavender task cards with abstract blank horizontal rows, beside a prominent round sky-blue badge containing a simple raised white person silhouette (one rounded head and shoulders). A mint small task tile and a coral sphere complete the composition. The person badge is the dominant distinctive motif. No clipboard, no checkmark.
+Composition: one compact balanced centered composition, slight three-quarter perspective, landscape 4:3 proportions, all objects fully visible with generous transparent margins. Strong simple silhouettes readable at small display size.
+Materials and lighting: tactile matte clay and soft paper surfaces, gently beveled edges, subtle ambient shadows, polished gentle studio lighting.
+Color palette: lavender, violet, sky blue, mint green, coral pink and warm yellow, harmonious with the reference.
+Background: truly transparent alpha background, including all surrounding margins.
+Constraints: illustration alone; no words, letters, numbers, logos, real people, photographs, screenshots, UI layouts, checkerboard or opaque background. Do not copy the reference clipboard or its green checkmark badge.
+```
+
+### Prompt: Ulubione
+
+```text
+Use case: stylized-concept.
+Asset type: a decorative empty-state illustration for one tab in the personal overview of a Polish task-management app, displayed at 240px wide.
+Input image: for-you-tasks-empty.webp is a STYLE REFERENCE only. Create a new companion with a DISTINCT subject; match the exact premium soft 3D matte clay finish, rounded forms and cheerful pastel palette.
+Primary request: a colorful illustration meaning personal favorites ready to collect.
+Subject: a large warm yellow five-point star hovering above an open lavender and ivory folder, with a small coral bookmark tab and mint and sky-blue abstract blank cards peeking from the folder. A few restrained small spheres. The large golden star is the dominant distinctive motif. No person badge, no clipboard, no checkmark.
+Composition: one compact balanced centered composition, slight three-quarter perspective, landscape 4:3 proportions, all objects fully visible with generous transparent margins. Strong simple silhouettes readable at small display size.
+Materials and lighting: tactile matte clay and soft paper surfaces, gently beveled edges, subtle ambient shadows, polished gentle studio lighting.
+Color palette: lavender, violet, sky blue, mint green, coral pink and warm yellow, harmonious with the reference.
+Background: truly transparent alpha background, including all surrounding margins.
+Constraints: illustration alone; no words, letters, numbers, logos, real people, photographs, screenshots, UI layouts, checkerboard or opaque background. Do not copy the reference clipboard or its green checkmark badge.
+```
+
+### Prompt: Ostatnia praca
+
+```text
+Use case: stylized-concept.
+Asset type: a decorative empty-state illustration for one tab in the personal overview of a Polish task-management app, displayed at 240px wide.
+Input image: for-you-tasks-empty.webp is a STYLE REFERENCE only. Create a new companion with a DISTINCT subject; match the exact premium soft 3D matte clay finish, rounded forms and cheerful pastel palette.
+Primary request: a colorful illustration meaning recent personal work and activity history.
+Subject: a prominent round lavender and sky-blue clock face with simple white hands and no numerals, next to a floating warm ivory task note with coral and mint abstract horizontal rows and a coral pencil laid diagonally beside it. A small warm yellow sphere completes the composition. The clock and pencil are the dominant distinctive motif. No person badge, no clipboard, no checkmark.
+Composition: one compact balanced centered composition, slight three-quarter perspective, landscape 4:3 proportions, all objects fully visible with generous transparent margins. Strong simple silhouettes readable at small display size.
+Materials and lighting: tactile matte clay and soft paper surfaces, gently beveled edges, subtle ambient shadows, polished gentle studio lighting.
+Color palette: lavender, violet, sky blue, mint green, coral pink and warm yellow, harmonious with the reference.
+Background: truly transparent alpha background, including all surrounding margins.
+Constraints: illustration alone; no words, letters, numbers, logos, real people, photographs, screenshots, UI layouts, checkerboard or opaque background. Do not copy the reference clipboard or its green checkmark badge.
+```
+
+### Prompt: Ostatnio oglądane
+
+```text
+Use case: stylized-concept.
+Asset type: a decorative empty-state illustration for one tab in the personal overview of a Polish task-management app, displayed at 240px wide.
+Input image: for-you-tasks-empty.webp is a STYLE REFERENCE only. Create a new companion with a DISTINCT subject; match the exact premium soft 3D matte clay finish, rounded forms and cheerful pastel palette.
+Primary request: a colorful illustration meaning recently viewed pages and returning to previously opened items.
+Subject: two overlapping floating rounded warm ivory and sky-blue document panels with lavender abstract blank rows, beside a prominent mint circular badge containing a raised white eye silhouette with a lavender iris. A small coral bookmark tab and warm yellow sphere give gentle details. The eye badge is the dominant distinctive motif. No clock, no clipboard, no checkmark, no magnifying glass.
+Composition: one compact balanced centered composition, slight three-quarter perspective, landscape 4:3 proportions, all objects fully visible with generous transparent margins. Strong simple silhouettes readable at small display size.
+Materials and lighting: tactile matte clay and soft paper surfaces, gently beveled edges, subtle ambient shadows, polished gentle studio lighting.
+Color palette: lavender, violet, sky blue, mint green, coral pink and warm yellow, harmonious with the reference.
+Background: truly transparent alpha background, including all surrounding margins.
+Constraints: illustration alone; no words, letters, numbers, logos, real people, photographs, screenshots, UI layouts, checkerboard or opaque background. Do not copy the reference clipboard or its green checkmark badge.
+```

@@ -1719,6 +1719,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [static/img/empty-states/README.md](../static/img/empty-states/README.md)
 - [static/img/empty-states/dashboard-empty.webp](../static/img/empty-states/dashboard-empty.webp)
+- [static/img/empty-states/for-you-assigned-empty.webp](../static/img/empty-states/for-you-assigned-empty.webp)
+- [static/img/empty-states/for-you-starred-empty.webp](../static/img/empty-states/for-you-starred-empty.webp)
+- [static/img/empty-states/for-you-tasks-empty.webp](../static/img/empty-states/for-you-tasks-empty.webp)
+- [static/img/empty-states/for-you-viewed-empty.webp](../static/img/empty-states/for-you-viewed-empty.webp)
+- [static/img/empty-states/for-you-worked-empty.webp](../static/img/empty-states/for-you-worked-empty.webp)
 - [static/img/empty-states/gadget-column-empty.webp](../static/img/empty-states/gadget-column-empty.webp)
 - [static/img/empty-states/spaces-empty.webp](../static/img/empty-states/spaces-empty.webp)
 - [static/img/favicon-ancore-large.png](../static/img/favicon-ancore-large.png)

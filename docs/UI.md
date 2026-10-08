@@ -34,8 +34,14 @@ wspólnego `tasks-empty-state`: kolorowej ilustracji 3D
 `static/img/empty-states/spaces-empty.webp`, tekstu `tasks-empty-state__copy`
 oraz dotychczasowych przycisków tworzenia, przeglądania lub czyszczenia filtrów.
 Ilustracja przedstawia warstwy projektów i kolorowe karty zadań, ma przezroczyste
-tło, maksymalną szerokość 320px i skaluje się do kontenera na telefonie.
+tło, maksymalną szerokość 440px i skaluje się do kontenera na telefonie.
 Jest dekoracyjna (`alt=""`, `draggable="false"`), a pusty stan ma `role="status"`.
+Katalogi Przestrzeni i Pulpitów (także zarządzanie) oraz przegląd pustego pulpitu
+współdzielą `tasks-empty-state--illustrated` i `tasks-empty-state__illustration`:
+obraz zajmuje pole 440×330px, z proporcjami 4:3 i `object-fit: contain`.
+Cały pusty stan jest wyśrodkowany poziomo i pionowo w dostępnej treści pod
+nagłówkiem, zakładkami i filtrami. Na wąskim ekranie obraz proporcjonalnie
+maleje, a zbyt niska treść pozostaje przewijana bez ucinania opisu i akcji.
 Przyciski zachowują wspólny styl bez podkreślenia tekstu.
 Katalog zespołów używa kart.
 Przestrzeń ma kontekstowe zakładki
@@ -549,8 +555,20 @@ ze wspólnej nawigacji `AncoreApp`, także przy Wstecz/Dalej i ponownym wejściu
 `for-you.js` utrzymuje aktywną zakładkę w widocznej części paska po wejściu,
 częściowej nawigacji i zmianie szerokości. Przewija wyłącznie zakładki, bez
 przesuwania strony lub fokusu; odłącza obserwator rozmiaru przy opuszczeniu widoku.
-Puste stany wyjaśniają źródło danych
-każdej zakładki. Zakładki pozostają w jednym wierszu i przewijają się poziomo,
+Puste stany wyjaśniają źródło danych każdej zakładki. Wariant `for-you-empty-state`
+pokazuje kolorowe ilustracje 3D: `spaces-empty.webp` przy braku rekomendowanych
+przestrzeni, a każda zakładka ma własny obrazek: Polecane — lista z zielonym
+znacznikiem (`for-you-tasks-empty.webp`), Przypisane do mnie — karty z symbolem
+osoby (`for-you-assigned-empty.webp`), Ulubione — folder z gwiazdką
+(`for-you-starred-empty.webp`), Ostatnia praca — zegar i ołówek
+(`for-you-worked-empty.webp`), Ostatnio oglądane — dokumenty z symbolem oka
+(`for-you-viewed-empty.webp`). `EMPTY_ILLUSTRATIONS` w `dashboard/for_you.py`
+wybiera ilustrację aktywnej zakładki, również przy braku wyników filtrów.
+Obrazki z `static/img/empty-states/` mają przezroczyste tło, maksymalną
+szerokość 240px i skalują się do kontenera. Są dekoracyjne (`alt=""`,
+`draggable="false"`); kontener ma `role="status"`, a tekst i dotychczasowa akcja
+korzystają ze wspólnego `tasks-empty-state__copy`.
+Zakładki pozostają w jednym wierszu i przewijają się poziomo,
 gdy brakuje miejsca, także na telefonie. Etykiety i licznik nie zawijają się.
 Wiersz pokazuje klucz zadania, lokalizację i tekstową nazwę statusu przestrzeni
 obok wspólnej ikony kategorii. Historia i oglądane mają nagłówki grup dat
@@ -2248,7 +2266,7 @@ komunikat odpowiedni do kategorii lub filtrów. Przegląd pulpitu nadal używa
 `dashboard-overview` i gadżetów. Pozostałe warianty `pulpit-*` zachowują tokeny.
 Puste stany katalogu i zarządzania używają `pulpit-directory-empty-state`:
 kolorowej ilustracji 3D `static/img/empty-states/dashboard-empty.webp`
-o maksymalnej szerokości 320px, wspólnego `tasks-empty-state__copy` oraz
+o maksymalnej szerokości 440px, wspólnego `tasks-empty-state__copy` oraz
 dotychczasowych opisów i akcji dla zakładki lub filtrów. Ilustracja jest
 dekoracyjna (`alt=""`), ma przezroczyste tło i skaluje się do szerokości
 kontenera na telefonie. Przyciski zachowują `tasks-filter-button` bez
@@ -2320,8 +2338,10 @@ w tym samym stylu 3D co pusty pulpit. `canvas.html` udostępnia wzorzec `<templa
 z adresem wygenerowanym przez `{% static %}`; `pulpits.js` klonuje go po zmianie
 układu i opróżnieniu kolumny oraz usuwa po dodaniu gadżetu. Obraz ma `alt=""`
 i `draggable="false"`, więc przeciąganie nadal dotyczy uchwytów gadżetów.
-Ilustracja przeglądu pulpitu ma przezroczyste tło, maksymalną szerokość 440px i skaluje się
-do dostępnej szerokości. Jest dekoracyjna (`alt=""`); stan opisuje polski tekst.
+Ilustracja przeglądu pulpitu ma przezroczyste tło i wspólne pole 440×330px,
+tak jak puste katalogi Przestrzeni i Pulpitów. Skaluje się do dostępnej szerokości
+i wraz z opisem jest wyśrodkowana w treści. Jest dekoracyjna (`alt=""`,
+`draggable="false"`); stan opisuje polski tekst.
 Typografia pustego pulpitu nawiązuje do wskazanego wzorca Jiry: nagłówek
 28px/700 (24px na telefonie), opis 16px z interlinią 1,6 i odstępem 16px
 od nagłówka. Używa wspólnego Atlassian Sans i koloru `--text-primary`.

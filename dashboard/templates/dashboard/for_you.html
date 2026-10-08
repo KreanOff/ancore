@@ -4,7 +4,7 @@
 {% block title %}Dla ciebie | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261004-page-titles-17">
+<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261008-for-you-empty-illustrations">
 <script src="{% static 'js/for-you.js' %}?v=20261003-scroll-tabs" defer></script>
 {% endblock %}
 
@@ -31,7 +31,13 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="dashboard-panel for-you-spaces-empty"><i data-icon="folders" aria-hidden="true"></i><p>Otwórz przestrzeń lub dodaj ją do ulubionych, aby mieć ją pod ręką.</p><a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Przeglądaj przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a></div>
+            <div class="dashboard-panel for-you-spaces-empty for-you-empty-state" role="status">
+                <img class="for-you-empty-state__illustration" src="{% static 'img/empty-states/spaces-empty.webp' %}" alt="" width="720" height="540" draggable="false">
+                <div class="tasks-empty-state__copy">
+                    <p>Otwórz przestrzeń lub dodaj ją do ulubionych, aby mieć ją pod ręką.</p>
+                    <a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Przeglądaj przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </div>
             {% endif %}
         </section>
 
@@ -70,11 +76,13 @@
                     {% if item.is_task %}<span class="for-you-status" title="{{ item.status_label }}"><span class="status-indicator status-{{ item.object.status }}" aria-hidden="true"></span><span>{{ item.status_label }}</span></span>{% else %}<i data-icon="chevron-right" aria-hidden="true"></i>{% endif %}
                 </a>
                 {% empty %}
-                <div class="dashboard-overview-empty">
-                    {% if for_you_filtered %}<i data-icon="search" aria-hidden="true"></i><h3>Brak pasujących wyników</h3><p>Zmień nazwę, klucz zadania lub wybraną przestrzeń.</p><a class="dashboard-panel-link" href="{{ for_you_clear_url }}">Wyczyść filtry<i data-icon="arrow-right" aria-hidden="true"></i></a>
-                    {% else %}<i data-icon="{% if for_you_tab == 'starred' %}star{% elif for_you_tab == 'viewed' or for_you_tab == 'worked' %}clock{% else %}circle-check{% endif %}" aria-hidden="true"></i>
-                    <h3>{{ for_you_empty.0 }}</h3><p>{{ for_you_empty.1 }}</p>
-                    <a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Otwórz przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a>{% endif %}
+                <div class="dashboard-overview-empty for-you-empty-state" role="status">
+                    <img class="for-you-empty-state__illustration" src="{% static for_you_empty_illustration %}" alt="" width="720" height="540" draggable="false">
+                    <div class="tasks-empty-state__copy">
+                        {% if for_you_filtered %}<h3>Brak pasujących wyników</h3><p>Zmień nazwę, klucz zadania lub wybraną przestrzeń.</p><a class="dashboard-panel-link" href="{{ for_you_clear_url }}">Wyczyść filtry<i data-icon="arrow-right" aria-hidden="true"></i></a>
+                        {% else %}<h3>{{ for_you_empty.0 }}</h3><p>{{ for_you_empty.1 }}</p>
+                        <a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Otwórz przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a>{% endif %}
+                    </div>
                 </div>
                 {% endfor %}
             </div>

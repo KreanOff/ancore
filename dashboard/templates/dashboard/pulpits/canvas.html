@@ -16,8 +16,8 @@
     </template>
     {% endif %}
     {% if not has_gadgets and not editing_gadgets %}
-    <section class="tasks-empty-state tasks-empty-state--centered pulpit-empty-state" role="status">
-        <img class="pulpit-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086">
+    <section class="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated pulpit-empty-state" role="status">
+        <img class="tasks-empty-state__illustration pulpit-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086" draggable="false">
         <div class="tasks-empty-state__copy">
             <h2>Ten pulpit jest pusty.</h2>
             <p>{% if editing_gadgets %}Dodaj pierwszy gadżet, aby zobaczyć dane zespołu.{% elif dashboard.can_edit %}Otwórz edycję pulpitu, aby dodać pierwszy gadżet.{% else %}Twórca pulpitu nie dodał jeszcze gadżetów.{% endif %}</p>

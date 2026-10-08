@@ -3,13 +3,13 @@
 {% block title %}Pulpity | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261005-pulpits">
+<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261008-for-you-empty-illustrations">
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct">
 {% if pulpits_management_mode or tabs %}
 <link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261001-project-list">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261008-shared-directory">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261008-centered-empty-illustrations">
 {% endif %}
-<link rel="stylesheet" href="{% static 'css/components/pulpits.css' %}?v=20261008-shared-directory">
+<link rel="stylesheet" href="{% static 'css/components/pulpits.css' %}?v=20261008-centered-empty-illustrations">
 <script src="{% static 'js/pulpits.js' %}?v=20261007-column-illustration" defer></script>
 {% endblock %}
 {% block page_modals %}<div data-pulpit-modal-host>{% if modal %}{% include 'dashboard/pulpits/form.html' %}{% endif %}</div>{% endblock %}

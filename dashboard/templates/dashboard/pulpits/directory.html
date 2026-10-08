@@ -26,8 +26,8 @@
         </div>
     </section>
     {% else %}
-    <div class="tasks-empty-state pulpit-directory-empty-state" role="status">
-        <img class="pulpit-directory-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086" draggable="false">
+    <div class="tasks-empty-state tasks-empty-state--illustrated pulpit-directory-empty-state" role="status">
+        <img class="tasks-empty-state__illustration pulpit-directory-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086" draggable="false">
         <div class="tasks-empty-state__copy">
             <h2>{% if query or visibility_filter or favorite_filter %}Brak pasujących pulpitów{% elif management %}Brak pulpitów do zarządzania{% elif tab == 'favorites' %}Brak ulubionych pulpitów{% elif tab == 'mine' %}Brak własnych pulpitów{% else %}Brak pulpitów{% endif %}</h2>
             <p>{% if query or visibility_filter or favorite_filter %}Zmień wyszukiwanie lub filtry.{% elif tab == 'favorites' %}Oznacz pulpit gwiazdką, aby pojawił się na tej liście.{% else %}Utwórz pulpit z własnymi gadżetami.{% endif %}</p>

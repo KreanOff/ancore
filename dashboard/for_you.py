@@ -29,6 +29,13 @@ EMPTY_STATES = {
     'worked': ('Tutaj znajdziesz swoją ostatnią pracę', 'Zadania pojawią się po dodaniu komentarza, utworzeniu lub zmianie przez Ciebie.'),
     'viewed': ('Wróć do oglądanych elementów', 'Otwieraj przestrzenie, grupy i zadania. Ostatnio oglądane zapisujemy w bieżącej sesji przeglądarki.'),
 }
+EMPTY_ILLUSTRATIONS = {
+    'recommended': 'img/empty-states/for-you-tasks-empty.webp',
+    'assigned': 'img/empty-states/for-you-assigned-empty.webp',
+    'starred': 'img/empty-states/for-you-starred-empty.webp',
+    'worked': 'img/empty-states/for-you-worked-empty.webp',
+    'viewed': 'img/empty-states/for-you-viewed-empty.webp',
+}
 CAPTIONS = {
     'recommended': 'Twoje otwarte zadania: zaległe, z terminem w najbliższych 7 dniach oraz z wysokim lub pilnym priorytetem.',
     'assigned': 'Otwarte zadania i podzadania, których jesteś wykonawcą.',
@@ -216,6 +223,7 @@ def for_you_context(request):
         'for_you_previous': page_url(page=page.number - 1) if page.has_previous() else '',
         'for_you_next': page_url(page=page.number + 1) if page.has_next() else '',
         'for_you_empty': EMPTY_STATES[tab], 'for_you_assigned_count': assigned_count,
+        'for_you_empty_illustration': EMPTY_ILLUSTRATIONS[tab],
         'for_you_projects': projects, 'for_you_spaces': spaces,
         'for_you_search': search, 'for_you_space': space_filter,
         'for_you_space_unavailable': bool(space_filter and all(str(project.space.pk) != space_filter for project in spaces)),

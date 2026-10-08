@@ -6,16 +6,14 @@
     --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 320px 220px 190px 130px 320px;
 }
 .pulpit-directory-sheet .pulpit-directory-icon { width: 24px; height: 24px; flex-shrink: 0; }
-.pulpit-directory-empty-state { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.pulpit-directory-empty-state__illustration { display: block; width: min(320px, 100%); height: auto; flex-shrink: 0; }
 .pulpit-directory-empty-state .tasks-filter-button { text-decoration: none; }
 .pulpit-topbar .tasks-titlebar-left { min-width: 0; gap: 8px; }
 .pulpit-topbar .tasks-topbar-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .pulpit-topbar .tasks-titlebar-actions { flex-shrink: 0; }
 .pulpit-editor-page .tasks-titlebar-actions { flex-wrap: wrap; }
 .pulpit-intro { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
-.pulpits-page .pulpit-empty-state { width: 100%; flex: 1 0 auto; gap: 20px; padding: 24px 0 !important; }
-.pulpit-empty-state__illustration { display: block; width: min(440px, 100%); height: auto; flex-shrink: 0; }
+.pulpits-page .dashboard-main:has(> .pulpit-empty-state) { padding: 0; gap: 0; scrollbar-gutter: auto; }
+.pulpits-page .dashboard-main:has(> .pulpit-empty-state) > .pulpit-intro { padding: 24px var(--dashboard-inline-padding) 0; }
 .pulpit-empty-state .tasks-empty-state__copy { max-width: 640px; gap: 16px; }
 .pulpit-empty-state h2 { font-size: 28px; font-weight: 700 !important; line-height: 1.25; }
 .pulpit-empty-state p { font-size: 16px; line-height: 1.6; }
