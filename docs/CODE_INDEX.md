@@ -23,11 +23,11 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 36 | 63 | 39 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 31 | 9 | 28 | 182 |
+| [dashboard](../dashboard) | 31 | 9 | 29 | 182 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 24 | 4 | 26 | 80 |
+| [spaces](../spaces) | 24 | 4 | 27 | 80 |
 
 ## 2. Modele i relacje
 
@@ -1539,6 +1539,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/templates/dashboard/pulpits/catalog.html](../dashboard/templates/dashboard/pulpits/catalog.html)
 - [dashboard/templates/dashboard/pulpits/catalog_preview.html](../dashboard/templates/dashboard/pulpits/catalog_preview.html)
 - [dashboard/templates/dashboard/pulpits/detail.html](../dashboard/templates/dashboard/pulpits/detail.html)
+- [dashboard/templates/dashboard/pulpits/directory.html](../dashboard/templates/dashboard/pulpits/directory.html)
 - [dashboard/templates/dashboard/pulpits/edit.html](../dashboard/templates/dashboard/pulpits/edit.html)
 - [dashboard/templates/dashboard/pulpits/fields.html](../dashboard/templates/dashboard/pulpits/fields.html)
 - [dashboard/templates/dashboard/pulpits/form.html](../dashboard/templates/dashboard/pulpits/form.html)
@@ -1608,6 +1609,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/card.html](../spaces/templates/spaces/card.html)
 - [spaces/templates/spaces/configuration.html](../spaces/templates/spaces/configuration.html)
 - [spaces/templates/spaces/detail.html](../spaces/templates/spaces/detail.html)
+- [spaces/templates/spaces/directory.html](../spaces/templates/spaces/directory.html)
 - [spaces/templates/spaces/directory_row_actions.html](../spaces/templates/spaces/directory_row_actions.html)
 - [spaces/templates/spaces/form.html](../spaces/templates/spaces/form.html)
 - [spaces/templates/spaces/form_page.html](../spaces/templates/spaces/form_page.html)

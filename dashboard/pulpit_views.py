@@ -13,7 +13,6 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from workplaces.services import workspace_owner
-from accounts.avatar import account_avatar
 from spaces.services import visible_spaces
 from tasks.access import visible_to
 from tasks.models import Task
@@ -116,7 +115,6 @@ def management_context(request):
     page = Paginator(queryset.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
     for dashboard in page:
         decorate_dashboard(request, dashboard)
-        dashboard.creator_avatar = account_avatar(dashboard.created_by)
         dashboard.edit_url = management_url(request, f'{dashboard.pk}/edit/')
         dashboard.access_url = management_url(request, f'{dashboard.pk}/access/')
         dashboard.gadgets_url = management_url(request, f'{dashboard.pk}/gadgets/')

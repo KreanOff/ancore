@@ -1,7 +1,7 @@
 /* Saved dashboards extend the existing Workspace overview and modal shell. */
 .pulpits-page { min-width: 0; }
 .pulpits-page .dashboard-main { gap: 18px; }
-/* The catalog shares Spaces' sheet, toolbar, tabs and selection styles. */
+/* The catalog and management share the same sheet and selection styles. */
 .tasks-directory-board.work-space-sheet.pulpit-directory-sheet {
     --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 320px 220px 190px 130px 320px;
 }
@@ -134,10 +134,6 @@
 @media (max-width: 1250px) and (min-width: 768px) {
     .pulpit-catalog { flex-basis: 320px; width: 320px; }
     .pulpit-editor-page.has-catalog .pulpit-grid { grid-template-columns: minmax(0, 1fr); }
-}
-/* Management uses the same directory geometry as Spaces. */
-.tasks-directory-board.work-space-sheet.pulpit-management-sheet {
-    --tasks-directory-grid: 40px 270px 210px 160px 100px 190px 40px;
 }
 @media (max-width: 1100px) {
     .pulpit-grid--three { grid-template-columns: repeat(2, minmax(0, 1fr)); }

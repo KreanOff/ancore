@@ -45,13 +45,15 @@ Menu dotyczy
 wyłącznie przestrzeni; Workspace ma własne menu zarządzania.
 Powrót przywraca zwykłe menu,
 także przy częściowej nawigacji i korzystaniu z historii przeglądarki.
-Ekran zawiera wyszukiwanie po nazwie/kluczu,
-filtry rodzaju i sposobu zarządzania, paginację oraz kolumny nazwy, klucza,
-rodzaju, zarządzania, lidera i ostatniej aktywności dostępnych zadań.
-Lider pochodzi z osoby odpowiedzialnej projektu, z zastępstwem przez prywatnego
-właściciela lub właściciela danych. Nazwa prowadzi do ustawień przestrzeni;
-menu wiersza udostępnia otwarcie, edycję, ustawienia dostępu i konfigurację
-zadań (jeśli osoba może ją zmieniać).
+Ekran zawiera wyszukiwanie po nazwie/kluczu, filtry rodzaju i sposobu zarządzania
+oraz paginację. Lista współdzieli `spaces/directory.html` z „Przestrzenie”:
+checkboxy, menu po lewej oraz kolumny Klucz, Przestrzeń, Rodzaj, Szablon, Opis
+i liczba widocznych zadań. Zachowuje te same szerokości, ikony i awatary.
+Zaznaczenie dotyczy bieżącej strony, bez operacji zbiorczych.
+Filtry są po lewej, wyszukiwarka i paginacja po prawej.
+Nazwa prowadzi do ustawień przestrzeni; menu wiersza udostępnia otwarcie,
+osobiste ulubione, edycję, ustawienia dostępu i konfigurację zadań
+(jeśli osoba może ją zmieniać). Gwiazdka zachowuje adres i filtry zarządzania.
 
 `manageable_spaces` zawęża `visible_spaces` według istniejącego `manage_space`.
 Właściciel/administrator Workspace zarządza widocznymi przestrzeniami

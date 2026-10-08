@@ -189,7 +189,7 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   `pulpit_navigation.py` buduje menu gwiazdek i ostatnich z aktualnie
   dostępnych pulpitów. Dotychczasowy Dashboard jest „Pulpitem domyślnym”.
   `/dashboards/manage/` i scoped odpowiednik są osobnym ekranem zarządzania
-  własnymi pulpitami, ze wspólną tabelą Przestrzeni i trybem bocznego menu
+  własnymi pulpitami, ze wspólną listą katalogu Pulpitów i trybem bocznego menu
   `pulpits-management`. Nazwa pulpitu otwiera jego edytor z odrębnym menu
   `pulpit-editor`: „Gadżety i układ”, „Dostępy” i „Ustawienia”.
   `/<pk>/access/` zmienia widoczność/osoby, `/<pk>/edit/` nazwę/opis;

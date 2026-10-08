@@ -618,10 +618,11 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   „Zarządzaj pulpitami” w menu „…” otwiera osobny katalog zarządzania pod
   `/dashboards/manage/` i scoped adresem. Pokazuje tylko pulpity twórcy
   w aktywnym Workspace, zgodnie z dotychczasowymi prawami edycji.
-  Używa układu „Zarządzaj przestrzeniami”: osobne menu z powrotem do miejsca
-  wejścia, wyszukiwanie po nazwie/opisie, filtry widoczności i gwiazdki,
-  paginacja 30 pozycji oraz tabela nazwy, twórcy, widoczności, liczby gadżetów
-  i ostatniej zmiany konfiguracji. Nazwa otwiera osobny edytor wybranego pulpitu,
+  Zachowuje osobne menu z powrotem do miejsca wejścia, wyszukiwanie po nazwie/opisie,
+  filtry widoczności i gwiazdki oraz paginację 30 pozycji. Lista jest wspólna
+  z „Pulpity”: checkboxy, menu po lewej oraz kolumny Pulpit, Twórca,
+  Widoczność, Gadżety i Opis. Gwiazdka jest akcją menu wiersza.
+  Nazwa otwiera osobny edytor wybranego pulpitu,
   domyślnie „Gadżety i układ”. Jego menu po lewej ma nazwę pulpitu, powrót oraz
   „Gadżety i układ”, „Dostępy” i „Ustawienia”. Dawne poziome zakładki są usunięte.
   „Dostępy” zmienia widoczność i osoby z dostępem, „Ustawienia” nazwę i opis.

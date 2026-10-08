@@ -7493,14 +7493,6 @@ function initTasksPage() {
                     const widths = { select: 40, menu: 40, name: 320, leader: 220, visibility: 190, gadgets: 130, description: 320 };
                     if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
                 }
-                if (cell.closest('.pulpit-management-sheet')) {
-                    const widths = { action: 40, name: 270, leader: 210, visibility: 160, gadgets: 100, last_activity: 190, menu: 40 };
-                    if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
-                }
-                if (cell.closest('.work-space-sheet--management')) {
-                    const widths = { action: 40, name: 270, key: 100, kind: 160, management: 220, leader: 210, last_activity: 190, menu: 40 };
-                    if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
-                }
                 if (cell.closest('.work-space-sheet')) {
                     const widths = { select: 40, menu: 40, key: 150, name: 320, kind: 190, template: 220, description: 320, tasks_count: 130 };
                     if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
@@ -7580,8 +7572,9 @@ function initTasksPage() {
         }
 
         function getDirectoryStorageSegment() {
-            if (document.querySelector('.pulpit-directory-sheet')) return 'pulpits-directory';
             if (document.querySelector('.pulpit-management-sheet')) return 'pulpits-management';
+            if (document.querySelector('.pulpit-directory-sheet')) return 'pulpits-directory';
+            if (document.querySelector('.work-space-sheet--management')) return 'spaces-management';
             if (document.querySelector('[data-resources-page]')) return 'resources';
             const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
 

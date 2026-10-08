@@ -1,5 +1,4 @@
 {% extends 'dashboard/pulpits/base.html' %}
-{% load static %}
 {% block title %}Zarządzaj pulpitami | ancore{% endblock %}
 {% block content %}
 <div class="tasks-page tasks-list-page work-page work-page--management" data-pulpits-page data-pulpit-list-url="{{ return_url }}">
@@ -10,54 +9,21 @@
         </header>
         <form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get" action="{{ management_url }}" data-pulpit-search data-pulpit-management-filters>
             <div class="tasks-filterbar-left">
-                <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj pulpitu" aria-label="Szukaj pulpitu"></label>
                 <select name="visibility" class="tasks-inline-select" aria-label="Widoczność pulpitu"><option value="">Każda widoczność</option>{% for value, label in visibility_choices %}<option value="{{ value }}"{% if visibility_filter == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
                 <select name="favorite" class="tasks-inline-select" aria-label="Oznaczenie gwiazdką"><option value="">Wszystkie pulpity</option><option value="starred"{% if favorite_filter == 'starred' %} selected{% endif %}>Oznaczone gwiazdką</option><option value="unstarred"{% if favorite_filter == 'unstarred' %} selected{% endif %}>Bez gwiazdki</option></select>
                 <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>
             </div>
-            <div class="tasks-filterbar-right"><nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony zarządzania pulpitami">
-                {% if page.has_previous %}<a class="tasks-project-pagination__button" href="{% querystring page=page.previous_page_number %}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Poprzednia strona" disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>{% endif %}
-                <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-live="polite">{{ page.start_index }}–{{ page.end_index }} z {{ page.paginator.count }}</span>
-                {% if page.has_next %}<a class="tasks-project-pagination__button" href="{% querystring page=page.next_page_number %}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Następna strona" disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>{% endif %}
-            </nav></div>
+            <div class="tasks-filterbar-right">
+                <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj pulpitu" aria-label="Szukaj pulpitu"></label>
+                <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony zarządzania pulpitami">
+                    {% if page.has_previous %}<a class="tasks-project-pagination__button" href="{% querystring page=page.previous_page_number %}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Poprzednia strona" disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>{% endif %}
+                    <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-live="polite">{{ page.start_index }}–{{ page.end_index }} z {{ page.paginator.count }}</span>
+                    {% if page.has_next %}<a class="tasks-project-pagination__button" href="{% querystring page=page.next_page_number %}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Następna strona" disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>{% endif %}
+                </nav>
+            </div>
         </form>
         <div class="work-content work-content--directory">
-            <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-spreadsheet-sheet work-space-sheet work-space-sheet--management pulpit-management-sheet">
-                {% if page %}
-                <section class="tasks-directory-group" role="table" aria-label="Zarządzanie pulpitami">
-                    <div class="tasks-directory-header" role="row">
-                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Ulubione"><i data-icon="star" aria-hidden="true"></i></span>
-                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">NAZWA<i data-icon="layout-dashboard" aria-hidden="true"></i></span>
-                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="leader" role="columnheader">TWÓRCA<i data-icon="user-round" aria-hidden="true"></i></span>
-                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="visibility" role="columnheader">WIDOCZNOŚĆ<i data-icon="eye" aria-hidden="true"></i></span>
-                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="gadgets" role="columnheader">GADŻETY<i data-icon="panels-top-left" aria-hidden="true"></i></span>
-                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity" role="columnheader">OSTATNIA ZMIANA<i data-icon="history" aria-hidden="true"></i></span>
-                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="columnheader" aria-label="Działania"><i data-icon="ellipsis" aria-hidden="true"></i></span>
-                    </div>
-                    <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
-                        {% for item in page %}
-                        <article class="tasks-issue-row tasks-directory-row" role="row" data-pulpit-management-row="{{ item.pk }}">
-                            <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell"><form method="post" action="{{ item.favorite_url }}" data-pulpit-action>{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="tasks-icon-button tasks-row-favorite" type="submit" aria-label="{% if item.is_favorite %}Usuń z ulubionych{% else %}Dodaj do ulubionych{% endif %}: {{ item.name }}" aria-pressed="{{ item.is_favorite|yesno:'true,false' }}"><i data-icon="star" aria-hidden="true"></i></button></form></div>
-                            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-directory-name" data-column="name" role="cell"><i class="sidebar-subnav-icon" data-icon="layout-dashboard" aria-hidden="true"></i><a href="{{ item.gadgets_url }}" title="{{ item.name }}">{{ item.name }}</a></span>
-                            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-directory-assignee" data-column="leader" role="cell" title="{{ item.created_by.get_full_name|default:item.created_by.email }}">{% include 'accounts/includes/user_avatar.html' with avatar=item.creator_avatar avatar_class='tasks-directory-avatar' only %}<span>{{ item.created_by.get_full_name|default:item.created_by.email }}</span></span>
-                            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="visibility" role="cell">{{ item.get_visibility_display }}</span>
-                            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="gadgets" role="cell">{{ item.gadget_count }}</span>
-                            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="last_activity" role="cell" title="{{ item.updated_at|date:'d.m.Y H:i' }}">{{ item.updated_at|timesince }} temu</span>
-                            <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="cell">{% include 'dashboard/pulpits/actions.html' with management=True %}</div>
-                        </article>
-                        {% endfor %}
-                    </div>
-                </section>
-                {% else %}
-                <div class="tasks-empty-state pulpit-directory-empty-state" role="status">
-                    <img class="pulpit-directory-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086" draggable="false">
-                    <div class="tasks-empty-state__copy">
-                    <h2>{% if query or visibility_filter or favorite_filter %}Brak pasujących pulpitów{% else %}Brak pulpitów do zarządzania{% endif %}</h2>
-                    <p>{% if query or visibility_filter or favorite_filter %}Zmień wyszukiwanie lub filtry.{% else %}Utwórz pulpit z własnymi gadżetami.{% endif %}</p>
-                    {% if query or visibility_filter or favorite_filter %}<a class="tasks-filter-button" href="{{ management_url }}">Wyczyść filtry</a>{% else %}<a class="tasks-filter-button" href="{{ create_url }}" data-pulpit-open>Utwórz pulpit</a>{% endif %}
-                </div></div>
-                {% endif %}
-            </div>
+            {% include 'dashboard/pulpits/directory.html' with dashboards=page management=True %}
         </div>
     </section>
 </div>

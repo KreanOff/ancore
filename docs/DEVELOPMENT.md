@@ -39,7 +39,7 @@ zwinięty sidebar, telefon i ponowne wejście po częściowej nawigacji.
 Rozdzielenie katalogu i zarządzania przestrzeniami sprawdza
 `spaces.test_management`: zwykłe/scoped adresy, właściciel i administrator
 Workspace, role projektu, osoba odpowiedzialna, cofnięcie dostępu, obcy
-Workspace, ukryte zadania w aktywności, filtry/paginacja, tworzenie i edycja
+Workspace, ukryte zadania w licznikach, filtry/paginacja, tworzenie i edycja
 nad katalogiem oraz powrót po zapisie. Uruchamiaj także `spaces`,
 `dashboard.tests.DashboardViewTests` i `kanban.test_retirement`.
 Browser QA obejmuje przejście Katalog → menu „…” → Zarządzaj przestrzeniami,
@@ -47,6 +47,11 @@ zastąpienie głównego menu Workspace menu administracyjnym i jego przywróceni
 po powrocie, historię Wstecz/Dalej, zwinięty pasek oraz menu na telefonie,
 Ustawienia jako ekran referencyjny, edycję/zapis, błędy kreatora, anulowanie,
 wyszukiwanie/pusty wynik, pusty Workspace, ponowne wejście i desktop/telefon.
+Porównaj listę z katalogiem „Przestrzenie”: kolejność i szerokości kolumn,
+checkboxy, menu trzech pasków, awatary, szablon, opis i liczbę widocznych zadań.
+Sprawdź zaznaczenie wszystkich/części wierszy, gwiazdkę i edycję z menu,
+przejście z nazwy do ustawień oraz niezależne preferencje kolumn zarządzania
+między zwykłym i scoped URL. Wyszukiwarka i paginacja są po prawej.
 
 Dwukrokowy kreator sprawdzają także testy `SpaceTests.test_template_picker_is_only_used_when_creating_spaces`,
 `test_each_template_creates_its_matching_configuration` i
@@ -833,7 +838,11 @@ pozycja po zmianie pulpitu, przeładowanie i Wstecz/Dalej. Sprawdź zapis obu
 formularzy, ich izolację, walidację ze szkicem, ochronę zmian przy przełączaniu
 sekcji, powrót z filtrami po częściowej nawigacji i zwykłym POST, menu zwinięte
 oraz telefon. Zapis ustawień nie może zmieniać uprawnień ani układu.
-Porównaj w przeglądarce geometrię tabeli i toolbaru z „Zarządzaj przestrzeniami”.
+Porównaj w przeglądarce tabelę z „Pulpity”: te same kolumny, ikony, szerokości,
+checkboxy i menu po lewej; sprawdź opis i gwiazdkę w menu wiersza.
+Wyszukiwarka i paginacja są po prawej, a filtry zarządzania po lewej.
+Sprawdź zaznaczenie wszystkich/części wierszy oraz niezależny zapis szerokości
+kolumn katalogu i zarządzania w zwykłym/scoped URL.
 Wycofanie grup: menu katalogu, wiersza, pulpitu i zarządzania bez akcji grup,
 404 starego adresu, zachowanie powrotu, historii/reload, gwiazdek i gadżetów
 na desktopie oraz telefonie.

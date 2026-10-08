@@ -1,0 +1,38 @@
+{% load static %}
+<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet pulpit-directory-sheet{% if management %} pulpit-management-sheet{% endif %}">
+    {% if dashboards %}
+    <section class="tasks-directory-group" role="table" aria-label="{% if management %}Zarządzanie pulpitami{% else %}Lista pulpitów{% endif %}">
+        <div class="tasks-directory-header" role="row">
+            <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader"><input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie pulpity na tej stronie" title="Zaznacz wszystkie pulpity na tej stronie" data-select-all-checkbox data-select-all-target="pulpits"></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="columnheader" aria-label="Działania pulpitów" title="Działania pulpitów" data-column-label="Działania"><span class="u-sr-only">Działania</span></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">PULPIT<i data-icon="layout-dashboard" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="leader" role="columnheader">TWÓRCA<i data-icon="user-round" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="visibility" role="columnheader">WIDOCZNOŚĆ<i data-icon="lock" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="gadgets" role="columnheader">GADŻETY<i data-icon="layout-dashboard" aria-hidden="true"></i></span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="columnheader">OPIS<i data-icon="align-left" aria-hidden="true"></i></span>
+        </div>
+        <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
+            {% for item in dashboards %}
+            <article class="tasks-issue-row tasks-directory-row pulpit-directory-row" role="row" data-pulpit-directory-row="{{ item.pk }}"{% if management %} data-pulpit-management-row="{{ item.pk }}"{% endif %}>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ item.pk }}" data-pulpit-id="{{ item.pk }}" aria-label="Zaznacz pulpit {{ item.name }}"></span>
+                {% include 'tasks/includes/directory_row_menu.html' with kind='pulpit' item_id=item.pk item_name=item.name actions_template='dashboard/pulpits/row_actions.html' cell_role='cell' directory=True %}
+                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell"><i class="pulpit-directory-icon" data-icon="layout-dashboard" aria-hidden="true"></i><a href="{% if management %}{{ item.gadgets_url }}{% else %}{{ item.url }}{% endif %}" title="{{ item.name }}">{{ item.name }}</a></span>
+                <span class="tasks-directory-sheet__cell" data-column="leader" role="cell" title="{{ item.created_by.get_full_name|default:item.created_by.email }}">{{ item.created_by.get_full_name|default:item.created_by.email }}</span>
+                <span class="tasks-directory-sheet__cell" data-column="visibility" role="cell" title="{{ item.get_visibility_display }}">{{ item.get_visibility_display }}</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__count" data-column="gadgets" role="cell">{{ item.gadget_count }}</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__description" data-column="description" role="cell" title="{{ item.description|striptags }}">{{ item.description|striptags|default:'Brak opisu' }}</span>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% else %}
+    <div class="tasks-empty-state pulpit-directory-empty-state" role="status">
+        <img class="pulpit-directory-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086" draggable="false">
+        <div class="tasks-empty-state__copy">
+            <h2>{% if query or visibility_filter or favorite_filter %}Brak pasujących pulpitów{% elif management %}Brak pulpitów do zarządzania{% elif tab == 'favorites' %}Brak ulubionych pulpitów{% elif tab == 'mine' %}Brak własnych pulpitów{% else %}Brak pulpitów{% endif %}</h2>
+            <p>{% if query or visibility_filter or favorite_filter %}Zmień wyszukiwanie lub filtry.{% elif tab == 'favorites' %}Oznacz pulpit gwiazdką, aby pojawił się na tej liście.{% else %}Utwórz pulpit z własnymi gadżetami.{% endif %}</p>
+            {% if query or visibility_filter or favorite_filter %}<a class="tasks-filter-button" href="{% if management %}{{ management_url }}{% else %}{{ dashboards_url }}?tab={{ tab|urlencode }}{% endif %}">Wyczyść filtry</a>{% elif tab == 'favorites' %}<a class="tasks-filter-button" href="{{ dashboards_url }}?tab=all">Wszystkie pulpity</a>{% else %}<a class="tasks-filter-button" href="{{ create_url }}" data-pulpit-open>Utwórz pulpit</a>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>

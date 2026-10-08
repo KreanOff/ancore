@@ -8,7 +8,8 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
 ## Przestrzenie i zespoły
 
 `spaces/base.html` rozszerza `core/base.html` i wspólny kontener katalogu.
-Katalog przestrzeni używa listy `tasks-directory-sheet`, `tasks-project-sheet`
+Katalog i zarządzanie przestrzeniami współdzielą `spaces/directory.html`
+z listą `tasks-directory-sheet`, `tasks-project-sheet`
 i `tasks-spreadsheet-sheet`, tak jak projekty i grupy. Wariant `work-space-sheet`
 określa kolumny: zaznaczenie, działania, klucz, nazwa, rodzaj, szablon, opis
 i liczba zadań. Pierwsze dwie kolumny mają po 40px, jak w Projektach.
@@ -52,10 +53,16 @@ obok tego paska. Oba warianty menu używają wspólnych klas i zachowują zwijan
 zmianę szerokości oraz mobilne otwieranie/zamykanie. `layout.js` przełącza
 widoczną nawigację również przy częściowym przejściu, powrocie i historii
 przeglądarki. Bezpośrednie wejście do kreatora/edycji używa trybu administracyjnego.
-`work-space-sheet--management` dodaje kolumny
-lidera, sposobu zarządzania, aktywności dostępnych zadań oraz menu wiersza.
-Korzysta ze wspólnego formularza, awatarów, `row-actions.js`, filtrów,
-paginacji i zmiany szerokości kolumn. Nazwa przestrzeni otwiera ustawienia.
+Tabela ma te same kolumny, szerokości i awatary co „Przestrzenie”: checkbox,
+menu z trzema paskami, Klucz, Przestrzeń, Rodzaj, Szablon, Opis i Zadania.
+Checkboxy zaznaczają tylko bieżącą stronę, bez operacji zbiorczych.
+`work-space-sheet--management` wybiera osobny klucz `spaces-management`
+dla preferencji kolumn w `tasks.js`, wspólny dla zwykłego i scoped URL;
+nie nadpisuje wspólnej siatki. Filtry rodzaju i sposobu zarządzania są po lewej,
+wyszukiwarka i paginacja po prawej. Nazwa przestrzeni otwiera ustawienia.
+Wspólne menu `spaces/directory_row_actions.html` zachowuje osobistą gwiazdkę,
+otwarcie, edycję, ustawienia dostępu i konfigurację zadań według uprawnień.
+Formularze, `row-actions.js` i obsługa częściowej nawigacji pozostają wspólne.
 Menu „…” w głównej nawigacji zawiera wyłącznie „Zarządzaj przestrzeniami”;
 dostępność zarządzania odświeża się po częściowej nawigacji.
 Skrót Favorites „Przestrzenie” pozostaje aktywny tylko w codziennym module,
@@ -2218,7 +2225,8 @@ porzucenia zmian. Pobranie/zapis/usunięcie pokazują błędy umożliwiające po
 
 System „Pulpity” rozszerza Dashboard przez `dashboard/pulpits/base.html`,
 wspólne paski, przyciski, `row-actions.js` i `AncoreCustomSelect`.
-Katalog korzysta z powłoki `work-page` i tabeli Przestrzeni:
+Katalog i zarządzanie współdzielą `dashboard/pulpits/directory.html`
+oraz tabelę Przestrzeni w powłoce `work-page`:
 `tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable
 tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet`.
 Minimalny wariant `pulpit-directory-sheet` w `components/pulpits.css` określa
@@ -2362,13 +2370,16 @@ Wspólny flyout ma nagłówek poza przewijanym obszarem,
 aby linki i akcje pozostały dostępne również przy wielu pozycjach.
 
 „Zarządzaj pulpitami” używa powłoki `work-page--management`, pasków
-`tasks-topbar--directory`, `work-item-toolbar`, paginacji w toolbarze i wierszy
-`tasks-directory-sheet tasks-project-sheet`, tak jak „Zarządzaj przestrzeniami”.
-Wariant `pulpit-management-sheet` zmienia wyłącznie siatkę kolumn odpowiadającą
-danym pulpitu. Wspólny menedżer w `tasks.js` zna szerokości tych kolumn;
-osobny klucz `pulpits-management` zachowuje preferencje między zwykłym i scoped
-adresem, bez zmieniania tabel Przestrzeni. Twórca korzysta ze wspólnego awatara; gwiazdka, menu wiersza,
-fokus, błędy i puste stany pozostają wspólne. Nazwa otwiera edytor gadżetów,
+`tasks-topbar--directory`, `work-item-toolbar` i paginacji w toolbarze.
+Lista używa tego samego include'a, klas i szerokości kolumn co „Pulpity”:
+checkbox, menu z trzema paskami, Pulpit, Twórca, Widoczność, Gadżety i Opis.
+Twórca jest tekstem, a osobista gwiazdka znajduje się w menu wiersza.
+Filtry widoczności i gwiazdki pozostają po lewej, wyszukiwarka i paginacja po prawej.
+Checkboxy zaznaczają tylko bieżącą stronę, bez operacji zbiorczych.
+Klasa `pulpit-management-sheet` wybiera osobny klucz `pulpits-management`
+w `tasks.js`; nie nadpisuje wspólnej siatki `pulpit-directory-sheet`.
+Preferencje szerokości pozostają wspólne dla zwykłego i scoped adresu zarządzania,
+niezależne od katalogu. Nazwa otwiera edytor gadżetów,
 „Utwórz pulpit” modal nad katalogiem. Anulowanie i zapis edycji wracają
 do tego katalogu z jego filtrami; błąd pozostaje na stronie edycji.
 Tworzenie i usunięcie zachowują katalog oraz filtry. Filtry widoczności
