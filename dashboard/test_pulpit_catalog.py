@@ -29,12 +29,14 @@ class GadgetCatalogTests(TestCase):
         session[ACTIVE_WORKPLACE_SESSION_KEY] = self.workplace.pk
         session.save()
 
-    def add(self, kind='summary', revision=0, path=None, client=None):
+    def add(self, kind='progress', revision=0, path=None, client=None):
         return (client or self.client).post(path or f'/dashboards/{self.dashboard.pk}/gadgets/quick-add/',
                                            json.dumps({'kind': kind, 'revision': revision}), content_type='application/json')
 
-    def test_quick_add_all_kinds_balances_columns_and_returns_real_gadgets(self):
-        for revision, kind in enumerate(DashboardGadget.Kind.values):
+    def test_quick_add_progress_balances_columns_and_returns_real_gadgets(self):
+        self.assertEqual(DashboardGadget.Kind.values, ['progress'])
+        for revision in range(5):
+            kind = 'progress'
             response = self.add(kind, revision)
             self.assertEqual(response.status_code, 200)
             result = response.json()
@@ -44,9 +46,15 @@ class GadgetCatalogTests(TestCase):
             self.assertEqual((result['revision'], result['gadget_count']), (revision + 1, revision + 1))
             self.assertIn(f'data-pulpit-gadget="{gadget.pk}"', result['html'])
             self.assertIn('data-pulpit-drag', result['html'])
-            self.assertEqual((gadget.assignee, gadget.group_by, gadget.limit), ('all', 'status', 10))
+            self.assertEqual(gadget.assignee, 'all')
+            self.assertIn('Zamknięte: 0 z 0', result['html'])
+            self.assertIn('dashboard-overview-statuses', result['html'])
         editor = self.client.get(f'/dashboards/{self.dashboard.pk}/gadgets/')
-        self.assertContains(editor, 'data-pulpit-catalog-item', count=5)
+        self.assertContains(editor, 'data-pulpit-catalog-item', count=1)
+        self.assertContains(editor, 'data-pulpit-quick-add="progress"', count=1)
+        for kind in ['assigned', 'results', 'summary', 'statistics', 'activity']:
+            self.assertNotContains(editor, f'data-pulpit-quick-add="{kind}"')
+            self.assertEqual(self.add(kind, revision=5).status_code, 400)
 
     def test_stale_revision_rejects_repeated_add_without_creating_duplicates(self):
         self.assertEqual(self.add().status_code, 200)
@@ -62,7 +70,7 @@ class GadgetCatalogTests(TestCase):
             self.assertEqual(self.client.post(path, body, content_type='application/json').status_code, 400)
         self.assertEqual(self.add(kind='foreign').status_code, 400)
         self.assertFalse(self.dashboard.gadgets.exists())
-        DashboardGadget.objects.bulk_create([DashboardGadget(dashboard=self.dashboard, kind='summary') for _ in range(24)])
+        DashboardGadget.objects.bulk_create([DashboardGadget(dashboard=self.dashboard, kind='progress') for _ in range(24)])
         response = self.add()
         self.assertEqual(response.status_code, 400)
         self.assertIn('maksymalnie 24', response.json()['error'])

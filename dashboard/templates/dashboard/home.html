@@ -68,12 +68,7 @@
             <div class="dashboard-overview-column">
             <section class="dashboard-panel" aria-labelledby="dashboard-progress-title">
                 <header class="dashboard-panel-header"><h2 id="dashboard-progress-title">Postęp pracy</h2><i data-icon="chart-no-axes-combined" aria-hidden="true"></i></header>
-                <div class="dashboard-overview-progress">
-                    <div class="dashboard-overview-progress-total"><strong>{{ dashboard_completed_percent }}<span>%</span></strong><span>Zamknięte: {{ dashboard_closed_count }} z {{ dashboard_totals.total }}</span></div>
-                    <progress max="100" value="{{ dashboard_completed_percent }}" aria-label="Odsetek zamkniętych zadań">{{ dashboard_completed_percent }}%</progress>
-                    <p class="dashboard-overview-caption">Zadania we wszystkich przestrzeniach Workspace</p>
-                    <dl class="dashboard-overview-statuses">{% for status in dashboard_statuses %}<div><dt><span class="status-indicator status-{{ status.key }}" aria-hidden="true"></span>{{ status.label }}</dt><dd>{{ status.count }}</dd></div>{% endfor %}</dl>
-                </div>
+                {% include 'dashboard/includes/work_progress.html' with percent=dashboard_completed_percent closed=dashboard_closed_count total=dashboard_totals.total statuses=dashboard_statuses caption='Zadania we wszystkich przestrzeniach Workspace' only %}
             </section>
 
             <section class="dashboard-panel" aria-labelledby="dashboard-agenda-title">

@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 36 | 63 | 41 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 31 | 9 | 29 | 193 |
+| [dashboard](../dashboard) | 32 | 10 | 29 | 197 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -582,7 +582,7 @@ Metody/properties: `column_count`, `__str__`.
 
 Źródło: [dashboard/models.py](../dashboard/models.py).
 
-Pola zadeklarowane tutaj: `dashboard` (ForeignKey), `kind` (CharField), `title` (CharField), `space` (ForeignKey), `status` (CharField), `assignee` (CharField), `group_by` (CharField), `limit` (PositiveSmallIntegerField), `column` (PositiveSmallIntegerField), `position` (PositiveSmallIntegerField).
+Pola zadeklarowane tutaj: `dashboard` (ForeignKey), `kind` (CharField), `title` (CharField), `space` (ForeignKey), `assignee` (CharField), `column` (PositiveSmallIntegerField), `position` (PositiveSmallIntegerField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -1336,7 +1336,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/pulpit_navigation.py](../dashboard/pulpit_navigation.py) — `sidebar_dashboards`
 - [dashboard/pulpit_urls.py](../dashboard/pulpit_urls.py)
 - [dashboard/pulpit_views.py](../dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `management_context`, `manage`, `detail`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
-- [dashboard/pulpits.py](../dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `decorate_dashboard`, `task_url`, `decorate_gadget`, `gadget_data`, `detail_context`
+- [dashboard/pulpits.py](../dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `decorate_dashboard`, `decorate_gadget`, `gadget_data`, `detail_context`
 - [dashboard/recent.py](../dashboard/recent.py) — `remember_view`, `recent_views`
 - [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`
 - [dashboard/urls.py](../dashboard/urls.py)
@@ -1535,6 +1535,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/templates/dashboard/includes/notification_list.html](../dashboard/templates/dashboard/includes/notification_list.html)
 - [dashboard/templates/dashboard/includes/notification_pagination.html](../dashboard/templates/dashboard/includes/notification_pagination.html)
 - [dashboard/templates/dashboard/includes/settings_row.html](../dashboard/templates/dashboard/includes/settings_row.html)
+- [dashboard/templates/dashboard/includes/work_progress.html](../dashboard/templates/dashboard/includes/work_progress.html)
 - [dashboard/templates/dashboard/pulpits/actions.html](../dashboard/templates/dashboard/pulpits/actions.html)
 - [dashboard/templates/dashboard/pulpits/base.html](../dashboard/templates/dashboard/pulpits/base.html)
 - [dashboard/templates/dashboard/pulpits/canvas.html](../dashboard/templates/dashboard/pulpits/canvas.html)
@@ -1546,7 +1547,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/templates/dashboard/pulpits/fields.html](../dashboard/templates/dashboard/pulpits/fields.html)
 - [dashboard/templates/dashboard/pulpits/form.html](../dashboard/templates/dashboard/pulpits/form.html)
 - [dashboard/templates/dashboard/pulpits/gadget.html](../dashboard/templates/dashboard/pulpits/gadget.html)
-- [dashboard/templates/dashboard/pulpits/gadget_empty.html](../dashboard/templates/dashboard/pulpits/gadget_empty.html)
 - [dashboard/templates/dashboard/pulpits/gadget_preview.html](../dashboard/templates/dashboard/pulpits/gadget_preview.html)
 - [dashboard/templates/dashboard/pulpits/gadgets.html](../dashboard/templates/dashboard/pulpits/gadgets.html)
 - [dashboard/templates/dashboard/pulpits/index.html](../dashboard/templates/dashboard/pulpits/index.html)
@@ -2038,7 +2038,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_pulpits.py](../dashboard/test_pulpits.py).
 
-- `PulpitTests`: 29 metod testowych.
+- `PulpitTests`: 32 metod testowych.
 
 ### dashboard/test_reminders.py
 
@@ -2051,6 +2051,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [dashboard/test_search_regressions.py](../dashboard/test_search_regressions.py).
 
 - `GlobalSearchRegressionTests`: 13 metod testowych.
+
+### dashboard/test_work_progress_migration.py
+
+Źródło: [dashboard/test_work_progress_migration.py](../dashboard/test_work_progress_migration.py).
+
+- `WorkProgressMigrationTests`: 1 metod testowych.
 
 ### dashboard/test_workspace_invitations.py
 
@@ -2378,6 +2384,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [dashboard/migrations/0007_dashboard_dashboardgadget_and_more.py](../dashboard/migrations/0007_dashboard_dashboardgadget_and_more.py)
 - [dashboard/migrations/0008_dashboardgroup.py](../dashboard/migrations/0008_dashboardgroup.py)
 - [dashboard/migrations/0009_remove_dashboard_groups.py](../dashboard/migrations/0009_remove_dashboard_groups.py)
+- [dashboard/migrations/0010_work_progress_gadget.py](../dashboard/migrations/0010_work_progress_gadget.py)
 
 ### planner
 

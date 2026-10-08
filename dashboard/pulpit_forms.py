@@ -1,7 +1,6 @@
 from django import forms
 
 from spaces.services import visible_spaces
-from tasks.models import Task
 from workplaces.services import workplace_people
 from .models import Dashboard, DashboardGadget
 from .pulpits import AVAILABLE_GADGET_KINDS, GADGET_CATALOG, GADGET_ICONS
@@ -88,14 +87,11 @@ class GadgetKindSelect(forms.Select):
 
 
 class GadgetForm(forms.ModelForm):
-    status = forms.ChoiceField(label='Status', required=False, choices=[('', 'Wszystkie statusy'), *Task.STATUS_CHOICES])
     assignee = forms.ChoiceField(label='Przypisanie', choices=[('all', 'Wszyscy'), ('me', 'Przypisane do oglądającego'), ('unassigned', 'Bez wykonawcy')])
-    group_by = forms.ChoiceField(label='Grupowanie statystyk', choices=[('status', 'Status'), ('priority', 'Priorytet'), ('assignee', 'Wykonawca')])
-    limit = forms.TypedChoiceField(label='Liczba wyników', coerce=int, choices=[(5, '5'), (10, '10'), (20, '20')])
 
     class Meta:
         model = DashboardGadget
-        fields = ['kind', 'title', 'space', 'status', 'assignee', 'group_by', 'limit']
+        fields = ['kind', 'title', 'space', 'assignee']
         widgets = {'kind': GadgetKindSelect}
 
     def __init__(self, *args, request, **kwargs):
@@ -106,9 +102,7 @@ class GadgetForm(forms.ModelForm):
         self.fields['space'].empty_label = 'Wszystkie dostępne przestrzenie'
         self.fields['space'].label_from_instance = lambda space: space.project.name
         self.fields['title'].help_text = 'Puste pole używa nazwy gadżetu.'
-        self.fields['kind'].help_text = 'Przypisane do mnie pokazuje otwarte zadania osoby oglądającej pulpit.'
-        self.fields['group_by'].help_text = 'Dotyczy gadżetu „Statystyki zadań”.'
-        self.fields['limit'].help_text = 'Liczba widocznych zadań lub wpisów aktywności.'
+        self.fields['kind'].help_text = 'Postęp pracy pokazuje odsetek zamkniętych zadań i liczby zadań według statusu.'
         if self.instance.space_id and not self.fields['space'].queryset.filter(pk=self.instance.space_id).exists():
             self.fields['space'].help_text = 'Ta przestrzeń jest już niedostępna. Wybierz dostępne źródło danych.'
         style_fields(self)

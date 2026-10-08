@@ -75,13 +75,13 @@ class PulpitTests(TestCase):
                         self.assertNotContains(response, 'data-pulpit-gadget=')
                         self.assertFalse(dashboard.gadgets.exists())
                     response = self.client.post(detail_url + 'gadgets/add/', {
-                        'kind': 'statistics', 'title': '', 'status': '',
-                        'assignee': 'all', 'group_by': 'status', 'limit': 10,
+                        'kind': 'progress', 'title': '', 'status': '',
+                        'assignee': 'all',
                     }, **headers)
                     self.assertEqual(response.status_code, 200 if modal else 302)
-                    self.assertEqual(dashboard.gadgets.get().kind, 'statistics')
+                    self.assertEqual(dashboard.gadgets.get().kind, 'progress')
                     response = self.client.get(detail_url)
-                    self.assertContains(response, 'Statystyki zadań')
+                    self.assertContains(response, 'Postęp pracy')
                     self.assertNotContains(response, 'Ten pulpit jest pusty.')
 
     def test_private_selected_workspace_and_revoked_membership(self):
@@ -101,7 +101,7 @@ class PulpitTests(TestCase):
 
     def test_viewing_and_editing_gadgets_are_separate_for_the_creator(self):
         dashboard = self.dashboard()
-        DashboardGadget.objects.create(dashboard=dashboard, kind='statistics')
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
             response = self.client.get(f'{prefix}{dashboard.pk}/')
             self.assertFalse(response.context['pulpits_management_mode'])
@@ -129,7 +129,7 @@ class PulpitTests(TestCase):
 
     def test_direct_gadget_forms_use_editor_background_and_return_to_editor(self):
         dashboard = self.dashboard()
-        values = {'kind': 'statistics', 'title': 'Statystyki', 'status': '', 'assignee': 'all', 'group_by': 'priority', 'limit': 10}
+        values = {'kind': 'progress', 'title': 'Statystyki', 'assignee': 'all'}
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
             with self.subTest(prefix=prefix):
                 editor_url = f'{prefix}{dashboard.pk}/gadgets/'
@@ -176,7 +176,7 @@ class PulpitTests(TestCase):
 
     def test_read_only_member_cannot_change_dashboard_or_gadgets(self):
         dashboard = self.dashboard(visibility='workspace')
-        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
+        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
         self.login(self.member)
         paths = ['edit/', 'access/', 'delete/', 'arrange/', 'gadgets/add/', f'gadgets/{gadget.pk}/edit/', f'gadgets/{gadget.pk}/delete/']
         for path in paths:
@@ -209,18 +209,16 @@ class PulpitTests(TestCase):
         response = self.client.get(self.url(dashboard))
         self.assertEqual(response.status_code, 200)
         data = [entry for column in response.context['columns'] for entry in column]
-        self.assertEqual([entry['count'] for entry in data if entry['gadget'].kind != 'activity'], [1]*4)
-        activity = next(entry for entry in data if entry['gadget'].kind == 'activity')
-        self.assertEqual(activity['count'], 1)
-        self.assertEqual([row['action'] for row in activity['rows']], ['Utworzono zadanie'])
-        self.assertContains(response, visible.title)
+        self.assertEqual([entry['count'] for entry in data], [1])
+        self.assertEqual(data[0]['percent'], 0)
+        self.assertContains(response, 'Zamknięte: 0 z 1')
         for text in ['Tajny tytuł', 'Tajne podzadanie', 'Z innego Workspace', 'Inny właściciel', 'Sekretna przestrzeń']:
             self.assertNotContains(response, text)
 
     def test_inaccessible_space_returns_no_metadata_or_fallback_data(self):
         dashboard = self.dashboard(visibility='workspace')
         project = TaskProject.objects.create(user=self.owner, workplace=self.workplace, name='Nazwa tajnej przestrzeni', visibility='private', private_owner=self.owner)
-        DashboardGadget.objects.create(dashboard=dashboard, kind='summary', space=project.space)
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project.space)
         self.task()
         self.login(self.member)
         response = self.client.get(self.url(dashboard))
@@ -230,7 +228,7 @@ class PulpitTests(TestCase):
 
     def test_retired_copy_routes_return_404_without_changing_configuration(self):
         dashboard = self.dashboard(visibility='workspace', layout='three')
-        DashboardGadget.objects.create(dashboard=dashboard, kind='results', title='Pilne', status='new', column=2, position=3)
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', title='Pilne', column=2, position=3)
         dashboard.shared_with.add(self.member)
         dashboard.favorited_by.add(self.owner)
         dashboards_before = list(Dashboard.objects.values())
@@ -269,8 +267,8 @@ class PulpitTests(TestCase):
 
     def test_arrangement_validates_complete_set_and_revision(self):
         dashboard = self.dashboard()
-        a = DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
-        b = DashboardGadget.objects.create(dashboard=dashboard, kind='statistics')
+        a = DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
+        b = DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
         def arrange(columns, revision=0, layout='equal'):
             return self.client.post(self.url(dashboard, 'arrange/'), json.dumps({'layout': layout, 'columns': columns, 'revision': revision}), content_type='application/json')
         for columns in [[[a.pk], []], [[a.pk], [a.pk]], [[a.pk], [999999]]]:
@@ -285,7 +283,7 @@ class PulpitTests(TestCase):
 
     def test_settings_edit_keeps_layout_and_gadgets_and_stales_old_arrangement(self):
         dashboard = self.dashboard(layout='three')
-        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary', column=2)
+        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='progress', column=2)
         response = self.client.post(self.url(dashboard, 'edit/'), self.form_data(layout='single'))
         self.assertEqual(response.status_code, 302)
         gadget.refresh_from_db();dashboard.refresh_from_db()
@@ -296,15 +294,15 @@ class PulpitTests(TestCase):
         }), content_type='application/json')
         self.assertEqual(stale.status_code, 409)
 
-    def test_gadget_config_rejects_foreign_source_limit_and_arbitrary_status(self):
+    def test_gadget_config_rejects_foreign_source_and_invalid_assignment(self):
         dashboard = self.dashboard()
         foreign = TaskProject.objects.create(user=self.owner, workplace=self.other, name='Obca przestrzeń')
-        values = {'kind': 'statistics', 'title': '', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}
-        for extra in [{'space': foreign.space.pk}, {'limit': 1000}, {'status': 'unknown'}, {'kind': 'unknown'}]:
+        values = {'kind': 'progress', 'title': '', 'assignee': 'all'}
+        for extra in [{'space': foreign.space.pk}, {'assignee': 'unknown'}, {'kind': 'unknown'}]:
             response = self.client.post(self.url(dashboard, 'gadgets/add/'), {**values, **extra}, HTTP_X_PULPIT_MODAL='true')
             self.assertEqual(response.status_code, 400)
-            if 'status' in extra:
-                self.assertEqual(response.json()['html'].count('id="id_status_error"'), 1)
+            if 'assignee' in extra:
+                self.assertEqual(response.json()['html'].count('id="id_assignee_error"'), 1)
         self.assertFalse(dashboard.gadgets.exists())
         response = self.client.post(self.url(dashboard, 'gadgets/add/'), values)
         self.assertEqual(response.status_code, 302)
@@ -326,7 +324,7 @@ class PulpitTests(TestCase):
 
     def test_delete_only_removes_configuration(self):
         dashboard = self.dashboard()
-        DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
         task = self.task()
         self.assertEqual(self.client.post(self.url(dashboard, 'delete/')).status_code, 302)
         self.assertFalse(Dashboard.objects.exists())
@@ -343,10 +341,11 @@ class PulpitTests(TestCase):
         self.client.logout()
         self.assertEqual(self.client.get(reverse('pulpits:index')).status_code, 302)
 
-    def test_filter_statistics_and_assigned_are_viewer_specific(self):
+    def test_progress_assignment_filters_are_viewer_specific(self):
         dashboard = self.dashboard(visibility='workspace')
-        DashboardGadget.objects.create(dashboard=dashboard, kind='assigned')
-        DashboardGadget.objects.create(dashboard=dashboard, kind='statistics', group_by='priority')
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', assignee='me')
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', assignee='unassigned')
         self.task(priority='urgent', assignee=self.member)
         self.task(priority='urgent', assignee=self.owner, status='closed')
         self.task(priority='low')
@@ -354,28 +353,91 @@ class PulpitTests(TestCase):
         response = self.client.get(self.url(dashboard))
         data = response.context['columns'][0]
         self.assertEqual(data[0]['count'], 1)
-        self.assertEqual(data[1]['rows'][0], {'label': 'Pilny', 'count': 2, 'percent': 67})
+        self.assertEqual((data[1]['count'], data[1]['closed_count'], data[1]['percent']), (3, 1, 33))
+        self.assertEqual(data[2]['count'], 1)
+        self.login(self.owner)
+        response = self.client.get(self.url(dashboard))
+        self.assertEqual(response.context['columns'][0][0]['percent'], 100)
+
+    def test_progress_counts_all_main_tasks_and_reopened_status(self):
+        dashboard = self.dashboard()
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
+        for status, _label in Task.STATUS_CHOICES:
+            for _ in range(6):
+                self.task(status=status)
+        closed = Task.objects.filter(status='closed').first()
+        self.task(parent=closed, status='closed')
+        for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            response = self.client.get(f'{prefix}{dashboard.pk}/')
+            data = response.context['columns'][0][0]
+            self.assertEqual((data['count'], data['closed_count'], data['percent']), (30, 6, 20))
+            self.assertEqual(data['statuses'], [
+                {'key': key, 'label': label, 'count': 6} for key, label in Task.STATUS_CHOICES
+            ])
+            self.assertContains(response, 'Zamknięte: 6 z 30')
+            self.assertContains(response, 'value="20"')
+        closed.status = 'reopened'
+        closed.save()
+        data = self.client.get(scoped_workplace_app_path(self.workplace, 'dashboards', f'{dashboard.pk}/')).context['columns'][0][0]
+        self.assertEqual((data['count'], data['closed_count'], data['percent']), (30, 5, 17))
+        self.assertEqual(next(row['count'] for row in data['statuses'] if row['key'] == 'reopened'), 7)
+
+    def test_progress_empty_state_matches_reference_card(self):
+        dashboard = self.dashboard()
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
+        response = self.client.get(self.url(dashboard))
+        data = response.context['columns'][0][0]
+        self.assertEqual((data['count'], data['closed_count'], data['percent']), (0, 0, 0))
+        self.assertEqual([row['count'] for row in data['statuses']], [0] * 5)
+        self.assertContains(response, 'Zamknięte: 0 z 0')
+        self.assertContains(response, 'Zadania we wszystkich przestrzeniach Workspace')
+        self.assertTemplateUsed(response, 'dashboard/includes/work_progress.html')
+        self.assertTemplateUsed(self.client.get('/'), 'dashboard/includes/work_progress.html')
+
+    def test_progress_filters_space_and_private_tasks_without_granting_access(self):
+        dashboard = self.dashboard(visibility='workspace')
+        project = TaskProject.objects.create(user=self.owner, workplace=self.workplace, name='Wybrane źródło')
+        section = TaskSection.objects.create(project=project, title='Publiczna grupa')
+        hidden_section = TaskSection.objects.create(project=project, title='Prywatna grupa', visibility='private', private_owner=self.owner)
+        self.task(section=section, status='closed')
+        self.task(section=section, status='new')
+        self.task(section=section, status='closed', visibility='private', private_owner=self.owner, assignee=self.member)
+        self.task(section=hidden_section, status='closed', assignee=self.member)
+        self.task(status='closed')
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project.space)
+        self.login(self.member)
+        response = self.client.get(self.url(dashboard))
+        data = response.context['columns'][0][0]
+        self.assertEqual((data['count'], data['closed_count'], data['percent']), (2, 1, 50))
+        self.assertContains(response, 'Zadania w przestrzeni Wybrane źródło')
+        project.visibility = 'private'
+        project.private_owner = self.owner
+        project.save()
+        response = self.client.get(self.url(dashboard))
+        self.assertTrue(response.context['columns'][0][0]['unavailable'])
+        self.assertNotContains(response, project.name)
+        self.assertNotContains(response, 'Zamknięte:')
 
     def test_deleting_space_cannot_broaden_saved_filter(self):
         dashboard = self.dashboard()
         project = TaskProject.objects.create(user=self.owner, workplace=self.workplace, name='Źródło')
-        DashboardGadget.objects.create(dashboard=dashboard, kind='results', space=project.space)
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project.space)
         project.space.delete()
         self.assertFalse(dashboard.gadgets.exists())
 
     def test_gadget_cap_and_failed_form_preserve_existing_configuration(self):
         dashboard = self.dashboard()
-        DashboardGadget.objects.bulk_create([DashboardGadget(dashboard=dashboard, kind='summary', position=i) for i in range(24)])
+        DashboardGadget.objects.bulk_create([DashboardGadget(dashboard=dashboard, kind='progress', position=i) for i in range(24)])
         response = self.client.post(self.url(dashboard, 'gadgets/add/'),
-                                    {'kind': 'assigned', 'title': 'Zachowany szkic', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}, HTTP_X_PULPIT_MODAL='true')
+                                    {'kind': 'progress', 'title': 'Zachowany szkic', 'assignee': 'all'}, HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.status_code, 400)
         self.assertIn('Zachowany szkic', response.json()['html'])
         self.assertIn('maksymalnie 24', response.json()['html'])
         self.assertEqual(dashboard.gadgets.count(), 24)
 
-    def test_all_five_gadgets_are_available_for_add_and_edit(self):
+    def test_only_progress_is_available_for_add_and_edit(self):
         dashboard = self.dashboard()
-        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
+        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
             for suffix in ['gadgets/add/', f'gadgets/{gadget.pk}/edit/']:
                 for modal in [False, True]:
@@ -386,14 +448,18 @@ class PulpitTests(TestCase):
                         html = response.json()['html'] if modal else response.content.decode()
                         for kind in DashboardGadget.Kind.values:
                             self.assertIn(f'<option value="{kind}"', html)
+                        for kind in ['assigned', 'results', 'summary', 'statistics', 'activity']:
+                            self.assertNotIn(f'<option value="{kind}"', html)
+                        for field in ['status', 'group_by', 'limit']:
+                            self.assertNotIn(f'name="{field}"', html)
 
     def test_unknown_gadget_kinds_cannot_be_saved_and_preserve_existing_data(self):
         dashboard = self.dashboard()
-        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary', title='Zapisany gadżet')
-        values = {'title': 'Nowy tytuł', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}
+        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='progress', title='Zapisany gadżet')
+        values = {'title': 'Nowy tytuł', 'assignee': 'all'}
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
             for suffix in ['gadgets/add/', f'gadgets/{gadget.pk}/edit/']:
-                for kind in ['unknown', '<script>']:
+                for kind in ['unknown', '<script>', 'assigned', 'results', 'summary', 'statistics', 'activity']:
                     with self.subTest(prefix=prefix, suffix=suffix, kind=kind):
                         response = self.client.post(f'{prefix}{dashboard.pk}/{suffix}', {**values, 'kind': kind}, HTTP_X_PULPIT_MODAL='true')
                         self.assertEqual(response.status_code, 400)
@@ -401,18 +467,18 @@ class PulpitTests(TestCase):
                         self.assertEqual(dashboard.gadgets.count(), 1)
                         gadget.refresh_from_db()
                         dashboard.refresh_from_db()
-                        self.assertEqual((gadget.kind, gadget.title, dashboard.revision), ('summary', 'Zapisany gadżet', 0))
+                        self.assertEqual((gadget.kind, gadget.title, dashboard.revision), ('progress', 'Zapisany gadżet', 0))
 
     def test_all_available_kinds_can_be_added_and_reconfigured(self):
         dashboard = self.dashboard()
-        values = {'title': '', 'status': '', 'assignee': 'all', 'group_by': 'priority', 'limit': 5}
+        values = {'title': '', 'assignee': 'all'}
         for kind in DashboardGadget.Kind.values:
             with self.subTest(kind=kind):
                 response = self.client.post(self.url(dashboard, 'gadgets/add/'), {**values, 'kind': kind})
                 self.assertEqual(response.status_code, 302)
                 gadget = dashboard.gadgets.filter(kind=kind).latest('pk')
-                self.assertEqual((gadget.group_by, gadget.limit), ('priority', 5))
-                legacy = DashboardGadget.objects.create(dashboard=dashboard, kind='results')
+                self.assertEqual(gadget.assignee, 'all')
+                legacy = DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
                 response = self.client.post(self.url(dashboard, f'gadgets/{legacy.pk}/edit/'), {**values, 'kind': kind})
                 self.assertEqual(response.status_code, 302)
                 legacy.refresh_from_db()

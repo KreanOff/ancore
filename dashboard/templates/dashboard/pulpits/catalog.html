@@ -3,10 +3,8 @@
     <div class="pulpit-catalog-controls">
         <label class="tasks-search-field"><i data-icon="search" aria-hidden="true"></i><input type="search" placeholder="Szukaj gadżetów" aria-label="Szukaj gadżetów" data-pulpit-catalog-search></label>
         <div class="pulpit-catalog-categories" role="group" aria-label="Kategorie gadżetów">
-            <button type="button" class="tasks-filter-button" data-pulpit-category="all" aria-pressed="true">Wszystkie <span>5</span></button>
-            <button type="button" class="tasks-filter-button" data-pulpit-category="tasks" aria-pressed="false">Zadania <span>2</span></button>
-            <button type="button" class="tasks-filter-button" data-pulpit-category="charts" aria-pressed="false">Statystyki <span>2</span></button>
-            <button type="button" class="tasks-filter-button" data-pulpit-category="activity" aria-pressed="false">Aktywność <span>1</span></button>
+            <button type="button" class="tasks-filter-button" data-pulpit-category="all" aria-pressed="true">Wszystkie <span>{{ gadget_catalog|length }}</span></button>
+            <button type="button" class="tasks-filter-button" data-pulpit-category="charts" aria-pressed="false">Statystyki <span>{{ gadget_catalog|length }}</span></button>
         </div>
         <p class="pulpit-catalog-hint">Dodaj gadżet, a potem dopasuj jego filtry w menu „Konfiguruj”.</p>
         <div class="tasks-modal__errors" role="alert" data-pulpit-catalog-error hidden></div>

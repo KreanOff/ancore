@@ -282,5 +282,4 @@ def for_you_context(request):
         'for_you_filtered': bool(search or space_filter),
         'for_you_clear_url': f'{base_url}?{urlencode({"tab": tab})}',
         'for_you_projects_url': scoped_workplace_app_path(workplace, 'spaces'),
-        'for_you_tasks_url': scoped_workplace_app_path(workplace, 'spaces', 'items/', 'assignee=me'),
     }

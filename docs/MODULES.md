@@ -660,20 +660,19 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Konfiguracja i kolejność są zapisywane w PostgreSQL. Zmiana układu i kolejności
   zapisuje się automatycznie, także dla pustego pulpitu; błąd lub konflikt rewizji
   przywraca poprzedni układ i pokazuje komunikat. Dostęp do edytora ma wyłącznie twórca.
-  Katalog boczny oferuje pięć gadżetów: Przypisane do mnie, Wyniki filtra,
-  Podsumowanie zadań, Statystyki zadań i Ostatnia aktywność. Wyszukiwanie oraz
-  kategorie pomagają je znaleźć. „Dodaj” zapisuje domyślne filtry i dołącza gadżet
+  Katalog boczny oferuje jeden rodzaj gadżetu: „Postęp pracy”, w kategorii
+  Statystyki. Wyszukiwanie pomaga go znaleźć. „Dodaj” zapisuje domyślne filtry i dołącza gadżet
   do najmniej zapełnionej kolumny, pozostawiając katalog otwarty. Menu „Konfiguruj”
   pozwala następnie dopasować źródło, tytuł i filtry. Dodawanie sprawdza rewizję
   konfiguracji, limit i aktualne uprawnienia; konflikt wymaga odświeżenia.
-  Filtry obejmują przestrzeń,
-  kategorię statusu i wykonawcę (wszyscy, oglądający, bez wykonawcy).
-  Statystyki grupują po kategorii statusu, priorytecie lub wykonawcy
-  (do 20 grup); listy pokazują 5, 10 lub 20 wyników, maksymalnie 24 gadżety.
-  Gadżety uwzględniają dostępne podzadania. „Przypisane do mnie” pokazuje
-  otwarte zadania oglądającego, a status `closed` oznacza zakończenie.
-  Aktywność pokazuje autora, rodzaj operacji, zadanie i datę, bez treści
-  komentarzy. Nie ma automatycznego odświeżania ani zewnętrznych gadżetów;
+  Filtry obejmują przestrzeń i wykonawcę (wszyscy, oglądający, bez wykonawcy).
+  Gadżet pokazuje procent zamkniętych zadań, licznik „Zamknięte: X z Y”,
+  pasek postępu i pięć kategorii statusu. Liczy wszystkie dostępne zadania główne
+  bez podzadań, tak jak karta Dashboardu; tylko `closed` oznacza zakończenie.
+  Brak zadań daje 0% i pięć zer. Na pulpicie można dodać do 24 kart tego samego rodzaju,
+  np. dla różnych przestrzeni. Starsze rodzaje zastępuje migracja `dashboard.0010`:
+  jedna karta „Postęp pracy” na niepusty stary pulpit, bez dawnych filtrów i tytułów.
+  Puste pulpity pozostają puste. Nie ma automatycznego odświeżania ani zewnętrznych gadżetów;
   „Odśwież” w przeglądzie pulpitu pobiera aktualne dane. Szczegóły implementacji:
   [pulpits.py](../dashboard/pulpits.py), [widoki](../dashboard/pulpit_views.py)
   i [routing](../dashboard/pulpit_urls.py). Inspiracja funkcjonalna:

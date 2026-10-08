@@ -330,8 +330,8 @@ def gadget_quick_add(request, pk, management=False):
         return JsonResponse({'error': 'Pulpit zmieniono w innym oknie. Odśwież stronę przed dodaniem gadżetu.'}, status=409)
     if dashboard.gadgets.count() >= MAX_GADGETS:
         return JsonResponse({'error': f'Pulpit może zawierać maksymalnie {MAX_GADGETS} gadżety.'}, status=400)
-    form = GadgetForm({'kind': payload.get('kind'), 'title': '', 'status': '', 'assignee': 'all',
-                       'group_by': 'status', 'limit': 10}, request=request, instance=DashboardGadget(dashboard=dashboard))
+    form = GadgetForm({'kind': payload.get('kind'), 'title': '', 'assignee': 'all'},
+                      request=request, instance=DashboardGadget(dashboard=dashboard))
     if not form.is_valid():
         return JsonResponse({'error': 'Wybierz dostępny rodzaj gadżetu.'}, status=400)
     # Balance new gadgets across the actual persisted columns.

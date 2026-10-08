@@ -18,7 +18,7 @@ class PulpitEditorTests(TestCase):
         cls.dashboard = Dashboard.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner,
                                                  name='Przegląd zespołu', description='Opis', visibility='workspace', layout='three')
         cls.foreign = Dashboard.objects.create(owner=cls.owner, workplace=cls.other, created_by=cls.owner, name='Obcy pulpit', visibility='workspace')
-        cls.gadget = DashboardGadget.objects.create(dashboard=cls.dashboard, kind='summary', column=2)
+        cls.gadget = DashboardGadget.objects.create(dashboard=cls.dashboard, kind='progress', column=2)
 
     def setUp(self):
         self.login(self.owner)

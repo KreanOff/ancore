@@ -80,7 +80,7 @@ class PulpitManagementTests(TestCase):
 
     def test_gadget_editor_and_mutations_keep_management_filters(self):
         filters = '?q=Plan&visibility=private&favorite=starred&page=2'
-        values = {'kind': 'statistics', 'title': '', 'status': '', 'assignee': 'all', 'group_by': 'status', 'limit': 10}
+        values = {'kind': 'progress', 'title': '', 'assignee': 'all'}
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workspace, 'dashboards')]:
             with self.subTest(prefix=prefix):
                 base = f'{prefix}manage/{self.own.pk}/gadgets/'
@@ -120,7 +120,7 @@ class PulpitManagementTests(TestCase):
     def test_edit_and_delete_return_with_filters(self):
         filters = '?q=Plan&visibility=private&favorite=starred&page=2'
         self.own.favorited_by.add(self.owner)
-        gadget = DashboardGadget.objects.create(dashboard=self.own, kind='summary')
+        gadget = DashboardGadget.objects.create(dashboard=self.own, kind='progress')
         response = self.client.get(self.url(f'{self.own.pk}/edit/') + filters)
         self.assertTemplateUsed(response, 'dashboard/pulpits/edit.html')
         self.assertEqual(response.context['return_url'], self.url() + filters)
@@ -163,7 +163,7 @@ class PulpitManagementTests(TestCase):
                         owner=self.owner, workplace=self.workspace, created_by=self.owner, name='Usuwany pulpit',
                     )
                     pk = dashboard.pk
-                    gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
+                    gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
                     dashboard.favorited_by.add(self.owner)
                     url = prefix + ('manage/' if management else '') + f'{pk}/delete/' + filters
                     response = self.client.post(url, HTTP_X_PULPIT_MODAL='true')
@@ -189,7 +189,7 @@ class PulpitManagementTests(TestCase):
             self.assertTrue(Dashboard.objects.filter(pk=dashboard.pk).exists())
 
     def test_settings_save_and_cancel_preserve_destination_layout_and_access(self):
-        gadget = DashboardGadget.objects.create(dashboard=self.own, kind='statistics', column=1)
+        gadget = DashboardGadget.objects.create(dashboard=self.own, kind='progress', column=1)
         filters = '?q=Plan&visibility=private'
         for management in [False, True]:
             prefix = scoped_workplace_app_path(self.workspace, 'dashboards')

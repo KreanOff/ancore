@@ -42,20 +42,13 @@ class Dashboard(models.Model):
 
 class DashboardGadget(models.Model):
     class Kind(models.TextChoices):
-        ASSIGNED = 'assigned', 'Przypisane do mnie'
-        RESULTS = 'results', 'Wyniki filtra'
-        SUMMARY = 'summary', 'Podsumowanie zadań'
-        STATISTICS = 'statistics', 'Statystyki zadań'
-        ACTIVITY = 'activity', 'Ostatnia aktywność'
+        PROGRESS = 'progress', 'Postęp pracy'
 
     dashboard = models.ForeignKey(Dashboard, on_delete=models.CASCADE, related_name='gadgets')
-    kind = models.CharField('Gadżet', max_length=12, choices=Kind.choices)
+    kind = models.CharField('Gadżet', max_length=12, choices=Kind.choices, default=Kind.PROGRESS)
     title = models.CharField('Tytuł', max_length=150, blank=True)
     space = models.ForeignKey('spaces.Space', on_delete=models.CASCADE, null=True, blank=True, verbose_name='Przestrzeń')
-    status = models.CharField('Status', max_length=20, blank=True)
     assignee = models.CharField('Przypisanie', max_length=10, default='all')
-    group_by = models.CharField('Grupowanie statystyk', max_length=10, default='status')
-    limit = models.PositiveSmallIntegerField('Liczba wyników', default=10)
     column = models.PositiveSmallIntegerField(default=0)
     position = models.PositiveSmallIntegerField(default=0)
 

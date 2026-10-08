@@ -1,5 +1,0 @@
-{% load static %}
-<div class="pulpit-gadget-empty-state">
-    {% with art='img/pulpits/'|add:illustration|add:'.svg' %}<img class="pulpit-gadget-empty-art" src="{% static art %}" alt="" width="360" height="200">{% endwith %}
-    <p class="pulpit-gadget-empty">{{ message }}</p>
-</div>

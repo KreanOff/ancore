@@ -203,7 +203,7 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   Osobny edytor `/<pk>/gadgets/` i `/manage/<pk>/gadgets/` używa menu wybranego pulpitu;
   tylko twórca dodaje, konfiguruje, usuwa i układa gadżety. Bezpośrednie formularze
   gadżetów otwierają modal nad edytorem, a zapis wraca do edytora.
-  Panel katalogu w edytorze dodaje pięć rodzajów przez POST `gadgets/quick-add/`
+  Panel katalogu w edytorze dodaje wyłącznie „Postęp pracy” przez POST `gadgets/quick-add/`
   (również zarządzanie/scoped), zwracający HTML rzeczywistego gadżetu i rewizję.
   Blokada rekordu pulpitu chroni limit oraz układ przed równoczesnymi zmianami. Warianty
   zarządzania zachowują filtry katalogu; wszystkie adresy mają scoped odpowiedniki.

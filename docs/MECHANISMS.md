@@ -915,13 +915,24 @@ częściowej nawigacji, odświeżając nazwę, adresy, aktywną pozycję i fokus
 Źródło powrotu edytora przechowuje również wcześniejsze źródło katalogu;
 powrót oraz zwykły POST przywracają odpowiedni poziom zarządzania.
 
-Każdy gadżet ponownie stosuje `visible_to` do Tasks oraz historii oglądającego,
+Gadżet „Postęp pracy” ponownie stosuje `visible_to` do Tasks oglądającego,
 w zakresie właściciela i aktywnego Workspace. Filtr przestrzeni sprawdza
 `visible_spaces`; utrata dostępu daje komunikat bez jej nazwy, liczników ani
 poszerzania zakresu. Usunięcie źródłowej przestrzeni usuwa jej filtrowane gadżety
 przez CASCADE, zamiast zmieniać filtr na wszystkie zadania. Usunięcie pulpitu
-usuwa wyłącznie jego konfigurację i gadżety. Linki zadań zawierają numer `task_id`
-i stabilne `task_pk`; klucz wyświetlany pochodzi z `WorkItem`.
+usuwa wyłącznie jego konfigurację i gadżety. Postęp agreguje zadania główne
+po kanonicznym `Task.status`, bez limitu wyników; `closed / wszystkie × 100`
+jest zaokrąglany do całego procentu, a pusty zakres daje zero. `resolved` oraz
+`reopened` nie są zamknięte. Wybrana przestrzeń filtruje przez `work_item__space`,
+a przypisanie „me” dotyczy faktycznego oglądającego. Szablon
+`dashboard/includes/work_progress.html` współdzieli wygląd z Dashboardem.
+
+Migracja `dashboard.0010_work_progress_gadget` zastępuje starsze rodzaje jedną
+kartą na niepusty pulpit, w miejscu pierwszego gadżetu. Czyści tytuł i filtry
+zastępowanej karty, usuwa pozostałe stare karty oraz pola status/group_by/limit.
+Zachowuje konfigurację pulpitu, jego dostępy i gwiazdki; zwiększa rewizję
+zmienionych pulpitów, aby stare okno edytora nie nadpisało nowej listy kart.
+Puste pulpity i istniejące karty `progress` pozostają zachowane.
 
 Zapisy konfiguracji i układu blokują wiersz pulpitu w transakcji. Endpoint
 `arrange/` wymaga pełnej, nieduplikowanej listy gadżetów tego pulpitu w 1–3

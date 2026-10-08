@@ -1,0 +1,6 @@
+<div class="dashboard-overview-progress">
+    <div class="dashboard-overview-progress-total"><strong>{{ percent }}<span>%</span></strong><span>Zamknięte: {{ closed }} z {{ total }}</span></div>
+    <progress max="100" value="{{ percent }}" aria-label="Odsetek zamkniętych zadań">{{ percent }}%</progress>
+    <p class="dashboard-overview-caption">{{ caption }}</p>
+    <dl class="dashboard-overview-statuses">{% for status in statuses %}<div><dt><span class="status-indicator status-{{ status.key }}" aria-hidden="true"></span>{{ status.label }}</dt><dd>{{ status.count }}</dd></div>{% endfor %}</dl>
+</div>

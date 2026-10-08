@@ -532,6 +532,7 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 „Dla ciebie” jest osobną pozycją nad Dashboardem, z ikoną `user-round-check`
 i obsługą ulubionych menu. Widok rozszerza `core/base.html` i komponenty
 Dashboardu: nagłówek katalogu, panele, wiersze i podkreślane zakładki.
+Górny pasek zawiera tylko tytuł „Dla ciebie”, bez przycisku „Moje zadania”.
 Nagłówek strony i główna treść mają po 22px odstępu z lewej i prawej strony,
 także na telefonie, zgodnie ze wspólnym wariantem `.dashboard-overview`.
 Treść zaczyna się od nagłówka „Rekomendowane przestrzenie” i kart, bez powitania
@@ -2344,8 +2345,12 @@ dekoracyjna (`alt=""`), ma przezroczyste tło i skaluje się do szerokości
 kontenera na telefonie. Przyciski zachowują `tasks-filter-button` bez
 podkreślenia tekstu. Wiersze niepustej tabeli używają dotychczasowych ikon.
 
-Gadżety rozszerzają `dashboard-panel`; podsumowanie używa liczników, statystyki
-wspólnego `progress`, listy pokazują klucz, status i termin. Nagłówek pulpitu
+Jedyny gadżet „Postęp pracy” rozszerza `dashboard-panel` i współdzieli
+`dashboard/includes/work_progress.html` z kartą Dashboardu. Pokazuje procent,
+„Zamknięte: X z Y”, wspólny `progress`, opis zakresu i pięć liczników
+z istniejącymi kolorowymi `status-indicator`. Pusty zakres nadal pokazuje wszystkie
+statusy z zerami, bez ilustracji zastępującej dane. Ikona wykresu jest po prawej
+stronie nagłówka; uchwyt i menu występują wyłącznie w edytorze. Nagłówek pulpitu
 pokazuje samą nazwę po lewej, a „Edytuj pulpit” (dla twórcy), odświeżenie i menu
 edycji (dla twórcy) po prawej. „Kopiuj pulpit” jest usunięte ze wszystkich menu;
 przegląd odbiorcy udostępnionego pulpitu nie pokazuje pustego menu działań.
@@ -2378,8 +2383,8 @@ wartość selecta oraz pokazuje alert. Wspólny `canvas.html` zachowuje ten sam
 odczyt danych w przeglądzie i edytorze.
 
 Pozycje menu edytora i nagłówki gadżetów mają dekoracyjne ikony z `AncoreIcons`:
-aplikacje dla układu, osoby dla dostępu, ustawienia dla konfiguracji, osobę dla „Przypisane do mnie”
-i wykres dla statystyk. `GadgetKindSelect` przekazuje te same ikony do
+aplikacje dla układu, osoby dla dostępu, ustawienia dla konfiguracji
+i `chart-no-axes-combined` dla „Postępu pracy”. `GadgetKindSelect` przekazuje te same ikony do
 wspólnego dropdownu przez `data-ancore-option-icon`.
 `pulpit-layout-preview` pokazuje miniaturę aktualnego układu kolumn i zmienia
 ją razem z selectem, również przy przywracaniu układu po błędzie zapisu.
@@ -2391,11 +2396,8 @@ podgląd 32×23px przy wybranej wartości i 44×32px w wierszach listy o wysoko�
 wspólna warstwa dropdownów ogranicza go do dostępnego miejsca na ekranie.
 Pole zachowuje wyszukiwarkę, checkbox zaznaczenia i zapis natywnego selecta.
 Formularz rodzaju gadżetu zawiera `pulpit-gadget-preview`: miniaturę z ikoną
-oraz krótki opis, aktualizowane po wyborze rodzaju. Dwa autorskie SVG
-`static/img/pulpits/assigned.svg` i `statistics.svg` rozszerzają styl ilustracji
-szablonów Przestrzeni obecną paletą fioletu i ilustrują puste gadżety
-(`pulpit-gadget-empty-state`); niedostępne źródło ma ikonę kłódki.
-Ilustracje są dekoracyjne i skalują się na telefonie. Opisy oraz standardowa
+oraz krótki opis, aktualizowane po wyborze rodzaju. Niedostępne źródło ma ikonę
+kłódki i komunikat bez nazwy przestrzeni oraz liczników. Opisy oraz standardowa
 walidacja formularza pozostają tekstowe.
 
 Pusty pulpit używa wariantu `pulpit-empty-state` wspólnego `tasks-empty-state`:
@@ -2425,10 +2427,9 @@ W trybie tylko do odczytu ilustracja pozostaje, a opis dotyczy twórcy pulpitu.
 Tworzenie i gadżety używają standardowego `app-modal-panel--compact` i
 `AncoreTaskModals`: fokus, Escape, inert tła, błędy zapisu, zachowanie szkicu
 oraz potwierdzenie zamknięcia niezapisanych zmian. „Osoby z dostępem” jest
-widoczne dla „Wybrane osoby”, a pola grupowania/limitu zależą od gadżetu.
-Formularz obsługuje pięć rodzajów: Przypisane do mnie, Wyniki filtra,
-Podsumowanie zadań, Statystyki zadań oraz Ostatnia aktywność. Grupowanie dotyczy
-statystyk, a liczba wyników list zadań i aktywności. Podgląd rodzaju korzysta
+widoczne dla „Wybrane osoby”. Formularz gadżetu udostępnia wyłącznie
+„Postęp pracy”, tytuł, przestrzeń i przypisanie; nie ma pól statusu,
+grupowania ani limitu wyników. Podgląd rodzaju korzysta
 z tego samego katalogu i miniatur co panel dodawania.
 Porównywanie szkicu pomija token CSRF, który może się zmienić po błędzie walidacji.
 Bezpośredni URL gadżetu otwiera to samo okno nad edytorem, pozostałe nad
@@ -2518,7 +2519,8 @@ a po `ancore:content-loaded` odłącza poprzednie listenery.
 
 Panel katalogu gadżetów (`catalog.html`) jest dokowany po prawej stronie
 edytora, ma niezależne przewijanie, wyszukiwarkę ignorującą wielkość liter
-oraz polskie znaki, kategorie Zadania/Statystyki/Aktywność i stan bez wyników.
+oraz polskie znaki, kategorię Statystyki i stan bez wyników. Katalog oraz
+liczniki „Wszystkie”/„Statystyki” obejmują wyłącznie jeden rodzaj „Postęp pracy”.
 Miniatury `catalog_preview.html` korzystają z istniejących ikon i tokenów,
 a przyciski z klas wspólnych kontrolek. `pulpit-editor-body` rozszerza powłokę
 Dashboardu bez zmian na innych ekranach. Na telefonie katalog pojawia się
@@ -2535,4 +2537,6 @@ otwiera standardowy formularz dodawania. W trakcie żądania dodawanie, zmiana
 układu i wyjście są blokowane. Osiągnięcie limitu 24 wyłącza przyciski katalogu
 oraz pokazuje opis. Błąd sieci i konflikt rewizji wyświetlają alert bez dokładania
 pozornego gadżetu; przy niepewnym wyniku żądania należy odświeżyć pulpit.
+Po zakończeniu dodawania przycisk odzyskuje fokus utracony podczas blokady,
+również po błędzie; przy osiągnięciu limitu fokus przechodzi do zamknięcia katalogu.
 Nowe menu gadżetów inicjalizują się przez `ancore:modals-loaded`.

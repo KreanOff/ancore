@@ -19,7 +19,7 @@ class PulpitGroupRetirementTests(TestCase):
         cls.dashboard = Dashboard.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner, name='Wydanie', visibility='workspace', revision=4)
         cls.private = Dashboard.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner, name='Prywatny')
         cls.foreign = Dashboard.objects.create(owner=cls.owner, workplace=cls.other, created_by=cls.owner, name='Obcy', visibility='workspace')
-        cls.gadget = DashboardGadget.objects.create(dashboard=cls.dashboard, kind='summary')
+        cls.gadget = DashboardGadget.objects.create(dashboard=cls.dashboard, kind='progress')
         cls.dashboard.favorited_by.add(cls.owner)
 
     def login(self, user):
@@ -98,11 +98,13 @@ class PulpitGroupRemovalMigrationTests(TransactionTestCase):
                 group = OldGroup.objects.create(owner_id=owner.pk, workplace_id=workspace.pk, user_id=user.pk, name='Osobista grupa')
                 group.dashboards.add(dashboard)
             snapshots = list(Dashboard.objects.order_by('pk').values())
-            gadgets = list(DashboardGadget.objects.order_by('pk').values())
+            gadgets = list(OldGadget.objects.order_by('pk').values())
             executor = MigrationExecutor(connection)
-            executor.migrate(latest)
+            target = [('dashboard', '0009_remove_dashboard_groups')]
+            executor.migrate(target)
+            NewGadget = executor.loader.project_state(target).apps.get_model('dashboard', 'DashboardGadget')
             self.assertEqual(list(Dashboard.objects.order_by('pk').values()), snapshots)
-            self.assertEqual(list(DashboardGadget.objects.order_by('pk').values()), gadgets)
+            self.assertEqual(list(NewGadget.objects.order_by('pk').values()), gadgets)
             saved = Dashboard.objects.get(pk=dashboard.pk)
             self.assertEqual(list(saved.shared_with.values_list('pk', flat=True)), [owner.pk])
             self.assertEqual(set(saved.favorited_by.values_list('pk', flat=True)), {owner.pk, member.pk})

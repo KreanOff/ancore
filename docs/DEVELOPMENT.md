@@ -809,8 +809,20 @@ sprawdzają 404 dawnych adresów GET/POST (zwykłe/scoped, katalog/zarządzanie)
 dla twórcy i członka, zachowanie konfiguracji, gadżetów, dostępu i gwiazdek,
 brak akcji kopiowania w menu oraz brak pustego menu w przeglądzie odbiorcy.
 Katalog `GADGET_CATALOG` i `AVAILABLE_GADGET_KINDS` w `dashboard/pulpits.py`
-obejmują pięć istniejących rodzajów; zmiana nie wymaga migracji. Testy sprawdzają
-dodawanie i konfigurację wszystkich rodzajów, odrzucenie nieznanego rodzaju
+obejmują wyłącznie „Postęp pracy”. Migracja `dashboard.0010_work_progress_gadget`
+zastępuje stare gadżety jedną kartą na niepusty pulpit, w miejscu pierwszej starej
+karty; resetuje jej tytuł/źródło/przypisanie i usuwa pozostałe stare karty.
+Zachowuje puste pulpity, istniejące karty `progress`, układ, dostępy i gwiazdki.
+Usuwa nieużywane pola status/group_by/limit oraz zwiększa rewizję zmienionych
+pulpitów. Przed zastosowaniem wykonaj backup bazy i `manage.py migrate`.
+Cofnięcie migracji odtwarza pola, ale nie odzyskuje dawnych konfiguracji;
+przywrócenie starszej wersji wymaga backupu.
+`dashboard.test_work_progress_migration` sprawdza zastąpienie, dwa Workspace,
+pusty pulpit, istniejący postęp, idempotencję i zachowanie danych zadań.
+Testy gadżetu obejmują puste dane, pięć statusów, ponowne otwarcie,
+pełne agregacje ponad 24 zadania, wykluczenie podzadań, filtry źródła/przypisania
+i prywatność projektu/grupy/zadania. Testy sprawdzają też
+dodawanie i konfigurację postępu, odrzucenie nieznanego i wycofanych rodzajów
 oraz zachowanie zapisanego rekordu po błędzie, także przez scoped URL i modal.
 `dashboard.test_pulpit_catalog` obejmuje szybkie dodawanie, rozmieszczenie
 w kolumnach, rzeczywisty HTML, rewizję i duplikaty, limit, błędny JSON, CSRF,
@@ -843,8 +855,8 @@ i `/manage/<pk>/gadgets/`, aktywne pozycje menu, błędy zapisu i region live, w
 kierunki przenoszenia, powrót do edytora po dodaniu/edycji/usunięciu i przywrócenie
 układu/selecta po konflikcie rewizji. Przegląd nie może pokazywać kontrolek
 gadżetów również twórcy; odbiorca nie ma dostępu do URL edytora.
-Ikony i ilustracje: dropdown rodzaju z ikonami, zmiana podglądu listy/statystyk,
-ilustrowane puste gadżety, miniatura wszystkich pięciu układów i jej przywrócenie
+Ikony i ilustracje: dropdown rodzaju z ikoną, podgląd „Postępu pracy”,
+pusta karta z 0% i pięcioma zerami, miniatura wszystkich pięciu układów i jej przywrócenie
 po błędzie. Sprawdź formularz po walidacji, częściowej nawigacji i ponownym
 otwarciu, a także modal z dostępną stopką na telefonie.
 Panel „Więcej pulpitów”: `dashboard.test_pulpit_navigation` sprawdza
@@ -893,7 +905,7 @@ Testuj na oddzielnej bazie; nie dodawaj danych QA do Workspace użytkowników.
 
 Katalog gadżetów: w browser QA sprawdź tworzenie pustego pulpitu, otwarcie
 panelu, kategorie i wyszukiwanie (także bez polskich znaków), brak wyników/reset,
-pięć kolejnych dodań bez nawigacji, konfigurację i powrót z otwartym katalogiem,
+kilka kolejnych dodań „Postępu pracy” bez nawigacji, konfigurację i powrót z otwartym katalogiem,
 reload, zamknięcie/Escape/fokus, wszystkie miniatury układu, przeciąganie oraz
 menu przenoszenia nowych gadżetów. Sprawdź błąd sieci/ponowienie, konflikt dwóch
 okien, limit 24 oraz brak pozornie dodanych kart. Przegląd zachowuje ilustrację

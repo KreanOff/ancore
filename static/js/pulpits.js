@@ -10,14 +10,10 @@
         const kindField = root.querySelector('[name="kind"]');
         if (!kindField) return;
         const kind = kindField.value;
-        const previewKind = ['assigned', 'statistics', 'results', 'summary', 'activity'].includes(kind) ? kind : '';
+        const previewKind = kind === 'progress' ? kind : '';
         root.querySelectorAll('[data-pulpit-preview-kind]').forEach(preview => {
             preview.hidden = preview.dataset.pulpitPreviewKind !== previewKind;
         });
-        const grouping = root.querySelector('[data-pulpit-field="group_by"]');
-        const limit = root.querySelector('[data-pulpit-field="limit"]');
-        grouping.hidden = kind !== 'statistics';
-        limit.hidden = !['results', 'assigned', 'activity'].includes(kind);
     }
 
     function initEditForm(form, signal) {
@@ -319,6 +315,7 @@
             if (event.target.closest('[data-pulpit-catalog-reset]')) { search.value = ''; category = 'all'; filter(); search.focus(); return; }
             const button = event.target.closest('[data-pulpit-quick-add]');
             if (!button || page.dataset.pulpitSaving === 'true' || document.querySelector('[data-pulpit-modal]')) return;
+            const restoreFocus = document.activeElement === button;
             page.dataset.pulpitSaving = 'true';
             page.dispatchEvent(new Event('pulpit:busy'));
             updateLimit();
@@ -358,6 +355,9 @@
                 button.removeAttribute('aria-busy');
                 updateLimit();
                 page.dispatchEvent(new Event('pulpit:busy'));
+                if (restoreFocus && document.activeElement === document.body) {
+                    (button.disabled ? catalog.querySelector('[data-pulpit-catalog-close]') : button)?.focus({ preventScroll: true });
+                }
             }
         }, { signal });
         catalog.addEventListener('keydown', event => {
