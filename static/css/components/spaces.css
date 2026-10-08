@@ -166,6 +166,14 @@
 .tasks-directory-board.work-space-sheet.tasks-project-sheet--selectable {
     --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 150px 320px 190px 220px 320px 130px;
 }
+.tasks-directory-board.work-space-sheet--compact.tasks-project-sheet--selectable {
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 320px 150px 320px;
+}
+.tasks-directory-board.work-space-sheet--compact.work-space-sheet--unselectable.tasks-project-sheet--selectable {
+    --tasks-directory-select-width: 0px;
+    --tasks-project-action-width: 40px;
+    --tasks-directory-grid: var(--tasks-project-action-width) 320px 150px 320px;
+}
 .tasks-directory-board.work-space-sheet .tasks-directory-header,
 .tasks-directory-board.work-space-sheet .tasks-directory-list .tasks-directory-row {
     --tasks-directory-grid: inherit;

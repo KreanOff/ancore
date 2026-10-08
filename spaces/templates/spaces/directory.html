@@ -1,30 +1,34 @@
 {% load static %}
-<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet{% if management %} work-space-sheet--management{% endif %}">
+<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet{% if management %} work-space-sheet--management{% endif %}{% if directory_compact %} work-space-sheet--compact{% endif %}{% if hide_selection %} work-space-sheet--unselectable{% endif %}{% if directory_class %} {{ directory_class }}{% endif %}">
     {% if page %}
     <section class="tasks-directory-group" role="table" aria-label="{% if management %}Zarządzanie przestrzeniami{% else %}Lista przestrzeni{% endif %}">
         <div class="tasks-directory-header" role="row">
-            <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader">
+            {% if not hide_selection %}<span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader">
                 <input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie przestrzenie na tej stronie" title="Zaznacz wszystkie przestrzenie na tej stronie" data-select-all-checkbox data-select-all-target="spaces">
-            </span>
+            </span>{% endif %}
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="columnheader" aria-label="Działania przestrzeni" title="Działania przestrzeni" data-column-label="Działania"><span class="u-sr-only">Działania</span></span>
-            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="columnheader">KLUCZ<i data-icon="hash" aria-hidden="true"></i></span>
+            {% if not directory_compact %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="columnheader">KLUCZ<i data-icon="hash" aria-hidden="true"></i></span>{% endif %}
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">PRZESTRZEŃ<i data-icon="layers" aria-hidden="true"></i></span>
+            {% if directory_compact %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="columnheader">KLUCZ<i data-icon="hash" aria-hidden="true"></i></span>{% else %}
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="columnheader">RODZAJ<i data-icon="shapes" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="template" role="columnheader">SZABLON<i data-icon="layout-dashboard" aria-hidden="true"></i></span>
+            {% endif %}
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="columnheader">OPIS<i data-icon="align-left" aria-hidden="true"></i></span>
-            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count" role="columnheader">ZADANIA<i data-icon="list-checks" aria-hidden="true"></i></span>
+            {% if not directory_compact %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count" role="columnheader">ZADANIA<i data-icon="list-checks" aria-hidden="true"></i></span>{% endif %}
         </div>
         <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
             {% for space in page %}
             <article class="tasks-issue-row tasks-directory-row work-space-row" role="row" data-space-directory-row="{{ space.pk }}">
-                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ space.pk }}" data-space-id="{{ space.pk }}" aria-label="Zaznacz przestrzeń {{ space.project.name }}"></span>
+                {% if not hide_selection %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ space.pk }}" data-space-id="{{ space.pk }}" aria-label="Zaznacz przestrzeń {{ space.project.name }}"></span>{% endif %}
                 {% include 'tasks/includes/directory_row_menu.html' with kind='space' item_id=space.pk item_name=space.project.name actions_template='spaces/directory_row_actions.html' cell_role='cell' %}
-                <span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>
+                {% if not directory_compact %}<span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>{% endif %}
                 <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{% if management %}{{ space.settings_url }}{% else %}{{ space.url }}{% endif %}" title="{{ space.project.name }}">{{ space.project.name }}</a></span>
+                {% if directory_compact %}<span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>{% else %}
                 <span class="tasks-directory-sheet__cell" data-column="kind" role="cell" title="{{ space.get_kind_display }}">{{ space.get_kind_display }}</span>
                 <span class="tasks-directory-sheet__cell" data-column="template" role="cell" title="{{ space.get_template_display }}">{{ space.get_template_display }}</span>
+                {% endif %}
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__description" data-column="description" role="cell" title="{{ space.project.description|striptags }}">{{ space.project.description|striptags|default:'Brak opisu' }}</span>
-                <span class="tasks-directory-sheet__cell tasks-project-sheet__count" data-column="tasks_count" role="cell">{{ space.item_count }}</span>
+                {% if not directory_compact %}<span class="tasks-directory-sheet__cell tasks-project-sheet__count" data-column="tasks_count" role="cell">{{ space.item_count }}</span>{% endif %}
             </article>
             {% endfor %}
         </div>

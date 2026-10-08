@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from kanban.models import Kanban, KanbanActivity, KanbanProject, KanbanSection
-from tasks.models import Task, TaskActivity, TaskProject, TaskSection
+from tasks.models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
 
@@ -303,3 +303,153 @@ class ForYouTests(TestCase):
         self.assertEqual(rows[0]['status_label'], 'Do analizy')
         self.assertContains(response, 'Do analizy')
         self.assertContains(response, tasks[0].work_item.key)
+        blocks = response.context['for_you_groups']
+        self.assertEqual([block['date_group'] for block in blocks], [row['date_group'] for row in rows])
+        self.assertEqual([block['task_groups'][0]['items'][0]['object'] for block in blocks], tasks)
+
+    def test_task_rows_use_custom_types_and_distinct_counts_in_every_tab(self):
+        task = self.task(priority='high')
+        task.tags.set([
+            TaskTag.objects.create(user=self.owner, workplace=self.workspace, name=f'Tag {i}')
+            for i in range(2)
+        ])
+        TaskAttachment.objects.bulk_create([
+            TaskAttachment(task=task, file=f'qa/{i}.txt', filename=f'{i}.txt') for i in range(3)
+        ])
+        item = task.work_item
+        item.work_type = 'bug'
+        item.save(update_fields=['work_type'])
+        config = self.project.space.configuration
+        config.settings['types'][1]['label'] = 'Usterka'
+        config.save()
+        task.favorited_by.add(self.member)
+        TaskActivity.objects.create(task=task, actor=self.member)
+        self.visit(task)
+        for tab in ('recommended', 'assigned', 'starred', 'worked', 'viewed'):
+            with self.subTest(tab=tab):
+                response = self.page(tab)
+                row = response.context['for_you_rows'][0]['task_row']
+                self.assertEqual((row['tags_count'], row['attachments_count']), (2, 3))
+                self.assertEqual(row['get_work_type_display'], 'Usterka')
+                self.assertEqual(row['type_icon'], 'circle-alert')
+                self.assertContains(response, 'Typ zgłoszenia: Usterka')
+                self.assertContains(response, 'Tagi: 2')
+                self.assertContains(response, 'Załączniki: 3')
+                self.assertContains(response, f'href="{row["url"]}"')
+
+    def test_task_row_does_not_expose_foreign_space_metadata(self):
+        task = self.task()
+        item = task.work_item
+        item.space = self.hidden_project.space
+        item.key = 'TAJNY-KLUCZ'
+        item.work_type = 'secret'
+        item.save(update_fields=['space', 'key', 'work_type'])
+        response = self.page()
+        row = response.context['for_you_rows'][0]['task_row']
+        self.assertEqual(row['key'], f'#{task.task_id}')
+        self.assertEqual(row['get_work_type_display'], 'Zadanie')
+        self.assertIsNone(row['space'])
+        self.assertNotContains(response, 'TAJNY-KLUCZ')
+        self.assertNotContains(response, 'Typ zgłoszenia: secret')
+        self.assertNotContains(response, self.hidden_project.name)
+
+    def test_task_row_without_planning_metadata_keeps_subtask_link(self):
+        parent = self.task(assignee=None)
+        child = self.task(parent=parent)
+        child.work_item.delete()
+        response = self.page()
+        row = response.context['for_you_rows'][0]['task_row']
+        self.assertEqual(row['key'], f'#{child.task_id}')
+        self.assertEqual(row['get_work_type_display'], 'Zadanie')
+        self.assertEqual((row['tags_count'], row['attachments_count']), (0, 0))
+        self.assertIn(f'view-subtask/{child.task_id}/?task_pk={child.pk}', row['url'])
+        self.assertContains(response, f'href="{row["url"]}"')
+
+    def test_status_groups_cover_all_tabs_and_keep_non_task_favorites(self):
+        tasks = [self.task(status=status, priority='high') for status, _ in Task.STATUS_CHOICES]
+        hidden = self.task(section=self.hidden_section, priority='high')
+        for task in [*tasks, hidden]:
+            task.favorited_by.add(self.member)
+            TaskActivity.objects.create(task=task, actor=self.member)
+        for task in tasks:
+            self.visit(task)
+        self.project.favorited_by.add(self.member)
+        self.section.favorited_by.add(self.member)
+        for tab in ('recommended', 'assigned', 'starred', 'worked', 'viewed'):
+            with self.subTest(tab=tab):
+                response = self.page(tab)
+                block, = response.context['for_you_groups']
+                expected = [task for task in tasks if tab not in ('recommended', 'assigned') or task.status != 'closed']
+                groups = block['task_groups']
+                self.assertEqual([group['category'] for group in groups], [task.status for task in expected])
+                self.assertEqual([group['items'][0]['object'] for group in groups], expected)
+                self.assertEqual(sum(len(group['items']) for group in groups), len(expected))
+                self.assertNotContains(response, hidden.title + ' · ' + self.hidden_project.name)
+                if tab == 'starred':
+                    self.assertEqual({row['object'] for row in block['other_rows']}, {self.section})
+                    self.assertEqual([space.project for space in block['spaces']], [self.project])
+                else:
+                    self.assertEqual(block['other_rows'], [])
+                    self.assertEqual(block['spaces'], [])
+
+    def test_status_groups_keep_custom_names_and_configuration_order(self):
+        analysis = self.task('Do analizy')
+        in_progress = self.task('Rozpoczęte', status='in_progress')
+        second = self.task('Drugie do analizy')
+        other_project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Inna przestrzeń')
+        other_section = TaskSection.objects.create(project=other_project, title='Inna grupa')
+        other = self.task('Domyślne nowe', section=other_section)
+        config = self.project.space.configuration
+        statuses = config.settings['statuses']
+        statuses[0]['label'] = 'Do analizy'
+        config.settings['statuses'] = [statuses[1], statuses[0], *statuses[2:]]
+        config.save()
+        response = self.page()
+        groups = response.context['for_you_groups'][0]['task_groups']
+        by_label = {group['label']: group for group in groups}
+        self.assertEqual(set(by_label), {'W toku', 'Do analizy', 'Do zrobienia'})
+        self.assertEqual(by_label['Do analizy']['category'], by_label['Do zrobienia']['category'])
+        self.assertEqual([row['object'] for row in by_label['Do analizy']['items']], [second, analysis])
+        self.assertEqual(by_label['W toku']['items'][0]['object'], in_progress)
+        self.assertEqual(by_label['Do zrobienia']['items'][0]['object'], other)
+        self.assertLess(groups.index(by_label['W toku']), groups.index(by_label['Do analizy']))
+        filtered = self.page(q='Domyślne')
+        filtered_groups = filtered.context['for_you_groups'][0]['task_groups']
+        self.assertEqual([(group['label'], len(group['items'])) for group in filtered_groups], [('Do zrobienia', 1)])
+
+    def test_space_table_counts_only_visible_tasks_and_respects_management_roles(self):
+        self.task('Widoczne')
+        self.task('Zakończone widoczne', status='closed')
+        parent = self.task('Prywatne', visibility='private', private_owner=self.owner)
+        self.task('Ukryty potomek', parent=parent)
+        self.task('Inny Workspace', workplace=self.other_workspace, section=None)
+        self.project.description = '<p>Opis przestrzeni</p>'
+        self.project.save()
+        self.project.favorited_by.add(self.member)
+        self.hidden_project.favorited_by.add(self.member)
+        space_url = scoped_workplace_app_path(self.workspace, 'spaces', f'{self.project.space.pk}/')
+        self.assertEqual(self.client.get(space_url).status_code, 200)
+        for tab in ('starred', 'viewed'):
+            with self.subTest(tab=tab):
+                response = self.page(tab)
+                spaces = [space for block in response.context['for_you_groups'] for space in block['spaces']]
+                self.assertEqual([space.project_id for space in spaces], [self.project.pk])
+                space, = spaces
+                self.assertEqual(space.item_count, 2)
+                self.assertFalse(space.can_manage)
+                self.assertTrue(space.favorite)
+                self.assertEqual(space.url, space_url)
+                self.assertContains(response, 'Opis przestrzeni')
+                self.assertContains(response, f'href="{space.settings_url}"')
+                self.assertNotContains(response, f'href="{space.edit_url}"')
+                self.assertNotContains(response, self.hidden_project.name)
+        self.project.responsible_user = self.member
+        self.project.save()
+        response = self.page('starred')
+        space = response.context['for_you_groups'][0]['spaces'][0]
+        self.assertTrue(space.can_manage)
+        self.assertContains(response, f'href="{space.edit_url}"')
+        result = self.client.post(space.favorite_url, {'next': self.url + '?tab=starred'}, HTTP_X_SPACE_NAVIGATION='true')
+        self.assertEqual(result.json(), {'saved': True})
+        self.assertFalse(self.project.favorited_by.filter(pk=self.member.pk).exists())
+        self.assertEqual(self.page('starred').context['for_you_groups'], [])

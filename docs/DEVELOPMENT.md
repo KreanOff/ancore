@@ -301,11 +301,32 @@ zwykły/scoped URL, stabilne linki, zmianę Workspace i cofnięcie dostępu.
 Obejmuje też filtry przed paginacją i zachowanie ich w adresach, wyszukiwanie
 kluczy, niedostępną przestrzeń, własne nazwy statusów, lokalne grupy dat oraz
 skróty przestrzeni z odwiedzin/ulubionych oraz licznik zakładki przypisanych,
-ograniczone dostępem.
+ograniczone dostępem. Wiersze zadań sprawdzają własne typy zgłoszeń, dokładne
+liczniki tagów/załączników przy wielu relacjach, brak ujawniania metadanych
+obcej przestrzeni oraz link podzadania bez metadanych planowania. Grupowanie
+statusów obejmuje wszystkie zakładki, własne nazwy i kolejność konfiguracji,
+wyniki filtrów, zachowanie grup dat oraz ulubionych przestrzeni i grup.
+Tabela przestrzeni w „Dla ciebie” sprawdza licznik widocznych zadań (także
+zakończonych), ukrytych rodziców/potomków i obcy Workspace, role menu,
+zwykłe/scoped odnośniki oraz osobistą gwiazdkę. Wspólny dekorator tabel wymaga
+regresji `spaces.tests.SpaceTests`, `spaces.test_management` i `spaces.test_navigation`.
 Przy zmianach uruchom też Dashboard, testy prywatności Zadań i Kanbana,
 `core.test_task_integrity.TaskIdentityTests`, Workplaces i testy menu Core.
 W przeglądarce sprawdź wszystkie zakładki, paginację, wejście w element i powrót,
-Dashboard jako referencję, nawigację modułów, telefon, puste stany oraz błąd sieci.
+Dashboard i listę „Wszystkie zadania” jako referencje, nawigację modułów,
+kolory/liczniki statusów i zwijanie myszą/klawiaturą (również po ponownym wejściu),
+telefon, puste stany oraz błąd sieci.
+Przestrzenie w zakładkach „Ulubione” i „Ostatnio oglądane” porównaj z tabelą
+„Zarządzaj przestrzeniami”: awatary,
+menu (Escape/fokus), otwarcie przestrzeni, gwiazdkę z odświeżeniem zakładki,
+filtry, ponowne wejście i poziome przewijanie na telefonie.
+Ramkę sekcji „Przestrzenie”, wysokość nagłówka/wierszy i poziome podziały porównaj
+z grupami zadań. Sprawdź licznik osobno dla każdej daty, zwijanie nagłówkiem,
+Enter/Spacją oraz brak checkboxów i pustej kolumny wyboru w każdej zakładce.
+W „Dla ciebie” sprawdź kolejność trzech kolumn danych: Przestrzeń, Klucz, Opis,
+brak Rodzaju/Szablonu/Zadań również po odtworzeniu preferencji, wyrównanie komórek
+na telefonie i pełny zestaw kolumn w katalogu oraz zarządzaniu. Checkboxy pozostają
+na listach zadań, w backlogu i w katalogach przestrzeni poza „Dla ciebie”.
 
 | Moduł | Co sprawdzają istniejące testy |
 | --- | --- |

@@ -31,7 +31,7 @@ from .avatars import delete_avatar_after_commit
 from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
-from .services import app_url, can_manage_spaces, default_section, ensure_space, ensure_work_item, manageable_spaces, manage_configuration, manage_space, record, set_status, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
+from .services import app_url, can_manage_spaces, decorate_directory_spaces, default_section, ensure_space, ensure_work_item, manageable_spaces, manage_configuration, manage_space, record, set_status, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
 
 
@@ -98,18 +98,9 @@ def index_context(request, management=False):
     if management:
         spaces = spaces.select_related('project__responsible_user', 'project__private_owner', 'project__user')
     page = Paginator(spaces.order_by('project__name', 'pk'), 30).get_page(request.GET.get('page'))
-    favorites = set(TaskProject.objects.filter(favorited_by=request.user).values_list('pk', flat=True))
-    counts = {row['space_id']: row['count'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(count=Count('pk'))}
+    page.object_list = decorate_directory_spaces(request, page.object_list)
     activity = {row['space_id']: row['last_activity'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(last_activity=Max('task__activities__created_at'))} if management else {}
-    managed_ids = set(manageable_spaces(request).filter(pk__in=page.object_list).values_list('pk', flat=True)) if not management else set()
     for space in page:
-        space.url = app_url(request, f'{space.pk}/')
-        space.favorite_url = app_url(request, f'{space.pk}/favorite/')
-        space.favorite = space.project_id in favorites
-        space.item_count = counts.get(space.pk, 0)
-        space.settings_url = space.url + '?view=settings'
-        space.can_manage = management or space.pk in managed_ids
-        space.edit_url = app_url(request, f'{space.pk}/edit/')
         if management:
             space.edit_url = app_url(request, f'manage/{space.pk}/edit/')
             space.configuration_url = app_url(request, f'{space.pk}/configuration/') if manage_configuration(request, space) else ''

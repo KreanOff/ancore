@@ -545,7 +545,8 @@ i rodzaj 13px/400. Kafelek ma minimum 120px wysokości, padding 16px i odstęp
 Cała powierzchnia linku otwiera przestrzeń; nie ma oznaczenia gwiazdką,
 dolnych skrótów do przypisanych zadań i tablicy/aktywnego sprintu ani licznika.
 Ulubione nadal decydują o kolejności. Siatka ma 4, 2 lub 1 kolumnę zależnie od
-szerokości. Brak skrótów pokazuje instrukcję i link do katalogu Przestrzeni.
+szerokości. Brak skrótów pokazuje instrukcję i link do katalogu Przestrzeni
+w pustym stanie bez obramowania (`for-you-spaces-empty`).
 Pięć zakładek jest linkami z `aria-current`, a paginacja zachowuje kategorię,
 Workspace, wyszukiwanie i filtr przestrzeni. Pasek `for-you-toolbar` używa
 `tasks-filterbar`, `tasks-search-field`, `tasks-inline-select`, `AncoreCustomSelect`
@@ -570,11 +571,45 @@ szerokość 240px i skalują się do kontenera. Są dekoracyjne (`alt=""`,
 korzystają ze wspólnego `tasks-empty-state__copy`.
 Zakładki pozostają w jednym wierszu i przewijają się poziomo,
 gdy brakuje miejsca, także na telefonie. Etykiety i licznik nie zawijają się.
-Wiersz pokazuje klucz zadania, lokalizację i tekstową nazwę statusu przestrzeni
-obok wspólnej ikony kategorii. Historia i oglądane mają nagłówki grup dat
-(`for-you-date-heading`). Na telefonie termin i status przechodzą pod tytuł,
-a filtr i wyszukiwanie zawijają się w obrębie panelu. Style są ograniczone do
-`for-you-*` w `components/dashboard.css`.
+Zadania we wszystkich pięciu zakładkach używają wspólnego `spaces/row.html`,
+tak jak „Wszystkie zadania”: wiersza `tasks-issue-row` z priorytetem,
+ikoną statusu, oznaczeniem typu zgłoszenia, kluczem, tytułem, licznikami tagów
+i załączników oraz ikoną terminu. Wariant `hide_selection=True` nie renderuje
+checkboxa ani jego toru siatki w „Dla ciebie”. Lokalizacja i czas ostatniej aktywności są dostępne w `title` linku,
+a własna nazwa statusu i termin w etykietach ikon. Liczniki są pobierane zbiorczo
+dla zadań bieżącej strony. Przestrzenie w zakładkach „Ulubione” i „Ostatnio oglądane”
+używają wspólnego `spaces/directory.html` w wariancie `directory_compact=True`:
+trzy kolumny danych w kolejności Przestrzeń z awatarem, Klucz i Opis,
+poprzedzone menu działań. `hide_selection=True` usuwa checkboxy wierszy,
+checkbox nagłówka i kolumnę wyboru z siatki. Katalog i „Zarządzaj przestrzeniami”
+korzystają z pełnego wariantu. `spaces.services.decorate_directory_spaces` wspólnie przygotowuje
+dane tabel w katalogu, zarządzaniu i „Dla ciebie”; licznik obejmuje tylko widoczne
+zadania przestrzeni. Nazwa otwiera przestrzeń, a menu zachowuje osobistą gwiazdkę,
+ustawienia i edycję/dodawanie osób według roli. Akcja gwiazdki zachowuje zakładkę
+i filtry; działa również po częściowej nawigacji. W każdej grupie dat tabela znajduje się w sekcji
+`for-you-space-group`, z taką samą ramką, zaokrągleniem, odstępami i wysokością
+nagłówka jak grupy zadań. Wspólny `tasks/includes/issue_group_header.html`
+pokazuje neutralny nagłówek „Przestrzenie”, ikonę, liczbę przestrzeni na stronie
+w tej grupie dat i przycisk zwijania (mysz/Enter/Spacja). Nagłówki statusów
+korzystają z tego samego include przez `status_group_header.html`.
+Wiersze mają 40px wysokości jak zadania, poziome podziały i brak pionowych linii
+między kolumnami. Wariant `for-you-space-sheet` zachowuje wysokość tabeli według liczby
+wierszy i osobny klucz preferencji kolumn `for-you-spaces` z osobnym schematem
+trzech kolumn danych,
+wspólny dla zwykłego i scoped URL. Tabela przewija się poziomo na telefonie.
+Grupy nadal używają wierszy Dashboardu, a górne rekomendowane przestrzenie — kart.
+Zadania bieżącej strony są grupowane według kategorii i własnej nazwy statusu,
+w kolejności konfiguracji przestrzeni. Wewnątrz statusu pozostaje kolejność
+właściwa dla zakładki. Nagłówki używają wspólnego
+`tasks/includes/status_group_header.html`, również na listach Przestrzeni:
+kolorowego tła, ikony, nazwy, liczby zadań w grupie oraz przycisku zwijania.
+`tasks.js` obsługuje zwijanie po pierwszym wejściu i częściowej nawigacji;
+lokalne filtrowanie nie ukrywa grup obliczonych przez serwer w „Dla ciebie”.
+Historia i oglądane zachowują nagłówki grup dat (`for-you-date-heading`),
+a statusy są grupowane osobno wewnątrz każdej daty. Przestrzenie mają osobną
+sekcję bez statusu, a grupy pozostają poza sekcjami statusów. Na telefonie lista zadań przewija się
+poziomo we własnym obszarze, a filtr i wyszukiwanie zawijają się w obrębie panelu.
+Adaptery `for-you-*` w `components/dashboard.css` zachowują geometrię wspólnego wiersza.
 
 Dawne katalogi „Przestrzenie Kanban” i „Tablice” są wycofane. Ich pozostałe
 szablony, klasy CSS i współdzielony JavaScript stanowią kod historyczny, nie

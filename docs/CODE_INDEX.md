@@ -20,10 +20,10 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 19 | 0 | 18 | 58 |
 | [accounts](../accounts) | 17 | 7 | 8 | 43 |
 | [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
-| [tasks](../tasks) | 36 | 63 | 39 | 319 |
+| [tasks](../tasks) | 36 | 63 | 41 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 31 | 9 | 29 | 184 |
+| [dashboard](../dashboard) | 31 | 9 | 29 | 190 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -1395,7 +1395,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
 - [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
 - [spaces/navigation.py](../spaces/navigation.py) — `sidebar_spaces`
-- [spaces/services.py](../spaces/services.py) — `app_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
+- [spaces/services.py](../spaces/services.py) — `app_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
 - [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`, `deleted_space_avatar`
 - [spaces/summary.py](../spaces/summary.py) — `summary_scope`, `filter_summary_items`, `space_summary`
 - [spaces/team_urls.py](../spaces/team_urls.py)
@@ -1472,6 +1472,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/directory_sort_builder.html](../tasks/templates/tasks/includes/directory_sort_builder.html)
 - [tasks/templates/tasks/includes/follow_button.html](../tasks/templates/tasks/includes/follow_button.html)
 - [tasks/templates/tasks/includes/group_directory_filter_builder.html](../tasks/templates/tasks/includes/group_directory_filter_builder.html)
+- [tasks/templates/tasks/includes/issue_group_header.html](../tasks/templates/tasks/includes/issue_group_header.html)
 - [tasks/templates/tasks/includes/project_access_panel.html](../tasks/templates/tasks/includes/project_access_panel.html)
 - [tasks/templates/tasks/includes/project_access_tabs.html](../tasks/templates/tasks/includes/project_access_tabs.html)
 - [tasks/templates/tasks/includes/project_choice_filter_detail.html](../tasks/templates/tasks/includes/project_choice_filter_detail.html)
@@ -1482,6 +1483,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/project_team_modals.html](../tasks/templates/tasks/includes/project_team_modals.html)
 - [tasks/templates/tasks/includes/project_text_filter_detail.html](../tasks/templates/tasks/includes/project_text_filter_detail.html)
 - [tasks/templates/tasks/includes/section_notes_thread.html](../tasks/templates/tasks/includes/section_notes_thread.html)
+- [tasks/templates/tasks/includes/status_group_header.html](../tasks/templates/tasks/includes/status_group_header.html)
 - [tasks/templates/tasks/includes/status_pagination.html](../tasks/templates/tasks/includes/status_pagination.html)
 - [tasks/templates/tasks/includes/tag_notes_thread.html](../tasks/templates/tasks/includes/tag_notes_thread.html)
 - [tasks/templates/tasks/includes/task_activity_item.html](../tasks/templates/tasks/includes/task_activity_item.html)
@@ -1987,7 +1989,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_for_you.py](../dashboard/test_for_you.py).
 
-- `ForYouTests`: 20 metod testowych.
+- `ForYouTests`: 26 metod testowych.
 
 ### dashboard/test_notifications.py
 

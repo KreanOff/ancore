@@ -170,7 +170,7 @@ function initTasksPage() {
     const descriptionInput = document.querySelector('.tasks-issue-description-field textarea[name="description"]');
     const descriptionEditor = enhanceDescriptionEditor(descriptionInput);
     const issueDetailMain = document.querySelector('.tasks-issue-main');
-    const selectAllCheckbox = document.querySelector('[data-select-all-checkbox], #select-all-checkbox');
+    const selectAllCheckboxes = document.querySelectorAll('[data-select-all-checkbox], #select-all-checkbox');
     const checkboxes = document.querySelectorAll('.task-checkbox');
     const sectionCheckboxes = document.querySelectorAll('.tasks-section-row .tasks-row-checkbox[data-section-id]');
     const projectCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-project-id]');
@@ -5042,8 +5042,8 @@ function initTasksPage() {
         return selectedCheckboxes.length > 0 && selectedCheckboxes.every(checkboxCanManage);
     }
 
-    function getSelectAllTargetCheckboxes(visibleOnly = false) {
-        const target = selectAllCheckbox?.dataset.selectAllTarget || '';
+    function getSelectAllTargetCheckboxes(visibleOnly = false, source = selectAllCheckboxes[0]) {
+        const target = source?.dataset.selectAllTarget || '';
         let targetCheckboxes = [];
 
         if (target === 'projects') {
@@ -5285,23 +5285,23 @@ function initTasksPage() {
         });
 
         // Update select all state
-        if (selectAllCheckbox) {
-            const targetCheckboxes = getSelectAllTargetCheckboxes(true);
+        selectAllCheckboxes.forEach(selectAllCheckbox => {
+            const targetCheckboxes = getSelectAllTargetCheckboxes(true, selectAllCheckbox);
             const selectedTargetCheckboxes = targetCheckboxes.filter(cb => cb.checked);
             selectAllCheckbox.checked = targetCheckboxes.length > 0 && selectedTargetCheckboxes.length === targetCheckboxes.length;
             selectAllCheckbox.indeterminate = selectedTargetCheckboxes.length > 0 && selectedTargetCheckboxes.length < targetCheckboxes.length;
             selectAllCheckbox.disabled = targetCheckboxes.length === 0;
-        }
+        });
     }
 
-    if (selectAllCheckbox) {
+    selectAllCheckboxes.forEach(selectAllCheckbox => {
         selectAllCheckbox.addEventListener('change', function() {
-            getSelectAllTargetCheckboxes(true).forEach(cb => {
+            getSelectAllTargetCheckboxes(true, this).forEach(cb => {
                 cb.checked = this.checked;
             });
             updateSelection();
-        });
-    }
+        }, pageListenerOptions);
+    });
 
     checkboxes.forEach(cb => {
         cb.addEventListener('change', function(e) {
@@ -6054,8 +6054,8 @@ function initTasksPage() {
     }
 
     function updateGroupVisibility() {
-        // Spaces reuse the visual groups; their filtering and counts are server-side.
-        if (document.querySelector('[data-work-page]')) return;
+        // Spaces and Dla ciebie filter their shared visual groups on the server.
+        if (document.querySelector('[data-work-page], .for-you-page')) return;
         document.querySelectorAll('.tasks-group-row').forEach(groupRow => {
             let hasVisibleTask = false;
             let nextRow = groupRow.nextElementSibling;
@@ -7369,6 +7369,12 @@ function initTasksPage() {
         function syncDirectoryResizeGrid(board) {
             const header = board.querySelector('.tasks-directory-header');
 
+            if (header && board.classList.contains('work-space-sheet--compact') && !resizeMediaQuery.matches) {
+                const cells = getDirectoryHeaderCells(board, header);
+                setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
+                return;
+            }
+
             if (header && board.classList.contains('resources-sheet') && !resizeMediaQuery.matches) {
                 const cells = getDirectoryHeaderCells(board, header);
                 setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
@@ -7575,6 +7581,7 @@ function initTasksPage() {
             if (document.querySelector('.pulpit-management-sheet')) return 'pulpits-management';
             if (document.querySelector('.pulpit-directory-sheet')) return 'pulpits-directory';
             if (document.querySelector('.work-space-sheet--management')) return 'spaces-management';
+            if (document.querySelector('.for-you-space-sheet')) return 'for-you-spaces';
             if (document.querySelector('[data-resources-page]')) return 'resources';
             const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
 

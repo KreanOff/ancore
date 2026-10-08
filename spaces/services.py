@@ -1,6 +1,6 @@
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Count, Max, Q
 from django.utils import timezone
 
 from core.task_numbering import lock_task_numbers
@@ -41,6 +41,30 @@ def can_manage_spaces(request):
 def visible_items(request):
     tasks = visible_to(Task.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
     return WorkItem.objects.filter(task__in=tasks).select_related('task', 'task__assignee', 'space__project', 'space__configuration', 'team', 'sprint')
+
+
+def decorate_directory_spaces(request, spaces):
+    """Prepare already visible spaces for the shared directory table."""
+    spaces = list(spaces)
+    if not spaces:
+        return spaces
+    space_ids = [space.pk for space in spaces]
+    favorites = set(TaskProject.objects.filter(
+        pk__in=[space.project_id for space in spaces], favorited_by=request.user,
+    ).values_list('pk', flat=True))
+    counts = {row['space_id']: row['count'] for row in visible_items(request).filter(
+        space_id__in=space_ids,
+    ).values('space_id').annotate(count=Count('pk'))}
+    managed_ids = set(manageable_spaces(request).filter(pk__in=space_ids).values_list('pk', flat=True))
+    for space in spaces:
+        space.url = app_url(request, f'{space.pk}/')
+        space.favorite_url = app_url(request, f'{space.pk}/favorite/')
+        space.favorite = space.project_id in favorites
+        space.item_count = counts.get(space.pk, 0)
+        space.settings_url = space.url + '?view=settings'
+        space.can_manage = space.pk in managed_ids
+        space.edit_url = app_url(request, f'{space.pk}/edit/')
+    return spaces
 
 
 def teams_for(request):

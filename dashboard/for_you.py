@@ -4,10 +4,12 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 from django.core.paginator import Paginator
-from django.db.models import Case, DateTimeField, Exists, F, Max, OuterRef, Q, Value, When
+from django.db.models import Case, Count, DateTimeField, Exists, F, Max, OuterRef, Q, Value, When
 from django.db.models.functions import Greatest
 from django.utils import timezone
 
+from spaces.defaults import issue_type_icon, template_settings
+from spaces.services import decorate_directory_spaces
 from tasks.access import visible_to
 from tasks.models import Task, TaskProject, TaskSection
 from workplaces.services import scoped_workplace_app_path, workspace_owner
@@ -55,7 +57,9 @@ def _row(obj, workplace, now):
     label, icon = labels[type(obj)]
     location = label
     key, status_label, space = '', '', None
+    task_row = None
     if is_task:
+        status_order = next((n for n, (key, _) in enumerate(Task.STATUS_CHOICES) if key == obj.status), 0)
         detail = 'view-subtask' if obj.parent_id else 'view-task'
         url = f'{base}{detail}/{obj.task_id}/?task_pk={obj.pk}'
         if (obj.section_id and obj.section.project.user_id == workplace.owner_id
@@ -64,14 +68,30 @@ def _row(obj, workplace, now):
         status_label = obj.get_status_display()
         key = f'#{obj.task_id}'
         item = getattr(obj, 'work_item', None) if isinstance(obj, Task) else None
+        row_item = None
         if item and item.space_id is None:
             key = item.key
+            row_item = item
         elif (item and obj.section_id and item.space.project_id == obj.section.project_id
               and item.space.workplace_id == workplace.pk
               and obj.section.project.user_id == workplace.owner_id
               and obj.section.project.workplace_id == workplace.pk):
             key = item.key
-            status_label = next((s['label'] for s in item.space.statuses if s['key'] == item.status), status_label)
+            row_item = item
+        if row_item:
+            statuses = row_item.space.statuses if row_item.space_id else template_settings()['statuses']
+            status_order, status_label = next(
+                ((n, s['label']) for n, s in enumerate(statuses) if s['key'] == row_item.status),
+                (status_order, status_label),
+            )
+        type_label = row_item.get_work_type_display() if row_item else 'Zadanie'
+        task_row = {
+            'pk': row_item.pk if row_item else obj.pk,
+            'task': obj, 'url': url, 'key': key, 'status_label': status_label, 'status_order': status_order,
+            'space': row_item.space if row_item else None,
+            'type_label': type_label, 'get_work_type_display': type_label,
+            'type_icon': row_item.type_icon if row_item else issue_type_icon('task'),
+        }
     elif is_project:
         space = getattr(obj, 'space', None) if isinstance(obj, TaskProject) else None
         url = scoped_workplace_app_path(workplace, 'spaces', f'{space.pk}/') if space else f'{base}?project={obj.pk}'
@@ -84,9 +104,46 @@ def _row(obj, workplace, now):
         'object': obj, 'title': obj.title if not is_project else obj.name,
         'url': url, 'location': location, 'icon': icon, 'is_task': is_task,
         'key': key, 'status_label': status_label, 'space': space,
+        'task_row': task_row,
         'due_at': due, 'overdue': bool(due and due < now and obj.status != 'closed'),
         'identity': (obj._meta.label_lower, obj.pk),
     }
+
+
+def _decorate_task_rows(rows):
+    task_ids = [row['object'].pk for row in rows if row['is_task']]
+    if not task_ids:
+        return
+    counts = {row['pk']: row for row in Task.objects.filter(pk__in=task_ids).annotate(
+        tags_total=Count('tags', distinct=True), attachments_total=Count('attachments', distinct=True),
+    ).values('pk', 'tags_total', 'attachments_total')}
+    for row in rows:
+        if row['is_task']:
+            totals = counts[row['object'].pk]
+            row['task_row'].update(tags_count=totals['tags_total'], attachments_count=totals['attachments_total'])
+
+
+def _group_rows(rows):
+    """Group only the visible page, retaining date buckets and custom status names."""
+    blocks = {}
+    for row in rows:
+        date_group = row.get('date_group', '')
+        block = blocks.setdefault(date_group, {'date_group': date_group, 'task_groups': {}, 'spaces': [], 'other_rows': []})
+        if not row['is_task']:
+            if row['space']:
+                block['spaces'].append(row['space'])
+            else:
+                block['other_rows'].append(row)
+            continue
+        task_row = row['task_row']
+        key = (row['object'].status, task_row['status_label'])
+        group = block['task_groups'].setdefault(key, {
+            'category': key[0], 'label': key[1], 'order': task_row['status_order'], 'items': [],
+        })
+        group['items'].append(row)
+    for block in blocks.values():
+        block['task_groups'] = sorted(block['task_groups'].values(), key=lambda group: group['order'])
+    return list(blocks.values())
 
 
 def _project_shortcuts(scopes, viewer, workplace, now, recent):
@@ -152,9 +209,9 @@ def for_you_context(request):
         else:
             query = query.filter(user=owner, workplace=workplace)
             if model is Task:
-                query = query.select_related('section__project')
+                query = query.select_related('section__project', 'assignee')
             if model is Task:
-                query = query.select_related('work_item__space__configuration')
+                query = query.select_related('work_item__space__configuration', 'work_item__space__project')
             elif model is TaskProject:
                 query = query.select_related('space')
         scopes[model] = query
@@ -212,6 +269,8 @@ def for_you_context(request):
             candidates.sort(key=lambda row: (row['recent_at'], row['identity']), reverse=True)
         rows = candidates[(page.number - 1) * PAGE_SIZE:page.end_index()]
 
+    _decorate_task_rows(rows)
+    decorate_directory_spaces(request, [row['space'] for row in rows if row['space']])
     for row in rows:
         if row.get('recent_at'):
             age = (timezone.localdate(now) - timezone.localdate(row['recent_at'])).days
@@ -219,7 +278,7 @@ def for_you_context(request):
     return {
         'for_you_tab': tab, 'for_you_caption': CAPTIONS[tab],
         'for_you_tabs': [{'key': key, 'label': label, 'url': page_url(tab=key)} for key, label in TABS],
-        'for_you_rows': rows, 'for_you_page': page,
+        'for_you_rows': rows, 'for_you_groups': _group_rows(rows), 'for_you_page': page,
         'for_you_previous': page_url(page=page.number - 1) if page.has_previous() else '',
         'for_you_next': page_url(page=page.number + 1) if page.has_next() else '',
         'for_you_empty': EMPTY_STATES[tab], 'for_you_assigned_count': assigned_count,
