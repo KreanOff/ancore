@@ -44,7 +44,7 @@ class PulpitManagementTests(TestCase):
             self.assertContains(response, 'data-sidebar-mode="pulpits-management"')
             self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
             self.assertNotContains(response, 'data-sidebar-navigation="pulpits-management" hidden')
-            self.assertContains(response, 'Wróć do poprzedniego widoku')
+            self.assertContains(response, 'Wróć do pulpitów')
         response = self.client.get(scoped_workplace_app_path(self.workspace, 'dashboards'))
         self.assertFalse(response.context['pulpits_management_mode'])
         self.assertContains(response, 'data-sidebar-navigation="pulpits-management" hidden')
@@ -152,6 +152,41 @@ class PulpitManagementTests(TestCase):
                 self.assertTrue(invalid.context['pulpits_management_mode'])
                 self.own.refresh_from_db()
                 self.assertEqual(self.own.visibility, 'private')
+
+    def test_delete_invalidates_dashboard_return_paths_in_both_url_scopes(self):
+        scoped = scoped_workplace_app_path(self.workspace, 'dashboards')
+        filters = '?q=Usuwany&visibility=private&favorite=starred&page=2'
+        for prefix in ['/dashboards/', scoped]:
+            for management in [False, True]:
+                with self.subTest(prefix=prefix, management=management):
+                    dashboard = Dashboard.objects.create(
+                        owner=self.owner, workplace=self.workspace, created_by=self.owner, name='Usuwany pulpit',
+                    )
+                    pk = dashboard.pk
+                    gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='summary')
+                    dashboard.favorited_by.add(self.owner)
+                    url = prefix + ('manage/' if management else '') + f'{pk}/delete/' + filters
+                    response = self.client.post(url, HTTP_X_PULPIT_MODAL='true')
+                    self.assertEqual(response.status_code, 200)
+                    result = response.json()
+                    target = scoped + ('manage/' + filters if management else '')
+                    self.assertEqual(result['url'], target)
+                    self.assertEqual(set(result['invalidated_return_paths']), {
+                        f'/dashboards/{pk}/', f'/dashboards/manage/{pk}/',
+                        f'{scoped}{pk}/', f'{scoped}manage/{pk}/',
+                    })
+                    self.assertFalse(Dashboard.objects.filter(pk=pk).exists())
+                    self.assertFalse(DashboardGadget.objects.filter(pk=gadget.pk).exists())
+                    self.assertTrue(Dashboard.objects.filter(pk=self.own.pk).exists())
+                    self.assertEqual(self.client.get(target).status_code, 200)
+                    self.assertEqual(self.client.get(f'{scoped}{pk}/').status_code, 404)
+
+    def test_rejected_delete_does_not_invalidate_return_paths(self):
+        for dashboard, status in [(self.shared, 403), (self.hidden, 404), (self.foreign, 404)]:
+            response = self.client.post(self.url(f'{dashboard.pk}/delete/'), HTTP_X_PULPIT_MODAL='true')
+            self.assertEqual(response.status_code, status)
+            self.assertNotContains(response, 'invalidated_return_paths', status_code=status)
+            self.assertTrue(Dashboard.objects.filter(pk=dashboard.pk).exists())
 
     def test_settings_save_and_cancel_preserve_destination_layout_and_access(self):
         gadget = DashboardGadget.objects.create(dashboard=self.own, kind='statistics', column=1)

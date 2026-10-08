@@ -56,6 +56,7 @@
     let navigationIndex = window.history.state?.ancoreNavigationIndex || 0;
     let restoringHistory = false;
     const pendingScripts = new Map();
+    const invalidatedManagementReturnPaths = new Set();
     let managementReturn = initialManagementReturn();
 
     function getUrl(href) {
@@ -148,6 +149,11 @@
             || value.workplaceId !== document.body.dataset.workplaceId
             || typeof value.url !== 'string' || typeof value.label !== 'string'
             || !canUsePartialNavigation(value.url) || managementModeForUrl(value.url) === mode) return null;
+        const path = getUrl(value.url).pathname;
+        if ([...invalidatedManagementReturnPaths].some(prefix => path.startsWith(prefix))) return null;
+        if (value.previousManagementReturn) {
+            return { ...value, previousManagementReturn: validManagementReturn(value.previousManagementReturn, value.previousManagementReturn.mode) };
+        }
         return value;
     }
 
@@ -184,6 +190,28 @@
         } catch (error) {
             // History still preserves the entry point when browser storage is disabled.
         }
+    }
+
+    function invalidateManagementReturn(paths) {
+        paths.forEach(path => {
+            const url = getUrl(path);
+            if (url?.origin === window.location.origin && url.pathname !== '/' && url.pathname.endsWith('/')) {
+                invalidatedManagementReturnPaths.add(url.pathname);
+            }
+        });
+        // A catalog can be nested inside an editor's return context.
+        // Remove deleted destinations from both levels and from saved reload state.
+        managementReturn = validManagementReturn(managementReturn, sidebar?.dataset.sidebarMode);
+        MANAGEMENT_MODES.forEach(mode => {
+            try {
+                const value = JSON.parse(window.sessionStorage.getItem(managementStorageKey(mode)));
+                saveManagementReturn(mode, validManagementReturn(value, mode));
+            } catch (error) {
+                // In-memory and history state still work when storage is unavailable.
+            }
+        });
+        window.history.replaceState({ ...window.history.state, ancoreManagementReturn: managementReturn }, '', window.location.href);
+        syncManagementReturnLinks();
     }
 
     function captureReturnPosition() {
@@ -589,6 +617,14 @@
             if (navigationController.signal.aborted) return true;
 
             if (!response.ok) {
+                const fallback = options?.managementReturnFallback ? getUrl(options.managementReturnFallback) : null;
+                if (response.status === 404 && fallback && fallback.href !== url.href && canUsePartialNavigation(fallback.href)) {
+                    // Old history entries or another tab can still refer to a deleted object.
+                    invalidateManagementReturn([url.pathname]);
+                    return await navigatePartially(fallback.href, {
+                        ...options, managementReturnFallback: null, previousManagementReturn: null, restorePosition: null,
+                    });
+                }
                 window.location.href = url.href;
                 return true;
             }
@@ -620,6 +656,7 @@
     window.AncoreApp = Object.assign(window.AncoreApp || {}, {
         canNavigatePartially: canUsePartialNavigation,
         navigate: navigatePartially,
+        invalidateManagementReturn,
     });
 
     function requestContentLoading() {
@@ -744,7 +781,8 @@
             const managementReturnNavigation = link.dataset.managementReturn === sidebar?.dataset.sidebarMode;
             const restorePosition = managementReturnNavigation ? managementReturn?.position : null;
             const previousManagementReturn = managementReturnNavigation ? managementReturn?.previousManagementReturn : null;
-            navigatePartially(link.href, { restorePosition, managementReturnNavigation, previousManagementReturn });
+            const managementReturnFallback = managementReturnNavigation ? link.dataset.defaultReturnUrl : null;
+            navigatePartially(link.href, { restorePosition, managementReturnNavigation, previousManagementReturn, managementReturnFallback });
             return;
         }
 

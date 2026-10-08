@@ -772,6 +772,16 @@ właściwego wpisu. Powrót odtwarza przewinięcie po inicjalizacji docelowego U
 Adres musi być lokalny i obsługiwany przez częściową nawigację. Świeże
 bezpośrednie wejście używa domyślnego linku z szablonu; reload oraz formularze
 wewnątrz zarządzania zachowują wcześniej zapamiętane źródło.
+Po potwierdzonym usunięciu pulpitu odpowiedź JSON zawiera
+`invalidated_return_paths` dla zwykłego i scoped przeglądu/edytora.
+`pulpits.js` przekazuje je do `AncoreApp.invalidateManagementReturn` przed
+odświeżeniem listy. `layout.js` usuwa pasujące cele także z zagnieżdżonego
+kontekstu, bieżącego wpisu historii i osobistego `sessionStorage`;
+pozostałe cele oraz filtry zachowuje. Powrót dotyczący usuniętego pulpitu
+korzysta wtedy z domyślnego katalogu. Jeśli stary wpis historii lub usunięcie
+w innej karcie pozostawi nieaktualny cel, odpowiedź 404 przy kliknięciu
+`data-management-return` uruchamia domyślny powrót w powłoce aplikacji.
+Bezpośrednie wejście na adres usuniętego pulpitu nadal zwraca 404.
 
 ## 13. Stan w przeglądarce
 
@@ -865,7 +875,9 @@ Panel „Więcej pulpitów” korzysta ze wspólnego komponentu panelu Przestrze
 GET `dashboards/search/` (także scoped) filtruje przez `visible_dashboards`,
 wyszukuje po nazwie/opisie, ogranicza frazę do 120 znaków i wynik do 20 pulpitów.
 Odpowiedź zawiera escapowany HTML i `Cache-Control: private, no-store`;
-puste zapytanie zwraca pustą listę. Link katalogu zachowuje frazę i `tab=all`.
+puste zapytanie zwraca pustą listę. Link katalogu zachowuje frazę.
+Katalog pokazuje wszystkie dostępne pulpity bez zakładek; dawny parametr `tab`
+jest ignorowany, a filtry widoczności i wyszukiwania nadal ograniczają wyniki.
 Ostatnie odwiedziny korzystają z `dashboard/recent.py`, który
 zapisuje tylko identyfikatory, osobno dla użytkownika i Workspace. Samo otwarcie
 katalogu nie dopisuje historii. Pulpit domyślny jest stałym skrótem do `/`.

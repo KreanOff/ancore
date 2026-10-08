@@ -193,7 +193,10 @@
                     const result = await request(form.action, { method: 'POST', body: new FormData(form) });
                     delete page.dataset.pulpitSaving;
                     page.dispatchEvent(new Event('pulpit:busy'));
-                    if (!signal.aborted) await refresh(result.url);
+                    if (!signal.aborted) {
+                        if (result.invalidated_return_paths) window.AncoreApp?.invalidateManagementReturn?.(result.invalidated_return_paths);
+                        await refresh(result.url);
+                    }
                 } catch (error) {
                     if (!signal.aborted) window.showNotification?.('Nie udało się zapisać zmiany. Spróbuj ponownie.', 'error');
                 } finally {

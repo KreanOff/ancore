@@ -64,11 +64,11 @@ class PulpitGroupRetirementTests(TestCase):
             response = self.client.get(prefix, {'tab': 'all', 'group': 999999})
             self.assertEqual(response.status_code, 200)
             self.assertEqual([item.pk for item in response.context['dashboards']], [self.dashboard.pk])
-            self.assertTrue(all('group=' not in tab['url'] for tab in response.context['tabs']))
+            self.assertTrue(all('group=' not in response.context[key] for key in ['previous_url', 'next_url']))
             self.assertNotContains(response, 'name="group"')
-            self.assertNotContains(response, self.private.name)
+            self.assertNotContains(response, f'data-pulpit-directory-row="{self.private.pk}"')
             self.assertNotContains(response, self.foreign.name)
-            self.assertContains(response, 'sidebar-spaces-more active')
+            self.assertContains(response, 'data-sidebar-picker-toggle="pulpits"')
 
 
 class PulpitGroupRemovalMigrationTests(TransactionTestCase):

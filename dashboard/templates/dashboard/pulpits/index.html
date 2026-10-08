@@ -6,11 +6,7 @@
             <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Pulpity</h1></div>
             <div class="tasks-titlebar-actions"><a href="{{ create_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-pulpit-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span>Utwórz pulpit</span></a></div>
         </header>
-        <nav class="notifications-tabs work-tabs" aria-label="Katalog pulpitów">
-            {% for entry in tabs %}<a href="{{ entry.url }}"{% if tab == entry.key %} aria-current="page"{% endif %}><i data-icon="{{ entry.icon }}" aria-hidden="true"></i>{{ entry.label }}</a>{% endfor %}
-        </nav>
         <form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get" action="{{ dashboards_url }}" data-pulpit-search>
-            <input type="hidden" name="tab" value="{{ tab }}">
             <div class="tasks-filterbar-left">
                 <select name="visibility" class="tasks-inline-select" aria-label="Widoczność pulpitu"><option value="">Każda widoczność</option>{% for value, label in visibility_choices %}<option value="{{ value }}"{% if visibility_filter == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
                 <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>

@@ -317,8 +317,9 @@ class PulpitTests(TestCase):
         self.assertEqual(self.client.post(self.url(dashboard, 'favorite/')).status_code, 302)
         self.assertContains(self.client.get('/dashboards/'), dashboard.name)
         self.login(self.member)
-        self.assertNotContains(self.client.get('/dashboards/'), dashboard.name)
-        response = self.client.get(f'/workplaces/{self.workplace.slug}/dashboards/?tab=all&q=Przegląd')
+        self.assertContains(self.client.get('/dashboards/'), dashboard.name)
+        self.assertFalse(dashboard.favorited_by.filter(pk=self.member.pk).exists())
+        response = self.client.get(f'/workplaces/{self.workplace.slug}/dashboards/?q=Przegląd')
         self.assertContains(response, f'/workplaces/{self.workplace.slug}/dashboards/{dashboard.pk}/')
         self.assertEqual(self.client.post(self.url(dashboard, 'favorite/')).status_code, 302)
         self.assertEqual(dashboard.favorited_by.count(), 2)
@@ -417,10 +418,10 @@ class PulpitTests(TestCase):
                 legacy.refresh_from_db()
                 self.assertEqual(legacy.kind, kind)
 
-    def test_favorite_keeps_catalog_tab_and_search(self):
+    def test_favorite_keeps_catalog_search_without_retired_tab(self):
         dashboard = self.dashboard()
         response = self.client.post(self.url(dashboard, 'favorite/'), {'tab': 'all', 'q': 'Przegląd'}, HTTP_X_PULPIT_MODAL='true')
-        self.assertIn('tab=all', response.json()['url'])
+        self.assertNotIn('tab=', response.json()['url'])
         self.assertIn('q=Przegl%C4%85d', response.json()['url'])
 
     def test_catalog_visibility_filter_respects_access_and_workspace(self):
@@ -436,36 +437,44 @@ class PulpitTests(TestCase):
                                  name='Obcy Workspace', visibility='workspace')
         self.login(self.member)
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
+            for tab in ['', 'all', 'favorites', 'mine', 'unknown']:
+                with self.subTest(prefix=prefix, tab=tab):
+                    response = self.client.get(prefix, {'tab': tab} if tab else {})
+                    self.assertEqual({row.pk for row in response.context['dashboards']},
+                                     {member_private.pk, shared.pk, public.pk})
+                    self.assertNotContains(response, 'aria-label="Katalog pulpitów"')
+                    search_form = response.content.decode().split('data-pulpit-search>', 1)[1].split('</form>', 1)[0]
+                    self.assertNotIn('name="tab"', search_form)
+                    self.assertContains(response, 'css/components/spaces.css')
             for visibility, expected in [('private', member_private), ('selected', shared), ('workspace', public)]:
                 with self.subTest(prefix=prefix, visibility=visibility):
-                    response = self.client.get(prefix, {'tab': 'all', 'visibility': visibility})
+                    response = self.client.get(prefix, {'visibility': visibility})
                     self.assertEqual([row.pk for row in response.context['dashboards']], [expected.pk])
                     self.assertEqual(response.context['visibility_filter'], visibility)
-            response = self.client.get(prefix, {'tab': 'all', 'visibility': 'unknown'})
+            response = self.client.get(prefix, {'visibility': 'unknown'})
             self.assertEqual(response.context['visibility_filter'], '')
             self.assertEqual({row.pk for row in response.context['dashboards']}, {member_private.pk, shared.pk, public.pk})
             self.assertNotIn(own.pk, [row.pk for row in response.context['dashboards']])
         shared.shared_with.remove(self.member)
         response = self.client.get(scoped_workplace_app_path(self.workplace, 'dashboards'),
-                                   {'tab': 'all', 'visibility': 'selected'})
+                                   {'visibility': 'selected'})
         self.assertEqual(response.context['page'].paginator.count, 0)
+        self.assertContains(response, 'Brak pasujących pulpitów')
+        self.assertContains(response, 'css/components/spaces.css')
+        self.assertContains(response, f'href="{scoped_workplace_app_path(self.workplace, "dashboards")}"')
 
-    def test_catalog_filters_survive_pagination_tabs_and_favorite(self):
+    def test_catalog_filters_survive_pagination_and_favorite(self):
         for number in range(31):
             Dashboard.objects.create(owner=self.owner, workplace=self.workplace, created_by=self.owner,
                                      name=f'Lista {number:02}', visibility='workspace')
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
-            filters = {'tab': 'all', 'q': 'Lista', 'visibility': 'workspace', 'page': 2}
+            filters = {'q': 'Lista', 'visibility': 'workspace', 'page': 2}
             response = self.client.get(prefix, filters)
             self.assertEqual(len(response.context['dashboards']), 1)
             self.assertEqual(response.context['page'].paginator.per_page, 30)
             self.assertEqual(response.context['page'].paginator.count, 31)
-            for entry in response.context['tabs']:
-                self.assertEqual(parse_qs(urlparse(entry['url']).query), {
-                    'tab': [entry['key']], 'q': ['Lista'], 'visibility': ['workspace'],
-                })
             self.assertEqual(parse_qs(urlparse(response.context['previous_url']).query), {
-                'tab': ['all'], 'q': ['Lista'], 'visibility': ['workspace'], 'page': ['1'],
+                'q': ['Lista'], 'visibility': ['workspace'], 'page': ['1'],
             })
             dashboard = response.context['dashboards'][0]
             next_url = response.wsgi_request.get_full_path()

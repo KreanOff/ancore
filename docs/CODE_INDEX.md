@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 36 | 63 | 39 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 31 | 9 | 29 | 182 |
+| [dashboard](../dashboard) | 31 | 9 | 29 | 184 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -2024,7 +2024,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_pulpit_management.py](../dashboard/test_pulpit_management.py).
 
-- `PulpitManagementTests`: 10 metod testowych.
+- `PulpitManagementTests`: 12 metod testowych.
 
 ### dashboard/test_pulpit_navigation.py
 

@@ -771,6 +771,12 @@ wycofanie kopiowania, usuwanie, CSRF i walidację układu/rewizji. Tworzenie prz
 i zarządzanie zaczyna od zera gadżetów; ponowne wejście zachowuje pusty stan,
 a ręczne dodanie pierwszego gadżetu usuwa komunikat pustego pulpitu.
 Wycofanie kopiowania nie wymaga migracji. Testy w `dashboard.test_pulpits`
+sprawdzają też katalog bez zakładek: wszystkie dostępne pulpity bez gwiazdki,
+ignorowanie dawnych wartości `tab`, granice dostępu i Workspace, filtry,
+paginację, gwiazdkę oraz style i akcję czyszczenia pustych wyników.
+Browser QA: filtr widoczności i wyszukiwanie bez zakładek, pusty wynik/czyszczenie,
+zwykły/scoped URL, ponowne wejście przez częściową nawigację i desktop/telefon.
+Testy wycofania kopiowania w `dashboard.test_pulpits`
 sprawdzają 404 dawnych adresów GET/POST (zwykłe/scoped, katalog/zarządzanie)
 dla twórcy i członka, zachowanie konfiguracji, gadżetów, dostępu i gwiazdek,
 brak akcji kopiowania w menu oraz brak pustego menu w przeglądzie odbiorcy.
@@ -832,6 +838,14 @@ modal tworzenia, osobna strona edycji, walidacja ze szkicem, powrót
 z filtrami oraz Wstecz/Dalej/reload. Edycja: wejście z nazwy/menu katalogu,
 menu otwartego pulpitu i menu bocznego, zapis/anulowanie, „Wybrane osoby”,
 zmiana liczby kolumn, ochrona szkicu przy wyjściu oraz ponowne wejście.
+Regresja usuwania: utwórz i otwórz pulpit → „Zarządzaj pulpitami” → usuń go
+→ link powrotu otwiera wszystkie pulpity. Sprawdź ostatni pulpit, usunięcie
+innego pulpitu (zachowanie celu), filtry katalogu, zagnieżdżony powrót edytora,
+zwykły/scoped adres, anulowanie i błąd usuwania, reload oraz Wstecz/Dalej.
+Usunięcie w innej karcie i stary cel w historii powinny użyć domyślnego
+powrotu bez opuszczania powłoki aplikacji. `dashboard.test_pulpit_management`
+sprawdza adresy unieważniane po udanym usunięciu oraz brak unieważnienia
+przy odmowie dostępu; samo działanie linku wymaga browser QA.
 Menu wybranego pulpitu: lista → nazwa → Gadżety i układ → Dostępy → Ustawienia,
 brak poziomych zakładek i ogólnego menu zarządzania w edytorze, nazwa/aktywna
 pozycja po zmianie pulpitu, przeładowanie i Wstecz/Dalej. Sprawdź zapis obu

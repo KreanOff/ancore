@@ -1814,6 +1814,7 @@ wycofane edytowalne ikony encji — nie przywracaj dawnych pickerów.
 | `AncoreDropdownLayer.open/hide/dismiss` | Wspólna szerokość, pozycjonowanie i najwyższa warstwa list wyboru w całej aplikacji |
 | `AncoreApp.canNavigatePartially(url)` | Sprawdzenie, czy adres obsługuje częściową nawigację |
 | `AncoreApp.navigate(url, options)` | Istniejąca nawigacja aplikacji |
+| `AncoreApp.invalidateManagementReturn(paths)` | Usunięcie lokalnych celów powrotu po potwierdzonym skasowaniu obiektu |
 | `showConfirmModal(options)` | Wspólne potwierdzenie operacji |
 | `ancore:content-loaded` | Ponowne uruchomienie logiki po podmianie widoku |
 | `ancore:file-upload-updated` | Zmiana listy dodawanych plików |
@@ -2251,9 +2252,9 @@ Minimalny wariant `pulpit-directory-sheet` w `components/pulpits.css` określa
 kolumny zaznaczenia, menu, nazwy, twórcy, widoczności, liczby gadżetów i opisu
 oraz ikonę pulpitu 24px. Tabela dochodzi do krawędzi kontenera i zachowuje
 wspólne wysokości wierszy, separatory, podświetlenia oraz przewijanie.
-Nagłówek, zakładki `work-tabs` z ikonami oraz toolbar mają 22px odstępu.
-Zakładki są w kolejności Wszystkie, Ulubione, Moje; dotychczasowa domyślna
-kategoria Ulubione pozostaje zachowana. Filtr widoczności i przycisk „Filtruj”
+Nagłówek oraz toolbar mają 22px odstępu. Katalog nie ma zakładek
+Wszystkie, Ulubione i Moje; pokazuje wszystkie dostępne pulpity.
+Filtr widoczności i przycisk „Filtruj”
 są po lewej, wyszukiwarka i paginacja po 30 pozycji po prawej.
 Checkboxy zaznaczają wyłącznie bieżącą stronę, bez operacji zbiorczych.
 `tasks.js` obsługuje zaznaczenie, stan częściowego wyboru i szerokości kolumn
@@ -2262,12 +2263,12 @@ Menu z trzema paskami używa `directory_row_menu.html` oraz
 `dashboard/pulpits/row_actions.html`; zawiera osobistą gwiazdkę i dotychczasowe
 akcje według uprawnień. Nazwa otwiera pulpit. Opis jest osobną kolumną,
 a pełne teksty są dostępne w `title`. Puste wyniki ukrywają nagłówki i pokazują
-komunikat odpowiedni do kategorii lub filtrów. Przegląd pulpitu nadal używa
+komunikat odpowiedni do filtrów lub pustego katalogu. Przegląd pulpitu nadal używa
 `dashboard-overview` i gadżetów. Pozostałe warianty `pulpit-*` zachowują tokeny.
 Puste stany katalogu i zarządzania używają `pulpit-directory-empty-state`:
 kolorowej ilustracji 3D `static/img/empty-states/dashboard-empty.webp`
 o maksymalnej szerokości 440px, wspólnego `tasks-empty-state__copy` oraz
-dotychczasowych opisów i akcji dla zakładki lub filtrów. Ilustracja jest
+opisów i akcji dla pustego katalogu lub filtrów. Ilustracja jest
 dekoracyjna (`alt=""`), ma przezroczyste tło i skaluje się do szerokości
 kontenera na telefonie. Przyciski zachowują `tasks-filter-button` bez
 podkreślenia tekstu. Wiersze niepustej tabeli używają dotychczasowych ikon.
@@ -2375,7 +2376,7 @@ na chevron przy hover/fokus; plus otwiera tworzenie pulpitu, menu oferuje
 Otwiera ten sam niemodalny panel z tytułem „Pulpity”, zamknięciem, polem
 „Wyszukaj wszystkie pulpity” i linkiem „Wyświetl wszystkie pulpity”.
 Wyszukiwanie po nazwie/opisie obejmuje dostępne pulpity aktywnego Workspace
-i pokazuje do 20 wyników. Link zachowuje zapytanie i otwiera zakładkę Wszystkie.
+i pokazuje do 20 wyników. Link zachowuje zapytanie i otwiera katalog pulpitów.
 Przycisk podświetla się na szaro po otwarciu, bez zaznaczenia aktywnej strony.
 „Pulpit domyślny” prowadzi do starego Dashboardu.
 Grupy pulpitów i akcje przypisania są usunięte z katalogu, przeglądu, menu
@@ -2411,6 +2412,10 @@ od zarządzania Przestrzeniami i Workspace.
 Wspólny `layout.js` zachowuje miejsce
 wejścia, filtry i przewinięcie przez częściową nawigację, reload i Wstecz/Dalej.
 Świeży bezpośredni URL używa powrotu do wszystkich pulpitów.
+Po usunięciu pulpitu, z którego otwarto zarządzanie, link powrotu prowadzi
+do wszystkich pulpitów. Usunięcie innego pulpitu zachowuje pierwotny cel.
+Nieaktualny powrót ze starszej historii lub po usunięciu w innej karcie
+również otwiera domyślny katalog zamiast strony błędu.
 
 Edytor konkretnego pulpitu ma osobny tryb `pulpit-editor` i menu
 `core/includes/pulpit_editor_sidebar.html`. Pokazuje nazwę pulpitu, powrót oraz

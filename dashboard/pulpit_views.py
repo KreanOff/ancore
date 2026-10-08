@@ -35,16 +35,9 @@ def get_dashboard(request, pk, edit=False, lock=False):
 
 
 def index_context(request):
-    tab = request.GET.get('tab', 'favorites')
-    if tab not in {'favorites', 'mine', 'all'}:
-        tab = 'favorites'
     query = request.GET.get('q', '').strip()[:120]
     visibility = request.GET.get('visibility', '')
     queryset = visible_dashboards(request).select_related('created_by').annotate(gadget_count=Count('gadgets', distinct=True))
-    if tab == 'favorites':
-        queryset = queryset.filter(favorited_by=request.user)
-    elif tab == 'mine':
-        queryset = queryset.filter(created_by=request.user)
     if query:
         queryset = queryset.filter(Q(name__icontains=query) | Q(description__icontains=query))
     if visibility in Dashboard.Visibility.values:
@@ -55,13 +48,11 @@ def index_context(request):
     rows = [decorate_dashboard(request, row) for row in page]
     base = app_url(request)
     filters = {'q': query, 'visibility': visibility}
-    return {'dashboards': rows, 'page': page, 'tab': tab, 'query': query, 'dashboards_url': base,
+    return {'dashboards': rows, 'page': page, 'pulpits_directory_mode': True, 'query': query, 'dashboards_url': base,
             'visibility_filter': visibility, 'visibility_choices': Dashboard.Visibility.choices,
             'create_url': app_url(request, 'create/'),
-            'tabs': [{'key': key, 'label': label, 'icon': icon, 'url': base + '?' + urlencode({'tab': key, **filters})}
-                     for key, label, icon in [('all', 'Wszystkie', 'layout-dashboard'), ('favorites', 'Ulubione', 'star'), ('mine', 'Moje', 'user-round')]],
-            'previous_url': base + '?' + urlencode({'tab': tab, **filters, 'page': page.number - 1}),
-            'next_url': base + '?' + urlencode({'tab': tab, **filters, 'page': page.number + 1})}
+            'previous_url': base + '?' + urlencode({**filters, 'page': page.number - 1}),
+            'next_url': base + '?' + urlencode({**filters, 'page': page.number + 1})}
 
 
 @login_required
@@ -204,9 +195,9 @@ def form_response(request, form, title, return_url, dashboard=None, gadget=False
     return render(request, template, context, status=status)
 
 
-def saved_response(request, url):
+def saved_response(request, url, **extra):
     if request.headers.get('X-Pulpit-Modal') == 'true':
-        return JsonResponse({'saved': True, 'url': url})
+        return JsonResponse({'saved': True, 'url': url, **extra})
     return redirect(url)
 
 
@@ -261,7 +252,12 @@ def access(request, pk, management=False):
 @transaction.atomic
 def delete(request, pk, management=False):
     get_dashboard(request, pk, edit=True, lock=True).delete()
-    return saved_response(request, management_url(request) if management else app_url(request))
+    invalidated_paths = list(dict.fromkeys(
+        f'{base}{prefix}{pk}/'
+        for base in ['/dashboards/', app_url(request)] for prefix in ['', 'manage/']
+    ))
+    return saved_response(request, management_url(request) if management else app_url(request),
+                          invalidated_return_paths=invalidated_paths)
 
 
 @login_required
@@ -280,9 +276,7 @@ def favorite(request, pk):
         return saved_response(request, return_url)
     target = app_url(request, f'{pk}/') if request.POST.get('detail') else app_url(request)
     if not request.POST.get('detail'):
-        tab = request.POST.get('tab', 'favorites')
-        tab = tab if tab in {'favorites', 'mine', 'all'} else 'favorites'
-        target += '?' + urlencode({'tab': tab, 'q': request.POST.get('q', '').strip()[:120]})
+        target += '?' + urlencode({'q': request.POST.get('q', '').strip()[:120]})
     return saved_response(request, target)
 
 
