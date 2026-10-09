@@ -1,0 +1,105 @@
+<div class="tasks-modal app-modal-panel tasks-project-modal tasks-project-edit-modal {% if tag_modal_open %}is-open{% endif %}" id="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-modal-title" aria-hidden="{% if tag_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form" id="tag-create-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="{% if tag_edit_mode %}edit_tag{% else %}create_tag{% endif %}">
+            <input type="hidden" name="tag_id" value="{{ tag_edit_tag_id }}">
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                        <i data-icon="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong id="tag-modal-title">{% if tag_edit_mode %}Edytuj tag{% else %}Nowy tag{% endif %}</strong>
+                </div>
+            </header>
+
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
+                {% if tag_form.errors %}
+                <div class="tasks-modal__errors" role="alert">
+                    {% for field in tag_form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in tag_form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="tasks-form-field">
+                    <label for="{{ tag_form.name.id_for_label }}">Nazwa tagu</label>
+                    {{ tag_form.name }}
+                </div>
+                <div class="tasks-form-field">
+                    <label for="{{ tag_form.description.id_for_label }}">Opis</label>
+                    {{ tag_form.description }}
+                </div>
+
+                <section class="tasks-tag-parameters" aria-labelledby="tag-meaning-title">
+                    <h3 class="u-sr-only" id="tag-meaning-title">Parametry tagu</h3>
+                    <div class="tasks-tag-fields">
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--category">
+                                    <span>Typ tagu</span>
+                                    {{ tag_form.category }}
+                                </label>
+                                <label class="tasks-tag-field--status">
+                                    <span>Status</span>
+                                    {{ tag_form.status }}
+                                </label>
+                                <label class="tasks-tag-field--color">
+                                    <span>Kolor</span>
+                                    {{ tag_form.color }}
+                                </label>
+                                <label class="tasks-tag-field--icon">
+                                    <span>Ikona</span>
+                                    {{ tag_form.icon }}
+                                </label>
+                                <label class="tasks-tag-field--priority">
+                                    <span>Priorytet</span>
+                                    {{ tag_form.priority }}
+                                </label>
+                                <label class="tasks-tag-field--scope">
+                                    <span>Zakres</span>
+                                    {{ tag_form.scope }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--owner">
+                                    <span>Właściciel / dział</span>
+                                    {{ tag_form.owner_label }}
+                                </label>
+                                <label class="tasks-tag-field--related">
+                                    <span>Powiązane tagi</span>
+                                    {{ tag_form.related_tags }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="tasks-tag-field-group">
+                            <div class="tasks-tag-field-grid">
+                                <label class="tasks-tag-field--usage">
+                                    <span>Opis użycia</span>
+                                    {{ tag_form.usage_notes }}
+                                </label>
+                                <label class="tasks-tag-field--automation">
+                                    <span>Reguły automatyczne</span>
+                                    {{ tag_form.automation_rules }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <footer class="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
+                <button type="submit" class="tasks-modal__submit" id="tag-create-submit">{% if tag_edit_mode %}Zapisz zmiany{% else %}Utwórz tag{% endif %}</button>
+            </footer>
+        </form>
+    </div>
+</div>

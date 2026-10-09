@@ -137,6 +137,16 @@ walidację, Escape/fokus, ponowne wejście oraz desktop i telefon.
 
 ## 1. Wymagania i wersje
 
+Tagi przestrzeni wymagają migracji Tasks `0064_space_tags` i `0065_space_tag_data`.
+Wykonaj backup bazy przed migracją danych. `spaces.test_tags` sprawdza zwykłe/scoped
+adresy, izolację dwóch przestrzeni i Workspace, wycofany katalog, obserwatora,
+autora notatek, formularze, usuwanie zbiorcze, CSRF, wyszukiwanie, przenoszenie
+zadań oraz kopiowanie/cofanie danych migracji. Sprawdzaj również `spaces`,
+uprawnienia Tasks, `tasks.test_tag_retirement`, wyszukiwanie Dashboardu,
+wycofanie Kanbana oraz brak tagów w Dokumentach. Browser QA: zakładka i ekran
+referencyjny, dodanie/edycja/usunięcie, notatka, błąd nazwy, filtry, pusty stan,
+Escape, powrót po częściowej nawigacji oraz desktop i 390px.
+
 Źródła: [requirements.txt](../requirements.txt), [settings.py](../ancore/settings.py).
 
 - Python zgodny z używaną wersją Django.
@@ -929,3 +939,31 @@ okien, limit 24 oraz brak pozornie dodanych kart. Przegląd zachowuje ilustracj�
 pustego pulpitu i brak kontrolek gadżetów. Desktop, tablet z dokowanym katalogiem
 oraz telefon z katalogiem nad siatką muszą zachować własne przewijanie i dostęp
 do przycisków. Referencją powłoki i kontrolek jest „Zarządzaj przestrzeniami”.
+
+## Usunięcie globalnego katalogu Tagów
+
+Globalny katalog „Tagi” w Starszych widokach jest usunięty. Testy
+`tasks.test_tag_retirement` sprawdzają 404 dla zwykłych i scoped adresów oraz
+akcji CRUD/notatek, brak menu i modali, odrzucenie dawnego skrótu Favorites,
+wyszukiwanie, puste pickery zadań bez przestrzeni, brak katalogu w adminie
+oraz brak backfillu dawnych tagów. Historyczne rekordy
+i relacje pozostają w bazie. Zmiana nie wymaga dodatkowej migracji ponad
+`0064_space_tags` i `0065_space_tag_data`. Weryfikuj również `spaces.test_tags`,
+`tasks.tests`, `workplaces.tests`, wyszukiwanie Dashboardu, wycofanie Kanbana
+i brak tagów w Dysku/Dokumentach. Browser QA: Starsze widoki, 404 starego
+katalogu, tagi przestrzeni, ekran referencyjny, częściowa nawigacja i 390px.
+
+Weryfikacja 9.10.2026: końcowy zestaw 317 testów zakończył się 307 poprawnymi
+wynikami i 10 wcześniejszymi błędami/asercjami nawigacji, podzadania i pulpitu.
+Te same 10 przypadków odtworzono na niezmienionym HEAD w osobnej bazie.
+Wszystkie 8 testów wycofania oraz testy tagów przestrzeni przeszły. Wcześniejszy
+zestaw 36 testów funkcji, formularzy i wyszukiwania również przeszedł.
+Pełny powtórny przebieg na świeżej bazie potrzebował wyłączenia PostgreSQL JIT
+wyłącznie w tymczasowej konfiguracji testowej; standardowy przebieg zatrzymał
+długo wykonywany SELECT podsumowania przestrzeni. Konfiguracja aplikacji
+nie została zmieniona. Playwright/Chrome (plugin Browser niedostępny),
+1440×1000 i 390×844, potwierdził brak starego menu i Favorites, 404 zwykłego
+i scoped katalogu, brak modali Zadań, dodanie tagu przestrzeni, Escape, pusty
+stan, częściową nawigację, powrót i reload bez błędów JavaScript.
+Kontrole Django, zgodności migracji, składni, linków dokumentacji, indeksu
+i `git diff --check` przeszły. Nie uruchamiano całego repozytorium.

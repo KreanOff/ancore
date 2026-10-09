@@ -17,17 +17,17 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 19 | 0 | 18 | 58 |
+| [core](../core) | 19 | 0 | 18 | 56 |
 | [accounts](../accounts) | 18 | 7 | 9 | 43 |
 | [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
-| [tasks](../tasks) | 36 | 63 | 41 | 319 |
+| [tasks](../tasks) | 38 | 65 | 46 | 313 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
 | [dashboard](../dashboard) | 33 | 11 | 29 | 204 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 24 | 4 | 27 | 80 |
+| [spaces](../spaces) | 25 | 4 | 28 | 95 |
 
 ## 2. Modele i relacje
 
@@ -224,12 +224,13 @@ Metody/properties: `__str__`.
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `category` (CharField), `color` (CharField), `icon` (CharField), `priority` (CharField), `scope` (CharField), `owner_label` (CharField), `status` (CharField), `usage_notes` (TextField), `automation_rules` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `related_tags` (ManyToManyField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `category` (CharField), `color` (CharField), `icon` (CharField), `priority` (CharField), `scope` (CharField), `owner_label` (CharField), `status` (CharField), `usage_notes` (TextField), `automation_rules` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `space` (ForeignKey), `related_tags` (ManyToManyField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='task_tags' |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='task_tags'; null=True |
+| `space` | `'spaces.Space'` | on_delete=models.CASCADE; related_name='tags'; null=True |
 | `related_tags` | `'self'` | — |
 
 Metody/properties: `_code_scope_models`, `_code_exists`, `_generate_unique_code`, `save`, `__str__`.
@@ -1274,7 +1275,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [tasks/__init__.py](../tasks/__init__.py)
 - [tasks/access.py](../tasks/access.py) — `task_tree_ids`, `require_deletable_tasks`, `editable_to`, `require_editable`, `visible_to`
-- [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskSectionAdmin`, `TaskTagAdmin`, `TaskAttachmentAdmin`
+- [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskSectionAdmin`, `TaskAttachmentAdmin`
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
 - [tasks/directory.py](../tasks/directory.py) — `directory_tab`, `directory_queryset`, `directory_tabs`, `decorate_favorites`
 - [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `ProjectVisibilitySelect`, `TaskAccessForm`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionAccessForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
@@ -1283,6 +1284,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
 - [tasks/sharing.py](../tasks/sharing.py) — `share_candidates`, `project_role`, `project_access_data`, `section_candidates`, `section_role`, `section_access_data`, `task_candidates`, `task_role`
 - [tasks/sharing_signals.py](../tasks/sharing_signals.py) — `revoke_project_shares`, `membership_deleted`, `membership_disabled`, `project_member_deleted`, `section_member_deleted`, `task_member_deleted`
+- [tasks/tagging.py](../tasks/tagging.py) — `tags_in_scope`, `visible_tags`, `form_tags`, `tag_action`
 - [tasks/urls.py](../tasks/urls.py)
 - [tasks/views/__init__.py](../tasks/views/__init__.py)
 - [tasks/views/directory.py](../tasks/views/directory.py) — `directory_favorite`
@@ -1397,7 +1399,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
 - [spaces/navigation.py](../spaces/navigation.py) — `sidebar_spaces`
 - [spaces/services.py](../spaces/services.py) — `app_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
-- [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`, `deleted_space_avatar`
+- [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_task_tags`, `scoped_related_tags`
 - [spaces/summary.py](../spaces/summary.py) — `summary_scope`, `filter_summary_items`, `space_summary`
 - [spaces/team_urls.py](../spaces/team_urls.py)
 - [spaces/teams.py](../spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
@@ -1487,7 +1489,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/templates/tasks/includes/section_notes_thread.html](../tasks/templates/tasks/includes/section_notes_thread.html)
 - [tasks/templates/tasks/includes/status_group_header.html](../tasks/templates/tasks/includes/status_group_header.html)
 - [tasks/templates/tasks/includes/status_pagination.html](../tasks/templates/tasks/includes/status_pagination.html)
+- [tasks/templates/tasks/includes/tag_directory.html](../tasks/templates/tasks/includes/tag_directory.html)
+- [tasks/templates/tasks/includes/tag_filters.html](../tasks/templates/tasks/includes/tag_filters.html)
+- [tasks/templates/tasks/includes/tag_modal.html](../tasks/templates/tasks/includes/tag_modal.html)
+- [tasks/templates/tasks/includes/tag_notes_modal.html](../tasks/templates/tasks/includes/tag_notes_modal.html)
 - [tasks/templates/tasks/includes/tag_notes_thread.html](../tasks/templates/tasks/includes/tag_notes_thread.html)
+- [tasks/templates/tasks/includes/tag_sort.html](../tasks/templates/tasks/includes/tag_sort.html)
 - [tasks/templates/tasks/includes/task_activity_item.html](../tasks/templates/tasks/includes/task_activity_item.html)
 - [tasks/templates/tasks/includes/task_display_manager.html](../tasks/templates/tasks/includes/task_display_manager.html)
 - [tasks/templates/tasks/includes/task_issue_row.html](../tasks/templates/tasks/includes/task_issue_row.html)
@@ -1631,6 +1638,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/sidebar_picker.html](../spaces/templates/spaces/sidebar_picker.html)
 - [spaces/templates/spaces/sidebar_row.html](../spaces/templates/spaces/sidebar_row.html)
 - [spaces/templates/spaces/summary.html](../spaces/templates/spaces/summary.html)
+- [spaces/templates/spaces/tags.html](../spaces/templates/spaces/tags.html)
 - [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
 - [spaces/templates/spaces/teams.html](../spaces/templates/spaces/teams.html)
 - [spaces/templates/spaces/template_picker.html](../spaces/templates/spaces/template_picker.html)
@@ -1792,7 +1800,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [core/tests.py](../core/tests.py).
 
 - `UploadValidationTests`: 3 metod testowych.
-- `SidebarActiveStateTests`: 16 metod testowych.
+- `SidebarActiveStateTests`: 14 metod testowych.
 
 ### accounts/test_avatars.py
 
@@ -1930,6 +1938,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `TaskStatusPaginationTests`: 7 metod testowych.
 
+### tasks/test_tag_retirement.py
+
+Źródło: [tasks/test_tag_retirement.py](../tasks/test_tag_retirement.py).
+
+- `LegacyTagRetirementTests`: 8 metod testowych.
+
 ### tasks/test_task_sharing.py
 
 Źródło: [tasks/test_task_sharing.py](../tasks/test_task_sharing.py).
@@ -1954,7 +1968,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [tasks/tests.py](../tasks/tests.py).
 
 - `TaskProjectControlStyleTests`: 19 metod testowych.
-- `TaskProjectCreationTests`: 115 metod testowych.
+- `TaskProjectCreationTests`: 101 metod testowych.
 
 ### kanban/test_retirement.py
 
@@ -2229,6 +2243,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceSummaryTests`: 10 metod testowych.
 
+### spaces/test_tags.py
+
+Źródło: [spaces/test_tags.py](../spaces/test_tags.py).
+
+- `SpaceTagTests`: 14 metod testowych.
+- `SpaceTagMigrationTests`: 1 metod testowych.
+
 ### spaces/tests.py
 
 Źródło: [spaces/tests.py](../spaces/tests.py).
@@ -2327,6 +2348,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0061_directory_favorites.py](../tasks/migrations/0061_directory_favorites.py)
 - [tasks/migrations/0062_task_favorites.py](../tasks/migrations/0062_task_favorites.py)
 - [tasks/migrations/0063_remove_project_field_settings.py](../tasks/migrations/0063_remove_project_field_settings.py)
+- [tasks/migrations/0064_space_tags.py](../tasks/migrations/0064_space_tags.py)
+- [tasks/migrations/0065_space_tag_data.py](../tasks/migrations/0065_space_tag_data.py)
 
 ### kanban
 

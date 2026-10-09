@@ -166,7 +166,7 @@ Od 3.10.2026 główna nawigacja prowadzi do katalogu Przestrzeni, Wszystkich
 zadań i Zespołów. Przestrzeń organizuje pracę; zespół grupuje osoby. Workspace
 pozostaje nadrzędną granicą danych i członkostwa. Pod Zasobami zwijana sekcja
 „Starsze widoki” udostępnia dawne katalogi Projektów (także Ulubione), Grup,
-Zadań, Tagów, Szablonów projektów i Kanbana. Katalogi Kontaktów, Firm, Użytkowników
+Zadań, Szablonów projektów i Kanbana. Globalny katalog Tagów jest wycofany. Katalogi Kontaktów, Firm, Użytkowników
 i Gości są wycofane z menu i routingu. Skróty używają aktywnego Workspace
 i zachowują istniejące przekierowania
 Kanbana; nie przywracają edycji przeniesionych rekordów źródłowych.
@@ -198,7 +198,7 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
 - Rodzaje: programistyczny, biznesowy, obsługowy.
 - Szablony: Kanban, Scrum, zarządzanie zadaniami, marketing, rekrutacja,
   obsługa zgłoszeń. Szablon określa początkowe statusy, typy i pola.
-- Widoki przestrzeni: podsumowanie, lista, tablica, oś czasu, raporty i ustawienia.
+- Widoki przestrzeni: podsumowanie, lista, tablica, oś czasu, raporty, tagi i ustawienia.
   Lista zachowuje zwarte wiersze i grupy statusów Zadań, a tablica dotychczasowy
   wygląd kart Kanbana. Status zmienia się przez przeciąganie lub menu działań,
   dostępne również klawiaturą. Filtry i paginacja są w standardowym pasku Zadań.
@@ -237,6 +237,36 @@ kluczy pozostałych. Przeniesienie do innej przestrzeni zachowuje pierwotny kluc
 resetuje relacje planowania i nadaje numer w nowym zakresie. Nie należy mylić
 tego klucza z PK, renumerowanym `Task.task_id` ani dawnymi kodami grup.
 Szczegóły zadań używają istniejących adresów z parametrem `task_pk`.
+
+## Tagi przestrzeni
+
+Zakładka „Tagi” pod `/<pk>/?view=tags` (także scoped) korzysta z istniejącego
+modelu `tasks.TaskTag`, tabeli, filtrów, sortowania, paginacji, modali, informacji
+i notatek starszego katalogu. Każdy tag wskazuje dokładnie jedną przestrzeń;
+nazwa może powtarzać się w innych przestrzeniach. Osoby z prawem edycji projektu
+tworzą, edytują i usuwają tagi, także zbiorczo, oraz dodają notatki. Obserwator
+ma odczyt; edycja/usunięcie notatki dodatkowo wymaga bycia jej autorem.
+Liczba zadań zachowuje zasadę starszego katalogu: dostępne zadania główne,
+bez podzadań i bez ujawniania prywatnych zadań.
+
+Formularze nowego zadania i szczegółów oraz powiązania tagów ograniczają wybór
+do tej samej przestrzeni i Workspace. Starsze pickery zadań przełączają listę
+tagów od razu po zmianie przestrzeni; dane wyboru obejmują tylko widoczne
+projekty osoby oglądającej formularz. Bezpośredni zapis obcego identyfikatora
+jest odrzucany. Zmiana przestrzeni zadania lub całej grupy usuwa poprzednie
+przypisania tagów spoza przestrzeni docelowej. Globalne wyszukiwanie filtruje
+tagi przez dostęp do projektu i kieruje do zakładki ich przestrzeni.
+
+Migracje Tasks `0064_space_tags` i `0065_space_tag_data` rozdzielają zmianę schematu
+i danych, aby indeks FK powstał przed kopiowaniem rekordów w PostgreSQL.
+Druga tworzy niezależne kopie używanych starszych tagów w przestrzeniach zadań,
+przenosi przypisania, kopiuje notatki z autorami/datami i powiązane tagi.
+Oryginały i historyczne relacje Kanbana/Dokumentów pozostają zachowane.
+Tagi bez przestrzeni pozostają wyłącznie danymi historycznymi. Globalny
+katalog i jego akcje zwracają 404; nie mają pozycji menu, Favorites ani
+wyników wyszukiwania. Formularze zadań bez przestrzeni mają pusty wybór tagów. Migracja odwrotna łączy tagi o tej samej nazwie w starszym
+katalogu i zachowuje przypisania oraz notatki; przed wdrożeniem wykonaj backup.
+Pole „Zakres” nadal jest klasyfikacją, a tekst reguł nie uruchamia automatyzacji.
 
 ## Uprawnienia i konfiguracje
 
@@ -329,3 +359,21 @@ czas i prywatność; planowanie oraz zespół edytuje się z nowego okna.
   ekran referencyjny oraz rozmiary desktopowe i 390 px.
 - `manage.py check`, `makemigrations --check --dry-run`, kontrola składni JS,
   `update_code_index.py --check`, linki dokumentacji i `git diff --check`: OK.
+
+## Weryfikacja tagów przestrzeni (9.10.2026)
+
+Zastosowano lokalne migracje po backupie bazy. Nowe 15 testów obejmuje także
+pełną migrację schematu ze starszymi przypisaniami i jej cofnięcie na PostgreSQL.
+Końcowe zestawy: 63 testy nowych funkcji i powiązanych uprawnień/statusów oraz
+33 testy nowych i starszych operacji tagów — oba OK (15 testów jest wspólnych).
+Szerszy przebieg 208 testów miał 2 wcześniejsze błędy `dashboard_totals`,
+potwierdzone na HEAD. Osobno potwierdzono wcześniejszy błąd skrótu `tasks-my`
+i nieaktualną asercję koloru separatora w teście stylu. Nie uruchamiano całego repozytorium.
+
+Playwright z zainstalowanym Chrome (plugin Browser niedostępny) na osobnej bazie
+sprawdził 1440×1000 i 390×844: nową zakładkę i starszy katalog, dodanie, edycję,
+usunięcie z potwierdzeniem, notatkę, duplikat nazwy, wyszukiwanie, izolowany pusty
+stan, Escape, częściową nawigację i ponowne wejście. Oba starsze pickery zadań
+zmieniają opcje wraz z przestrzenią; nie zarejestrowano błędów JavaScript.
+Kontrole Django, zgodności migracji, składni `tasks.js`, linków dokumentacji,
+indeksu kodu i `git diff --check` przeszły.

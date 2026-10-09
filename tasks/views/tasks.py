@@ -63,7 +63,6 @@ from ..forms import (
     TaskProjectRenameForm,
     TaskSectionForm,
     TaskSectionRenameForm,
-    TaskTagForm,
     TaskWorkLogForm,
 )
 
@@ -224,7 +223,7 @@ def _mark_task_row_access(tasks, user, viewer=None):
         task.shared_view_url = ''
         task.tags_render_count = getattr(task, 'tags_total', None)
         if task.tags_render_count is None:
-            task.tags_render_count = task.tags.count()
+            task.tags_render_count = task.tags.filter(space__isnull=False).count()
         task.attachments_render_count = getattr(task, 'attachments_total', None)
         if task.attachments_render_count is None:
             task.attachments_render_count = task.attachments.count()
@@ -1361,8 +1360,8 @@ def _task_filter_queryset(
             | Q(assignee__last_name__icontains=query)
             | Q(assignee__email__icontains=query)
             | Q(assignee__username__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(tags__code__icontains=query)
+            | Q(tags__name__icontains=query, tags__space__isnull=False)
+            | Q(tags__code__icontains=query, tags__space__isnull=False)
         )
         if task_id:
             query_filter |= Q(task_id=task_id)
@@ -1613,8 +1612,10 @@ def _tag_filter_queryset(
     scope='',
     owner='',
     workplace=None,
+    space=None,
 ):
-    queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
+    from tasks.tagging import tags_in_scope
+    queryset = tags_in_scope(user, workplace, space)
     query = (query or '').strip()
     if query:
         priority_matches = _choice_values_matching_query(TaskTag.PRIORITY_CHOICES, query)
@@ -1663,8 +1664,9 @@ def _tag_filter_queryset(
     )
 
 
-def _tag_filter_options(user, workplace=None):
-    queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
+def _tag_filter_options(user, workplace=None, space=None):
+    from tasks.tagging import tags_in_scope
+    queryset = tags_in_scope(user, workplace, space)
     owners = [
         {'value': row['owner_label'], 'label': row['owner_label']}
         for row in queryset.exclude(owner_label='')
@@ -1681,16 +1683,6 @@ def _tag_filter_options(user, workplace=None):
         'categories': _choice_options(TaskTag.CATEGORY_CHOICES),
         'scopes': _choice_options(TaskTag.SCOPE_CHOICES),
         'owners': owners,
-    }
-
-
-def _empty_tag_filter_options():
-    return {
-        'priorities': _choice_options(TaskTag.PRIORITY_CHOICES),
-        'statuses': _choice_options(TaskTag.STATUS_CHOICES),
-        'categories': _choice_options(TaskTag.CATEGORY_CHOICES),
-        'scopes': _choice_options(TaskTag.SCOPE_CHOICES),
-        'owners': [],
     }
 
 
@@ -2090,7 +2082,7 @@ def _group_window_for_request(request, project=None):
     }
 
 
-def _tag_window_for_request(request):
+def _tag_window_for_request(request, space):
     workplace = _active_workplace(request)
     page_size = _project_page_size(request)
     requested_page = _project_page_number(request)
@@ -2110,6 +2102,7 @@ def _tag_window_for_request(request):
         scope=scope,
         owner=owner,
         workplace=workplace,
+        space=space,
     ).annotate(
         total_tasks=Count(
             'tasks',
@@ -2150,9 +2143,9 @@ def _tag_window_for_request(request):
         previous_page_params = {**base_params, 'page': current_page - 1}
         if current_page - 1 == 1:
             previous_page_params.pop('page', None)
-        previous_url = _projects_url(previous_page_params)
+        previous_url = _projects_url(previous_page_params, base_url=request.path)
     if has_next:
-        next_url = _projects_url({**base_params, 'page': current_page + 1})
+        next_url = _projects_url({**base_params, 'page': current_page + 1}, base_url=request.path)
 
     if not tags:
         summary = 'Brak tagów'
@@ -2173,13 +2166,13 @@ def _tag_window_for_request(request):
         'sort_param': '' if sort == TAG_DEFAULT_SORT else sort,
         'sort_label': TAG_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': TAG_SORT_OPTION_MAP[sort]['direction'],
-        'filters': _tag_filter_options(workspace_owner(request), workplace=workplace),
+        'filters': _tag_filter_options(workspace_owner(request), workplace=workplace, space=space),
         'page': current_page,
         'total_pages': total_pages,
         'total_tags': total_tags,
         'page_size': page_size,
         'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
-        'page_items': _project_page_items(current_page, total_pages, base_params) if total_tags else [],
+        'page_items': _project_page_items(current_page, total_pages, base_params, base_url=request.path) if total_tags else [],
         'has_previous': has_previous,
         'has_next': has_next,
         'previous_url': previous_url,
@@ -2883,7 +2876,7 @@ def _tasks_navigation_context(user, active_section=None, active_view=None, workp
             default=Value(0),
             output_field=IntegerField(),
         ),
-        tags_total=Count('tags', distinct=True),
+        tags_total=Count('tags', filter=Q(tags__space__isnull=False), distinct=True),
         attachments_total=Count('attachments', distinct=True),
     ).order_by('is_closed_sort', 'task_id')
 
@@ -2916,10 +2909,6 @@ def _tasks_navigation_context(user, active_section=None, active_view=None, workp
         'tasks': tasks_qs,
         'total_task_count': tasks_qs.count(),
         'total_group_count': len(_sections_for_projects(navigation_projects)),
-        'tags': _filter_workplace(TaskTag.objects.filter(user=user), workplace).annotate(
-            total_tasks=Count('tasks', filter=_tag_task_count_filter(user, workplace, viewer=viewer))
-        ),
-        'total_tag_count': _filter_workplace(TaskTag.objects.filter(user=user), workplace).count(),
         'shared_task_count': 0,
         'shared_group_count': 0,
         'shared_project_count': 0,
@@ -3107,6 +3096,9 @@ def task_group(request, section_id):
 
 def _tasks_page(request, active_section=None):
     workplace = _active_workplace(request)
+    from tasks.tagging import TAG_ACTIONS
+    if request.GET.get('view') == 'tags' or (request.method == 'POST' and request.POST.get('action') in TAG_ACTIONS):
+        raise Http404
     if request.method == 'POST' and request.POST.get('action') == 'save_project_template':
         project_id = request.POST.get('project_id', '')
         if not project_id.isdecimal() or len(project_id) > 18:
@@ -3129,12 +3121,10 @@ def _tasks_page(request, active_section=None):
         viewer=request.user,
     )
     section_form = TaskSectionForm(user=workspace_owner(request), workplace=workplace, viewer=request.user)
-    tag_form = TaskTagForm(user=workspace_owner(request), workplace=workplace)
     all_tasks_view = request.GET.get('view') == 'all-tasks' and not active_section
     my_tasks_view = request.GET.get('view') == 'my-tasks' and not active_section
     unassigned_tasks_view = request.GET.get('view') == 'unassigned-tasks' and not active_section
     all_groups_view = request.GET.get('view') == 'all-groups' and not active_section
-    tags_view = request.GET.get('view') == 'tags' and not active_section
     shared_tasks_view = False
     shared_groups_view = False
     shared_projects_view = False
@@ -3144,7 +3134,6 @@ def _tasks_page(request, active_section=None):
         or my_tasks_view
         or unassigned_tasks_view
         or all_groups_view
-        or tags_view
         or shared_tasks_view
         or shared_groups_view
         or shared_projects_view
@@ -3192,9 +3181,6 @@ def _tasks_page(request, active_section=None):
     section_rename_form = TaskSectionRenameForm(user=workspace_owner(request), workplace=workplace, viewer=request.user)
     section_rename_section_id = ''
     task_modal_open = False
-    tag_modal_open = False
-    tag_edit_mode = False
-    tag_edit_tag_id = ''
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -3421,107 +3407,6 @@ def _tasks_page(request, active_section=None):
             section_create_project_id = project.id
             messages.error(request, 'Nie udało się dodać grupy.')
 
-        if action == 'create_tag':
-            tag_form = TaskTagForm(request.POST, user=workspace_owner(request), workplace=workplace)
-            if tag_form.is_valid():
-                tag_name = tag_form.cleaned_data['name']
-                if _filter_workplace(TaskTag.objects.filter(user=workspace_owner(request), name__iexact=tag_name), workplace).exists():
-                    tag_form.add_error('name', 'Taki tag już istnieje.')
-                else:
-                    tag = tag_form.save(commit=False)
-                    tag.user = workspace_owner(request)
-                    tag.workplace = workplace
-                    tag.save()
-                    tag_form.save_m2m()
-                    messages.success(request, 'Tag dodany.')
-                    return redirect(f"{reverse('tasks:tasks')}?view=tags")
-            tag_modal_open = True
-            messages.error(request, 'Nie udało się dodać tagu.')
-
-        if action == 'edit_tag':
-            tag = get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('tag_id'))
-            tag_form = TaskTagForm(request.POST, instance=tag, user=workspace_owner(request), workplace=workplace)
-            if tag_form.is_valid():
-                tag_name = tag_form.cleaned_data['name']
-                if _filter_workplace(TaskTag.objects.filter(user=workspace_owner(request), name__iexact=tag_name), workplace).exclude(pk=tag.pk).exists():
-                    tag_form.add_error('name', 'Taki tag już istnieje.')
-                else:
-                    tag_form.save()
-                    messages.success(request, 'Tag zaktualizowany.')
-                    return redirect(f"{reverse('tasks:tasks')}?view=tags")
-            tag_modal_open = True
-            tag_edit_mode = True
-            tag_edit_tag_id = tag.id
-            messages.error(request, 'Nie udało się zaktualizować tagu.')
-
-        if action in ('add_tag_note', 'update_tag_notes'):
-            tag = get_object_or_404(
-                _filter_workplace(TaskTag.objects.filter(user=workspace_owner(request)), workplace),
-                id=request.POST.get('tag_id'),
-            )
-            message = (request.POST.get('message') or request.POST.get('description') or '').strip()
-            if message:
-                TaskTagNote.objects.create(tag=tag, author=request.user, message=message)
-                messages.success(request, 'Notatka dodana.')
-            else:
-                messages.error(request, 'Wpisz treść notatki.')
-            return redirect(_tasks_next_url(request))
-
-        if action == 'edit_tag_note':
-            note_queryset = _filter_workplace(
-                TaskTagNote.objects.filter(author=request.user, tag__user=workspace_owner(request)),
-                workplace,
-                field_name='tag__workplace',
-            )
-            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), tag_id=request.POST.get('tag_id'))
-            message = (request.POST.get('message') or '').strip()
-            is_ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-            if message:
-                note.message = message
-                note.edited_at = timezone.now()
-                note.save(update_fields=['message', 'updated_at', 'edited_at'])
-                if is_ajax_request:
-                    edited_at = timezone.localtime(note.edited_at)
-                    return JsonResponse({
-                        'status': 'success',
-                        'message': 'Notatka zaktualizowana.',
-                        'note': {
-                            'message': note.message,
-                            'edited_at': edited_at.isoformat(),
-                            'edited_at_label': edited_at.strftime('%d.%m.%Y, %H:%M'),
-                        },
-                    })
-                messages.success(request, 'Notatka zaktualizowana.')
-            else:
-                if is_ajax_request:
-                    return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
-                messages.error(request, 'Wpisz treść notatki.')
-            return redirect(_tasks_next_url(request))
-
-        if action == 'delete_tag_note':
-            note_queryset = _filter_workplace(
-                TaskTagNote.objects.filter(author=request.user, tag__user=workspace_owner(request)),
-                workplace,
-                field_name='tag__workplace',
-            )
-            note = get_object_or_404(note_queryset, id=request.POST.get('note_id'), tag_id=request.POST.get('tag_id'))
-            note.delete()
-            messages.success(request, 'Notatka usunięta.')
-            return redirect(_tasks_next_url(request))
-
-        if action == 'delete_tag':
-            tag_ids = _posted_ids(request, 'tag_ids', 'tag_id')
-            tags_to_delete = _filter_workplace(TaskTag.objects.filter(id__in=tag_ids, user=workspace_owner(request)), workplace)
-            if not tags_to_delete.exists():
-                get_object_or_404(_filter_workplace(TaskTag.objects.filter(user=workspace_owner(request)), workplace), id=request.POST.get('tag_id'))
-            tag_count = tags_to_delete.count()
-            tags_to_delete.delete()
-            if tag_count == 1:
-                messages.success(request, 'Tag usunięty.')
-            else:
-                messages.success(request, f'Usunięto tagi ({tag_count}).')
-            return redirect(f"{reverse('tasks:tasks')}?view=tags")
-
         if action in ('edit_section', 'rename_section'):
             with transaction.atomic():
                 if workplace:
@@ -3646,7 +3531,7 @@ def _tasks_page(request, active_section=None):
             default=Value(0),
             output_field=IntegerField(),
         ),
-        tags_total=Count('tags', distinct=True),
+        tags_total=Count('tags', filter=Q(tags__space__isnull=False), distinct=True),
         attachments_total=Count('attachments', distinct=True),
     ).order_by('is_closed_sort', 'task_id')
 
@@ -3661,8 +3546,6 @@ def _tasks_page(request, active_section=None):
         active_view = 'project'
     elif all_groups_view:
         active_view = 'all_groups'
-    elif tags_view:
-        active_view = 'tags'
     elif my_tasks_view:
         active_view = 'my_tasks'
     elif unassigned_tasks_view:
@@ -3770,31 +3653,6 @@ def _tasks_page(request, active_section=None):
         'next_url': '',
         'summary': '',
     }
-    tag_window = _tag_window_for_request(request) if active_view == 'tags' else {
-        'tags': [],
-        'query': '',
-        'priority': '',
-        'status': '',
-        'category': '',
-        'scope': '',
-        'owner': '',
-        'sort': TAG_DEFAULT_SORT,
-        'sort_param': '',
-        'sort_label': TAG_SORT_OPTION_MAP[TAG_DEFAULT_SORT]['label'],
-        'sort_direction': TAG_SORT_OPTION_MAP[TAG_DEFAULT_SORT]['direction'],
-        'filters': _empty_tag_filter_options(),
-        'page': 1,
-        'total_pages': 1,
-        'total_tags': 0,
-        'page_size': PROJECT_DEFAULT_PAGE_SIZE,
-        'page_size_options': PROJECT_PAGE_SIZE_OPTIONS,
-        'page_items': [],
-        'has_previous': False,
-        'has_next': False,
-        'previous_url': '',
-        'next_url': '',
-        'summary': '',
-    }
     task_window = _task_window_for_request(request, tasks_qs) if active_view in ('all_tasks', 'my_tasks', 'unassigned_tasks') else {
         'queryset': tasks_qs,
         'query': '',
@@ -3873,7 +3731,6 @@ def _tasks_page(request, active_section=None):
     shared_tasks = []
     shared_status_groups = []
     _decorate_share_links(request, [*projects, *all_sections])
-    tags = tag_window['tags'] if active_view == 'tags' else TaskTag.objects.none()
     total_task_count = task_window['total_tasks'] if (all_tasks_view or my_tasks_view or unassigned_tasks_view) else 0
     can_create_issue = _user_can_create_issue(
         workspace_owner(request),
@@ -3945,20 +3802,6 @@ def _tasks_page(request, active_section=None):
         'project_sections': project_sections,
         'project_section_query': project_section_window['query'],
         'project_section_priority_filter': project_section_window['priority'],
-        'tag_window': tag_window,
-        'tag_query': tag_window['query'],
-        'tag_priority_filter': tag_window['priority'],
-        'tag_status_filter': tag_window['status'],
-        'tag_category_filter': tag_window['category'],
-        'tag_scope_filter': tag_window['scope'],
-        'tag_owner_filter': tag_window['owner'],
-        'tag_filter_options': tag_window['filters'],
-        'tag_sort_options': TAG_SORT_OPTIONS,
-        'tag_sort': tag_window['sort'],
-        'tag_sort_param': tag_window['sort_param'],
-        'tag_sort_label': tag_window['sort_label'],
-        'tag_sort_direction': tag_window['sort_direction'],
-        'tag_default_sort': TAG_DEFAULT_SORT,
         'task_window': task_window,
         'task_query': task_window['query'],
         'task_priority_filter': task_window['priority'],
@@ -3997,8 +3840,6 @@ def _tasks_page(request, active_section=None):
             if active_view == 'project'
             else len(_sections_for_projects(navigation_projects))
         ),
-        'tags': tags,
-        'total_tag_count': tag_window['total_tags'],
         'shared_task_count': len(shared_tasks),
         'shared_group_count': len(shared_sections),
         'shared_project_count': len(shared_projects),
@@ -4009,7 +3850,6 @@ def _tasks_page(request, active_section=None):
         'section_access_data': section_access_data(workplace, request.user),
         'project_rename_project_id': project_rename_project_id,
         'section_form': section_form,
-        'tag_form': tag_form,
         'section_create_modal_open': section_create_modal_open,
         'section_create_project_id': section_create_project_id,
         'section_create_uses_project_select': (
@@ -4025,9 +3865,6 @@ def _tasks_page(request, active_section=None):
         'project_modal_open': project_modal_open,
         'project_rename_modal_open': project_rename_modal_open,
         'task_modal_open': task_modal_open,
-        'tag_modal_open': tag_modal_open,
-        'tag_edit_mode': tag_edit_mode,
-        'tag_edit_tag_id': tag_edit_tag_id,
         'can_create_issue': can_create_issue,
     }
     context.update(follow_context(request.user, active_project, 'tasks', 'project'))

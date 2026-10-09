@@ -19,7 +19,7 @@ from accounts.views import _switch_account_context
 from documents.models import Document, DocumentLibrary, Folder, WorkspaceDocument
 from planner.models import CalendarEvent
 from resources.models import Resource
-from tasks.models import Task, TaskProject, TaskSection, TaskTag
+from tasks.models import Task, TaskProject, TaskSection
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
 from .pulpit_views import default as default_pulpit
 from .for_you import for_you_context
@@ -106,7 +106,6 @@ def _navigation_search_results(query, workplace):
         ('Przestrzenie', 'Przestrzenie w bieżącym Workspace', _workspace_app_url(workplace, 'spaces'), 'folders', 'przestrzenie projekty kanban scrum'),
         ('Zespoły', 'Osoby i ich zespoły', _workspace_app_url(workplace, 'teams'), 'users', 'zespoly osoby teams'),
         ('Kalendarz', 'Wydarzenia i terminy', calendar_url, 'calendar-days', 'wydarzenia terminy'),
-        ('Tagi', 'Wspólne oznaczenia', _search_url(tasks_url, view='tags'), 'tag', 'etykiety labels'),
         ('Dysk', 'Dyski, foldery i pliki', _workspace_app_url(workplace, 'documents'), 'hard-drive', 'dysk dyski pliki foldery dokumenty biblioteka'),
         ('Dokumenty', 'Tworzenie, edycja i przechowywanie dokumentów', _workspace_app_url(workplace, 'office'), 'file-text', 'dokumenty edytor tekst pisanie'),
         ('Zasoby', 'Sprzęt, licencje i narzędzia', _workspace_app_url(workplace, 'resources'), 'package', 'ewidencja wyposażenie zasoby'),
@@ -211,7 +210,7 @@ def global_search(request):
         | Q(blocked_reason__icontains=query)
         | Q(section__title__icontains=query)
         | Q(section__project__name__icontains=query)
-        | Q(tags__name__icontains=query)
+        | Q(tags__name__icontains=query, tags__space__isnull=False)
         | Q(activities__message__icontains=query)
     )
     if numeric_query is not None:
@@ -238,7 +237,8 @@ def global_search(request):
         | Q(project__code__icontains=query)
         | Q(section_notes__message__icontains=query)
     )
-    tag_queryset = TaskTag.objects.filter(user=user).filter(
+    from tasks.tagging import visible_tags
+    tag_queryset = visible_tags(request).select_related('space').filter(
         Q(name__icontains=query)
         | Q(description__icontains=query)
         | Q(code__icontains=query)
@@ -333,7 +333,7 @@ def global_search(request):
             lambda tag: _global_search_result(
                 tag.name,
                 'Tag',
-                _search_url(tasks_url, view='tags', q=tag.name),
+                _search_url(_workspace_app_url(workplace, 'spaces', f'{tag.space_id}/'), view='tags', q=tag.name),
                 tag.icon or 'tag',
                 ' · '.join(part for part in (tag.code, tag.get_category_display()) if part),
             ),

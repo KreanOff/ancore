@@ -258,6 +258,7 @@ class GlobalSearchTests(TestCase):
         TaskTag.objects.create(
             user=self.user,
             workplace=self.workplace,
+            space=task_project.space,
             name='Apollo VIP',
         )
         kanban_project = KanbanProject.objects.create(

@@ -815,6 +815,35 @@ function syncTaskDetailDropdown(dropdown) {
     }
 }
 
+function syncTaskDetailTagOptions() {
+    const select = document.querySelector('#task-detail-form [name="tags"]');
+    const project = document.querySelector('#task-detail-form [name="project"]');
+    if (!window.AncoreTaskTags?.setProject(select, project?.value)) return;
+    const dropdown = select.closest('.tasks-issue-select-wrap')?.querySelector('[data-task-detail-dropdown]');
+    const menu = dropdown?.querySelector('.tasks-issue-dropdown-menu');
+    if (!menu) return;
+    menu.replaceChildren();
+    Array.from(select.options).forEach(option => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'menuitemcheckbox');
+        button.dataset.taskDetailValue = option.value;
+        const chip = document.createElement('span');
+        chip.className = 'tasks-tag-chip';
+        chip.textContent = option.textContent;
+        button.appendChild(chip);
+        menu.appendChild(button);
+    });
+    if (!select.options.length) {
+        const empty = document.createElement('button');
+        empty.type = 'button';
+        empty.disabled = true;
+        empty.textContent = 'Brak tagów';
+        menu.appendChild(empty);
+    }
+    syncTaskDetailDropdown(dropdown);
+}
+
 document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
     const select = document.querySelector(dropdown.dataset.taskDetailSelect);
     const toggle = dropdown.querySelector('[data-task-detail-toggle]');
@@ -838,32 +867,33 @@ document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
         event.stopPropagation();
     });
 
-    dropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
-        button.addEventListener('click', () => {
-            if (!select) return;
-            if (select.disabled) return;
+    dropdown.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-task-detail-value]');
+        if (!button || !dropdown.contains(button)) return;
+        if (!select) return;
+        if (select.disabled) return;
 
-            if (isMultiple) {
-                const option = Array.from(select.options).find((item) => item.value === button.dataset.taskDetailValue);
-                if (option) option.selected = !option.selected;
-            } else {
-                select.value = button.dataset.taskDetailValue;
-                syncTaskDetailProjectSections(dropdown);
-                closeTaskDetailDropdowns();
-            }
+        if (isMultiple) {
+            const option = Array.from(select.options).find((item) => item.value === button.dataset.taskDetailValue);
+            if (option) option.selected = !option.selected;
+        } else {
+            select.value = button.dataset.taskDetailValue;
+            syncTaskDetailProjectSections(dropdown);
+            closeTaskDetailDropdowns();
+        }
 
-            select.dispatchEvent(new Event('change', { bubbles: true }));
-            if (dropdown.hasAttribute('data-task-detail-project-dropdown')) {
-                getTaskDetailSelect(document.querySelector('[data-task-detail-section-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            if (dropdown.hasAttribute('data-task-detail-section-dropdown')) {
-                getTaskDetailSelect(document.querySelector('[data-task-detail-project-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            syncTaskDetailDropdown(dropdown);
-            syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown]'));
-            syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
-            syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
-        });
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        if (dropdown.hasAttribute('data-task-detail-project-dropdown')) {
+            getTaskDetailSelect(document.querySelector('[data-task-detail-section-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        if (dropdown.hasAttribute('data-task-detail-section-dropdown')) {
+            getTaskDetailSelect(document.querySelector('[data-task-detail-project-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        syncTaskDetailDropdown(dropdown);
+        syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown]'));
+        syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
+        syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
+        syncTaskDetailTagOptions();
     });
 });
 

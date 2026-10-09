@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Task, TaskAttachment, TaskProject, TaskSection, TaskTag
+from .models import Task, TaskAttachment, TaskProject, TaskSection
 
 class TaskAttachmentInline(admin.TabularInline):
     model = TaskAttachment
@@ -11,6 +11,11 @@ class TaskAdmin(admin.ModelAdmin):
     list_filter = ('status', 'priority', 'due_at', 'created_at')
     search_fields = ('title', 'description')
     inlines = [TaskAttachmentInline]
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == 'tags':
+            kwargs['queryset'] = db_field.remote_field.model.objects.filter(space__isnull=False)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
 class TaskSectionInline(admin.TabularInline):
@@ -31,11 +36,6 @@ class TaskSectionAdmin(admin.ModelAdmin):
     list_display = ('title', 'project', 'kind', 'order', 'created_at')
     list_filter = ('kind', 'created_at')
     search_fields = ('title', 'project__name')
-
-@admin.register(TaskTag)
-class TaskTagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'user', 'created_at')
-    search_fields = ('name', 'user__username')
 
 @admin.register(TaskAttachment)
 class TaskAttachmentAdmin(admin.ModelAdmin):

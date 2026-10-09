@@ -1,0 +1,40 @@
+{% extends 'spaces/detail.html' %}
+{% block work_actions %}
+{% if can_edit_tags %}
+<button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-open-tag aria-haspopup="dialog" aria-controls="tag-modal"><i data-icon="plus" aria-hidden="true"></i>Dodaj tag</button>
+{% include 'tasks/includes/directory_actions_menu.html' %}
+{% endif %}
+{% endblock %}
+{% block work_toolbar %}
+<form hidden id="projects-search-form" method="get" action="{{ space_url }}" data-project-search-form data-server-directory-filters="true">
+    <input type="hidden" name="view" value="tags">
+    <input type="hidden" name="status" value="{{ tag_status_filter }}" data-project-filter-input="status">
+    <input type="hidden" name="category" value="{{ tag_category_filter }}" data-project-filter-input="category">
+    <input type="hidden" name="scope" value="{{ tag_scope_filter }}" data-project-filter-input="scope">
+    <input type="hidden" name="owner" value="{{ tag_owner_filter }}" data-project-filter-input="owner">
+    <input type="hidden" name="priority" value="{{ tag_priority_filter }}" data-project-filter-input="priority">
+    <input type="hidden" name="sort" value="{{ tag_sort_param }}" data-project-sort-input>
+    <input type="hidden" name="page_size" value="{{ tag_window.page_size }}" data-project-search-page-size>
+</form>
+<div class="tasks-filterbar tasks-filterbar--directory">
+    <div class="tasks-filterbar-left">
+        {% include 'tasks/includes/directory_column_manager.html' %}
+        {% include 'tasks/includes/tag_sort.html' %}
+        {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=tag_status_filter|default:tag_priority_filter|default:tag_category_filter|default:tag_scope_filter|default:tag_owner_filter only %}
+        {% include 'tasks/includes/tag_filters.html' %}
+    </div>
+    <div class="tasks-filterbar-center"></div>
+    <div class="tasks-filterbar-right">
+        <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-icon="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="projects-search-form" value="{{ tag_query }}" placeholder="Szukaj tagów" aria-label="Szukaj tagów" autocomplete="off"></label>
+        {% include 'tasks/includes/directory_pagination_toolbar.html' with window=tag_window items_exist=tags pages_label='Strony tagów' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' include_page_items=True only %}
+    </div>
+</div>
+{% endblock %}
+{% block work_content_class %} work-content--tasks{% endblock %}
+{% block work_content %}{% include 'tasks/includes/tag_directory.html' %}{% endblock %}
+{% block page_modals %}
+{{ block.super }}
+{% if can_edit_tags %}{% include 'tasks/includes/tag_modal.html' %}{% endif %}
+{% include 'tasks/includes/tag_notes_modal.html' %}
+{% include 'tasks/includes/project_info_modal.html' %}
+{% endblock %}

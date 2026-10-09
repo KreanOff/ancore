@@ -463,39 +463,38 @@ class WorkplaceSelectionTests(TestCase):
         SidebarFavorite.objects.create(
             user=self.user,
             workplace=self.first_workplace,
-            item_key='tags',
+            item_key='calendar',
         )
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
-        response = self.client.get(reverse('tasks:tasks') + '?view=tags')
+        response = self.client.get(reverse('planner:index'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-sidebar-favorite-item="dashboard"')
-        self.assertContains(response, 'data-sidebar-favorite-item="tags"')
-        self.assertContains(response, 'data-sidebar-source-item="tags"')
+        self.assertContains(response, 'data-sidebar-favorite-item="calendar"')
+        self.assertContains(response, 'data-sidebar-source-item="calendar"')
         self.assertContains(response, 'data-sidebar-favorites-dropzone')
         self.assertContains(response, 'data-sidebar-favorites-reorder-form')
         self.assertContains(response, 'data-sidebar-favorites-order')
         self.assertContains(response, 'data-sidebar-favorites-remove-dropzone')
         self.assertContains(response, 'Usuń z Favorites')
         self.assertNotContains(response, 'data-sidebar-workspace-dropzone')
-        self.assertContains(response, 'data-sidebar-favorite-item="tags" draggable="true"')
+        self.assertContains(response, 'data-sidebar-favorite-item="calendar" draggable="true"')
         self.assertNotContains(response, 'data-sidebar-favorite-drag-handle')
         self.assertNotContains(response, 'data-icon="grip-vertical"')
-        self.assertContains(response, 'data-sidebar-source-item="tags" draggable="true"')
+        self.assertContains(response, 'data-sidebar-source-item="calendar" draggable="true"')
         self.assertNotContains(response, 'data-sidebar-favorite-remove')
         self.assertContains(
             response,
             'class="sidebar-favorite-form sidebar-favorite-remove-form u-sr-only"',
             count=2,
         )
-        self.assertContains(response, '>Usuń Tagi z Favorites</button>')
+        self.assertContains(response, '>Usuń Kalendarz z Favorites</button>')
         self.assertNotContains(response, 'sidebar-pinnable-row')
         self.assertNotContains(response, 'sidebar-favorite-toggle')
-        self.assertNotContains(response, 'data-icon="star"')
         self.assertGreaterEqual(
-            response.content.decode().count(f'/workplaces/{self.first_workplace.slug}/tasks/?view=tags'),
+            response.content.decode().count(f'/workplaces/{self.first_workplace.slug}/calendar/'),
             3,
         )
 

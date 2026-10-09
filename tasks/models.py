@@ -478,13 +478,15 @@ class TaskTag(models.Model):
     automation_rules = models.TextField(blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_tags')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='task_tags', null=True, blank=True)
+    space = models.ForeignKey('spaces.Space', on_delete=models.CASCADE, related_name='tags', null=True, blank=True)
     related_tags = models.ManyToManyField('self', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['name']
         constraints = [
-            models.UniqueConstraint(fields=['user', 'workplace', 'name'], name='unique_task_tag_per_workplace'),
+            models.UniqueConstraint(fields=['user', 'workplace', 'name'], condition=models.Q(space__isnull=True), name='unique_task_tag_per_workplace'),
+            models.UniqueConstraint(fields=['space', 'name'], condition=models.Q(space__isnull=False), name='unique_task_tag_per_space'),
             models.UniqueConstraint(fields=['code'], name='unique_task_tag_code'),
         ]
 

@@ -20,7 +20,7 @@ from django.utils import timezone
 from django.urls import reverse
 
 from contacts.models import Company, SharedItem
-from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag, TaskTagNote
+from .models import Task, TaskActivity, TaskAttachment, TaskProject, TaskProjectNote, TaskSection, TaskSectionNote, TaskTag
 
 
 class TaskProjectControlStyleTests(SimpleTestCase):
@@ -1210,125 +1210,6 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, '<span class="tasks-project-sort-current">Priorytet</span>', html=True)
         self.assertContains(response, 'data-project-page-url="/tasks/?view=all-groups&amp;tab=public&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
 
-    def test_tags_view_renders_server_filter_controls(self):
-        TaskTag.objects.create(user=self.user, name='Tag właściciela', owner_label='Zespół CRM')
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
-
-        self.assertContains(response, 'data-project-filter-menu="status"')
-        self.assertContains(response, 'data-project-filter-menu="category"')
-        self.assertContains(response, 'data-project-filter-menu="scope"')
-        self.assertContains(response, 'data-project-filter-menu="owner"')
-        self.assertContains(response, 'data-project-filter-menu="priority"')
-        self.assertContains(response, 'name="status" value="" data-project-filter-input="status"')
-        self.assertContains(response, 'name="category" value="" data-project-filter-input="category"')
-        self.assertContains(response, 'name="scope" value="" data-project-filter-input="scope"')
-        self.assertContains(response, 'name="owner" value="" data-project-filter-input="owner"')
-        self.assertContains(response, 'name="priority" value="" data-project-filter-input="priority"')
-        self.assertContains(response, 'placeholder="Szukaj właściciela"')
-        self.assertContains(response, 'Zespół CRM')
-        self.assertNotContains(response, 'data-status-filter-menu')
-        self.assertNotContains(response, 'data-priority-filter-menu')
-
-    def test_tags_view_filters_on_server(self):
-        matching = TaskTag.objects.create(
-            user=self.user,
-            name='Ryzyko klienta',
-            description='Pilny temat wdrożenia',
-            category='risk',
-            priority='urgent',
-            scope='clients',
-            owner_label='Zespół CRM',
-            status='archived',
-        )
-        TaskTag.objects.create(
-            user=self.user,
-            name='Tag ogólny',
-            description='Inny temat',
-            category='general',
-            priority='low',
-            scope='tasks',
-            owner_label='Zespół Support',
-            status='active',
-        )
-
-        response = self.client.get(
-            reverse('tasks:tasks'),
-            {
-                'view': 'tags',
-                'q': 'ryzyko',
-                'status': 'archived',
-                'category': 'risk',
-                'scope': 'clients',
-                'owner': 'Zespół CRM',
-                'priority': 'urgent',
-            },
-        )
-        html = response.content.decode()
-        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
-        table_end = html.index('</section>', table_start)
-        table_html = html[table_start:table_end]
-
-        self.assertContains(response, 'tasks-tag-sheet__row', count=1)
-        self.assertIn(matching.name, table_html)
-        self.assertNotIn('Tag ogólny', table_html)
-        self.assertContains(response, 'Status: Archiwalny')
-        self.assertContains(response, 'Typ: Ryzyko')
-        self.assertContains(response, 'Zakres: Klienci')
-        self.assertContains(response, 'Właściciel: Zespół CRM')
-        self.assertContains(response, 'Priorytet: Krytyczny')
-
-    def test_tags_view_renders_server_sort_controls(self):
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
-
-        self.assertContains(response, 'data-project-sort-menu')
-        self.assertContains(response, 'data-project-default-sort="name_asc"')
-        self.assertContains(response, 'aria-label="Sortowanie tagów"')
-        self.assertContains(response, 'name="sort" value="" data-project-sort-input')
-        self.assertContains(response, 'data-project-sort-value="name_desc"')
-        self.assertContains(response, 'data-project-sort-value="priority_desc"')
-        self.assertContains(response, 'data-project-sort-value="task_count_desc"')
-        self.assertContains(response, 'data-project-sort-value="related_desc"')
-
-    def test_tags_view_sorts_by_priority_and_preserves_query_params_in_pagination(self):
-        low = TaskTag.objects.create(user=self.user, name='Niski tag', priority='low')
-        urgent = TaskTag.objects.create(user=self.user, name='Pilny tag', priority='urgent')
-        for index in range(55):
-            TaskTag.objects.create(
-                user=self.user,
-                name=f'Tag testowy {index:03d}',
-                priority='low',
-            )
-
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags&sort=priority_desc&page_size=50")
-        html = response.content.decode()
-        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
-        table_end = html.index('</section>', table_start)
-        table_html = html[table_start:table_end]
-
-        self.assertLess(table_html.index(urgent.name), table_html.index(low.name))
-        self.assertContains(response, 'Sortowanie: Priorytet')
-        self.assertContains(response, '<span class="tasks-project-sort-current">Priorytet</span>', html=True)
-        self.assertContains(response, 'data-project-page-url="/tasks/?view=tags&amp;sort=priority_desc&amp;page_size=50&amp;page=2"')
-
-    def test_tags_view_sorts_by_task_count(self):
-        busy = TaskTag.objects.create(user=self.user, name='Aktywny tag')
-        quiet = TaskTag.objects.create(user=self.user, name='Cichy tag')
-        for index in range(2):
-            task = Task.objects.create(user=self.user, title=f'Zadanie aktywne {index}')
-            task.tags.add(busy)
-        task = Task.objects.create(user=self.user, title='Zadanie ciche')
-        task.tags.add(quiet)
-
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags&sort=task_count_desc")
-        html = response.content.decode()
-        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
-        table_end = html.index('</section>', table_start)
-        table_html = html[table_start:table_end]
-
-        self.assertLess(table_html.index(busy.name), table_html.index(quiet.name))
-        self.assertContains(response, 'Sortowanie: Najwięcej zadań')
-        self.assertContains(response, '2 zadań')
-
     def test_projects_priority_column_uses_priority_icons(self):
         project = TaskProject.objects.create(user=self.user, name='Pilny projekt', priority='urgent')
 
@@ -1435,37 +1316,6 @@ class TaskProjectCreationTests(TestCase):
         self.assertIn('tasks-project-value-badge--priority-urgent', blocked_row)
         self.assertIn('tasks-project-value-badge--due-overdue', blocked_row)
         self.assertIn('tasks-project-value-badge--due-completed', group_row(closed))
-
-    def test_tags_list_highlights_category_priority_scope_and_status(self):
-        tag = TaskTag.objects.create(
-            user=self.user,
-            name='Tag ryzyka',
-            category='risk',
-            color='#3b82f6',
-            icon='layers',
-            priority='high',
-            scope='projects',
-            status='archived',
-        )
-
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
-        html = response.content.decode()
-        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
-        table_end = html.index('</section>', table_start)
-        table_html = html[table_start:table_end]
-        row_marker = table_html.index(f'data-tag-id="{tag.id}"')
-        row_start = table_html.rfind('<article', 0, row_marker)
-        row_end = table_html.index('</article>', row_marker)
-        row_html = table_html[row_start:row_end]
-
-        self.assertIn('tasks-project-value-badge--tag-category-risk', row_html)
-        self.assertIn('tasks-project-value-badge--tag-visual', row_html)
-        self.assertIn('style="--tag-color: #3b82f6;"', row_html)
-        self.assertIn('data-icon="layers"', row_html)
-        self.assertIn('tasks-project-value-badge--priority-high', row_html)
-        self.assertIn('tasks-project-value-badge--tag-scope-projects', row_html)
-        self.assertIn('tasks-project-value-badge--tag-status-archived', row_html)
-        self.assertNotIn('tasks-tag-color-swatch', row_html)
 
     def test_group_priority_is_rendered_independently_from_project_priority(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt pilny', priority='urgent')
@@ -2398,8 +2248,7 @@ class TaskProjectCreationTests(TestCase):
     def test_directory_headers_offer_contextual_creation_actions(self):
         for query, label, control in [('', 'Dodaj projekt', 'project-modal'),
                                       ('?view=all-groups', 'Dodaj grupę', 'section-create-modal'),
-                                      ('?view=all-tasks&tab=public', 'Dodaj zadanie', 'issue-modal'),
-                                      ('?view=tags', 'Dodaj tag', 'tag-modal')]:
+                                      ('?view=all-tasks&tab=public', 'Dodaj zadanie', 'issue-modal')]:
             with self.subTest(view=query):
                 response = self.client.get(reverse('tasks:tasks') + query)
                 html = response.content.decode()
@@ -2740,7 +2589,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(response, 'DEFAULT ASSIGNEE FOR ISSUES')
         self.assertNotContains(response, 'Employee')
 
-    def test_flat_navigation_shows_projects_and_tags(self):
+    def test_flat_navigation_shows_projects_without_legacy_tags(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
         TaskSection.objects.create(project=project, title='Frontend')
         TaskSection.objects.create(project=project, title='Backend')
@@ -2750,376 +2599,17 @@ class TaskProjectCreationTests(TestCase):
 
         self.assertContains(response, 'Projekty')
         self.assertContains(response, 'Grupy')
-        self.assertContains(response, 'Tagi')
+        self.assertNotContains(response, '?view=tags')
         self.assertContains(response, 'tasks-directory-header')
         self.assertContains(response, 'data-select-all-target="projects"')
         self.assertContains(response, 'aria-label="Zaznacz projekt Projekt"')
         self.assertNotContains(response, 'Moje grupy')
 
-    def test_tags_view_lists_tags(self):
-        frontend = TaskTag.objects.create(
-            user=self.user,
-            name='Frontend',
-            description='Prace po stronie UI',
-            category='area',
-            color='#1d4ed8',
-            icon='flag',
-            priority='high',
-            scope='projects',
-            owner_label='IT',
-            status='active',
-            usage_notes='Używaj przy pracach interfejsu.',
-            automation_rules='Dodaj przy kanale frontend.',
-        )
-        backend = TaskTag.objects.create(user=self.user, name='Backend')
-        frontend.related_tags.add(backend)
-        TaskTagNote.objects.create(tag=frontend, author=self.user, message='Moja notatka tagu')
-        TaskTag.objects.filter(pk=frontend.pk).update(
-            created_at=datetime(2026, 6, 7, 12, 0, tzinfo=datetime_timezone.utc)
-        )
-        project = TaskProject.objects.create(user=self.user, name='Pierwszy projekt', code='ONE')
-        section = TaskSection.objects.create(project=project, title='Grupa')
-        task = Task.objects.create(user=self.user, section=section, title='Zadanie frontendowe')
-        task.tags.add(frontend)
-
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
-        html = response.content.decode()
-
-        self.assertContains(response, 'Tagi')
-        self.assertContains(response, 'tasks-spreadsheet-sheet')
-        self.assertContains(response, 'KOD TAGU')
-        self.assertContains(response, 'NAZWA TAGU')
-        self.assertContains(response, 'data-directory-column-manager')
-        self.assertContains(response, 'data-directory-column-manager-toggle')
-        self.assertContains(response, 'data-directory-column-manager-list')
-        self.assertContains(response, 'data-directory-column-manager-search')
-        self.assertContains(response, 'data-directory-column-manager-save')
-        self.assertContains(response, 'data-directory-column-manager-cancel')
-        self.assertContains(response, 'Zarządzaj tabelą')
-        self.assertContains(response, 'data-ancore-custom-select-search-placeholder="Szukaj tagów"')
-        self.assertContains(response, 'data-column-label="Edytuj"')
-        self.assertContains(response, 'data-column-label="Informacje"')
-        self.assertContains(response, 'data-column-label="Notatki"')
-        expected_columns = [
-            'data-column="action" aria-label="Edytuj tag"',
-            'data-column="info" aria-label="Informacje o tagu"',
-            'data-column="notes" aria-label="Notatki tagu"',
-            'data-column="tag_name">NAZWA TAGU',
-            'data-column="tag_code">KOD TAGU',
-            'data-column="tag_type">TYP',
-            'data-column="tag_visual">KOLOR / IKONA',
-            'data-column="priority">PRIORYTET',
-            'data-column="scope">ZAKRES',
-            'data-column="owner">WŁAŚCICIEL',
-            'data-column="status">STATUS',
-            'data-column="description">OPIS',
-            'data-column="usage_notes">UŻYCIE',
-            'data-column="automation">AUTOMATYKA',
-            'data-column="related_tags">POWIĄZANE',
-            'data-column="task_count">ZADANIA',
-            'data-column="created_at">DATA UTWORZENIA',
-        ]
-        column_positions = [html.index(column) for column in expected_columns]
-        self.assertEqual(column_positions, sorted(column_positions))
-        self.assertContains(response, 'data-column="action"', count=3)
-        self.assertContains(response, 'data-column="action" aria-label="Edytuj tag"')
-        self.assertContains(response, 'data-column="info"', count=3)
-        self.assertContains(response, 'data-column="info" aria-label="Informacje o tagu"')
-        self.assertContains(response, 'data-column="notes"', count=3)
-        self.assertContains(response, 'data-column="notes" aria-label="Notatki tagu"')
-        self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action"')
-        self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info"')
-        self.assertContains(response, 'tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes"')
-        self.assertContains(response, 'tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action"')
-        self.assertContains(response, 'tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info"')
-        self.assertContains(response, 'tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes"')
-        self.assertContains(response, 'data-open-tag-edit', count=2)
-        self.assertContains(response, 'data-open-tag-info', count=2)
-        self.assertContains(response, 'data-open-tag-notes', count=2)
-        self.assertContains(response, 'aria-label="Edytuj tag Frontend"')
-        self.assertContains(response, 'aria-label="Informacje o tagu Frontend"')
-        self.assertContains(response, 'aria-label="Notatki tagu Frontend"')
-        self.assertContains(response, 'id="tag-notes-modal"')
-        self.assertContains(response, 'name="action" value="add_tag_note"')
-        self.assertContains(response, 'name="action" value="edit_tag_note"')
-        self.assertContains(response, 'name="action" value="delete_tag_note"')
-        self.assertContains(response, 'Moja notatka tagu')
-        self.assertContains(response, 'data-tag-notes-message')
-        self.assertContains(response, 'data-tag-note-edit-toggle')
-        self.assertContains(response, 'data-column="tag_code"', count=3)
-        self.assertContains(response, 'data-column="tag_name"', count=3)
-        frontend_row_start = html.index(f'data-tag-id="{frontend.id}"')
-        self.assertLess(
-            html.index('data-column="action"', frontend_row_start),
-            html.index('data-column="info"', frontend_row_start),
-        )
-        self.assertLess(
-            html.index('data-column="info"', frontend_row_start),
-            html.index('data-column="notes"', frontend_row_start),
-        )
-        self.assertLess(
-            html.index('data-column="notes"', frontend_row_start),
-            html.index('data-column="tag_name"', frontend_row_start),
-        )
-        self.assertLess(
-            html.index('data-column="tag_name"', frontend_row_start),
-            html.index('data-column="tag_code"', frontend_row_start),
-        )
-        self.assertContains(response, 'Frontend')
-        self.assertContains(response, 'Prace po stronie UI')
-        self.assertContains(response, 'Obszar')
-        self.assertContains(response, '#1d4ed8')
-        self.assertContains(response, 'Flaga')
-        self.assertContains(response, 'Wysoki')
-        self.assertContains(response, 'Projekty')
-        self.assertContains(response, 'IT')
-        self.assertContains(response, 'Aktywny')
-        self.assertContains(response, 'Używaj przy pracach interfejsu.')
-        self.assertContains(response, 'Dodaj przy kanale frontend.')
-        self.assertContains(response, 'Backend')
-        self.assertContains(response, 'Brak opisu')
-        self.assertContains(response, frontend.code)
-        self.assertContains(response, backend.code)
-        self.assertContains(response, '1 zadań')
-        self.assertContains(response, '0 zadań')
-        self.assertContains(
-            response,
-            'data-column="created_at" title="Data utworzenia">07.06.2026 14:00</span>',
-        )
-        self.assertNotContains(response, '7 cze')
-
-    def test_tags_view_renders_only_server_side_window(self):
-        for index in range(60):
-            TaskTag.objects.create(
-                user=self.user,
-                name=f'Tag {index:03d}',
-                description=f'Opis tagu {index:03d}',
-            )
-
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
-        html = response.content.decode()
-        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
-        table_end = html.index('</section>', table_start)
-        table_html = html[table_start:table_end]
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-server-pagination="true"')
-        self.assertContains(response, 'tasks-tag-sheet__row', count=50)
-        self.assertIn('Tag 000', table_html)
-        self.assertIn('Tag 049', table_html)
-        self.assertNotIn('Tag 050', table_html)
-        self.assertContains(response, 'Na stronie')
-        self.assertContains(response, 'tagów')
-        self.assertContains(response, 'Pokazano 1-50 z 60 tagów')
-        self.assertIn('data-project-page-url="/tasks/?view=tags&amp;page_size=50&amp;page=2"', html)
-        self.assertIn('aria-current="page">1</button>', html)
-
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags&page_size=50&page=2")
-        html = response.content.decode()
-        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
-        table_end = html.index('</section>', table_start)
-        table_html = html[table_start:table_end]
-
-        self.assertContains(response, 'tasks-tag-sheet__row', count=10)
-        self.assertIn('Tag 050', table_html)
-        self.assertIn('Tag 059', table_html)
-        self.assertNotIn('Tag 049', table_html)
-        self.assertContains(response, 'Pokazano 51-60 z 60 tagów')
-        self.assertIn('aria-current="page">2</button>', html)
-        self.assertIn('data-project-page-url="/tasks/?view=tags&amp;page_size=50"', html)
-
-        response = self.client.get(f"{reverse('tasks:tasks')}?view=tags&page_size=10")
-        html = response.content.decode()
-        table_start = html.index('class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list')
-        table_end = html.index('</section>', table_start)
-        table_html = html[table_start:table_end]
-
-        self.assertContains(response, 'tasks-tag-sheet__row', count=10)
-        self.assertIn('Tag 000', table_html)
-        self.assertNotIn('Tag 010', table_html)
-        self.assertIn('data-project-page="6"', html)
-
-    def test_tags_link_is_rendered(self):
-        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
-        TaskSection.objects.create(project=project, title='Frontend')
-        TaskTag.objects.create(user=self.user, name='Frontend')
-        TaskTag.objects.create(user=self.user, name='Backend')
-
-        response = self.client.get(reverse('tasks:tasks'))
-
-        self.assertContains(response, 'Tagi')
-        self.assertContains(response, f'href="/workplaces/{response.wsgi_request.workplace.slug}/tasks/?view=tags"')
-
-    def test_create_tag_from_tasks_page(self):
-        related = TaskTag.objects.create(user=self.user, name='Backend')
-        response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'create_tag',
-            'name': 'Design',
-            'description': 'Makiety i decyzje wizualne',
-            'category': 'work_type',
-            'color': '#22c55e',
-            'icon': 'briefcase',
-            'priority': 'medium',
-            'scope': 'tasks',
-            'owner_label': 'Design',
-            'status': 'active',
-            'usage_notes': 'Używać dla makiet i UI.',
-            'automation_rules': 'Dodaj po imporcie briefu.',
-            'related_tags': [related.id],
-            'code': 'DES',
-        })
-
-        tag = TaskTag.objects.get(user=self.user, name='Design')
-
-        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
-        self.assertEqual(tag.description, 'Makiety i decyzje wizualne')
-        self.assertEqual(tag.category, 'work_type')
-        self.assertEqual(tag.color, '#22c55e')
-        self.assertEqual(tag.icon, 'briefcase')
-        self.assertEqual(tag.priority, 'medium')
-        self.assertEqual(tag.scope, 'tasks')
-        self.assertEqual(tag.owner_label, 'Design')
-        self.assertEqual(tag.status, 'active')
-        self.assertEqual(tag.usage_notes, 'Używać dla makiet i UI.')
-        self.assertEqual(tag.automation_rules, 'Dodaj po imporcie briefu.')
-        self.assertEqual(list(tag.related_tags.all()), [related])
-        self.assertNotEqual(tag.code, 'DES')
-        self.assertRegex(tag.code, r'^T-[0-9A-Z]{8}$')
-
     def test_create_tag_avoids_existing_base36_tag_code(self):
         TaskTag.objects.create(user=self.user, name='Design', code='T-COLLIDE1')
-
         with patch('tasks.models.secrets.choice', side_effect=list('COLLIDE1BACKEND1')):
-            response = self.client.post(reverse('tasks:tasks'), {
-                'action': 'create_tag',
-                'name': 'Backend',
-                'description': '',
-            })
-
-        tag = TaskTag.objects.get(user=self.user, name='Backend')
-
-        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
+            tag = TaskTag.objects.create(user=self.user, name='Backend')
         self.assertEqual(tag.code, 'T-BACKEND1')
-
-    def test_delete_tag_from_tasks_page(self):
-        tag = TaskTag.objects.create(user=self.user, name='Design')
-
-        response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'delete_tag',
-            'tag_id': tag.id,
-        })
-
-        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
-        self.assertFalse(TaskTag.objects.filter(id=tag.id).exists())
-
-    def test_tag_note_actions_add_edit_and_delete_own_notes(self):
-        tag = TaskTag.objects.create(
-            user=self.user,
-            name='Design',
-            description='Opis tagu',
-            status='active',
-        )
-        old_code = tag.code
-
-        response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'add_tag_note',
-            'tag_id': tag.id,
-            'message': '  Nowa notatka tagu  ',
-        })
-
-        tag.refresh_from_db()
-        self.assertRedirects(response, reverse('tasks:tasks'))
-        note = TaskTagNote.objects.get(tag=tag)
-        self.assertEqual(tag.name, 'Design')
-        self.assertEqual(tag.description, 'Opis tagu')
-        self.assertEqual(tag.status, 'active')
-        self.assertEqual(tag.code, old_code)
-        self.assertEqual(note.author, self.user)
-        self.assertEqual(note.message, 'Nowa notatka tagu')
-        self.assertIsNone(note.edited_at)
-
-        response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'edit_tag_note',
-            'tag_id': tag.id,
-            'note_id': note.id,
-            'message': '  Poprawiona notatka tagu  ',
-        })
-
-        note.refresh_from_db()
-        self.assertRedirects(response, reverse('tasks:tasks'))
-        self.assertEqual(note.message, 'Poprawiona notatka tagu')
-        self.assertIsNotNone(note.edited_at)
-
-        response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'delete_tag_note',
-            'tag_id': tag.id,
-            'note_id': note.id,
-        })
-
-        self.assertRedirects(response, reverse('tasks:tasks'))
-        self.assertFalse(TaskTagNote.objects.filter(id=note.id).exists())
-
-    def test_tag_note_actions_only_allow_author_to_change_note(self):
-        other_user = get_user_model().objects.create_user(username='tag-note-owner', password='test-pass-123')
-        tag = TaskTag.objects.create(user=self.user, name='Design')
-        note = TaskTagNote.objects.create(tag=tag, author=other_user, message='Cudza notatka tagu')
-
-        edit_response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'edit_tag_note',
-            'tag_id': tag.id,
-            'note_id': note.id,
-            'message': 'Nie moje',
-        })
-        delete_response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'delete_tag_note',
-            'tag_id': tag.id,
-            'note_id': note.id,
-        })
-
-        note.refresh_from_db()
-        self.assertEqual(edit_response.status_code, 404)
-        self.assertEqual(delete_response.status_code, 404)
-        self.assertEqual(note.message, 'Cudza notatka tagu')
-
-    def test_edit_tag_from_tasks_page(self):
-        tag = TaskTag.objects.create(user=self.user, name='Design', description='Stary opis')
-        related = TaskTag.objects.create(user=self.user, name='Backend')
-        old_code = tag.code
-
-        response = self.client.post(reverse('tasks:tasks'), {
-            'action': 'edit_tag',
-            'tag_id': tag.id,
-            'name': 'UI',
-            'description': 'Nowy opis',
-            'category': 'area',
-            'color': '#0f766e',
-            'icon': 'layers',
-            'priority': 'high',
-            'scope': 'projects',
-            'owner_label': 'Produkt',
-            'status': 'archived',
-            'usage_notes': 'Stosować przy zmianach UI.',
-            'automation_rules': 'Dodaj przy typie zadania UI.',
-            'related_tags': [related.id],
-            'code': 'NEW',
-        })
-
-        tag.refresh_from_db()
-
-        self.assertRedirects(response, f"{reverse('tasks:tasks')}?view=tags")
-        self.assertEqual(tag.name, 'UI')
-        self.assertEqual(tag.description, 'Nowy opis')
-        self.assertEqual(tag.category, 'area')
-        self.assertEqual(tag.color, '#0f766e')
-        self.assertEqual(tag.icon, 'layers')
-        self.assertEqual(tag.priority, 'high')
-        self.assertEqual(tag.scope, 'projects')
-        self.assertEqual(tag.owner_label, 'Produkt')
-        self.assertEqual(tag.status, 'archived')
-        self.assertEqual(tag.usage_notes, 'Stosować przy zmianach UI.')
-        self.assertEqual(tag.automation_rules, 'Dodaj przy typie zadania UI.')
-        self.assertEqual(list(tag.related_tags.all()), [related])
-        self.assertEqual(tag.code, old_code)
 
     def test_more_options_render_edit_and_delete_actions_for_list_views(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
@@ -3133,7 +2623,6 @@ class TaskProjectCreationTests(TestCase):
         my_tasks_response = self.client.get(f"{reverse('tasks:tasks')}?view=my-tasks")
         projects_response = self.client.get(reverse('tasks:tasks'), {'tab': 'public'})
         groups_response = self.client.get(f"{reverse('tasks:tasks')}?view=all-groups&tab=public")
-        tags_response = self.client.get(f"{reverse('tasks:tasks')}?view=tags")
 
         self.assertContains(section_response, 'id="delete-selected-task-menu-btn"')
         self.assertContains(section_response, 'id="edit-selected-task-menu-btn"')
@@ -3160,13 +2649,12 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(groups_response, 'data-select-all-target="sections"')
         self.assertNotContains(groups_response, 'id="delete-selected-tag-menu-btn"')
         self.assertNotContains(groups_response, 'id="edit-selected-tag-menu-btn"')
-        self.assertContains(tags_response, 'id="delete-selected-tag-menu-btn"')
-        self.assertContains(tags_response, 'id="edit-selected-tag-menu-btn"')
 
     def test_create_task_modal_assigns_existing_tags(self):
-        project = TaskProject.objects.create(user=self.user, name='Projekt', code='PRJ')
+        workplace = self.client.get(reverse('tasks:tasks')).wsgi_request.workplace
+        project = TaskProject.objects.create(user=self.user, workplace=workplace, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
-        tag = TaskTag.objects.create(user=self.user, name='Pilne')
+        tag = TaskTag.objects.create(user=self.user, workplace=project.workplace, space=project.space, name='Pilne')
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'create_task_modal',
@@ -3765,7 +3253,7 @@ class TaskProjectCreationTests(TestCase):
         self.assertContains(response, 'Zadania')
         self.assertContains(response, 'Projekty')
         self.assertContains(response, 'Grupy')
-        self.assertContains(response, 'Tagi')
+        self.assertNotContains(response, '?view=tags')
         self.assertContains(response, 'id="sidebar-tasks-subnav"')
         self.assertNotContains(response, 'Udostępnione zadania')
         self.assertNotContains(response, 'Udostępnione grupy')
@@ -3888,7 +3376,6 @@ class TaskProjectCreationTests(TestCase):
     def test_note_ajax_edits_return_updated_data_without_redirect(self):
         project = TaskProject.objects.create(user=self.user, name='Projekt AJAX')
         section = TaskSection.objects.create(project=project, title='Grupa AJAX')
-        tag = TaskTag.objects.create(user=self.user, name='Tag AJAX')
         cases = (
             (
                 'edit_project_note',
@@ -3899,11 +3386,6 @@ class TaskProjectCreationTests(TestCase):
                 'edit_section_note',
                 {'section_id': section.id},
                 TaskSectionNote.objects.create(section=section, author=self.user, message='Stara treść'),
-            ),
-            (
-                'edit_tag_note',
-                {'tag_id': tag.id},
-                TaskTagNote.objects.create(tag=tag, author=self.user, message='Stara treść'),
             ),
         )
 

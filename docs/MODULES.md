@@ -106,7 +106,7 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 - Zadania z zakładką „Nieprzydzielone”.
 - Szczegóły zadania/podzadania, komentarze z plikami, zdjęciami i `@Imię Nazwisko` oraz historia; nagłówek nie udostępnia przycisku obserwowania.
 - Obserwowanie projektu: nowe komentarze i zmiany jego zadań w filtrze „Obserwowane”.
-- Katalog tagów oraz formularze tworzenia i edycji.
+- Tagi przestrzeni oraz formularze tworzenia i edycji w ich zakładkach.
 
 Katalogi obsługują wyszukiwanie, sortowanie, filtrowanie i paginację po stronie
 serwera. UI ma wybór widocznych kolumn, zmianę szerokości/kolejności oraz akcje
@@ -316,14 +316,25 @@ nadal działa na `tasks.Task`. [Migracja i zgodność](SPACES.md#przeniesienie-d
 Źródła: [adresy zgodności](../kanban/urls.py), [przekierowania](../spaces/middleware.py),
 [modele historyczne](../kanban/models.py).
 
-## 5. Wspólne tagi
+## 5. Tagi przestrzeni
 
 Źródła: `TaskTag`, `TaskTagNote` w [tasks/models.py](../tasks/models.py),
-formularze i katalogi Tasks/Kanban.
+formularze Tasks, `tasks/tagging.py` oraz zakładka przestrzeni w `spaces/views.py`.
 
 Tag ma nazwę, opis, kod, kategorię, kolor, ikonę, priorytet, deklarowany zakres,
 etykietę właściciela, status, powiązane tagi, notatki użycia i tekst reguł.
-Ten sam model jest przypinany do zadań i kart. Dysk i Dokumenty nie obsługują tagów;
+Każda przestrzeń ma własny katalog `TaskTag.space`, dostępny w zakładce „Tagi”.
+Formularze zadań oraz powiązanych tagów pokazują tylko jej rekordy. Globalny
+katalog „Tagi” został usunięty z menu, Favorites, formularzy i wyszukiwania.
+Dawny `/tasks/?view=tags` oraz jego scoped odpowiednik zwracają 404, podobnie
+jak wszystkie dawne akcje tagów wysłane do katalogu Zadań lub grup.
+Osobny katalog tagów Django admin jest także usunięty, a formularz zadania
+w adminie nie udostępnia dawnych tagów. Rekordy bez przestrzeni i ich notatki
+pozostają wyłącznie historyczne; nie można ich wybierać także w zadaniach
+bez przestrzeni ani automatycznie przypisywać do Workspace przy wejściu.
+Dostęp i edycja dziedziczą uprawnienia projektu przestrzeni. Globalne wyszukiwanie
+respektuje prywatność i otwiera właściwą zakładkę przestrzeni. Kanban zachowuje
+historyczne przypisania tego samego modelu. Dysk i Dokumenty nie obsługują tagów;
 ich dawne relacje pozostają wyłącznie jako dane historyczne.
 
 `scope` jest zapisaną klasyfikacją; nie jest samoistnym systemem uprawnień.

@@ -1,0 +1,85 @@
+<div class="tasks-filter-dropdown" data-project-filter-menu="status">
+                    <button type="button" class="tasks-filter-button{% if tag_status_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="status">
+                        <i data-icon="circle-dot" aria-hidden="true"></i>
+                        <span data-project-filter-label="status">Status{% for option in tag_filter_options.statuses %}{% if option.value == tag_status_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr statusu tagu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_status_filter %}true{% else %}false{% endif %}" {% if not tag_status_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="status" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.statuses %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_status_filter == option.value %}true{% else %}false{% endif %}" {% if tag_status_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="status" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="category">
+                    <button type="button" class="tasks-filter-button{% if tag_category_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="category">
+                        <i data-icon="layers-3" aria-hidden="true"></i>
+                        <span data-project-filter-label="category">Typ{% for option in tag_filter_options.categories %}{% if option.value == tag_category_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr typu tagu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_category_filter %}true{% else %}false{% endif %}" {% if not tag_category_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="category" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.categories %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_category_filter == option.value %}true{% else %}false{% endif %}" {% if tag_category_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="category" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="scope">
+                    <button type="button" class="tasks-filter-button{% if tag_scope_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="scope">
+                        <i data-icon="target" aria-hidden="true"></i>
+                        <span data-project-filter-label="scope">Zakres{% for option in tag_filter_options.scopes %}{% if option.value == tag_scope_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr zakresu tagu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_scope_filter %}true{% else %}false{% endif %}" {% if not tag_scope_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="scope" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.scopes %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_scope_filter == option.value %}true{% else %}false{% endif %}" {% if tag_scope_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="scope" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="owner">
+                    <button type="button" class="tasks-filter-button{% if tag_owner_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="owner">
+                        <i data-icon="circle-user-round" aria-hidden="true"></i>
+                        <span data-project-filter-label="owner">Właściciel{% for option in tag_filter_options.owners %}{% if option.value == tag_owner_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu tasks-filter-menu--wide" role="menu" aria-label="Filtr właściciela tagu">
+                        <label class="tasks-filter-menu-search">
+                            <i data-icon="search" aria-hidden="true"></i>
+                            <input type="search" placeholder="Szukaj właściciela" autocomplete="off" data-project-filter-search>
+                        </label>
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_owner_filter %}true{% else %}false{% endif %}" {% if not tag_owner_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="owner" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.owners %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_owner_filter == option.value %}true{% else %}false{% endif %}" {% if tag_owner_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="owner" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                        <span class="tasks-filter-menu-empty" data-project-filter-empty hidden>Brak wyników</span>
+                    </div>
+                </div>
+                <div class="tasks-filter-dropdown" data-project-filter-menu="priority">
+                    <button type="button" class="tasks-filter-button{% if tag_priority_filter %} is-active{% endif %}" aria-haspopup="menu" aria-expanded="false" data-project-filter-toggle data-project-filter-param="priority">
+                        <i data-icon="chart-no-axes-column-increasing" aria-hidden="true"></i>
+                        <span data-project-filter-label="priority">Priorytet{% for option in tag_filter_options.priorities %}{% if option.value == tag_priority_filter %}: {{ option.label }}{% endif %}{% endfor %}</span>
+                    </button>
+                    <div class="tasks-filter-menu" role="menu" aria-label="Filtr priorytetu tagu">
+                        <button type="button" role="menuitemradio" aria-checked="{% if not tag_priority_filter %}true{% else %}false{% endif %}" {% if not tag_priority_filter %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="priority" data-project-filter-value="">
+                            <span>Wszystko</span>
+                        </button>
+                        {% for option in tag_filter_options.priorities %}
+                        <button type="button" role="menuitemradio" aria-checked="{% if tag_priority_filter == option.value %}true{% else %}false{% endif %}" {% if tag_priority_filter == option.value %}class="is-active"{% endif %} data-project-filter-option data-project-filter-param="priority" data-project-filter-value="{{ option.value }}">
+                            <span>{{ option.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>

@@ -1,3 +1,15 @@
+window.AncoreTaskTags = {
+    setProject(select, projectId) {
+        if (!select?.dataset.tagProjectOptions || select.dataset.tagProject === String(projectId || '')) return false;
+        const choices = JSON.parse(select.dataset.tagProjectOptions)[String(projectId || '')] || [];
+        const selected = new Set(Array.from(select.selectedOptions, option => option.value));
+        select.replaceChildren(...choices.map(tag => new Option(tag.name, tag.id, false, selected.has(tag.id))));
+        select.dataset.tagProject = String(projectId || '');
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+    }
+};
+
 function initTasksPage() {
     if (window.ancoreTasksPageListenersController) {
         window.ancoreTasksPageListenersController.abort();
@@ -3083,6 +3095,15 @@ function initTasksPage() {
     }
 
     function selectIssueProject(projectId, preferredSectionId = '') {
+        const tags = issueForm?.querySelector('[name="tags"]');
+        if (window.AncoreTaskTags.setProject(tags, projectId)) {
+            const dropdown = tags.closest('.tasks-issue-select-wrap')?.querySelector('[data-inline-select-dropdown]');
+            if (dropdown) {
+                dropdown.dataset.inlineSelectHydrated = 'false';
+                ensureInlineSelectMenuOptions(dropdown);
+                syncInlineSelectDropdown(dropdown);
+            }
+        }
         if (issueAllowsUnassigned && !projectId) {
             if (issueProjectInput) issueProjectInput.value = '';
             setIssueChip(issueProjectPicker, 'Wybierz projekt');

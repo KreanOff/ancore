@@ -167,7 +167,6 @@ def backfill_legacy_records_for_workplace(user, workplace):
 
     models_by_owner_field = [
         ('tasks', 'TaskProject', 'user'),
-        ('tasks', 'TaskTag', 'user'),
         ('tasks', 'Task', 'user'),
         ('kanban', 'KanbanProject', 'user'),
         ('kanban', 'Kanban', 'user'),

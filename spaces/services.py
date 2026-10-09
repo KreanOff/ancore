@@ -135,6 +135,8 @@ def ensure_work_item(task):
         values['key'] = item.key
         WorkItem.objects.filter(pk=item.pk).update(**values)
         item.refresh_from_db()
+        # A destination space has its own vocabulary; do not carry foreign tags.
+        task.tags.remove(*task.tags.exclude(space=space).values_list('pk', flat=True))
         return item
     return WorkItem.objects.create(task=task, **values)
 

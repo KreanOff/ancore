@@ -1,0 +1,101 @@
+<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-directory-menu-sheet{% if not tags %} tasks-tag-board--empty{% endif %}" data-directory-default-hidden="action info notes">
+            <section class="tasks-issue-group tasks-directory-group" data-section-status="">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header" role="row">
+                    <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select">
+                        <input type="checkbox" id="select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie tagi" title="Zaznacz wszystkie tagi" data-select-all-checkbox data-select-all-target="tags">
+                    </span>
+                    {% include 'tasks/includes/directory_menu_header.html' %}
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action" aria-label="Edytuj tag" title="Edytuj tag" data-column-label="Edytuj">
+                    </span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info" aria-label="Informacje o tagu" title="Informacje o tagu" data-column-label="Informacje">
+                        <span class="u-sr-only">Informacje</span>
+                    </span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes" aria-label="Notatki tagu" title="Notatki tagu" data-column-label="Notatki">
+                        <span class="u-sr-only">Notatki</span>
+                    </span>
+                    <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">NAZWA TAGU<i data-icon="tag" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">KOD TAGU<i data-icon="hash" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_type">TYP<i data-icon="shapes" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_visual">KOLOR / IKONA<i data-icon="palette" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="priority">PRIORYTET<i data-icon="flag" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="scope">ZAKRES<i data-icon="target" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="owner">WŁAŚCICIEL<i data-icon="user-round" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="status">STATUS<i data-icon="circle-dot" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="description">OPIS<i data-icon="align-left" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="usage_notes">UŻYCIE<i data-icon="notebook-pen" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="automation">AUTOMATYKA<i data-icon="workflow" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="related_tags">POWIĄZANE<i data-icon="tags" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">ZADANIA<i data-icon="list-checks" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-header-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at">DATA UTWORZENIA<i data-icon="calendar-days" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
+                </div>
+                <div class="tasks-issue-list tasks-section-list tasks-directory-list tasks-tag-list" aria-label="Lista tagów">
+                {% for tag in tags %}
+                <article class="tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" data-search-primary="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.get_category_display }} {{ tag.get_scope_display }} {{ tag.owner_label|default:''|striptags }} {{ tag.get_status_display }}" data-search-index="{{ tag.name|default:''|striptags }} {{ tag.description|default:''|striptags }} {{ tag.code|default:'' }} {{ tag.get_category_display }} {{ tag.get_priority_display }} {{ tag.get_scope_display }} {{ tag.owner_label|default:''|striptags }} {{ tag.get_status_display }} {{ tag.usage_notes|default:''|striptags }} {{ tag.automation_rules|default:''|striptags }} {{ tag.related_tags_label }}">
+                    <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" aria-label="Zaznacz tag {{ tag.name }}" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-category="{{ tag.category }}" data-tag-color="{{ tag.color|default:'#64748b' }}" data-tag-icon="{{ tag.icon|default:'tag' }}" data-tag-priority="{{ tag.priority|default:'none' }}" data-tag-scope="{{ tag.scope|default:'tasks' }}" data-tag-owner-label="{{ tag.owner_label|default:''|escape }}" data-tag-status="{{ tag.status|default:'active' }}" data-tag-usage-notes="{{ tag.usage_notes|default:''|escape }}" data-tag-automation-rules="{{ tag.automation_rules|default:''|escape }}" data-tag-related-tags="{{ tag.related_tag_ids }}">
+                    {% include 'tasks/includes/directory_row_menu.html' with kind='tag' item_id=tag.pk item_name=tag.name can_manage=can_edit_tags edit_label='Edytuj tag' info_label='Informacje o tagu' notes_label='Notatki tagu' edit_modal='tag-modal' delete_label='Usuń tag' only %}
+                    <span class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="action">
+                        {% if can_edit_tags %}<button type="button" class="tasks-project-sheet__edit-button" title="Edytuj tag" aria-label="Edytuj tag {{ tag.name }}" aria-haspopup="dialog" aria-controls="tag-modal" data-open-tag-edit data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-category="{{ tag.category }}" data-tag-color="{{ tag.color|default:'#64748b' }}" data-tag-icon="{{ tag.icon|default:'tag' }}" data-tag-priority="{{ tag.priority|default:'none' }}" data-tag-scope="{{ tag.scope|default:'tasks' }}" data-tag-owner-label="{{ tag.owner_label|default:''|escape }}" data-tag-status="{{ tag.status|default:'active' }}" data-tag-usage-notes="{{ tag.usage_notes|default:''|escape }}" data-tag-automation-rules="{{ tag.automation_rules|default:''|escape }}" data-tag-related-tags="{{ tag.related_tag_ids }}">
+                            <i data-icon="pencil" aria-hidden="true"></i>
+                        </button>{% endif %}
+                    </span>
+                    <span class="tasks-project-sheet__info tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="info">
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__info-button" title="Informacje o tagu" aria-label="Informacje o tagu {{ tag.name }}" aria-haspopup="dialog" aria-controls="project-info-modal" data-open-tag-info data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}" data-tag-code="{{ tag.code|escape }}" data-tag-tasks-label="{{ tag.total_tasks }} zadań" data-tag-category-label="{{ tag.get_category_display|escape }}" data-tag-visual-label="{{ tag.color|default:'#64748b' }} / {{ tag.get_icon_display|escape }}" data-tag-priority-label="{{ tag.get_priority_display|escape }}" data-tag-scope-label="{{ tag.get_scope_display|escape }}" data-tag-owner-label="{% if tag.owner_label %}{{ tag.owner_label|escape }}{% else %}Brak właściciela{% endif %}" data-tag-status-label="{{ tag.get_status_display|escape }}" data-tag-usage-notes="{% if tag.usage_notes %}{{ tag.usage_notes|escape }}{% else %}Brak opisu użycia{% endif %}" data-tag-automation-rules="{% if tag.automation_rules %}{{ tag.automation_rules|escape }}{% else %}Brak reguł{% endif %}" data-tag-related-tags="{{ tag.related_tags_label|escape }}" data-tag-created-label="{{ tag.created_at|date:'d.m.Y' }}">
+                            <i data-icon="info" aria-hidden="true"></i>
+                        </button>
+                    </span>
+                    <span class="tasks-project-sheet__notes tasks-directory-sheet__cell tasks-project-sheet__cell tasks-tag-sheet__cell" data-column="notes">
+                        <button type="button" class="tasks-project-sheet__edit-button tasks-project-sheet__notes-button" title="Notatki tagu" aria-label="Notatki tagu {{ tag.name }}" aria-haspopup="dialog" aria-controls="tag-notes-modal" data-open-tag-notes data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name|escape }}" data-tag-description="{{ tag.description|default:''|escape }}">
+                            <i data-icon="file-text" aria-hidden="true"></i>
+                        </button>
+                    </span>
+                    <span class="tasks-directory-name tasks-row-title tasks-section-row-title tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_name">
+                        <span>{{ tag.name }}</span>
+                    </span>
+                    <span class="tasks-tag-sheet__code tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_code">{{ tag.code }}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_type">
+                        <span class="tasks-project-value-badge tasks-project-value-badge--tag-category-{{ tag.category }}">{{ tag.get_category_display }}</span>
+                    </span>
+                    <span class="tasks-tag-sheet__visual tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="tag_visual" title="{{ tag.get_icon_display }}">
+                        <span class="tasks-project-value-badge tasks-project-value-badge--with-icon tasks-project-value-badge--tag-visual" style="--tag-color: {{ tag.color|default:'#64748b' }};">
+                            <i data-icon="{{ tag.icon|default:'tag' }}" aria-hidden="true"></i>
+                            <span>{{ tag.get_icon_display }}</span>
+                        </span>
+                    </span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="priority">
+                        <span class="tasks-project-value-badge tasks-project-value-badge--with-icon tasks-project-value-badge--priority-{{ tag.priority|default:'none' }}">
+                            <span class="tasks-row-priority priority-{{ tag.priority|default:'none' }}" aria-hidden="true">
+                                {% include 'core/includes/priority_icon.html' with priority=tag.priority|default:'none' only %}
+                            </span>
+                            <span>{{ tag.get_priority_display }}</span>
+                        </span>
+                    </span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="scope">
+                        <span class="tasks-project-value-badge tasks-project-value-badge--tag-scope-{{ tag.scope }}">{{ tag.get_scope_display }}</span>
+                    </span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="owner">{% if tag.owner_label %}{{ tag.owner_label }}{% else %}<span class="tasks-project-sheet__muted">Brak właściciela</span>{% endif %}</span>
+                    <span class="tasks-tag-sheet__meta tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="status">
+                        <span class="tasks-project-value-badge tasks-project-value-badge--tag-status-{{ tag.status }}">{{ tag.get_status_display }}</span>
+                    </span>
+                    <span class="tasks-section-row-description tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="description">{{ tag.description|default:"Brak opisu" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="usage_notes">{{ tag.usage_notes|default:"Brak opisu użycia" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="automation">{{ tag.automation_rules|default:"Brak reguł" }}</span>
+                    <span class="tasks-tag-sheet__description tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="related_tags">{{ tag.related_tags_label }}</span>
+                    <span class="tasks-row-time tasks-tag-sheet__count tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="task_count">{{ tag.total_tasks }} zadań</span>
+                    <span class="tasks-row-date tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="created_at" title="Data utworzenia">{{ tag.created_at|date:"d.m.Y H:i" }}</span>
+                    <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
+                </article>
+                {% empty %}
+                <div class="tasks-empty-state tasks-empty-state--centered tasks-tag-empty-state" role="status" aria-live="polite">
+                    <span class="tasks-empty-state__icon" aria-hidden="true">
+                        <i data-icon="tag" aria-hidden="true"></i>
+                    </span>
+                    <div class="tasks-empty-state__copy">
+                        <h2>{% if tag_query or tag_priority_filter or tag_status_filter or tag_category_filter or tag_scope_filter or tag_owner_filter %}Nie znaleziono tagów.{% else %}Nie ma jeszcze tagów.{% endif %}</h2>
+                        <p>{% if tag_query or tag_priority_filter or tag_status_filter or tag_category_filter or tag_scope_filter or tag_owner_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszy tag, aby łatwiej porządkować zadania.{% endif %}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+            </section>
+        </div>

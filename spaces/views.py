@@ -144,7 +144,7 @@ def search(request):
 
 
 def detail_context(request, space, view):
-    allowed_views = {'overview', 'board', 'list', 'timeline', 'reports', 'settings'}
+    allowed_views = {'overview', 'board', 'list', 'timeline', 'reports', 'tags', 'settings'}
     if space.template in {'kanban', 'scrum'}:
         allowed_views.add('backlog')
     if view not in allowed_views:
@@ -162,6 +162,7 @@ def detail_context(request, space, view):
     navigation += [
         ('timeline', 'Oś czasu', 'calendar-range'),
         ('reports', 'Raporty', 'chart-no-axes-combined'),
+        ('tags', 'Tagi', 'tag'),
         ('settings', 'Ustawienia przestrzeni', 'settings'),
     ]
     query = request.GET.get('q', '').strip()[:120]
@@ -180,13 +181,14 @@ def detail_context(request, space, view):
         items = items.filter(team_id=int(team))
     now = timezone.now()
     items, summary_filters = filter_summary_items(request, space, items, now)
-    if view == 'overview':
+    if view in {'overview', 'tags'}:
         return {
             **base_context(request), 'space': space, 'space_url': base, 'view': view,
             'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation],
             'can_manage': manage_space(request, space),
             'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(),
-            'create_item_url': base + 'items/create/', 'summary': space_summary(request, space, items, now),
+            'create_item_url': base + 'items/create/',
+            **({'summary': space_summary(request, space, items, now)} if view == 'overview' else {}),
         }
     active_sprint = space.sprints.filter(state='active').first()
     all_items = items
@@ -232,10 +234,33 @@ def detail_context(request, space, view):
 
 
 @login_required
-@require_GET
+@require_http_methods(['GET', 'POST'])
 def detail(request, pk):
     space = space_object(request, pk)
     remember_view(request, space.project)
+    if request.GET.get('view') == 'tags':
+        from tasks.forms import TaskTagForm
+        from tasks.tagging import tag_action
+        from tasks.views.tasks import _tag_window_for_request, TAG_SORT_OPTIONS, TAG_DEFAULT_SORT
+        context = detail_context(request, space, 'tags')
+        window = _tag_window_for_request(request, space=space)
+        context.update({
+            'active_view': 'tags', 'tag_window': window, 'tags': window['tags'],
+            'can_edit_tags': context['can_edit'], 'tag_query': window['query'],
+            'tag_filter_options': window['filters'], 'tag_sort_options': TAG_SORT_OPTIONS,
+            'tag_default_sort': TAG_DEFAULT_SORT,
+            'tag_form': TaskTagForm(user=workspace_owner(request), workplace=request.workplace, space=space),
+        })
+        context.update({f'tag_{key}_filter': window[key] for key in ('priority', 'status', 'category', 'scope', 'owner')})
+        context.update({f'tag_{key}': window[key] for key in ('sort', 'sort_param', 'sort_label', 'sort_direction')})
+        if request.method == 'POST':
+            result = tag_action(request, space=space)
+            if not isinstance(result, dict):
+                return result
+            context.update(result)
+        return render(request, 'spaces/tags.html', context)
+    if request.method == 'POST':
+        raise Http404
     return render(request, 'spaces/detail.html', detail_context(request, space, request.GET.get('view', 'overview')))
 
 
@@ -416,6 +441,7 @@ def item_edit(request, pk=None, space_pk=None):
             task.section = data.get('section') or default_section(space)
             task._activity_actor = request.user
             task.save()
+            task.tags.set(data['tags'])
             item = WorkItem.objects.select_for_update().get(task=task)
             old_type, old_type_label = item.work_type, item.get_work_type_display()
             for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_on', 'in_backlog'):

@@ -132,7 +132,10 @@ flowchart LR
   tablice i dziedziczoną zawartość historyczną, obecnie zawsze zwracając pusty
   wynik; wspólne `tasks.access` deleguje do niego modele Kanbana.
   Członkostwa przestrzeni/tablic mają własne tabele i wspólne komponenty UI zespołu.
-- Tagi pochodzą z `tasks.TaskTag` i są używane w Zadaniach i Kanbanie.
+- Tagi pochodzą z `tasks.TaskTag`. Relacja `space` wyznacza niezależny katalog
+  każdej przestrzeni; rekordy bez przestrzeni pozostają wyłącznie historyczne.
+  Globalny katalog i jego akcje są wycofane, bez menu, Favorites i wyszukiwania.
+  Kanban oraz Dokumenty zachowują historyczne powiązania.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
   typu komentarz z Zadań, zaproszeń oraz osobistych przypomnień `TaskReminder`.
   Wycofany Kanban pozostaje tylko źródłem danych historycznych i mapowań importu.

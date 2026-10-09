@@ -1,0 +1,48 @@
+<div class="tasks-modal app-modal-panel tasks-project-modal tasks-project-notes-modal" id="tag-notes-modal" role="dialog" aria-modal="true" aria-labelledby="tag-notes-modal-title" aria-hidden="true">
+    <div class="tasks-modal__dialog tasks-project-modal__dialog tasks-project-rename-modal__dialog tasks-project-edit-modal__dialog tasks-issue-modal__dialog">
+        <div class="tasks-modal__form tasks-project-modal__form tasks-project-rename-modal__form tasks-project-edit-modal__form tasks-issue-modal__form">
+            <header class="tasks-modal__header tasks-project-edit-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                        <i data-icon="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong class="tasks-project-edit-modal__title-chip" id="tag-notes-modal-title">
+                        <span>Notatki tagu</span>
+                    </strong>
+                </div>
+            </header>
+
+            <div class="tasks-modal__body tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body">
+                <div class="tasks-project-notes-modal__project">
+                    <span>Tag</span>
+                    <strong data-tag-notes-name>Tag</strong>
+                </div>
+                {% if can_edit_tags or not space %}<form method="post" class="tasks-project-notes-compose" id="tag-notes-form" data-tag-note-create-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_tag_note">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input type="hidden" name="tag_id" value="" data-tag-notes-id>
+                    <div class="tasks-form-field">
+                        <label for="tag-notes-message">Nowa notatka</label>
+                        <textarea id="tag-notes-message" name="message" class="tasks-project-notes-compose__input" placeholder="Dodaj notatkę..." rows="3" data-tag-notes-message></textarea>
+                    </div>
+                    <div class="tasks-project-notes-compose__footer">
+                        <button type="submit" class="tasks-project-note__primary" id="tag-notes-submit">
+                            <i data-icon="plus" aria-hidden="true"></i>
+                            <span>Dodaj notatkę</span>
+                        </button>
+                    </div>
+                </form>{% endif %}
+                <div class="tasks-project-notes-list" data-tag-notes-feed>
+                    {% for tag in tags %}
+                        {% include 'tasks/includes/tag_notes_thread.html' with tag=tag %}
+                    {% endfor %}
+                </div>
+            </div>
+            <footer class="tasks-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Zamknij</button>
+            </footer>
+        </div>
+    </div>
+</div>

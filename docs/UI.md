@@ -46,8 +46,20 @@ Przyciski zachowują wspólny styl bez podkreślenia tekstu.
 Katalog zespołów używa kart.
 Przestrzeń ma kontekstowe zakładki
 Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
-Raporty, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
+Raporty, Tagi, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Wszystkie zadania i Zespoły.
+
+Zakładka „Tagi” zachowuje nagłówek i nawigację otwartej przestrzeni.
+`spaces/tags.html` korzysta ze wspólnych include'ów `tag_directory`,
+`tag_sort`, `tag_filters`, `tag_modal` i `tag_notes_modal`. Przycisk „Dodaj tag”,
+menu wiersza, informacje, notatki, wybór kolumn i operacje zbiorcze obsługuje
+istniejący `tasks.js`, również po `ancore:content-loaded`. Obserwator widzi
+informacje i notatki bez przycisków zapisu; modal edycji jest niedostępny.
+Tabela dochodzi do krawędzi kontenera jak lista zadań. W formularzu zadania
+przestrzeni picker „Tagi” korzysta z `AncoreCustomSelect` i lokalnego wyszukiwania.
+Starszy modal zadania i szczegóły przełączają opcje tagów po zmianie przestrzeni
+przez `AncoreTaskTags` w `tasks.js`, zachowując własne dropdowny. Dane opcji
+są filtrowane przez widoczność projektów; etykiety trafiają do DOM jako tekst.
 
 Osobny ekran „Zarządzaj przestrzeniami” (`spaces/manage.html`) używa tej samej
 powłoki. Główny pasek boczny przełącza się z menu Workspace na menu zarządzania
@@ -93,13 +105,15 @@ stare fragmenty `#preferences`, `#appearance`, `#notifications` i `#region`
 otwierają widok Ogólne.
 
 Pod Zasobami znajduje się zwijana sekcja „Starsze widoki”: Projekty, Ulubione
-projekty, Grupy, Zadania, Tagi i Szablony projektów. Używa istniejących
+projekty, Grupy, Zadania i Szablony projektów. Używa istniejących
 `sidebar-nav-group` i `sidebar-subnav` oraz ikon `AncoreIcons`, bez osobnych listenerów. Wariant `sidebar-subnav--extended`
 usuwa desktopowy limit wysokości 160px dla dłuższego podmenu; przewijanie pozostaje
 we wspólnej nawigacji, a zwinięcie sidebaru nadal ukrywa podmenu. `layout.js` zachowuje
 stan zwinięcia, obsługuje klawiaturę, panel skrótów przy zwiniętym sidebarze
 i zamknięcie menu po wyborze linku na telefonie. Adresy korzystają z aktywnego
 Workspace, a aktywna pozycja odświeża się także po częściowej nawigacji.
+Globalny katalog „Tagi” nie ma pozycji menu, skrótów Favorites ani modali
+w katalogu Zadań; tagi są dostępne wyłącznie w zakładce przestrzeni.
 Stary Kanban nie ma pozycji menu; jego dawne adresy służą wyłącznie
 przekierowaniom do Przestrzeni i zaimportowanych zadań.
 Katalogi Kontaktów, Firm, Użytkowników i Gości zostały wycofane także
@@ -930,7 +944,7 @@ Ważne wyjątki:
 
 | Element | Wzorzec do ponownego użycia | Styl / zachowanie |
 | --- | --- | --- |
-| Katalog projektów/grup/tagów | [tasks/tasks.html](../tasks/templates/tasks/tasks.html) | `components/tasks.css`, `tasks.js` |
+| Katalog projektów/grup | [tasks/tasks.html](../tasks/templates/tasks/tasks.html) | `components/tasks.css`, `tasks.js` |
 | Historyczna lista kontaktów i firm (wycofana) | [contacts.html](../contacts/templates/contacts/contacts.html), [companies.html](../contacts/templates/contacts/companies.html) | `contacts.css` + wspólne style katalogu |
 | Tytuł i toolbar katalogu | [toolbar Dysku](../documents/templates/documents/toolbar.html) jako przykład użycia wspólnych klas | `tasks-topbar`, `tasks-filterbar`, `tasks-filter-button`, `tasks-search-field` |
 | Paginacja | [directory_pagination_toolbar.html](../tasks/templates/tasks/includes/directory_pagination_toolbar.html) | Kontekst `window`, atrybuty `data-project-*`, serwerowe URL |

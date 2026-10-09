@@ -81,7 +81,7 @@ dostępne Workspace, aby równoczesne pierwsze wejścia nie tworzyły duplikató
 Kolejne wejścia, utrata sesji oraz edycja nazwy nie powodują ponownego losowania.
 Istniejące Workspace, również z dawną nazwą domyślną, pozostają bez zmian.
 
-Backfill obejmuje stare projekty, zadania, tagi, karty, firmy, kontakty,
+Backfill obejmuje stare projekty, zadania, karty, firmy, kontakty,
 powiązania kontaktów i wydarzenia. Nie jest ogólną migracją wszystkich modeli.
 
 Typowy filtr jest dwuczęściowy: właściciel Workspace **i** Workspace.
@@ -290,8 +290,10 @@ obsługuje tylko adresy zgodności, z aktualną kontrolą dostępu Tasks.
 Tasks oraz archiwalny kod Kanbana mają rozbudowane funkcje `*_window_for_request()`, które
 filtrują, sortują i wycinają okno wyników po stronie serwera. Widoki używają
 `select_related`, `prefetch_related`, agregacji i adnotacji do liczników.
-Tasks ma osobne mechanizmy katalogów projektów, grup, tagów i zadań oraz
-grupowania/paginacji po statusach.
+Tasks ma osobne mechanizmy katalogów projektów, grup i zadań oraz
+grupowania/paginacji po statusach. Wspólne funkcje katalogu tagów obsługują
+wyłącznie zakładkę przestrzeni; tagi bez przestrzeni nie trafiają do wyników,
+pickerów ani indeksów wyszukiwania zadań.
 
 W `_task_window_for_request()` liczności statusów są liczone jednym agregatem
 na identyfikatorach przefiltrowanego zbioru. Katalogi zadań, nieprzydzielonych oraz dawny widok Moje zadania

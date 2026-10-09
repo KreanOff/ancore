@@ -180,7 +180,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         for label in ('Kontakty', 'Firmy', 'Użytkownicy', 'Goście'):
             self.assertNotIn(f'>{label}</span>', html)
         self.assertNotIn('/contacts/', html)
-        for label in ('Projekty', 'Grupy', 'Zadania', 'Tagi', 'Szablony projektów'):
+        for label in ('Projekty', 'Grupy', 'Zadania', 'Szablony projektów'):
             self.assertIn(f'>{label}</span>', html)
 
     def test_sidebar_has_favorites_and_workspace_sections(self):
@@ -294,43 +294,6 @@ class SidebarActiveStateTests(SimpleTestCase):
             css,
         )
 
-    def test_tags_is_a_single_standalone_link_below_calendar(self):
-        request = SimpleNamespace(
-            resolver_match=SimpleNamespace(app_name='', view_name=''),
-            user=AnonymousUser(),
-        )
-        html = render_to_string('core/base.html', {
-            'request': request,
-            'workplace_app_urls': {},
-            'active_view': '',
-            'active_contact_status': '',
-        })
-
-        calendar_position = html.index('>Kalendarz</span>')
-        tags_position = html.index('>Tagi</span>')
-        tags_link = self._sidebar_link_html(html, 'Tagi')
-
-        self.assertEqual(html.count('>Tagi</span>'), 1)
-        self.assertLess(calendar_position, tags_position)
-        self.assertIn('href="/tasks/?view=tags"', tags_link)
-        self.assertIn('sidebar-primary-link--standalone', tags_link)
-
-    def test_tags_standalone_link_is_active_on_shared_tags_views(self):
-        for app_name in ('tasks', 'workplace_tasks', 'kanban', 'workplace_kanban'):
-            with self.subTest(app_name=app_name):
-                request = SimpleNamespace(
-                    resolver_match=SimpleNamespace(app_name=app_name, view_name=''),
-                    user=AnonymousUser(),
-                )
-                html = render_to_string('core/base.html', {
-                    'request': request,
-                    'workplace_app_urls': {},
-                    'active_view': 'tags',
-                    'active_contact_status': '',
-                })
-
-                self.assertIn(' active', self._sidebar_link_html(html, 'Tagi'))
-
     def test_topbar_search_controls_existing_panel_and_sidebar_can_collapse(self):
         request = SimpleNamespace(
             resolver_match=SimpleNamespace(app_name='', view_name=''),
@@ -366,7 +329,7 @@ class SidebarActiveStateTests(SimpleTestCase):
             'active_contact_status': '',
         })
 
-        for label in ('Dashboard', 'Kalendarz', 'Tagi'):
+        for label in ('Dashboard', 'Kalendarz'):
             with self.subTest(label=label):
                 link_html = self._sidebar_link_html(html, label)
                 self.assertIn(f'aria-label="{label}"', link_html)

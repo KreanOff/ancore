@@ -14,7 +14,6 @@ SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'kanban-spaces', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'kanban-boards', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'calendar', 'label': 'Kalendarz', 'icon': 'calendar-days', 'app': 'calendar'},
-    {'key': 'tags', 'label': 'Tagi', 'icon': 'tag', 'app': 'tasks', 'query': 'view=tags'},
     {'key': 'documents', 'label': 'Dysk', 'icon': 'hard-drive', 'app': 'documents'},
     {'key': 'office', 'label': 'Dokumenty', 'icon': 'file-text', 'app': 'office'},
     {'key': 'resources', 'label': 'Zasoby', 'icon': 'package', 'app': 'resources'},
@@ -70,7 +69,7 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
     if item_key == 'resources':
         return app_name in {'resources', 'workplace_resources'}
 
-    if item_key.startswith('tasks-') or item_key == 'tags':
+    if item_key.startswith('tasks-'):
         if app_name not in {'tasks', 'workplace_tasks', 'kanban', 'workplace_kanban'}:
             return False
         expected_view = {
@@ -78,7 +77,6 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
             'tasks-all': ('all_tasks', 'unassigned_tasks'),
             'tasks-projects': ('projects', 'project'),
             'tasks-groups': ('all_groups', 'section'),
-            'tags': 'tags',
         }.get(item_key)
         if item_key.startswith('tasks-') and app_name not in {'tasks', 'workplace_tasks'}:
             return False

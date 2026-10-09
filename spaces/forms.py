@@ -8,8 +8,8 @@ from django.utils import timezone
 from accounts.widgets import UserChoiceField
 from core.upload_validation import validate_image_upload
 from tasks.access import editable_to
-from tasks.models import Task, TaskSection
-from workplaces.services import can_manage_team, workplace_people
+from tasks.models import Task, TaskSection, TaskTag
+from workplaces.services import can_manage_team, workplace_people, workspace_owner
 from .defaults import KINDS, MANAGEMENT, TEMPLATES
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
@@ -108,6 +108,9 @@ class ItemForm(StyledForm):
     description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
     work_type = forms.ChoiceField(label='Typ zgłoszenia', widget=IssueTypeSelect)
     priority = forms.ChoiceField(label='Priorytet', choices=Task.PRIORITY_CHOICES, initial='medium')
+    tags = forms.ModelMultipleChoiceField(label='Tagi', queryset=TaskTag.objects.none(), required=False, widget=forms.SelectMultiple(attrs={
+        'data-ancore-custom-select-search': 'true', 'data-ancore-custom-select-search-placeholder': 'Szukaj tagów',
+    }))
     assignee = UserChoiceField(label='Wykonawca', queryset=None, required=False, empty_label='Brak osoby')
     team = forms.ModelChoiceField(label='Zespół', queryset=Team.objects.none(), required=False)
     section = forms.ModelChoiceField(label='Grupa', queryset=TaskSection.objects.none(), required=False, empty_label='Domyślna grupa przestrzeni')
@@ -124,6 +127,10 @@ class ItemForm(StyledForm):
             kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_on')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'section', 'due_at')}}
         super().__init__(*args, **kwargs)
         config = space.configuration.settings
+        from tasks.tagging import tags_in_scope
+        self.fields['tags'].queryset = tags_in_scope(workspace_owner(request), request.workplace, space)
+        if item:
+            self.initial['tags'] = item.task.tags.all()
         self.fields['work_type'].choices = [(t['key'], t['label']) for t in config['types']]
         self.fields['assignee'].queryset = workplace_people(request.workplace)
         self.fields['team'].queryset = teams_for(request).filter(spaces=space)

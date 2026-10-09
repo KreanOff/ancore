@@ -187,7 +187,8 @@ class TaskForm(TaskAccessForm):
             self.fields['project'].queryset = projects
             self.fields['section'].queryset = sections
             self.fields['parent'].queryset = parents
-            self.fields['tags'].queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
+            from .tagging import form_tags
+            self.fields['tags'].queryset = form_tags(self, user, workplace, project, section)
             _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user, workplace), 'Brak osoby')
         else:
             _replace_optional_model_choice(self, 'assignee', get_user_model().objects.none(), 'Brak osoby')
@@ -996,14 +997,19 @@ class TaskTagForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         workplace = kwargs.pop('workplace', None)
+        space = kwargs.pop('space', None)
         super().__init__(*args, **kwargs)
+        self.instance.space = space or getattr(self.instance, 'space', None)
+        self.instance.user = user or getattr(self.instance, 'user', None)
+        self.instance.workplace = workplace or getattr(self.instance, 'workplace', None)
         if user is None:
             user = getattr(self.instance, 'user', None)
         if workplace is None:
             workplace = getattr(self.instance, 'workplace', None)
         related_queryset = TaskTag.objects.none()
         if user:
-            related_queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
+            from .tagging import tags_in_scope
+            related_queryset = tags_in_scope(user, workplace, self.instance.space)
             if self.instance and self.instance.pk:
                 related_queryset = related_queryset.exclude(pk=self.instance.pk)
         self.fields['related_tags'].queryset = related_queryset.order_by('name', 'id')
@@ -1091,7 +1097,11 @@ class TaskTagForm(forms.ModelForm):
         }
 
     def clean_name(self):
-        return (self.cleaned_data.get('name') or '').strip()
+        from .tagging import tags_in_scope
+        name = (self.cleaned_data.get('name') or '').strip()
+        if tags_in_scope(self.instance.user, self.instance.workplace, self.instance.space).filter(name__iexact=name).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Taki tag już istnieje.')
+        return name
 
     def clean_color(self):
         value = (self.cleaned_data.get('color') or '#64748b').strip()
@@ -1156,7 +1166,8 @@ class TaskModalForm(TaskAccessForm):
                 sections = sections.filter(project=project)
             self.fields['section'].queryset = sections
         if user:
-            self.fields['tags'].queryset = _filter_workplace(TaskTag.objects.filter(user=user), workplace)
+            from .tagging import form_tags
+            self.fields['tags'].queryset = form_tags(self, user, workplace, project, section)
             _replace_optional_model_choice(self, 'assignee', _crm_user_queryset(user, workplace), 'Brak osoby')
         else:
             _replace_optional_model_choice(self, 'assignee', get_user_model().objects.none(), 'Brak osoby')
