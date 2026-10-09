@@ -2,11 +2,13 @@ from datetime import UTC, timedelta
 
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch
 from django.utils import timezone
 
 from accounts.widgets import UserChoiceField, UserSelect
 from tasks.access import editable_to, visible_to
+from tasks.hierarchy import require_movable_task_tree, save_task_tree
 from workplaces.services import workplace_people
 
 from contacts.models import Company
@@ -137,7 +139,10 @@ class TaskAccessForm(forms.ModelForm):
         else:
             task.private_owner = None
         if commit:
-            task.save()
+            if task.pk and self.viewer:
+                save_task_tree(task, self.viewer)
+            else:
+                task.save()
             self.save_m2m()
         return task
 
@@ -254,6 +259,11 @@ class TaskForm(TaskAccessForm):
             self.add_error('section', 'Wybierz grupę z wybranego projektu.')
         if project and not section and 'section' not in self.errors:
             self.add_error('section', 'Wybierz grupę z wybranego projektu lub usuń wybór projektu.')
+        if self.instance.pk and self.instance.section_id != getattr(section, 'pk', None):
+            try:
+                require_movable_task_tree(self.instance, self.viewer)
+            except PermissionDenied:
+                self.add_error('section', 'Nie można przenieść zadania z niedostępnymi lub obserwowanymi podzadaniami.')
         work_type = cleaned_data.get('work_type')
         if self.issue_item and work_type:
             if self.issue_item.epic_items.exists() and work_type != 'epic':

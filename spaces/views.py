@@ -23,7 +23,8 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from core.task_numbering import lock_task_numbers
 from accounts.avatar import account_avatar
 from dashboard.recent import remember_view
-from tasks.access import editable_to, visible_to
+from tasks.access import editable_to, require_editable, visible_to
+from tasks.hierarchy import save_task_tree
 from tasks.models import Task, TaskProject, TaskProjectMembership
 from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
@@ -53,6 +54,8 @@ def decorate_items(request, items):
         item.url = task_url(request, item.task)
         item.edit_url = app_url(request, f'items/{item.pk}/edit/')
         item.action_url = app_url(request, f'items/{item.pk}/action/')
+        if request.GET:
+            item.action_url += '?' + request.GET.urlencode()
         item.editable = item.task_id in editable_ids and item.space_id is not None
         settings = item.space.configuration.settings if item.space_id else template_settings()
         item.status_label = next((s['label'] for s in settings['statuses'] if s['key'] == item.status), item.task.get_status_display())
@@ -143,6 +146,33 @@ def search(request):
     return response
 
 
+def filtered_space_items(request, space, items, now):
+    """Shared filter scope for displayed rows and backlog reordering."""
+    query = request.GET.get('q', '').strip()[:120]
+    if query:
+        items = items.filter(Q(task__title__icontains=query) | Q(key__icontains=query))
+    work_type = request.GET.get('work_type', '').strip()[:40]
+    if work_type:
+        items = items.filter(work_type=work_type)
+    for parameter, lookup in (('group', 'task__section_id'), ('team', 'team_id')):
+        value = request.GET.get(parameter, '')
+        if value.isdecimal() and len(value) < 19:
+            items = items.filter(**{lookup: int(value)})
+    return filter_summary_items(request, space, items, now)
+
+
+def items_for_view(space, items, view, active_sprint=None):
+    if view == 'board':
+        if space.template == 'scrum':
+            return items.filter(sprint=active_sprint) if active_sprint else items.none()
+        return items.filter(in_backlog=False)
+    if view == 'backlog':
+        items = items.exclude(task__status='closed').filter(Q(sprint__isnull=True) | ~Q(sprint__state='closed'))
+        if space.template == 'kanban':
+            items = items.filter(in_backlog=True)
+    return items
+
+
 def detail_context(request, space, view):
     allowed_views = {'overview', 'board', 'list', 'timeline', 'reports', 'tags', 'settings'}
     if space.template in {'kanban', 'scrum'}:
@@ -169,18 +199,10 @@ def detail_context(request, space, view):
     items = visible_items(request).filter(space=space)
     assignee_options = get_user_model().objects.filter(pk__in=items.order_by().values('task__assignee_id')).order_by('first_name', 'last_name', 'pk')
     type_options, type_filter = issue_type_filters(request, space)
-    if type_filter:
-        items = items.filter(work_type=type_filter)
     group = request.GET.get('group', '')
-    if group.isdecimal() and len(group) < 19:
-        items = items.filter(task__section_id=int(group))
-    if query:
-        items = items.filter(Q(task__title__icontains=query) | Q(key__icontains=query))
     team = request.GET.get('team', '')
-    if team.isdecimal() and len(team) < 19:
-        items = items.filter(team_id=int(team))
     now = timezone.now()
-    items, summary_filters = filter_summary_items(request, space, items, now)
+    items, summary_filters = filtered_space_items(request, space, items, now)
     if view in {'overview', 'tags'}:
         return {
             **base_context(request), 'space': space, 'space_url': base, 'view': view,
@@ -192,14 +214,7 @@ def detail_context(request, space, view):
         }
     active_sprint = space.sprints.filter(state='active').first()
     all_items = items
-    if view == 'board':
-        items = items.filter(sprint=active_sprint) if space.template == 'scrum' and active_sprint else items.filter(in_backlog=False)
-        if space.template == 'scrum' and not active_sprint:
-            items = items.none()
-    if view == 'backlog':
-        items = items.exclude(task__status='closed').filter(Q(sprint__isnull=True) | ~Q(sprint__state='closed'))
-        if space.template == 'kanban':
-            items = items.filter(in_backlog=True)
+    items = items_for_view(space, items, view, active_sprint)
     if view == 'timeline':
         items = items.filter(Q(start_on__isnull=False) | Q(task__due_at__isnull=False)).order_by('start_on', 'task__due_at', 'pk')
     else:
@@ -432,15 +447,26 @@ def item_edit(request, pk=None, space_pk=None):
         raise PermissionDenied
     form = ItemForm(request.POST if request.method == 'POST' else None, request=request, space=space, item=item)
     url = app_url(request, f'{space.pk}/?view=list')
-    if request.method == 'POST' and form.is_valid():
-        data = form.cleaned_data
+    if request.method == 'POST':
         with lock_task_numbers(space.project.user_id):
+            if request.workplace:
+                Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+            if item:
+                require_editable(Task.objects.filter(pk=item.task_id), request.user)
+                item = get_object_or_404(visible_items(request), pk=item.pk, space=space)
+            else:
+                require_editable(TaskProject.objects.filter(pk=space.project_id), request.user)
+            space = space_object(request, space.pk)
+            form = ItemForm(request.POST, request=request, space=space, item=item)
+            if not form.is_valid():
+                return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url)
+            data = form.cleaned_data
             task = Task.objects.select_for_update().get(pk=item.task_id) if item else Task(user=workspace_owner(request), workplace=request.workplace, visibility='public')
             for name in ('title', 'description', 'priority', 'assignee', 'due_at'):
                 setattr(task, name, data[name])
             task.section = data.get('section') or default_section(space)
             task._activity_actor = request.user
-            task.save()
+            save_task_tree(task, request.user)
             task.tags.set(data['tags'])
             item = WorkItem.objects.select_for_update().get(task=task)
             old_type, old_type_label = item.work_type, item.get_work_type_display()
@@ -467,7 +493,10 @@ def item_action(request, pk):
         raise PermissionDenied
     try:
         with lock_task_numbers(item.task.user_id):
+            if request.workplace:
+                Workplace.objects.select_for_update().get(pk=request.workplace.pk)
             item = WorkItem.objects.select_for_update().get(pk=item.pk)
+            require_editable(Task.objects.filter(pk=item.task_id), request.user)
             action = request.POST.get('action')
             if action == 'status':
                 set_status(request, item, request.POST.get('status'))
@@ -478,8 +507,13 @@ def item_action(request, pk):
                 record(item, request.user, 'updated', 'przeniósł zadanie do backlogu' if item.in_backlog else 'przeniósł zadanie na tablicę')
             elif action in {'up', 'down'}:
                 Space.objects.select_for_update().get(pk=item.space_id)
-                ordered = list(visible_items(request).filter(space_id=item.space_id, sprint_id=item.sprint_id).order_by('rank', 'pk'))
-                index = next(i for i, row in enumerate(ordered) if row.pk == item.pk)
+                space = space_object(request, item.space_id)
+                candidates, _ = filtered_space_items(request, space, visible_items(request).filter(space=space), timezone.now())
+                candidates = items_for_view(space, candidates, 'backlog').filter(sprint_id=item.sprint_id)
+                ordered = list(candidates.order_by('rank', 'pk'))
+                index = next((i for i, row in enumerate(ordered) if row.pk == item.pk), None)
+                if index is None:
+                    raise ValidationError('Zadanie nie jest już widoczne w tym backlogu. Odśwież listę.')
                 target = index + (-1 if action == 'up' else 1)
                 if 0 <= target < len(ordered):
                     other = ordered[target]
@@ -496,7 +530,9 @@ def item_action(request, pk):
         if request.headers.get('X-Work-Action') == 'true':
             return JsonResponse({'error': ' '.join(error.messages)}, status=400)
         messages.error(request, ' '.join(error.messages))
-    url = app_url(request, f'{item.space_id}/?view=' + ('backlog' if request.POST.get('return_view') == 'backlog' else 'board'))
+    params = request.GET.copy()
+    params['view'] = 'backlog' if request.POST.get('return_view') == 'backlog' else 'board'
+    url = app_url(request, f'{item.space_id}/?') + params.urlencode()
     if request.headers.get('X-Work-Action') == 'true':
         return JsonResponse({'saved': True, 'url': url})
     return redirect(url)

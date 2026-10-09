@@ -49,6 +49,12 @@ Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Tagi, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Wszystkie zadania i Zespoły.
 
+Wiersze backlogu z prawem edycji używają wariantu `work-issue-row--actions`
+z dodatkową kolumną 30px i istniejącym include'em `spaces/item_actions.html`.
+Menu oferuje edycję, zmianę statusu i kolejności oraz przeniesienie na tablicę
+Kanbana. Obsługuje je wspólny `row-actions.js`, również po podmianie treści.
+Obserwatorzy zachowują wiersze bez przycisków zapisu.
+
 Zakładka „Tagi” zachowuje nagłówek i nawigację otwartej przestrzeni.
 `spaces/tags.html` korzysta ze wspólnych include'ów `tag_directory`,
 `tag_sort`, `tag_filters`, `tag_modal` i `tag_notes_modal`. Przycisk „Dodaj tag”,

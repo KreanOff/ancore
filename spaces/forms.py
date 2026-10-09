@@ -1,7 +1,7 @@
 import re
 
 from django import forms
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
@@ -9,6 +9,7 @@ from accounts.widgets import UserChoiceField
 from core.upload_validation import validate_image_upload
 from tasks.access import editable_to
 from tasks.models import Task, TaskSection, TaskTag
+from tasks.hierarchy import require_movable_task_tree
 from workplaces.services import can_manage_team, workplace_people, workspace_owner
 from .defaults import KINDS, MANAGEMENT, TEMPLATES
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
@@ -167,6 +168,11 @@ class ItemForm(StyledForm):
             self.add_error('due_at', 'Termin nie może być wcześniejszy niż rozpoczęcie.')
         if self.item and self.item.task.parent_id:
             data['section'] = self.item.task.parent.section
+        if self.item and data.get('section') and self.item.task.section_id != data['section'].pk:
+            try:
+                require_movable_task_tree(self.item.task, self.request.user)
+            except PermissionDenied:
+                self.add_error('section', 'Nie można przenieść zadania z niedostępnymi lub obserwowanymi podzadaniami.')
         return data
 
 

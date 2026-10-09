@@ -1,5 +1,19 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Regresje zapisu i numeracji
+
+`tasks.test_task_moves` sprawdza przenoszenie całego drzewa, prywatnych i
+obserwowanych potomków, wycofanie zapisu oraz zachowanie podzadań po usunięciu
+starej grupy. `tasks.test_write_locking` uruchamia równocześnie tworzenie projektu
+z szablonu i POST szczegółów zadania. `spaces.test_write_access` zmienia rolę lub
+członkostwo z drugiego połączenia przed uzyskaniem blokady; zapis musi zostać
+odrzucony. `spaces.test_backlog_ordering` obejmuje kolejność, filtry, zadania na
+tablicy/zamknięte oraz menu członka i obserwatora. Sprawdzaj także
+`accounts.test_email_identity`, `core.test_task_integrity`, `spaces` i istniejące
+testy prywatności Zadań. Kontrola przeglądarkowa: logowanie e-mailem zapisanym z
+inną wielkością liter, menu backlogu → „Przesuń niżej”, zachowanie filtra i
+kolejności po powrocie/przeładowaniu, pusty wynik oraz desktop/telefon.
+
 ## Uruchomienie przestrzeni i zespołów
 
 Przed nowym kodem wykonaj backup i `manage.py migrate`. Migracje `spaces/0001`

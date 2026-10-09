@@ -44,6 +44,25 @@ class TaskIdentityTests(TestCase):
                 c.refresh_from_db()
                 self.assertEqual(c.task_id, 1)
 
+    def test_bulk_delete_counts_only_tasks_including_descendants(self):
+        project = TaskProject.objects.create(user=self.user, workplace=self.first, name='Delete count')
+        section = TaskSection.objects.create(project=project, title='Group')
+        root = Task.objects.create(user=self.user, section=section, title='Root')
+        child = Task.objects.create(user=self.user, section=section, parent=root, title='Child')
+        child.activities.create(actor=self.user, message='Additional history')
+        elsewhere = Task.objects.create(user=self.user, workplace=self.second, title='Elsewhere')
+        url = scoped_workplace_app_path(self.first, 'tasks', 'delete/')
+        response = self.post_json(url, {'task_pks': [root.pk, elsewhere.pk]})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['deleted_count'], 2)
+        self.assertTrue(Task.objects.filter(pk=elsewhere.pk).exists())
+        self.assertEqual(self.post_json(url, {'task_pks': [root.pk]}).json()['deleted_count'], 0)
+
+    def test_bulk_delete_one_task_does_not_count_metadata_or_history(self):
+        task = Task.objects.create(user=self.user, workplace=self.first, title='Single')
+        response = self.post_json(scoped_workplace_app_path(self.first, 'tasks', 'delete/'), {'task_pks': [task.pk]})
+        self.assertEqual(response.json()['deleted_count'], 1)
+
     def test_scoped_actions_stay_in_first_tab_after_opening_second_workspace(self):
         for app, model in [('tasks', Task)]:
             with self.subTest(app=app):

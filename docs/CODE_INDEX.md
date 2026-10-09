@@ -17,17 +17,17 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 19 | 0 | 18 | 56 |
-| [accounts](../accounts) | 18 | 7 | 9 | 43 |
+| [core](../core) | 19 | 0 | 18 | 58 |
+| [accounts](../accounts) | 19 | 7 | 9 | 47 |
 | [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
-| [tasks](../tasks) | 38 | 65 | 46 | 313 |
+| [tasks](../tasks) | 41 | 65 | 46 | 320 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
 | [dashboard](../dashboard) | 33 | 11 | 29 | 204 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 25 | 4 | 28 | 95 |
+| [spaces](../spaces) | 27 | 4 | 28 | 106 |
 
 ## 2. Modele i relacje
 
@@ -1242,6 +1242,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [accounts/apps.py](../accounts/apps.py) — `AccountsConfig`
 - [accounts/avatar.py](../accounts/avatar.py) — `avatar_color_seed`, `avatar_color_style`, `avatar_color_style_from_seed`, `avatar_color_class`, `account_avatar`
 - [accounts/avatar_presets.py](../accounts/avatar_presets.py) — `preset_avatar`
+- [accounts/backends.py](../accounts/backends.py) — `EmailBackend`
 - [accounts/context_processors.py](../accounts/context_processors.py) — `current_account_avatar`
 - [accounts/forms.py](../accounts/forms.py) — `UserRegistrationForm`, `UserProfileForm`
 - [accounts/middleware.py](../accounts/middleware.py) — `UserPresenceMiddleware`
@@ -1279,6 +1280,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
 - [tasks/directory.py](../tasks/directory.py) — `directory_tab`, `directory_queryset`, `directory_tabs`, `decorate_favorites`
 - [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `ProjectVisibilitySelect`, `TaskAccessForm`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionAccessForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
+- [tasks/hierarchy.py](../tasks/hierarchy.py) — `require_movable_task_tree`, `save_task_tree`
 - [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectMembership`, `TaskProjectInvitation`, `TaskProjectTemplate`, `TaskProjectNote`, `TaskSection`, `TaskSectionMembership`, `TaskSectionInvitation`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskMembership`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
 - [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
@@ -1406,7 +1408,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
 - [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `space_avatar`, `status_groups`
 - [spaces/urls.py](../spaces/urls.py)
-- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [spaces/widgets.py](../spaces/widgets.py) — `IssueTypeSelect`
 
 ## 6. Szablony
@@ -1786,7 +1788,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [core/test_task_integrity.py](../core/test_task_integrity.py).
 
-- `TaskIdentityTests`: 10 metod testowych.
+- `TaskIdentityTests`: 12 metod testowych.
 - `ConcurrentTaskNumberTests`: 2 metod testowych.
 
 ### core/test_task_number_migrations.py
@@ -1812,7 +1814,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [accounts/test_email_identity.py](../accounts/test_email_identity.py).
 
-- `EmailIdentityTests`: 5 metod testowych.
+- `EmailIdentityTests`: 9 metod testowych.
 - `EmailIdentityMigrationTests`: 1 metod testowych.
 
 ### accounts/tests.py
@@ -1944,6 +1946,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `LegacyTagRetirementTests`: 8 metod testowych.
 
+### tasks/test_task_moves.py
+
+Źródło: [tasks/test_task_moves.py](../tasks/test_task_moves.py).
+
+- `TaskTreeMoveTests`: 6 metod testowych.
+
 ### tasks/test_task_sharing.py
 
 Źródło: [tasks/test_task_sharing.py](../tasks/test_task_sharing.py).
@@ -1962,6 +1970,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [tasks/test_work_logs.py](../tasks/test_work_logs.py).
 
 - `TaskWorkLogTests`: 21 metod testowych.
+
+### tasks/test_write_locking.py
+
+Źródło: [tasks/test_write_locking.py](../tasks/test_write_locking.py).
+
+- `ProjectTemplateWriteLockTests`: 1 metod testowych.
 
 ### tasks/tests.py
 
@@ -2219,6 +2233,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceAvatarTests`: 11 metod testowych.
 
+### spaces/test_backlog_ordering.py
+
+Źródło: [spaces/test_backlog_ordering.py](../spaces/test_backlog_ordering.py).
+
+- `BacklogOrderingTests`: 7 metod testowych.
+
 ### spaces/test_issue_types.py
 
 Źródło: [spaces/test_issue_types.py](../spaces/test_issue_types.py).
@@ -2249,6 +2269,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceTagTests`: 14 metod testowych.
 - `SpaceTagMigrationTests`: 1 metod testowych.
+
+### spaces/test_write_access.py
+
+Źródło: [spaces/test_write_access.py](../spaces/test_write_access.py).
+
+- `SpaceWriteAccessRaceTests`: 4 metod testowych.
 
 ### spaces/tests.py
 

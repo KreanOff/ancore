@@ -1,9 +1,11 @@
 from unittest.mock import patch
 
-from django.contrib.auth import get_user_model
+from asgiref.sync import async_to_sync
+from django.contrib.auth import SESSION_KEY, aauthenticate, authenticate, get_user_model
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TestCase, TransactionTestCase
+from django.urls import reverse
 
 from workplaces.models import create_workplace_for_user
 from workplaces.team_views import InvitationForm
@@ -62,6 +64,39 @@ class EmailIdentityTests(TestCase):
         form = InvitationForm(data={'email': 'ANNA@example.test', 'role': 'member'}, workplace=workspace, actor=owner)
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.recipient, self.user)
+
+    def test_authentication_and_login_accept_email_case_variants(self):
+        password = 'email-authentication-83!'
+        self.user.set_password(password)
+        self.user.save(update_fields=['password'])
+        for email in ('anna@example.test', 'ANNA@EXAMPLE.TEST'):
+            with self.subTest(email=email):
+                self.assertEqual(authenticate(username=email, password=password), self.user)
+                self.assertEqual(async_to_sync(aauthenticate)(email=email, password=password), self.user)
+                response = self.client.post(reverse('login'), {'username': email, 'password': password})
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
+
+    def test_email_case_does_not_bypass_password_or_active_account_check(self):
+        self.user.set_password('email-authentication-83!')
+        self.user.save(update_fields=['password'])
+        self.assertIsNone(authenticate(username='ANNA@EXAMPLE.TEST', password='wrong-password'))
+        self.user.is_active = False
+        self.user.save(update_fields=['is_active'])
+        self.assertIsNone(authenticate(username='ANNA@EXAMPLE.TEST', password='email-authentication-83!'))
+
+    def test_case_variant_also_works_when_adding_account(self):
+        self.user.set_password('email-authentication-83!')
+        self.user.save(update_fields=['password'])
+        other = get_user_model().objects.create_user(username='signed-in', email='signed-in@example.test')
+        self.client.force_login(other)
+        response = self.client.post(reverse('add_account'), {'username': 'ANNA@EXAMPLE.TEST', 'password': 'email-authentication-83!'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
+
+    def test_existing_model_backend_session_remains_authenticated(self):
+        self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
+        self.assertEqual(self.client.get(reverse('profile')).status_code, 200)
 
 
 class EmailIdentityMigrationTests(TransactionTestCase):

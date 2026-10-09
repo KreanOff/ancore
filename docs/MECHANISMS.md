@@ -22,6 +22,10 @@ to `email`. Profil i publiczny identyfikator są oddzielone od danych wpisu
 `Contact`. Aktualne konto jest w `request.user`.
 
 Rejestracja i profil sprawdzają e-mail bez względu na wielkość liter.
+Logowanie i dodanie kolejnego konta używają `accounts.backends.EmailBackend`
+z wyszukiwaniem `email__iexact`, również dla kont zapisanych wcześniej z wielkimi
+literami. Hasło i aktywność konta nadal sprawdza Django. Historyczny
+`ModelBackend` pozostaje dostępny dla istniejących sesji.
 Ograniczenie `accounts_user_email_ci_unique` na `Lower(email)` chroni również
 równoczesne zapisy i operacje ORM. Konflikt pomiędzy walidacją a zapisem
 wraca jako błąd pola e-mail, bez błędu HTTP 500. Zaproszenia wymagają
@@ -159,6 +163,9 @@ przez `TaskSectionMembership`, z zachowaniem dostępu do projektu nadrzędnego.
 Zadania używają `items/<pk>/team/`, `items/<pk>/team/candidates/` i `TaskMembership`.
 Nie ma zaproszeń ani endpointów akceptacji dla projektu/grupy/zadania.
 Zapisy zespołu blokują Workspace i odpowiedni projekt, grupę lub zadanie; nie zapisują pól głównego formularza.
+Zapis zadania i operacje planowania w Przestrzeniach blokują najpierw właściciela
+numeracji, potem Workspace i ponownie sprawdzają `editable_to`. Zmiana roli lub
+odebranie członkostwa podczas oczekiwania na blokadę nie pozwala zapisać danych.
 Rola `observer` zachowuje `visible_to`, ale jest wykluczona z zapisu przez
 `tasks.access.editable_to(queryset, viewer)`. Ten filtr obejmuje projekt, grupy,
 notatki i całe drzewa zadań wraz z plikami. Relacje formularzy edycji korzystają
@@ -185,7 +192,8 @@ Przy zmianie uprawnień trzeba świadomie przeanalizować całą ścieżkę,
 Liczniki grup/zadań korzystają z blokady `select_for_update()` i transakcji.
 Numer `task_id` powstaje z maksimum w zakresie właściciela/Workspace.
 `core/task_numbering.py` blokuje wiersz właściciela przed zapisem, usuwaniem
-i renumeracją; blokada poprzedza blokady grup/zadań. Odroczone ograniczenie
+i renumeracją; blokada poprzedza blokadę Workspace i blokady grup/zadań,
+również podczas tworzenia projektu z szablonu. Odroczone ograniczenie
 unikalności w PostgreSQL chroni kombinację użytkownika, Workspace i numeru.
 Migracje Tasks 0047 i Kanban 0034 porządkują istniejące numery przed dodaniem
 ograniczeń, zachowując PK i relacje. Backfill starych rekordów bez Workspace
@@ -200,6 +208,16 @@ Wiersze, karty i wyniki globalnego wyszukiwania przekazują PK także w parametr
 szczegółów w ukrytym polu. Szczegóły bez tego parametru zachowują historyczne
 wyszukiwanie po numerze. W każdym wariancie obowiązuje właściciel i Workspace.
 Po usunięciu lista jest przeładowywana, aby pokazać aktualną numerację.
+`deleted_count` z usuwania zbiorczego liczy wyłącznie rekordy `Task`, w tym
+usunięte podzadania; nie obejmuje historii, plików ani metadanych `WorkItem`.
+
+Zmiana grupy przez formularz zadania lub edycję w Przestrzeni używa
+`tasks.hierarchy.save_task_tree`. Całe drzewo podzadań przenosi się w jednej
+transakcji; niedostępny lub obserwowany potomek blokuje przeniesienie. Każdy
+potomek przechodzi przez `Task.save()`, dostaje numer kodu w nowej grupie,
+aktualizuje metadane Przestrzeni i zapisuje historię z rzeczywistym autorem.
+Błąd zapisu potomka wycofuje całą operację. Zwykła edycja pól bez zmiany grupy
+nie wymaga dostępu do prywatnych podzadań.
 
 Przy zmianie grupy zadania model aktualizuje `code_number` i Workspace na
 podstawie projektu. Kontrola właściciela nadal należy również do widoku/formularza.

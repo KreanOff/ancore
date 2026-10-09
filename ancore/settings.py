@@ -221,6 +221,11 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o750
 LOGOUT_REDIRECT_URL = 'login'
 LOGIN_REDIRECT_URL = 'workplaces:workplaces'
 LOGIN_URL = 'login'
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailBackend',
+    # Keep sessions authenticated before the email backend was introduced valid.
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 AUTH_USER_MODEL = 'accounts.User'
 

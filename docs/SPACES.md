@@ -222,6 +222,7 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
 - Scrum: backlog, epiki, punkty, planowanie i rozpoczęcie sprintu, jeden aktywny
   sprint, zakończenie z powrotem niezakończonych zadań do backlogu.
 - Kanban: kolejka backlogu oddzielona od zadań na tablicy i zmiana kolejności.
+
 - Oś czasu: paski pomiędzy początkiem i terminem; zadania bez dat są pomijane.
 - Raporty: aktualne liczby statusów, zakończone i zaległe zadania oraz sprinty.
 - Konfiguracja: typy, pola tekst/liczba/data, wymagane pola, statusy i dozwolone
@@ -230,6 +231,11 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
 - Zespoły: katalog, moje zespoły, wyszukiwanie, profil, prywatnie serwowane zdjęcie,
   członkowie i administratorzy, powiązane przestrzenie i przypisane zadania.
   Zadanie może równocześnie mieć zespół oraz konkretnego wykonawcę.
+
+„Przesuń wyżej/niżej” działa w zakresie widocznego backlogu i tej samej grupy
+sprintu. Pomija zadania na tablicy Kanbana, zadania zamknięte i wykluczone przez
+filtry. URL akcji oraz powrót zachowują wyszukiwanie i filtry listy. Odczyt listy
+i zmiana kolejności korzystają z tych samych funkcji filtrujących.
 
 Klucz przestrzeni jest unikalny w Workspace. Zadania otrzymują trwały klucz,
 np. `ANC-12`, z rosnącego licznika przestrzeni. Usunięcie zadania nie zmienia

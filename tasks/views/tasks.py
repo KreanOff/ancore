@@ -3193,7 +3193,7 @@ def _tasks_page(request, active_section=None):
                 workplace=workplace,
                 viewer=request.user,
             )
-            with transaction.atomic():
+            with lock_task_numbers(workspace_owner(request).pk):
                 if workplace:
                     Workplace.objects.select_for_update().get(pk=workplace.pk)
                 if project_form.is_valid():
@@ -4077,7 +4077,8 @@ def delete_tasks(request):
             tasks_to_delete = _filter_workplace(visible_to(Task.objects.all(), request.user).filter(pk__in=task_pks, user=user), workplace)
             require_editable(tasks_to_delete, request.user)
             require_deletable_tasks(tasks_to_delete, request.user)
-            deleted_count = tasks_to_delete.delete()[0]
+            _, deleted_by_model = tasks_to_delete.delete()
+            deleted_count = deleted_by_model.get(Task._meta.label, 0)
             Task._renumber_user_tasks(user, workplace)
 
         return JsonResponse({
