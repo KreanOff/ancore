@@ -202,9 +202,12 @@ Akcja `clear_time_spent` w Zadaniach została wycofana. Historia zmian statusu
 w zakładce „Historia” pozostaje dostępna. Kanban zachowuje własne kontrolki.
 Podzadanie dziedziczy kontekst rodzica; w obecnych widokach nie można dodawać
 do niego załączników.
-Przeniesienie zadania do innej grupy lub do zadań nieprzypisanych obejmuje
-wszystkie jego podzadania. Wymaga prawa edycji całego drzewa; przeniesione
-podzadania pozostają z rodzicem także po usunięciu poprzedniej grupy.
+System przenoszenia istniejących zadań między przestrzeniami/grupami oraz
+do zadań nieprzypisanych jest usunięty. Szczegóły pokazują obecną przestrzeń
+i grupę tylko jako tekst; edycja w Przestrzeni nie ma wyboru grupy.
+Stare pola `project` i `section` przesłane do edycji są ignorowane, bez zmiany
+powiązań, numeracji, tagów i podzadań. Zadanie nadrzędne można wybrać wyłącznie
+z tej samej grupy. Tworzenie nadal pozwala wybrać miejsce nowego zadania.
 
 Szczegóły zadania i podzadania mają drugi pasek z zakładkami „Główna”,
 „Dziennik pracy” i „Historia”. Zadanie główne ma dodatkowo zakładkę „Podzadania”

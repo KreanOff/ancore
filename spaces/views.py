@@ -24,7 +24,7 @@ from core.task_numbering import lock_task_numbers
 from accounts.avatar import account_avatar
 from dashboard.recent import remember_view
 from tasks.access import editable_to, require_editable, visible_to
-from tasks.hierarchy import save_task_tree
+from tasks.hierarchy import save_task_edit
 from tasks.models import Task, TaskProject, TaskProjectMembership
 from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
@@ -464,9 +464,10 @@ def item_edit(request, pk=None, space_pk=None):
             task = Task.objects.select_for_update().get(pk=item.task_id) if item else Task(user=workspace_owner(request), workplace=request.workplace, visibility='public')
             for name in ('title', 'description', 'priority', 'assignee', 'due_at'):
                 setattr(task, name, data[name])
-            task.section = data.get('section') or default_section(space)
+            if not item:
+                task.section = data.get('section') or default_section(space)
             task._activity_actor = request.user
-            save_task_tree(task, request.user)
+            save_task_edit(task, request.user)
             task.tags.set(data['tags'])
             item = WorkItem.objects.select_for_update().get(task=task)
             old_type, old_type_label = item.work_type, item.get_work_type_display()

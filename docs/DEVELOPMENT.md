@@ -2,9 +2,16 @@
 
 ## Regresje zapisu i numeracji
 
-`tasks.test_task_moves` sprawdza przenoszenie całego drzewa, prywatnych i
-obserwowanych potomków, wycofanie zapisu oraz zachowanie podzadań po usunięciu
-starej grupy. `tasks.test_write_locking` uruchamia równocześnie tworzenie projektu
+`tasks.test_task_moves` sprawdza wycofanie przenoszenia zadań: ignorowanie
+starych pól miejsca w zwykłych/scoped adresach i AJAX, zachowanie grupy,
+numeracji i metadanych całego drzewa, edycję przy ukrytych/obserwowanych
+potomkach, walidację tagów/typu w zapisanej przestrzeni, wybór rodzica
+tylko z tej samej grupy oraz odmowę zapisu obserwatorowi. Sprawdzaj również
+`tasks.test_unassigned_creation`, `spaces.test_issue_types`, `spaces.test_tags`
+i `core.test_status_updates`. Browser QA obejmuje tekst obecnej przestrzeni/grupy,
+brak wyboru grupy w edycji, zapis pozostałych pól, zadanie nieprzypisane,
+błąd walidacji, ponowne wejście oraz desktop/telefon.
+`tasks.test_write_locking` uruchamia równocześnie tworzenie projektu
 z szablonu i POST szczegółów zadania. `spaces.test_write_access` zmienia rolę lub
 członkostwo z drugiego połączenia przed uzyskaniem blokady; zapis musi zostać
 odrzucony. `spaces.test_backlog_ordering` obejmuje kolejność, filtry, zadania na

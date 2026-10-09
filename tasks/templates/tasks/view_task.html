@@ -396,43 +396,15 @@
                     <section class="tasks-issue-side-section">
                         <div class="tasks-issue-field">
                             <span class="tasks-issue-field-label">
-                                <label for="{{ form.project.id_for_label }}">Przestrzeń</label>
+                                <span>Przestrzeń</span>
                             </span>
-                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
-                                {{ form.project }}
-                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-project-dropdown data-task-detail-select="#{{ form.project.id_for_label }}">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
-                                        <span data-task-detail-label data-task-detail-default-label="Przestrzeń">Przestrzeń</span>
-                                    </button>
-                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz przestrzeń">
-                                        {% for project in form.project.field.queryset %}
-                                        <button type="button" role="menuitem" data-task-detail-value="{{ project.id }}" data-task-detail-default-section="{% for section in project.sections.all %}{% if forloop.first %}{{ section.id }}{% endif %}{% endfor %}">
-                                            <span>{{ project.name }}</span>
-                                        </button>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
+                            <strong title="{{ task.section.project.name|default:'Brak przestrzeni' }}">{{ task.section.project.name|default:'Brak przestrzeni' }}</strong>
                         </div>
                         <div class="tasks-issue-field">
                             <span class="tasks-issue-field-label">
-                                <label for="{{ form.section.id_for_label }}">Grupa</label>
+                                <span>Grupa</span>
                             </span>
-                            <div class="tasks-issue-select-wrap tasks-issue-dropdown-wrap">
-                                {{ form.section }}
-                                <div class="tasks-filter-dropdown tasks-issue-dropdown" data-task-detail-dropdown data-task-detail-section-dropdown data-task-detail-select="#{{ form.section.id_for_label }}">
-                                    <button type="button" class="tasks-filter-button tasks-issue-dropdown-button" aria-haspopup="menu" aria-expanded="false" data-task-detail-toggle {% if not can_edit_task %}disabled aria-disabled="true"{% endif %}>
-                                        <span data-task-detail-label data-task-detail-default-label="Grupa">Grupa</span>
-                                    </button>
-                                    <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz grupę">
-                                        {% for section in form.section.field.queryset %}
-                                        <button type="button" role="menuitem" data-task-detail-value="{{ section.id }}" data-task-detail-project-id="{{ section.project_id }}">
-                                            <span>{{ section.title }}</span>
-                                        </button>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
+                            <strong title="{{ task.section.title|default:'Brak grupy' }}">{{ task.section.title|default:'Brak grupy' }}</strong>
                         </div>
                         {% if task.parent %}
                         <div class="tasks-issue-field">
@@ -447,7 +419,7 @@
                                     </button>
                                     <div class="tasks-filter-menu tasks-issue-dropdown-menu" role="menu" aria-label="Wybierz zadanie">
                                         {% for parent_task in form.parent.field.queryset %}
-                                        <button type="button" role="menuitem" data-task-detail-value="{{ parent_task.id }}" data-task-detail-section-id="{{ parent_task.section_id }}" data-task-detail-project-id="{{ parent_task.section.project_id }}">
+                                        <button type="button" role="menuitem" data-task-detail-value="{{ parent_task.id }}">
                                             <span>{{ parent_task.title }}</span>
                                         </button>
                                         {% endfor %}
@@ -704,71 +676,6 @@ function closeTaskDetailDropdowns(exceptDropdown = null) {
     });
 }
 
-function getTaskDetailSelect(dropdown) {
-    return dropdown ? document.querySelector(dropdown.dataset.taskDetailSelect) : null;
-}
-
-function syncTaskDetailProjectSections(changedDropdown = null) {
-    const projectDropdown = document.querySelector('[data-task-detail-project-dropdown]');
-    const sectionDropdown = document.querySelector('[data-task-detail-section-dropdown]');
-    const parentDropdown = document.querySelector('[data-task-detail-parent-dropdown]');
-    const projectSelect = getTaskDetailSelect(projectDropdown);
-    const sectionSelect = getTaskDetailSelect(sectionDropdown);
-    const parentSelect = getTaskDetailSelect(parentDropdown);
-    if (!projectDropdown || !sectionDropdown || !projectSelect || !sectionSelect) return;
-
-    if (changedDropdown === parentDropdown && parentSelect) {
-        const activeParentButton = parentDropdown.querySelector(`[data-task-detail-value="${parentSelect.value}"]`);
-        if (activeParentButton?.dataset.taskDetailSectionId) {
-            sectionSelect.value = activeParentButton.dataset.taskDetailSectionId;
-        }
-        if (activeParentButton?.dataset.taskDetailProjectId) {
-            projectSelect.value = activeParentButton.dataset.taskDetailProjectId;
-        }
-    }
-
-    if (changedDropdown === sectionDropdown) {
-        const activeSectionButton = sectionDropdown.querySelector(`[data-task-detail-value="${sectionSelect.value}"]`);
-        if (activeSectionButton?.dataset.taskDetailProjectId) {
-            projectSelect.value = activeSectionButton.dataset.taskDetailProjectId;
-        }
-    }
-
-    const projectId = projectSelect.value;
-    let firstVisibleSection = null;
-    sectionDropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
-        const isVisible = !projectId || button.dataset.taskDetailProjectId === projectId;
-        button.hidden = !isVisible;
-        if (isVisible && !firstVisibleSection) firstVisibleSection = button;
-    });
-
-    if (changedDropdown === projectDropdown) {
-        const currentSectionButton = sectionDropdown.querySelector(`[data-task-detail-value="${sectionSelect.value}"]`);
-        const currentSectionFits = currentSectionButton?.dataset.taskDetailProjectId === projectId;
-        if (!currentSectionFits) sectionSelect.value = '';
-    }
-
-    if (parentDropdown && parentSelect) {
-        const sectionId = sectionSelect.value;
-        let firstVisibleParent = null;
-        parentDropdown.querySelectorAll('[data-task-detail-value]').forEach((button) => {
-            const matchesSection = sectionId && button.dataset.taskDetailSectionId === sectionId;
-            const matchesProject = !sectionId && (!projectId || button.dataset.taskDetailProjectId === projectId);
-            const isVisible = matchesSection || matchesProject;
-            button.hidden = !isVisible;
-            if (isVisible && !firstVisibleParent) firstVisibleParent = button;
-        });
-
-        if (changedDropdown === sectionDropdown || changedDropdown === projectDropdown) {
-            const currentParentButton = parentDropdown.querySelector(`[data-task-detail-value="${parentSelect.value}"]`);
-            if (currentParentButton?.hidden && firstVisibleParent) {
-                parentSelect.value = firstVisibleParent.dataset.taskDetailValue;
-                syncTaskDetailProjectSections(parentDropdown);
-            }
-        }
-    }
-}
-
 function syncTaskDetailDropdown(dropdown) {
     if (!dropdown) return;
     const select = document.querySelector(dropdown.dataset.taskDetailSelect);
@@ -815,35 +722,6 @@ function syncTaskDetailDropdown(dropdown) {
     }
 }
 
-function syncTaskDetailTagOptions() {
-    const select = document.querySelector('#task-detail-form [name="tags"]');
-    const project = document.querySelector('#task-detail-form [name="project"]');
-    if (!window.AncoreTaskTags?.setProject(select, project?.value)) return;
-    const dropdown = select.closest('.tasks-issue-select-wrap')?.querySelector('[data-task-detail-dropdown]');
-    const menu = dropdown?.querySelector('.tasks-issue-dropdown-menu');
-    if (!menu) return;
-    menu.replaceChildren();
-    Array.from(select.options).forEach(option => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.setAttribute('role', 'menuitemcheckbox');
-        button.dataset.taskDetailValue = option.value;
-        const chip = document.createElement('span');
-        chip.className = 'tasks-tag-chip';
-        chip.textContent = option.textContent;
-        button.appendChild(chip);
-        menu.appendChild(button);
-    });
-    if (!select.options.length) {
-        const empty = document.createElement('button');
-        empty.type = 'button';
-        empty.disabled = true;
-        empty.textContent = 'Brak tagów';
-        menu.appendChild(empty);
-    }
-    syncTaskDetailDropdown(dropdown);
-}
-
 document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
     const select = document.querySelector(dropdown.dataset.taskDetailSelect);
     const toggle = dropdown.querySelector('[data-task-detail-toggle]');
@@ -878,29 +756,13 @@ document.querySelectorAll('[data-task-detail-dropdown]').forEach((dropdown) => {
             if (option) option.selected = !option.selected;
         } else {
             select.value = button.dataset.taskDetailValue;
-            syncTaskDetailProjectSections(dropdown);
             closeTaskDetailDropdowns();
         }
 
         select.dispatchEvent(new Event('change', { bubbles: true }));
-        if (dropdown.hasAttribute('data-task-detail-project-dropdown')) {
-            getTaskDetailSelect(document.querySelector('[data-task-detail-section-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        if (dropdown.hasAttribute('data-task-detail-section-dropdown')) {
-            getTaskDetailSelect(document.querySelector('[data-task-detail-project-dropdown]'))?.dispatchEvent(new Event('change', { bubbles: true }));
-        }
         syncTaskDetailDropdown(dropdown);
-        syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown]'));
-        syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
-        syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
-        syncTaskDetailTagOptions();
     });
 });
-
-syncTaskDetailProjectSections(document.querySelector('[data-task-detail-project-dropdown]'));
-syncTaskDetailDropdown(document.querySelector('[data-task-detail-parent-dropdown]'));
-syncTaskDetailDropdown(document.querySelector('[data-task-detail-project-dropdown]'));
-syncTaskDetailDropdown(document.querySelector('[data-task-detail-section-dropdown]'));
 
 document.addEventListener('click', () => closeTaskDetailDropdowns(), listenerOptions);
 

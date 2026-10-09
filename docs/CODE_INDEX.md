@@ -20,7 +20,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [core](../core) | 19 | 0 | 18 | 58 |
 | [accounts](../accounts) | 19 | 7 | 9 | 47 |
 | [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
-| [tasks](../tasks) | 41 | 65 | 46 | 320 |
+| [tasks](../tasks) | 41 | 65 | 46 | 324 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
 | [dashboard](../dashboard) | 33 | 11 | 29 | 204 |
@@ -1280,7 +1280,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
 - [tasks/directory.py](../tasks/directory.py) — `directory_tab`, `directory_queryset`, `directory_tabs`, `decorate_favorites`
 - [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `ProjectVisibilitySelect`, `TaskAccessForm`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionAccessForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
-- [tasks/hierarchy.py](../tasks/hierarchy.py) — `require_movable_task_tree`, `save_task_tree`
+- [tasks/hierarchy.py](../tasks/hierarchy.py) — `save_task_edit`
 - [tasks/models.py](../tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectMembership`, `TaskProjectInvitation`, `TaskProjectTemplate`, `TaskProjectNote`, `TaskSection`, `TaskSectionMembership`, `TaskSectionInvitation`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskMembership`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
 - [tasks/project_template_forms.py](../tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
 - [tasks/project_templates.py](../tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
@@ -1950,7 +1950,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [tasks/test_task_moves.py](../tasks/test_task_moves.py).
 
-- `TaskTreeMoveTests`: 6 metod testowych.
+- `TaskLocationEditTests`: 10 metod testowych.
 
 ### tasks/test_task_sharing.py
 

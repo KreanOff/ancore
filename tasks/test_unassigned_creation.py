@@ -103,7 +103,7 @@ class UnassignedTaskCreationTests(TestCase):
                 self.assertIn('section', response.context['task_modal_form'].errors)
                 self.assertFalse(Task.objects.exists())
 
-    def test_edit_unassigned_task_and_later_assign_group(self):
+    def test_edit_unassigned_task_preserves_missing_group(self):
         self.client.post(self.url, self.payload())
         task = Task.objects.latest('pk')
         url = self.url + f'view-task/{task.task_id}/?task_pk={task.pk}'
@@ -118,6 +118,6 @@ class UnassignedTaskCreationTests(TestCase):
         response = self.client.post(url, {**data, 'project': self.project.pk, 'section': self.section.pk})
         self.assertEqual(response.status_code, 302)
         task.refresh_from_db()
-        self.assertEqual(task.section, self.section)
+        self.assertIsNone(task.section_id)
         listing = self.client.get(self.url, {'view': 'unassigned-tasks'})
-        self.assertNotIn(task, listing.context['task_window']['queryset'])
+        self.assertIn(task, listing.context['task_window']['queryset'])

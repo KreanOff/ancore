@@ -43,8 +43,11 @@ def visible_tags(request):
 
 
 def form_tags(form, user, workplace, project=None, section=None):
-    """Resolve the destination from validated relation choices, including moves."""
-    if form.is_bound:
+    """Use the saved location for edits and validated relation choices for creation."""
+    if form.instance.pk:
+        section = form.instance.section
+        project = section.project if section else None
+    elif form.is_bound:
         section_field = form.fields.get('section')
         section_id = form.data.get(form.add_prefix('section'), '')
         section = section_field.queryset.filter(pk=section_id).first() if section_field and _valid_pk(section_id) else None

@@ -2,13 +2,12 @@ from datetime import UTC, timedelta
 
 from django import forms
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch
 from django.utils import timezone
 
 from accounts.widgets import UserChoiceField, UserSelect
 from tasks.access import editable_to, visible_to
-from tasks.hierarchy import require_movable_task_tree, save_task_tree
+from tasks.hierarchy import save_task_edit
 from workplaces.services import workplace_people
 
 from contacts.models import Company
@@ -140,7 +139,7 @@ class TaskAccessForm(forms.ModelForm):
             task.private_owner = None
         if commit:
             if task.pk and self.viewer:
-                save_task_tree(task, self.viewer)
+                save_task_edit(task, self.viewer)
             else:
                 task.save()
             self.save_m2m()
@@ -184,7 +183,7 @@ class TaskForm(TaskAccessForm):
                 sections = sections.filter(project__workplace=workplace)
             parents = Task.objects.none()
             if getattr(self.instance, 'parent_id', None):
-                parents = relation_scope(Task.objects.all(), viewer).filter(user=user, parent__isnull=True).select_related('section', 'section__project').order_by('task_id')
+                parents = relation_scope(Task.objects.all(), viewer).filter(user=user, parent__isnull=True, section_id=self.instance.section_id).order_by('task_id')
                 if workplace is not None:
                     parents = parents.filter(workplace=workplace)
                 if self.instance and self.instance.pk:
@@ -223,7 +222,7 @@ class TaskForm(TaskAccessForm):
         from spaces.widgets import IssueTypeSelect
         self.issue_item = WorkItem.objects.filter(task=self.instance).select_related('space__configuration').first() if self.instance.pk else None
         type_section = current_section
-        if self.is_bound:
+        if self.is_bound and not self.instance.pk:
             section_value = self.data.get(self.add_prefix('section'), '')
             type_section = sections.filter(pk=int(section_value)).first() if section_value.isdecimal() and len(section_value) < 19 and user else None
             parent_value = self.data.get(self.add_prefix('parent'), '')
@@ -236,6 +235,9 @@ class TaskForm(TaskAccessForm):
         self.fields['work_type'].widget = IssueTypeSelect(attrs={'class': 'form-input'})
         self.fields['work_type'].choices = [(row['key'], row['label']) for row in config['types']]
         self.initial['work_type'] = self.issue_item.work_type if self.issue_item else config['types'][0]['key']
+        if self.instance.pk:
+            del self.fields['project']
+            del self.fields['section']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -245,25 +247,20 @@ class TaskForm(TaskAccessForm):
             if not category_transition_allowed(self.instance, cleaned_data['status']):
                 self.add_error('status', 'To przejście statusu nie jest dozwolone w przestrzeni.')
         project = cleaned_data.get('project')
-        section = cleaned_data.get('section')
-        if parent:
+        section = self.instance.section if self.instance.pk else cleaned_data.get('section')
+        if parent and not self.instance.pk:
             cleaned_data['section'] = parent.section
             section = parent.section
             if section:
                 cleaned_data['project'] = section.project
                 project = section.project
-        if section and not project:
+        if section and not project and not self.instance.pk:
             cleaned_data['project'] = section.project
             project = section.project
         if project and section and section.project_id != project.id:
             self.add_error('section', 'Wybierz grupę z wybranego projektu.')
         if project and not section and 'section' not in self.errors:
             self.add_error('section', 'Wybierz grupę z wybranego projektu lub usuń wybór projektu.')
-        if self.instance.pk and self.instance.section_id != getattr(section, 'pk', None):
-            try:
-                require_movable_task_tree(self.instance, self.viewer)
-            except PermissionDenied:
-                self.add_error('section', 'Nie można przenieść zadania z niedostępnymi lub obserwowanymi podzadaniami.')
         work_type = cleaned_data.get('work_type')
         if self.issue_item and work_type:
             if self.issue_item.epic_items.exists() and work_type != 'epic':

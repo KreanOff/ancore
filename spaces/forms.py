@@ -1,7 +1,7 @@
 import re
 
 from django import forms
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
@@ -9,7 +9,6 @@ from accounts.widgets import UserChoiceField
 from core.upload_validation import validate_image_upload
 from tasks.access import editable_to
 from tasks.models import Task, TaskSection, TaskTag
-from tasks.hierarchy import require_movable_task_tree
 from workplaces.services import can_manage_team, workplace_people, workspace_owner
 from .defaults import KINDS, MANAGEMENT, TEMPLATES
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
@@ -136,6 +135,8 @@ class ItemForm(StyledForm):
         self.fields['assignee'].queryset = workplace_people(request.workplace)
         self.fields['team'].queryset = teams_for(request).filter(spaces=space)
         self.fields['section'].queryset = editable_to(TaskSection.objects.filter(project=space.project), request.user)
+        if item:
+            del self.fields['section']
         self.fields['sprint'].queryset = Sprint.objects.filter(space=space).filter(~Q(state='closed') | Q(pk=getattr(item, 'sprint_id', None)))
         self.fields['epic'].queryset = visible_items(request).filter(space=space, work_type='epic').exclude(pk=getattr(item, 'pk', None))
         self.fields['epic'].label_from_instance = lambda epic: f'{epic.key} · {epic.task.title}'
@@ -166,13 +167,6 @@ class ItemForm(StyledForm):
             self.add_error('work_type', 'Najpierw odłącz zadania należące do tego epika.')
         if data.get('start_on') and data.get('due_at') and data['start_on'] > timezone.localtime(data['due_at']).date():
             self.add_error('due_at', 'Termin nie może być wcześniejszy niż rozpoczęcie.')
-        if self.item and self.item.task.parent_id:
-            data['section'] = self.item.task.parent.section
-        if self.item and data.get('section') and self.item.task.section_id != data['section'].pk:
-            try:
-                require_movable_task_tree(self.item.task, self.request.user)
-            except PermissionDenied:
-                self.add_error('section', 'Nie można przenieść zadania z niedostępnymi lub obserwowanymi podzadaniami.')
         return data
 
 

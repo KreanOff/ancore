@@ -63,8 +63,9 @@ istniejący `tasks.js`, również po `ancore:content-loaded`. Obserwator widzi
 informacje i notatki bez przycisków zapisu; modal edycji jest niedostępny.
 Tabela dochodzi do krawędzi kontenera jak lista zadań. W formularzu zadania
 przestrzeni picker „Tagi” korzysta z `AncoreCustomSelect` i lokalnego wyszukiwania.
-Starszy modal zadania i szczegóły przełączają opcje tagów po zmianie przestrzeni
-przez `AncoreTaskTags` w `tasks.js`, zachowując własne dropdowny. Dane opcji
+Modal tworzenia zadania przełącza opcje tagów po wyborze przestrzeni
+przez `AncoreTaskTags` w `tasks.js`, zachowując własne dropdowny. Szczegóły
+zadania korzystają wyłącznie z tagów jego zapisanej przestrzeni. Dane opcji
 są filtrowane przez widoczność projektów; etykiety trafiają do DOM jako tekst.
 
 Osobny ekran „Zarządzaj przestrzeniami” (`spaces/manage.html`) używa tej samej
@@ -1613,6 +1614,12 @@ i podzadania; na wąskich ekranach pozostaje pod treścią zgodnie ze wspólnym
 układem szczegółów. Przycisk „Zapisz” jest dostępny we wszystkich zakładkach i zapisuje
 ten sam formularz, w tym zmiany z panelu bocznego. „Dodaj czas” pojawia się
 obok zakładek w lewej kolumnie i zapisuje wpisy przez osobny formularz modala.
+Wiersze „Przestrzeń” i „Grupa” są informacją tylko do odczytu, we wspólnych
+`tasks-issue-field`, ze skracaniem długich nazw i pełną nazwą w `title`.
+Brak przypisania pokazuje „Brak przestrzeni” i „Brak grupy”. Nie mają selectów
+ani menu wyboru. Okno „Planowanie i zespół” również nie pozwala zmienić grupy;
+wybór grupy pozostaje w formularzu tworzenia. Picker rodzica podzadania
+obejmuje tylko zadania z tej samej grupy.
 ARIA tablist/tab/tabpanel, strzałki, Home i End obsługują klawiaturę.
 Wybrany widok jest zapisywany w parametrze `tab=subtasks`, `tab=work-log` lub `tab=history`, bez przeładowania.
 „Podzadania” są dostępne dla zadania głównego, także przy pustej liście.

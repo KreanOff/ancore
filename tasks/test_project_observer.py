@@ -153,13 +153,13 @@ class ProjectObserverTests(TestCase):
         for base in ['/tasks/', self.url()]:
             self.client.post(base, {'action': 'create_task_modal', 'section': self.section.pk, 'title': 'Nie twórz'})
             self.client.post(base + f'view-task/{self.public_task.task_id}/?task_pk={self.public_task.pk}', {
-                'title': 'Nie przenoś', 'section': self.section.pk, 'project': self.project.pk,
+                'title': 'Edytuj dostępne zadanie', 'section': self.section.pk, 'project': self.project.pk,
                 'status': 'new', 'priority': 'none', 'task_type': 'general',
             })
         self.assertFalse(Task.objects.filter(title='Nie twórz').exists())
         self.public_task.refresh_from_db()
         self.assertEqual(self.public_task.section_id, self.public_section.pk)
-        self.assertEqual(self.public_task.title, 'Wspólne zadanie')
+        self.assertEqual(self.public_task.title, 'Edytuj dostępne zadanie')
 
     def test_legacy_descendants_and_cascades_preserve_readonly_children(self):
         Task.objects.filter(pk=self.child.pk).update(section=self.public_section)
@@ -211,7 +211,8 @@ class ProjectObserverTests(TestCase):
         self.assertContains(response, 'data-task-readonly="true"')
         self.assertNotContains(response, 'name="activity_comment"')
         self.assertNotContains(response, 'id="task-work-log-modal"')
-        self.assertEqual(response.context['form']['section'].value(), self.section.pk)
+        self.assertNotIn('section', response.context['form'].fields)
+        self.assertContains(response, f'<strong title="{self.section.title}">{self.section.title}</strong>', html=True)
         page = self.client.get(self.url(f'?project={self.project.pk}'))
         self.assertFalse(page.context['active_project'].can_manage)
         self.assertFalse(page.context['can_create_issue'])

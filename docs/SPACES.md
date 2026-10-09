@@ -259,7 +259,9 @@ Formularze nowego zadania i szczegółów oraz powiązania tagów ograniczają w
 do tej samej przestrzeni i Workspace. Starsze pickery zadań przełączają listę
 tagów od razu po zmianie przestrzeni; dane wyboru obejmują tylko widoczne
 projekty osoby oglądającej formularz. Bezpośredni zapis obcego identyfikatora
-jest odrzucany. Zmiana przestrzeni zadania lub całej grupy usuwa poprzednie
+jest odrzucany. Edycja zadania nie pozwala zmieniać jego przestrzeni ani grupy;
+tagi zawsze pochodzą z zapisanej przestrzeni. Techniczna zmiana przestrzeni
+zadania lub całej grupy usuwa poprzednie
 przypisania tagów spoza przestrzeni docelowej. Globalne wyszukiwanie filtruje
 tagi przez dostęp do projektu i kieruje do zakładki ich przestrzeni.
 

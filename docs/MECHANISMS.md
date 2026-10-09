@@ -211,16 +211,17 @@ Po usunięciu lista jest przeładowywana, aby pokazać aktualną numerację.
 `deleted_count` z usuwania zbiorczego liczy wyłącznie rekordy `Task`, w tym
 usunięte podzadania; nie obejmuje historii, plików ani metadanych `WorkItem`.
 
-Zmiana grupy przez formularz zadania lub edycję w Przestrzeni używa
-`tasks.hierarchy.save_task_tree`. Całe drzewo podzadań przenosi się w jednej
-transakcji; niedostępny lub obserwowany potomek blokuje przeniesienie. Każdy
-potomek przechodzi przez `Task.save()`, dostaje numer kodu w nowej grupie,
-aktualizuje metadane Przestrzeni i zapisuje historię z rzeczywistym autorem.
-Błąd zapisu potomka wycofuje całą operację. Zwykła edycja pól bez zmiany grupy
-nie wymaga dostępu do prywatnych podzadań.
+Formularze edycji zadania oraz edycji w Przestrzeni nie przyjmują zmiany miejsca:
+dawne pola `project` i `section` są ignorowane. `tasks.hierarchy.save_task_edit`
+blokuje zapis rekordu i sprawdza, że jego grupa nie została zmieniona; odrzuca
+też nowego rodzica z innej grupy. Nie przenosi ani nie zapisuje potomków.
+Tagi i typ zgłoszenia są walidowane według zapisanej przestrzeni, niezależnie
+od przesłanych pól miejsca. Zwykła edycja nie wymaga dostępu do prywatnych
+podzadań. Tworzenie zachowuje wybór grupy i dziedziczenie miejsca przez podzadania.
 
-Przy zmianie grupy zadania model aktualizuje `code_number` i Workspace na
-podstawie projektu. Kontrola właściciela nadal należy również do widoku/formularza.
+Model zachowuje techniczną obsługę zmiany grupy dla integralności danych
+i operacji wewnętrznych; formularze aplikacji nie udostępniają przenoszenia.
+Kontrola właściciela nadal należy również do widoku/formularza.
 
 ## 6. Zapis zadania, status i historia
 
