@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
 | [core](../core) | 19 | 0 | 18 | 58 |
-| [accounts](../accounts) | 17 | 7 | 8 | 43 |
+| [accounts](../accounts) | 18 | 7 | 9 | 43 |
 | [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
 | [tasks](../tasks) | 36 | 63 | 41 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
@@ -1250,6 +1250,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [accounts/templatetags/account_avatar.py](../accounts/templatetags/account_avatar.py) — `user_avatar`
 - [accounts/urls.py](../accounts/urls.py)
 - [accounts/views.py](../accounts/views.py) — `AccountLogoutView`, `register`, `profile`, `update_presence_status`, `add_account`, `switch_account`, `remove_account`, `presence_ping`
+- [accounts/widgets.py](../accounts/widgets.py) — `UserSelect`, `UserChoiceField`
 
 ### workplaces
 
@@ -1439,6 +1440,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [accounts/templates/accounts/login.html](../accounts/templates/accounts/login.html)
 - [accounts/templates/accounts/profile.html](../accounts/templates/accounts/profile.html)
 - [accounts/templates/accounts/register.html](../accounts/templates/accounts/register.html)
+- [accounts/templates/accounts/widgets/user_select.html](../accounts/templates/accounts/widgets/user_select.html)
 
 ### workplaces
 

@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Prefetch
 from django.utils import timezone
 
+from accounts.widgets import UserChoiceField, UserSelect
 from tasks.access import editable_to, visible_to
 from workplaces.services import workplace_people
 
@@ -64,7 +65,12 @@ def _replace_optional_model_choice(form, field_name, queryset, empty_label):
     if field_name not in form.fields:
         return
     current = form.fields[field_name]
-    field_class = forms.ModelChoiceField if field_name in {'assignee', 'responsible_user', 'owner'} else LenientModelChoiceField
+    if field_name == 'assignee':
+        field_class = UserChoiceField
+    elif field_name in {'responsible_user', 'owner'}:
+        field_class = forms.ModelChoiceField
+    else:
+        field_class = LenientModelChoiceField
     form.fields[field_name] = field_class(
         queryset=queryset,
         required=False,
@@ -303,7 +309,7 @@ class TaskForm(TaskAccessForm):
             'task_type': forms.Select(attrs={
                 'class': 'form-input'
             }),
-            'assignee': forms.Select(attrs={
+            'assignee': UserSelect(attrs={
                 'class': 'form-input'
             }),
             'priority': forms.Select(attrs={
@@ -1213,7 +1219,7 @@ class TaskModalForm(TaskAccessForm):
             'task_type': forms.Select(attrs={
                 'class': 'tasks-inline-select',
             }),
-            'assignee': forms.Select(attrs={
+            'assignee': UserSelect(attrs={
                 'class': 'tasks-inline-select',
             }),
             'priority': forms.Select(attrs={

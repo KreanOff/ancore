@@ -219,7 +219,7 @@
 .for-you-task-list :is(.work-issue-row, .for-you-item):is(:hover, :focus-visible, :has(:focus-visible)) { background: color-mix(in srgb, var(--system-accent) 8%, #ffffff); background-clip: padding-box; }
 .for-you-task-list :is(.work-issue-row, .for-you-item):is(:hover, :focus-visible, :has(:focus-visible))::after { opacity: 1; }
 .for-you-status-groups .tasks-status-block { min-width: 540px; }
-.for-you-task-list .work-issue-row--unselectable { grid-template-columns: 22px 24px minmax(190px, 1fr) max-content max-content max-content; }
+.for-you-task-list .work-issue-row--unselectable { grid-template-columns: 22px 24px minmax(0, 1fr) max-content max-content max-content max-content; }
 .for-you-task-list .tasks-row-title { min-width: 0; text-decoration: none; }
 .for-you-task-list .tasks-row-title:hover { text-decoration: none; }
 .for-you-task-list .work-item-key { color: var(--text-secondary); font-size: var(--font-size-sm); flex-shrink: 0; }

@@ -286,10 +286,20 @@ wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
 wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.
 Include `spaces/issue_type.html` dodaje wspólne oznaczenie `tasks-issue-type`:
 ikonę z lokalnego `AncoreIcons` i nazwę typu zgłoszenia w neutralnym tle.
-Oznaczenie jest widoczne przy kluczu wiersza i w metadanych karty; długą nazwę
-skraca wielokropek, a pełną udostępnia `title` i etykieta dostępności.
+Oznaczenie jest widoczne po prawej stronie wiersza, bezpośrednio przed licznikiem
+tagów, oraz w metadanych karty; długą nazwę skraca wielokropek, a pełną udostępnia
+`title` i etykieta dostępności. Wspólny wiersz `work-issue-row` ma osobną kolumnę
+typu również w backlogu i sprintach; „Dla ciebie” zachowuje ten układ bez checkboxa.
+Kolumna klucza i tytułu może się zwężać, zachowując wielokropek i jedną linię metadanych.
 `IssueTypeSelect` używa istniejących ikon opcji `AncoreCustomSelect` w formularzu
-przestrzeni i szczegółach zadania. Toolbar zawiera filtr „Typ zgłoszenia”;
+przestrzeni i szczegółach zadania. Ikony typu mają wspólne kolory w opcjach,
+wybranej wartości, filtrze, wierszach, kartach i podsumowaniu: Zadanie — niebieski,
+Błąd — czerwony, Historyjka — zielony, Epik — fioletowy. Materiał i Zgłoszenie
+używają niebieskiego, Incydent czerwonego, Kandydatura fioletowego, a Kampania
+i Rozmowa bursztynowego. Barwy pochodzą z obecnych statusów, priorytetów i akcentów;
+nieznany typ zachowuje neutralną ikonę. Nazwy i tła kontrolek pozostają standardowe,
+a kolory dotyczą tylko ikon w komponentach typu zgłoszenia.
+Toolbar zawiera filtr „Typ zgłoszenia”;
 dotychczasowe pole biznesowe w szczegółach ma etykietę „Kategoria zadania”.
 Pierwsza kolumna wiersza zawiera stale widoczny, standardowy `tasks-row-checkbox`
 z etykietą zawierającą kod i tytuł zadania. Zaznaczenie myszą lub Spacją podświetla
@@ -469,6 +479,14 @@ Wspólny select obsługuje także `data-ancore-option-preview` wskazujący ID
 lokalnego `<template>`. Klonuje jego pierwszy element jako dekoracyjną
 miniaturę w opcji i przy jednej wybranej wartości. Brak szablonu zachowuje
 zwykłą ikonę lub tekst; ponowne odświeżenie zastępuje poprzednią miniaturę.
+Pole wykonawcy w szczegółach oraz formularzach zadań i Przestrzeni używa
+`accounts.widgets.UserChoiceField` i `UserSelect`: imię i nazwisko (także zapisane
+drugie imię), z e-mailem lub nazwą konta jako zastępstwem przy braku danych.
+W opcjach i wybranej wartości pojawia się awatar 24px ze wspólnego
+`accounts/includes/user_avatar.html`: zdjęcie profilowe albo istniejący awatar konta.
+Lokalne szablony podglądów są generowane tylko z użytkowników dopuszczonych
+przez queryset pola; tooltip awatara udostępnia pełną nazwę i e-mail.
+„Brak osoby” pozostaje opcją bez awatara. Wartością formularza nadal jest PK osoby.
 Nowy projekt ma formularz główny. Po utworzeniu okno „Edytuj projekt” ma
 zakładki „Główna” i „Członkowie”. `notifications-tabs` obsługuje strzałki,
 Home i End. Członkowie korzystają ze wspólnego `members_table.html` Workspace:

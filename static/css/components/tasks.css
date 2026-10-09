@@ -14559,6 +14559,32 @@ body.is-resizing-directory-columns {
 .tasks-issue-type > :last-child { overflow: hidden; text-overflow: ellipsis; }
 .tasks-issue-type [data-icon] { width: 14px; height: 14px; flex-shrink: 0; }
 
+/* Issue type colors are shared by badges, select options and summaries. */
+:is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select[name="work_type"]))
+:is([data-icon="square-check"], [data-icon="file-text"], [data-icon="ticket"]) {
+    color: #2563eb;
+}
+
+:is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select[name="work_type"]))
+:is([data-icon="circle-alert"], [data-icon="siren"]) {
+    color: #dc4b3e;
+}
+
+:is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select[name="work_type"]))
+[data-icon="book-open"] {
+    color: var(--accent-green);
+}
+
+:is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select[name="work_type"]))
+:is([data-icon="zap"], [data-icon="user-round"]) {
+    color: var(--system-accent);
+}
+
+:is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select[name="work_type"]))
+:is([data-icon="megaphone"], [data-icon="messages-square"]) {
+    color: #c18a34;
+}
+
 .tasks-issue-row.tasks-issue-row--with-favorite {
     grid-template-columns: 18px 22px 24px minmax(190px, 1fr) max-content max-content max-content 30px;
 }

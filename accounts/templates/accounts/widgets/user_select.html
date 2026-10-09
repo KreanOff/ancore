@@ -1,0 +1,4 @@
+{% include 'django/forms/widgets/select.html' %}
+{% for group_name, group_choices, group_index in widget.optgroups %}{% for option in group_choices %}{% if option.avatar %}
+<template id="{{ option.preview_id }}">{% include 'accounts/includes/user_avatar.html' with avatar=option.avatar avatar_class='tasks-issue-mini-avatar' avatar_title=option.person_title only %}</template>
+{% endif %}{% endfor %}{% endfor %}

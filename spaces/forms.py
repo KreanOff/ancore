@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
+from accounts.widgets import UserChoiceField
 from core.upload_validation import validate_image_upload
 from tasks.access import editable_to
 from tasks.models import Task, TaskSection
@@ -107,7 +108,7 @@ class ItemForm(StyledForm):
     description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
     work_type = forms.ChoiceField(label='Typ zgłoszenia', widget=IssueTypeSelect)
     priority = forms.ChoiceField(label='Priorytet', choices=Task.PRIORITY_CHOICES, initial='medium')
-    assignee = forms.ModelChoiceField(label='Wykonawca', queryset=None, required=False)
+    assignee = UserChoiceField(label='Wykonawca', queryset=None, required=False, empty_label='Brak osoby')
     team = forms.ModelChoiceField(label='Zespół', queryset=Team.objects.none(), required=False)
     section = forms.ModelChoiceField(label='Grupa', queryset=TaskSection.objects.none(), required=False, empty_label='Domyślna grupa przestrzeni')
     in_backlog = forms.BooleanField(label='Umieść w backlogu', required=False)
@@ -125,7 +126,6 @@ class ItemForm(StyledForm):
         config = space.configuration.settings
         self.fields['work_type'].choices = [(t['key'], t['label']) for t in config['types']]
         self.fields['assignee'].queryset = workplace_people(request.workplace)
-        self.fields['assignee'].label_from_instance = lambda user: user.get_full_name() or user.email
         self.fields['team'].queryset = teams_for(request).filter(spaces=space)
         self.fields['section'].queryset = editable_to(TaskSection.objects.filter(project=space.project), request.user)
         self.fields['sprint'].queryset = Sprint.objects.filter(space=space).filter(~Q(state='closed') | Q(pk=getattr(item, 'sprint_id', None)))
