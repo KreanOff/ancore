@@ -136,13 +136,13 @@ class TaskLocationEditTests(TestCase):
         self.assertEqual(self.child.parent, parent)
         self.assertEqual(self.child.section, self.section)
 
-    def test_forms_show_location_as_text_and_have_no_transfer_fields(self):
+    def test_forms_omit_location_information_and_have_no_transfer_fields(self):
         for scoped in (False, True):
             response = self.client.get(self.task_url(scoped=scoped))
             self.assertNotIn('project', response.context['form'].fields)
             self.assertNotIn('section', response.context['form'].fields)
-            self.assertContains(response, f'<strong title="{self.source.name}">{self.source.name}</strong>', html=True)
-            self.assertContains(response, f'<strong title="{self.section.title}">{self.section.title}</strong>', html=True)
+            self.assertNotContains(response, f'<strong title="{self.source.name}">{self.source.name}</strong>', html=True)
+            self.assertNotContains(response, f'<strong title="{self.section.title}">{self.section.title}</strong>', html=True)
             response = self.client.get(self.edit_url(scoped=scoped), HTTP_X_WORK_MODAL='true')
             self.assertNotContains(response, 'name="section"')
             response = self.client.get(scoped_workplace_app_path(self.workspace, 'spaces', f'{self.source.space.pk}/items/create/'))

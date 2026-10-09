@@ -202,10 +202,14 @@
 .work-item-toolbar { flex-shrink: 0; }
 .work-item-toolbar .ancore-custom-select { width: auto; min-width: 140px; max-width: 190px; }
 .work-item-toolbar .tasks-project-pagination__pages { flex-shrink: 0; }
-.work-issue-row { grid-template-columns: 18px 22px 24px minmax(0, 1fr) max-content max-content max-content max-content; }
+.work-issue-row { position: relative; grid-template-columns: 18px 22px 24px minmax(0, 1fr) max-content max-content max-content max-content; transition: background-color 0.12s ease; }
+.work-issue-row::after { content: ""; position: absolute; inset: 0 auto 0 0; z-index: 2; width: 3px; background: var(--system-accent); opacity: 0; pointer-events: none; transition: opacity 0.12s ease; }
+.tasks-issue-row.work-issue-row:is(:hover, :focus-visible, :has(:focus-visible), :has(> .tasks-row-checkbox:checked)),
+.tasks-issue-row.work-issue-row:has(> .tasks-row-checkbox:checked):hover { background: color-mix(in srgb, var(--system-accent) 8%, #ffffff); background-clip: padding-box; }
+.tasks-issue-row.work-issue-row:is(:hover, :focus-visible, :has(:focus-visible), :has(> .tasks-row-checkbox:checked))::after { opacity: 1; }
 .work-issue-row.work-issue-row--actions { grid-template-columns: 18px 22px 24px minmax(0, 1fr) max-content max-content max-content max-content 30px; }
 .work-issue-row .tasks-row-title { text-decoration: none; min-width: 0; }
-.work-issue-row .tasks-row-title:hover { text-decoration: underline; }
+.work-issue-row .tasks-row-title:hover { text-decoration: none; }
 .work-item-key { color: var(--text-secondary); font-size: var(--font-size-sm); flex-shrink: 0; }
 .work-issue-row > .tasks-row-checkbox { opacity: 1; }
 .work-kanban-card .tasks-kanban-card__title { display: block; text-decoration: none; }

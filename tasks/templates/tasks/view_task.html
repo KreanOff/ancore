@@ -393,20 +393,8 @@
                         </div>
                     </section>
 
+                    {% if task.parent %}
                     <section class="tasks-issue-side-section">
-                        <div class="tasks-issue-field">
-                            <span class="tasks-issue-field-label">
-                                <span>Przestrzeń</span>
-                            </span>
-                            <strong title="{{ task.section.project.name|default:'Brak przestrzeni' }}">{{ task.section.project.name|default:'Brak przestrzeni' }}</strong>
-                        </div>
-                        <div class="tasks-issue-field">
-                            <span class="tasks-issue-field-label">
-                                <span>Grupa</span>
-                            </span>
-                            <strong title="{{ task.section.title|default:'Brak grupy' }}">{{ task.section.title|default:'Brak grupy' }}</strong>
-                        </div>
-                        {% if task.parent %}
                         <div class="tasks-issue-field">
                             <span class="tasks-issue-field-label">
                                 <label for="{{ form.parent.id_for_label }}">Zadanie</label>
@@ -427,8 +415,8 @@
                                 </div>
                             </div>
                         </div>
-                        {% endif %}
                     </section>
+                    {% endif %}
 
                 </aside>
             </main>

@@ -305,6 +305,12 @@ bieżącą treścią. W innych modułach otwiera kreator nad katalogiem.
 Listy zadań w przestrzeni, „Wszystkie zadania” oraz zadania zespołu zachowują
 wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
 wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.
+Wspólny `work-issue-row` w `spaces.css` podświetla cały wiersz przy najechaniu
+lub fokusie klawiatury wewnątrz: 8% `--system-accent` na białym tle, pasek 3px
+po lewej i przejście 0,12s, tak samo jak w „Dla ciebie”. Link nazwy nie ma
+podkreślenia przy najechaniu. Wzorzec obejmuje też backlog i sprinty;
+zaznaczenie checkboxa utrzymuje to samo fioletowe tło i pasek również po
+odsunięciu kursora i utracie fokusu, tak jak zaznaczenie w katalogu Projektów.
 Include `spaces/issue_type.html` dodaje wspólne oznaczenie `tasks-issue-type`:
 ikonę z lokalnego `AncoreIcons` i nazwę typu zgłoszenia w neutralnym tle.
 Oznaczenie jest widoczne po prawej stronie wiersza, bezpośrednio przed licznikiem
@@ -1614,10 +1620,9 @@ i podzadania; na wąskich ekranach pozostaje pod treścią zgodnie ze wspólnym
 układem szczegółów. Przycisk „Zapisz” jest dostępny we wszystkich zakładkach i zapisuje
 ten sam formularz, w tym zmiany z panelu bocznego. „Dodaj czas” pojawia się
 obok zakładek w lewej kolumnie i zapisuje wpisy przez osobny formularz modala.
-Wiersze „Przestrzeń” i „Grupa” są informacją tylko do odczytu, we wspólnych
-`tasks-issue-field`, ze skracaniem długich nazw i pełną nazwą w `title`.
-Brak przypisania pokazuje „Brak przestrzeni” i „Brak grupy”. Nie mają selectów
-ani menu wyboru. Okno „Planowanie i zespół” również nie pozwala zmienić grupy;
+Panel boczny szczegółów zadania i podzadania nie pokazuje wierszy „Przestrzeń”
+ani „Grupa”. Ostatnia sekcja panelu występuje wyłącznie w podzadaniu i zawiera
+wybór zadania nadrzędnego. Okno „Planowanie i zespół” również nie pozwala zmienić grupy;
 wybór grupy pozostaje w formularzu tworzenia. Picker rodzica podzadania
 obejmuje tylko zadania z tej samej grupy.
 ARIA tablist/tab/tabpanel, strzałki, Home i End obsługują klawiaturę.

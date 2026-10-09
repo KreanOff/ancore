@@ -214,10 +214,10 @@
 .for-you-page .for-you-space-sheet .tasks-directory-list .tasks-directory-row > [data-column] { border-left: 0; border-right: 0; }
 .for-you-page .for-you-space-sheet .tasks-directory-list .tasks-directory-row > [data-column] { align-items: center; padding-inline: 0.75rem; }
 .for-you-page .for-you-space-sheet .tasks-directory-list .tasks-directory-row > [data-column="key"] { padding-inline-start: calc(0.75rem + var(--work-space-key-gap)); }
-.for-you-task-list :is(.work-issue-row, .for-you-item) { position: relative; transition: background-color 0.12s ease; }
-.for-you-task-list :is(.work-issue-row, .for-you-item)::after { content: ""; position: absolute; inset: 0 auto 0 0; z-index: 2; width: 3px; background: var(--system-accent); opacity: 0; pointer-events: none; transition: opacity 0.12s ease; }
-.for-you-task-list :is(.work-issue-row, .for-you-item):is(:hover, :focus-visible, :has(:focus-visible)) { background: color-mix(in srgb, var(--system-accent) 8%, #ffffff); background-clip: padding-box; }
-.for-you-task-list :is(.work-issue-row, .for-you-item):is(:hover, :focus-visible, :has(:focus-visible))::after { opacity: 1; }
+.for-you-task-list .for-you-item { position: relative; transition: background-color 0.12s ease; }
+.for-you-task-list .for-you-item::after { content: ""; position: absolute; inset: 0 auto 0 0; z-index: 2; width: 3px; background: var(--system-accent); opacity: 0; pointer-events: none; transition: opacity 0.12s ease; }
+.for-you-task-list .for-you-item:is(:hover, :focus-visible, :has(:focus-visible)) { background: color-mix(in srgb, var(--system-accent) 8%, #ffffff); background-clip: padding-box; }
+.for-you-task-list .for-you-item:is(:hover, :focus-visible, :has(:focus-visible))::after { opacity: 1; }
 .for-you-status-groups .tasks-status-block { min-width: 540px; }
 .for-you-task-list .work-issue-row--unselectable { grid-template-columns: 22px 24px minmax(0, 1fr) max-content max-content max-content max-content; }
 .for-you-task-list .tasks-row-title { min-width: 0; text-decoration: none; }
