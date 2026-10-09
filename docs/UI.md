@@ -618,10 +618,18 @@ korzystają z tego samego include przez `status_group_header.html`.
 Wiersze mają 40px wysokości jak zadania, poziome podziały i brak pionowych linii
 między kolumnami. Wszystkie komórki, również pierwsza po usunięciu menu, mają
 0,75rem odstępu wewnętrznego z obu boków i zawartość wyśrodkowaną pionowo.
+Kolumna Klucz ma dodatkowe 100px odstępu z lewej strony, oddzielające ją od nazwy
+przestrzeni. Lokalny token `--work-space-key-gap` powiększa także tor klucza
+ze 150px do 250px, zachowując miejsce na jego tekst. Kolumna nazwy ma minimum
+320px i rozszerza się do najdłuższej pełnej nazwy w danej tabeli, bez wielokropka.
+Siatka `subgrid` wyrównuje klucze i opisy wszystkich wierszy. Wspólny mechanizm
+szerokości kolumn pomija ten wariant, również na telefonie, aby nie przywracać
+stałej szerokości nazwy. Długie nazwy pozostają w jednym wierszu i są dostępne
+przez poziome przewijanie tabeli na wąskich ekranach.
 Awatar i nazwa zachowują odstęp 8px. Wariant `for-you-space-sheet` zachowuje wysokość tabeli według liczby
-wierszy i osobny klucz preferencji kolumn `for-you-spaces` z osobnym schematem
-trzech kolumn danych,
-wspólny dla zwykłego i scoped URL. Tabela przewija się poziomo na telefonie.
+wierszy i osobny schemat trzech kolumn danych bez odtwarzania stałych preferencji
+szerokości. Układ jest wspólny dla zwykłego i scoped URL. Kolumna Opis wypełnia
+pozostałą szerokość tabeli; na telefonie tabela przewija się poziomo.
 Grupy nadal używają wierszy Dashboardu, a górne rekomendowane przestrzenie — kart.
 Zadania bieżącej strony są grupowane według kategorii i własnej nazwy statusu,
 w kolejności konfiguracji przestrzeni. Wewnątrz statusu pozostaje kolejność

@@ -334,6 +334,10 @@ W „Dla ciebie” sprawdź kolejność trzech kolumn danych: Przestrzeń, Klucz
 brak Rodzaju/Szablonu/Zadań również po odtworzeniu preferencji, wyrównanie komórek
 na telefonie i pełny zestaw kolumn w katalogu oraz zarządzaniu. Checkboxy pozostają
 na listach zadań, w backlogu i w katalogach przestrzeni poza „Dla ciebie”.
+Pełne nazwy przestrzeni w „Dla ciebie” muszą mieścić się bez wielokropka,
+zachowując wspólne wyrównanie kluczy i odstęp 100px. Sprawdź długą nazwę,
+przeładowanie, zwinięcie/rozwinięcie grupy oraz poziome przewijanie na telefonie;
+katalog i zarządzanie nadal stosują dotychczasowe szerokości i skracanie nazw.
 
 | Moduł | Co sprawdzają istniejące testy |
 | --- | --- |

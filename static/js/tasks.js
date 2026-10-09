@@ -7369,6 +7369,12 @@ function initTasksPage() {
         function syncDirectoryResizeGrid(board) {
             const header = board.querySelector('.tasks-directory-header');
 
+            // This compact list sizes its shared columns from the full space names.
+            if (board.classList.contains('for-you-space-sheet')) {
+                board.style.removeProperty('--tasks-directory-grid');
+                return;
+            }
+
             if (header && board.classList.contains('work-space-sheet--compact') && !resizeMediaQuery.matches) {
                 const cells = getDirectoryHeaderCells(board, header);
                 setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));

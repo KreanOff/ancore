@@ -187,13 +187,33 @@
 .for-you-page .for-you-item { grid-template-columns: 24px minmax(0, 1fr) auto 140px; }
 .for-you-task-list { overflow-x: auto; }
 .for-you-page .for-you-task-list > :is(.for-you-status-groups, .for-you-space-groups) { padding-inline: 0.95rem; }
-.for-you-page .for-you-space-sheet { --tasks-project-row-height: 40px; flex: none; padding: 0; }
+.for-you-page .for-you-space-sheet { --tasks-project-row-height: 40px; --work-space-key-gap: 100px; flex: none; padding: 0; }
+.for-you-page .for-you-space-sheet .tasks-directory-group {
+    display: grid;
+    grid-template-columns: max-content calc(150px + var(--work-space-key-gap)) minmax(320px, 1fr);
+    width: 100%;
+    min-width: min-content;
+}
+.for-you-page .for-you-space-sheet .tasks-directory-list,
+.for-you-page .for-you-space-sheet .tasks-directory-list .tasks-directory-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    width: 100%;
+}
+.for-you-page .for-you-space-sheet [data-column="name"] > a {
+    overflow: visible;
+    text-overflow: clip;
+    flex-shrink: 0;
+}
+.for-you-page .for-you-space-sheet .tasks-directory-list .tasks-directory-row > [data-column="name"] { min-width: 320px; }
 .for-you-page .for-you-space-sheet .tasks-directory-header { display: none; }
 .for-you-space-group .tasks-issue-group-label { display: inline-flex; align-items: center; gap: 0.45rem; }
 .for-you-space-group .tasks-issue-group-label > svg { width: 18.4px; height: 18.4px; flex-shrink: 0; }
 .for-you-page .for-you-space-sheet .tasks-directory-header > [data-column],
 .for-you-page .for-you-space-sheet .tasks-directory-list .tasks-directory-row > [data-column] { border-left: 0; border-right: 0; }
 .for-you-page .for-you-space-sheet .tasks-directory-list .tasks-directory-row > [data-column] { align-items: center; padding-inline: 0.75rem; }
+.for-you-page .for-you-space-sheet .tasks-directory-list .tasks-directory-row > [data-column="key"] { padding-inline-start: calc(0.75rem + var(--work-space-key-gap)); }
 .for-you-task-list :is(.work-issue-row, .for-you-item) { position: relative; transition: background-color 0.12s ease; }
 .for-you-task-list :is(.work-issue-row, .for-you-item)::after { content: ""; position: absolute; inset: 0 auto 0 0; z-index: 2; width: 3px; background: var(--system-accent); opacity: 0; pointer-events: none; transition: opacity 0.12s ease; }
 .for-you-task-list :is(.work-issue-row, .for-you-item):is(:hover, :focus-visible, :has(:focus-visible)) { background: color-mix(in srgb, var(--system-accent) 8%, #ffffff); background-clip: padding-box; }
